@@ -439,18 +439,23 @@ public class Platform {
             }
         }
         if (getGlobalProperty("JGroup.Address") == null) {
-            System.setProperty("JGroup.Address", getManagementServerIp());
-            logger.debug(String.format("default JGroup.Address to JGroup.Address [%s]", getManagementServerIp()));
+            String serverIp = getCanonicalServerIp();
+            System.setProperty("JGroup.Address", serverIp);
+            logger.debug(String.format("default JGroup.Address to JGroup.Address [%s]", serverIp));
         }
         if (ZSha2Helper.isMNHaEnvironment()) {
-            SearchGlobalProperty.ExclusiveIndexUse = "false";
-            System.setProperty("Exclusive.indexUse", SearchGlobalProperty.ExclusiveIndexUse);
-            logger.debug(String.format("default Exclusive.indexUse to Exclusive.indexUse [%s]", SearchGlobalProperty.ExclusiveIndexUse));
+            SearchGlobalProperty.JGroupFlushBypass = "false";
+            SearchGlobalProperty.JGroupJoinTimeout = "5000";
         } else {
             SearchGlobalProperty.ExclusiveIndexUse = "true";
-            System.setProperty("Exclusive.indexUse", SearchGlobalProperty.ExclusiveIndexUse);
-            logger.debug(String.format("default Exclusive.indexUse to Exclusive.indexUse [%s]", SearchGlobalProperty.ExclusiveIndexUse));
         }
+
+        System.setProperty("Exclusive.indexUse", SearchGlobalProperty.ExclusiveIndexUse);
+        System.setProperty("JGroup.FlushBypass", SearchGlobalProperty.JGroupFlushBypass);
+        System.setProperty("JGroup.JoinTimeout", SearchGlobalProperty.JGroupJoinTimeout);
+        logger.debug(String.format("default Exclusive.indexUse to Exclusive.indexUse [%s]", SearchGlobalProperty.ExclusiveIndexUse));
+        logger.debug(String.format("default JGroup.FlushBypass to JGroup.FlushBypass [%s]", SearchGlobalProperty.JGroupFlushBypass));
+        logger.debug(String.format("default JGroup.JoinTimeout to JGroup.JoinTimeout [%s]", SearchGlobalProperty.JGroupJoinTimeout));
     }
 
     static {
@@ -692,6 +697,14 @@ public class Platform {
         }
 
         return managementServerIp;
+    }
+
+    public static String getCanonicalServerIp() {
+        if (!ZSha2Helper.isMNHaEnvironment()) {
+            return getManagementServerIp();
+        }
+
+        return ZSha2Helper.getInfo(false).getNodeip();
     }
 
     public static boolean isVIPNode() {

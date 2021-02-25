@@ -8,6 +8,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigException;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -17,9 +19,10 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.Quota;
@@ -51,6 +54,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -305,9 +309,9 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                                     wcompl.done();
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (errs.isEmpty()) {
                                     trigger.next();
                                 } else {
@@ -382,10 +386,30 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             lbFactories.put(f.getType(), f);
         }
 
+        installConfigValidateExtension();
         prepareSystemTags();
 
         upgradeLoadBalancerServerGroup();
         return true;
+    }
+
+
+    private void installConfigValidateExtension(){
+        LoadBalancerGlobalConfig.HTTP_MODE.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
+                List<String> httpModes = new ArrayList<>(Arrays.asList("http-keep-alive",
+                                                                        "http-server-close",
+                                                                        " http-tunnel",
+                                                                        "httpclose",
+                                                                        "forceclose"));
+                if (!httpModes.contains(value)) {
+                    throw new GlobalConfigException(String.format("%s must be in %s",
+                            LoadBalancerGlobalConfig.HTTP_MODE.getName(),String.join(", ",httpModes)));
+                }
+            }
+        });
+
     }
 
     private void prepareSystemTags() {
@@ -956,6 +980,27 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     @Override
     public void upgradeLoadBalancerServerGroup() {
         if (!LoadBalancerGlobalProperty.UPGRADE_LB_SERVER_GROUP) {
+            /* lb upgrade failed check */
+            List<LoadBalancerListenerVO> listenerVOS = Q.New(LoadBalancerListenerVO.class).list();
+            for (LoadBalancerListenerVO vo : listenerVOS) {
+                /* if listener has old vmnic attached directly, a related lb server group must has been crated  */
+                List<String> nicUuids = vo.getVmNicRefs().stream().map(LoadBalancerListenerVmNicRefVO::getVmNicUuid)
+                        .collect(Collectors.toList());
+                if (!nicUuids.isEmpty()) {
+                    List<String> uuids = new ArrayList<>();
+                    for (LoadBalancerListenerServerGroupRefVO ref : vo.getServerGroupRefs()) {
+                        LoadBalancerServerGroupVO groupVO = dbf.findByUuid(ref.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+                        uuids.addAll(groupVO.getLoadBalancerServerGroupVmNicRefs().stream()
+                                .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList()));
+                    }
+
+                    if (!uuids.containsAll(nicUuids)) {
+                        throw new CloudRuntimeException(String.format("load balancer listener [uuid:%s] upgraded failed," +
+                                "vmnics directly attached are [%s], vmnic attached to its serverGroup are",
+                                vo.getUuid(), uuids));
+                    }
+                }
+            }
             return;
         }
 
@@ -1021,6 +1066,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             ref.setServerGroupUuid(groupVO.getUuid());
             dbf.persist(ref);
 
+            /* remove vmnic directly attached load balaner */
+            dbf.removeCollection(vo.getVmNicRefs(), LoadBalancerListenerVmNicRefVO.class);
         }
 
         dbf.persistCollection(vmNicRefVOS);

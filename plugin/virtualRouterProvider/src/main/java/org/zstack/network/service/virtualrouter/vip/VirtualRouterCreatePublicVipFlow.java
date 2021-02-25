@@ -9,11 +9,12 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.MessageReply;
@@ -157,9 +158,9 @@ public class VirtualRouterCreatePublicVipFlow implements Flow {
                     wcoml.done();
                 }
             });
-        }).run(new NoErrorCompletion(chain) {
+        }).run(new WhileDoneCompletion(chain) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (snat != null && !snat) {
                     logger.debug(String.format("SNAT is not enabled on virtual router [uuid:%s]", vr.getUuid()));
                     chain.next();
@@ -244,9 +245,9 @@ public class VirtualRouterCreatePublicVipFlow implements Flow {
                         }
                     });
                 }
-        ).run(new NoErrorCompletion(chain) {
+        ).run(new WhileDoneCompletion(chain) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 chain.rollback();
             }
         });

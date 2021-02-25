@@ -51,7 +51,7 @@
         <category>loadBalancer</category>
         <name>maxConnection</name>
         <description>The number of max concurrent connections.</description>
-        <defaultValue>100000</defaultValue>
+        <defaultValue>2000000</defaultValue>
         <type>java.lang.Long</type>
     </config>
 
@@ -76,6 +76,14 @@
         <defaultValue>20</defaultValue>
         <category>quota</category>
         <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <category>loadBalancer</category>
+        <name>httpMode</name>
+        <description>When mode http is turned on, HAProxy processes HTTP protocol for each request and response passing through. to choose from http-keep-alive,http-server-close,http-tunnel,httpclose,forceclose</description>
+        <defaultValue>http-server-close</defaultValue>
+        <type>java.lang.String</type>
     </config>
 
     <config>

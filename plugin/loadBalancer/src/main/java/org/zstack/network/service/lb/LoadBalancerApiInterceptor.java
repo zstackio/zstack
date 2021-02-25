@@ -586,6 +586,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         );
 
 
+        insertTagIfNotExisting(
+                msg, LoadBalancerSystemTags.HTTP_MODE,
+                LoadBalancerSystemTags.HTTP_MODE.instantiateTag(
+                        map(e(LoadBalancerSystemTags.HTTP_MODE_TOKEN, LoadBalancerGlobalConfig.HTTP_MODE.value()))
+                )
+        );
+
+
         /*check the validation of systemtags*/
         for (String tag : msg.getSystemTags()) {
             try {

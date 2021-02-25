@@ -9,6 +9,9 @@ public class DetachNicFromVmMsg extends NeedReplyMessage implements VmInstanceMe
     private String vmInstanceUuid;
     private String vmNicUuid;
 
+    // do not call DetachNicFromVmOnHypervisorMsg even vm is running
+    private boolean dbOnly = false;
+
     @Override
     public String getVmInstanceUuid() {
         return vmInstanceUuid;
@@ -24,5 +27,13 @@ public class DetachNicFromVmMsg extends NeedReplyMessage implements VmInstanceMe
 
     public void setVmNicUuid(String vmNicUuid) {
         this.vmNicUuid = vmNicUuid;
+    }
+
+    public boolean isDbOnly() {
+        return dbOnly;
+    }
+
+    public void setDbOnly(boolean dbOnly) {
+        this.dbOnly = dbOnly;
     }
 }

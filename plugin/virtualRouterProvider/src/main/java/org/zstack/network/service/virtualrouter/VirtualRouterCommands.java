@@ -1,5 +1,6 @@
 package org.zstack.network.service.virtualrouter;
 
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
@@ -8,6 +9,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class VirtualRouterCommands {
 	public static class AgentCommand implements Serializable {
@@ -36,6 +38,7 @@ public class VirtualRouterCommands {
 		private String mgtCidr;
 		private String logLevel;
 		private List<String> timeServers;
+		private Map<String,String> parms;
 
 		public String getUuid() {
 			return uuid;
@@ -75,6 +78,14 @@ public class VirtualRouterCommands {
 
 		public void setTimeServers(List<String> timeServers) {
 			this.timeServers = timeServers;
+		}
+
+		public Map<String, String> getParms() {
+			return parms;
+		}
+
+		public void setParms(Map<String, String> parms) {
+			this.parms = parms;
 		}
 	}
 
@@ -842,16 +853,62 @@ public class VirtualRouterCommands {
 		}
 	}
 
-	public static class CreateVipCmd extends AgentCommand {
-		private Boolean rebuild;
-	    private List<VipTO> vips;
+	public static class NicIpTO {
+		private String ip;
+		private String netmask;
+		private String ownerEthernetMac;
 
-		public Boolean getRebuild() {
-			return rebuild;
+
+		public static NicIpTO valueOf(VmNicInventory nic) {
+			NicIpTO to = new NicIpTO();
+			to.setIp(nic.getIp());
+			to.setNetmask(nic.getNetmask());
+			to.setOwnerEthernetMac(nic.getMac());
+			return to;
 		}
 
-		public void setRebuild(Boolean rebuild) {
-			this.rebuild = rebuild;
+		@Override
+		public String toString() {
+			return JSONObjectUtil.toJsonString(this);
+		}
+
+		public String getIp() {
+			return ip;
+		}
+
+		public void setIp(String ip) {
+			this.ip = ip;
+		}
+
+		public String getNetmask() {
+			return netmask;
+		}
+
+		public void setNetmask(String netmask) {
+			this.netmask = netmask;
+		}
+
+		public String getOwnerEthernetMac() {
+			return ownerEthernetMac;
+		}
+
+		public void setOwnerEthernetMac(String ownerEthernetMac) {
+			this.ownerEthernetMac = ownerEthernetMac;
+		}
+	}
+
+	public static class CreateVipCmd extends AgentCommand {
+		private Boolean syncVip;
+	    private List<VipTO> vips;
+	    /* sync all vips to virtual router together with nic ips*/
+	    private List<NicIpTO> nicIps;
+
+		public Boolean getSyncVip() {
+			return syncVip;
+		}
+
+		public void setSyncVip(Boolean syncVip) {
+			this.syncVip = syncVip;
 		}
 
 		public List<VipTO> getVips() {
@@ -861,6 +918,14 @@ public class VirtualRouterCommands {
         public void setVips(List<VipTO> vips) {
             this.vips = vips;
         }
+
+		public List<NicIpTO> getNicIps() {
+			return nicIps;
+		}
+
+		public void setNicIps(List<NicIpTO> nicIps) {
+			this.nicIps = nicIps;
+		}
 	}
 	
 	public static class RemoveVipCmd extends AgentCommand {

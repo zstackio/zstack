@@ -1,30 +1,27 @@
 package org.zstack.network.service.flat;
 
 import com.google.common.collect.Lists;
-import edu.emory.mathcs.backport.java.util.Collections;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.BatchCheckNetworkPhysicalInterfaceMsg;
-import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.network.IPv6Constants;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
@@ -61,7 +58,7 @@ public class DhcpApply {
                     FlatDhcpAcquireDhcpServerIpReply r = reply.castReply();
                     List<FlatDhcpAcquireDhcpServerIpReply.DhcpServerIpStruct> dhcpServerIps = r.getDhcpServerList();
                     if (dhcpServerIps == null || dhcpServerIps.isEmpty()) {
-                        completion.fail(operr("could not get dhcp server ip for l3 network [uuid:%s]", msg.getL3NetworkUuid()));
+                        completion.success();
                         return;
                     }
 
@@ -87,6 +84,10 @@ public class DhcpApply {
         }
 
         FlatDhcpBackend.PrepareDhcpCmd getPrepareDhcpCmd() {
+            if (dhcp4Server == null && dhcp6Server == null) {
+                return null;
+            }
+
             FlatDhcpBackend.DhcpInfo i = info.get(0);
 
             FlatDhcpBackend.PrepareDhcpCmd cmd = new FlatDhcpBackend.PrepareDhcpCmd();
@@ -140,7 +141,6 @@ public class DhcpApply {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ErrorCodeList errorCodeList = new ErrorCodeList();
                         new While<>(e.entrySet()).each((entry, c) -> {
                             InternalWorker internalWorker = new InternalWorker();
                             internalWorker.acquireDhcpServerIp(entry, new Completion(c) {
@@ -152,13 +152,13 @@ public class DhcpApply {
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    errorCodeList.getCauses().add(errorCode);
+                                    c.addError(errorCode);
                                     c.allDone();
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (!errorCodeList.getCauses().isEmpty()) {
                                     trigger.fail(errorCodeList.getCauses().get(0));
                                     return;
@@ -181,6 +181,7 @@ public class DhcpApply {
                             List<FlatDhcpBackend.PrepareDhcpCmd> dhcpCmds = internalWorkers
                                     .stream()
                                     .map(InternalWorker::getPrepareDhcpCmd)
+                                    .filter(Objects::nonNull)
                                     .collect(Collectors.toList());
 
                             FlatDhcpBackend.BatchPrepareDhcpCmd cmd = new FlatDhcpBackend.BatchPrepareDhcpCmd();
@@ -195,12 +196,11 @@ public class DhcpApply {
                             msgs.add(msg);
                         }
 
-                        ErrorCodeList errorCodeList = new ErrorCodeList();
                         new While<>(msgs).each((msg, c) -> bus.send(msg, new CloudBusCallBack(c) {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    errorCodeList.getCauses().add(reply.getError());
+                                    c.addError(reply.getError());
                                     c.allDone();
                                     return;
                                 }
@@ -208,16 +208,16 @@ public class DhcpApply {
                                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                                 FlatDhcpBackend.PrepareDhcpRsp rsp = ar.toResponse(FlatDhcpBackend.PrepareDhcpRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    errorCodeList.getCauses().add(operr("operation error, because:%s", rsp.getError()));
+                                    c.addError(operr("operation error, because:%s", rsp.getError()));
                                     c.allDone();
                                     return;
                                 }
 
                                 c.done();
                             }
-                        })).run(new NoErrorCompletion(trigger) {
+                        })).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (!errorCodeList.getCauses().isEmpty()) {
                                     trigger.fail(errorCodeList.getCauses().get(0));
                                     return;
@@ -254,12 +254,11 @@ public class DhcpApply {
                             msgs.add(msg);
                         }
 
-                        ErrorCodeList errorCodeList = new ErrorCodeList();
                         new While<>(msgs).each((msg, c) -> bus.send(msg, new CloudBusCallBack(c) {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    errorCodeList.getCauses().add(reply.getError());
+                                    c.addError(reply.getError());
                                     c.allDone();
                                     return;
                                 }
@@ -267,16 +266,16 @@ public class DhcpApply {
                                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                                 FlatDhcpBackend.ApplyDhcpRsp rsp = ar.toResponse(FlatDhcpBackend.ApplyDhcpRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    errorCodeList.getCauses().add(operr("operation error, because:%s", rsp.getError()));
+                                    c.addError(operr("operation error, because:%s", rsp.getError()));
                                     c.allDone();
                                     return;
                                 }
 
                                 c.done();
                             }
-                        })).run(new NoErrorCompletion(trigger) {
+                        })).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (!errorCodeList.getCauses().isEmpty()) {
                                     trigger.fail(errorCodeList.getCauses().get(0));
                                     return;

@@ -20,7 +20,7 @@
 
     <bean id="EipPortForwardingAttachableMarshaler" class="org.zstack.mediator.EipPortForwardingAttachableMarshaler">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint" />
+            <zstack:extension interface="org.zstack.core.cloudbus.MarshalReplyMessageExtensionPoint" />
         </zstack:plugin>
     </bean>
 

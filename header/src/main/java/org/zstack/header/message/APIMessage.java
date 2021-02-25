@@ -195,10 +195,10 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
 
 
     public void validate() throws IllegalAccessException {
-        validate(null);
+        validate(Collections.emptyList());
     }
 
-    public void validate(ApiMessageValidator validator) throws IllegalAccessException {
+    public void validate(Collection<ApiMessageValidator> validators) throws IllegalAccessException {
         Collection<FieldParam> params = apiParams.get(this.getClass());
         if (params == null) {
             throw new CloudRuntimeException(String.format("cannot find ApiParams for the class[%s]", this.getClass()));
@@ -211,97 +211,12 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
             f.setAccessible(true);
             Object value = f.get(this);
 
-            if (value != null && (value instanceof String) && !at.noTrim()) {
+            if (value instanceof String && !at.noTrim()) {
                 value = ((String) value).trim();
                 f.set(this, value);
             }
-
-            if (value != null && at.maxLength() != Integer.MIN_VALUE && (value instanceof String)) {
-                String str = (String) value;
-                if (str.length() > at.maxLength()) {
-                    throw new InvalidApiMessageException("field[%s] of message[%s] exceeds max length of string. expected was <= %s, actual was %s",
-                            f.getName(), getClass().getName(), at.maxLength(), str.length());
-                }
-            }
-
-            if (value != null && at.minLength() != 0 && (value instanceof String)) {
-                String str = (String) value;
-                if (str.length() < at.minLength()) {
-                    throw new InvalidApiMessageException("field[%s] of message[%s] less than the min length of string. expected was >= %s, actual was %s",
-                            f.getName(), getClass().getName(), at.minLength(), str.length());
-                }
-            }
-
-            if (at.required() && value == null) {
-                throw new InvalidApiMessageException("field[%s] of message[%s] is mandatory, can not be null", f.getName(), getClass().getName());
-            }
-
-            if (value != null && at.validValues().length > 0) {
-                if (value instanceof Collection) {
-                    for (Object v : (Collection) value) {
-                        validateValue(at.validValues(), v.toString(), f.getName(), getClass().getName());
-                    }
-                } else {
-                    validateValue(at.validValues(), value.toString(), f.getName(), getClass().getName());
-                }
-            }
-
-            if (value != null && at.validRegexValues() != null && at.validRegexValues().trim().equals("") == false) {
-                String regex = at.validRegexValues().trim();
-                Pattern p = Pattern.compile(regex);
-                Matcher mt = p.matcher(value.toString());
-                if (!mt.matches()){
-                    throw new InvalidApiMessageException("valid regex value for field[%s] of message[%s] are %s, but %s found", f.getName(),
-                            getClass().getName(), regex, value);
-                }
-            }
-
-            if (value !=null && at.nonempty() && value instanceof Collection) {
-                Collection col = (Collection) value;
-                if (col.isEmpty()) {
-                    throw new InvalidApiMessageException("field[%s] must be a nonempty list", f.getName());
-                }
-            }
-
-            if (value !=null && !at.nullElements() && value instanceof Collection) {
-                Collection col = (Collection) value;
-                for (Object o : col) {
-                    if (o == null) {
-                        throw new InvalidApiMessageException("field[%s] cannot contain a NULL element", f.getName());
-                    }
-                }
-            }
-
-            if (value != null &&!at.emptyString()) {
-                if (value instanceof String && StringUtils.isEmpty((String) value)) {
-                    throw new InvalidApiMessageException("field[%s] cannot be an empty string", f.getName());
-                } else if (value instanceof Collection) {
-                    for (Object v : (Collection)value) {
-                        if (v instanceof String && StringUtils.isEmpty((String)v)) {
-                            throw new InvalidApiMessageException("field[%s] cannot contain any empty string", f.getName());
-                        }
-                    }
-                }
-            }
-
-            if (value != null && at.numberRange().length > 0 && TypeUtils.isTypeOf(value, Integer.TYPE, Integer.class, Long.TYPE, Long.class)) {
-                DebugUtils.Assert(at.numberRange().length == 2, String.format("invalid field[%s], APIParam.numberRange must have and only have 2 items", f.getName()));
-                long low = at.numberRange()[0];
-                long high = at.numberRange()[1];
-                long val = ((Number) value).longValue();
-                if (val < low || val > high) {
-                    if (at.numberRangeUnit().length > 0) {
-                        DebugUtils.Assert(at.numberRangeUnit().length == 2, String.format("invalid field[%s], APIParam.numberRangeUnit must have and only have 2 items", f.getName()));
-                        String lowUnit = at.numberRangeUnit()[0];
-                        String highUnit = at.numberRangeUnit()[1];
-                        throw new InvalidApiMessageException("field[%s] must be in range of [%s %s, %s %s]", f.getName(), low, lowUnit, high, highUnit);
-                    } else {
-                        throw new InvalidApiMessageException("field[%s] must be in range of [%s, %s]", f.getName(), low, high);
-                    }
-                }
-            }
-
-            if (validator != null) {
+            
+            for (ApiMessageValidator validator : validators) {
                 validator.validate(this, f, value, at);
             }
         }

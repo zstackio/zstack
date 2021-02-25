@@ -27,7 +27,7 @@
 		<name>expungePeriod</name>
         <description>the period before a destroyed vm being deleted from database and before its root volume being deleted from primary storage, in seconds</description>
 		<category>vm</category>
-		<defaultValue>86400</defaultValue>
+		<defaultValue>604800</defaultValue>
 		<type>java.lang.Long</type>
 	</config>
 

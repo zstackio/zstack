@@ -10,6 +10,8 @@ import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmNicVO;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,6 +68,35 @@ public class APIAddBackendServerToServerGroupMsg extends APIMessage implements L
     @Override
     public Result audit(APIMessage msg, APIEvent rsp) {
         return new Result(((APIAddBackendServerToServerGroupMsg)msg).getLoadBalancerUuid(), LoadBalancerVO.class);
+    }
+
+    public static APIAddBackendServerToServerGroupMsg __example__() {
+        APIAddBackendServerToServerGroupMsg msg = new APIAddBackendServerToServerGroupMsg();
+        Map<String,String> vmnicMap = new HashMap<String, String>() {
+            {
+                put("uuid", uuid());
+                put("weight","20");
+            }
+        };
+
+        List<Map<String, String>> vmnicList = new ArrayList<>();
+        vmnicList.add(vmnicMap);
+
+        Map<String,String> serverMap = new HashMap<String, String>() {
+            {
+                put("ipAddress", "192.168.2.1");
+                put("weight","20");
+            }
+        };
+
+        List<Map<String, String>> serverList = new ArrayList<>();
+        serverList.add(serverMap);
+
+        msg.setVmNics(vmnicList);
+        msg.setServers(serverList);
+        msg.setServerGroupUuid(uuid());
+
+        return msg;
     }
 
 }

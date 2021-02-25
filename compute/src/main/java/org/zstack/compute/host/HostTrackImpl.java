@@ -1,11 +1,13 @@
 package org.zstack.compute.host;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.AsyncTimer;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
@@ -123,7 +125,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
             PingHostMsg msg = new PingHostMsg();
             msg.setHostUuid(uuid);
-            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, uuid);
+            bus.makeLocalServiceId(msg, HostConstant.SERVICE_ID);
             bus.send(msg, new CloudBusCallBack(null) {
                 @Override
                 public void run(MessageReply reply) {
@@ -238,7 +240,13 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
         t = new Tracker(hostUuid);
         trackers.put(hostUuid, t);
-        t.start();
+
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            t.start();
+        } else {
+            t.startRightNow();
+        }
+
         logger.debug(String.format("starting tracking hosts[uuid:%s]", hostUuid));
     }
 
@@ -291,6 +299,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     }
 
     @Override
+    @AsyncThread
     public void nodeJoin(ManagementNodeInventory inv) {
         reScanHost();
     }

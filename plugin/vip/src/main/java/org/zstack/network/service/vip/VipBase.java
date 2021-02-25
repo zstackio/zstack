@@ -20,10 +20,11 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -35,7 +36,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
-import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
@@ -160,7 +160,7 @@ public class VipBase {
         if (s.isPeerL3NetworkUuid()) {
             try {
                 if (s.isServiceProvider()) {
-                    s.getPeerL3NetworkUuids().forEach(peer -> addPeerL3NetworkUuid(peer));
+                    s.getPeerL3NetworkUuids().forEach(this::addPeerL3NetworkUuid);
                 }
             } catch (CloudRuntimeException e) {
                 throw new OperationFailureException(operr(e.getMessage()));
@@ -357,7 +357,7 @@ public class VipBase {
                     delServicesRef(s.getServiceUuid(),s.getUseFor());
                 }
                 if (s.isPeerL3NetworkUuid() && s.isServiceProvider() && !self.isSystem()) {
-                    s.getPeerL3NetworkUuids().forEach(peer -> deletePeerL3Network(peer));
+                    s.getPeerL3NetworkUuids().forEach(this::deletePeerL3Network);
                 }
             } catch (CloudRuntimeException e) {
                 throw new OperationFailureException(operr(e.getMessage()));
@@ -611,9 +611,9 @@ public class VipBase {
                                     compl.done();
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 trigger.next();
                             }
                         });
@@ -894,7 +894,7 @@ public class VipBase {
     }
 
     public void addPeerL3NetworkUuid(String peerL3NetworkUuid) {
-        if (checkPeerL3Additive(peerL3NetworkUuid) == false) {
+        if (!checkPeerL3Additive(peerL3NetworkUuid)) {
             logger.debug(String.format("can not add peer l3[uuid:%s] to vip[uuid:%s]",
                     peerL3NetworkUuid, self.getUuid()));
             return;
@@ -949,7 +949,7 @@ public class VipBase {
     private void addServicesRef(String uuid, String type) {
         VipNetworkServicesRefVO vipRef = new VipNetworkServicesRefVO();
 
-        if (dbf.findByUuid(uuid, VipNetworkServicesRefVO.class) != null) {
+        if (dbf.isExist(uuid, VipNetworkServicesRefVO.class)) {
             logger.debug(String.format("repeat to add the servicesRef [type:%s:uuid:%s] with vip[uuid:%s]",
                     type, uuid, self.getUuid()));
             return;
@@ -996,14 +996,4 @@ public class VipBase {
                 type, uuid, self.getUuid()));
     }
 
-    private void clearServicesRefs() {
-        List<VipNetworkServicesRefVO> vipRefs = Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, self.getUuid()).list();
-        if (vipRefs != null && !vipRefs.isEmpty()) {
-            dbf.removeCollection(vipRefs, VipNetworkServicesRefVO.class);
-            self.setUseFor(null);
-            self.setServicesRefs(null);
-            self = dbf.updateAndRefresh(self);
-        }
-        logger.debug(String.format("clear the servicesRefs with vip[uuid:%s]",self.getUuid()));
-    }
 }

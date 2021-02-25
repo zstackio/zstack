@@ -3,9 +3,9 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIAddBackendServerToServerGroupEvent
 
 doc {
-    title "AddBackendServerToServerGroup"
+    title "添加后端服务器到服务器组"
 
-    category "loadBalancer"
+    category "负载均衡"
 
     desc """负载均衡器服务器组添加后端服务器"""
 

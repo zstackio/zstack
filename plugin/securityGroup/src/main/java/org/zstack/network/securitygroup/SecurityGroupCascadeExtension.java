@@ -12,7 +12,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
@@ -154,9 +155,9 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
 
                 com.done();
             }
-        })).run(new NoErrorCompletion() {
+        })).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 completion.success();
             }
         });

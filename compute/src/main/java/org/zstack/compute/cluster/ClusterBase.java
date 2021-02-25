@@ -20,10 +20,11 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.cluster.*;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostVO;
@@ -349,9 +350,9 @@ public class ClusterBase extends AbstractCluster {
                             completion.done();
                         }
                     });
-                }).run(new NoErrorCompletion() {
+                }).run(new WhileDoneCompletion(msg, chain) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         extpEmitter.afterUpdateOS(self);
                         bus.reply(msg, reply);
                         chain.next();

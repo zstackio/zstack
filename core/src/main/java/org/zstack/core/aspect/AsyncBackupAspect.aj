@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -34,6 +35,7 @@ public aspect AsyncBackupAspect {
                 || backup instanceof FlowTrigger
                 || backup instanceof SyncTaskChain
                 || backup instanceof NoErrorCompletion
+                || backup instanceof WhileDoneCompletion
                 || backup instanceof FlowRollback
                 || backup instanceof ChainTask;
     }
@@ -72,7 +74,14 @@ public aspect AsyncBackupAspect {
             } else if (ancestor instanceof  SyncTaskChain) {
                 ((SyncTaskChain) ancestor).next();
             } else if (ancestor instanceof NoErrorCompletion) {
+                if (ancestor instanceof WhileCompletion && !((WhileCompletion) ancestor).getAddErrorCalled().get()) {
+                    ((WhileCompletion) ancestor).addError(err);
+                }
                 ((NoErrorCompletion) ancestor).done();
+            } else if (ancestor instanceof WhileDoneCompletion) {
+                ErrorCodeList errs = new ErrorCodeList();
+                errs.getCauses().add(err);
+                ((WhileDoneCompletion) ancestor).done(errs);
             } else if (ancestor instanceof Message) {
                 bus.logExceptionWithMessageDump((Message) ancestor, t);
                 bus.replyErrorByMessageType((Message) ancestor, err);
@@ -125,6 +134,22 @@ public aspect AsyncBackupAspect {
     }
 
     void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.NoErrorCompletion+.done()) {
+        try {
+            proceed(completion);
+        } catch (Throwable  t) {
+            backup(completion.getBackups(), t);
+        }
+    }
+
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.WhileCompletion+.allDone()) {
+        try {
+            proceed(completion);
+        } catch (Throwable  t) {
+            backup(completion.getBackups(), t);
+        }
+    }
+
+    void around(org.zstack.header.core.AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.WhileDoneCompletion+.done(..)) {
         try {
             proceed(completion);
         } catch (Throwable  t) {

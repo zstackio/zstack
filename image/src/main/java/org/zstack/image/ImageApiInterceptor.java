@@ -1,9 +1,11 @@
 package org.zstack.image;
 
+import edu.emory.mathcs.backport.java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.HostSystemTags;
+import org.zstack.compute.vm.VmExtraInfoGetter;
 import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.GlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -18,7 +20,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.Message;
 import org.zstack.header.storage.backup.BackupStorageState;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -26,7 +27,6 @@ import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotState;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
@@ -86,8 +86,6 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateDataVolumeTemplateFromVolumeSnapshotMsg) msg);
         } else if (msg instanceof APISetImageBootModeMsg) {
             validate((APISetImageBootModeMsg) msg);
-        } else if (msg instanceof APIUpdateImageMsg) {
-            validate((APIUpdateImageMsg) msg);
         }
 
         setServiceId(msg);
@@ -98,18 +96,7 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         ImageVO vo = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
         if (ImageBootMode.Legacy.toString().equals(msg.getBootMode())
                 && ImageArchitecture.aarch64.toString().equals(vo.getArchitecture())) {
-            throw new OperationFailureException(argerr("The aarch64 architecture does not support legacy."));
-        }
-    }
-
-    private void validate(APIUpdateImageMsg msg){
-        if (ImageArchitecture.aarch64.toString().equals(msg.getArchitecture())){
-            SystemTagCreator creator = ImageSystemTags.BOOT_MODE.newSystemTagCreator(msg.getImageUuid());
-            creator.setTagByTokens(map(
-                    e(ImageSystemTags.BOOT_MODE_TOKEN, ImageBootMode.UEFI.toString())
-            ));
-            creator.recreate = true;
-            creator.create();
+            throw new ApiMessageInterceptionException(argerr("The aarch64 architecture does not support legacy."));
         }
     }
 
@@ -181,7 +168,8 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         fillGuestOsType(msg);
     }
 
-    private void validate(APICreateRootVolumeTemplateFromRootVolumeMsg msg) {
+    @Transactional(readOnly = true)
+    protected void validate(APICreateRootVolumeTemplateFromRootVolumeMsg msg) {
         if (msg.getPlatform() == null) {
             String platform = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.rootVolumeUuid, msg.getRootVolumeUuid()).select(VmInstanceVO_.platform).findValue();
             msg.setPlatform(platform == null ? ImagePlatform.Linux.toString() : platform);
@@ -196,9 +184,10 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getArchitecture() == null) {
-            String vmUuid = dbf.createQuery(VolumeVO.class).add(VolumeVO_.uuid, Op.EQ, msg.getRootVolumeUuid()).find().getVmInstanceUuid();
-            String hostUuid = dbf.createQuery(VmInstanceVO.class).add(VmInstanceVO_.uuid, Op.EQ, vmUuid).find().getHostUuid();
-            msg.setArchitecture(HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(hostUuid, HostSystemTags.CPU_ARCHITECTURE_TOKEN));
+            String vmUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getRootVolumeUuid())
+                    .select(VolumeVO_.vmInstanceUuid)
+                    .findValue();
+            msg.setArchitecture(VmExtraInfoGetter.New(vmUuid).getArchitecture());
         }
     }
 
@@ -229,8 +218,19 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             msg.setPlatform(ImagePlatform.Linux.toString());
         }
 
-        if (CoreGlobalProperty.UNIT_TEST_ON && msg.getArchitecture() == null) {
-            msg.setArchitecture(ImageArchitecture.x86_64.toString());
+        if (msg.getArchitecture() == null && !ImageMediaType.DataVolumeTemplate.toString().equals(msg.getMediaType())) {
+            msg.setArchitecture(CoreGlobalProperty.UNIT_TEST_ON ?
+                    ImageArchitecture.x86_64.toString() : ImageArchitecture.defaultArch());
+        }
+
+        if (ImageArchitecture.aarch64.toString().equals(msg.getArchitecture())) {
+            if (msg.getSystemTags() != null) {
+                msg.getSystemTags().removeIf(tag -> ImageSystemTags.BOOT_MODE.isMatch(tag));
+            }
+
+            msg.addSystemTag(ImageSystemTags.BOOT_MODE.instantiateTag(Collections.singletonMap(
+                    ImageSystemTags.BOOT_MODE_TOKEN, ImageBootMode.UEFI.toString()
+            )));
         }
 
         if (msg.getBackupStorageUuids() != null) {

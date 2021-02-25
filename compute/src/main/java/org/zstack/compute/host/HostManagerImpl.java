@@ -20,9 +20,7 @@ import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -151,9 +149,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 }
             });
 
-        }).run(new NoErrorCompletion(msg) {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 bus.reply(msg, reply);
             }
         });
@@ -371,6 +369,32 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 });
             }
         }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String arch = HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN);
+
+                if (arch == null) {
+                    trigger.fail(operr("after connecting, host[name:%s, ip:%s] returns a null architecture", vo.getName(), vo.getManagementIp()));
+                    return;
+                }
+
+                ClusterVO cluster = dbf.findByUuid(msg.getClusterUuid(), ClusterVO.class);
+                if (cluster.getArchitecture() == null) {
+                    cluster.setArchitecture(arch);
+                    dbf.update(cluster);
+                    trigger.next();
+                    return;
+                }
+
+                if (!arch.equals(cluster.getArchitecture())) {
+                    trigger.fail(operr("cluster[uuid:%s]'s architecture is %s, not match the host[name:%s, ip:%s] architecture %s",
+                            vo.getClusterUuid(), cluster.getArchitecture(), vo.getName(), vo.getManagementIp(), arch));
+                    return;
+                }
+
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
             String __name__ = "check-host-os-version";
 
             @Override
@@ -439,10 +463,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             @Override
             public void handle(Map data) {
                 HostInventory inv = factory.getHostInventory(vo.getUuid());
-                if (cluster.getArchitecture() == null) {
-                    cluster.setArchitecture(HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN));
-                    dbf.update(cluster);
-                }
                 logger.debug(String.format("successfully added host[name:%s, hypervisor:%s, uuid:%s]", vo.getName(), vo.getHypervisorType(), vo.getUuid()));
                 completion.success(inv);
             }
@@ -557,9 +577,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     compl.done();
                 }
             });
-        }).run(new NoErrorCompletion(msg) {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (!err.getCauses().isEmpty()) {
                     reply.setError(err.getCauses().get(0));
                 }
@@ -610,7 +630,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         setupGlobalConfig();
         populateExtensions();
         setupCanonicalEvents();
-        startPeriodTasks();
         return true;
     }
 
@@ -674,12 +693,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     completion.done();
                 }
             });
-        }, 15).run(new NoErrorCompletion() {
-            @Override
-            public void done() {
-                // do nothing
-            }
-        });
+        }, 15).run(new NopeWhileDoneCompletion());
     }
 
     private int getReportInterval() {
@@ -924,6 +938,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         // Disconnected and connecting are not expected host status for ZStack
         // Need to reconnect those hosts when the node started.
         loadHost(true);
+        startPeriodTasks();
     }
 
     @Override

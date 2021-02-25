@@ -16,7 +16,6 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.errorcode.schema.Error;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -33,6 +32,7 @@ import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -453,6 +453,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((CancelMigrateVmMsg) msg);
         } else if (msg instanceof AttachIsoToVmInstanceMsg) {
             handle((AttachIsoToVmInstanceMsg) msg);
+        } else if (msg instanceof GetVmCapabilitiesMsg) {
+            handle((GetVmCapabilitiesMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -603,14 +605,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 getStartingCandidateHosts(msg, new ReturnValueCompletion<AllocateHostDryRunReply>(chain) {
                     @Override
                     public void success(AllocateHostDryRunReply returnValue) {
-                        List<HostInventory> hosts = ((AllocateHostDryRunReply) returnValue).getHosts();
+                        List<HostInventory> hosts = returnValue.getHosts();
                         if (!hosts.isEmpty()) {
-                            List<String> cuuids = CollectionUtils.transformToList(hosts, new Function<String, HostInventory>() {
-                                @Override
-                                public String call(HostInventory arg) {
-                                    return arg.getClusterUuid();
-                                }
-                            });
+                            List<String> cuuids = CollectionUtils.transformToList(hosts, HostInventory::getClusterUuid);
 
                             SimpleQuery<ClusterVO> cq = dbf.createQuery(ClusterVO.class);
                             cq.add(ClusterVO_.uuid, Op.IN, cuuids);
@@ -662,7 +659,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         amsg.setAllocatorStrategy(self.getAllocatorStrategy());
         amsg.setVmOperation(VmOperation.Start.toString());
-        if (self.getImageUuid() != null && dbf.findByUuid(self.getImageUuid(), ImageVO.class) != null) {
+        if (self.getImageUuid() != null && dbf.isExist(self.getImageUuid(), ImageVO.class)) {
             amsg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
         }
         amsg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(self.getVmNics())));
@@ -721,9 +718,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                             whileCompletion.done();
                         }
                     });
-                }).run(new NoErrorCompletion() {
+                }).run(new WhileDoneCompletion(msg, chain) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         if (!errList.getCauses().isEmpty()) {
                             reply.setError(errList.getCauses().get(0));
                             bus.reply(msg, reply);
@@ -838,9 +835,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                                     }
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (errs.size() > 0) {
                                     trigger.fail(errs.get(0));
                                 } else {
@@ -865,9 +862,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                                         wcomp.done();
                                     }
                                 });
-                            }).run(new NoErrorCompletion() {
+                            }).run(new WhileDoneCompletion(trigger) {
                                 @Override
-                                public void done() {
+                                public void done(ErrorCodeList errorCodeList) {
                                     trigger.rollback();
                                 }
                             });
@@ -912,9 +909,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                                     wcomp.done();
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 trigger.next();
                             }
                         });
@@ -1442,7 +1439,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 }
 
-                doDetachNic(VmNicInventory.valueOf(nicVO), true, false, new Completion(chain) {
+                doDetachNic(VmNicInventory.valueOf(nicVO), true, false, msg.isDbOnly(), new Completion(chain) {
                     @Override
                     public void success() {
                         self = dbf.reload(self);
@@ -2045,12 +2042,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 final SetDefaultL3Network setDefaultL3Network = new SetDefaultL3Network();
                 setDefaultL3Network.set();
-                Defer.guard(new Runnable() {
-                    @Override
-                    public void run() {
-                        setDefaultL3Network.rollback();
-                    }
-                });
+                Defer.guard(setDefaultL3Network::rollback);
 
                 final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
                 spec.setVmInventory(VmInstanceInventory.valueOf(self));
@@ -2627,7 +2619,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        reply.setError(error);
+                        reply.setError(errorCode);
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -3009,17 +3001,36 @@ public class VmInstanceBase extends AbstractVmInstance {
         bus.reply(msg, reply);
     }
 
-    private void handle(APIGetVmCapabilitiesMsg msg) {
-        APIGetVmCapabilitiesReply reply = new APIGetVmCapabilitiesReply();
-
+    private void handle(GetVmCapabilitiesMsg msg) {
+        GetVmCapabilitiesReply reply = new GetVmCapabilitiesReply();
         VmCapabilities capabilities = new VmCapabilities();
         checkPrimaryStorageCapabilities(capabilities);
         checkImageMediaTypeCapabilities(capabilities);
 
         extEmitter.getVmCapabilities(getSelfInventory(), capabilities);
 
-        reply.setCapabilities(capabilities.toMap());
+        reply.setCapabilities(capabilities);
         bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetVmCapabilitiesMsg msg) {
+        APIGetVmCapabilitiesReply reply = new APIGetVmCapabilitiesReply();
+        final GetVmCapabilitiesMsg gmsg = new GetVmCapabilitiesMsg();
+        gmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        bus.makeLocalServiceId(gmsg, VmInstanceConstant.SERVICE_ID);
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply re) {
+                if (!re.isSuccess()) {
+                    reply.setSuccess(false);
+                    reply.setError(re.getError());
+                } else {
+                    GetVmCapabilitiesReply greply = (GetVmCapabilitiesReply) re;
+                    reply.setCapabilities(greply.getCapabilities().toMap());
+                }
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void checkPrimaryStorageCapabilities(VmCapabilities capabilities) {
@@ -3291,7 +3302,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         String order = VmSystemTags.BOOT_ORDER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.BOOT_ORDER_TOKEN);
         if (order != null) {
             reply.setOrder(list(order.split(",")));
-        } else if (order == null && !IsoOperator.isIsoAttachedToVm(msg.getUuid())) {
+        } else if (!IsoOperator.isIsoAttachedToVm(msg.getUuid())) {
             reply.setOrder(list(VmBootDevice.HardDisk.toString(), VmBootDevice.Network.toString()));
         } else {
             reply.setOrder(list(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString(), VmBootDevice.Network.toString()));
@@ -3341,6 +3352,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             creator.create();
         } else {
             VmSystemTags.BOOT_ORDER.deleteInherentTag(self.getUuid());
+            VmSystemTags.BOOT_ORDER.delete(self.getUuid());
         }
 
         boolean bootOrderOnce = false;
@@ -3360,10 +3372,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             creator.create();
         } else {
             VmSystemTags.BOOT_ORDER_ONCE.deleteInherentTag(self.getUuid());
+            VmSystemTags.BOOT_ORDER_ONCE.delete(self.getUuid());
         }
         //No need to use this tag: cdromBootOnce
         if (VmSystemTags.CDROM_BOOT_ONCE.hasTag(self.getUuid(), VmInstanceVO.class)) {
             VmSystemTags.CDROM_BOOT_ONCE.deleteInherentTag(self.getUuid());
+            VmSystemTags.CDROM_BOOT_ONCE.delete(self.getUuid());
         }
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
@@ -3611,9 +3625,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                                 c.done();
                             }
-                        })).run(new NoErrorCompletion(trigger) {
+                        })).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 trigger.next();
                             }
                         });
@@ -4022,17 +4036,10 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void handle(APIGetVmAttachableL3NetworkMsg msg) {
         APIGetVmAttachableL3NetworkReply reply = new APIGetVmAttachableL3NetworkReply();
         List<L3NetworkInventory> l3Invs = getAttachableL3Network(msg.getSession().getAccountUuid());
-        List<L3NetworkInventory> ret = new ArrayList<>();
-
-        for (L3NetworkInventory l3 : l3Invs) {
-            try {
-                for (VmPreAttachL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(VmPreAttachL3NetworkExtensionPoint.class)) {
-                    ext.vmPreAttachL3Network(VmInstanceInventory.valueOf(self), l3);
-                }
-                ret.add(l3);
-            } catch (Exception e) {
-                /* vmPreAttachL3Network will filter out the l3s that can not be attached */
-            }
+        
+        List<L3NetworkInventory> ret = new ArrayList<>(l3Invs);
+        for (FilterAttachableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterAttachableL3NetworkExtensionPoint.class)) {
+            ret = ext.filterAttachableL3Network(VmInstanceInventory.valueOf(self), ret);
         }
 
         reply.setInventories(ret);
@@ -4213,6 +4220,10 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void doDetachNic(VmNicInventory vmNic, boolean releaseNic, boolean isRollback, Completion completion) {
+        doDetachNic(vmNic, releaseNic, isRollback, false, completion);
+    }
+
+    private void doDetachNic(VmNicInventory vmNic, boolean releaseNic, boolean isRollback, boolean dbOnly, Completion completion) {
         FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
         fchain.setName(String.format("detach-l3-network-from-vm-%s", vmNic.getVmInstanceUuid()));
         fchain.then(new NoRollbackFlow() {
@@ -4237,7 +4248,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                detachNic(vmNic.getUuid(), releaseNic, isRollback, new Completion(trigger) {
+                detachNic(vmNic.getUuid(), releaseNic, isRollback, dbOnly, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -4342,7 +4353,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected void selectDefaultL3(VmNicInventory nic) {
         if (self.getDefaultL3NetworkUuid() != null) {
             VmInstanceInventory vmInstanceInventory = VmInstanceInventory.valueOf(self);
-            
+
             // maybe default L3 network and nic has been modified | ZSTAC-29441
             if (VmNicHelper.getDefaultNic(vmInstanceInventory) == null) {
                 self.setDefaultL3NetworkUuid(null);
@@ -4353,7 +4364,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final VmInstanceInventory vm = getSelfInventory();
         final String previousDefaultL3 = vm.getDefaultL3NetworkUuid();
-        
+
         // the nic has been removed, reload
         self = dbf.reload(self);
 
@@ -4390,7 +4401,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         self = dbf.updateAndRefresh(self);
     }
 
-    private void detachNic(final String nicUuid, boolean releaseNic, boolean isRollback, final Completion completion) {
+    private void detachNic(final String nicUuid, boolean releaseNic, boolean isRollback, boolean dbOnly, final Completion completion) {
         VmNicVO vmNicVO = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
             @Override
             public VmNicVO call(VmNicVO arg) {
@@ -4425,20 +4436,20 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.DetachNic);
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
         spec.setDestNics(list(nic));
-    
+
         FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
         flowChain.setName(String.format("detachNic-vm-%s-nic-%s", self.getUuid(), nicUuid));
         setFlowMarshaller(flowChain);
-        
+
         if (nic.getL3NetworkUuid() != null) {
             L3NetworkVO l3NetworkVO = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
             L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3NetworkVO);
             spec.setL3Networks(list(new VmNicSpec(l3Inv)));
         }
-        
+
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(Params.ReleaseNicAfterDetachNic.toString(), releaseNic);
-        if (self.getState() == VmInstanceState.Running && nic.getL3NetworkUuid() != null) {
+        if (!dbOnly && self.getState() == VmInstanceState.Running && nic.getL3NetworkUuid() != null) {
             flowChain.then(new VmDetachNicOnHypervisorFlow());
         }
         flowChain.then(new VmReleaseResourceOnDetachingNicFlow());
@@ -4625,7 +4636,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 msg.setOldMemoryCapacity(oldMemorySize);
                 msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
                 msg.setVmInstance(VmInstanceInventory.valueOf(self));
-                if (self.getImageUuid() != null && dbf.findByUuid(self.getImageUuid(), ImageVO.class) != null) {
+                if (self.getImageUuid() != null && dbf.isExist(self.getImageUuid(), ImageVO.class)) {
                     msg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
                 }
                 msg.setHostUuid(self.getHostUuid());
@@ -5730,7 +5741,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                         return null;
                     }
                 });
-                disks.add(DiskOfferingInventory.valueOf(dvo));
+                if (dvo != null) {
+                    disks.add(DiskOfferingInventory.valueOf(dvo));
+                }
             }
             spec.setDataDiskOfferings(disks);
         } else {
@@ -6833,7 +6846,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         bus.send(smsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                UpdateVmPriorityReply r = new UpdateVmPriorityReply();
                 if (!reply.isSuccess()) {
                     ErrorCode err = operr("update vm[%s] priority to [%s] failed,because %s",
                             self.getUuid(), msg.getPriority(), reply.getError());
@@ -6970,7 +6982,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         .orderBy(VmCdRomVO_.deviceId, SimpleQuery.Od.ASC)
                         .list();
 
-                Map<String, Integer> cdRomUUidDeviceIdMap = cdRomVOS.stream().collect(Collectors.toMap(VmCdRomVO::getUuid, i -> i.getDeviceId()));
+                Map<String, Integer> cdRomUUidDeviceIdMap = cdRomVOS.stream().collect(Collectors.toMap(VmCdRomVO::getUuid, VmCdRomVO::getDeviceId));
                 int deviceId = cdRomUUidDeviceIdMap.get(vmCdRomUuid);
 
                 VmCdRomVO beforeDefaultCdRomVO = null;

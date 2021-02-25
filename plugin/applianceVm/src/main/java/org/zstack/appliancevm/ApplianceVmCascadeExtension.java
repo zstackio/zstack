@@ -257,11 +257,36 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     private void handleL2NetworkDetach(CascadeAction action, final Completion completion) {
         List<L2NetworkDetachStruct> structs = action.getParentIssuerContext();
-        final List<VmInstanceVO> apvms = getVmFromL2NetworkDetached(structs);
+        List<VmInstanceVO> apvms = getVmFromL2NetworkDetached(structs);
         if (apvms.isEmpty()) {
             completion.success();
             return;
         }
+
+        List<String> l3uuids = new ArrayList<>();
+        for (L2NetworkDetachStruct s : structs) {
+            List<String> ret = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, s.getL2NetworkUuid()).select(L3NetworkVO_.uuid).listValues();
+            if (!ret.isEmpty()) {
+                l3uuids.addAll(ret);
+            }
+        }
+
+        List<ApplianceVmVO> applianceVmVOS = Q.New(ApplianceVmVO.class).in(ApplianceVmVO_.uuid, apvms.stream()
+                .map(VmInstanceVO::getUuid).collect(Collectors.toList())).list();
+
+        if (!applianceVmVOS.isEmpty()) {
+            for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
+                applianceVmVOS = ext.filterApplianceVmCascade(applianceVmVOS, action, action.getParentIssuer(), l3uuids);
+            }
+        }
+
+        if (applianceVmVOS.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        List<String> needMigrateVmUuids = applianceVmVOS.stream().map(ApplianceVmVO::getUuid).collect(Collectors.toList());
+        apvms = apvms.stream().filter(apvm -> needMigrateVmUuids.contains(apvm.getUuid())).collect(Collectors.toList());
 
         List<String> clusterUuids = CollectionUtils.transformToList(structs, new Function<String, L2NetworkDetachStruct>() {
             @Override
@@ -643,7 +668,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             List<ApplianceVmVO> apvms = q.getResultList();
             if (!apvms.isEmpty()) {
                 for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
-                    apvms = ext.filterApplianceVmCascade(apvms, action.getParentIssuer(), l3uuids);
+                    apvms = ext.filterApplianceVmCascade(apvms, action, action.getParentIssuer(), l3uuids);
                 }
                 if (!apvms.isEmpty()) {
                     ret = ApplianceVmInventory.valueOf1(apvms);
@@ -711,7 +736,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             }
             for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
-                vmvos = ext.filterApplianceVmCascade(vmvos, action.getParentIssuer(), ipruuids);
+                vmvos = ext.filterApplianceVmCascade(vmvos, action, action.getParentIssuer(), ipruuids);
             }
 
             if (!vmvos.isEmpty()) {

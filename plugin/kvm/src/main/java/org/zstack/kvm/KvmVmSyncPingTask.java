@@ -3,6 +3,7 @@ package org.zstack.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.DeleteVmGC;
 import org.zstack.compute.vm.VmTracer;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -22,6 +23,9 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
@@ -40,7 +44,8 @@ import static org.zstack.core.Platform.getReflections;
 import static org.zstack.core.Platform.operr;
 
 public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailureExtensionPoint, KVMHostConnectExtensionPoint,
-        ReplyMessagePreSendingExtensionPoint, HostConnectionReestablishExtensionPoint, HostAfterConnectedExtensionPoint, Component {
+        MarshalReplyMessageExtensionPoint, HostConnectionReestablishExtensionPoint, HostAfterConnectedExtensionPoint, Component,
+        ManagementNodeChangeListener {
     private static final CLogger logger = Utils.getLogger(KvmVmSyncPingTask.class);
 
     @Autowired
@@ -57,8 +62,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     private PluginRegistry pluginRgty;
 
     // A map from apiId to VM instance uuid
-    private ConcurrentHashMap<String, String> vmApis = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Boolean> vmsToSkip = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, ConcurrentHashMap<String, String>> vmApis = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, ConcurrentHashMap<String, Boolean>> vmsToSkip = new ConcurrentHashMap<>();
     private List<Class<? extends Message>> skipVmTracerMessages = new ArrayList<>();
     private List<Class> skipVmTracerReplies = new ArrayList<>();
     private Map<String, Integer> vmInShutdownMap = new ConcurrentHashMap<>();
@@ -98,6 +103,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     data.setApiId(apiId);
                 }
 
+                data.setManagementNodeId(Platform.getManagementServerId());
+
                 evtf.fire(VmTracerCanonicalEvents.VM_SKIP_TRACE_PATH, data);
             }
         }, skipVmTracerMessages);
@@ -108,7 +115,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                 VmTracerCanonicalEvents.VmSkipTraceData data1
                         = (VmTracerCanonicalEvents.VmSkipTraceData) data;
                 if (data1.getVmUuid() != null) {
-                    vmsToSkip.putIfAbsent(data1.getVmUuid(), true);
+                    vmsToSkip.putIfAbsent(data1.getManagementNodeId(), new ConcurrentHashMap<>());
+                    vmsToSkip.get(data1.getManagementNodeId()).putIfAbsent(data1.getVmUuid(), true);
                 }
 
                 if (data1.getApiId() == null) {
@@ -117,7 +125,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     return;
                 }
 
-                if (vmApis.putIfAbsent(data1.getApiId(), data1.getVmUuid()) == null) {
+                vmApis.putIfAbsent(data1.getManagementNodeId(), new ConcurrentHashMap<>());
+                if (vmApis.get(data1.getManagementNodeId()).putIfAbsent(data1.getApiId(), data1.getVmUuid()) == null) {
                     logger.info(String.format("Skipping tracing VM[uuid:%s], due to %s, api=%s", data1.getVmUuid(), data1.getMsgName(), data1.getApiId()));
                 }
             }
@@ -128,28 +137,37 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             protected void run(Map tokens, Object data) {
                 VmTracerCanonicalEvents.VmContinueTraceData data1
                         = (VmTracerCanonicalEvents.VmContinueTraceData) data;
-                if (data1.getApiId() != null && vmApis.containsKey(data1.getApiId())) {
-                    String vmUuid = vmApis.remove(data1.getApiId());
+                if (data1.getApiId() != null && vmApis.containsKey(data1.getManagementNodeId()) && vmApis.get(data1.getManagementNodeId()).contains(data1.getApiId())) {
+                    String vmUuid = vmApis.get(data1.getManagementNodeId()).remove(data1.getApiId());
                     logger.info("Continuing tracing VM: " + vmUuid);
-                    vmsToSkip.remove(vmUuid);
+                    vmsToSkip.get(data1.getManagementNodeId()).remove(vmUuid);
                     return;
                 }
 
                 if (data1.getVmUuid() != null) {
                     logger.info("Continuing tracing VM: " + data1.getVmUuid());
-                    vmsToSkip.remove(data1.getVmUuid());
+                    vmsToSkip.get(data1.getManagementNodeId()).remove(data1.getVmUuid());
                 }
             }
         });
     }
 
     @Override
-    public List<Class> getReplyMessageClassForPreSendingExtensionPoint() {
+    public List<Class> getReplyMessageClassForMarshalExtensionPoint() {
         return skipVmTracerReplies;
     }
 
     @Override
     public void marshalReplyMessageBeforeSending(Message replyOrEvent, NeedReplyMessage msg) {
+        continueTraceVmAfterWhenMessageReplied(replyOrEvent, msg);
+    }
+
+    @Override
+    public void marshalReplyMessageBeforeDropping(Message replyOrEvent, NeedReplyMessage msg) {
+        continueTraceVmAfterWhenMessageReplied(replyOrEvent, msg);
+    }
+
+    private void continueTraceVmAfterWhenMessageReplied(Message replyOrEvent, NeedReplyMessage msg) {
         String vmUuid = null;
         String apiId = null;
 
@@ -161,13 +179,14 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         }
 
         if (apiId != null) {
-            vmUuid = vmApis.get(apiId);
+            vmUuid = vmApis.get(Platform.getManagementServerId()).get(apiId);
         }
 
         if (vmUuid != null) {
             VmTracerCanonicalEvents.VmContinueTraceData data = new VmTracerCanonicalEvents.VmContinueTraceData();
             data.setApiId(apiId);
             data.setVmUuid(vmUuid);
+            data.setManagementNodeId(Platform.getManagementServerId());
             evtf.fire(VmTracerCanonicalEvents.VM_CONTINUE_TRACE_PATH, data);
         }
     }
@@ -191,7 +210,14 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                 VmSyncResponse ret = r.toResponse(VmSyncResponse.class);
                 if (ret.isSuccess()) {
                     Map<String, VmInstanceState> states = new HashMap<>(ret.getStates().size());
-                    Set<String> vmsToSkipSetHostSide = new HashSet<>(vmsToSkip.keySet());
+
+                    Set<String> vmsToSkipSetHostSide;
+                    if (vmsToSkip.get(Platform.getManagementServerId()) != null) {
+                        vmsToSkipSetHostSide = new HashSet<>(vmsToSkip.get(Platform.getManagementServerId()).keySet());
+                    } else {
+                        vmsToSkipSetHostSide = new HashSet<>();
+                    }
+
                     Collection<String> vmUuidsInDeleteVmGC = DeleteVmGC.queryVmInGC(host.getUuid(), ret.getStates().keySet());
 
                     for (Map.Entry<String, String> e : ret.getStates().entrySet()) {
@@ -393,5 +419,26 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             }
         });
         completion.done();
+    }
+
+    @Override
+    public void nodeJoin(ManagementNodeInventory inv) {
+
+    }
+
+    @Override
+    public void nodeLeft(ManagementNodeInventory inv) {
+        vmApis.remove(inv.getUuid());
+        vmsToSkip.remove(inv.getUuid());
+    }
+
+    @Override
+    public void iAmDead(ManagementNodeInventory inv) {
+
+    }
+
+    @Override
+    public void iJoin(ManagementNodeInventory inv) {
+
     }
 }

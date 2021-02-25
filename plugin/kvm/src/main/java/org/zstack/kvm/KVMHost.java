@@ -3169,6 +3169,7 @@ public class KVMHost extends HostBase implements Host {
             cmd.setSendCommandUrl(restf.getSendCommandUrl());
             cmd.setIptablesRules(KVMGlobalProperty.IPTABLES_RULES);
             cmd.setIgnoreMsrs(KVMGlobalConfig.KVM_IGNORE_MSRS.value(Boolean.class));
+            cmd.setTcpServerPort(KVMGlobalProperty.TCP_SERVER_PORT);
             cmd.setVersion(dbf.getDbVersion());
             if (HostSystemTags.PAGE_TABLE_EXTENSION_DISABLED.hasTag(self.getUuid(), HostVO.class) || !KVMSystemTags.EPT_CPU_FLAG.hasTag(self.getUuid())) {
                 cmd.setPageTableExtensionDisabled(true);
@@ -3500,13 +3501,21 @@ public class KVMHost extends HostBase implements Host {
                             SshResult ret = sshShell.runCommand("uname -m");
 
                             if (ret.isSshFailure() || ret.getReturnCode() != 0) {
-                                throw new OperationFailureException(operr("unable to get host cpu architecture, please check if username/password is wrong; %s", ret.getExitErrorMessage()));
+                                trigger.fail(operr("unable to get host cpu architecture, please check if username/password is wrong; %s", ret.getExitErrorMessage()));
+                                return;
                             }
 
                             String hostArchitecture = ret.getStdout().trim();
-                            String clusterArchitecture = Q.New(ClusterVO.class).select(ClusterVO_.architecture).eq(ClusterVO_.uuid, self.getClusterUuid()).findValue();
-                            if (clusterArchitecture != null && !hostArchitecture.equals(clusterArchitecture)) {
-                                throw new OperationFailureException(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, clusterArchitecture));
+                            ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
+                            if (cluster.getArchitecture() != null && !hostArchitecture.equals(cluster.getArchitecture())) {
+                                trigger.fail(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, cluster.getArchitecture()));
+                                return;
+                            }
+
+                            // for upgrade case, prevent from add host failure.
+                            if (cluster.getArchitecture() == null && !info.isNewAdded()) {
+                                cluster.setArchitecture(hostArchitecture);
+                                dbf.update(cluster);
                             }
 
                             trigger.next();
@@ -3553,6 +3562,18 @@ public class KVMHost extends HostBase implements Host {
                             runner.installChecker(chronyChecker);
                             runner.installChecker(repoChecker);
                             runner.installChecker(callbackChecker);
+
+                            if (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
+                                CallBackNetworkChecker hostTcpConnectionCallbackChecker = new CallBackNetworkChecker();
+                                hostTcpConnectionCallbackChecker.setTargetIp(getSelf().getManagementIp());
+                                hostTcpConnectionCallbackChecker.setUsername(getSelf().getUsername());
+                                hostTcpConnectionCallbackChecker.setPassword(getSelf().getPassword());
+                                hostTcpConnectionCallbackChecker.setPort(getSelf().getPort());
+                                hostTcpConnectionCallbackChecker.setCallbackIp(Platform.getManagementServerIp());
+                                hostTcpConnectionCallbackChecker.setCallBackPort(KVMGlobalProperty.TCP_SERVER_PORT);
+                                runner.installChecker(hostTcpConnectionCallbackChecker);
+                            }
+
                             for (KVMHostAddSshFileMd5CheckerExtensionPoint exp : pluginRgty.getExtensionList(KVMHostAddSshFileMd5CheckerExtensionPoint.class)) {
                                 SshFileMd5Checker sshFileMd5Checker = exp.getSshFileMd5Checker(getSelf());
                                 if (sshFileMd5Checker != null) {

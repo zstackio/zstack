@@ -17,6 +17,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -313,7 +314,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     public Class<LinkedHashMap> getReturnClass() {
                         return LinkedHashMap.class;
                     }
-                });
+                }, TimeUnit.SECONDS, ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class).longValue());
             }
 
             @Override
@@ -1015,9 +1016,9 @@ public class VirtualRouter extends ApplianceVmBase {
                         completion.done();
                     }
                 });
-            }).run(new NoErrorCompletion() {
+            }).run(new WhileDoneCompletion(trigger) {
                 @Override
-                public void done() {
+                public void done(ErrorCodeList errorCodeList) {
                     if (errList.getCauses().size() > 0) {
                         trigger.fail(errList.getCauses().get(0));
                     } else {

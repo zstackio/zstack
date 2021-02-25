@@ -33,4 +33,8 @@ public class SearchGlobalProperty {
     public static String JGroupBackendPort;
     @GlobalProperty(name="Exclusive.indexUse", defaultValue = "false")
     public static String ExclusiveIndexUse;
+    @GlobalProperty(name="JGroup.JoinTimeout", defaultValue = "1000")
+    public static String JGroupJoinTimeout;
+    @GlobalProperty(name="JGroup.FlushBypass", defaultValue = "true")
+    public static String JGroupFlushBypass;
 }

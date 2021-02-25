@@ -25,6 +25,7 @@ import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.validation.ValidationFacade;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -41,10 +42,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -318,67 +316,81 @@ public class RESTFacadeImpl implements RESTFacade {
                 timeoutTaskReceipt.cancel();
             }
 
-            public void fail(ErrorCode err) {
-                if (!called.compareAndSet(false, true)) {
-                    logger.warn(String.format("Failed callback many times, taskId=%s, currentTimeMillis=%s", taskUuid, System.currentTimeMillis()));
-                    return;
-                }
+            ReturnValueCompletion<HttpEntity<String>> completion = new ReturnValueCompletion<HttpEntity<String>>(callback) {
+                @Override
+                @AsyncThread
+                public void success(HttpEntity<String> responseEntity) {
+                    if (!called.compareAndSet(false, true)) {
+                        logger.warn(String.format("Success callback many times, taskId=%s, currentTimeMillis=%s", taskUuid, System.currentTimeMillis()));
+                        return;
+                    }
 
-                wrappers.remove(taskUuid);
-                if (!SysErrors.TIMEOUT.toString().equals(err.getCode())) {
+                    if (CoreGlobalProperty.PROFILER_HTTP_CALL) {
+                        HttpCallStatistic stat = statistics.get(url);
+                        stat.addStatistic(System.currentTimeMillis() - finalStime);
+                    }
+
+                    wrappers.remove(taskUuid);
                     cancelTimeout();
+
+                    if (logger.isTraceEnabled()) {
+                        List<String> hs = responseEntity.getHeaders().get(RESTConstant.TASK_UUID);
+                        String taskUuid = hs == null || hs.isEmpty() ? null : hs.get(0);
+
+                        if (taskUuid == null) {
+                            logger.trace(String.format("[http response(url: %s)] %s", url, responseEntity.getBody()));
+                        } else {
+                            logger.trace(String.format("[http response(url: %s, taskUuid: %s)] %s",
+                                    url, taskUuid, responseEntity.getBody()));
+                        }
+                    }
+
+                    if (callback instanceof JsonAsyncRESTCallback) {
+                        JsonAsyncRESTCallback<Object> jcallback = (JsonAsyncRESTCallback)callback;
+                        try {
+                            Object obj = JSONObjectUtil.toObject(responseEntity.getBody(), jcallback.getReturnClass());
+                            ErrorCode err = vf.validateErrorByErrorCode(obj);
+                            if (err != null) {
+                                logger.warn(String.format("error response that causes validation failure: %s", responseEntity.getBody()));
+                                jcallback.fail(err);
+                            } else {
+                                jcallback.success(obj);
+                            }
+                        } catch (Throwable t) {
+                            logger.warn(t.getMessage(), t);
+                            callback.fail(inerr(t.getMessage()));
+                        }
+                    } else {
+                        callback.success(responseEntity);
+                    }
                 }
 
-                logger.warn(String.format("Unable to post to %s: %s", url, err.getDetails()));
-                callback.fail(err);
+                @Override
+                @AsyncThread
+                public void fail(ErrorCode err) {
+                    if (!called.compareAndSet(false, true)) {
+                        logger.warn(String.format("Failed callback many times, taskId=%s, currentTimeMillis=%s", taskUuid, System.currentTimeMillis()));
+                        return;
+                    }
+
+                    wrappers.remove(taskUuid);
+                    if (!SysErrors.TIMEOUT.toString().equals(err.getCode())) {
+                        cancelTimeout();
+                    }
+
+                    logger.warn(String.format("Unable to post to %s: %s", url, err.getDetails()));
+                    callback.fail(err);
+                }
+            };
+
+            @Override
+            public void fail(ErrorCode err) {
+                completion.fail(err);
             }
 
             @Override
-            @AsyncThread
             public void success(HttpEntity<String> responseEntity) {
-                if (!called.compareAndSet(false, true)) {
-                    logger.warn(String.format("Success callback many times, taskId=%s, currentTimeMillis=%s", taskUuid, System.currentTimeMillis()));
-                    return;
-                }
-
-                if (CoreGlobalProperty.PROFILER_HTTP_CALL) {
-                    HttpCallStatistic stat = statistics.get(url);
-                    stat.addStatistic(System.currentTimeMillis() - finalStime);
-                }
-
-                wrappers.remove(taskUuid);
-                cancelTimeout();
-
-                if (logger.isTraceEnabled()) {
-                    List<String> hs = responseEntity.getHeaders().get(RESTConstant.TASK_UUID);
-                    String taskUuid = hs == null || hs.isEmpty() ? null : hs.get(0);
-
-                    if (taskUuid == null) {
-                        logger.trace(String.format("[http response(url: %s)] %s", url, responseEntity.getBody()));
-                    } else {
-                        logger.trace(String.format("[http response(url: %s, taskUuid: %s)] %s",
-                                url, taskUuid, responseEntity.getBody()));
-                    }
-                }
-
-                if (callback instanceof JsonAsyncRESTCallback) {
-                    JsonAsyncRESTCallback<Object> jcallback = (JsonAsyncRESTCallback)callback;
-                    try {
-                        Object obj = JSONObjectUtil.toObject(responseEntity.getBody(), jcallback.getReturnClass());
-                        ErrorCode err = vf.validateErrorByErrorCode(obj);
-                        if (err != null) {
-                            logger.warn(String.format("error response that causes validation failure: %s", responseEntity.getBody()));
-                            jcallback.fail(err);
-                        } else {
-                            jcallback.success(obj);
-                        }
-                    } catch (Throwable t) {
-                        logger.warn(t.getMessage(), t);
-                        callback.fail(inerr(t.getMessage()));
-                    }
-                } else {
-                    callback.success(responseEntity);
-                }
+                completion.success(responseEntity);
             }
         };
 
@@ -559,6 +571,9 @@ public class RESTFacadeImpl implements RESTFacade {
 
             return JSONObjectUtil.toObject(rsp.getBody(), returnClass);
         } else {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("[http response(url: %s)] %s", url, rsp.getBody()));
+            }
             return null;
         }
     }

@@ -551,10 +551,13 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                             .filter(n -> n.getL3NetworkUuid().equals(t.get(2, String.class)))
                             .findFirst().get().getMac());
             to.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
-            to.setPublicMac(
-                    vr.getVmNics().stream()
-                            .filter(n -> n.getL3NetworkUuid().equals(t.get(4, String.class)))
-                            .findFirst().get().getMac());
+            Optional<VmNicInventory> pubNic = vr.getVmNics().stream()
+                    .filter(n -> n.getL3NetworkUuid().equals(t.get(4, String.class)))
+                    .findFirst();
+            if (!pubNic.isPresent()) {
+                continue;
+            }
+            to.setPublicMac(pubNic.get().getMac());
             ret.add(to);
         }
 

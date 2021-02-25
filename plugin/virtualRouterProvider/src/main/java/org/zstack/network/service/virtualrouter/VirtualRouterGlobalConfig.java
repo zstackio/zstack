@@ -35,4 +35,6 @@ public class VirtualRouterGlobalConfig {
     @BindResourceConfig({VmInstanceVO.class})
     @GlobalConfigValidation(validValues = {"debug", "info", "warn", "error"})
     public static GlobalConfig LOG_LEVEL = new GlobalConfig(CATEGORY, "haproxy.logLevel");
+    @GlobalConfigValidation
+    public static GlobalConfig IPV4_LOCAL_PORT_RANGE = new GlobalConfig(CATEGORY, "ipv4LocalPortRange");
 }

@@ -172,6 +172,19 @@ class CreateSystemTagForAPICreateDataVolumeFromVolumeTemplateMsgCase extends Sub
         assert tags.size() == 1
         assert tags.get(0).getTag() == "capability::virtio-scsi".toString()
 
+        changeVolumeState {
+            uuid = dataVolume.uuid
+            stateEvent = "disable"
+        }
+
+        deleteDataVolume {
+            uuid = dataVolume.uuid
+        }
+
+        expungeDataVolume {
+            uuid = dataVolume.uuid
+        }
+
         VolumeSnapshotInventory snapshotInventory = queryVolumeSnapshot {
         }[0]
         deleteVolumeSnapshot {

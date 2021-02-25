@@ -4,7 +4,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.host.HostSystemTags;
+import org.zstack.compute.vm.VmExtraInfoGetter;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -27,9 +27,12 @@ import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -824,11 +827,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     }
 
     private void initDefaultImageArch() {
-        String defaultArch = System.getProperty("os.arch").equals("amd64") ? "x86_64" : System.getProperty("os.arch");
-        UpdateQuery.New(ImageVO.class)
+        SQL.New(ImageVO.class)
                 .isNull(ImageVO_.architecture)
                 .notEq(ImageVO_.mediaType, ImageMediaType.DataVolumeTemplate)
-                .set(ImageVO_.architecture, defaultArch)
+                .set(ImageVO_.architecture, ImageArchitecture.defaultArch())
                 .update();
     }
 
@@ -1632,7 +1634,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         imvo.setPlatform(ImagePlatform.valueOf(msgData.getPlatform()));
                         imvo.setStatus(ImageStatus.Downloading);
                         imvo.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
-                        imvo.setArchitecture(ImageUtils.getArchitectureFromRootVolume(msgData.getRootVolumeUuid(), null));
+                        imvo.setArchitecture(VmExtraInfoGetter.New(rootVolume.getVmInstanceUuid()).getArchitecture());
                         imvo.setUrl(String.format("volume://%s", msgData.getRootVolumeUuid()));
                         imvo.setSize(volvo.getSize());
                         imvo.setActualSize(imageActualSize);
@@ -1865,9 +1867,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     completion.done();
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 trigger.next();
                             }
                         });
@@ -2311,19 +2313,41 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
-        List<HostVO> result = new ArrayList<>();
+        // TODO: move to compute module.
+
         String architecture = spec.getArchitecture();
         if (architecture == null && spec.getImage() != null) {
             architecture = spec.getImage().getArchitecture();
         }
-        for (HostVO host : candidates) {
-            String hostArch = HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(host.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN);
-            if (architecture == null || hostArch == null || architecture.equals(hostArch)){
-                result.add(host);
-            }
+
+        if (architecture == null && spec.getVmInstance() != null) {
+            architecture = VmExtraInfoGetter.New(spec.getVmInstance().getUuid()).getArchitecture();
         }
-        return result;
+
+        if (architecture == null) {
+            return candidates;
+        }
+
+        List<String> archTypes = SQL.New("select distinct c.architecture from ClusterVO c", String.class).list();
+
+        String finalArchitecture = architecture;
+        long matchCount = archTypes.stream().filter(it -> it == null || it.equals(finalArchitecture)).count();
+        if (matchCount == archTypes.size()) {
+            return candidates;
+        } else if (matchCount == 0) {
+            return Collections.emptyList();
+        }
+
+        Set<String> sameArchClusterUuids = new HashSet<>(SQL.New("select c.uuid from ClusterVO c" +
+                " where c.architecture = :arch" +
+                " or c.architecture is null", String.class)
+                .param("arch", finalArchitecture)
+                .list());
+
+        return candidates.stream().filter(it -> sameArchClusterUuids.contains(it.getClusterUuid()))
+                .collect(Collectors.toList());
     }
 
     @Override

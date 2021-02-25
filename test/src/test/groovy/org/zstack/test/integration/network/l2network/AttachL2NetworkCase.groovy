@@ -4,21 +4,19 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.asyncbatch.While
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
-import org.zstack.header.core.FutureCompletion
 import org.zstack.header.core.NoErrorCompletion
-import org.zstack.header.core.workflow.WhileCompletion
+import org.zstack.header.core.NopeWhileDoneCompletion
+import org.zstack.header.core.WhileCompletion
 import org.zstack.header.network.l2.L2NetworkClusterRefVO
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.l3.NetworkGlobalProperty
 import org.zstack.sdk.ClusterInventory
-import org.zstack.sdk.HostInventory
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.test.integration.network.NetworkTest;
 import org.zstack.testlib.EnvSpec;
 import org.zstack.testlib.SubCase
-import org.zstack.utils.data.SizeUnit;
 
 /**
  * Created by heathhose on 17-5-6.
@@ -178,13 +176,7 @@ public class AttachL2NetworkCase extends SubCase{
                 }
                 completion.done()
             }
-        }).run(new NoErrorCompletion(){
-
-            @Override
-            void done() {
-
-            }
-        })
+        }).run(new NopeWhileDoneCompletion())
 
         retryInSecs{
             return {
@@ -210,13 +202,7 @@ public class AttachL2NetworkCase extends SubCase{
                 }
                 completion.done()
             }
-        }).run(new NoErrorCompletion(){
-
-            @Override
-            void done() {
-
-            }
-        })
+        }).run(new NopeWhileDoneCompletion())
 
         retryInSecs{
             return {

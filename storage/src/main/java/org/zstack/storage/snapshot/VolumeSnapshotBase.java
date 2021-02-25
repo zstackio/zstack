@@ -10,13 +10,13 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.DeleteSnapshotOnPrimaryStorageMsg;
@@ -230,9 +230,9 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                             c.done();
                         }
                     });
-                }).run(new NoErrorCompletion(msg) {
+                }).run(new WhileDoneCompletion(msg) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         VolumeSnapshotPrimaryStorageDeletionReply dreply = new VolumeSnapshotPrimaryStorageDeletionReply();
                         try {
                             updateDb();

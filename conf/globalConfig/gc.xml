@@ -9,10 +9,26 @@
     </config>
 
     <config>
+        <category>gc</category>
+        <name>cleanUpCompletedJobInterval</name>
+        <description>the interval to clean up completed GC jobs, in hours</description>
+        <defaultValue>24</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
         <category>elaborate</category>
         <name>elimilate.time</name>
         <description>how long time will be lasted that the records in ElaborateVO when trigger APIReloadElaborateMsg</description>
         <defaultValue>180d</defaultValue>
+        <type>java.lang.String</type>
+    </config>
+
+    <config>
+        <category>gc</category>
+        <name>retentionTime</name>
+        <description>GarbageCollectorVO retention time</description>
+        <defaultValue>14d</defaultValue>
         <type>java.lang.String</type>
     </config>
 </globalConfig>

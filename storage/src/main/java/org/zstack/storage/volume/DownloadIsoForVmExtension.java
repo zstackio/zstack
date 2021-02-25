@@ -9,7 +9,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
@@ -148,9 +148,9 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                     whileCompletion.done();
                 }
             });
-        }).run(new NoErrorCompletion(completion) {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (errorCodes.isEmpty()) {
                     completion.success();
                     return;
@@ -217,9 +217,9 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                     whileCompletion.done();
                 }
             });
-        }).run(new NoErrorCompletion(completion) {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 completion.success();
             }
         });

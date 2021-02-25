@@ -12,6 +12,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.NopeNoErrorCompletion;
+import org.zstack.header.core.NopeWhileDoneCompletion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.volume.*;
 import org.zstack.utils.Utils;
@@ -136,7 +137,7 @@ public class VolumeSizeTrackerImpl implements VolumeSizeTracker, Component {
                     completion.done();
                 }
             });
-        }, 50).run(new NopeNoErrorCompletion());
+        }, 50).run(new NopeWhileDoneCompletion());
     }
 
     private List<String> getNeedRefreshSizeVolumeUuids(){

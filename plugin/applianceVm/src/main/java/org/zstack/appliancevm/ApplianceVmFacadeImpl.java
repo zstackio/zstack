@@ -257,6 +257,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         VmNicInventory mgmtNic = null;
         String defaultL3Uuid;
         int sshPort;
+        String applianceVmSubType;
         if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate) {
             ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
             for (VmNicInventory nic : spec.getDestNics()) {
@@ -269,8 +270,10 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             DebugUtils.Assert(mgmtNic!=null, String.format("cannot find management nic for appliance vm[uuid:%s]", aspec.getUuid()));
             defaultL3Uuid = aspec.getDefaultRouteL3Network() != null ? aspec.getDefaultRouteL3Network().getUuid() : mgmtNic.getL3NetworkUuid();
             sshPort = aspec.getSshPort();
+            applianceVmSubType = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSubType.toString(), String.class);
         } else {
             ApplianceVmVO avo = dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);
+            applianceVmSubType = avo.getApplianceVmType();
             ApplianceVmInventory ainv = ApplianceVmInventory.valueOf(avo);
             mgmtNic = ainv.getManagementNic();
             defaultL3Uuid = ainv.getDefaultRouteL3NetworkUuid();
@@ -279,6 +282,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         }
 
         Map<String, Object> ret = new HashMap<String, Object>();
+        ret.put(ApplianceVmConstant.Params.applianceVmSubType.toString(), applianceVmSubType);
         ApplianceVmNicTO mto = new ApplianceVmNicTO(mgmtNic);
         mto.setDeviceName(String.format("eth0"));
         if (mgmtNic.getL3NetworkUuid().equals(defaultL3Uuid)) {

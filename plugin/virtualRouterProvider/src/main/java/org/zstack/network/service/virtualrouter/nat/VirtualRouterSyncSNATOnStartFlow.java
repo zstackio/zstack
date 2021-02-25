@@ -87,10 +87,13 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
             chain.next();
             return;
         }
-
+        VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
+        if (publicNic.isIpv6OnlyNic()) {
+            chain.next();
+            return;
+        }
         new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
 
-        VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
         final List<SNATInfo> snatInfo = new ArrayList<SNATInfo>();
         for (VmNicInventory nic : vr.getVmNics()) {
             if (nwServed.contains(nic.getL3NetworkUuid()) && !nic.isIpv6OnlyNic()) {

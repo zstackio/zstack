@@ -11,10 +11,11 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.allocator.*;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostInventory;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -183,9 +184,9 @@ public class HostSortorChain implements HostSortorStrategy {
                             wcmpl.done();
                         }
                     });
-                }).run(new NoErrorCompletion(completion) {
+                }).run(new WhileDoneCompletion(completion) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         if (!selectedHosts.isEmpty()) {
                             completion.success(selectedHosts.get(0));
                         } else {

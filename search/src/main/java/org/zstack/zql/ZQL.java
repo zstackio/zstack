@@ -13,16 +13,16 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.search.SearchGlobalProperty;
 import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vo.ResourceInventory;
 import org.zstack.header.vo.ResourceVO;
-import org.zstack.header.vo.ResourceVO_;
 import org.zstack.header.vo.ToInventory;
 import org.zstack.header.zql.*;
 import org.zstack.search.SearchErrors;
@@ -486,9 +486,9 @@ public class ZQL {
                     coml.allDone();
                 }
             });
-        }).run(new NoErrorCompletion(future) {
+        }).run(new WhileDoneCompletion(future) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (errs.isEmpty()) {
                     future.success();
                 } else {
