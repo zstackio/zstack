@@ -20,6 +20,8 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ShellResult;
+import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -27,6 +29,7 @@ import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
+import org.zstack.utils.ssh.SshResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +52,9 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
     private DatabaseFacade dbf;
     @Autowired
     private ThreadFacade thdf;
+
+    private final static String REMOTE_ZVR_PATH = "/home/vyos/zvr.bin";
+    private final static String REMOTE_ZVRBOOT_PATH = "/home/vyos/zvrboot.bin";
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -104,7 +110,11 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     }
 
                     if (NetworkUtils.isRemotePortOpen(mgmtNicIp, sshPort, 2000)) {
-                        deployAgent();
+                        if(isZvrMd5Changed(mgmtNicIp,sshPort)){
+                            deployAgent();
+                        } else{
+                            trigger.next();
+                        }
                         return true;
                     } else {
                         errors.add(new Throwable(String.format("vyos agent port %s is not opened on managment nic %s", sshPort, mgmtNicIp)));
@@ -177,4 +187,65 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
             }
         });
     }
+
+    private boolean isZvrMd5Changed(String ip, int port){
+        int interval = 30 ;
+        Ssh ssh = new Ssh();
+        ssh.setUsername("vyos")
+                .setPrivateKey(asf.getPrivateKey())
+                .setPort(port)
+                .setHostname(ip)
+                .setTimeout(interval);
+
+        String remoteZvrMd5 = "";
+        String remoteZvrbootMd5 = "";
+
+        String localZvrPath = PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath();
+        String localZvrBootPath = PathUtil.findFileOnClassPath("ansible/zvr/zvrboot.bin", true).getAbsolutePath();
+
+
+        try {
+            ssh.command(String.format("sudo -S md5sum %s 2>/dev/null", REMOTE_ZVR_PATH));
+            SshResult ret = ssh.run();
+            if (ret.getReturnCode() == 0) {
+                remoteZvrMd5 =  ret.getStdout().split(" ")[0];
+            }
+            ssh.reset();
+
+            ShellResult zvrRet = ShellUtils.runAndReturn(String.format("md5sum %s", localZvrPath));
+            zvrRet.raiseExceptionIfFail();
+            String localZvrMd5 = zvrRet.getStdout().split(" ")[0];
+
+            if (!remoteZvrMd5.equals(localZvrMd5)) {
+                logger.debug(String.format("file MD5 changed, local[%s, md5:%s] remote[%s, md5: %s]", localZvrPath,
+                        localZvrMd5, REMOTE_ZVR_PATH, remoteZvrMd5));
+                return true;
+            }
+
+            ssh.command(String.format("sudo -S md5sum %s 2>/dev/null", REMOTE_ZVRBOOT_PATH));
+            ret = ssh.run();
+            if (ret.getReturnCode() == 0) {
+                remoteZvrbootMd5 =  ret.getStdout().split(" ")[0];
+            }
+
+            ShellResult zvrbootRet = ShellUtils.runAndReturn(String.format("md5sum %s",localZvrBootPath));
+            zvrbootRet.raiseExceptionIfFail();
+            String localZvrbootMd5 = zvrbootRet.getStdout().split(" ")[0];
+
+
+            if (!remoteZvrbootMd5.equals(localZvrbootMd5)) {
+                logger.debug(String.format("file MD5 changed, local[%s, md5:%s] remote[%s, md5: %s]", localZvrBootPath,
+                        localZvrbootMd5, REMOTE_ZVRBOOT_PATH, remoteZvrbootMd5));
+                return true;
+            }
+
+        }catch (SshException  e ) {
+            logger.debug(String.format("unable to check vyos[ip:%s, port:%s] zvr md5", ip, port, e.getMessage()));
+        }finally {
+            ssh.close();
+        }
+
+        return false;
+    }
+
 }
