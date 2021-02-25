@@ -10,8 +10,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.compiler.version>3.6.1</project.compiler.version>
         <project.java.version>1.8</project.java.version>
-        <spring.framework.version>4.3.6.RELEASE</spring.framework.version>
-        <spring.security.version>4.0.2.RELEASE</spring.security.version>
+        <spring.framework.version>4.3.30.RELEASE</spring.framework.version>
+        <spring.security.version>4.2.18.RELEASE</spring.security.version>
         <hibernate.version>5.2.17.Final</hibernate.version>
         <aspectj.version>1.8.9</aspectj.version>
         <aspectj.plugin.version>1.10</aspectj.plugin.version>
@@ -252,7 +252,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>4.5.2</version>
+                <version>4.5.13</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -290,10 +290,20 @@
                 <artifactId>guava</artifactId>
                 <version>19.0</version>
             </dependency>
-            <dependency>
+            <!--<dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcmail-jdk16</artifactId>
                 <version>1.46</version>
+            </dependency>-->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>1.65</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcmail-jdk15on</artifactId>
+                <version>1.67</version>
             </dependency>
             <dependency>
                 <groupId>org.objenesis</groupId>
