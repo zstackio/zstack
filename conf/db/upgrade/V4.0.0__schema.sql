@@ -942,4 +942,4 @@ UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.cloudf
 UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.baremetal.pxeserver.BaremetalPxeServerVO" WHERE concreteResourceType = "" AND resourceType = "BaremetalPxeServerVO";
 UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.baremetal.pxeserver.BaremetalPxeServerVO" WHERE concreteResourceType = "" AND resourceType = "BaremetalPxeServerVO";
 
-ALTER TABLE `zstack`.`PolicyRouteRuleSetVO` modify COLUMN `name` varchar(255)
+ALTER TABLE `zstack`.`PolicyRouteRuleSetVO` modify COLUMN `name` varchar(255);
