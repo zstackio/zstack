@@ -385,12 +385,19 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        vol.setInstallPath(primaryStorageInstallPath);
-                        vol.setStatus(VolumeStatus.Ready);
-                        if (volumeFormat != null) {
-                            vol.setFormat(volumeFormat);
+                        VolumeVO vo = dbf.reload(vol);
+                        if (vo == null) {
+                            reply.setError(operr("target volume is expunged during volume creation"));
+                            bus.reply(msg, reply);
+                            return;
                         }
-                        VolumeVO vo = dbf.updateAndRefresh(vol);
+
+                        vo.setInstallPath(primaryStorageInstallPath);
+                        vo.setStatus(VolumeStatus.Ready);
+                        if (volumeFormat != null) {
+                            vo.setFormat(volumeFormat);
+                        }
+                        vo = dbf.updateAndRefresh(vo);
 
                         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vo));
 
@@ -529,15 +536,22 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
+                    VolumeVO vvo = dbf.reload(vo);
+                    if (vvo == null) {
+                        reply.setError(operr("target volume is expunged during volume creation"));
+                        bus.reply(msg, reply);
+                        return;
+                    }
+
                     CreateDataVolumeFromVolumeSnapshotReply cr = reply.castReply();
                     VolumeInventory inv = cr.getInventory();
-                    vo.setSize(inv.getSize());
-                    vo.setActualSize(cr.getActualSize());
-                    vo.setInstallPath(inv.getInstallPath());
-                    vo.setStatus(VolumeStatus.Ready);
-                    vo.setPrimaryStorageUuid(inv.getPrimaryStorageUuid());
-                    vo.setFormat(inv.getFormat());
-                    VolumeVO vvo = dbf.updateAndRefresh(vo);
+                    vvo.setSize(inv.getSize());
+                    vvo.setActualSize(cr.getActualSize());
+                    vvo.setInstallPath(inv.getInstallPath());
+                    vvo.setStatus(VolumeStatus.Ready);
+                    vvo.setPrimaryStorageUuid(inv.getPrimaryStorageUuid());
+                    vvo.setFormat(inv.getFormat());
+                    vvo = dbf.updateAndRefresh(vvo);
 
                     new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vvo));
 
