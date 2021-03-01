@@ -67,7 +67,7 @@ public interface KVMConstant {
     String KVM_BOOT_FROM_NEW_NODE = "/vm/bootfromnewnode";
     String KVM_SOC_CREATE_SNAPSHOT_PATH = "/vm/soccreatesnapshot";
     String KVM_SOC_DELETE_SNAPSHOT_PATH = "/vm/socdeletesnapshot";
-    String KVM_SOC_USE_SNAPSHOT = "/vm/scpusesnapshot";
+    String KVM_SOC_USE_SNAPSHOT = "/vm/socusesnapshot";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";

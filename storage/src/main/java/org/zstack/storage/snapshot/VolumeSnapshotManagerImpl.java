@@ -730,8 +730,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         VmSocCreateSnapshotMsg vmsg = new VmSocCreateSnapshotMsg();
-                        vmsg.setHostUuid(Q.New(VmInstanceVO.class)
-                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue());
+                        String hostUuid = Q.New(VmInstanceVO.class)
+                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue();
+                        if (hostUuid == null) {
+                            hostUuid = Q.New(VmInstanceVO.class)
+                                    .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.lastHostUuid).findValue();
+                        }
+                        vmsg.setHostUuid(hostUuid);
                         vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
                         vmsg.setSnapshotUuid(snapshot.getUuid());
                         vmsg.setVmUuid(Q.New(VmInstanceVO.class)
