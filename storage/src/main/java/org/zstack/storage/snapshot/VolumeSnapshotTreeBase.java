@@ -1764,8 +1764,13 @@ public class VolumeSnapshotTreeBase {
                     public void run(FlowTrigger trigger, Map data) {
                         VmSocUseSnapshotMsg vmsg = new VmSocUseSnapshotMsg();
                         vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
-                        vmsg.setHostUuid(Q.New(VmInstanceVO.class)
-                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue());
+                        String hostUuid = Q.New(VmInstanceVO.class)
+                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue();
+                        if (hostUuid == null) {
+                            hostUuid = Q.New(VmInstanceVO.class)
+                                    .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.lastHostUuid).findValue();
+                        }
+                        vmsg.setHostUuid(hostUuid);
                         vmsg.setVmUuid(Q.New(VmInstanceVO.class)
                                 .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
                         vmsg.setSnapshotUuid(msg.getSnapshotUuid());
