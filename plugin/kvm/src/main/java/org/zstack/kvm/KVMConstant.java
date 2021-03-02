@@ -65,9 +65,10 @@ public interface KVMConstant {
     String KVM_VM_DELETE_VSOC = "/vm/deletevsoc";
     String KVM_VSOC_MIGRATE = "/vm/vsocmigrate";
     String KVM_BOOT_FROM_NEW_NODE = "/vm/bootfromnewnode";
-    String KVM_SOC_CREATE_SNAPSHOT_PATH = "/vm/soccreatesnapshot";
-    String KVM_SOC_DELETE_SNAPSHOT_PATH = "/vm/socdeletesnapshot";
-    String KVM_SOC_USE_SNAPSHOT = "/vm/socusesnapshot";
+    String KVM_VSOC_CREATE_SNAPSHOT_PATH = "/vm/vsoccreatesnapshot";
+    String KVM_VSOC_DELETE_SNAPSHOT_PATH = "/vm/vsocdeletesnapshot";
+    String KVM_VSOC_USE_SNAPSHOT = "/vm/vsocusesnapshot";
+    String KVM_CLONE_VSOC = "/vm/clonevsoc";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";

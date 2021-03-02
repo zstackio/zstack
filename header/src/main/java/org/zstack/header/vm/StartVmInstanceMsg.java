@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.springframework.core.SpringVersion;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.message.NeedReplyMessage;
@@ -29,6 +30,25 @@ public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMe
     }
 
     private List<String> avoidHostUuids;
+    private boolean clone;
+
+    public String getScrVmUuid() {
+        return scrVmUuid;
+    }
+
+    public void setScrVmUuid(String scrVmUuid) {
+        this.scrVmUuid = scrVmUuid;
+    }
+
+    private String scrVmUuid;
+
+    public boolean isClone() {
+        return clone;
+    }
+
+    public void setClone(boolean clone) {
+        this.clone = clone;
+    }
 
     public AllocationScene getAllocationScene() {
         return allocationScene;
