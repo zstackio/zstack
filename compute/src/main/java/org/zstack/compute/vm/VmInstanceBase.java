@@ -243,6 +243,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         return vmMgr.getCreateVmWorkFlowChain(inv);
     }
 
+    protected FlowChain getCreateVmFromCloneWorkFlowChain(VmInstanceInventory inv) {
+        return vmMgr.getCreateVmFromCloneWorkFlowChain(inv);
+    }
+
     protected FlowChain getStopVmWorkFlowChain(VmInstanceInventory inv) {
         return vmMgr.getStopVmWorkFlowChain(inv);
     }
@@ -5138,6 +5142,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                     InstantiateVmFromNewCreatedStruct.makeLabelKey(self.getUuid()), InstantiateVmFromNewCreatedStruct.class);
 
             struct.setStrategy(VmCreationStrategy.InstantStart);
+            if (msg instanceof StartVmInstanceMsg) {
+                StartVmInstanceMsg amsg = (StartVmInstanceMsg) msg;
+                struct.setFromClone(amsg.isClone());
+                struct.setSrcVmUuid(amsg.getScrVmUuid());
+            }
             instantiateVmFromNewCreate(struct, completion);
             return;
         }
@@ -5262,6 +5271,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setDataVolumeSystemTags(struct.getDataVolumeSystemTags());
         spec.setRootVolumeSystemTags(struct.getRootVolumeSystemTags());
         spec.setRequiredHostUuid(struct.getRequiredHostUuid());
+        spec.setSrcVmUuid(struct.getSrcVmUuid());
 
         spec.setVmInventory(getSelfInventory());
         if (struct.getL3NetworkUuids() != null && !struct.getL3NetworkUuids().isEmpty()) {
@@ -5432,6 +5442,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         extEmitter.beforeStartNewCreatedVm(VmInstanceInventory.valueOf(self));
         FlowChain chain = getCreateVmWorkFlowChain(getSelfInventory());
+        if (struct.isFromClone()) {
+            chain = getCreateVmFromCloneWorkFlowChain(getSelfInventory());
+        }
         setFlowMarshaller(chain);
 
         chain.setName(String.format("create-vm-%s", self.getUuid()));

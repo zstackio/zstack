@@ -278,6 +278,16 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
 
+    public String getSrcVmUuid() {
+        return srcVmUuid;
+    }
+
+    public void setSrcVmUuid(String srcVmUuid) {
+        this.srcVmUuid = srcVmUuid;
+    }
+
+    private String srcVmUuid;
+
     public AllocationScene getAllocationScene() {
         return allocationScene;
     }

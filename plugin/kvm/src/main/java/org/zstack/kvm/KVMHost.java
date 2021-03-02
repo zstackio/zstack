@@ -2,7 +2,6 @@ package org.zstack.kvm;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.springframework.aop.framework.AopProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,10 +11,7 @@ import org.zstack.compute.host.HostBase;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.host.MigrateNetworkExtensionPoint;
-import org.zstack.compute.vm.IsoOperator;
-import org.zstack.compute.vm.VmGlobalConfig;
-import org.zstack.compute.vm.VmPriorityOperator;
-import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.compute.vm.*;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
@@ -159,6 +155,7 @@ public class KVMHost extends HostBase implements Host {
     private String socCreateSnapshotPath;
     private String socDeleteSnapshotPath;
     private String socUseSnapshotPath;
+    private String cloneVsocPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -317,16 +314,20 @@ public class KVMHost extends HostBase implements Host {
         bootFromNewNodePath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-        ub.path(KVMConstant.KVM_SOC_CREATE_SNAPSHOT_PATH);
+        ub.path(KVMConstant.KVM_VSOC_CREATE_SNAPSHOT_PATH);
         socCreateSnapshotPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-        ub.path(KVMConstant.KVM_SOC_DELETE_SNAPSHOT_PATH);
+        ub.path(KVMConstant.KVM_VSOC_DELETE_SNAPSHOT_PATH);
         socDeleteSnapshotPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-        ub.path(KVMConstant.KVM_SOC_USE_SNAPSHOT);
+        ub.path(KVMConstant.KVM_VSOC_USE_SNAPSHOT);
         socUseSnapshotPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_CLONE_VSOC);
+        cloneVsocPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -517,9 +518,38 @@ public class KVMHost extends HostBase implements Host {
             handle((VmSocDeleteSnapshotMsg) msg);
         } else if (msg instanceof VmSocUseSnapshotMsg) {
             handle((VmSocUseSnapshotMsg) msg);
+        } else if (msg instanceof VmCloneVsocFileMsg) {
+            handle((VmCloneVsocFileMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(VmCloneVsocFileMsg msg) {
+        VsocCloneCommand cmd = new VsocCloneCommand();
+        cmd.destSocId = msg.getDestSocId();
+        cmd.destVmUuid = msg.getDestVmUuid();
+        cmd.srcVmUuid = msg.getSrcVmUuid();
+        cmd.resource = msg.getResource();
+        cmd.platformId = msg.getPlatformId();
+        cmd.type = msg.getType();
+        new Http<>(cloneVsocPath, cmd, VsocCloneRsp.class).call(new ReturnValueCompletion<VsocCloneRsp>(msg) {
+            @Override
+            public void success(VsocCloneRsp ret) {
+                VmCloneVsocReply reply = new VmCloneVsocReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("Fail:call create_snapshot, because:%s", ret.getError()));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                VmCloneVsocReply reply = new VmCloneVsocReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(VmSocCreateSnapshotMsg msg) {
@@ -532,12 +562,10 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(SocCreateSnapshotRsp ret) {
                 VmSocCreateSnapshotReply reply = new VmSocCreateSnapshotReply();
-                if (ret.isSuccess()) {
+                if (!ret.isSuccess()) {
                     reply.setError(operr("Fail:call create_snapshot, because:%s", ret.getError()));
-                    bus.reply(msg, reply);
-                } else {
-                    bus.reply(msg, reply);
                 }
+                bus.reply(msg, reply);
             }
 
             @Override
@@ -561,10 +589,8 @@ public class KVMHost extends HostBase implements Host {
                 VmSocDeleteSnapshotReply reply = new VmSocDeleteSnapshotReply();
                 if (ret.isSuccess()) {
                     reply.setError(operr("Fail:call delete_snapshot, because:%s", ret.getError()));
-                    bus.reply(msg, reply);
-                } else {
-                    bus.reply(msg, reply);
                 }
+                bus.reply(msg, reply);
             }
 
             @Override
@@ -586,12 +612,10 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(SocUseSnapshotRsp ret) {
                 VmSocUseSnapshotReply reply = new VmSocUseSnapshotReply();
-                if (ret.isSuccess()) {
+                if (!ret.isSuccess()) {
                     reply.setError(operr("Fail:call use_snapshot, because:%s", ret.getError()));
-                    bus.reply(msg, reply);
-                } else {
-                    bus.reply(msg, reply);
                 }
+                bus.reply(msg, reply);
             }
 
             @Override
@@ -613,14 +637,14 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(BootFromNewNodeRsp ret) {
                 VmBootFromNewNodeReply rsp = new VmBootFromNewNodeReply();
-                if (ret.isSuccess()) {
-                    bus.reply(msg, rsp);
-                } else {
+                if (!ret.isSuccess()) {
                     logger.warn(String.format("Fail:call boot_from_new_node, because: %s", ret.getError()));
                     rsp.setSuccess(false);
                     rsp.setError(operr("Fail:call boot_from_new_node, because: %s", ret.getError()));
                     bus.reply(msg, rsp);
                 }
+
+                bus.reply(msg, rsp);
             }
 
             @Override
@@ -646,10 +670,8 @@ public class KVMHost extends HostBase implements Host {
                 VmVsocMigrateReply rsp = new VmVsocMigrateReply();
                 if (!ret.isSuccess()) {
                     rsp.setError(operr("migrate vm vsoc fail,becauese:%s", ret.getError()));
-                    bus.reply(msg, rsp);
-                } else{
-                    bus.reply(msg, rsp);
                 }
+                bus.reply(msg, rsp);
             }
 
             @Override
@@ -691,7 +713,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void fail(ErrorCode err) {
-                final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
+                final CreateVmVsocFileReply reply = new CreateVmVsocFileReply();
                 reply.setError(err);
                 bus.reply(msg, reply);
             }

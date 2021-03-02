@@ -17,6 +17,9 @@ public class InstantiateVmFromNewCreatedStruct {
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private String requiredHostUuid;
+    private boolean isFromClone;
+
+    private String srcVmUuid;
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -121,5 +124,21 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setRequiredHostUuid(String requiredHostUuid) {
         this.requiredHostUuid = requiredHostUuid;
+    }
+
+    public boolean isFromClone() {
+        return isFromClone;
+    }
+
+    public void setFromClone(boolean fromClone) {
+        isFromClone = fromClone;
+    }
+
+    public String getSrcVmUuid() {
+        return srcVmUuid;
+    }
+
+    public void setSrcVmUuid(String srcVmUuid) {
+        this.srcVmUuid = srcVmUuid;
     }
 }

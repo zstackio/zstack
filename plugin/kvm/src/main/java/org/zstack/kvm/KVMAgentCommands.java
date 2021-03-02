@@ -2418,4 +2418,16 @@ public class KVMAgentCommands {
 
     public static class SocUseSnapshotRsp extends AgentResponse {
     }
+
+    public static class VsocCloneCommand extends AgentCommand {
+        public String platformId;
+        public String destVmUuid;
+        public String srcVmUuid;
+        public int resource;
+        public int type;
+        public String destSocId;
+    }
+
+    public static class VsocCloneRsp extends AgentResponse {
+    }
 }
