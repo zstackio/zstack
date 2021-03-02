@@ -426,4 +426,8 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     public void releaseResourceOnAttachingNic(VmInstanceSpec spec, L3NetworkInventory l3, NoErrorCompletion completion) {
         completion.done();
     }
+
+    public void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
+        completion.success();
+    }
 }

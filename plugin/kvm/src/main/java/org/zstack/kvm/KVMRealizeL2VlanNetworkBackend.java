@@ -176,4 +176,12 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
                 .select(L2VlanNetworkVO_.vlan)
                 .findValue();
     }
+
+    @Override
+    public  void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion){
+
+    }
+
+
+
 }
