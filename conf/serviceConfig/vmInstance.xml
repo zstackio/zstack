@@ -40,6 +40,12 @@
         <name>org.zstack.header.vm.APIAttachL3NetworkToVmMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APIChangeVmNicNetworkMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIGetCandidateL3NetworksForChangeVmNicNetworkMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APICreateVmNicMsg</name>
     </message>
     <message>
