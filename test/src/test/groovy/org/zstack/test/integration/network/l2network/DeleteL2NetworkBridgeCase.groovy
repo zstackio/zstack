@@ -110,7 +110,7 @@ class DeleteL2NetworkBridgeCase extends SubCase {
         }
 
         
-        def cmds = [] as SynchronizedList<String>
+        def cmds = [] as SynchronizedList<KVMAgentCommands.DeleteBridgeCmd>
         env.afterSimulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             deleteBridgeCmd = json(e.body, KVMAgentCommands.DeleteBridgeCmd.class)
             cmds.add(deleteBridgeCmd)
