@@ -101,6 +101,11 @@ class DeleteL2NetworkBridgeCase extends SubCase {
             clusterUuid = cluster.uuid
         }
 
+        env.simulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            return  new KVMAgentCommands.DeleteBridgeResponse()
+        }
+
+
         def cmds = [] as SynchronizedList<KVMAgentCommands.DeleteBridgeCmd>
         env.afterSimulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             deleteBridgeCmd = json(e.body, KVMAgentCommands.DeleteBridgeCmd.class)
@@ -111,13 +116,6 @@ class DeleteL2NetworkBridgeCase extends SubCase {
         deleteL2Network {
             uuid = l2_1.uuid
         }
-
-//        env.simulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
-//            return  new KVMAgentCommands.DeleteBridgeResponse()
-//        }
-
-        
-
 
         assert cmds.size()==2
 
