@@ -179,7 +179,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 
     @Override
     public  void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion){
-
+        completion.success();
     }
 
 

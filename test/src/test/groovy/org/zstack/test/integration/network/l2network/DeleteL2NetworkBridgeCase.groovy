@@ -9,6 +9,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.utils.data.SizeUnit
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMAgentCommands
+import java.util.Collections.synchronizedList
 
 
 class DeleteL2NetworkBridgeCase extends SubCase {
@@ -109,14 +110,14 @@ class DeleteL2NetworkBridgeCase extends SubCase {
         }
 
         
-//        def cmds = [] as SynchronizedList<String>
-//        env.afterSimulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
-//            deleteBridgeCmd = json(e.body, KVMAgentCommands.DeleteBridgeCmd.class)
-//            cmds.add(deleteBridgeCmd)
-//            return rsp
-//        }
-//
-//        assert cmds.size()==2
+        def cmds = [] as SynchronizedList<String>
+        env.afterSimulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
+            deleteBridgeCmd = json(e.body, KVMAgentCommands.DeleteBridgeCmd.class)
+            cmds.add(deleteBridgeCmd)
+            return rsp
+        }
+
+        assert cmds.size()==2
 
     }
 
