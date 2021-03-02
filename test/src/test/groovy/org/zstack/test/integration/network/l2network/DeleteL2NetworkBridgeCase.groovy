@@ -9,7 +9,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.utils.data.SizeUnit
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMAgentCommands
-import java.util.Collections.synchronizedList
+import org.apache.commons.collections.list.SynchronizedList
 
 
 class DeleteL2NetworkBridgeCase extends SubCase {
