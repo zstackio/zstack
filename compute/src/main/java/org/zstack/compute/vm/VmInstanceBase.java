@@ -30,11 +30,7 @@ import org.zstack.header.cluster.ClusterState;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -62,6 +58,7 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.IpRangeHelper;
+import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
@@ -76,6 +73,7 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
+import javax.enterprise.inject.New;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -118,6 +116,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     private VmPriorityOperator priorityOperator;
     @Autowired
     private VmNicManager nicManager;
+    @Autowired
+    protected L3NetworkManager l3nm;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
@@ -148,7 +148,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 if (VmInstanceState.Running.toString().equals(state)) {
-                    changeVmStateInDb(VmInstanceStateEvent.running, ()-> self.setHostUuid(hostUuid));
+                    changeVmStateInDb(VmInstanceStateEvent.running, () -> self.setHostUuid(hostUuid));
                 } else if (VmInstanceState.Stopped.toString().equals(state) && self.getState().equals(VmInstanceState.Destroying)) {
                     changeVmStateInDb(VmInstanceStateEvent.destroyed);
                 } else if (VmInstanceState.Stopped.toString().equals(state)) {
@@ -313,7 +313,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         VmInstanceState bs = self.getState();
         final VmInstanceState state = self.getState().nextState(stateEvent);
 
-        SQLBatch sql = new SQLBatch(){
+        SQLBatch sql = new SQLBatch() {
             @Override
             protected void scripts() {
                 self = findByUuid(self.getUuid(), self.getClass());
@@ -344,7 +344,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         };
         try {
             sql.execute();
-        } catch (DataIntegrityViolationException e){
+        } catch (DataIntegrityViolationException e) {
             sql.execute();
         }
 
@@ -1269,7 +1269,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (operation == VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged) {
             // the vm is detected on the host again. It's largely because the host disconnected before
             // and now reconnected
-            changeVmStateInDb(VmInstanceStateEvent.running, ()-> self.setHostUuid(msg.getHostUuid()));
+            changeVmStateInDb(VmInstanceStateEvent.running, () -> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
@@ -1278,21 +1278,21 @@ public class VmInstanceBase extends AbstractVmInstance {
             // the vm comes out of the unknown state to the stopped state
             // it happens when an operation failure led the vm from the stopped state to the unknown state,
             // and later on the vm was detected as stopped on the host again
-            changeVmStateInDb(VmInstanceStateEvent.stopped, ()-> self.setHostUuid(null));
+            changeVmStateInDb(VmInstanceStateEvent.stopped, () -> self.setHostUuid(null));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmStoppedFromPausedStateHostNotChanged) {
-            changeVmStateInDb(VmInstanceStateEvent.stopped, ()-> self.setHostUuid(msg.getHostUuid()));
+            changeVmStateInDb(VmInstanceStateEvent.stopped, () -> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged
-                || operation == VmAbnormalLifeCycleOperation.VmPausedFromStoppedStateHostNotChanged ) {
+                || operation == VmAbnormalLifeCycleOperation.VmPausedFromStoppedStateHostNotChanged) {
             //some reason led vm to unknown state and the paused vm are detected on the host again
-            changeVmStateInDb(VmInstanceStateEvent.paused, ()-> self.setHostUuid(msg.getHostUuid()));
+            changeVmStateInDb(VmInstanceStateEvent.paused, () -> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
@@ -1300,14 +1300,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromRunningStateHostNotChanged
                 || operation == VmAbnormalLifeCycleOperation.VmPausedFromMigratingStateHostNotChanged) {
             // just synchronize database
-            changeVmStateInDb(VmInstanceStateEvent.paused, ()->self.setHostUuid(msg.getHostUuid()));
+            changeVmStateInDb(VmInstanceStateEvent.paused, () -> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmRunningFromPausedStateHostNotChanged) {
             // just synchronize database
-            changeVmStateInDb(VmInstanceStateEvent.running, ()->self.setHostUuid(msg.getHostUuid()));
+            changeVmStateInDb(VmInstanceStateEvent.running, () -> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
@@ -1353,7 +1353,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(Map data) {
                 if (currentState == VmInstanceState.Running) {
-                    changeVmStateInDb(VmInstanceStateEvent.running, ()-> self.setHostUuid(currentHostUuid));
+                    changeVmStateInDb(VmInstanceStateEvent.running, () -> self.setHostUuid(currentHostUuid));
                 } else if (currentState == VmInstanceState.Stopped) {
                     changeVmStateInDb(VmInstanceStateEvent.stopped);
                 }
@@ -1645,7 +1645,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if ((h.getExpected() == null && self.getHostUuid() == null) ||
                         (h.getExpected() != null && h.getExpected().equals(self.getHostUuid()))) {
 
-                    changeVmStateInDb(s.getValue().getDrivenEvent(), ()-> {
+                    changeVmStateInDb(s.getValue().getDrivenEvent(), () -> {
                         self.setHostUuid(h.getValue());
                     });
 
@@ -1691,8 +1691,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 amsg.getAvoidHostUuids().addAll(gmsg.getAvoidHostUuids());
             }
         } else {
-            if (msg instanceof APIMessage){
-                if (((APIMessage) msg).getSystemTags() != null){
+            if (msg instanceof APIMessage) {
+                if (((APIMessage) msg).getSystemTags() != null) {
                     amsg.setSystemTags(new ArrayList<String>(((APIMessage) msg).getSystemTags()));
                 }
             }
@@ -1875,7 +1875,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
                     staticIpMap = amsg.getStaticIpMap();
                 } else if (msg instanceof VmAttachNicMsg) {
-                    VmAttachNicMsg nicMsg = (VmAttachNicMsg)msg;
+                    VmAttachNicMsg nicMsg = (VmAttachNicMsg) msg;
                     staticIpMap = nicMsg.getStaticIpMap();
                     allowDupicatedAddress = nicMsg.isAllowDuplicatedAddress();
                 }
@@ -1937,8 +1937,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setL3Networks(list(new VmNicSpec(l3s)));
         spec.setDestNics(new ArrayList<VmNicInventory>());
 
-        if (msg instanceof APIAttachL3NetworkToVmMsg ) {
-            APIAttachL3NetworkToVmMsg msg1 = (APIAttachL3NetworkToVmMsg)msg;
+        if (msg instanceof APIAttachL3NetworkToVmMsg) {
+            APIAttachL3NetworkToVmMsg msg1 = (APIAttachL3NetworkToVmMsg) msg;
             for (VmNicSpec vmNicSpec : spec.getL3Networks()) {
                 vmNicSpec.setNicDriverType(msg1.getDriverType());
             }
@@ -2192,7 +2192,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         refreshVO();
-                        VmNicInventory nic = (VmNicInventory)data.get(vmNicInvKey);
+                        VmNicInventory nic = (VmNicInventory) data.get(vmNicInvKey);
                         doDetachNic(nic, true, true, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -2772,7 +2772,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             ImageVO imageVO = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
             assert imageVO != null;
 
-            if(imageVO.getMediaType() == ImageMediaType.ISO) {
+            if (imageVO.getMediaType() == ImageMediaType.ISO) {
                 spec.setBootOrders(list(VmBootDevice.CdRom.toString()));
             } else {
                 spec.setBootOrders(list(VmBootDevice.HardDisk.toString()));
@@ -2885,8 +2885,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIMigrateVmMsg) msg);
         } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
             handle((APIAttachL3NetworkToVmMsg) msg);
-        } else if(msg instanceof APIAttachVmNicToVmMsg) {
+        } else if (msg instanceof APIAttachVmNicToVmMsg) {
             handle((APIAttachVmNicToVmMsg) msg);
+        } else if (msg instanceof APIChangeVmNicNetworkMsg) {
+            handle((APIChangeVmNicNetworkMsg) msg);
         } else if (msg instanceof APIGetVmMigrationCandidateHostsMsg) {
             handle((APIGetVmMigrationCandidateHostsMsg) msg);
         } else if (msg instanceof APIGetVmAttachableDataVolumeMsg) {
@@ -2899,6 +2901,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIDetachL3NetworkFromVmMsg) msg);
         } else if (msg instanceof APIGetVmAttachableL3NetworkMsg) {
             handle((APIGetVmAttachableL3NetworkMsg) msg);
+        } else if (msg instanceof APIGetCandidateL3NetworksForChangeVmNicNetworkMsg) {
+            handle((APIGetCandidateL3NetworksForChangeVmNicNetworkMsg)msg);
         } else if (msg instanceof APIAttachIsoToVmInstanceMsg) {
             handle((APIAttachIsoToVmInstanceMsg) msg);
         } else if (msg instanceof APIDetachIsoFromVmInstanceMsg) {
@@ -3749,7 +3753,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void handle(final DetachIsoFromVmInstanceMsg msg) {
         DetachIsoFromVmInstanceReply reply = new DetachIsoFromVmInstanceReply();
 
-        detachIso(msg.getIsoUuid() ,new Completion(msg) {
+        detachIso(msg.getIsoUuid(), new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -3782,7 +3786,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                detachIso(msg.getIsoUuid() ,new Completion(msg, chain) {
+                detachIso(msg.getIsoUuid(), new Completion(msg, chain) {
                     @Override
                     public void success() {
                         self = dbf.reload(self);
@@ -3876,7 +3880,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (l3Uuids != null && l3Uuids.isEmpty()) {
             return new ArrayList<L3NetworkInventory>();
         }
-        if (self.getClusterUuid() == null){
+        if (self.getClusterUuid() == null) {
             return getAttachableL3NetworkWhenClusterUuidSetNull(l3Uuids);
         }
         String sql;
@@ -3957,25 +3961,25 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     @Transactional(readOnly = true)
-    private List<L3NetworkInventory> getAttachableL3NetworkWhenClusterUuidSetNull(List<String> uuids){
+    private List<L3NetworkInventory> getAttachableL3NetworkWhenClusterUuidSetNull(List<String> uuids) {
         return new SQLBatchWithReturn<List<L3NetworkInventory>>() {
 
             @Override
-            protected List<L3NetworkInventory> scripts(){
+            protected List<L3NetworkInventory> scripts() {
                 String rootPsUuid = self.getRootVolume().getPrimaryStorageUuid();
 
                 //Get Candidate ClusterUuids From Primary Storage
-                List<String> clusterUuids =  q(PrimaryStorageClusterRefVO.class)
+                List<String> clusterUuids = q(PrimaryStorageClusterRefVO.class)
                         .select(PrimaryStorageClusterRefVO_.clusterUuid)
                         .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, rootPsUuid)
                         .listValues();
 
                 //filtering the ClusterUuid by vmNic L3s one by one
-                if (!self.getVmNics().isEmpty()){
-                    for (String l3uuid: self.getVmNics().stream().flatMap(nic -> VmNicHelper.getL3Uuids(VmNicInventory.valueOf(nic)).stream())
-                            .distinct().collect(Collectors.toList())){
+                if (!self.getVmNics().isEmpty()) {
+                    for (String l3uuid : self.getVmNics().stream().flatMap(nic -> VmNicHelper.getL3Uuids(VmNicInventory.valueOf(nic)).stream())
+                            .distinct().collect(Collectors.toList())) {
                         clusterUuids = getCandidateClusterUuidsFromAttachedL3(l3uuid, clusterUuids);
-                        if (clusterUuids.isEmpty()){
+                        if (clusterUuids.isEmpty()) {
                             return new ArrayList<>();
                         }
                     }
@@ -3995,27 +3999,27 @@ public class VmInstanceBase extends AbstractVmInstance {
                         .param("l3Category", L3NetworkCategory.System)
                         .param("l3State", L3NetworkState.Enabled).list();
 
-               if (l3s.isEmpty()){
-                   return new ArrayList<>();
-               }
+                if (l3s.isEmpty()) {
+                    return new ArrayList<>();
+                }
 
-               //filter result if normal user
-               if (uuids != null) {
-                   l3s = l3s.stream().filter(l3 -> uuids.contains(l3.getUuid())).collect(Collectors.toList());
-               }
+                //filter result if normal user
+                if (uuids != null) {
+                    l3s = l3s.stream().filter(l3 -> uuids.contains(l3.getUuid())).collect(Collectors.toList());
+                }
 
-               if (l3s.isEmpty()){
-                   return new ArrayList<>();
-               }
-               //filter l3 that already attached
-               if (!self.getVmNics().isEmpty()) {
-                   List<String> vmL3Uuids = self.getVmNics().stream().flatMap(nic -> VmNicHelper.getL3Uuids(VmNicInventory.valueOf(nic)).stream())
-                           .distinct().collect(Collectors.toList());
-                   l3s = l3s.stream().filter(l3 -> !vmL3Uuids.contains(l3.getUuid())).collect(Collectors.toList());
-               }
+                if (l3s.isEmpty()) {
+                    return new ArrayList<>();
+                }
+                //filter l3 that already attached
+                if (!self.getVmNics().isEmpty()) {
+                    List<String> vmL3Uuids = self.getVmNics().stream().flatMap(nic -> VmNicHelper.getL3Uuids(VmNicInventory.valueOf(nic)).stream())
+                            .distinct().collect(Collectors.toList());
+                    l3s = l3s.stream().filter(l3 -> !vmL3Uuids.contains(l3.getUuid())).collect(Collectors.toList());
+                }
 
                 l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty()).collect(Collectors.toList());
-               return L3NetworkInventory.valueOf(l3s);
+                return L3NetworkInventory.valueOf(l3s);
             }
 
             private List<String> getCandidateClusterUuidsFromAttachedL3(String l3Uuid, List<String> clusterUuids) {
@@ -4037,10 +4041,28 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void handle(APIGetVmAttachableL3NetworkMsg msg) {
         APIGetVmAttachableL3NetworkReply reply = new APIGetVmAttachableL3NetworkReply();
         List<L3NetworkInventory> l3Invs = getAttachableL3Network(msg.getSession().getAccountUuid());
-        
+
         List<L3NetworkInventory> ret = new ArrayList<>(l3Invs);
         for (FilterAttachableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterAttachableL3NetworkExtensionPoint.class)) {
             ret = ext.filterAttachableL3Network(VmInstanceInventory.valueOf(self), ret);
+        }
+
+        reply.setInventories(ret);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetCandidateL3NetworksForChangeVmNicNetworkMsg msg) {
+        APIGetVmAttachableL3NetworkReply reply = new APIGetVmAttachableL3NetworkReply();
+        List<L3NetworkInventory> l3Invs = getAttachableL3Network(msg.getSession().getAccountUuid());
+
+        List<L3NetworkInventory> ret = new ArrayList<>(l3Invs);
+        for (FilterAttachableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterAttachableL3NetworkExtensionPoint.class)) {
+            ret = ext.filterAttachableL3Network(VmInstanceInventory.valueOf(self), ret);
+        }
+
+        VmNicVO nicVO= Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+        for (FilterVmNicChangeableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterVmNicChangeableL3NetworkExtensionPoint.class)) {
+            ret = ext.filterVmNicChangeableL3Network(VmNicInventory.valueOf(nicVO), ret);
         }
 
         reply.setInventories(ret);
@@ -4217,7 +4239,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         throw new OperationFailureException(operr("the ISO[uuid:%s] is on backup storage that is not compatible of the primary storage[uuid:%s]" +
-                        " where the VM[name:%s, uuid:%s] is on", isoUuid, psUuid, self.getName(), self.getUuid()));
+                " where the VM[name:%s, uuid:%s] is on", isoUuid, psUuid, self.getName(), self.getUuid()));
     }
 
     private void doDetachNic(VmNicInventory vmNic, boolean releaseNic, boolean isRollback, Completion completion) {
@@ -4905,20 +4927,20 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     // Specify an iso as the first one, restart vm effective
-    private void updateVmIsoFirstOrder(List<String> systemTags){
-        if(systemTags == null || systemTags.isEmpty()){
+    private void updateVmIsoFirstOrder(List<String> systemTags) {
+        if (systemTags == null || systemTags.isEmpty()) {
             return;
         }
 
         String isoUuid = SystemTagUtils.findTagValue(systemTags, VmSystemTags.ISO, VmSystemTags.ISO_TOKEN);
-        if (isoUuid == null){
+        if (isoUuid == null) {
             return;
         }
 
         String vmUuid = self.getUuid();
         List<String> isoList = IsoOperator.getIsoUuidByVmUuid(vmUuid);
         if (!isoList.contains(isoUuid)) {
-            throw new OperationFailureException(operr("ISO[uuid:%s] is not attached to VM[uuid:%s]", isoUuid , self.getUuid()));
+            throw new OperationFailureException(operr("ISO[uuid:%s] is not attached to VM[uuid:%s]", isoUuid, self.getUuid()));
         }
 
         List<VmCdRomVO> cdRomVOS = Q.New(VmCdRomVO.class)
@@ -5014,7 +5036,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     .param("clusterUuids", clusterUuids)
                     .param("psState", PrimaryStorageState.Enabled)
                     .param("psStatus", PrimaryStorageStatus.Connected)
-                    .param("clsCount", (long)clusterUuids.size())
+                    .param("clsCount", (long) clusterUuids.size())
                     .list();
         }
 
@@ -5253,6 +5275,293 @@ public class VmInstanceBase extends AbstractVmInstance {
         completion.success();
     }
 
+    private void handle(APIChangeVmNicNetworkMsg msg) {
+        final APIChangeVmNicNetworkEvent evt = new APIChangeVmNicNetworkEvent(msg.getId());
+
+        VmNicVO vmNicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+        L3NetworkVO destL3NetowrkVO = dbf.findByUuid(msg.getDestL3NetworkUuid(), L3NetworkVO.class);
+        VmNicInventory nic = VmNicInventory.valueOf(vmNicVO);
+        L3NetworkInventory destL3 = L3NetworkInventory.valueOf(destL3NetowrkVO);
+
+        changeVmNicNetwork(msg, nic, destL3, new ReturnValueCompletion<VmNicInventory>(msg) {
+            @Override
+            public void success(VmNicInventory returnValue) {
+                evt.setInventory(returnValue);
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void changeVmNicNetwork(APIChangeVmNicNetworkMsg msg, VmNicInventory nic, L3NetworkInventory destL3, final ReturnValueCompletion<VmNicInventory> completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            @Deferred
+            public void run(final SyncTaskChain chain) {
+                refreshVO();
+                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                   completion.fail(allowed);
+                   chain.next();
+                   return;
+                }
+
+                class SetStaticIp {
+                    private boolean isSet = false;
+                    Map<String, List<String>> staticIpMap = null;
+
+                    void set() {
+                        if (msg instanceof APIChangeVmNicNetworkMsg) {
+                            APIChangeVmNicNetworkMsg amsg = (APIChangeVmNicNetworkMsg) msg;
+                            staticIpMap = amsg.getRequiredIpMap();
+                        }
+
+                        if (staticIpMap == null || staticIpMap.isEmpty()) {
+                            return;
+                        }
+
+                        for (Map.Entry<String, List<String>> e : staticIpMap.entrySet()) {
+                            List<String> ips = e.getValue();
+                            String l3Uuid = e.getKey();
+                            for (String ip : ips) {
+                                new StaticIpOperator().setStaticIp(self.getUuid(), l3Uuid, ip);
+                            }
+                        }
+
+                        isSet = true;
+                    }
+
+                    void rollback() {
+                        if (isSet) {
+                            for (Map.Entry<String, List<String>> e : staticIpMap.entrySet()) {
+                                new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), e.getKey());
+                            }
+                        }
+                    }
+                }
+
+                final SetStaticIp setStaticIp = new SetStaticIp();
+                setStaticIp.set();
+                Defer.guard(new Runnable() {
+                    @Override
+                    public void run() {
+                        setStaticIp.rollback();
+                    }
+                });
+
+                FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
+                flowChain.setName(String.format("changeNicNetwork-vm-%s-nic-%s-%s-to-%s", self.getUuid(), nic.getUuid(), nic.getL3NetworkUuid(), destL3.getUuid()));
+                final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.ChangeNicNetwork);
+                spec.setVmInventory(VmInstanceInventory.valueOf(self));
+                spec.setDestNics(list(nic));
+                flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+
+                flowChain.then(new NoRollbackFlow() {
+                    String __name__ = "allocate-ip-for-change-nic-network";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        allocateIp(destL3, nic, new ReturnValueCompletion<List<UsedIpInventory>>(chain) {
+                            @Override
+                            public void success(List<UsedIpInventory> returnValue) {
+                                data.put(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString(), returnValue);
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+
+                    }
+                });
+                flowChain.then(new NoRollbackFlow() {
+                    String __name__ = "update-nic-ip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new While<>(nic.getUsedIps()).all((ip, comp) -> {
+                            ReturnIpMsg msg = new ReturnIpMsg();
+                            msg.setUsedIpUuid(ip.getUuid());
+                            msg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+                            bus.send(msg, new CloudBusCallBack(comp) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    comp.done();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
+                                    self.setDefaultL3NetworkUuid(destL3.getUuid());
+                                }
+                                self = dbf.updateAndRefresh(self);
+                                VmNicVO nicVO = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
+                                List<UsedIpInventory> allocateIps = (List<UsedIpInventory>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString());
+                                List<UsedIpVO> ipVOS = new ArrayList<>();
+                                for (UsedIpInventory ip : allocateIps) {
+                                    /* update usedIpVo */
+                                    UsedIpVO ipVO = dbf.findByUuid(ip.getUuid(), UsedIpVO.class);
+                                    ipVO.setVmNicUuid(nic.getUuid());
+                                    ipVOS.add(ipVO);
+                                    if (allocateIps.size() == 2) {
+                                        if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                                            nicVO.setIp(ip.getIp());
+                                            nicVO.setL3NetworkUuid(ip.getL3NetworkUuid());
+                                            nicVO.setUsedIpUuid(ip.getUuid());
+                                        }
+                                    } else {
+                                        nicVO.setIp(ip.getIp());
+                                        nicVO.setL3NetworkUuid(ip.getL3NetworkUuid());
+                                        nicVO.setUsedIpUuid(ip.getUuid());
+                                    }
+                                }
+                                dbf.updateAndRefresh(nicVO);
+                                dbf.updateCollection(ipVOS);
+                                data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+                flowChain.done(new FlowDoneHandler(chain) {
+                    @Override
+                    public void handle(Map data) {
+                        VmNicVO nicVO = (VmNicVO) data.get(VmInstanceConstant.Params.VmNicInventory.toString());
+                        completion.success(VmNicInventory.valueOf(nicVO));
+                        chain.next();
+                    }
+                }).error(new FlowErrorHandler(chain) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        setStaticIp.rollback();
+                        if (data.get(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString()) == null) {
+                            completion.fail(errCode);
+                            chain.next();
+                            return;
+                        }
+
+                        List<UsedIpInventory> allocateIps = (List<UsedIpInventory>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString());
+                        List<ReturnIpMsg> msgs = new ArrayList<ReturnIpMsg>();
+                        for (UsedIpInventory ip : allocateIps) {
+                            ReturnIpMsg msg = new ReturnIpMsg();
+                            msg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                            msg.setUsedIpUuid(ip.getUuid());
+                            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+                            msgs.add(msg);
+                        }
+
+                        if (!msgs.isEmpty()) {
+                            bus.send(msgs, 1, new CloudBusListCallBack(chain) {
+                                @Override
+                                public void run(List<MessageReply> replies) {
+                                    for (MessageReply reply : replies) {
+                                        ReturnIpReply rly = reply.castReply();
+                                        logger.debug(String.format("return ip %s because change vm nic[%s] network to l3[%s] when change nic network",
+                                                rly.isSuccess() == true ? "sucess" : "failed", nic.getUuid(), destL3.getUuid()));
+                                    }
+                                }
+                            });
+                        }
+
+                        completion.fail(errCode);
+                        chain.next();
+                    }
+                }).start();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("change-vm-%s-nic-%s-to-network-%s", self.getUuid(), nic.getUuid(), destL3.getUuid());
+            }
+        });
+    }
+
+    private void allocateIp(L3NetworkInventory l3, VmNicInventory nic,final ReturnValueCompletion<List<UsedIpInventory>> completion) {
+        L3NetworkInventory nw = l3;
+        Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(getSelf().getUuid());
+        List<Integer> ipVersions = nw.getIpVersions();
+        Map<Integer, String> nicStaticIpMap = new StaticIpOperator().getNicStaticIpMap(vmStaticIps.get(nw.getUuid()));
+
+        List<AllocateIpMsg> msgs = new ArrayList<>();
+        List<UsedIpInventory> ips = new ArrayList<>();
+        List<ErrorCode> errs = new ArrayList<>();
+
+        //data.put(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString(), ips);
+
+        for (int ipversion : ipVersions) {
+            AllocateIpMsg msg = new AllocateIpMsg();
+            msg.setL3NetworkUuid(nw.getUuid());
+            String staticIp = nicStaticIpMap.get(ipversion);
+            if (staticIp != null) {
+                msg.setRequiredIp(staticIp);
+            } else {
+                if (ipversion == IPv6Constants.IPv6) {
+                    l3nm.updateIpAllocationMsg(msg, nic.getMac());
+                }
+            }
+            msg.setIpVersion(ipversion);
+            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nw.getUuid());
+            msgs.add(msg);
+        }
+
+        List<ErrorCode> ipErrs = new ArrayList<>();
+        new While<>(msgs).each((amsg, wcompl) -> {
+            bus.send(amsg, new CloudBusCallBack(wcompl) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (reply.isSuccess()) {
+                        AllocateIpReply areply = reply.castReply();
+                        ips.add(areply.getIpInventory());
+                        wcompl.done();
+                    } else {
+                        ipErrs.add(reply.getError());
+                        wcompl.allDone();
+                    }
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (ipErrs.size() > 0) {
+                    if (ips.isEmpty()) {
+                        completion.fail(ipErrs.get(0));
+                        return;
+                    }
+                    List<ReturnIpMsg> msgs = new ArrayList<ReturnIpMsg>();
+                    for (UsedIpInventory ip : ips) {
+                        ReturnIpMsg msg = new ReturnIpMsg();
+                        msg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                        msg.setUsedIpUuid(ip.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+                        msgs.add(msg);
+                    }
+
+                    bus.send(msgs, 1, new CloudBusListCallBack(completion) {
+                        @Override
+                        public void run(List<MessageReply> replies) {
+                            completion.fail(ipErrs.get(0));
+                        }
+                    });
+                }
+                completion.success(ips);
+            }
+        });
+    }
+
     private void detachVolume(final DetachDataVolumeFromVmMsg msg, final NoErrorCompletion completion) {
         final DetachDataVolumeFromVmReply reply = new DetachDataVolumeFromVmReply();
         refreshVO(true);
@@ -5447,7 +5756,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void handle(final Map data) {
                 VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
                 HostInventory host = spec.getDestHost();
-                self = changeVmStateInDb(VmInstanceStateEvent.running, ()-> {
+                self = changeVmStateInDb(VmInstanceStateEvent.running, () -> {
                     self.setZoneUuid(host.getZoneUuid());
                     self.setClusterUuid(host.getClusterUuid());
                     self.setLastHostUuid(lastHostUuid);
@@ -5594,7 +5903,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         if (spec.getDestNics().isEmpty()) {
             throw new OperationFailureException(operr("unable to start the vm[uuid:%s]." +
-                            " It doesn't have any nic, please attach a nic and try again", self.getUuid()));
+                    " It doesn't have any nic, please attach a nic and try again", self.getUuid()));
         }
 
         final VmInstanceState originState = self.getState();
@@ -5619,7 +5928,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final Map data) {
                 VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                self = changeVmStateInDb(VmInstanceStateEvent.running, ()-> new SQLBatch() {
+                self = changeVmStateInDb(VmInstanceStateEvent.running, () -> new SQLBatch() {
                     @Override
                     protected void scripts() {
                         // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
@@ -5883,7 +6192,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(FlowTrigger trigger, Map data) {
                 VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
                 changeVmStateInDb(struct.getStrategy() == VmCreationStrategy.InstantStart ?
-                        VmInstanceStateEvent.running : VmInstanceStateEvent.paused, ()-> {
+                        VmInstanceStateEvent.running : VmInstanceStateEvent.paused, () -> {
                     self.setLastHostUuid(spec.getDestHost().getUuid());
                     self.setHostUuid(spec.getDestHost().getUuid());
                     self.setClusterUuid(spec.getDestHost().getClusterUuid());
@@ -6197,7 +6506,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             String isoUuid = cdRomVO.getIsoUuid();
             if (isoUuid != null) {
-                if(dbf.isExist(isoUuid, ImageVO.class)) {
+                if (dbf.isExist(isoUuid, ImageVO.class)) {
                     cdRomSpec.setImageUuid(isoUuid);
                     cdRomSpec.setInstallPath(cdRomVO.getIsoInstallPath());
                 } else {
@@ -6905,7 +7214,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             update = true;
         }
 
-        if (msg.getDescription() != null ) {
+        if (msg.getDescription() != null) {
             vmCdRomVO.setDescription(msg.getDescription());
             update = true;
         }
@@ -6975,7 +7284,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void setVmInstanceDefaultCdRom(String vmCdRomUuid, Completion completion) {
         // update target cdRom deviceId
         // update the source cdRom deviceId
-        new SQLBatch(){
+        new SQLBatch() {
             @Override
             protected void scripts() {
                 List<VmCdRomVO> cdRomVOS = q(VmCdRomVO.class)
@@ -7037,7 +7346,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         bus.send(omsg, new CloudBusCallBack(completion, evt) {
             @Override
             public void run(MessageReply reply) {
-                if (reply.isSuccess()){
+                if (reply.isSuccess()) {
                     self = refreshVO();
                     VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                     evt.setInventory(inv);
@@ -7051,7 +7360,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void handle(ReimageVmInstanceMsg msg){
+    private void handle(ReimageVmInstanceMsg msg) {
         ReimageVmInstanceReply reply = new ReimageVmInstanceReply();
 
         self = refreshVO();
