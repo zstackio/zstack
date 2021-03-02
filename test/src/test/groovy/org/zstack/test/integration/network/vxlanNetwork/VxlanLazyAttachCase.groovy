@@ -24,6 +24,8 @@ import static java.util.Arrays.asList
  * */
 class VxlanLazyAttachCase extends SubCase {
     EnvSpec env
+    String host1VtepIp = "192.168.100.10"
+    String host2VtepIp = "192.168.100.11"
 
     @Override
     void setup() {
@@ -226,6 +228,9 @@ class VxlanLazyAttachCase extends SubCase {
             delegate.systemTags = ["l2NetworkUuid::${poolinv.uuid}::clusterUuid::${cluster.uuid}::cidr::{192.168.100.0/24}".toString()]
         }
         assert fdbcmds.size() == 2
+        for (VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd fdbCmd : fdbcmds) {
+            assert fdbCmd.peers.size() == 1
+        }
 
         attachL3NetworkToVm {
             delegate.l3NetworkUuid = l3.uuid
@@ -269,9 +274,9 @@ class VxlanLazyAttachCase extends SubCase {
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             def resp = new VxlanKvmAgentCommands.CheckVxlanCidrResponse() as VxlanKvmAgentCommands.CheckVxlanCidrResponse
             if (entity.getHeaders().get("X-Resource-UUID")[0] == host1.uuid) {
-                resp.vtepIp = "192.168.102.10"
+                resp.vtepIp = host1VtepIp
             } else {
-                resp.vtepIp = "192.168.100.11"
+                resp.vtepIp = host2VtepIp
             }
             resp.setSuccess(true)
             return resp
@@ -306,9 +311,12 @@ class VxlanLazyAttachCase extends SubCase {
         }
 
         def realizeRecords = [] as SynchronizedList<String>
+        List<VxlanKvmAgentCommands.CreateVxlanBridgeCmd> createBridgeCmds = new ArrayList<>()
+        createBridgeCmds = Collections.synchronizedList(new ArrayList())
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(entity.body, VxlanKvmAgentCommands.CreateVxlanBridgeCmd.class)
             realizeRecords.add(cmd.l2NetworkUuid)
+            createBridgeCmds.add(cmd)
             return new VxlanKvmAgentCommands.CreateVxlanBridgesCmd()
         }
 
@@ -330,6 +338,19 @@ class VxlanLazyAttachCase extends SubCase {
 
         retryInSecs {
             assert realizeRecords.size() == 1
+        }
+
+        /* because host is disconnected, so only send create bridge command to host2 */
+        retryInSecs {
+            assert createBridgeCmds.size() == 1
+        }
+        for (VxlanKvmAgentCommands.CreateVxlanBridgeCmd cmd : createBridgeCmds) {
+            assert cmd.peers.size() == 1
+            if (cmd.vtepIp == host1VtepIp) {
+                assert cmd.peers.get(0) == host2VtepIp
+            } else {
+                assert cmd.peers.get(0) == host1VtepIp
+            }
         }
 
         disconnected = false
@@ -363,6 +384,10 @@ class VxlanLazyAttachCase extends SubCase {
 
         assert fdbcmds.size() == 1
         assert vxlanCmd.bridgeCmds.size() == 2
+        for (VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd fdbCmd : fdbcmds) {
+            assert fdbCmd.peers.size() == 1
+            assert fdbCmd.peers.get(0) == host2VtepIp
+        }
         for (VxlanKvmAgentCommands.CreateVxlanBridgeCmd bridgeCmd : vxlanCmd.bridgeCmds) {
             assert bridgeCmd.vni == vxlan2.vni || bridgeCmd.vni == vxlan1.vni
             assert bridgeCmd.mtu == 1450

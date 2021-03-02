@@ -159,10 +159,11 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 .listValues();
 
         new While<>(targets).all((host, completion1) -> {
-            Set<String> peers = vteps.stream()
+            List<VtepVO> peerVteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, msg.getPoolUuid())
+                    .notEq(VtepVO_.hostUuid, host.getUuid()).list();
+            Set<String> peers = peerVteps.stream()
                     .map(v -> v.getVtepIp())
                     .collect(Collectors.toSet());
-            peers.remove(host.getManagementIp());
 
             logger.info(String.format("populate fdb to host[ip:%s] for vxlan network pool %s with vxlan network[uuids:%s] to host[uuid:%s]",
                     host.getManagementIp(), msg.getPoolUuid(), vxlanNetworkUuids, host.getUuid()));
