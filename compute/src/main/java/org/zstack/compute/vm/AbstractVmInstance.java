@@ -74,6 +74,7 @@ public abstract class AbstractVmInstance implements VmInstance {
                 CreateTemplateFromVmRootVolumeMsg.class.getName(),
                 VmAttachNicMsg.class.getName(),
                 APIAttachL3NetworkToVmMsg.class.getName(),
+                APIChangeVmNicNetworkMsg.class.getName(),
                 APIAttachVmNicToVmMsg.class.getName(),
                 APIChangeInstanceOfferingMsg.class.getName(),
                 StopVmInstanceMsg.class.getName(),

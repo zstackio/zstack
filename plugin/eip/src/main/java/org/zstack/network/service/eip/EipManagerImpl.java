@@ -54,14 +54,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  */
 public class EipManagerImpl extends AbstractService implements EipManager, VipReleaseExtensionPoint,
         AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VmPreAttachL3NetworkExtensionPoint,
         VmIpChangedExtensionPoint, ResourceOwnerAfterChangeExtensionPoint, VipGetServiceReferencePoint,
-        ManagementNodeReadyExtensionPoint, FilterAttachableL3NetworkExtensionPoint {
+        ManagementNodeReadyExtensionPoint, FilterAttachableL3NetworkExtensionPoint, VmNicChangeNetworkExtensionPoint {
     private static final CLogger logger = Utils.getLogger(EipManagerImpl.class);
 
     @Autowired
@@ -1841,5 +1841,18 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         for (GetEipAttachableVmNicsExtensionPoint ext : pluginRgty.getExtensionList(GetEipAttachableVmNicsExtensionPoint.class)) {
             eipAttachableVmTypes.add(ext.getAdditionalVmState());
         }
+    }
+
+    @Override
+    public Map<String, String> getVmNicAttachedNetworkService(VmNicInventory nic) {
+        List<String> eipUuids = Q.New(EipVO.class).select(EipVO_.uuid).eq(EipVO_.vmNicUuid, nic.getUuid()).listValues();
+        if (eipUuids.isEmpty()) {
+            return null;
+        }
+        HashMap<String, String> ret = new HashMap<>();
+        for (String eipUuid : eipUuids) {
+            ret.put(EipConstant.EIP_NETWORK_SERVICE_TYPE, eipUuid);
+        }
+        return ret;
     }
 }
