@@ -31,6 +31,21 @@
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
             </list>
         </property>
+        <property name="createVmFromCloneWorkFlowElements">
+            <list>
+                <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateHostFlow</value>
+                <value>org.zstack.compute.vm.VmAllocatePrimaryStorageFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
+                <value>org.zstack.compute.vm.VmAttachL3NetworkToNicFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateCdRomFlow</value>
+                <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
+                <value>org.zstack.compute.vm.VmCloneVsocFileFlow</value>
+                <value>org.zstack.compute.vm.VmCreateOnHypervisorFlow</value>
+                <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
+            </list>
+        </property>
         <property name="stopVmWorkFlowElements">
             <list>
                 <value>org.zstack.compute.vm.BeforeVmStopOnHypervisorFlow</value>

@@ -104,6 +104,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<>());
     private List<String> createVmWorkFlowElements;
+
+    public void setCreateVmFromCloneWorkFlowElements(List<String> createVmFromCloneWorkFlowElements) {
+        this.createVmFromCloneWorkFlowElements = createVmFromCloneWorkFlowElements;
+    }
+
+    private List<String> createVmFromCloneWorkFlowElements;
     private List<String> stopVmWorkFlowElements;
     private List<String> rebootVmWorkFlowElements;
     private List<String> startVmWorkFlowElements;
@@ -116,6 +122,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private List<String> pauseVmWorkFlowElements;
     private List<String> resumeVmWorkFlowElements;
     private FlowChainBuilder createVmFlowBuilder;
+    private FlowChainBuilder createVmFromCloneBuilder;
     private FlowChainBuilder stopVmFlowBuilder;
     private FlowChainBuilder rebootVmFlowBuilder;
     private FlowChainBuilder startVmFlowBuilder;
@@ -1378,6 +1385,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     private void createVmFlowChainBuilder() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         createVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(createVmWorkFlowElements).construct();
+        createVmFromCloneBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(createVmFromCloneWorkFlowElements).construct();
         stopVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(stopVmWorkFlowElements).construct();
         rebootVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(rebootVmWorkFlowElements).construct();
         startVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(startVmWorkFlowElements).construct();
@@ -1838,6 +1846,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
     @Override
     public FlowChain getCreateVmWorkFlowChain(VmInstanceInventory inv) {
         return createVmFlowBuilder.build();
+    }
+
+    @Override
+    public FlowChain getCreateVmFromCloneWorkFlowChain(VmInstanceInventory inv) {
+        return createVmFromCloneBuilder.build();
     }
 
     @Override

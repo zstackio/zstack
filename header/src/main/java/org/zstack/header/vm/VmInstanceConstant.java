@@ -1,6 +1,7 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.configuration.PythonClass;
+import org.zstack.header.log.NoLogging;
 
 @PythonClass
 public interface VmInstanceConstant {
@@ -75,4 +76,12 @@ public interface VmInstanceConstant {
     String NONE_CDROM = "none";
     int COLD_MIGRATE = 1;
     int HOT_MIGRATE = 2;
+    //resource
+    int NORESOURCE = 0;
+    int SNAPSHOT = 1;
+    int BACKUP = 2;
+    int SNAPSHOT_BACKUP = 3;
+    //clone type
+    int OFFLINE = 1;
+    int ONLINE = 2;
 }
