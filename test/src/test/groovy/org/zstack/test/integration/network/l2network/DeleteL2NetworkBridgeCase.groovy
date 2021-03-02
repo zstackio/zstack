@@ -101,15 +101,6 @@ class DeleteL2NetworkBridgeCase extends SubCase {
             clusterUuid = cluster.uuid
         }
 
-        deleteL2Network {
-            uuid = l2_1.uuid
-        }
-
-        env.simulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
-            return  new KVMAgentCommands.DeleteBridgeResponse()
-        }
-
-        
         def cmds = [] as SynchronizedList<KVMAgentCommands.DeleteBridgeCmd>
         env.afterSimulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             deleteBridgeCmd = json(e.body, KVMAgentCommands.DeleteBridgeCmd.class)
@@ -117,7 +108,32 @@ class DeleteL2NetworkBridgeCase extends SubCase {
             return rsp
         }
 
+        deleteL2Network {
+            uuid = l2_1.uuid
+        }
+
+//        env.simulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+//            return  new KVMAgentCommands.DeleteBridgeResponse()
+//        }
+
+        
+
+
         assert cmds.size()==2
+
+//        List<VirtualRouterLoadBalancerBackend.RefreshLbCmd> cmds = new ArrayList<>()
+//        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+//            VirtualRouterLoadBalancerBackend.RefreshLbCmd cmd =
+//                    JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class)
+//            cmds.add(cmd)
+//            return rsp
+//        }
+//        addVmNicToLoadBalancer {
+//            vmNicUuids = [vm3.vmNics[0].uuid]
+//            listenerUuid = listener1.uuid
+//        }
+//        assert cmds.size() == 1
+
 
     }
 
