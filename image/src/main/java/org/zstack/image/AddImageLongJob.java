@@ -93,7 +93,7 @@ public class AddImageLongJob implements LongJob {
                     if (data.getUuid().equals(job.getTargetResourceUuid())) {
                         handleResult(data);
                         return true;
-                    } else if (offTime > System.currentTimeMillis()) {
+                    } else if (offTime < System.currentTimeMillis()) {
                         return true;
                     }
 
