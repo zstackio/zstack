@@ -61,7 +61,7 @@ public class APIPauseVmInstanceEvent extends APIEvent {
         vm.setMemorySize(SizeUnit.GIGABYTE.toByte(8));
         vm.setPlatform("Linux");
         vm.setRootVolumeUuid(rootVolumeUuid);
-        vm.setState(VmInstanceState.Running.toString());
+        vm.setState(VmInstanceState.Paused.toString());
         vm.setType(VmInstanceConstant.USER_VM_TYPE);
         vm.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         vm.setZoneUuid(uuid());
