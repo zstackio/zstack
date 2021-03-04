@@ -3,11 +3,13 @@ package org.zstack.header.identity;
 import org.zstack.header.configuration.PythonClass;
 import org.zstack.header.rest.RestAuthenticationType;
 
+import java.util.Base64;
+
 @PythonClass
 public interface AccountConstant {
     String SERVICE_ID = "identity";
     @PythonClass
-    String INITIAL_SYSTEM_ADMIN_UUID = "36c27e8ff05c4780bf6d2fa65700f22e";
+    String INITIAL_SYSTEM_ADMIN_UUID = new String(Base64.getDecoder().decode("MzZjMjdlOGZmMDVjNDc4MGJmNmQyZmE2NTcwMGYyMmU="));
     @PythonClass
     String INITIAL_SYSTEM_ADMIN_NAME = "admin";
     // 'password' SHA512 hex coding
