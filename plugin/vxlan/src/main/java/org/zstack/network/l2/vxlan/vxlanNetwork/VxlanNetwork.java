@@ -74,7 +74,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
 
     @Override
     public void deleteHook(NoErrorCompletion completion) {
-        completion.done();
+        deleteL2Bridge(completion);
     }
 
     @Override

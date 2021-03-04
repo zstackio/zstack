@@ -1,11 +1,14 @@
 package org.zstack.testlib
 
+import org.springframework.http.HttpEntity
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.L2NetworkInventory
 
 /**
  * Created by xing5 on 2017/2/15.
  */
-class L2VlanNetworkSpec extends L2NetworkSpec {
+class L2VlanNetworkSpec extends L2NetworkSpec implements Simulator{
     @SpecParam(required = true)
     Integer vlan
 
@@ -33,5 +36,13 @@ class L2VlanNetworkSpec extends L2NetworkSpec {
         }
 
         return id(name, inventory.uuid)
+    }
+
+
+    @Override
+    void registerSimulators(EnvSpec env) {
+        env.simulator(KVMConstant.KVM_DELETE_L2VLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            return  new KVMAgentCommands.DeleteVlanBridgeResponse()
+        }
     }
 }
