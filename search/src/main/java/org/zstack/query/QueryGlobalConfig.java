@@ -13,4 +13,7 @@ public class QueryGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig ZQL_RETURN_WITH_CONCURRENCY = new GlobalConfig(CATEGORY, "zql.returnWith.concurrency");
+
+    @GlobalConfigValidation
+    public static GlobalConfig SLOW_ZQL_COST_TIME = new GlobalConfig(CATEGORY, "slow.zql.cost.time");
 }
