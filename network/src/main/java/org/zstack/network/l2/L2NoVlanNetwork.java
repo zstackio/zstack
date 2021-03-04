@@ -669,7 +669,7 @@ public class L2NoVlanNetwork implements L2Network {
                 }
 
             });
-        },5).run((new WhileDoneCompletion(completion) {
+        },10).run((new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 completion.done();
