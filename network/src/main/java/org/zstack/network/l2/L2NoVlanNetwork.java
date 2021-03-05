@@ -216,11 +216,12 @@ public class L2NoVlanNetwork implements L2Network {
                             if (rvo != null) {
                                 dbf.remove(rvo);
                             }
+                            bus.reply(msg, reply);
                         }
                 };
         deleteL2Bridge(completion);
 
-        bus.reply(msg, reply);
+
     }
 
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
