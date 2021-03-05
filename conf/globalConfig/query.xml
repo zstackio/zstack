@@ -15,4 +15,12 @@
         <defaultValue>10</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+
+    <config>
+        <category>query</category>
+        <name>slow.zql.cost.time</name>
+        <description>slow zql cost time in seconds, slow zql text will be logged in mn log.</description>
+        <defaultValue>10</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>

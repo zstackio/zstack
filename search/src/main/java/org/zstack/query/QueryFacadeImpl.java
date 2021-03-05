@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.MarshalReplyMessageExtensionPoint;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.thread.ThreadGlobalProperty;
@@ -38,6 +39,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -170,6 +172,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         checkBoxTypeInInventory();
         populateExtensions();
         collectInventoryAPINoSee();
+        cleanSlowZQLCache();
         return true;
     }
 
@@ -509,6 +512,30 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                         return v;
                     });
                 }
+            }
+        });
+    }
+
+    private void cleanSlowZQLCache() {
+        thdf.submitPeriodicTask(new PeriodicTask() {
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.MINUTES;
+            }
+
+            @Override
+            public long getInterval() {
+                return 5;
+            }
+
+            @Override
+            public String getName() {
+                return "clean-slow-zql-cache";
+            }
+
+            @Override
+            public void run() {
+                ZQL.cleanSlowZqlCache();
             }
         });
     }

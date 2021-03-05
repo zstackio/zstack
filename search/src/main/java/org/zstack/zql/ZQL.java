@@ -1,5 +1,7 @@
 package org.zstack.zql;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
@@ -12,6 +14,8 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.search.SearchGlobalProperty;
+import org.zstack.core.thread.AsyncThread;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -25,6 +29,7 @@ import org.zstack.header.vo.ResourceInventory;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ToInventory;
 import org.zstack.header.zql.*;
+import org.zstack.query.QueryGlobalConfig;
 import org.zstack.search.SearchErrors;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
@@ -45,6 +50,7 @@ import javax.persistence.Query;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
@@ -52,6 +58,8 @@ import static org.zstack.core.Platform.err;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ZQL {
     private static final CLogger logger = Utils.getLogger(ZQL.class);
+
+    private static Set<String> slowZql = new HashSet<>();
 
     private QueryResult astResult;
     private SearchResult searchResult;
@@ -221,6 +229,8 @@ public class ZQL {
     }
 
     public List<ZQLQueryReturn> getResultList() {
+        long before = System.currentTimeMillis();
+
         List<ZQLQueryReturn> rs = new ArrayList<>();
 
         ZQLLexer l = new ZQLLexer(CharStreams.fromString(text));
@@ -400,7 +410,25 @@ public class ZQL {
             rs.add(qr);
         });
 
+
+        long cost = System.currentTimeMillis() - before;
+        if (cost > TimeUnit.SECONDS.toMillis(QueryGlobalConfig.SLOW_ZQL_COST_TIME.value(Long.class))) {
+            logSlowZql(text, cost);
+        }
         return rs;
+    }
+
+    @ExceptionSafe
+    private void logSlowZql(String zql, long time) {
+        if (!slowZql.contains(zql)) {
+            slowZql.add(zql);
+            logger.warn(String.format("SLOW ZQL cost %d ms: %s", time, zql));
+        }
+    }
+
+    @ExceptionSafe
+    public static void cleanSlowZqlCache() {
+        slowZql.clear();
     }
 
     private List<ResourceInventory> filterNoAccessResources(Set<String> resourceUuids, String accountUuid) {
