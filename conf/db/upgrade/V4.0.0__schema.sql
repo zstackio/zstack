@@ -943,3 +943,8 @@ UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.baremetal.pxeser
 UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.baremetal.pxeserver.BaremetalPxeServerVO" WHERE concreteResourceType = "" AND resourceType = "BaremetalPxeServerVO";
 
 ALTER TABLE `zstack`.`PolicyRouteRuleSetVO` modify COLUMN `name` varchar(255);
+
+ALTER TABLE `zstack`.`IAM2VirtualIDAttributeVO` ADD INDEX `idxName` (`name`);
+ALTER TABLE `zstack`.`IAM2VirtualIDAttributeVO` ADD INDEX `idxValue` (`value`);
+ALTER TABLE `zstack`.`SharedResourceVO` ADD INDEX `idxToPublic` (`toPublic`);
+ALTER TABLE `zstack`.`IAM2OrganizationVO` ADD INDEX `idxRootOrganizationUuid` (`rootOrganizationUuid`);
