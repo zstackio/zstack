@@ -17,13 +17,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, RestrictByExprExtensionPoint {
-    private static final String ENTITY_NAME = "__ACCOUNT_FILTER__";
-    private static final String ENTITY_FIELD = "__ACCOUNT_FILTER_FIELD__";
+    protected static final String ENTITY_NAME = "__ACCOUNT_FILTER__";
+    protected static final String ENTITY_FIELD = "__ACCOUNT_FILTER_FIELD__";
 
     public static final String SKIP_IDENTITY_FILTER = "__SKIP_IDENTITY_FILTER __";
 
     @Autowired
-    private AccountManager acntMgr;
+    protected AccountManager acntMgr;
 
     @Override
     public void marshalZQLASTTree(ASTNode.Query node) {
@@ -78,10 +78,19 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
                 .map(uuid -> String.format("'%s'", uuid))
                 .collect(Collectors.joining(","));
 
-        return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
-                        "  accountresourcerefvo.ownerAccountUuid in (%s) OR (accountresourcerefvo.resourceUuid" +
-                        " IN (SELECT sharedresourcevo.resourceUuid FROM SharedResourceVO sharedresourcevo WHERE" +
-                        " sharedresourcevo.receiverAccountUuid in (%s) OR sharedresourcevo.toPublic = 1))))",
-                src.simpleInventoryName(), primaryKey, accountStr, accountStr);
+        if (src.simpleInventoryName().equals("IAM2VirtualIDInventory")) {
+            return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
+                            "  accountresourcerefvo.ownerAccountUuid in (%s) OR (accountresourcerefvo.resourceUuid" +
+                            " IN (SELECT sharedresourcevo.resourceUuid FROM SharedResourceVO sharedresourcevo WHERE" +
+                            " sharedresourcevo.receiverAccountUuid in (%s)))))",
+                    src.simpleInventoryName(), primaryKey, accountStr, accountStr);
+        } else {
+            return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
+                            "  accountresourcerefvo.ownerAccountUuid in (%s) OR (accountresourcerefvo.resourceUuid" +
+                            " IN (SELECT sharedresourcevo.resourceUuid FROM SharedResourceVO sharedresourcevo WHERE" +
+                            " sharedresourcevo.receiverAccountUuid in (%s) OR sharedresourcevo.toPublic = 1))))",
+                    src.simpleInventoryName(), primaryKey, accountStr, accountStr);
+        }
+
     }
 }
