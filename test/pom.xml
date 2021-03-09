@@ -234,6 +234,49 @@
 
     <profiles>
         <profile>
+            <id>merge</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.8</version>
+
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+
+                                <id>default-cli</id>
+
+                                <configuration>
+                                    <target>
+                                        <taskdef name="merge" classname="org.jacoco.ant.MergeTask">
+                                            <classpath path="${basedir}/target/jacoco-jars/*.jar"/>
+                                        </taskdef>
+
+                                        <merge destfile="target/reports/jacoco-merged.exec">
+                                            <fileset dir="${basedir}/target/reports" includes="*.exec"/>
+                                        </merge>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.jacoco</groupId>
+                                <artifactId>org.jacoco.ant</artifactId>
+                                <version>0.8.6</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <id>coverage</id>
             <build>
                 <plugins>
@@ -290,7 +333,7 @@
                             <dependency>
                                 <groupId>org.jacoco</groupId>
                                 <artifactId>org.jacoco.ant</artifactId>
-                                <version>0.7.9</version>
+                                <version>0.8.6</version>
                             </dependency>
                         </dependencies>
                     </plugin>
@@ -305,7 +348,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.7.9</version>
+                <version>0.8.6</version>
 
                 <executions>
                     <execution>
