@@ -37,4 +37,8 @@ public class L2VlanNetworkRealizer implements L2NetworkRealizationExtensionPoint
         return HypervisorType.valueOf(SimulatorConstant.SIMULATOR_HYPERVISOR_TYPE);
     }
 
+    public void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
+        completion.success();
+    }
+
 }

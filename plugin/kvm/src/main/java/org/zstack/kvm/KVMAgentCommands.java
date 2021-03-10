@@ -564,6 +564,39 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class DeleteBridgeCmd extends AgentCommand {
+        private String physicalInterfaceName;
+        private String bridgeName;
+        private String l2NetworkUuid;
+
+        public String getPhysicalInterfaceName() {
+            return physicalInterfaceName;
+        }
+
+        public void setPhysicalInterfaceName(String physicalInterfaceName) {
+            this.physicalInterfaceName = physicalInterfaceName;
+        }
+
+        public String getBridgeName() {
+            return bridgeName;
+        }
+
+        public void setBridgeName(String bridgeName) {
+            this.bridgeName = bridgeName;
+        }
+
+        public String getL2NetworkUuid() {
+            return l2NetworkUuid;
+        }
+
+        public void setL2NetworkUuid(String l2NetworkUuid) {
+            this.l2NetworkUuid = l2NetworkUuid;
+        }
+    }
+
+
+
+
     public static class CreateBridgeCmd extends AgentCommand {
         private String physicalInterfaceName;
         private String bridgeName;
@@ -616,6 +649,8 @@ public class KVMAgentCommands {
     public static class CreateBridgeResponse extends AgentResponse {
     }
 
+    public static class DeleteBridgeResponse extends AgentResponse {
+    }
     public static class CheckBridgeCmd extends AgentCommand {
         private String physicalInterfaceName;
         private String bridgeName;
@@ -679,6 +714,22 @@ public class KVMAgentCommands {
 
     public static class AddInterfaceToBridgeResponse extends KVMAgentCommands.AgentResponse {
     }
+
+    public static class DeleteVlanBridgeCmd extends DeleteBridgeCmd {
+        private int vlan;
+
+        public int getVlan() {
+            return vlan;
+        }
+
+        public void setVlan(int vlan) {
+            this.vlan = vlan;
+        }
+    }
+
+    public static class DeleteVlanBridgeResponse extends DeleteBridgeResponse {
+    }
+
 
     public static class CreateVlanBridgeCmd extends CreateBridgeCmd {
         private int vlan;

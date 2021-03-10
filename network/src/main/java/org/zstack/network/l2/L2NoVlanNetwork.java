@@ -3,9 +3,11 @@ package org.zstack.network.l2;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -18,8 +20,10 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.*;
@@ -200,16 +204,29 @@ public class L2NoVlanNetwork implements L2Network {
     }
 
     private void handle(DetachL2NetworkFromClusterMsg msg) {
-        SimpleQuery<L2NetworkClusterRefVO> query = dbf.createQuery(L2NetworkClusterRefVO.class);
-        query.add(L2NetworkClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
-        query.add(L2NetworkClusterRefVO_.l2NetworkUuid, Op.EQ, msg.getL2NetworkUuid());
-        L2NetworkClusterRefVO rvo = query.find();
-        if (rvo != null) {
-            dbf.remove(rvo);
-        }
-
         DetachL2NetworkFromClusterReply reply = new DetachL2NetworkFromClusterReply();
-        bus.reply(msg, reply);
+        NoErrorCompletion completion =
+                new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        long count1 = Q.New(L2NetworkClusterRefVO.class).count();
+                        logger.info("anquan 0:"+String.valueOf(count1));
+                        SimpleQuery<L2NetworkClusterRefVO> query = dbf.createQuery(L2NetworkClusterRefVO.class);
+                        query.add(L2NetworkClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
+                        query.add(L2NetworkClusterRefVO_.l2NetworkUuid, Op.EQ, msg.getL2NetworkUuid());
+                        L2NetworkClusterRefVO rvo = query.find();
+                        if (rvo != null) {
+                            dbf.remove(rvo);
+                        }
+                        long count2 = Q.New(L2NetworkClusterRefVO.class).count();
+                        logger.info("anquan 1:"+String.valueOf(count2));
+                        bus.reply(msg, reply);
+                    }
+                };
+        deleteL2Bridge(completion);
+        long count = Q.New(L2NetworkClusterRefVO.class).count();
+        logger.info("anquan 2:"+String.valueOf(count));
+
     }
 
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
@@ -633,6 +650,36 @@ public class L2NoVlanNetwork implements L2Network {
 
     @Override
     public void deleteHook(NoErrorCompletion completion) {
-        completion.done();
+        deleteL2Bridge(completion);
+    }
+
+    protected void deleteL2Bridge(NoErrorCompletion completion) {
+        L2NetworkInventory l2NetworkInventory = getSelfInventory();
+        List<HostVO> hosts = Q.New(HostVO.class)
+                .in(HostVO_.clusterUuid, l2NetworkInventory.getAttachedClusterUuids())
+                .list();
+        new While<>(hosts).step((host,compl) -> {
+            HypervisorType hvType = HypervisorType.valueOf(host.getHypervisorType());
+            L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
+
+            L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
+            ext.delete(getSelfInventory(), host.getUuid(), new Completion(compl){
+                @Override
+                public void success() {
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                }
+
+            });
+        },10).run((new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.done();
+            }
+        }));
     }
 }
