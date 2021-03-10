@@ -405,6 +405,15 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
+        List<String> attachedVmNics = listenerVO.getAttachedVmNics();
+        for(String uuid: msg.getVmNicUuids()){
+            if (attachedVmNics.contains(uuid)){
+                throw new ApiMessageInterceptionException(operr("could not add vm nic [uuid:%s] to loadbalancer" +
+                                "because listener [uuid:%s] have added this vmnic in servergroup",
+                        uuid, listenerVO.getUuid()));
+            }
+        }
+
         if (LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(
                 LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByResourceUuid(
                         msg.getListenerUuid(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN))) {
