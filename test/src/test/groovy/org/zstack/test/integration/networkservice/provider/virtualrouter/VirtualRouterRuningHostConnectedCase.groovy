@@ -1,9 +1,16 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter
 
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
+import org.zstack.header.vm.VmInstanceEO
+import org.zstack.header.vm.VmInstanceEO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vo.ResourceVO
+import org.zstack.header.vo.ResourceVO_
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
+import org.zstack.resourceconfig.ResourceConfigVO
+import org.zstack.resourceconfig.ResourceConfigVO_
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -54,6 +61,9 @@ test the vr is set to never stop
             uuid = vr.uuid
         }
         assert dbf.listAll(VirtualRouterVmVO.class).size() == 0
+        assert !Q.New(VmInstanceEO.class).eq(VmInstanceEO_.uuid, vr.uuid).exists
+        assert !Q.New(ResourceVO.class).eq(ResourceVO_.uuid, vr.uuid).exists
+        assert !Q.New(ResourceConfigVO.class).eq(ResourceConfigVO_.resourceUuid ,vr.uuid).exists
 
         rebootVmInstance {
             uuid = vmi.uuid
