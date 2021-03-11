@@ -35,5 +35,10 @@
 			<zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" />
 		</zstack:plugin>
     </bean>
-	
+
+	<bean id="PortForwardingCascadeExtension" class="org.zstack.network.service.portforwarding.PortForwardingCascadeExtension">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+		</zstack:plugin>
+	</bean>
 </beans>

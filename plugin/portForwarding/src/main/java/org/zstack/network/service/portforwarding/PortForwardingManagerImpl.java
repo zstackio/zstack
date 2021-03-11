@@ -59,7 +59,6 @@ import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 
 public class PortForwardingManagerImpl extends AbstractService implements PortForwardingManager,
         VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint, VipGetServiceReferencePoint {
@@ -95,6 +94,11 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         return bus.makeLocalServiceId(PortForwardingConstant.SERVICE_ID);
     }
 
+    private String getThreadSyncSignature(String pfUuid) {
+        String vipUuid = Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.uuid, pfUuid).select(PortForwardingRuleVO_.vipUuid).findValue();
+        return String.format("portforwardingrule-vip-%s", vipUuid);
+    }
+
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
@@ -113,17 +117,17 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         }
     }
 
-    private void removePortforwardingRule(final Iterator<String> it, final Completion completion) {
+    private void deletePortforwardingRule(final Iterator<String> it, final Completion completion) {
         if (!it.hasNext()) {
             completion.success();
             return;
         }
 
         String uuid = it.next();
-        removePortforwardingRule(uuid, new Completion(completion) {
+        doDeletePortforwardingRule(uuid, new Completion(completion) {
             @Override
             public void success() {
-                removePortforwardingRule(it, completion);
+                deletePortforwardingRule(it, completion);
             }
 
             @Override
@@ -135,7 +139,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
     private void handle(final PortForwardingRuleDeletionMsg msg) {
         final PortForwardingRuleDeletionReply reply = new PortForwardingRuleDeletionReply();
-        removePortforwardingRule(msg.getRuleUuids().iterator(), new Completion(msg) {
+        deletePortforwardingRule(msg.getRuleUuids().iterator(), new Completion(msg) {
             @Override
             public void success () {
                 bus.reply(msg, reply);
@@ -465,9 +469,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
             @Override
             public void fail(ErrorCode errorCode) {
-                prvo.setVmNicUuid(null);
-                prvo.setGuestIp(null);
-                dbf.update(prvo);
                 evt.setError(errorCode);
                 bus.publish(evt);
             }
@@ -626,28 +627,31 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         }).start();
     }
 
-    private void handle(APIDeletePortForwardingRuleMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
+    void doDeletePortforwardingRule(String pfUuid, Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
-                String vipUuid = Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.uuid, msg.getUuid()).select(PortForwardingRuleVO_.vipUuid).findValue();
-                return String.format("api-delete-portforwardingrule-vip-%s", vipUuid);
+                return getThreadSyncSignature(pfUuid);
             }
 
             @Override
             public void run(SyncTaskChain chain) {
-                final APIDeletePortForwardingRuleEvent evt = new APIDeletePortForwardingRuleEvent(msg.getId());
-                removePortforwardingRule(msg.getUuid(), new Completion(msg) {
+                if (!dbf.isExist(pfUuid, PortForwardingRuleVO.class)) {
+                    completion.success();
+                    chain.next();
+                    return;
+                }
+
+                removePortforwardingRule(pfUuid, new Completion(completion) {
                     @Override
                     public void success() {
-                        bus.publish(evt);
+                        completion.success();
                         chain.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setError(errorCode);
-                        bus.publish(evt);
+                        completion.fail(errorCode);
                         chain.next();
                     }
                 });
@@ -655,7 +659,23 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
             @Override
             public String getName() {
-                return String.format("api-delete-portforwardingrule-%s", msg.getUuid());
+                return String.format("api-delete-portforwardingrule-%s", pfUuid);
+            }
+        });
+    }
+
+    private void handle(APIDeletePortForwardingRuleMsg msg) {
+        final APIDeletePortForwardingRuleEvent evt = new APIDeletePortForwardingRuleEvent(msg.getId());
+        doDeletePortforwardingRule(msg.getUuid(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
             }
         });
     }
@@ -818,7 +838,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                                 logger.debug(String.format("failed to create port forwarding rule %s, because %s", JSONObjectUtil.toJsonString(ruleInv), errorCode));
 
-                /* pf is deleted, then release vip */
+                                /* pf is deleted, then release vip */
                                 ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
                                 vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
                                 vipStruct.setServiceUuid(struct.getRule().getUuid());
@@ -886,6 +906,55 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         return PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE;
     }
 
+    private void doReleaseServicesOnVip(PortForwardingRuleVO pf, Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return getThreadSyncSignature(pf.getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                if (!dbf.isExist(pf.getUuid(), PortForwardingRuleVO.class)) {
+                    completion.fail(operr("port forwarding rule [uuid:%s] is deleted", pf.getUuid()));
+                    chain.next();
+                    return;
+                }
+
+                if (pf.getVmNicUuid() == null) {
+                    dbf.remove(pf);
+                    completion.success();
+                    chain.next();
+                    return;
+                }
+
+                PortForwardingStruct struct = makePortForwardingStruct(PortForwardingRuleInventory.valueOf(pf));
+                final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(struct.getGuestL3Network().getUuid(),
+                        NetworkServiceType.PortForwarding);
+                PortForwardingBackend bkd = getPortForwardingBackend(providerType);
+                bkd.revokePortForwardingRule(struct, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        dbf.remove(pf);
+                        completion.success();
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("release-portforwarding-%s", pf.getUuid());
+            }
+        });
+    }
+
     private void releaseServicesOnVip(final Iterator<PortForwardingRuleVO> it, final Completion completion) {
         if (!it.hasNext()) {
             completion.success();
@@ -893,20 +962,9 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         }
 
         final PortForwardingRuleVO rule = it.next();
-        if (rule.getVmNicUuid() == null) {
-            dbf.remove(rule);
-            releaseServicesOnVip(it, completion);
-            return;
-        }
-
-        PortForwardingStruct struct = makePortForwardingStruct(PortForwardingRuleInventory.valueOf(rule));
-        final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(struct.getGuestL3Network().getUuid(),
-                NetworkServiceType.PortForwarding);
-        PortForwardingBackend bkd = getPortForwardingBackend(providerType);
-        bkd.revokePortForwardingRule(struct, new Completion(completion) {
+        doReleaseServicesOnVip(rule, new Completion(completion) {
             @Override
             public void success() {
-                dbf.remove(rule);
                 releaseServicesOnVip(it, completion);
             }
 
@@ -952,8 +1010,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         return bkd;
     }
 
-    @Override
-    public void attachPortForwardingRule(PortForwardingStruct struct, String providerType, final Completion completion) {
+    private void doAttachPortForwardingRule(PortForwardingStruct struct, String providerType, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("attach-portforwarding-%s-vm-nic-%s", struct.getRule().getUuid(), struct.getRule().getVmNicUuid()));
         chain.then(new ShareFlow() {
@@ -1027,7 +1084,47 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     }
 
     @Override
-    public void detachPortForwardingRule(final PortForwardingStruct struct, String providerType, final Completion completion) {
+    public void attachPortForwardingRule(PortForwardingStruct struct, String providerType, final Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return getThreadSyncSignature(struct.getRule().getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                if (!dbf.isExist(struct.getRule().getUuid(), PortForwardingRuleVO.class)) {
+                    completion.fail(operr("port forwarding rule [uuid:%s] is deleted", struct.getRule().getUuid()));
+                    chain.next();
+                    return;
+                }
+
+                doAttachPortForwardingRule(struct, providerType, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.success();
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        SQL.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.uuid, struct.getRule().getUuid())
+                                .set(PortForwardingRuleVO_.vmNicUuid, null)
+                                .set(PortForwardingRuleVO_.guestIp, null).update();
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("attach-portforwarding-%s", struct.getRule().getUuid());
+            }
+        });
+    }
+
+    private void doDetachPortForwardingRule(final PortForwardingStruct struct, String providerType, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("detach-portforwarding-%s-vm-nic-%s", struct.getRule().getUuid(), struct.getRule().getVmNicUuid()));
         chain.then(new ShareFlow() {
@@ -1110,6 +1207,44 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 });
             }
         }).start();
+    }
+
+    @Override
+    public void detachPortForwardingRule(final PortForwardingStruct struct, String providerType, final Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return getThreadSyncSignature(struct.getRule().getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                if (!dbf.isExist(struct.getRule().getUuid(), PortForwardingRuleVO.class)) {
+                    completion.fail(operr("port forwarding rule [uuid:%s] is deleted", struct.getRule().getUuid()));
+                    chain.next();
+                    return;
+                }
+
+                doDetachPortForwardingRule(struct, providerType, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.success();
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("detach-portforwarding-%s", struct.getRule().getUuid());
+            }
+        });
     }
 
     @Override
