@@ -85,6 +85,7 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -116,8 +117,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
 	private NetworkServiceProviderInventory virtualRouterProvider;
-	private Map<String, VirtualRouterHypervisorBackend> hypervisorBackends = new HashMap<String, VirtualRouterHypervisorBackend>();
-    private Map<String, Integer> vrParallelismDegrees = new ConcurrentHashMap<String, Integer>();
+	private final Map<String, VirtualRouterHypervisorBackend> hypervisorBackends = new HashMap<String, VirtualRouterHypervisorBackend>();
+    private final Map<String, Integer> vrParallelismDegrees = new ConcurrentHashMap<String, Integer>();
 
     private List<String> virtualRouterPostCreateFlows;
     private List<String> virtualRouterPostStartFlows;
@@ -246,12 +247,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             private void openAdditionalPorts(ApplianceVmSpec aspec, String mgmtNwUuid) {
                 final List<String> tcpPorts = VirtualRouterGlobalProperty.TCP_PORTS_ON_MGMT_NIC;
                 if (!tcpPorts.isEmpty()) {
-                    List<Integer> ports = CollectionUtils.transformToList(tcpPorts, new Function<Integer, String>() {
-                        @Override
-                        public Integer call(String arg) {
-                            return Integer.valueOf(arg);
-                        }
-                    });
+                    List<Integer> ports = CollectionUtils.transformToList(tcpPorts, (Function<Integer, String>) Integer::valueOf);
                     for (int p : ports) {
                         openFirewall(aspec, mgmtNwUuid, p, ApplianceVmFirewallProtocol.tcp);
                     }
@@ -259,12 +255,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
                 final List<String> udpPorts = VirtualRouterGlobalProperty.UDP_PORTS_ON_MGMT_NIC;
                 if (!udpPorts.isEmpty()) {
-                    List<Integer> ports = CollectionUtils.transformToList(udpPorts, new Function<Integer, String>() {
-                        @Override
-                        public Integer call(String arg) {
-                            return Integer.valueOf(arg);
-                        }
-                    });
+                    List<Integer> ports = CollectionUtils.transformToList(udpPorts, (Function<Integer, String>) Integer::valueOf);
                     for (int p : ports) {
                         openFirewall(aspec, mgmtNwUuid, p, ApplianceVmFirewallProtocol.udp);
                     }
@@ -704,7 +695,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 }
 
                 if (ipRange == null){
-                    logger.warn(String.format("can not find ip range for ip address[ip:%s, l3 network: Uuid]",
+                    logger.warn(String.format("can not find ip range for ip address[ip:%s, l3 network:%s]",
                             nic.getIp(), nic.getL3NetworkUuid()));
                     continue;
                 }
@@ -1477,12 +1468,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             NetworkServiceProviderType providerType = nwServiceMgr.
                     getTypeOfNetworkServiceProviderForService(vip.getPeerL3NetworkUuids().get(0), EipConstant.EIP_TYPE);
             // Todo(WeiW): Need to refactor to avoid hard code
-            if (providerType.toString().equals(VYOS_ROUTER_PROVIDER_TYPE) ||
-                    providerType.toString().equals(VIRTUAL_ROUTER_PROVIDER_TYPE)) {
-                vipForVirtualRouter = true;
-            } else {
-                vipForVirtualRouter = false;
-            }
+            vipForVirtualRouter = providerType.toString().equals(VYOS_ROUTER_PROVIDER_TYPE) ||
+                    providerType.toString().equals(VIRTUAL_ROUTER_PROVIDER_TYPE);
         }
 
         // 1.get the vm nics which are managed by vrouter or virtual router.
@@ -1519,20 +1506,20 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 List<String> vrAttachedGuestL3 = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).eq(VmNicVO_.vmInstanceUuid, vrUuid).eq(VmNicVO_.metaData, GUEST_NIC_MASK).listValues();
                 logger.debug(String.format("there is virtual router[uuid:%s] associate with vip[uuid:%s], will return candidates from vr guest l3 networks[%s]",
                         vrUuid, vip.getUuid(), vrAttachedGuestL3));
-                Set<VmNicInventory> r = candidates.stream()
+                return candidates.stream()
                         .filter(nic -> vrAttachedGuestL3.contains(nic.getL3NetworkUuid()))
-                        .collect(Collectors.toSet());
-                return new ArrayList<>(r);
+                        .distinct()
+                        .collect(Collectors.toList());
             }
 
             logger.debug(String.format("there are no virtual router associate with vip[uuid:%s], and peer l3 exists, will return candidates from peer l3 networks[%s]",
                     vip.getUuid(), vip.getPeerL3NetworkUuids()));
-            Set<VmNicInventory> r = candidates.stream()
-                    .filter(nic -> vip.getPeerL3NetworkUuids().contains(nic.getL3NetworkUuid()))
-                    .collect(Collectors.toSet());
 
-            return new ArrayList<>(r);
-        } else if (vipForVirtualRouter != null && !vipForVirtualRouter) {
+            return candidates.stream()
+                    .filter(nic -> vip.getPeerL3NetworkUuids().contains(nic.getL3NetworkUuid()))
+                    .distinct()
+                    .collect(Collectors.toList());
+        } else if (vipForVirtualRouter != null) {
             logger.debug(String.format("remove all vmnics in virtual router network since vip[uuid:%s] has used in network which is not %s or %s",
                     vip.getUuid(), VYOS_ROUTER_PROVIDER_TYPE, VIRTUAL_ROUTER_PROVIDER_TYPE));
             candidates.removeAll(vmNicInVirtualRouter);
@@ -1944,9 +1931,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 } else {
                     logger.info(String.format("detach nics[%s] for delete l3[uuid:%s] success",
                             toDeleteNics.stream()
-                                    .map(n -> n.getUuid())
+                                    .map(VmNicInventory::getUuid)
                                     .collect(Collectors.toList()),
-                            toDeleteNics.stream().map(n-> n.getL3NetworkUuid()).collect(Collectors.toSet())));
+                            toDeleteNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toSet())));
                     completion.success();
                 }
             }
@@ -1955,7 +1942,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         completion.await(TimeUnit.MINUTES.toMillis(30));
         if (!completion.isSuccess()) {
             throw new OperationFailureException(operr("can not detach nic [uuid:%s]", toDeleteNics.stream()
-                    .map(n -> n.getUuid())
+                    .map(VmNicInventory::getUuid)
                     .collect(Collectors.toList())).causedBy(completion.getErrorCode()));
         }
     }
@@ -2390,9 +2377,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         changeDefaultNic.type = VirtualRouterConstant.VR_CHANGE_DEFAULT_ROUTE_JOB;
         changeDefaultNic.callback = new VirtualRouterHaCallbackInterface() {
             @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
-                String newL3Uuid =  (String) data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                String oldL3Uuid =  (String) data.get(VirtualRouterHaCallbackInterface.Params.Struct1.toString());
+            public void callBack(String vrUuid, VirtualRouterHaTask task, Completion completion) {
+                ChangeDefaultRouteTaskData d = JSONObjectUtil.toObject(task.getJsonData(), ChangeDefaultRouteTaskData.class);
+                String newL3Uuid = d.getNewL3uuid();
+                String oldL3Uuid = d.getOldL3uuid();
                 changeVirutalRouterDefaultL3Network(vrUuid, newL3Uuid, oldL3Uuid, completion);
             }
         };
@@ -2427,7 +2415,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 continue;
             }
 
-            String haGroupUuid = haBackend.getVirutalRouterHaUuid(nic.getVmInstanceUuid());
+            String haGroupUuid = haBackend.getVirtualRouterHaUuid(nic.getVmInstanceUuid());
             AllocateIpMsg msg = new AllocateIpMsg();
             msg.setL3NetworkUuid(ipr.getL3NetworkUuid());
             if (VirtualRouterNicMetaData.isGuestNic(nic)) {
