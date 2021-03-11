@@ -173,6 +173,10 @@ public class KVMHost extends HostBase implements Host {
     private String socDeleteSnapshotPath;
     private String socUseSnapshotPath;
     private String cloneVsocPath;
+    private String vsocCreateBackup;
+    private String vsocDeleteBackup;
+    private String vsocCreateVmFromBackup;
+    private String vsocUseBackup;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -375,6 +379,22 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_CLONE_VSOC);
         cloneVsocPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_CREATE_BACKUP_PATH);
+        vsocCreateBackup = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_DELETE_BACKUP_PATH);
+        vsocDeleteBackup = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_CREATE_FROM_BACKUP_PATH);
+        vsocCreateVmFromBackup = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_USE_BACKUP_PATH);
+        vsocUseBackup = ub.build().toString();
     }
 
     class Http<T> {
@@ -581,6 +601,14 @@ public class KVMHost extends HostBase implements Host {
             handle((VmSocUseSnapshotMsg) msg);
         } else if (msg instanceof VmCloneVsocFileMsg) {
             handle((VmCloneVsocFileMsg) msg);
+        } else if (msg instanceof VmVsocCreateBackupMsg) {
+            handle((VmVsocCreateBackupMsg) msg);
+        } else if (msg instanceof VmVsocDeleteBackupMsg) {
+            handle((VmVsocDeleteBackupMsg) msg);
+        } else if (msg instanceof VmVsocCreateVmFromBackupMsg) {
+            handle((VmVsocCreateVmFromBackupMsg) msg);
+        } else if (msg instanceof VmVsocUseBackupMsg) {
+            handle((VmVsocUseBackupMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -792,6 +820,103 @@ public class KVMHost extends HostBase implements Host {
 
     private void handle(RegisterColoPrimaryCheckMsg msg) {
         inQueue().name(String.format("register-vm-heart-beat-on-%s", self.getUuid()))
+
+    private void handle(VmVsocCreateBackupMsg msg) {
+        VsocCreateBackupCommand cmd = new VsocCreateBackupCommand();
+        cmd.vmUuid = msg.getVmUuid();
+        cmd.backupUuid = msg.getBackUuid();
+        cmd.platformId = msg.getPlatformId();
+        new Http<>(vsocCreateBackup, cmd, VsocCreateBackupRsp.class).call(new ReturnValueCompletion<VsocCreateBackupRsp>(msg) {
+            @Override
+            public void success(VsocCreateBackupRsp ret) {
+                VmVsocCreateBackupReply rsp = new VmVsocCreateBackupReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("Fail: create_backup,becauese:%s", ret.getError()));
+                }
+                bus.reply(msg, rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocCreateBackupReply rsp = new VmVsocCreateBackupReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
+            }
+        });
+    }
+
+    private void handle(VmVsocCreateVmFromBackupMsg msg) {
+        VsocCreateVmFromBackupCommand cmd = new VsocCreateVmFromBackupCommand();
+        cmd.vmUuid = msg.getVmUuid();
+        cmd.backupUuid = msg.getBackupUuid();
+        cmd.platformId = msg.getPlatformId();
+        cmd.srcVmUuid = msg.getSrcVmUuid();
+        new Http<>(vsocCreateVmFromBackup, cmd, VsocCreateVmFromBackupRsp.class).call(new ReturnValueCompletion<VsocCreateVmFromBackupRsp>(msg) {
+            @Override
+            public void success(VsocCreateVmFromBackupRsp ret) {
+                VmVsocCreateVmFromBackupReply rsp = new VmVsocCreateVmFromBackupReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("Fail: delete_backup,becauese:%s", ret.getError()));
+                }
+                bus.reply(msg, rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocCreateVmFromBackupReply rsp = new VmVsocCreateVmFromBackupReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
+            }
+        });
+    }
+
+    private void handle(VmVsocDeleteBackupMsg msg) {
+        VsocDeleteBackupCommand cmd = new VsocDeleteBackupCommand();
+        cmd.vmUuid = msg.getVmUuid();
+        cmd.backupUuid = msg.getBackUuid();
+        cmd.platformId = msg.getPlatformId();
+        new Http<>(vsocDeleteBackup, cmd, VsocDeleteBackupRsp.class).call(new ReturnValueCompletion<VsocDeleteBackupRsp>(msg) {
+            @Override
+            public void success(VsocDeleteBackupRsp ret) {
+                VmVsocDeleteBackupReply rsp = new VmVsocDeleteBackupReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("Fail: create_backup,becauese:%s", ret.getError()));
+                }
+                bus.reply(msg, rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocDeleteBackupReply rsp = new VmVsocDeleteBackupReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
+            }
+        });
+    }
+
+    private void handle(VmVsocUseBackupMsg msg) {
+        VsocUseBackupCommand cmd = new VsocUseBackupCommand();
+        cmd.vmUuid = msg.getVmUuid();
+        cmd.backupUuid = msg.getBackupUuid();
+        cmd.platformId = msg.getPlatformId();
+        new Http<>(vsocUseBackup, cmd, VsocUseBackupRsp.class).call(new ReturnValueCompletion<VsocUseBackupRsp>(msg) {
+            @Override
+            public void success(VsocUseBackupRsp ret) {
+                VmVsocUseBackupReply rsp = new VmVsocUseBackupReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("Fail: use_backup,becauese:%s", ret.getError()));
+                }
+                bus.reply(msg, rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocUseBackupReply rsp = new VmVsocUseBackupReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
+            }
+        });
+    }
 
     private void handle(GetVmFirstBootDeviceOnHypervisorMsg msg) {
         inQueue().name(String.format("get-first-boot-device-of-vm-%s-on-kvm-%s", msg.getVmInstanceUuid(), self.getUuid()))
