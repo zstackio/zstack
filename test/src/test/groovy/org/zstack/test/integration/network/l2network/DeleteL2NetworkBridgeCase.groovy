@@ -99,9 +99,9 @@ class DeleteL2NetworkBridgeCase extends SubCase {
             testDeleteL2VlanNetwork()
             testDeleteL2VxlanNetwork()
             testDeleteL2VxlanPool()
-            testDetachL2NoVlanNetworkFromCluster()
-            testDetachL2VlanNetworkFromCluster()
-            testDetachL2VxlanPoolFromCluster()
+//            testDetachL2NoVlanNetworkFromCluster()
+//            testDetachL2VlanNetworkFromCluster()
+//            testDetachL2VxlanPoolFromCluster()
         }
     }
 
