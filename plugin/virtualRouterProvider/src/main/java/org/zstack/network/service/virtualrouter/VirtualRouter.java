@@ -44,6 +44,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterCreatePublicVipFlow;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
@@ -51,6 +52,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.network.service.virtualrouter.VirtualRouterConstant.VR_CHANGE_DEFAULT_ROUTE_JOB;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.ADDITIONAL_PUBLIC_NIC_MASK;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
 
@@ -623,12 +625,14 @@ public class VirtualRouter extends ApplianceVmBase {
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                Map<String, Object> haData = new HashMap<>();
-                haData.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), VirtualRouterConstant.VR_CHANGE_DEFAULT_ROUTE_JOB);
-                haData.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), msg.getVmInstanceUuid());
-                haData.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), msg.getDefaultRouteL3NetworkUuid());
-                haData.put(VirtualRouterHaCallbackInterface.Params.Struct1.toString(), vrVO.getDefaultRouteL3NetworkUuid());
-                haBackend.submitVirutalRouterHaTask(haData, completion);
+                VirtualRouterHaTask task = new VirtualRouterHaTask();
+                task.setTaskName(VR_CHANGE_DEFAULT_ROUTE_JOB);
+                task.setOriginRouterUuid(msg.getVmInstanceUuid());
+                ChangeDefaultRouteTaskData d = new ChangeDefaultRouteTaskData();
+                d.setNewL3uuid(msg.getDefaultRouteL3NetworkUuid());
+                d.setOldL3uuid(vrVO.getDefaultRouteL3NetworkUuid());
+                task.setJsonData(JSONObjectUtil.toJsonString(d));
+                haBackend.submitVirtualRouterHaTask(task, completion);
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
@@ -1115,7 +1119,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     } else {
                         logger.warn(String.format("unable to detach nic[%s] from virtual router vm[uuid:%s ip:%s], because %s",
                                 info, vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError()));
-                        trigger.next();;
+                        trigger.next();
                     }
                 }
             });

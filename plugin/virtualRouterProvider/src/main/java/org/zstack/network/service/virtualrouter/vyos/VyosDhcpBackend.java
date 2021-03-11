@@ -21,7 +21,6 @@ import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.MtuGetter;
-import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.dhcp.VirtualRouterDhcpBackend;
 import org.zstack.network.service.virtualrouter.ha.BeforeCleanUpHaGroupNetworkServiceRefsExtensionPoint;
@@ -75,12 +74,12 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
                 return true;
             } else {
                 /* hagroup of this vr is configured as vpc router for l3Uuid */
-                String haUuid = haBackend.getVirutalRouterHaUuid(vrUuid);
+                String haUuid = haBackend.getVirtualRouterHaUuid(vrUuid);
                 return uuid.equals(haUuid);
             }
         }
 
-        String haUuid = haBackend.getVirutalRouterHaUuid(vrUuid);
+        String haUuid = haBackend.getVirtualRouterHaUuid(vrUuid);
         if (haUuid != null) {
             uuid = haUuid;
         } else {
@@ -410,7 +409,7 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
 
     @Override
     public void beforeCleanUp(VmInstanceInventory vrInv) {
-        String haUuid = haBackend.getVirutalRouterHaUuid(vrInv.getUuid());
+        String haUuid = haBackend.getVirtualRouterHaUuid(vrInv.getUuid());
         if (haUuid == null) {
             return;
         }

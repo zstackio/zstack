@@ -3,11 +3,9 @@ package org.zstack.network.service.virtualrouter.vip;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -20,9 +18,12 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
+import org.zstack.header.network.service.VirtualRouterHaTask;
 import org.zstack.header.vm.*;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.AfterAcquireVipExtensionPoint;
+import org.zstack.network.service.vip.VipBaseBackend;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
@@ -30,9 +31,13 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -48,35 +53,30 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
     @Autowired
     protected VirtualRouterManager vrMgr;
     @Autowired
-    private ApiTimeoutManager apiTimeoutManager;
-    @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
     private VipConfigProxy proxy;
     @Autowired
     private VirtualRouterHaBackend haBackend;
-    @Autowired
-    @Qualifier("VirtualRouterVipBackend")
-    private VirtualRouterVipBackend vipBackend;
 
     public VirtualRouterVipBaseBackend(VipVO self) {
         super(self);
     }
 
     protected void releaseVipOnHaHaRouter(VirtualRouterVmInventory vrInv, Completion completion) {
-        Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), vipBackend.RELEASE_VIP_TASK);
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
-        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), asList(getSelfInventory()));
-        haBackend.submitVirutalRouterHaTask(data, completion);
+        VirtualRouterHaTask task = new VirtualRouterHaTask();
+        task.setTaskName(VirtualRouterVipBackend.RELEASE_VIP_TASK);
+        task.setOriginRouterUuid(vrInv.getUuid());
+        task.setJsonData(JSONObjectUtil.toJsonString(getSelfInventory()));
+        haBackend.submitVirtualRouterHaTask(task, completion);
     }
 
     protected void acquireVipOnHaBackend(VirtualRouterVmInventory vrInv, Completion completion) {
-        Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), vipBackend.APPLY_VIP_TASK);
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
-        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), asList(getSelfInventory()));
-        haBackend.submitVirutalRouterHaTask(data, completion);
+        VirtualRouterHaTask task = new VirtualRouterHaTask();
+        task.setTaskName(VirtualRouterVipBackend.APPLY_VIP_TASK);
+        task.setOriginRouterUuid(vrInv.getUuid());
+        task.setJsonData(JSONObjectUtil.toJsonString(getSelfInventory()));
+        haBackend.submitVirtualRouterHaTask(task, completion);
     }
 
     @Override
@@ -178,7 +178,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
 
     public void createVipOnVirtualRouterVm(final VirtualRouterVmInventory vr, List<VipInventory> vips, final Completion completion) {
         final List<VirtualRouterCommands.VipTO> tos = new ArrayList<VirtualRouterCommands.VipTO>(vips.size());
-        List<VipInventory> systemVip = vips.stream().filter(v -> v.isSystem()).collect(Collectors.toList());
+        List<VipInventory> systemVip = vips.stream().filter(VipInventory::isSystem).collect(Collectors.toList());
         List<VipInventory> notSystemVip = vips.stream().filter(v -> !v.isSystem()).collect(Collectors.toList());
         List<VipInventory> vipss = new ArrayList<>();
         vipss.addAll(systemVip);
