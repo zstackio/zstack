@@ -2430,4 +2430,41 @@ public class KVMAgentCommands {
 
     public static class VsocCloneRsp extends AgentResponse {
     }
+
+    public static class VsocCreateBackupCommand extends AgentCommand {
+        public String platformId;
+        public String backupUuid;
+        public String vmUuid;
+    }
+
+    public static class VsocCreateBackupRsp extends AgentResponse {
+    }
+
+    public static class VsocDeleteBackupCommand extends AgentCommand {
+        public String platformId;
+        public String backupUuid;
+        public String vmUuid;
+    }
+
+    public static class VsocDeleteBackupRsp extends AgentResponse {
+    }
+
+    public static class VsocCreateVmFromBackupCommand extends AgentCommand {
+        public String platformId;
+        public String backupUuid;
+        public String vmUuid;
+        public String srcVmUuid;
+    }
+
+    public static class VsocCreateVmFromBackupRsp extends AgentResponse {
+    }
+
+    public static class VsocUseBackupCommand extends AgentCommand {
+        public String platformId;
+        public String backupUuid;
+        public String vmUuid;
+    }
+
+    public static class VsocUseBackupRsp extends AgentResponse {
+    }
 }
