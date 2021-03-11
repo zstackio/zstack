@@ -29,11 +29,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -426,7 +422,27 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 }
 
                 VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
-                List<VipInventory> vips = (List<VipInventory>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                List<VipInventory> tempVips = (List<VipInventory>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                List<VipInventory> vips = new ArrayList<>(tempVips);
+
+                List<String> l3NetworkUuids = new ArrayList<>();
+                for(VmNicInventory nic : vrInv.getVmNics()){
+                    l3NetworkUuids.add(nic.getL3NetworkUuid());
+                }
+
+
+                Iterator<VipInventory> iterator = vips.iterator();
+                while(iterator.hasNext()){
+                    VipInventory vip = iterator.next();
+                    if(!l3NetworkUuids.contains(vip.getL3NetworkUuid())){
+                        logger.info(String.format("VirtualRouter has no vip[ip:%s] with L3Network[uuid:%s], no need releaseVip on backend", vip.getIp(),vip.getL3NetworkUuid()));
+                        iterator.remove();
+                    }
+                }
+                if(vips.isEmpty()){
+                    completion.success();
+                    return;
+                }
                 releaseVipOnVirtualRouterVm(vrInv, vips, completion);
             }
         };
