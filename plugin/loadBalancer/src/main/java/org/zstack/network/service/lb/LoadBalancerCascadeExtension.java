@@ -18,6 +18,8 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -162,7 +164,10 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(AccountVO.class.getSimpleName());
+        List<String> ret = new ArrayList<>();
+        ret.add(AccountVO.class.getSimpleName());
+        ret.add(VipVO.class.getSimpleName());
+        return ret;
     }
 
     @Override
@@ -240,7 +245,34 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
             if (!vos.isEmpty()) {
                 return LoadBalancerInventory.valueOf(vos);
             }
+        } else if (VipVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            final List<String> vipUuids = CollectionUtils.transformToList((List<VipInventory>) action.getParentIssuerContext(), new Function<String, VipInventory>() {
+                @Override
+                public String call(VipInventory arg) {
+                    return arg.getUuid();
+                }
+            });
+
+            if (vipUuids.isEmpty()) {
+                return null;
+            }
+
+            List<LoadBalancerVO> vos = new Callable<List<LoadBalancerVO>>() {
+                @Override
+                @Transactional(readOnly = true)
+                public List<LoadBalancerVO> call() {
+                    String sql = "select d from LoadBalancerVO d where d.vipUuid in (:vipUuids)";
+                    TypedQuery<LoadBalancerVO> q = dbf.getEntityManager().createQuery(sql, LoadBalancerVO.class);
+                    q.setParameter("vipUuids", vipUuids);
+                    return q.getResultList();
+                }
+            }.call();
+
+            if (!vos.isEmpty()) {
+                return LoadBalancerInventory.valueOf(vos);
+            }
         }
+
         return null;
     }
 }
