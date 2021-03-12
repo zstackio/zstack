@@ -4,4 +4,5 @@ public enum PciDeviceStatus {
 	Active,
 	Attached,
 	System,
+	Reserve,
 }
