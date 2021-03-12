@@ -97,7 +97,7 @@ public class RecoverBackupFromS3BackupStorageAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/vm-backups/{uuid}/actions";
+        info.path = "/volume-backups/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "recoverBackupFromS3BackupStorage";
