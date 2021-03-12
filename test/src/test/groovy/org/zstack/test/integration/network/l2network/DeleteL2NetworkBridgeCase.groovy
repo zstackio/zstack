@@ -1,7 +1,6 @@
-package org.zstack.test.integration.network.l3network.ipv6
+package org.zstack.test.integration.network.l2network
 
-import org.zstack.sdk.*
-import org.zstack.test.integration.kvm.KvmTest
+
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -14,7 +13,6 @@ import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 
-import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 class DeleteL2NetworkBridgeCase extends SubCase {
     EnvSpec env
     ZoneInventory zone
@@ -99,9 +97,9 @@ class DeleteL2NetworkBridgeCase extends SubCase {
             testDeleteL2VlanNetwork()
             testDeleteL2VxlanNetwork()
             testDeleteL2VxlanPool()
-//            testDetachL2NoVlanNetworkFromCluster()
-//            testDetachL2VlanNetworkFromCluster()
-//            testDetachL2VxlanPoolFromCluster()
+            testDetachL2NoVlanNetworkFromCluster()
+            testDetachL2VlanNetworkFromCluster()
+            testDetachL2VxlanPoolFromCluster()
         }
     }
 
