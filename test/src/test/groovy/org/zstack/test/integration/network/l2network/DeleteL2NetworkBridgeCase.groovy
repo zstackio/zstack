@@ -1,6 +1,6 @@
 package org.zstack.test.integration.network.l2network
 
-
+import org.zstack.sdk.*
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
