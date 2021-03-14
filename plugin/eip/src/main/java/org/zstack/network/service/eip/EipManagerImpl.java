@@ -9,6 +9,9 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
@@ -75,10 +78,16 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     private TagManager tagMgr;
     @Autowired
     private L3NetworkManager l3Mgr;
+    @Autowired
+    protected ThreadFacade thdf;
 
     private Map<String, EipBackend> backends = new HashMap<>();
 
     private static List<String> eipAttachableVmTypes = new ArrayList<>();
+
+    private String getThreadSyncSignature(String eipUuid) {
+        return String.format("eip-%s", eipUuid);
+    }
 
     @Override
     @MessageSafe
@@ -100,7 +109,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     private void handle(EipDeletionMsg msg) {
         EipDeletionReply reply = new EipDeletionReply();
-        deleteEip(msg.getEipUuid(), new Completion(msg) {
+        doDeleteEip(msg.getEipUuid(), new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -682,6 +691,43 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         return flows;
     }
 
+    private void doDeleteEip(String eipUuid, Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return getThreadSyncSignature(eipUuid);
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                if (!dbf.isExist(eipUuid, EipVO.class)) {
+                    completion.success();
+                    chain.next();
+                    return;
+                }
+
+                deleteEip(eipUuid, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        completion.success();
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("deleteEip-%s", eipUuid);
+            }
+        });
+    }
+
     private void deleteEip(String eipUuid, Completion completion) {
         final EipVO vo = dbf.findByUuid(eipUuid, EipVO.class);
         VipVO vipvo = dbf.findByUuid(vo.getVipUuid(), VipVO.class);
@@ -809,7 +855,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     private void handle(APIDeleteEipMsg msg) {
         final APIDeleteEipEvent evt = new APIDeleteEipEvent(msg.getId());
 
-        deleteEip(msg.getEipUuid(), new Completion(msg) {
+        doDeleteEip(msg.getEipUuid(), new Completion(msg) {
             @Override
             public void success() {
                 bus.publish(evt);
@@ -1112,6 +1158,42 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         return bkd;
     }
 
+    private void doDetachEip(final EipStruct struct, final String providerType, final DetachEipOperation operation, final boolean fromApiMessage, final Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return getThreadSyncSignature(struct.getEip().getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                if (!dbf.isExist(struct.getEip().getUuid(), EipVO.class)) {
+                    completion.fail(operr("eip [uuid:%s] is deleted", struct.getEip().getUuid()));
+                    chain.next();
+                    return;
+                }
+
+                detachEip(struct, providerType, operation, fromApiMessage, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.success();
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("detachEip-%s", struct.getEip().getUuid());
+            }
+        });
+    }
 
     private void detachEip(final EipStruct struct, final String providerType, final DetachEipOperation operation, final boolean fromApiMessage, final Completion completion) {
         VmNicInventory nic = struct.getNic();
@@ -1215,20 +1297,19 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     @Override
     public void detachEip(EipStruct struct, String providerType, final Completion completion) {
-        detachEip(struct, providerType, DetachEipOperation.NO_DB_UPDATE, false, completion);
+        doDetachEip(struct, providerType, DetachEipOperation.NO_DB_UPDATE, false, completion);
     }
 
     public void detachEipAndUpdateDb(EipStruct struct, String providerType, DetachEipOperation dbOperation, boolean fromApiMessage, Completion completion) {
-        detachEip(struct, providerType, dbOperation, fromApiMessage, completion);
+        doDetachEip(struct, providerType, dbOperation, fromApiMessage, completion);
     }
 
     @Override
     public void detachEipAndUpdateDb(EipStruct struct, String providerType, DetachEipOperation dbOperation, Completion completion) {
-        detachEip(struct, providerType, dbOperation, false, completion);
+        doDetachEip(struct, providerType, dbOperation, false, completion);
     }
 
-    @Override
-    public void attachEip(final EipStruct struct, final String providerType, final Completion completion) {
+    private void doAttachEip(final EipStruct struct, final String providerType, final Completion completion) {
         final EipInventory eip = struct.getEip();
         final VmNicInventory nic = struct.getNic();
         final UsedIpInventory guestIp = struct.getGuestIp();
@@ -1369,6 +1450,44 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 });
             }
         }).start();
+    }
+
+    @Override
+    public void attachEip(final EipStruct struct, final String providerType, final Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return getThreadSyncSignature(struct.getEip().getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                if (!dbf.isExist(struct.getEip().getUuid(), EipVO.class)) {
+                    completion.fail(operr("eip [uuid:%s] is deleted", struct.getEip().getUuid()));
+                    chain.next();
+                    return;
+                }
+
+                doAttachEip(struct, providerType, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.success();
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("attachEip-%s", struct.getEip().getUuid());
+            }
+        });
     }
 
     @Override
