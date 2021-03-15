@@ -5,6 +5,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -13,6 +14,8 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.schema.GuestOsCategory;
+import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
@@ -68,6 +71,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
+import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -350,6 +354,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             vo.setActualSize(actualSize);
                             vo.setFormat(format);
                             vo.setUrl(String.format("volume://%s", msg.getVolumeUuid()));
+                            vo.setVirtio(false);
                         });
 
                         trigger.next();
@@ -607,6 +612,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setDescription(msg.getDescription());
         vo.setPlatform(msg.getPlatform() == null ? null : ImagePlatform.valueOf(msg.getPlatform()));
         vo.setGuestOsType(msg.getGuestOsType());
+        vo.setVirtio(msg.getVirtio());
         vo.setArchitecture(msg.getArchitecture());
         vo.setStatus(ImageStatus.Creating);
         vo.setState(ImageState.Enabled);
@@ -1278,6 +1284,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setState(ImageState.Enabled);
         vo.setUrl(msgData.getUrl());
         vo.setDescription(msgData.getDescription());
+        vo.setVirtio(msgData.getVirtio());
         if (msgData.getFormat().equals(ImageConstant.VMTX_FORMAT_STRING)) {
             vo.setArchitecture(ImageArchitecture.x86_64.toString());
         } else {
@@ -1522,7 +1529,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             imgvo.setSize(volvo.getSize());
                             imgvo.setActualSize(imageActualSize);
                             imgvo.setArchitecture(dbf.findByUuid(rootVolume.getVmInstanceUuid(), VmInstanceVO.class).getArchitecture());
+                            imgvo.setVirtio(VmSystemTags.VIRTIO.hasTag(rootVolume.getVmInstanceUuid()));
                         });
+
                         trigger.next();
                     }
 
@@ -1858,6 +1867,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             imgvo.setUrl(String.format("volume://%s", volumeUuid));
                             imgvo.setSize(size);
                             imgvo.setActualSize(actualSize);
+                            imgvo.setVirtio(false);
                         });
 
                         trigger.next();

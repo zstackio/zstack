@@ -809,6 +809,10 @@ public class ImageBase implements Image {
             self.setArchitecture(msg.getArchitecture());
             update = true;
         }
+        if (msg.getVirtio() != null) {
+            self.setVirtio(msg.getVirtio());
+            update = true;
+        }
 
         if (update) {
             self = dbf.updateAndRefresh(self);

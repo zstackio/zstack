@@ -35,6 +35,8 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     private Integer cpuNum;
     @APIParam(required = false, numberRange = {1, Long.MAX_VALUE})
     private Long memorySize;
+    @APIParam(required = false, maxLength = 255)
+    private String guestOsType;
 
     public String getDefaultL3NetworkUuid() {
         return defaultL3NetworkUuid;
@@ -103,6 +105,14 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
 
     public void setMemorySize(Long memorySize) {
         this.memorySize = memorySize;
+    }
+
+    public String getGuestOsType() {
+        return guestOsType;
+    }
+
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
     }
  
     public static APIUpdateVmInstanceMsg __example__() {

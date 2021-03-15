@@ -2,8 +2,10 @@ package org.zstack.compute.vm;
 
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SensitiveTag;
+import org.zstack.tag.SystemTag;
 
 /**
  */
@@ -153,4 +155,6 @@ public class VmSystemTags {
     public static String RX_SIZE_TOKEN = "rxBufferSize";
     public static String TX_SIZE_TOKEN = "txBufferSize";
     public static PatternedSystemTag VM_VRING_BUFFER_SIZE = new PatternedSystemTag(String.format("vRingBufferSize::{%s}::{%s}", RX_SIZE_TOKEN, TX_SIZE_TOKEN), VmInstanceVO.class);
+
+    public static SystemTag VIRTIO = new SystemTag("driver::virtio", VmInstanceVO.class);
 }

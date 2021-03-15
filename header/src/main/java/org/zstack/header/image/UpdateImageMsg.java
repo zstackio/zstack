@@ -15,6 +15,7 @@ public class UpdateImageMsg extends NeedReplyMessage implements ImageMessage {
     private Boolean system;
     private String platform;
     private String architecture;
+    private Boolean virtio;
 
     public String getPlatform() {
         return platform;
@@ -88,6 +89,14 @@ public class UpdateImageMsg extends NeedReplyMessage implements ImageMessage {
         this.architecture = architecture;
     }
 
+    public Boolean getVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(Boolean virtio) {
+        this.virtio = virtio;
+    }
+
     @Override
     public String getImageUuid() {
         return uuid;
@@ -105,6 +114,7 @@ public class UpdateImageMsg extends NeedReplyMessage implements ImageMessage {
         result.system = msg.getSystem();
         result.platform = msg.getPlatform();
         result.architecture = msg.getArchitecture();
+        result.virtio = msg.getVirtio();
         return result;
     }
 }

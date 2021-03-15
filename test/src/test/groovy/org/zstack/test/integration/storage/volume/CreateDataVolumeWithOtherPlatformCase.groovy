@@ -55,6 +55,7 @@ class CreateDataVolumeWithOtherPlatformCase extends SubCase {
                     name = "image1"
                     url = "http://zstack.org/download/test2.qcow2"
                     platform = ImagePlatform.Other.toString()
+                    virtio = false
                 }
             }
 
