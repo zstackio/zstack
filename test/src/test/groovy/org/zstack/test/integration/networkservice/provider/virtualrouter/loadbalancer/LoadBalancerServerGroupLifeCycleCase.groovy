@@ -195,9 +195,10 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
         dbf = bean(DatabaseFacade.class)
         env.create {
             createServerGroup()
-            TestUpdateLoadBalancerServerGroup()
-            TestServerGroupWithBackendServer()
-            TestDeleteLoadBalancerServerGroup()
+            testUpdateLoadBalancerServerGroup()
+            testServerGroupWithBackendServer()
+            testDeleteLoadBalancerServerGroup()
+            testAddVmNicToLoadBalancer()
         }
     }
 
@@ -226,7 +227,7 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
 
     }
 
-    void TestUpdateLoadBalancerServerGroup(){
+    void testUpdateLoadBalancerServerGroup(){
         updateLoadBalancerServerGroup {
             uuid = servergroup1.uuid
             name = "updated name"
@@ -235,7 +236,7 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
         assert servergroup.name == "updated name"
     }
 
-    void TestServerGroupWithBackendServer(){
+    void testServerGroupWithBackendServer(){
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
         def lbl1 = env.inventoryByName("listener-22") as LoadBalancerListenerInventory
 
@@ -373,7 +374,7 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
 
     }
 
-    void TestDeleteLoadBalancerServerGroup(){
+    void testDeleteLoadBalancerServerGroup(){
         deleteLoadBalancerServerGroup{
             uuid = servergroup1.uuid
         }
@@ -411,6 +412,38 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
         }
 
     }
+
+
+
+    void testAddVmNicToLoadBalancer(){
+        def lb = env.inventoryByName("lb") as LoadBalancerInventory
+        def lbl1 = env.inventoryByName("listener-22") as LoadBalancerListenerInventory
+
+        LoadBalancerServerGroupInventory servergroup = createLoadBalancerServerGroup{
+            loadBalancerUuid =  lb.uuid
+            name = "lb-group"
+        }
+
+        VmInstanceInventory vm5 = queryVmInstance {conditions = ["name=vm-5"]} [0]
+        VmNicInventory nic5 = vm5.vmNics.get(0)
+
+        addBackendServerToServerGroup {
+            vmNics = [['uuid':nic5.uuid,'weight':'20']]
+            serverGroupUuid = servergroup.uuid
+        }
+
+        addServerGroupToLoadBalancerListener {
+            serverGroupUuid = servergroup.uuid
+            listenerUuid = lbl1.uuid
+        }
+        expect(AssertionError.class){
+            addVmNicToLoadBalancer {
+                vmNicUuids = [nic5.uuid]
+                listenerUuid = lbl1.uuid
+            }
+        }
+    }
+
 
 
     @Override
