@@ -45,7 +45,7 @@ class RegexElaborationCase extends SubCase {
         def err = Platform.operr("Fn::Join must be array and contain 2 params, array[0] must be String, array[1] must be array!") as ErrorCode
         assert err.messages != null
         assert err.messages.method == ElaborationSearchMethod.regex
-        assert err.messages.message_cn == "Fn::Join后面的参数出错，该参数应包含2个参数，第一个为String,第二个为数组"
+        assert err.messages.message_cn == "Fn::Join 后面的参数出错，该参数应包含 2 个参数，第一个为 String，第二个为数组。"
     }
 
     void testElaboration2() {
@@ -53,35 +53,35 @@ class RegexElaborationCase extends SubCase {
         assert err.messages != null
         assert err.messages.method == ElaborationSearchMethod.regex
         assert err.messages.method == ElaborationSearchMethod.regex
-        assert err.messages.message_cn == "Parameter中的[ImageUuid]字段没有输入，并且也没有缺省值"
+        assert err.messages.message_cn == "参数中的 [ImageUuid] 字段没有输入，也没有默认值。"
     }
 
     void testElaboration3() {
         def err = Platform.operr("no host having cpu[%s], memory[%s bytes] found", 4, 8589934592) as ErrorCode
         assert err.messages != null
         assert err.messages.method == ElaborationSearchMethod.regex
-        assert err.messages.message_cn == "找不到合适的host来启动vm, 因为可以用于分配vm的host都没有足够的资源: cpu [4], 内存 [8589934592]"
+        assert err.messages.message_cn == "找不到合适的物理机来启动云主机，因为可以用于分配云主机的物理机都没有足够的资源：CPU [4]，内存 [8589934592 字节]。"
     }
 
     void testElaboration4() {
         def err = Platform.operr("no Connected hosts found in the [%s] candidate hosts having the hypervisor type [%s]", 4, "KVM") as ErrorCode
         assert err.messages != null
         assert err.messages.method == ElaborationSearchMethod.regex
-        assert err.messages.message_cn == "找不到合适的host来启动vm, 因为满足分配条件的4个hosts都不是KVM的虚拟化类型"
+        assert err.messages.message_cn == "找不到合适的物理机来启动云主机，因为满足分配条件的 4 个物理机都不是 KVM 的虚拟化类型。"
     }
 
     void testElaboration5() {
         def err = Platform.operr("no Connected hosts found in the [%s] candidate hosts", 2) as ErrorCode
         assert err.messages != null
         assert err.messages.method == ElaborationSearchMethod.regex
-        assert err.messages.message_cn == "找不到合适的host来启动vm, 因为满足分配条件的2个hosts都不处于Connected状态"
+        assert err.messages.message_cn == "找不到合适的物理机来启动云主机，因为满足分配条件的 2 个物理机都不处于 Connected 状态。"
     }
 
     void testElaboration6() {
         def err = Platform.operr("shell command[sudo PYTHONPATH=/usr/local/zstack/ansible/files/zstacklib timeout 1800 python /usr/local/zstack/ansible/kvm.py -i /usr/local/zstack/ansible/hosts --private-key /usr/local/zstack/apache-tomcat-7.0.35/webapps/zstack/WEB-INF/classes/ansible/rsaKeys/id_rsa -e '{\"chrony_servers\":\"\",\"trusted_host\":\"\",\"remote_port\":\"22\",\"update_packages\":\"false\",\"zstack_root\":\"/var/lib/zstack\",\"remote_user\":\"root\",\"hostname\":\"10-0-121-175.zstack.org\",\"pkg_kvmagent\":\"kvmagent-3.2.0.tar.gz\",\"post_url\":\"http://172.20.11.235:8080/zstack/kvm/ansiblelog/%s\\n\",\"remote_pass\":\"******\",\"host\":\"172.20.11.235\",\"pip_url\":\"http://172.20.11.235:8080/zstack/static/pypi/simple\",\"zstack_repo\":\"\\\"zstack-mn,qemu-kvm-ev-mn\\\"\",\"yum_server\":\"172.20.11.235:8080\",\"pkg_zstacklib\":\"zstacklib-3.2.0.tar.gz\"}'] failed\n ret code: 1", Platform.uuid)
         assert err.elaboration != null
         assert err.messages.method == ElaborationSearchMethod.regex
-        assert err.messages.message_cn == "pip安装失败。因为pip安装文件不完整，或者pip版本不正确"
+        assert err.messages.message_cn == "pip 安装失败。可能因为 pip 安装文件不完整，或者 pip 版本不正确。"
     }
 
     void testElaboration7() {
@@ -99,6 +99,6 @@ class RegexElaborationCase extends SubCase {
 
         assert result.elaboration.trim().equals("错误信息: 无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
         assert result.messages.message_cn.trim().equals("无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
-        assert result.messages.message_en.trim().equals("Unable to connect the shared block group primary storage to the cluster, because device is not empty, please check the checkbox of \"Clear SharedBlock\" and try again.")
+        assert result.messages.message_en.trim().equals("Could not attach shared block storage to cluster, because device is not empty. Please select the checkbox \"Clear LUN\" and try again.")
     }
 }
