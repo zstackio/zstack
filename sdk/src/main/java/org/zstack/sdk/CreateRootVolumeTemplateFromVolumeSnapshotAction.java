@@ -50,6 +50,9 @@ public class CreateRootVolumeTemplateFromVolumeSnapshotAction extends AbstractAc
     public boolean system = false;
 
     @Param(required = false)
+    public boolean virtio = false;
+
+    @Param(required = false)
     public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

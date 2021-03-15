@@ -18,6 +18,7 @@ public class CreateRootVolumeTemplateFromVolumeSnapshotMsg extends NeedReplyMess
     private String platform;
     private String architecture;
     private boolean system;
+    private boolean virtio;
     private SessionInventory session;
 
     public void setSnapshotUuid(String snapshotUuid) {
@@ -47,6 +48,14 @@ public class CreateRootVolumeTemplateFromVolumeSnapshotMsg extends NeedReplyMess
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
 
     @Override

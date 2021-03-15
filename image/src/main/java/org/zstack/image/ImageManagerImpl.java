@@ -5,6 +5,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -13,6 +14,8 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.schema.GuestOsCategory;
+import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
@@ -67,14 +70,19 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
+import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -349,6 +357,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             vo.setActualSize(actualSize);
                             vo.setFormat(format);
                             vo.setUrl(String.format("volume://%s", msg.getVolumeUuid()));
+                            vo.setVirtio(false);
                         });
 
                         trigger.next();
@@ -512,6 +521,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         ImageVO vo = createImageInDb(msg, imgvo -> {
             imgvo.setFormat(format);
             imgvo.setUrl(String.format("volumeSnapshot://%s", snapshotUuid));
+            imgvo.setVirtio(VmSystemTags.VIRTIO.hasTag(Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volumeUuid).select(VolumeVO_.vmInstanceUuid).findValue()));
         });
 
         if (msg.getBackupStorageUuids() == null || msg.getBackupStorageUuids().isEmpty()) {
@@ -620,7 +630,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         } else {
             tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), ImageVO.class.getSimpleName());
         }
-
         return vo;
     }
 
@@ -1277,6 +1286,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setState(ImageState.Enabled);
         vo.setUrl(msgData.getUrl());
         vo.setDescription(msgData.getDescription());
+        vo.setVirtio(msgData.getVirtio());
         if (msgData.getFormat().equals(ImageConstant.VMTX_FORMAT_STRING)) {
             vo.setArchitecture(ImageArchitecture.x86_64.toString());
         } else {
@@ -1521,6 +1531,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             imgvo.setSize(volvo.getSize());
                             imgvo.setActualSize(imageActualSize);
                             imgvo.setArchitecture(dbf.findByUuid(rootVolume.getVmInstanceUuid(), VmInstanceVO.class).getArchitecture());
+                            imgvo.setVirtio(VmSystemTags.VIRTIO.hasTag(rootVolume.getVmInstanceUuid()));
                         });
                         trigger.next();
                     }
@@ -1857,6 +1868,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             imgvo.setUrl(String.format("volume://%s", volumeUuid));
                             imgvo.setSize(size);
                             imgvo.setActualSize(actualSize);
+                            imgvo.setVirtio(false);
                         });
 
                         trigger.next();

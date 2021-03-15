@@ -1495,6 +1495,8 @@ public class KVMAgentCommands {
         private boolean coloPrimary;
         private boolean coloSecondary;
         private boolean consoleLogToFile;
+        private boolean acpi;
+        private boolean hygonCpu;
 
         // TODO: only for test
         private boolean useColoBinary;
@@ -1884,6 +1886,22 @@ public class KVMAgentCommands {
 
         public void setConsoleLogToFile(boolean consoleLogToFile) {
             this.consoleLogToFile = consoleLogToFile;
+        }
+
+        public boolean getHygonCpu() {
+            return hygonCpu;
+        }
+
+        public void setHygonCpu(boolean hygonCpu) {
+            this.hygonCpu = hygonCpu;
+        }
+
+        public boolean getAcpi() {
+            return acpi;
+        }
+
+        public void setAcpi(boolean acpi) {
+            this.acpi = acpi;
         }
 
         @Override

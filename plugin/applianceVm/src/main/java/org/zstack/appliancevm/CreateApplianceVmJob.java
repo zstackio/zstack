@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.vm.VmGlobalConfig;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -21,6 +22,7 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.image.Image;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
@@ -114,11 +116,9 @@ public class CreateApplianceVmJob implements Job {
                 avo.setApplianceVmType(spec.getApplianceVmType().toString());
                 avo.setAgentPort(spec.getAgentPort());
 
-                SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
-                imgq.select(ImageVO_.platform);
-                imgq.add(ImageVO_.uuid, Op.EQ, spec.getTemplate().getUuid());
-                ImagePlatform platform = imgq.findValue();
-                avo.setPlatform(platform.toString());
+                ImageVO imageVO = Q.New(ImageVO.class).eq(ImageVO_.uuid, spec.getTemplate().getUuid()).find();
+                avo.setPlatform(imageVO.getPlatform().toString());
+                avo.setGuestOsType(imageVO.getGuestOsType());
 
                 InstanceOfferingVO iovo = dbf.findByUuid(spec.getInstanceOffering().getUuid(), InstanceOfferingVO.class);
                 avo.setCpuNum(iovo.getCpuNum());
@@ -151,6 +151,10 @@ public class CreateApplianceVmJob implements Job {
                 }
                 if (spec.getNonInherentSystemTags() != null && !spec.getNonInherentSystemTags().isEmpty()) {
                     tagMgr.createNonInherentSystemTags(spec.getNonInherentSystemTags(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
+                }
+
+                if (imageVO.getVirtio()) {
+                    tagMgr.createNonInherentSystemTag(avo.getUuid(), VmSystemTags.VIRTIO.getTagFormat(), VmInstanceVO.class.getSimpleName());
                 }
 
                 /* if there is ha configure, appliance vm will use individual affinityGroup */

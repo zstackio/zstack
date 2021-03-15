@@ -48,6 +48,7 @@ use:
                     name = "image1"
                     architecture = "x86_64"
                     url = "http://zstack.org/download/test.qcow2"
+                    virtio = true
                 }
 
                 image {

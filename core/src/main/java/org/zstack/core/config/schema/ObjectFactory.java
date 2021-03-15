@@ -52,4 +52,35 @@ public class ObjectFactory {
         return new GlobalConfig.Config();
     }
 
+    /**
+     * Create an instance of {@link GuestOsCategory }
+     *
+     */
+    public GuestOsCategory createGuestOsConfig() {
+        return new GuestOsCategory();
+    }
+
+    /**
+     * Create an instance of {@link GuestOsCategory.Config }
+     *
+     */
+    public GuestOsCategory.Config createGuestOsConfigConfig() {
+        return new GuestOsCategory.Config();
+    }
+
+    /**
+     * Create an instance of {@link GuestOsCharacter }
+     *
+     */
+    public GuestOsCharacter createGuestOsCharacter() {
+        return new GuestOsCharacter();
+    }
+
+    /**
+     * Create an instance of {@link GuestOsCharacter.Config }
+     *
+     */
+    public GuestOsCharacter.Config createGuestOsCharacterConfig() {
+        return new GuestOsCharacter.Config();
+    }
 }

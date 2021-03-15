@@ -89,6 +89,8 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
+import static org.zstack.kvm.KVMHostFactory.allGuestOsCategory;
+import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 public class KVMHost extends HostBase implements Host {
@@ -2458,12 +2460,7 @@ public class KVMHost extends HostBase implements Host {
         NicTO to = extp.completeNicInformation(l2inv, l3Inv, nic);
 
         if (to.getUseVirtio() == null) {
-            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.platform);
-            q.add(VmInstanceVO_.uuid, Op.EQ, nic.getVmInstanceUuid());
-            String platform = q.findValue();
-
-            to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
+            to.setUseVirtio(VmSystemTags.VIRTIO.hasTag(nic.getVmInstanceUuid()));
             to.setIps(getCleanTrafficIp(nic));
         }
 
@@ -2543,7 +2540,6 @@ public class KVMHost extends HostBase implements Host {
 
         final StartVmCmd cmd = new StartVmCmd();
 
-        boolean virtio;
         String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
                 spec.getVmInventory().getPlatform();
         if(ImagePlatform.Other.toString().equals(platform)){
@@ -2551,12 +2547,6 @@ public class KVMHost extends HostBase implements Host {
         }
 
         String architecture = spec.getDestHost().getArchitecture();
-
-        if (ImagePlatform.Windows.toString().equals(platform)) {
-            virtio = VmSystemTags.WINDOWS_VOLUME_ON_VIRTIO.hasTag(spec.getVmInventory().getUuid());
-        } else {
-            virtio = ImagePlatform.valueOf(platform).isParaVirtualization();
-        }
 
         int cpuNum = spec.getVmInventory().getCpuNum();
         cmd.setCpuNum(cpuNum);
@@ -2637,7 +2627,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
         rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
-        rootVolume.setUseVirtio(virtio);
+        rootVolume.setUseVirtio(VmSystemTags.VIRTIO.hasTag(spec.getVmInventory().getUuid()));
         rootVolume.setUseVirtioSCSI(ImagePlatform.Other.toString().equals(platform) ? false : KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));
         rootVolume.setWwn(computeWwnIfAbsent(spec.getDestRootVolume().getUuid()));
         rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
@@ -2701,6 +2691,11 @@ public class KVMHost extends HostBase implements Host {
         cmd.setConsoleLogToFile(!VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType()));
         if (spec.isCreatePaused()) {
             cmd.setCreatePaused(true);
+        }
+        String vmArchPlatformRelease = String.format("%s_%s_%s", spec.getVmInventory().getArchitecture(), spec.getVmInventory().getPlatform(), spec.getVmInventory().getGuestOsType());
+        if (allGuestOsCharacter.containsKey(vmArchPlatformRelease)) {
+            cmd.setAcpi(allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi());
+            cmd.setHygonCpu(allGuestOsCharacter.get(vmArchPlatformRelease).getHygonCpu() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getHygonCpu());
         }
 
         addons(spec, cmd);

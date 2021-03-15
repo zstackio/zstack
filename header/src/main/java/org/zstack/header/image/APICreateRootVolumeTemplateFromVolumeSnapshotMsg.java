@@ -38,6 +38,7 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateM
     private String platform;
     private String architecture;
     private boolean system;
+    private boolean virtio;
 
     public boolean isSystem() {
         return system;
@@ -90,6 +91,14 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateM
     @Override
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
+    }
+
+    public boolean getVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
 
     @Override
