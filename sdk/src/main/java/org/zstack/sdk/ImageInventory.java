@@ -132,6 +132,14 @@ public class ImageInventory  {
         return this.system;
     }
 
+    public java.lang.Boolean virtio;
+    public void setVirtio(java.lang.Boolean virtio) {
+        this.virtio = virtio;
+    }
+    public java.lang.Boolean getVirtio() {
+        return this.virtio;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

@@ -31,6 +31,8 @@ class ImageSpec extends Spec implements HasSession {
     boolean system = false
     @SpecParam
     String architecture = "x86_64"
+    @SpecParam
+    boolean virtio = false
 
     ImageInventory inventory
 
@@ -53,6 +55,7 @@ class ImageSpec extends Spec implements HasSession {
             delegate.sessionId = sessionId
             delegate.system = system
             delegate.architecture = architecture
+            delegate.virtio = virtio
             delegate.backupStorageUuids = [(parent as BackupStorageSpec).inventory.uuid]
         }
 
