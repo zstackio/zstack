@@ -2093,7 +2093,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         vmNicVO.setDeviceId(deviceId);
                         vmNicVO.setInternalName(internalName);
                         vmNicVO.setHypervisorType(spec.getVmInventory().getHypervisorType());
-                        vmNicVO.setDriverType(ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization() ?
+                        vmNicVO.setDriverType(VmSystemTags.VIRTIO.hasTag(self.getUuid()) ?
                                 nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
                         spec.getDestNics().add(0, VmNicInventory.valueOf(vmNicVO));
 
@@ -4822,6 +4822,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                             }
                         });
                     }
+                }
+
+                if (msg.getGuestOsType() != null) {
+                    self.setGuestOsType(msg.getGuestOsType());
+                    update = true;
                 }
 
                 if (update) {

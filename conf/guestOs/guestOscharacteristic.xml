@@ -1,0 +1,20 @@
+<scharacteristic>
+    <osInfo>
+        <architecture>aarch64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Kylin_10</osRelease>
+        <acpi>ture</acpi>
+    </osInfo>
+    <osInfo>
+        <architecture>aarch64</architecture>
+        <platform>Linux</platform>
+        <osRelease>OpenEuler_20.03</osRelease>
+        <acpi>ture</acpi>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <osRelease>*</osRelease>
+        <hygonCpu>ture</hygonCpu>
+    </osInfo>
+</scharacteristic>

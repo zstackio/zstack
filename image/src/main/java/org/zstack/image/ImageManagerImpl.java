@@ -12,6 +12,7 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.schema.GuestOsConfig;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
@@ -63,14 +64,19 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -117,6 +123,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     private List<ImageExtensionManager> imageExtensionManagers = new ArrayList<>();
     private static final Set<Class> allowedMessageAfterDeletion = new HashSet<>();
     private Future<Void> expungeTask;
+    private static final String GUEST_OS_CATEGORY_FILE = "guestOs/guestOsCategory.xml";
+    private Map<String, GuestOsConfig.Config> allGuestOsCategory = new ConcurrentHashMap<>();
 
     static {
         allowedMessageAfterDeletion.add(ImageDeletionMsg.class);
@@ -650,6 +658,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         installSystemTagValidator();
         installGlobalConfigUpdater();
         initDefaultImageArch();
+        initGuestOSTypeInfo();
         return true;
     }
 
@@ -829,6 +838,43 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 .notEq(ImageVO_.mediaType, ImageMediaType.DataVolumeTemplate)
                 .set(ImageVO_.architecture, ImageArchitecture.defaultArch())
                 .update();
+    }
+
+    private void initGuestOsCategory() {
+        GuestOsConfig configs;
+        File guestOsCategoryFile = PathUtil.findFileOnClassPath(GUEST_OS_CATEGORY_FILE);
+        try {
+            JAXBContext context = JAXBContext.newInstance("org.zstack.core.config.schema");
+            Unmarshaller unmarshaller = context.createUnmarshaller();
+            configs = (GuestOsConfig) unmarshaller.unmarshal(guestOsCategoryFile);
+        } catch (Exception e){
+            throw new CloudRuntimeException(e);
+        }
+        for (GuestOsConfig.Config config : configs.getOsInfo()) {
+            allGuestOsCategory.put(config.getOsRelease(), config);
+            if (!Q.New(GuestOsCategoryVO.class).eq(GuestOsCategoryVO_.osRelease, config.getOsRelease()).isExists()) {
+                GuestOsCategoryVO vo = new GuestOsCategoryVO();
+                vo.setPlatform(config.getPlatform());
+                vo.setName(config.getName());
+                vo.setVersion(config.getVersion());
+                vo.setOsRelease(config.getOsRelease());
+                vo.setUuid(Platform.getUuid());
+                vo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+                dbf.persist(vo);
+            }
+        }
+
+        //delete release not in config
+        SQL.New(GuestOsCategoryVO.class).notIn(GuestOsCategoryVO_.osRelease, allGuestOsCategory.keySet()).delete();
+    }
+
+    private void initGuestOscharacteristic() {
+
+    }
+
+    private void initGuestOSTypeInfo() {
+        initGuestOsCategory();
+        initGuestOscharacteristic();
     }
 
     @Override
@@ -1321,6 +1367,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setState(ImageState.Enabled);
         vo.setUrl(msgData.getUrl());
         vo.setDescription(msgData.getDescription());
+        vo.setVirtio(msgData.getVirtio());
         if (msgData.getFormat().equals(ImageConstant.VMTX_FORMAT_STRING)) {
             vo.setArchitecture(ImageArchitecture.x86_64.toString());
         } else {

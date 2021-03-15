@@ -71,6 +71,9 @@ public class ImageAO extends ResourceVO implements ShadowEntity {
     @Transient
     private ImageAO shadow;
 
+    @Column
+    private Boolean virtio;
+
     public ImageAO getShadow() {
         return shadow;
     }
@@ -220,4 +223,14 @@ public class ImageAO extends ResourceVO implements ShadowEntity {
     public void setShadow(Object o) {
         shadow = (ImageAO) o;
     }
+
+
+    public Boolean getVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(Boolean virtio) {
+        this.virtio = virtio;
+    }
+
 }

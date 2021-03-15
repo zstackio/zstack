@@ -52,4 +52,19 @@ public class ObjectFactory {
         return new GlobalConfig.Config();
     }
 
+    /**
+     * Create an instance of {@link GuestOsConfig }
+     *
+     */
+    public GuestOsConfig createGuestOsConfig() {
+        return new GuestOsConfig();
+    }
+
+    /**
+     * Create an instance of {@link GuestOsConfig.Config }
+     *
+     */
+    public GuestOsConfig.Config createGuestOsConfigConfig() {
+        return new GuestOsConfig.Config();
+    }
 }
