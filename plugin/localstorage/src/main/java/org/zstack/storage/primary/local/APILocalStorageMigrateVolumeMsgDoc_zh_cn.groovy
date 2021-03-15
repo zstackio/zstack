@@ -59,7 +59,7 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+
 				}
 			}
         }
