@@ -28,6 +28,7 @@ public class AddImageLongJobData extends LongJobMessageData {
     private SessionInventory session;
     private List<String> systemTags;
     private List<String> userTags;
+    private boolean virtio;
 
     public AddImageLongJobData(NeedReplyMessage msg) {
         super(msg);
@@ -152,5 +153,13 @@ public class AddImageLongJobData extends LongJobMessageData {
 
     public void setUserTags(List<String> userTags) {
         this.userTags = userTags;
+    }
+
+    public boolean getVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
 }

@@ -41,6 +41,7 @@ public class ImageInventory implements Serializable {
     private String architecture;
     private String format;
     private Boolean system;
+    private Boolean virtio;
     private Timestamp createDate;
     private Timestamp lastOpDate;
     @Queryable(mappingClass = ImageBackupStorageRefInventory.class,
@@ -69,6 +70,7 @@ public class ImageInventory implements Serializable {
         inv.setSystem(vo.isSystem());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setBackupStorageRefs(ImageBackupStorageRefInventory.valueOf(vo.getBackupStorageRefs()));
+        inv.setVirtio(vo.getVirtio());
         return inv;
     }
 
@@ -92,6 +94,7 @@ public class ImageInventory implements Serializable {
         inv.setType(vo.getType());
         inv.setSystem(vo.isSystem());
         inv.setLastOpDate(vo.getLastOpDate());
+        inv.setVirtio(vo.getVirtio());
         return inv;
     }
 
@@ -270,4 +273,14 @@ public class ImageInventory implements Serializable {
     public void setSystemTags(List<SystemTagInventory> systemTags) {
         this.systemTags = systemTags;
     }
+
+
+    public Boolean getVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(Boolean virtio) {
+        this.virtio = virtio;
+    }
+
 }
