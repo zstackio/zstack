@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 )
 @TagResourceType(ImageVO.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
-public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessage implements APIAuditor {
+public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessage implements APIAuditor, CreateRootVolumeTemplateMessage {
     @APIParam(maxLength = 255)
     private String name;
     @APIParam(required = false, maxLength = 2048)
@@ -45,18 +45,22 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
         this.system = system;
     }
 
+    @Override
     public String getPlatform() {
         return platform;
     }
 
+    @Override
     public void setPlatform(String platform) {
         this.platform = platform;
     }
 
+    @Override
     public String getArchitecture() {
         return architecture;
     }
 
+    @Override
     public void setArchitecture(String architecture) {
         this.architecture = architecture;
     }
@@ -77,10 +81,12 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
         this.description = description;
     }
 
+    @Override
     public String getGuestOsType() {
         return guestOsType;
     }
 
+    @Override
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
     }
@@ -93,6 +99,7 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
         this.rootVolumeUuid = rootVolumeUuid;
     }
 
+    @Override
     public List<String> getBackupStorageUuids() {
         return backupStorageUuids;
     }

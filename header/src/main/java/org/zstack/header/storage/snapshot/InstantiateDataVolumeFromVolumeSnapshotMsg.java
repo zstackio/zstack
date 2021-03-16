@@ -8,10 +8,9 @@ import org.zstack.header.volume.VolumeInventory;
 import java.util.concurrent.TimeUnit;
 
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
-public class CreateDataVolumeFromVolumeSnapshotMsg extends NeedReplyMessage implements VolumeSnapshotMessage, ConfigurableTimeoutMessage {
+public class InstantiateDataVolumeFromVolumeSnapshotMsg extends NeedReplyMessage implements VolumeSnapshotMessage, ConfigurableTimeoutMessage {
     private String uuid;
     private VolumeInventory volume;
-    private String primaryStorageUuid;
     private String volumeUuid;
     /**
      * @ignore
@@ -51,14 +50,6 @@ public class CreateDataVolumeFromVolumeSnapshotMsg extends NeedReplyMessage impl
 
     public void setVolume(VolumeInventory volume) {
         this.volume = volume;
-    }
-
-    public String getPrimaryStorageUuid() {
-        return primaryStorageUuid;
-    }
-
-    public void setPrimaryStorageUuid(String primaryStorageUuid) {
-        this.primaryStorageUuid = primaryStorageUuid;
     }
 
     @Override

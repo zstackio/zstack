@@ -10,6 +10,12 @@
         <name>org.zstack.header.vm.APICreateVmInstanceFromVolumeMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotGroupMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIStopVmInstanceMsg</name>
     </message>
     <message>

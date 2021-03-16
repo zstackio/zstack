@@ -56,4 +56,8 @@ public class VmExtraInfoGetter {
                 .param("huuid", hostUuid)
                 .find();
     }
+
+    public String getGuestOsType() {
+        return null;
+    }
 }

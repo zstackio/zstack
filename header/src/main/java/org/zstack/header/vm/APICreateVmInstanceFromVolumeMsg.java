@@ -70,7 +70,7 @@ public class APICreateVmInstanceFromVolumeMsg extends APICreateMessage implement
      * @desc root volume. Optional when vm is created from RootVolumeTemplate,
      * mandatory when vm is created from ISO. See 'mediaType' of :ref:`ImageInventory`
      */
-    @APIParam(required = false, resourceType = VolumeVO.class, checkAccount = true)
+    @APIParam(resourceType = VolumeVO.class, checkAccount = true)
     private String volumeUuid;
 
     @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})

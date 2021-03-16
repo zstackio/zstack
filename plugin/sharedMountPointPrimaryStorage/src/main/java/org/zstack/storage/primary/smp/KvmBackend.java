@@ -136,6 +136,11 @@ public class KvmBackend extends HypervisorBackend {
         public String volumePath;
     }
 
+    public static class CreateTemplateFromVolumeRsp extends AgentRsp {
+        public long actualSize;
+        public long size;
+    }
+
     public static class SftpUploadBitsCmd extends AgentCmd implements HasThreadContext{
         public String primaryStorageInstallPath;
         public String backupStorageInstallPath;
@@ -482,7 +487,7 @@ public class KvmBackend extends HypervisorBackend {
         String backupStorageUuid;
         String primaryStorageInstallPath;
         String backupStorageInstallPath;
-        VolumeInventory volume;
+        String volumeResourceInstallPath;
 
         void download(final ReturnValueCompletion<ImageCacheInventory> completion) {
             DebugUtils.Assert(image != null, "image cannot be null");
@@ -495,7 +500,7 @@ public class KvmBackend extends HypervisorBackend {
                 }
 
                 private void doDownload(final SyncTaskChain chain) {
-                    if (volume == null) {
+                    if (volumeResourceInstallPath == null) {
                         DebugUtils.Assert(backupStorageUuid != null, "backup storage UUID cannot be null");
                         DebugUtils.Assert(backupStorageInstallPath != null, "backupStorageInstallPath cannot be null");
                     }
@@ -504,6 +509,8 @@ public class KvmBackend extends HypervisorBackend {
                     fchain.setName(String.format("download-image-%s-to-shared-mountpoint-storage-%s-cache",
                             image.getUuid(), self.getUuid()));
                     fchain.then(new ShareFlow() {
+                        long actualSize = image.getActualSize();
+
                         @Override
                         public void setup() {
                             flow(new Flow() {
@@ -552,20 +559,22 @@ public class KvmBackend extends HypervisorBackend {
 
                                 @Override
                                 public void run(final FlowTrigger trigger, Map data) {
-                                    if (volume != null) {
-                                        downloadFromVolume(trigger);
+                                    if (volumeResourceInstallPath != null) {
+                                        downloadFromVolumeResource(trigger);
                                     } else {
                                         downloadFromBackupStorage(trigger);
                                     }
                                 }
 
-                                private void downloadFromVolume(FlowTrigger trigger) {
+                                private void downloadFromVolumeResource(FlowTrigger trigger) {
                                     CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
-                                    cmd.volumePath = volume.getInstallPath();
+                                    cmd.volumePath = volumeResourceInstallPath;
                                     cmd.installPath = primaryStorageInstallPath;
-                                    new Do().go(CREATE_TEMPLATE_FROM_VOLUME_PATH, cmd, new ReturnValueCompletion<AgentRsp>(trigger) {
+                                    new Do().go(CREATE_TEMPLATE_FROM_VOLUME_PATH, cmd, CreateTemplateFromVolumeRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
                                         @Override
                                         public void success(AgentRsp returnValue) {
+                                            CreateTemplateFromVolumeRsp rsp = (CreateTemplateFromVolumeRsp) returnValue;
+                                            actualSize = rsp.actualSize;
                                             trigger.next();
                                         }
 
@@ -600,7 +609,7 @@ public class KvmBackend extends HypervisorBackend {
                                     vo.setMediaType(ImageMediaType.valueOf(image.getMediaType()));
                                     vo.setImageUuid(image.getUuid());
                                     vo.setPrimaryStorageUuid(self.getUuid());
-                                    vo.setSize(image.getActualSize());
+                                    vo.setSize(actualSize);
                                     vo.setMd5sum("not calculated");
                                     vo.setInstallUrl(primaryStorageInstallPath);
                                     dbf.persist(vo);
@@ -1401,10 +1410,32 @@ public class KvmBackend extends HypervisorBackend {
         final ImageCache cache = new ImageCache();
         cache.image = msg.getImageInventory();
         cache.primaryStorageInstallPath = makeCachedImageInstallUrl(msg.getImageInventory());
-        cache.volume = msg.getVolumeInventory();
+        cache.volumeResourceInstallPath = msg.getVolumeInventory().getInstallPath();
         cache.download(new ReturnValueCompletion<ImageCacheInventory>(completion) {
             @Override
             public void success(ImageCacheInventory cache) {
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg, ReturnValueCompletion<CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply> completion) {
+        CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
+
+        final ImageCache cache = new ImageCache();
+        cache.image = msg.getImageInventory();
+        cache.primaryStorageInstallPath = makeCachedImageInstallUrl(msg.getImageInventory());
+        cache.volumeResourceInstallPath = msg.getVolumeSnapshot().getPrimaryStorageInstallPath();
+        cache.download(new ReturnValueCompletion<ImageCacheInventory>(completion) {
+            @Override
+            public void success(ImageCacheInventory cache) {
+                reply.setActualSize(cache.getSize());
                 completion.success(reply);
             }
 
