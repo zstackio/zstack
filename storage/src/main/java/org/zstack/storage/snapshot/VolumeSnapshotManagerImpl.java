@@ -1376,10 +1376,10 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     @Override
     public void vmJustBeforeDeleteFromDb(VmInstanceInventory inv) {
-        deleteStaleSnapshotRecords(inv.getRootVolumeUuid());
+        deleteStaleSnapshotRecords(inv.getRootVolumeUuid(), VolumeType.Root, inv.getUuid());
     }
 
-    private void deleteStaleSnapshotRecords(String volumeUuid) {
+    private void deleteStaleSnapshotRecords(String volumeUuid, VolumeType volumeType, String vmUuid) {
         new SQLBatch() {
             @Override
             protected void scripts() {
@@ -1392,12 +1392,20 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 sql(VolumeSnapshotTreeVO.class).in(VolumeSnapshotTreeVO_.uuid, treeUuids).delete();
 
                 sql(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, volumeUuid).delete();
+
+                if (volumeType == VolumeType.Root) {
+                    sql(VolumeSnapshotGroupVO.class).eq(VolumeSnapshotGroupVO_.vmInstanceUuid, vmUuid).delete();
+                } else {
+                    sql(VolumeSnapshotGroupRefVO.class).eq(VolumeSnapshotGroupRefVO_.volumeUuid, volumeUuid)
+                            .set(VolumeSnapshotGroupRefVO_.snapshotDeleted, true)
+                            .update();
+                }
             }
         }.execute();
     }
 
     @Override
     public void volumeJustBeforeDeleteFromDb(VolumeInventory inv) {
-        deleteStaleSnapshotRecords(inv.getUuid());
+        deleteStaleSnapshotRecords(inv.getUuid(), VolumeType.valueOf(inv.getType()), inv.getVmInstanceUuid());
     }
 }

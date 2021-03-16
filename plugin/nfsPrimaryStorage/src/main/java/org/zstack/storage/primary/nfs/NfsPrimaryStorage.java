@@ -38,6 +38,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
+import org.zstack.header.storage.snapshot.CreateImageCacheFromVolumeSnapshotReply;
 import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -887,7 +888,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         NfsDownloadImageToCacheJob job = new NfsDownloadImageToCacheJob();
         job.setPrimaryStorage(getSelfInventory());
         job.setImage(spec);
-        job.setVolume(msg.getVolumeInventory());
+        job.setVolumeResourceInstallPath(msg.getVolumeInventory().getInstallPath());
 
         jobf.execute(NfsPrimaryStorageKvmHelper.makeDownloadImageJobName(msg.getImageInventory(), job.getPrimaryStorage()),
                 NfsPrimaryStorageKvmHelper.makeJobOwnerName(job.getPrimaryStorage()), job,
@@ -895,6 +896,36 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void success(ImageCacheInventory cache) {
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                }, ImageCacheInventory.class);
+    }
+
+    @Override
+    protected void handle(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
+
+        ImageSpec spec = new ImageSpec();
+        spec.setInventory(msg.getImageInventory());
+
+        NfsDownloadImageToCacheJob job = new NfsDownloadImageToCacheJob();
+        job.setPrimaryStorage(getSelfInventory());
+        job.setImage(spec);
+        job.setVolumeResourceInstallPath(msg.getVolumeSnapshot().getPrimaryStorageInstallPath());
+
+        jobf.execute(NfsPrimaryStorageKvmHelper.makeDownloadImageJobName(msg.getImageInventory(), job.getPrimaryStorage()),
+                NfsPrimaryStorageKvmHelper.makeJobOwnerName(job.getPrimaryStorage()), job,
+                new ReturnValueCompletion<ImageCacheInventory>(msg) {
+
+                    @Override
+                    public void success(ImageCacheInventory cache) {
+                        reply.setActualSize(cache.getSize());
                         bus.reply(msg, reply);
                     }
 
@@ -935,10 +966,10 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     public void run(final FlowTrigger trigger, Map data) {
                         TaskProgressRange stage = markTaskStage(parentStage, CREATE_TEMPORARY_TEMPLATE_STAGE);
 
-                        bkd.createTemplateFromVolume(pinv, volume, image, new ReturnValueCompletion<String>(trigger) {
+                        bkd.createTemplateFromVolume(pinv, volume, image, new ReturnValueCompletion<NfsPrimaryStorageBackend.BitsInfo>(trigger) {
                             @Override
-                            public void success(String returnValue) {
-                                templatePrimaryStorageInstallPath = returnValue;
+                            public void success(NfsPrimaryStorageBackend.BitsInfo info) {
+                                templatePrimaryStorageInstallPath = info.getInstallPath();
                                 reportProgress(stage.getEnd().toString());
                                 trigger.next();
                             }

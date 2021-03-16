@@ -125,6 +125,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg);
 
+    protected abstract void handle(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg);
+
     protected abstract void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg);
 
     protected abstract void handle(DownloadDataVolumeToPrimaryStorageMsg msg);
@@ -320,6 +322,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((DeleteBitsOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateImageCacheFromVolumeOnPrimaryStorageMsg) {
             handleBase((CreateImageCacheFromVolumeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg) {
+            handleBase((CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateTemplateFromVolumeOnPrimaryStorageMsg) {
             handleBase((CreateTemplateFromVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CancelJobOnPrimaryStorageMsg) {
@@ -720,6 +724,12 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         new PrimaryStorageValidater().disable().maintenance()
                 .validate();
         check(msg);
+        handle(msg);
+    }
+
+    private void handleBase(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        new PrimaryStorageValidater().disable().maintenance()
+                .validate();
         handle(msg);
     }
 

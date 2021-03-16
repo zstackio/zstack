@@ -9,10 +9,11 @@ import java.util.List;
  * Created by camile on 2/5/2018.
  * copy by APICreateRootVolumeTemplateFromRootVolumeMsg
  */
-public class CreateRootVolumeTemplateFromRootVolumeMsg extends NeedReplyMessage {
+public class CreateRootVolumeTemplateFromRootVolumeMsg extends NeedReplyMessage implements CreateRootVolumeTemplateMessage {
     private String name;
     private String description;
     private String guestOsType;
+    private String architecture;
     private List<String> backupStorageUuids;
     private String rootVolumeUuid;
     private String platform;
@@ -42,6 +43,16 @@ public class CreateRootVolumeTemplateFromRootVolumeMsg extends NeedReplyMessage 
 
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
+    }
+
+    @Override
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    @Override
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 
     public List<String> getBackupStorageUuids() {

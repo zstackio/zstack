@@ -43,6 +43,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.AllocateBackupStorageMsg;
+import org.zstack.header.storage.backup.AllocateBackupStorageReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.ReturnBackupStorageMsg;
 import org.zstack.header.storage.primary.*;
@@ -90,7 +91,7 @@ public class VolumeSnapshotTreeBase {
         allowedStatus.addState(VolumeSnapshotStatus.Ready,
                 VolumeSnapshotDeletionMsg.class.getName(),
                 BackupVolumeSnapshotMsg.class.getName(),
-                CreateDataVolumeFromVolumeSnapshotMsg.class.getName(),
+                InstantiateDataVolumeFromVolumeSnapshotMsg.class.getName(),
                 CreateTemplateFromVolumeSnapshotMsg.class.getName(),
                 VolumeSnapshotBackupStorageDeletionMsg.class.getName(),
                 APIRevertVolumeFromSnapshotMsg.class.getName(),
@@ -188,8 +189,10 @@ public class VolumeSnapshotTreeBase {
     private void handleLocalMessage(Message msg) {
         if (msg instanceof CreateTemplateFromVolumeSnapshotMsg) {
             handle((CreateTemplateFromVolumeSnapshotMsg) msg);
-        } else if (msg instanceof CreateDataVolumeFromVolumeSnapshotMsg) {
-            handle((CreateDataVolumeFromVolumeSnapshotMsg) msg);
+        } else if (msg instanceof CreateImageCacheFromVolumeSnapshotMsg) {
+            handle((CreateImageCacheFromVolumeSnapshotMsg) msg);
+        } else if (msg instanceof InstantiateDataVolumeFromVolumeSnapshotMsg) {
+            handle((InstantiateDataVolumeFromVolumeSnapshotMsg) msg);
         } else if (msg instanceof VolumeSnapshotDeletionMsg) {
             handle((VolumeSnapshotDeletionMsg) msg);
         } else if (msg instanceof DeleteVolumeSnapshotMsg) {
@@ -631,7 +634,7 @@ public class VolumeSnapshotTreeBase {
         }).start();
     }
 
-    private void handle(final CreateDataVolumeFromVolumeSnapshotMsg msg) {
+    private void handle(final InstantiateDataVolumeFromVolumeSnapshotMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -655,8 +658,8 @@ public class VolumeSnapshotTreeBase {
         });
     }
 
-    private void createDataVolume(final CreateDataVolumeFromVolumeSnapshotMsg msg, final NoErrorCompletion completion) {
-        final CreateDataVolumeFromVolumeSnapshotReply reply = new CreateDataVolumeFromVolumeSnapshotReply();
+    private void createDataVolume(final InstantiateDataVolumeFromVolumeSnapshotMsg msg, final NoErrorCompletion completion) {
+        final InstantiateDataVolumeFromVolumeSnapshotReply reply = new InstantiateDataVolumeFromVolumeSnapshotReply();
 
         refreshVO();
         ErrorCode err = isOperationAllowed(msg);
@@ -786,6 +789,30 @@ public class VolumeSnapshotTreeBase {
         });
     }
 
+    private void handle(CreateImageCacheFromVolumeSnapshotMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncSignature;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                createImageCache(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("create-image-cache-from-volume-snapshot-%s", currentRoot.getUuid());
+            }
+        });
+    }
+
     private void changeStatusOfSnapshots(final StatusEvent evt, final List<VolumeSnapshotInventory> snapshots, final Completion completion) {
         List<ChangeVolumeSnapshotStatusMsg> msgs = CollectionUtils.transformToList(snapshots, new Function<ChangeVolumeSnapshotStatusMsg, VolumeSnapshotInventory>() {
             @Override
@@ -873,12 +900,21 @@ public class VolumeSnapshotTreeBase {
                 AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
                 amsg.setBackupStorageUuid(msg.getBackupStorageUuid());
                 amsg.setSize(allocatedSize);
+
+                if (amsg.getBackupStorageUuid() == null) {
+                    String volumePsUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                            .select(VolumeVO_.primaryStorageUuid)
+                            .findValue();
+                    amsg.setRequiredPrimaryStorageUuid(volumePsUuid);
+                }
+
                 bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
                 bus.send(amsg, new CloudBusCallBack(trigger) {
                     @Override
                     public void run(MessageReply reply) {
                         if (reply.isSuccess()) {
-                            allocateBackupStorageUuid = msg.getBackupStorageUuid();
+                            AllocateBackupStorageReply r = reply.castReply();
+                            allocateBackupStorageUuid = r.getInventory().getUuid();
                             paramIn.setBackupStorageUuid(allocateBackupStorageUuid);
                             trigger.next();
                         } else {
@@ -943,6 +979,31 @@ public class VolumeSnapshotTreeBase {
                 completion.done();
             }
         }).start();
+    }
+
+    private void createImageCache(final CreateImageCacheFromVolumeSnapshotMsg msg, final NoErrorCompletion completion) {
+        CreateImageCacheFromVolumeSnapshotReply reply = new CreateImageCacheFromVolumeSnapshotReply();
+
+        ImageInventory image = ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class));
+
+        CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg cmsg = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg();
+        cmsg.setImageInventory(image);
+        cmsg.setVolumeSnapshot(VolumeSnapshotInventory.valueOf(currentRoot));
+        bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, cmsg.getPrimaryStorageUuid());
+        bus.send(cmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                } else {
+                    CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply cr = r.castReply();
+                    reply.setLocationHostUuid(cr.getLocateHostUuid());
+                    reply.setActualSize(cr.getActualSize());
+                }
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
     }
 
     private void handleApiMessage(APIMessage msg) {
