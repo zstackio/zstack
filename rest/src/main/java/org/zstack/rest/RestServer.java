@@ -22,6 +22,7 @@ import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.log.LogUtils;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Component;
 import org.zstack.header.Constants;
 import org.zstack.header.MapField;
@@ -85,6 +86,8 @@ public class RestServer implements Component, CloudBusEventListener {
     private CloudBus bus;
     @Autowired
     private AsyncRestApiStore asyncStore;
+    @Autowired
+    protected ApiTimeoutManager timeoutMgr;
     @Autowired
     private RESTFacade restf;
     @Autowired
@@ -1149,6 +1152,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
             ApiResponse response = new ApiResponse();
             response.setLocation(ub.build().toUriString());
+            response.setApiTimeout(timeoutMgr.getMessageTimeout(msg));
 
             bus.send(msg);
 
