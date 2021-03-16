@@ -320,12 +320,6 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
     }
 
     private VirtualRouterVmInventory getVirtualRouterForVyosDhcp(L3NetworkInventory l3Nw) {
-        /* only public l3 network has systemTag: PUBLIC_NETWORK_DHCP_SERVER_UUID  */
-        String uuid = L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID.getTokenByResourceUuid(l3Nw.getUuid(), L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN);
-        if (uuid == null && l3Nw.getCategory().equals(L3NetworkCategory.Public.toString())) {
-            return null;
-        }
-
         /* for vyos dhcp, it will not create virtual router, if virtual router not existed return error */
         String sql = "select vr from VirtualRouterVmVO vr, VmNicVO nic where vr.uuid = nic.vmInstanceUuid and nic.l3NetworkUuid = :l3Uuid and nic.metaData in (:meta)";
         TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
@@ -339,6 +333,13 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
 
         VirtualRouterVmVO masterVr = null;
         if (l3Nw.getCategory().equals(L3NetworkCategory.Public.toString())) {
+            /* only public l3 network has systemTag: PUBLIC_NETWORK_DHCP_SERVER_UUID
+            * tag value is virtual router uuid for non-ha virtual router, ha group uuid for ha router  */
+            String uuid = L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID.getTokenByResourceUuid(l3Nw.getUuid(), L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN);
+            if (uuid == null) {
+                return null;
+            }
+
             for (VirtualRouterVmVO vr : vrs) {
                 if (vr.getUuid().equals(uuid)) {
                     return VirtualRouterVmInventory.valueOf(vr);

@@ -79,7 +79,7 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
             if (tmp.isEmpty()) {
                 v.getValues().add(generateEmptyValue());
             } else {
-                v.setValues(tmp.stream().map(id -> {
+                v.setValues(tmp.stream().filter(Objects::nonNull).map(id -> {
                     ASTNode.PlainValue strValue = new ASTNode.PlainValue();
                     strValue.setText("'" + id.toString() + "'");
                     strValue.setCtype(String.class.getName());
