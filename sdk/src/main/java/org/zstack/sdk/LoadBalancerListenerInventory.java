@@ -52,6 +52,14 @@ public class LoadBalancerListenerInventory  {
         return this.loadBalancerPort;
     }
 
+    public java.lang.String securityPolicyType;
+    public void setSecurityPolicyType(java.lang.String securityPolicyType) {
+        this.securityPolicyType = securityPolicyType;
+    }
+    public java.lang.String getSecurityPolicyType() {
+        return this.securityPolicyType;
+    }
+
     public java.lang.String protocol;
     public void setProtocol(java.lang.String protocol) {
         this.protocol = protocol;

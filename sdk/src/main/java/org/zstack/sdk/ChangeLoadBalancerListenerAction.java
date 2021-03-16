@@ -30,7 +30,7 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
     public java.lang.Integer connectionIdleTimeout;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,100000L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,10000000L}, noTrim = false)
     public java.lang.Integer maxConnection;
 
     @Param(required = false, validValues = {"weightroundrobin","roundrobin","leastconn","source"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -62,6 +62,9 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
 
     @Param(required = false, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String aclStatus;
+
+    @Param(required = false, validValues = {"tls_cipher_policy_1_0","tls_cipher_policy_1_1","tls_cipher_policy_1_2","tls_cipher_policy_1_2_strict","tls_cipher_policy_1_2_strict_with_1_3"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String securityPolicyType;
 
     @Param(required = false)
     public java.util.List systemTags;

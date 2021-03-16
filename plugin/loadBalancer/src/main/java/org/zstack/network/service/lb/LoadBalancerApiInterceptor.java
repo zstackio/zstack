@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.network.service.lb.LoadBalancerConstants.LB_PROTOCOL_HTTPS;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -629,6 +630,12 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (luuid != null) {
             throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a listener[uuid:%s] has used that port", msg.getLoadBalancerPort(), luuid));
         }
+
+        if (msg.getSecurityPolicyType() != null) {
+            if (!msg.getProtocol().equals(LB_PROTOCOL_HTTPS)) {
+                throw new ApiMessageInterceptionException(operr("the listener with protocol [%s] doesn't support select security policy", msg.getProtocol(), msg.getHealthCheckProtocol()));
+            }
+        }
     }
 
     private void validate(APIDeleteLoadBalancerListenerMsg msg) {
@@ -716,6 +723,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         LoadBalancerListenerVO listenerVO = Q.New(LoadBalancerListenerVO.class).
                                            eq(LoadBalancerListenerVO_.uuid,msg.getLoadBalancerListenerUuid()).find();
 
+        if (msg.getSecurityPolicyType() != null) {
+            if (!listenerVO.getProtocol().equals(LB_PROTOCOL_HTTPS)) {
+                throw new ApiMessageInterceptionException(operr("the listener with protocol [%s] doesn't support select security policy", listenerVO.getProtocol(), msg.getHealthCheckProtocol()));
+            }
+        }
         if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
             String healthTarget = LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(msg.getLoadBalancerListenerUuid(),
                     LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);

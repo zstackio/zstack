@@ -59,7 +59,7 @@ doc {
 					type "Integer"
 					optional true
 					since "0.6"
-
+					
 				}
 				column {
 					name "loadBalancerPort"
@@ -91,7 +91,6 @@ doc {
 					since "2.3"
 					
 				}
-
 				column {
 					name "healthCheckProtocol"
 					enclosedIn "params"
@@ -120,7 +119,7 @@ doc {
 					type "String"
 					optional true
 					since "3.9"
-
+					
 				}
 				column {
 					name "healthCheckHttpCode"
@@ -130,7 +129,7 @@ doc {
 					type "String"
 					optional true
 					since "3.9"
-
+					
 				}
 				column {
 					name "aclStatus"
@@ -150,7 +149,7 @@ doc {
 					type "List"
 					optional true
 					since "3.9"
-
+					
 				}
 				column {
 					name "aclType"
@@ -201,6 +200,16 @@ doc {
 					optional true
 					since "0.6"
 					
+				}
+				column {
+					name "securityPolicyType"
+					enclosedIn "params"
+					desc "TLS安全策略"
+					location "body"
+					type "String"
+					optional true
+					since "4.1"
+					values ("tls_cipher_policy_1_0","tls_cipher_policy_1_1","tls_cipher_policy_1_2","tls_cipher_policy_1_2_strict","tls_cipher_policy_1_2_strict_with_1_3")
 				}
 			}
         }
