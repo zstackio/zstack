@@ -58,10 +58,11 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.*;
 
 public class PortForwardingManagerImpl extends AbstractService implements PortForwardingManager,
-        VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint, VipGetServiceReferencePoint {
+        VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint,
+        VipGetServiceReferencePoint, VmNicChangeNetworkExtensionPoint {
     private static CLogger logger = Utils.getLogger(PortForwardingManagerImpl.class);
 
     @Autowired
@@ -1378,4 +1379,19 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         }
         return new VipGetServiceReferencePoint.ServiceReference(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE, uuids.size(), uuids);
     }
+
+    @Override
+    public Map<String, String> getVmNicAttachedNetworkService(VmNicInventory nic) {
+        List<String> pfUuids = Q.New(PortForwardingRuleVO.class).select(PortForwardingRuleVO_.uuid).eq(PortForwardingRuleVO_.vmNicUuid, nic.getUuid()).listValues();
+
+        if (pfUuids.isEmpty()) {
+            return null;
+        }
+        HashMap<String, String> ret = new HashMap<>();
+        for (String pfUuid : pfUuids) {
+            ret.put(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE, pfUuid);
+        }
+        return ret;
+    }
+
 }

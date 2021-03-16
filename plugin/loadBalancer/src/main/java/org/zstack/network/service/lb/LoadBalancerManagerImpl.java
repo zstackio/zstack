@@ -37,6 +37,7 @@ import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.tag.*;
+import org.zstack.header.vm.VmNicChangeNetworkExtensionPoint;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
@@ -58,13 +59,13 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created by frank on 8/8/2015.
  */
 public class LoadBalancerManagerImpl extends AbstractService implements LoadBalancerManager,
-        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint, VipGetServiceReferencePoint {
+        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint, VipGetServiceReferencePoint, VmNicChangeNetworkExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LoadBalancerManagerImpl.class);
 
     @Autowired
@@ -1071,5 +1072,22 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         }
 
         dbf.persistCollection(vmNicRefVOS);
+    }
+
+    @Override
+    public Map<String, String> getVmNicAttachedNetworkService(VmNicInventory nic) {
+        List<LoadBalancerServerGroupVO> lbSgs = SQL.New("select lbSg from LoadBalancerServerGroupVmNicRefVO ref, LoadBalancerServerGroupVO lbSg where ref.serverGroupUuid = lbSg.uuid" +
+                " and ref.vmNicUuid = :vmNicUuid")
+                .param("vmNicUuid", nic.getUuid())
+                .list();
+        if (lbSgs.isEmpty()) {
+            return null;
+        }
+        HashMap<String, String> ret = new HashMap<>();
+        for (LoadBalancerServerGroupVO lbSg : lbSgs) {
+            ret.put(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING,
+                    String.format("lb uuid is [%s], serverGroupUuid is [%d]",lbSg.getLoadBalancerUuid(), lbSg.getUuid()));
+        }
+        return ret;
     }
 }
