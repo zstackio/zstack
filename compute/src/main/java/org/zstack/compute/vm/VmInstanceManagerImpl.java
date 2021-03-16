@@ -988,11 +988,18 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 creator.create();
             }
         }
-
+    
+        List<ErrorCode> errorCodes = Collections.emptyList();
         if (cmsg != null && cmsg.getSystemTags() != null && !cmsg.getSystemTags().isEmpty()) {
-            extEmitter.handleSystemTag(vo.getUuid(), cmsg.getSystemTags());
+            errorCodes = extEmitter.handleSystemTag(vo.getUuid(), cmsg.getSystemTags());
         } else if (cmsg == null && msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
-            extEmitter.handleSystemTag(vo.getUuid(), msg.getSystemTags());
+            errorCodes = extEmitter.handleSystemTag(vo.getUuid(), msg.getSystemTags());
+        }
+        
+        if (!errorCodes.isEmpty()) {
+            completion.fail(operr("handle system tag fail when creating vm because [%s]",
+                    StringUtils.join(errorCodes.stream().map(ErrorCode::getDescription).collect(Collectors.toList()),
+                        ", ")));
         }
 
         InstantiateNewCreatedVmInstanceMsg smsg = new InstantiateNewCreatedVmInstanceMsg();
