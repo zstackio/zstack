@@ -100,6 +100,11 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
+    @Override
     protected void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
         bus.dealWithUnknownMessage(msg);
     }

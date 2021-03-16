@@ -47,5 +47,11 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ImageExtensionPointEmitter" class="org.zstack.image.ImageExtensionPointEmitter">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="ImageDeletionPolicyManager" class="org.zstack.image.ImageDeletionPolicyManagerImpl"/>
 </beans>

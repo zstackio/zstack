@@ -5,7 +5,7 @@ import org.zstack.header.volume.VolumeInventory;
 
 /**
  */
-public class CreateDataVolumeFromVolumeSnapshotReply extends MessageReply {
+public class InstantiateDataVolumeFromVolumeSnapshotReply extends MessageReply {
     private VolumeInventory inventory;
     private long actualSize;
 
