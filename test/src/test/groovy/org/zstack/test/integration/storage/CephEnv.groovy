@@ -91,6 +91,7 @@ use:
 
                 image {
                     name = "test-iso"
+                    mediaType = ImageConstant.ImageMediaType.ISO.toString()
                     url  = "http://zstack.org/download/test.iso"
                 }
                 image {
