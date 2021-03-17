@@ -12,13 +12,23 @@ public class ApiResponse extends HashMap {
     private String location;
     private ErrorCode error;
     private Map<String, String> schema;
+    private long apiTimeout;
 
+    public long getApiTimeout() {
+        return apiTimeout;
+    }
+ 
     public String getLocation() {
         return location;
     }
 
     public Map<String, String> getSchema() {
         return schema;
+    }
+
+    public void setApiTimeout(long apiTimeout) {
+        this.apiTimeout = apiTimeout;
+        put("apiTimeout", apiTimeout);
     }
 
     public void setSchema(Map<String, String> schema) {
