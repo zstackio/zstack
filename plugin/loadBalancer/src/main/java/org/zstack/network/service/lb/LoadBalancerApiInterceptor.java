@@ -553,6 +553,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 )
         );
 
+        insertTagIfNotExisting(
+                msg, LoadBalancerSystemTags.NUMBER_OF_PROCESS,
+                LoadBalancerSystemTags.NUMBER_OF_PROCESS.instantiateTag(
+                        map(e(LoadBalancerSystemTags.NUMBER_OF_PROCESS_TOKEN, LoadBalancerGlobalConfig.NUMBER_OF_PROCESS.value()))
+                )
+        );
+
 
         /*check the validation of systemtags*/
         for (String tag : msg.getSystemTags()) {
