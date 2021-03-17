@@ -61,5 +61,3 @@ BEGIN
 END $$
 DELIMITER ;
 CALL upgradeProjectAdminSystemTags();
-
-
