@@ -409,6 +409,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), msg.getIsoUuid()));
         }
 
+        String isoImageMediaType = Q.New(ImageVO.class).select(ImageVO_.mediaType).eq(ImageVO_.uuid, msg.getIsoUuid()).findValue();
+        if (isoImageMediaType != null && !isoImageMediaType.equals(ImageMediaType.ISO)) {
+            throw new ApiMessageInterceptionException(argerr("Unsupported Image Media Type: [%s] ", isoImageMediaType));
+        }
+
         validateCdRomUuid(msg);
     }
 
