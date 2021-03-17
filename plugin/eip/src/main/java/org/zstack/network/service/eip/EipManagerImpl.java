@@ -200,12 +200,11 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         if (NetworkUtils.isIpv4Address(vip.getIp())) {
             vipVersion = IPv6Constants.IPv4;
             l3Versions.add(IPv6Constants.IPv4);
-            l3Versions.add(IPv6Constants.DUAL_STACK);
         } else {
             vipVersion = IPv6Constants.IPv6;
             l3Versions.add(IPv6Constants.IPv6);
-            l3Versions.add(IPv6Constants.DUAL_STACK);
         }
+        l3Versions.add(IPv6Constants.DUAL_STACK);
         if (providerType != null) {
             // the eip is created on the backend
             l3Uuids = SQL.New("select l3.uuid" +
