@@ -49,6 +49,7 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
