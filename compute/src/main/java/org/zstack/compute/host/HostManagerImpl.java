@@ -317,7 +317,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        final HostInventory inv = HostInventory.valueOf(vo);
+        HostInventory inv = HostInventory.valueOf(vo);
         chain.setName(String.format("add-host-%s", vo.getUuid()));
         chain.then(new NoRollbackFlow() {
             String __name__ = "call-before-add-host-extension";
@@ -371,7 +371,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                String arch = HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN);
+                HostVO h = dbf.findByUuid(vo.getUuid(), HostVO.class);
+                String arch = h.getArchitecture();
+                inv.setArchitecture(arch);
 
                 if (arch == null) {
                     trigger.fail(operr("after connecting, host[name:%s, ip:%s] returns a null architecture", vo.getName(), vo.getManagementIp()));

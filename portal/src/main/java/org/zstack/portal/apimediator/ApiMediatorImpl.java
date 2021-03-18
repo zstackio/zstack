@@ -11,6 +11,7 @@ import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.*;
+import org.zstack.header.cluster.APIUpdateClusterOSMsg;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.managementnode.*;
@@ -129,6 +130,10 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
                     handle((APIGetCurrentTimeMsg) msg);
                 } else if (msg instanceof APIGetPlatformTimeZoneMsg) {
                     handle((APIGetPlatformTimeZoneMsg) msg);
+                } else if (msg instanceof APIGetManagementNodeArchMsg) {
+                    handle((APIGetManagementNodeArchMsg) msg);
+                } else if (msg instanceof APIGetManagementNodeOSMsg) {
+                    handle((APIGetManagementNodeOSMsg) msg);
                 } else if (msg instanceof APIMessage) {
                     dispatchMessage((APIMessage) msg);
                 } else {
@@ -166,6 +171,19 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
         ret.put("Seconds", currentTimeSeconds);
         APIGetCurrentTimeReply reply = new APIGetCurrentTimeReply();
         reply.setCurrentTime(ret);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetManagementNodeArchMsg msg) {
+        APIGetManagementNodeArchReply reply = new APIGetManagementNodeArchReply();
+        reply.setArchitecture(System.getProperty("os.arch").equals("amd64") ? "x86_64" : System.getProperty("os.arch"));
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetManagementNodeOSMsg msg) {
+        APIGetManagementNodeOSReply reply = new APIGetManagementNodeOSReply();
+        reply.setName(System.getProperty("os.name"));
+        reply.setVersion(System.getProperty("os.version"));
         bus.reply(msg, reply);
     }
 
