@@ -5,6 +5,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class ChangeHostStateMsg extends NeedReplyMessage implements HostMessage {
     private String uuid;
     private String stateEvent;
+    private boolean forceChange;
 
     // different behaviours for APIChangeHostStateMsg and ChangeHostStateMsg
     private boolean fromApiMsg = false;
@@ -44,5 +45,13 @@ public class ChangeHostStateMsg extends NeedReplyMessage implements HostMessage 
 
     public void setFromApiMsg(boolean fromApiMsg) {
         this.fromApiMsg = fromApiMsg;
+    }
+
+    public boolean isForceChange() {
+        return forceChange;
+    }
+
+    public void setForceChange(boolean forceChange) {
+        this.forceChange = forceChange;
     }
 }
