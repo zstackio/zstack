@@ -57,7 +57,7 @@ public class VmAllocateHostFlow implements Flow {
         List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
         ImageInventory image = spec.getImageSpec().getInventory();
         long diskSize;
-        if (image.getMediaType().equals(ImageMediaType.ISO.toString())) {
+        if (image.getMediaType() != null && image.getMediaType().equals(ImageMediaType.ISO.toString())) {
             DiskOfferingVO dvo = dbf.findByUuid(spec.getRootDiskOffering().getUuid(), DiskOfferingVO.class);
             diskSize = dvo.getDiskSize();
             diskOfferings.add(DiskOfferingInventory.valueOf(dvo));
@@ -104,7 +104,7 @@ public class VmAllocateHostFlow implements Flow {
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setVmInstance(spec.getVmInventory());
 
-        if (spec.getImageSpec().getSelectedBackupStorage() != null) {
+        if (spec.getImageSpec() != null && spec.getImageSpec().getSelectedBackupStorage() != null) {
             msg.setRequiredBackupStorageUuid(spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
         }
         return msg;
