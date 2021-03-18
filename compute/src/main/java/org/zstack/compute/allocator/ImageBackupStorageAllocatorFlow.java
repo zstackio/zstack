@@ -68,17 +68,16 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             }
         }
 
-        SimpleQuery<ImageCacheVO> cq = dbf.createQuery(ImageCacheVO.class);
-        cq.add(ImageCacheVO_.imageUuid, Op.EQ, spec.getImage().getUuid());
-        cq.add(ImageCacheVO_.primaryStorageUuid, Op.IN, psUuids);
-        cq.groupBy(ImageCacheVO_.primaryStorageUuid);
-        long imageCacheCount = cq.count();
+        long imageCacheCount = SQL.New("select count(distinct cache.primaryStorageUuid) from ImageCacheVO cache where cache.primaryStorageUuid in :psUuids and cache.imageUuid = :imageUuid", Long.class)
+                .param("psUuids", psUuids)
+                .param("imageUuid", spec.getImage().getUuid())
+                .find();
         long imageCacheShadowCount = SQL.New("select count(distinct cache.primaryStorageUuid) from ImageCacheShadowVO cache where cache.primaryStorageUuid in :psUuids and cache.imageUuid = :imageUuid", Long.class)
                 .param("psUuids", psUuids)
                 .param("imageUuid", spec.getImage().getUuid())
                 .find();
 
-        return Math.max(imageCacheCount, imageCacheShadowCount) !=  psUuids.size();
+        return Math.max(imageCacheCount, imageCacheShadowCount) < psUuids.size();
     }
 
     @Override
