@@ -35,6 +35,7 @@ import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.service.DhcpStruct;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
@@ -613,6 +614,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public String sendCommandUrl;
         public String volumeUuid;
         public String stage;
+        public String srcFolderPath;
     }
 
     public static class Md5TO {
@@ -631,6 +633,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public String sendCommandUrl;
         public String volumeUuid;
         public String stage;
+        public String originBaseDir;
+        public String destBaseDir;
+        public String dstFolderPath;
+    }
+
+    public static class RebaseQcow2BackingFileCmd extends AgentCommand implements HasThreadContext {
+        public List<Md5TO> md5s;
+        public String sendCommandUrl;
+        public String originBaseDir;
+        public String destBaseDir;
     }
 
     public static class GetBackingFileCmd extends AgentCommand {
@@ -737,7 +749,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String MERGE_AND_REBASE_SNAPSHOT_PATH = "/localstorage/snapshot/mergeandrebase";
     public static final String OFFLINE_MERGE_PATH = "/localstorage/snapshot/offlinemerge";
     public static final String GET_MD5_PATH = "/localstorage/getmd5";
+    public static final String GET_MD5_BY_DIR_PATH = "/localstorage/getdirmd5";
     public static final String CHECK_MD5_PATH = "/localstorage/checkmd5";
+    public static final String CHECK_MD5_BY_DIR_PATH = "/localstorage/checkdirmd5";
+    public static final String REBASE_QCOW2_FILE = "/localstorage/rebaseqcow2";
     public static final String GET_BACKING_FILE_PATH = "/localstorage/volume/getbackingfile";
     public static final String GET_VOLUME_SIZE = "/localstorage/volume/getsize";
     public static final String GET_BASE_IMAGE_PATH = "/localstorage/volume/getbaseimagepath";
@@ -2169,6 +2184,27 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         });
     }
 
+    void downloadImageToRemoteCache(ImageInventory img, String hostUuid, String psUuid, final ReturnValueCompletion<String> completion) {
+        DownloadVolumeTemplateToPrimaryStorageMsg dmsg = new DownloadVolumeTemplateToPrimaryStorageMsg();
+        dmsg.setPrimaryStorageUuid(psUuid);
+        dmsg.setHostUuid(hostUuid);
+        ImageSpec imageSpec = new ImageSpec();
+        imageSpec.setInventory(img);
+        dmsg.setTemplateSpec(imageSpec);
+        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, dmsg.getPrimaryStorageUuid());
+        bus.send(dmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                completion.success(((DownloadVolumeTemplateToPrimaryStorageReply) reply).getImageCache().getInstallUrl());
+            }
+        });
+    }
+
     @Override
     void handle(final LocalStorageDeleteImageCacheOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<DeleteImageCacheOnPrimaryStorageReply> completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -2296,17 +2332,31 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        downloadImageToCache(ImageInventory.valueOf(context.image), struct.getDestHostUuid(), new ReturnValueCompletion<String>(trigger) {
-                            @Override
-                            public void success(String returnValue) {
-                                trigger.next();
-                            }
+                        if (struct.CrossPrimaryStorage()) {
+                            downloadImageToRemoteCache(ImageInventory.valueOf(context.image), struct.getDestHostUuid(), struct.getDestPrimaryStorageUuid(), new ReturnValueCompletion<String>(trigger) {
+                                @Override
+                                public void success(String returnValue) {
+                                    trigger.next();
+                                }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        } else {
+                            downloadImageToCache(ImageInventory.valueOf(context.image), struct.getDestHostUuid(), new ReturnValueCompletion<String>(trigger) {
+                                @Override
+                                public void success(String returnValue) {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
                     }
                 });
             } else {
@@ -2354,7 +2404,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             return;
                         }
 
-                        reserveCapacityOnHost(struct.getDestHostUuid(), context.baseImageCacheSize, self.getUuid());
+                        reserveCapacityOnHost(struct.getDestHostUuid(), context.baseImageCacheSize, struct.CrossPrimaryStorage() ? struct.getDestPrimaryStorageUuid(): self.getUuid());
                         s = true;
                         trigger.next();
                     }
@@ -2362,7 +2412,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
-                            returnStorageCapacityToHost(struct.getDestHostUuid(), context.baseImageCacheSize);
+                            if (struct.CrossPrimaryStorage()) {
+                                PrimaryStorageVO ps = dbf.findByUuid(struct.getDestPrimaryStorageUuid(), PrimaryStorageVO.class);
+                                returnStorageCapacityToDestHost(struct.getDestHostUuid(),context.baseImageCacheSize, ps);
+                            } else {
+                                returnStorageCapacityToHost(struct.getDestHostUuid(), context.baseImageCacheSize);
+                            }
                         }
                         trigger.rollback();
                     }
@@ -2423,6 +2478,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 cmd.dstPassword = password;
                                 cmd.dstPort = port;
                                 cmd.paths = list(context.baseImageCachePath);
+                                if (struct.CrossPrimaryStorage()) {
+                                    cmd.originBaseDir = struct.getOriginBaseDir();
+                                    cmd.destBaseDir = struct.getNewBaseDir();
+                                }
                                 cmd.volumeUuid = context.rootVolumeUuid;
                                 cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_BACKING_FILE_COPY_STAGE;
 
@@ -2501,7 +2560,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
-                            deleteBits(context.baseImageCachePath, struct.getDestHostUuid(), new Completion(null) {
+                            final String deleteBitsPath = struct.CrossPrimaryStorage() ? context.baseImageCachePath.replace(struct.getOriginBaseDir(), struct.getNewBaseDir()):context.baseImageCachePath;
+                            deleteBits(deleteBitsPath, struct.getDestHostUuid(), new Completion(null) {
                                 @Override
                                 public void success() {
                                     // ignore
@@ -2511,7 +2571,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 public void fail(ErrorCode errorCode) {
                                     //TODO add GC
                                     logger.warn(String.format("failed to delete %s on the host[uuid:%s], %s",
-                                            struct.getDestHostUuid(), context.baseImageCachePath, errorCode));
+                                            struct.getDestHostUuid(), deleteBitsPath, errorCode));
                                 }
                             });
                         }
@@ -2540,6 +2600,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         cmd.md5s = list(to);
                         cmd.volumeUuid = struct.getVolume().getUuid();
                         cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_BACKING_FILE_CHECK_MD5_STAGE;
+                        if (struct.CrossPrimaryStorage()) {
+                            cmd.originBaseDir = struct.getOriginBaseDir();
+                            cmd.destBaseDir = struct.getNewBaseDir();
+                        }
 
                         httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
@@ -2639,7 +2703,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     }
                 });
 
-                httpCall(GET_MD5_PATH, struct.getSrcHostUuid(), cmd, false, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
+                String GET_MD5_URL = GET_MD5_PATH;
+                if (struct.CrossPrimaryStorage()) {
+                    GET_MD5_URL = GET_MD5_BY_DIR_PATH;
+                    cmd.srcFolderPath = struct.getSrcVolumeFolderPath();
+                }
+                httpCall(GET_MD5_URL, struct.getSrcHostUuid(), cmd, false, GetMd5Rsp.class, new ReturnValueCompletion<GetMd5Rsp>(trigger) {
                     @Override
                     public void success(GetMd5Rsp rsp) {
                         context.getMd5Rsp = rsp;
@@ -2673,6 +2742,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_COPY_STAGE;
                 }
                 cmd.paths = CollectionUtils.transformToList(struct.getInfos(), ResourceInfo::getPath);
+                if (struct.CrossPrimaryStorage()) {
+                    cmd.originBaseDir = struct.getOriginBaseDir();
+                    cmd.destBaseDir = struct.getNewBaseDir();
+                }
                 cmd.volumeUuid = struct.getInfos().get(0).getResourceRef().getResourceUuid();
 
                 httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
@@ -2706,7 +2779,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             }
 
                             final String path = it.next();
-                            deleteBits(path, struct.getDestHostUuid(), new Completion(trigger) {
+                            final String deleteBitsPath = struct.CrossPrimaryStorage() ? path.replace(struct.getOriginBaseDir(), struct.getNewBaseDir()):path;
+                            deleteBits(deleteBitsPath, struct.getDestHostUuid(), new Completion(trigger) {
                                 @Override
                                 public void success() {
                                     doDelete(it);
@@ -2716,7 +2790,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 public void fail(ErrorCode errorCode) {
                                     //TODO add GC
                                     logger.warn(String.format("failed to delete %s on the host[uuid:%s], %s",
-                                            path, struct.getDestHostUuid(), errorCode));
+                                            deleteBitsPath, struct.getDestHostUuid(), errorCode));
                                     doDelete(it);
                                 }
                             });
@@ -2730,6 +2804,44 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         });
 
         flows.add(new NoRollbackFlow() {
+            String __name__ = "rebase-snapshot-backing-file-path-on-dest-host";
+
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                if (struct.CrossPrimaryStorage()){
+                    RebaseQcow2BackingFileCmd cmd = new RebaseQcow2BackingFileCmd();
+                    List<Md5TO> list = new ArrayList<>();
+                    for (Md5TO md5To : context.getMd5Rsp.md5s) {
+                        Md5TO tmpMd5TO = new Md5TO();
+                        tmpMd5TO.path = md5To.path.replace(struct.getOriginBaseDir(),struct.getNewBaseDir());
+                        tmpMd5TO.md5 = md5To.md5;
+                        tmpMd5TO.resourceUuid = md5To.resourceUuid;
+                        list.add(tmpMd5TO);
+                    }
+                    
+                    context.getMd5Rsp.md5s = list;
+                    cmd.md5s = list;
+                    cmd.originBaseDir = struct.getOriginBaseDir();
+                    cmd.destBaseDir = struct.getNewBaseDir();
+                    cmd.sendCommandUrl = restf.getSendCommandUrl();
+                    httpCall(REBASE_QCOW2_FILE, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                        @Override
+                        public void success(AgentResponse rsp) {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                } else {
+                    trigger.next();
+                }
+            }
+        });
+
+        flows.add(new Flow() {
             String __name__ = "check-md5-on-dst";
 
             @Override
@@ -2743,7 +2855,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 } else {
                     cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_CHECK_MD5_STAGE;
                 }
-                httpCall(CHECK_MD5_PATH, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                String CHECK_MD5_URL = CHECK_MD5_PATH;
+                if (struct.CrossPrimaryStorage()) {
+                    CHECK_MD5_URL = CHECK_MD5_BY_DIR_PATH;
+                    cmd.dstFolderPath = struct.getDstVolumeFolderPath();
+                }
+                httpCall(CHECK_MD5_URL, struct.getDestHostUuid(), cmd, false, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                     @Override
                     public void success(AgentResponse rsp) {
                         trigger.next();
@@ -2754,6 +2871,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         trigger.fail(errorCode);
                     }
                 });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                trigger.rollback();
             }
         });
 
