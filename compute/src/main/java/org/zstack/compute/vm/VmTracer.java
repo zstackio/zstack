@@ -50,34 +50,6 @@ public abstract class VmTracer {
         Map<String, VmInstanceState> hostSideStates;
         Map<String, VmInstanceState> mgmtSideStates;
 
-        @Transactional(readOnly = true)
-        private void buildManagementServerSideVmStates() {
-            mgmtSideStates = new HashMap<>();
-            String sql = "select vm.uuid, vm.state from VmInstanceVO vm where vm.hostUuid = :huuid or (vm.hostUuid is null and vm.lastHostUuid = :huuid)" +
-                    " and vm.state not in (:vmstates)";
-
-            if (!vmTracerHelper.getVmTracerUnsupportedVmInstanceTypeSet().isEmpty()) {
-                sql += "and vm.type not in (:vmtypes)";
-            }
-
-            TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-            q.setParameter("huuid", hostUuid);
-            q.setParameter("vmstates", list(VmInstanceState.Destroyed, VmInstanceState.Destroying));
-
-            if (!vmTracerHelper.getVmTracerUnsupportedVmInstanceTypeSet().isEmpty()) {
-                q.setParameter("vmtypes", vmTracerHelper.getVmTracerUnsupportedVmInstanceTypeSet());
-            }
-
-            List<Tuple> ts = q.getResultList();
-
-            for (Tuple t : ts) {
-                mgmtSideStates.put(t.get(0, String.class), t.get(1, VmInstanceState.class));
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("ManagementServerSideVmStates vm %s, state %s", t.get(0, String.class), t.get(1, VmInstanceState.class).toString()));
-                }
-            }
-        }
-
         private void checkFromHostSide() {
             for (Map.Entry<String, VmInstanceState> e : hostSideStates.entrySet()) {
                 String vmUuid = e.getKey();
@@ -160,13 +132,46 @@ public abstract class VmTracer {
         }
 
         void trace() {
-            buildManagementServerSideVmStates();
+            if (mgmtSideStates == null) {
+                mgmtSideStates = buildManagementServerSideVmStates(hostUuid);
+            }
+
             checkFromHostSide();
             checkFromManagementServerSide();
         }
     }
 
-    protected void reportVmState(final String hostUuid, final Map<String, VmInstanceState> vmStates, final Set<String> vmsToSkipHostSide) {
+    @Transactional(readOnly = true)
+    protected Map<String, VmInstanceState> buildManagementServerSideVmStates(String hostUuid) {
+        Map<String, VmInstanceState> mgmtSideStates = new HashMap<>();
+        String sql = "select vm.uuid, vm.state from VmInstanceVO vm where vm.hostUuid = :huuid or (vm.hostUuid is null and vm.lastHostUuid = :huuid)" +
+                " and vm.state not in (:vmstates)";
+
+        if (!vmTracerHelper.getVmTracerUnsupportedVmInstanceTypeSet().isEmpty()) {
+            sql += "and vm.type not in (:vmtypes)";
+        }
+
+        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        q.setParameter("huuid", hostUuid);
+        q.setParameter("vmstates", list(VmInstanceState.Destroyed, VmInstanceState.Destroying));
+
+        if (!vmTracerHelper.getVmTracerUnsupportedVmInstanceTypeSet().isEmpty()) {
+            q.setParameter("vmtypes", vmTracerHelper.getVmTracerUnsupportedVmInstanceTypeSet());
+        }
+
+        List<Tuple> ts = q.getResultList();
+
+        for (Tuple t : ts) {
+            mgmtSideStates.put(t.get(0, String.class), t.get(1, VmInstanceState.class));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("ManagementServerSideVmStates vm %s, state %s", t.get(0, String.class), t.get(1, VmInstanceState.class).toString()));
+            }
+        }
+
+        return mgmtSideStates;
+    }
+
+    protected void reportVmState(final String hostUuid, final Map<String, VmInstanceState> vmStates, final Set<String> vmsToSkipHostSide, final Map<String, VmInstanceState> mgmtSideStates) {
         if (logger.isTraceEnabled()) {
             for (Map.Entry<String, VmInstanceState> e : vmStates.entrySet()) {
                 logger.trace(String.format("reportVmState vm: %s, state: %s", e.getKey(), e.getValue().toString()));
@@ -206,6 +211,7 @@ public abstract class VmTracer {
                 t.hostUuid = hostUuid;
                 t.hostSideStates = vmStates;
                 t.vmsToSkipHostSide = vmsToSkipHostSide;
+                t.mgmtSideStates = mgmtSideStates;
                 t.trace();
                 return null;
             }

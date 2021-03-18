@@ -192,6 +192,22 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     }
 
     private void syncVm(final HostInventory host, final Completion completion) {
+        // Get vms to skip before send command to host to confirm the vm will be skipped after sync command finished.
+        // The problem is if one vm-sync skipped operation is started and finished during vm sync command's handling
+        // vm state would still be sync to mn
+        Set<String> vmsToSkipSetHostSide = new HashSet<>();
+        if (vmsToSkip.get(Platform.getManagementServerId()) != null) {
+            vmsToSkipSetHostSide.addAll(vmsToSkip.get(Platform.getManagementServerId()).keySet());
+        }
+
+        // if the vm is not running on host when sync command executing but started as soon as possible
+        // before response handling of vm sync, mgmtSideStates will including the running vm but not result in
+        // vm sync response the vm would be changed to Stopped which is not expected.
+        // but if the vm is running on host but stopped on management node side in same pattern, the result is
+        // wrong but it will be fixed in next vm sync and different from creation, normally vm operations skip
+        // vm sync during processing
+        Map<String, VmInstanceState> mgmtSideStates = buildManagementServerSideVmStates(host.getUuid());
+
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         VmSyncCmd cmd = new VmSyncCmd();
         msg.setCommand(cmd);
@@ -211,11 +227,9 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                 if (ret.isSuccess()) {
                     Map<String, VmInstanceState> states = new HashMap<>(ret.getStates().size());
 
-                    Set<String> vmsToSkipSetHostSide;
                     if (vmsToSkip.get(Platform.getManagementServerId()) != null) {
-                        vmsToSkipSetHostSide = new HashSet<>(vmsToSkip.get(Platform.getManagementServerId()).keySet());
-                    } else {
-                        vmsToSkipSetHostSide = new HashSet<>();
+                        // Get vms to skip after sync result returned.
+                        vmsToSkipSetHostSide.addAll(vmsToSkip.get(Platform.getManagementServerId()).keySet());
                     }
 
                     Collection<String> vmUuidsInDeleteVmGC = DeleteVmGC.queryVmInGC(host.getUuid(), ret.getStates().keySet());
@@ -242,7 +256,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     }
 
                     checkVmInShutdown(ret.getVmInShutdowns(), states);
-                    reportVmState(host.getUuid(), states, vmsToSkipSetHostSide);
+                    reportVmState(host.getUuid(), states, vmsToSkipSetHostSide, mgmtSideStates);
                     completion.success();
                 } else {
                     ErrorCode errorCode = operr("unable to do vm sync on host[uuid:%s, ip:%s] because %s", host.getUuid(), host.getManagementIp(), ret.getError());
