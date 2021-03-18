@@ -131,6 +131,10 @@ public class HostInventory implements Serializable {
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "cpuNum"))
     private Integer cpuNum;
 
+    @Queryable(mappingClass = HostCapacityInventory.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "cpuSockets"))
+    private String architecture;
+
     /**
      * @desc the time this resource gets created
      */
@@ -152,6 +156,7 @@ public class HostInventory implements Serializable {
         this.setUuid(vo.getUuid());
         this.setZoneUuid(vo.getZoneUuid());
         this.setClusterUuid(vo.getClusterUuid());
+        this.setArchitecture(vo.getArchitecture());
         if (vo.getCapacity() != null) {
             this.setTotalCpuCapacity(vo.getCapacity().getTotalCpu());
             this.setAvailableCpuCapacity(vo.getCapacity().getAvailableCpu());
@@ -311,5 +316,13 @@ public class HostInventory implements Serializable {
 
     public void setClusterUuid(String clusterUuid) {
         this.clusterUuid = clusterUuid;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 }

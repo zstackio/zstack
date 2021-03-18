@@ -15,4 +15,12 @@
         <name>org.zstack.header.managementnode.APIGetCurrentTimeMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.header.managementnode.APIGetManagementNodeArchMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.managementnode.APIGetManagementNodeOSMsg</name>
+    </message>
+
 </service>
