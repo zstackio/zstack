@@ -260,7 +260,7 @@ public class Ssh {
        };
     }
 
-    public Ssh scpUpload(final String local, final String remote) {
+    public Ssh  scpUpload(final String local, final String remote) {
         commands.add(createScpCommand(local, remote, false));
         return this;
     }
