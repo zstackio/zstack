@@ -24,6 +24,8 @@ import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotState;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 
 import java.util.List;
@@ -121,6 +123,24 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
     @Transactional(readOnly = true)
     protected void validate(APICreateRootVolumeTemplateFromRootVolumeMsg msg) {
         ImageMessageFiller.fillFromVolume(msg, msg.getRootVolumeUuid());
+
+        if (msg.getPlatform() == null) {
+            String platform = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.rootVolumeUuid, msg.getRootVolumeUuid()).select(VmInstanceVO_.platform).findValue();
+            msg.setPlatform(platform == null ? ImagePlatform.Linux.toString() : platform);
+        }
+
+        if (msg.getGuestOsType() == null) {
+            List<String> osTypes = SQL.New("select i.guestOsType from VolumeVO v, ImageVO i where v.uuid=:vol and v.rootImageUuid = i.uuid").
+                    param("vol", msg.getRootVolumeUuid()).list();
+            if (osTypes != null && osTypes.size() > 0) {
+                msg.setGuestOsType(osTypes.get(0));
+            }
+        }
+
+        if (msg.getArchitecture() == null) {
+            String vmUuid = dbf.findByUuid(msg.getRootVolumeUuid(), VolumeVO.class).getVmInstanceUuid();
+            msg.setArchitecture(dbf.findByUuid(vmUuid, VmInstanceVO.class).getArchitecture());
+        }
     }
 
     private void validate(APIAddImageMsg msg) {

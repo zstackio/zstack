@@ -198,6 +198,8 @@ public class VmInstanceInventory implements Serializable, Cloneable {
 
     private String platform;
 
+    private String architecture;
+
     private String defaultL3NetworkUuid;
     /**
      * @desc - UserVm: normal vm
@@ -292,6 +294,7 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setMemorySize(vo.getMemorySize());
         this.setAllocatorStrategy(vo.getAllocatorStrategy());
         this.setPlatform(vo.getPlatform());
+        this.setArchitecture(vo.getArchitecture());
     }
 
     public static VmInstanceInventory valueOf(VmInstanceVO vo) {
@@ -375,6 +378,7 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setCpuSpeed(inv.getCpuSpeed());
         this.setMemorySize(inv.getMemorySize());
         this.setAllocatorStrategy(inv.getAllocatorStrategy());
+        this.setArchitecture(inv.getArchitecture());
     }
 
     public VolumeInventory getRootVolume() {
@@ -578,5 +582,13 @@ public class VmInstanceInventory implements Serializable, Cloneable {
 
     public void setVmCdRoms(List<VmCdRomInventory> vmCdRoms) {
         this.vmCdRoms = vmCdRoms;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 }

@@ -917,6 +917,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
 
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
+        final String architecture = dbf.findByUuid(msg.getImageUuid(), ImageVO.class).getArchitecture();
         VmInstanceVO vo = new VmInstanceVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -932,6 +933,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo.setZoneUuid(msg.getZoneUuid());
         vo.setInternalId(dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class));
         vo.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
+        vo.setArchitecture(architecture);
 
         SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
         imgq.select(ImageVO_.platform);
@@ -980,7 +982,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     vo.getUuid(),
                     VmInstanceVO.class.getSimpleName(), false);
 
-            String architecture = dbf.findByUuid(msg.getImageUuid(), ImageVO.class).getArchitecture();
             if (ImageArchitecture.aarch64.toString().equals(architecture)) {
                 SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(vo.getUuid());
                 creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, VmMachineType.virt.toString())));

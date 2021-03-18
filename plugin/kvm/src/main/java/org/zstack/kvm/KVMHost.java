@@ -2,6 +2,7 @@ package org.zstack.kvm;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.apache.tools.ant.taskdefs.Sleep;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,8 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.cluster.Cluster;
+import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.*;
@@ -2547,7 +2550,7 @@ public class KVMHost extends HostBase implements Host {
             checkPlatformWithOther(spec);
         }
 
-        String architecture = dbf.findByUuid(spec.getDestHost().getClusterUuid(), ClusterVO.class).getArchitecture();
+        String architecture = spec.getDestHost().getArchitecture();
 
         if (ImagePlatform.Windows.toString().equals(platform)) {
             virtio = VmSystemTags.WINDOWS_VOLUME_ON_VIRTIO.hasTag(spec.getVmInventory().getUuid());
@@ -3338,8 +3341,15 @@ public class KVMHost extends HostBase implements Host {
                 if (null == KVMSystemTags.EPT_CPU_FLAG.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.EPT_CPU_FLAG_TOKEN)) {
                     createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, "ept", false);
                 }
-                if (null == HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(self.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN)) {
-                    createTagWithoutNonValue(HostSystemTags.CPU_ARCHITECTURE, HostSystemTags.CPU_ARCHITECTURE_TOKEN, "x86_64", false);
+                if (null == self.getArchitecture()) {
+                    ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
+                    HostVO host = dbf.findByUuid(self.getUuid(), HostVO.class);
+                    if (null == cluster.getArchitecture()){
+                        host.setArchitecture(CpuArchitecture.x86_64.toString());
+                    } else {
+                        host.setArchitecture(cluster.getArchitecture());
+                    }
+                    dbf.update(host);
                 }
 
                 if (!checkQemuLibvirtVersionOfHost()) {
@@ -3525,6 +3535,10 @@ public class KVMHost extends HostBase implements Host {
                             }
 
                             String hostArchitecture = ret.getStdout().trim();
+                            HostVO host = dbf.findByUuid(getSelf().getUuid(), HostVO.class);
+                            host.setArchitecture(hostArchitecture);
+                            dbf.update(host);
+                            self.setArchitecture(hostArchitecture);
                             ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
                             if (cluster.getArchitecture() != null && !hostArchitecture.equals(cluster.getArchitecture()) && !cluster.getHypervisorType().equals("baremetal2")) {
                                 trigger.fail(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, cluster.getArchitecture()));
@@ -3803,7 +3817,6 @@ public class KVMHost extends HostBase implements Host {
                                     createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
                                     createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, ret.getEptFlag(), false);
                                     createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
-                                    createTagWithoutNonValue(HostSystemTags.CPU_ARCHITECTURE, HostSystemTags.CPU_ARCHITECTURE_TOKEN, ret.getCpuArchitecture(), true);
                                     createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
                                     createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);

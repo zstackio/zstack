@@ -124,6 +124,14 @@ public class HostInventory  {
         return this.cpuNum;
     }
 
+    public java.lang.String architecture;
+    public void setArchitecture(java.lang.String architecture) {
+        this.architecture = architecture;
+    }
+    public java.lang.String getArchitecture() {
+        return this.architecture;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
