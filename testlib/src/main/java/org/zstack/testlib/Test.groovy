@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Level
 import java.util.logging.Logger
 /**
@@ -322,11 +323,8 @@ abstract class Test extends ApiHelper implements Retry {
                         bus.replyErrorByMessageType(msg, "a test case installed message handler for this message, however," +
                                 " its condition closure decides not to handle this message. Check your test case")
                     } else {
-                        if (currentEnvSpec.messageHandlerCounters[msg.getClass()] == null) {
-                            currentEnvSpec.messageHandlerCounters[msg.getClass()] = 1
-                        } else {
-                            currentEnvSpec.messageHandlerCounters[msg.getClass()] ++
-                        }
+                        currentEnvSpec.messageHandlerCounters.putIfAbsent(msg.getClass(), new AtomicInteger(0))
+                        currentEnvSpec.messageHandlerCounters.get(msg.getClass()).incrementAndGet()
                     }
                 } catch (Exception ex) {
                     bus.replyErrorByMessageType(msg, ex)
