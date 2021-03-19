@@ -667,6 +667,7 @@ public class L2NoVlanNetwork implements L2Network {
         if(clusterUuids.isEmpty()){
             logger.debug(String.format("no need to delete l2 bridge ,because l2nework[uuid:%s] is not added to any cluster",l2NetworkInventory.getUuid()));
             completion.success();
+            return;
         }
         List<HostVO> hosts = Q.New(HostVO.class)
                 .in(HostVO_.clusterUuid, clusterUuids)
