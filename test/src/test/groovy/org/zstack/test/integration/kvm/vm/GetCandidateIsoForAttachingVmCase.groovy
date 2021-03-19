@@ -8,6 +8,7 @@ import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.ZoneInventory
+import org.zstack.sdk.AttachIsoToVmInstanceAction
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
@@ -57,6 +58,12 @@ class GetCandidateIsoForAttachingVmCase extends SubCase {
                     name = "iso_1"
                     mediaType = ImageConstant.ImageMediaType.ISO.toString()
                     url  = "http://zstack.org/download/test.iso"
+                }
+
+                image {
+                    name = "image-test"
+                    mediaType = ImageConstant.ImageMediaType.RootVolumeTemplate.toString()
+                    url = "http://zstack.org/download/image_test.qcow2"
                 }
             }
 
@@ -123,6 +130,14 @@ class GetCandidateIsoForAttachingVmCase extends SubCase {
         VmInstanceInventory vm = env.inventoryByName("vm")
         BackupStorageInventory bs = env.inventoryByName("sftp")
         ZoneInventory zone = env.inventoryByName("zone")
+        ImageInventory testImage = env.inventoryByName("image-test")
+
+        AttachIsoToVmInstanceAction testvalidate = new AttachIsoToVmInstanceAction()
+        testvalidate.isoUuid = testImage.uuid
+        testvalidate.vmInstanceUuid = vm.uuid
+        testvalidate.sessionId = adminSession()
+        AttachIsoToVmInstanceAction.Result validateRes = testvalidate.call()
+        assert validateRes.error.details.contains("Unsupported Image Media Type")
 
         List<ImageInventory> isoList = getCandidateIsoForAttachingVm {
             vmInstanceUuid = vm.uuid

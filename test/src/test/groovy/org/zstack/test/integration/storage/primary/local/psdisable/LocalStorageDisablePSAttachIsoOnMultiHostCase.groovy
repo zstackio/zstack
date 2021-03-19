@@ -6,6 +6,7 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.storage.primary.PrimaryStorageState
 import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.header.image.ImageConstant
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -68,6 +69,7 @@ class LocalStorageDisablePSAttachIsoOnMultiHostCase extends SubCase{
 
                 image {
                     name = "test-iso"
+                    mediaType = ImageConstant.ImageMediaType.ISO.toString()
                     url  = "http://zstack.org/download/test.iso"
                 }
 

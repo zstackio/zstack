@@ -3,6 +3,7 @@ package org.zstack.test.integration.storage
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
+import org.zstack.header.image.ImageConstant
 /**
  * Created by Administrator on 2017-03-01.
  */
@@ -91,6 +92,7 @@ use:
 
                 image {
                     name = "test-iso"
+                    mediaType = ImageConstant.ImageMediaType.ISO.toString()
                     url  = "http://zstack.org/download/test.iso"
                 }
                 image {
