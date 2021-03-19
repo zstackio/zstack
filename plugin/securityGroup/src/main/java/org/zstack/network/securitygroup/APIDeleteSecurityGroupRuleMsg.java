@@ -5,6 +5,7 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
@@ -57,7 +58,7 @@ import static java.util.Arrays.asList;
         method = HttpMethod.DELETE,
         responseClass = APIDeleteSecurityGroupRuleEvent.class
 )
-public class APIDeleteSecurityGroupRuleMsg extends APIMessage {
+public class APIDeleteSecurityGroupRuleMsg extends APIMessage implements APIAuditor {
     /**
      * @desc a list of rule uuid
      */
@@ -76,5 +77,10 @@ public class APIDeleteSecurityGroupRuleMsg extends APIMessage {
         APIDeleteSecurityGroupRuleMsg msg = new APIDeleteSecurityGroupRuleMsg();
         msg.setRuleUuids(asList(uuid()));
         return msg;
+    }
+
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(((APIDeleteSecurityGroupRuleEvent) rsp).getInventory().getUuid(), SecurityGroupVO.class);
     }
 }
