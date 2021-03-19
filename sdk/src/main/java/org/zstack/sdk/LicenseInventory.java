@@ -12,20 +12,44 @@ public class LicenseInventory  {
         return this.uuid;
     }
 
+    public java.lang.String user;
+    public void setUser(java.lang.String user) {
+        this.user = user;
+    }
+    public java.lang.String getUser() {
+        return this.user;
+    }
+
+    public java.lang.Integer cpuNum;
+    public void setCpuNum(java.lang.Integer cpuNum) {
+        this.cpuNum = cpuNum;
+    }
+    public java.lang.Integer getCpuNum() {
+        return this.cpuNum;
+    }
+
+    public java.lang.Integer hostNum;
+    public void setHostNum(java.lang.Integer hostNum) {
+        this.hostNum = hostNum;
+    }
+    public java.lang.Integer getHostNum() {
+        return this.hostNum;
+    }
+
+    public java.lang.Integer vmNum;
+    public void setVmNum(java.lang.Integer vmNum) {
+        this.vmNum = vmNum;
+    }
+    public java.lang.Integer getVmNum() {
+        return this.vmNum;
+    }
+
     public java.lang.String licenseType;
     public void setLicenseType(java.lang.String licenseType) {
         this.licenseType = licenseType;
     }
     public java.lang.String getLicenseType() {
         return this.licenseType;
-    }
-
-    public java.lang.String licenseRequest;
-    public void setLicenseRequest(java.lang.String licenseRequest) {
-        this.licenseRequest = licenseRequest;
-    }
-    public java.lang.String getLicenseRequest() {
-        return this.licenseRequest;
     }
 
     public java.lang.String expiredDate;
@@ -44,36 +68,36 @@ public class LicenseInventory  {
         return this.issuedDate;
     }
 
-    public java.lang.String user;
-    public void setUser(java.lang.String user) {
-        this.user = user;
+    public java.lang.String uploadDate;
+    public void setUploadDate(java.lang.String uploadDate) {
+        this.uploadDate = uploadDate;
     }
-    public java.lang.String getUser() {
-        return this.user;
-    }
-
-    public java.lang.Integer hostNum;
-    public void setHostNum(java.lang.Integer hostNum) {
-        this.hostNum = hostNum;
-    }
-    public java.lang.Integer getHostNum() {
-        return this.hostNum;
+    public java.lang.String getUploadDate() {
+        return this.uploadDate;
     }
 
-    public java.lang.Integer cpuNum;
-    public void setCpuNum(java.lang.Integer cpuNum) {
-        this.cpuNum = cpuNum;
+    public java.lang.String managementNodeUuid;
+    public void setManagementNodeUuid(java.lang.String managementNodeUuid) {
+        this.managementNodeUuid = managementNodeUuid;
     }
-    public java.lang.Integer getCpuNum() {
-        return this.cpuNum;
+    public java.lang.String getManagementNodeUuid() {
+        return this.managementNodeUuid;
     }
 
-    public java.lang.Integer vmNum;
-    public void setVmNum(java.lang.Integer vmNum) {
-        this.vmNum = vmNum;
+    public boolean expired;
+    public void setExpired(boolean expired) {
+        this.expired = expired;
     }
-    public java.lang.Integer getVmNum() {
-        return this.vmNum;
+    public boolean getExpired() {
+        return this.expired;
+    }
+
+    public java.lang.String licenseRequest;
+    public void setLicenseRequest(java.lang.String licenseRequest) {
+        this.licenseRequest = licenseRequest;
+    }
+    public java.lang.String getLicenseRequest() {
+        return this.licenseRequest;
     }
 
     public java.lang.Integer availableHostNum;
@@ -98,22 +122,6 @@ public class LicenseInventory  {
     }
     public java.lang.Integer getAvailableVmNum() {
         return this.availableVmNum;
-    }
-
-    public boolean expired;
-    public void setExpired(boolean expired) {
-        this.expired = expired;
-    }
-    public boolean getExpired() {
-        return this.expired;
-    }
-
-    public java.lang.String managementNodeUuid;
-    public void setManagementNodeUuid(java.lang.String managementNodeUuid) {
-        this.managementNodeUuid = managementNodeUuid;
-    }
-    public java.lang.String getManagementNodeUuid() {
-        return this.managementNodeUuid;
     }
 
 }
