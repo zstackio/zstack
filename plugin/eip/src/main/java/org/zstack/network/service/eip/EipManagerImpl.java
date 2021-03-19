@@ -423,7 +423,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         UsedIpInventory guestIp = getEipGuestIp(eip.getUuid());
         EipStruct struct = generateEipStruct(nicInventory, vipInventory, eip, guestIp);
         struct.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
-        detachEipAndUpdateDb(struct, providerType.toString(), DetachEipOperation.DB_UPDATE, new Completion(msg) {
+        detachEipAndUpdateDb(struct, providerType.toString(), DetachEipOperation.DB_UPDATE, true, new Completion(msg) {
             @Override
             public void success() {
                 evt.setInventory(EipInventory.valueOf(dbf.reload(vo)));
