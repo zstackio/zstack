@@ -232,13 +232,18 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
     private void handle(L2NetworkDeletionMsg msg) {
         L2NetworkInventory inv = L2NetworkInventory.valueOf(self);
         extpEmitter.beforeDelete(inv);
-        deleteHook(new NoErrorCompletion(msg) {
+        L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
+        deleteHook(new Completion(msg) {
             @Override
-            public void done() {
+            public void success() {
                 dbf.removeByPrimaryKey(msg.getL2NetworkUuid(), L2NetworkVO.class);
                 extpEmitter.afterDelete(inv);
+                bus.reply(msg, reply);
+            }
 
-                L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
         });
