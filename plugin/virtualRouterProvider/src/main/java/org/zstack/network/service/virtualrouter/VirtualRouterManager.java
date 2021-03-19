@@ -49,6 +49,8 @@ public interface VirtualRouterManager {
 
     FlowChain getReconnectFlowChain();
 
+    FlowChain getProvisionConfigChain();
+
     int getParallelismDegree(String vrUuid);
 
     VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv);

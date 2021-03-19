@@ -1,6 +1,5 @@
 package org.zstack.network.service.virtualrouter;
 
-import org.apache.commons.net.util.SubnetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
@@ -50,11 +49,16 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
     private CloudBus bus;
 
     private void setServiceId(APIMessage msg) {
+        /* APIReconnectVirtualRouterMsg, APIUpdateVirtualRouterMsg, APIFlushConfigToVirtualRouterMsg
+        * is handled in vmInstanceManagerImpl, then call handler in virtualrouter */
         if (msg instanceof APIReconnectVirtualRouterMsg) {
             VmInstanceMessage vmsg = (VmInstanceMessage) msg;
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmsg.getVmInstanceUuid());
         } else if (msg instanceof APIUpdateVirtualRouterMsg) {
             VmInstanceMessage vmsg = (VmInstanceMessage) msg;
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmsg.getVmInstanceUuid());
+        } else if (msg instanceof APIProvisionVirtualRouterConfigMsg) {
+            APIProvisionVirtualRouterConfigMsg vmsg = (APIProvisionVirtualRouterConfigMsg) msg;
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmsg.getVmInstanceUuid());
         } else if (msg instanceof VmInstanceMessage){
             VmInstanceMessage vmsg = (VmInstanceMessage) msg;

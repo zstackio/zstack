@@ -74,6 +74,11 @@ public class VyosVm extends VirtualRouter {
     }
 
     @Override
+    protected FlowChain getProvisionConfigChain() {
+        return vyosf.getFlushConfigChain();
+    }
+
+    @Override
     protected void handle(final ApplianceVmRefreshFirewallMsg msg) {
         // vyos doesn't need appliance vm
         ApplianceVmRefreshFirewallReply reply = new ApplianceVmRefreshFirewallReply();

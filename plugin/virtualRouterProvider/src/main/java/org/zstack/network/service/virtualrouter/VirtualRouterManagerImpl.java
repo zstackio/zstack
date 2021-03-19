@@ -125,11 +125,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private List<String> virtualRouterPostRebootFlows;
     private List<String> virtualRouterPostDestroyFlows;
     private List<String> virtualRouterReconnectFlows;
+    private List<String> virtualRouterProvisionConfigFlows;
     private FlowChainBuilder postCreateFlowsBuilder;
     private FlowChainBuilder postStartFlowsBuilder;
     private FlowChainBuilder postRebootFlowsBuilder;
     private FlowChainBuilder postDestroyFlowsBuilder;
     private FlowChainBuilder reconnectFlowsBuilder;
+    private FlowChainBuilder provisionConfigFlowsBuilder;
 
     private List<VirtualRouterPostCreateFlowExtensionPoint> postCreateFlowExtensionPoints;
     private List<VirtualRouterPostStartFlowExtensionPoint> postStartFlowExtensionPoints;
@@ -137,6 +139,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private List<VirtualRouterPostReconnectFlowExtensionPoint> postReconnectFlowExtensionPoints;
     private List<VirtualRouterPostDestroyFlowExtensionPoint> postDestroyFlowExtensionPoints;
     private List<VipGetUsedPortRangeExtensionPoint> vipGetUsedPortRangeExtensionPoints;
+    private List<VirtualProvisionConfigFlowExtensionPoint> provisionConfigFlowExtensionPoints;
 
 	static {
 		supportedL2NetworkTypes.add(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE);
@@ -781,6 +784,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         postReconnectFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostReconnectFlowExtensionPoint.class);
         postDestroyFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostDestroyFlowExtensionPoint.class);
         vipGetUsedPortRangeExtensionPoints = pluginRgty.getExtensionList(VipGetUsedPortRangeExtensionPoint.class);
+        provisionConfigFlowExtensionPoints = pluginRgty.getExtensionList(VirtualProvisionConfigFlowExtensionPoint.class);
 	}
 	
 	private NetworkServiceProviderVO getRouterVO() {
@@ -864,6 +868,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         postRebootFlowsBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(virtualRouterPostRebootFlows).construct();
         postDestroyFlowsBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(virtualRouterPostDestroyFlows).construct();
         reconnectFlowsBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(virtualRouterReconnectFlows).construct();
+        provisionConfigFlowsBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(virtualRouterProvisionConfigFlows).construct();
 	}
 
     @Override
@@ -1275,6 +1280,15 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     @Override
+    public FlowChain getProvisionConfigChain() {
+        FlowChain chain = provisionConfigFlowsBuilder.build();
+        for (VirtualProvisionConfigFlowExtensionPoint ext : provisionConfigFlowExtensionPoints) {
+            chain.then(ext.provisionConfigFlow());
+        }
+        return chain;
+    }
+
+    @Override
     public int getParallelismDegree(String vrUuid) {
         Integer degree = vrParallelismDegrees.get(vrUuid);
         return degree == null ? VirtualRouterGlobalConfig.COMMANDS_PARALELLISM_DEGREE.value(Integer.class) : degree;
@@ -1299,6 +1313,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     public void setVirtualRouterReconnectFlows(List<String> virtualRouterReconnectFlows) {
         this.virtualRouterReconnectFlows = virtualRouterReconnectFlows;
+    }
+
+    public void setVirtualRouterProvisionConfigFlows(List<String> virtualRouterProvisionConfigFlows) {
+        this.virtualRouterProvisionConfigFlows = virtualRouterProvisionConfigFlows;
     }
 
     @Override
