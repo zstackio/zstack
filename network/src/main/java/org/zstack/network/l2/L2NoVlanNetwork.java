@@ -663,8 +663,13 @@ public class L2NoVlanNetwork implements L2Network {
 
     protected void deleteL2Bridge(Completion completion) {
         L2NetworkInventory l2NetworkInventory = getSelfInventory();
+        List<String> clusterUuids = l2NetworkInventory.getAttachedClusterUuids();
+        if(clusterUuids.isEmpty()){
+            logger.debug(String.format("no need to delete l2 bridge ,because l2nework[uuid:%s] is not added to any cluster",l2NetworkInventory.getUuid()));
+            completion.success();
+        }
         List<HostVO> hosts = Q.New(HostVO.class)
-                .in(HostVO_.clusterUuid, l2NetworkInventory.getAttachedClusterUuids())
+                .in(HostVO_.clusterUuid, clusterUuids)
                 .list();
         List<ErrorCode> errs = new ArrayList<>();
         new While<>(hosts).step((host,compl) -> {
