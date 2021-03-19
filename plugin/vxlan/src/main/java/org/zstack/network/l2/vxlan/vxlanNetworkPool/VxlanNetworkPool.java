@@ -97,8 +97,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     }
 
     @Override
-    public void deleteHook(NoErrorCompletion completion) {
-        completion.done();
+    public void deleteHook(Completion completion) {
+        completion.success();
     }
 
     @Override
@@ -234,15 +234,21 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     private void handle(L2NetworkDeletionMsg msg) {
         L2NetworkInventory inv = L2NetworkInventory.valueOf(self);
         extpEmitter.beforeDelete(inv);
-        deleteHook(new NoErrorCompletion() {
+        L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
+        deleteHook(new Completion(msg) {
             @Override
-            public void done() {
+            public void success() {
                 dbf.removeByPrimaryKey(msg.getL2NetworkUuid(), L2NetworkVO.class);
                 extpEmitter.afterDelete(inv);
-
-                L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
                 bus.reply(msg, reply);
             }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+
         });
 
     }

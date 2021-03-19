@@ -205,25 +205,28 @@ public class L2NoVlanNetwork implements L2Network {
 
     private void handle(DetachL2NetworkFromClusterMsg msg) {
         DetachL2NetworkFromClusterReply reply = new DetachL2NetworkFromClusterReply();
-        NoErrorCompletion completion =
-                new NoErrorCompletion() {
-                    @Override
-                    public void done() {
-                        long count1 = Q.New(L2NetworkClusterRefVO.class).count();
-                        logger.info("anquan 0:"+String.valueOf(count1));
-                        SimpleQuery<L2NetworkClusterRefVO> query = dbf.createQuery(L2NetworkClusterRefVO.class);
-                        query.add(L2NetworkClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
-                        query.add(L2NetworkClusterRefVO_.l2NetworkUuid, Op.EQ, msg.getL2NetworkUuid());
-                        L2NetworkClusterRefVO rvo = query.find();
-                        if (rvo != null) {
-                            dbf.remove(rvo);
-                        }
-                        long count2 = Q.New(L2NetworkClusterRefVO.class).count();
-                        logger.info("anquan 1:"+String.valueOf(count2));
-                        bus.reply(msg, reply);
+        deleteL2Bridge(
+            new Completion(msg) {
+                @Override
+                public void success() {
+                    long count1 = Q.New(L2NetworkClusterRefVO.class).count();
+                    SimpleQuery<L2NetworkClusterRefVO> query = dbf.createQuery(L2NetworkClusterRefVO.class);
+                    query.add(L2NetworkClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
+                    query.add(L2NetworkClusterRefVO_.l2NetworkUuid, Op.EQ, msg.getL2NetworkUuid());
+                    L2NetworkClusterRefVO rvo = query.find();
+                    if (rvo != null) {
+                        dbf.remove(rvo);
                     }
-                };
-        deleteL2Bridge(completion);
+                    long count2 = Q.New(L2NetworkClusterRefVO.class).count();
+                    logger.info("anquan 1:"+String.valueOf(count2));
+                    bus.reply(msg, reply);
+                }
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                }
+            }
+        );
         long count = Q.New(L2NetworkClusterRefVO.class).count();
         logger.info("anquan 2:"+String.valueOf(count));
 
@@ -272,12 +275,17 @@ public class L2NoVlanNetwork implements L2Network {
     private void handle(L2NetworkDeletionMsg msg) {
         L2NetworkInventory inv = L2NetworkInventory.valueOf(self);
         extpEmitter.beforeDelete(inv);
-        deleteHook(new NoErrorCompletion(msg) {
+        L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
+        deleteHook(new Completion(msg) {
             @Override
-            public void done() {
+            public void success() {
                 extpEmitter.afterDelete(inv);
+                bus.reply(msg, reply);
+            }
 
-                L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
         });
@@ -649,15 +657,16 @@ public class L2NoVlanNetwork implements L2Network {
     }
 
     @Override
-    public void deleteHook(NoErrorCompletion completion) {
+    public void deleteHook(Completion completion) {
         deleteL2Bridge(completion);
     }
 
-    protected void deleteL2Bridge(NoErrorCompletion completion) {
+    protected void deleteL2Bridge(Completion completion) {
         L2NetworkInventory l2NetworkInventory = getSelfInventory();
         List<HostVO> hosts = Q.New(HostVO.class)
                 .in(HostVO_.clusterUuid, l2NetworkInventory.getAttachedClusterUuids())
                 .list();
+        List<ErrorCode> errs = new ArrayList<>();
         new While<>(hosts).step((host,compl) -> {
             HypervisorType hvType = HypervisorType.valueOf(host.getHypervisorType());
             L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
@@ -671,14 +680,20 @@ public class L2NoVlanNetwork implements L2Network {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    compl.addError(errorCode);
+                    errs.add(errorCode);
+                    compl.done();
                 }
 
             });
         },10).run((new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                completion.done();
+                if (errs.size() > 0) {
+                    completion.fail(errs.get(0));
+                } else {
+                    completion.success();
+                }
+
             }
         }));
     }
