@@ -64,8 +64,10 @@ public class VirtualRouter extends ApplianceVmBase {
 
     static {
         allowedOperations.addState(VmInstanceState.Running, APIReconnectVirtualRouterMsg.class.getName());
+        allowedOperations.addState(VmInstanceState.Running, APIProvisionVirtualRouterConfigMsg.class.getName());
         allowedOperations.addState(VmInstanceState.Running, APIUpdateVirtualRouterMsg.class.getName());
         allowedOperations.addState(VmInstanceState.Running, ReconnectVirtualRouterVmMsg.class.getName());
+        allowedOperations.addState(VmInstanceState.Running, ProvisionVirtualRouterConfigMsg.class.getName());
     }
 
     @Autowired
@@ -127,12 +129,18 @@ public class VirtualRouter extends ApplianceVmBase {
         return vrMgr.getReconnectFlowChain();
     }
 
+    protected FlowChain getProvisionConfigChain() {
+        return vrMgr.getProvisionConfigChain();
+    }
+
     @Override
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIReconnectVirtualRouterMsg) {
             handle((APIReconnectVirtualRouterMsg) msg);
         } else if (msg instanceof APIUpdateVirtualRouterMsg) {
             handle((APIUpdateVirtualRouterMsg) msg);
+        } else if (msg instanceof APIProvisionVirtualRouterConfigMsg) {
+            handle((APIProvisionVirtualRouterConfigMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
@@ -146,6 +154,8 @@ public class VirtualRouter extends ApplianceVmBase {
             handle((ReconnectVirtualRouterVmMsg) msg);
         } else if (msg instanceof PingVirtualRouterVmMsg) {
             handle((PingVirtualRouterVmMsg) msg);
+        } else if (msg instanceof ProvisionVirtualRouterConfigMsg) {
+            handle((ProvisionVirtualRouterConfigMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -265,6 +275,115 @@ public class VirtualRouter extends ApplianceVmBase {
         });
 
 
+    }
+
+    private void provisionConfig(Message msg, final Completion completion) {
+        ApplianceVmStatus oldStatus = getSelf().getStatus();
+
+        refreshVO();
+        ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (allowed != null) {
+            completion.fail(allowed);
+            return;
+        }
+
+        FlowChain chain = getProvisionConfigChain();
+        chain.setName(String.format("virtual-router-%s-provision-config", self.getUuid()));
+        chain.getData().put(VirtualRouterConstant.Param.VR.toString(), vr);
+        chain.getData().put(Params.isReconnect.toString(), Boolean.TRUE.toString());
+        chain.getData().put(Params.managementNicIp.toString(), vr.getManagementNic().getIp());
+        chain.getData().put(Params.applianceVmUuid.toString(), self.getUuid());
+
+        SimpleQuery<ApplianceVmFirewallRuleVO> q = dbf.createQuery(ApplianceVmFirewallRuleVO.class);
+        q.add(ApplianceVmFirewallRuleVO_.applianceVmUuid, Op.EQ, getSelf().getUuid());
+        List<ApplianceVmFirewallRuleVO> vos = q.list();
+        List<ApplianceVmFirewallRuleInventory> rules = ApplianceVmFirewallRuleInventory.valueOf(vos);
+        chain.getData().put(ApplianceVmConstant.Params.applianceVmFirewallRules.toString(), rules);
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                self = dbf.reload(self);
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                if (oldStatus == ApplianceVmStatus.Connected) {
+                    fireDisconnectedCanonicalEvent(errCode);
+                }
+
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    private void handle(final ProvisionVirtualRouterConfigMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final ProvisionVirtualRouterConfigReply reply = new ProvisionVirtualRouterConfigReply();
+
+                provisionConfig(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("provision-config-to-virtual-router-%s", self.getUuid());
+            }
+        });
+    }
+
+    private void handle(final APIProvisionVirtualRouterConfigMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final APIProvisionVirtualRouterConfigEvent evt = new APIProvisionVirtualRouterConfigEvent(msg.getId());
+
+                provisionConfig(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        evt.setInventory((ApplianceVmInventory) getSelfInventory());
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("provision-config-to-virtual-router-%s", self.getUuid());
+            }
+        });
     }
 
     private void handle(final ReconnectVirtualRouterVmMsg msg) {

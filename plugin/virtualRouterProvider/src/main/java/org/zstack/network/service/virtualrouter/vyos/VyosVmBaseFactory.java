@@ -60,11 +60,13 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
     private List<String> vyosPostRebootFlows;
     private List<String> vyosPostDestroyFlows;
     private List<String> vyosReconnectFlows;
+    private List<String> vyosProvisionConfigFlows;
     private FlowChainBuilder postCreateFlowsBuilder;
     private FlowChainBuilder postStartFlowsBuilder;
     private FlowChainBuilder postRebootFlowsBuilder;
     private FlowChainBuilder postDestroyFlowsBuilder;
     private FlowChainBuilder reconnectFlowsBuilder;
+    private FlowChainBuilder provisionConfigFlows;
     private NetworkServiceProviderVO providerVO;
 
     private List<VyosPostCreateFlowExtensionPoint> postCreateFlowExtensionPoints;
@@ -73,6 +75,7 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
     private List<VyosPostReconnectFlowExtensionPoint> postReconnectFlowExtensionPoints;
     private List<VyosPostStartFlowExtensionPoint> postStartFlowExtensionPoints;
     private List<VyosPostMigrateFlowExtensionPoint> postMigrateFlowExtensionPoints;
+    private List<VyosProvisionConfigFlowExtensionPoint> provisionConfigFlowExtensionPoints;
 
     private final static List<String> supportedL2NetworkTypes = new ArrayList<>();
 
@@ -99,6 +102,10 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
 
     public void setVyosReconnectFlows(List<String> vyosReconnectFlows) {
         this.vyosReconnectFlows = vyosReconnectFlows;
+    }
+
+    public void setVyosProvisionConfigFlows(List<String> vyosProvisionConfigFlows) {
+        this.vyosProvisionConfigFlows = vyosProvisionConfigFlows;
     }
 
     public List<Flow> getPostCreateFlows() {
@@ -144,6 +151,19 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
         for (VyosPostReconnectFlowExtensionPoint ext : postReconnectFlowExtensionPoints) {
             c.then(ext.vyosPostReconnectFlow());
         }
+
+        /* flush config is part of reconnect flow */
+        for (VyosProvisionConfigFlowExtensionPoint ext : provisionConfigFlowExtensionPoints) {
+            c.then(ext.vyosProvisionConfigFlow());
+        }
+        return c;
+    }
+
+    public FlowChain getFlushConfigChain() {
+        FlowChain c = provisionConfigFlows.build();
+        for (VyosProvisionConfigFlowExtensionPoint ext : provisionConfigFlowExtensionPoints) {
+            c.then(ext.vyosProvisionConfigFlow());
+        }
         return c;
     }
 
@@ -159,6 +179,7 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
         postRebootFlowsBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(vyosPostRebootFlows).construct();
         postDestroyFlowsBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(vyosPostDestroyFlows).construct();
         reconnectFlowsBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(vyosReconnectFlows).construct();
+        provisionConfigFlows = FlowChainBuilder.newBuilder().setFlowClassNames(vyosProvisionConfigFlows).construct();
     }
 
 
@@ -186,6 +207,7 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
         postReconnectFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostReconnectFlowExtensionPoint.class);
         postStartFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostStartFlowExtensionPoint.class);
         postMigrateFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostMigrateFlowExtensionPoint.class);
+        provisionConfigFlowExtensionPoints = pluginRgty.getExtensionList(VyosProvisionConfigFlowExtensionPoint.class);
     }
 
     @Override
