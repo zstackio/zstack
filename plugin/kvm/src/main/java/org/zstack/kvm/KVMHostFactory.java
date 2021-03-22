@@ -47,7 +47,6 @@ import org.zstack.utils.function.ValidateFunction;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
@@ -56,7 +55,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -75,7 +73,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public static final VolumeFormat QCOW2_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_QCOW2, hypervisorType);
     public static final VolumeFormat RAW_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_RAW, hypervisorType);
     private List<KVMHostConnectExtensionPoint> connectExtensions = new ArrayList<>();
-    private Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<>();
+    private final Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<>();
     private int maxDataVolumeNum;
 
     private final Map<SocketChannel, Long> socketTimeoutMap = new ConcurrentHashMap<>();
@@ -359,9 +357,9 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 return;
             }
 
-            if (hostModelMap.values().stream().distinct().collect(Collectors.toList()).size() != 1) {
+            if (hostModelMap.values().stream().distinct().count() != 1) {
                 StringBuilder str = new StringBuilder();
-                for (Map.Entry entry : hostModelMap.entrySet()) {
+                for (Map.Entry<String, String> entry : hostModelMap.entrySet()) {
                     str.append(String.format("host[uuid:%s]'s cpu model is %s ;\n", entry.getKey(), entry.getValue()));
                 }
 
@@ -371,7 +369,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
         KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.installValidator(((resourceUuid, resourceType, systemTag) -> {
             String check = KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.getTokenByTag(systemTag, KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN);
-            Integer num;
+            int num;
             try {
                 num = Integer.parseInt(check);
             } catch (Exception e) {
