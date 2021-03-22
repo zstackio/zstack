@@ -26,7 +26,7 @@ public class SimulatorVmSyncPingTask extends VmTracer implements HostPingTaskExt
 
         Map<String, VmInstanceState> curr = config.getVmOnHost(inv.getUuid());
         if (curr == null) {
-            super.reportVmState(inv.getUuid(), vms, null);
+            super.reportVmState(inv.getUuid(), vms, null, null);
             return;
         }
 
@@ -36,7 +36,7 @@ public class SimulatorVmSyncPingTask extends VmTracer implements HostPingTaskExt
             }
         }
         
-        super.reportVmState(inv.getUuid(), vms, null);
+        super.reportVmState(inv.getUuid(), vms, null, null);
     }
 
     @Override
