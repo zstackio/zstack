@@ -52,7 +52,7 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     private String healthCheckHttpCode;
     @APIParam(validValues = {"enable", "disable"}, required = false)
     private String aclStatus;
-    @APIParam(validValues = {LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_0, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_1,
+    @APIParam(validValues = {LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_DEFAULT, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_0, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_1,
             LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2_STRICT,
             LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2_STRICT_WITH_1_3}, required = false)
     private String securityPolicyType;

@@ -66,7 +66,7 @@ public class CreateLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, validValues = {"white","black"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String aclType = "black";
 
-    @Param(required = false, validValues = {"tls_cipher_policy_1_0","tls_cipher_policy_1_1","tls_cipher_policy_1_2","tls_cipher_policy_1_2_strict","tls_cipher_policy_1_2_strict_with_1_3"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"tls_cipher_policy_default","tls_cipher_policy_1_0","tls_cipher_policy_1_1","tls_cipher_policy_1_2","tls_cipher_policy_1_2_strict","tls_cipher_policy_1_2_strict_with_1_3"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String securityPolicyType;
 
     @Param(required = false)
