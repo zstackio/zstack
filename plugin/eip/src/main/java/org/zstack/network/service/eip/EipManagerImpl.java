@@ -9,6 +9,9 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
@@ -75,6 +78,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     private TagManager tagMgr;
     @Autowired
     private L3NetworkManager l3Mgr;
+    @Autowired
+    private ThreadFacade thdf;
 
     private Map<String, EipBackend> backends = new HashMap<>();
 
@@ -686,124 +691,141 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         final EipVO vo = dbf.findByUuid(eipUuid, EipVO.class);
         VipVO vipvo = dbf.findByUuid(vo.getVipUuid(), VipVO.class);
         VipInventory vipInventory = VipInventory.valueOf(vipvo);
-
-        if (vo.getVmNicUuid() == null) {
-            ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-            struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
-            struct.setServiceUuid(eipUuid);
-            Vip vip = new Vip(vo.getVipUuid());
-            vip.setStruct(struct);
-            vip.release(new Completion(completion) {
-                @Override
-                public void success() {
-                    dbf.remove(vo);
-                    completion.success();
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    completion.fail(errorCode);
-                }
-            });
-
-            return;
-        }
-
-        VmNicVO nicvo = dbf.findByUuid(vo.getVmNicUuid(), VmNicVO.class);
-        VmNicInventory nicInventory = VmNicInventory.valueOf(nicvo);
-
         EipInventory eip = EipInventory.valueOf(vo);
-        String l3NetworkUuid = getEipL3Network(nicInventory, eip);
-        EipStruct struct = generateEipStruct(nicInventory, vipInventory, eip, getEipGuestIp(eipUuid));
-        struct.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
-        NetworkServiceProviderType providerType = nwServiceMgr.
-                getTypeOfNetworkServiceProviderForService(l3NetworkUuid, EipConstant.EIP_TYPE);
 
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("delete-eip-vmNic-%s-vip-%s", nicvo.getUuid(), vipvo.getUuid()));
-        chain.then(new ShareFlow() {
+        thdf.chainSubmit(new ChainTask(completion) {
             @Override
-            public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "pre-delete-eip";
+            public String getSyncSignature() {
+                return String.format("gusestIp-" + eip.getGuestIp() + "-vmNicUuid-" + eip.getVmNicUuid());
+            }
 
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
-                            ext.preAttachEip(struct);
+            @Override
+            public String getName() {
+                return String.format("delete-eip-for-guestIp-" + eip.getGuestIp() + "-vmNicUuid-" + eip.getVmNicUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain syncTaskChain) {
+                if (vo.getVmNicUuid() == null) {
+                    ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                    struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+                    struct.setServiceUuid(eipUuid);
+                    Vip vip = new Vip(vo.getVipUuid());
+                    vip.setStruct(struct);
+                    vip.release(new Completion(completion) {
+                        @Override
+                        public void success() {
+                            dbf.remove(vo);
+                            completion.success();
+                            syncTaskChain.next();
                         }
 
-                        trigger.next();
-                    }
-                });
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                            syncTaskChain.next();
+                        }
+                    });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "delete-eip-from-backend";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        EipBackend bkd = getEipBackend(providerType.toString());
-                        bkd.revokeEip(struct, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                //TODO: add GC instead of failing the API
-                                logger.warn(String.format("failed to detach eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider will garbage collect. %s",
-                                        struct.getEip().getUuid(), struct.getVip().getIp(), struct.getNic().getUuid(), providerType, errorCode));
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
-
-                for (Flow f : getAdditionalDeleteEipFlow(struct, providerType)) {
-                    flow(f);
+                    return;
                 }
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "release-vip";
-
+                VmNicVO nicvo = dbf.findByUuid(vo.getVmNicUuid(), VmNicVO.class);
+                VmNicInventory nicInventory = VmNicInventory.valueOf(nicvo);
+                String l3NetworkUuid = getEipL3Network(nicInventory, eip);
+                EipStruct struct = generateEipStruct(nicInventory, vipInventory, eip, getEipGuestIp(eipUuid));
+                struct.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
+                NetworkServiceProviderType providerType = nwServiceMgr.
+                        getTypeOfNetworkServiceProviderForService(l3NetworkUuid, EipConstant.EIP_TYPE);
+                FlowChain chain = FlowChainBuilder.newShareFlowChain();
+                chain.setName(String.format("delete-eip-vmNic-%s-vip-%s", nicvo.getUuid(), vipvo.getUuid()));
+                chain.then(new ShareFlow() {
                     @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                        struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
-                        struct.setServiceUuid(eipUuid);
-                        Vip vip = new Vip(vipInventory.getUuid());
-                        vip.setStruct(struct);
-                        vip.release(new Completion(trigger) {
+                    public void setup() {
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "pre-delete-eip";
+
                             @Override
-                            public void success() {
+                            public void run(FlowTrigger trigger, Map data) {
+                                for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
+                                    ext.preAttachEip(struct);
+                                }
+
                                 trigger.next();
                             }
+                        });
+
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "delete-eip-from-backend";
 
                             @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                            public void run(FlowTrigger trigger, Map data) {
+                                EipBackend bkd = getEipBackend(providerType.toString());
+                                bkd.revokeEip(struct, new Completion(trigger) {
+                                    @Override
+                                    public void success() {
+                                        trigger.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        //TODO: add GC instead of failing the API
+                                        logger.warn(String.format("failed to detach eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider will garbage collect. %s",
+                                                struct.getEip().getUuid(), struct.getVip().getIp(), struct.getNic().getUuid(), providerType, errorCode));
+                                        trigger.fail(errorCode);
+                                    }
+                                });
+                            }
+                        });
+
+                        for (Flow f : getAdditionalDeleteEipFlow(struct, providerType)) {
+                            flow(f);
+                        }
+
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "release-vip";
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                                struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+                                struct.setServiceUuid(eipUuid);
+                                Vip vip = new Vip(vipInventory.getUuid());
+                                vip.setStruct(struct);
+                                vip.release(new Completion(trigger) {
+                                    @Override
+                                    public void success() {
+                                        trigger.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
+                            }
+                        });
+
+                        done(new FlowDoneHandler(completion) {
+                            @Override
+                            public void handle(Map data) {
+                                dbf.remove(vo);
+                                completion.success();
+                                syncTaskChain.next();
+                            }
+                        });
+
+                        error(new FlowErrorHandler(completion) {
+                            @Override
+                            public void handle(ErrorCode errCode, Map data) {
+                                completion.fail(errCode);
+                                syncTaskChain.next();
                             }
                         });
                     }
-                });
-
-                done(new FlowDoneHandler(completion) {
-                    @Override
-                    public void handle(Map data) {
-                        dbf.remove(vo);
-                        completion.success();
-                    }
-                });
-
-                error(new FlowErrorHandler(completion) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        completion.fail(errCode);
-                    }
-                });
+                }).start();
             }
-        }).start();
+        });
     }
 
     private void handle(APIDeleteEipMsg msg) {
