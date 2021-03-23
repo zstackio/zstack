@@ -46,6 +46,9 @@ public class UpdateSchedulerTriggerAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String cron;
 
+    @Param(required = false, validValues = {"cron","simple"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String schedulerType;
+
     @Param(required = false)
     public java.util.List systemTags;
 
