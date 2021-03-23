@@ -47,11 +47,16 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
     private CloudBus bus;
 
     private void setServiceId(APIMessage msg) {
+        /* APIReconnectVirtualRouterMsg, APIUpdateVirtualRouterMsg, APIFlushConfigToVirtualRouterMsg
+        * is handled in vmInstanceManagerImpl, then call handler in virtualrouter */
         if (msg instanceof APIReconnectVirtualRouterMsg) {
             VmInstanceMessage vmsg = (VmInstanceMessage) msg;
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmsg.getVmInstanceUuid());
         } else if (msg instanceof APIUpdateVirtualRouterMsg) {
             VmInstanceMessage vmsg = (VmInstanceMessage) msg;
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmsg.getVmInstanceUuid());
+        } else if (msg instanceof APIProvisionVirtualRouterConfigMsg) {
+            APIProvisionVirtualRouterConfigMsg vmsg = (APIProvisionVirtualRouterConfigMsg) msg;
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmsg.getVmInstanceUuid());
         } else if (msg instanceof VmInstanceMessage){
             VmInstanceMessage vmsg = (VmInstanceMessage) msg;
