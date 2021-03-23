@@ -33,6 +33,7 @@ public class ApplianceVmConstant {
         applianceVmInfoForPostLifeCycle,
         applianceVmFirewallRules,
         isReconnect,
+        needRebootAgent,
         managementNicIp,
         applianceVmUuid,
         timeout,

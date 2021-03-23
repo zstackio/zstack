@@ -28,7 +28,7 @@ public class VyosDeployAgentFlow extends VyosRunScriptFlow {
 
     @Override
     public void initEnv() {
-setLogger(Utils.getLogger(VyosDeployAgentFlow.class));
+        setLogger(Utils.getLogger(VyosDeployAgentFlow.class));
     }
 
     @Override
@@ -37,7 +37,7 @@ setLogger(Utils.getLogger(VyosDeployAgentFlow.class));
             return true;
         }
 
-        boolean isReconnect = Boolean.parseBoolean((String) data.getOrDefault(ApplianceVmConstant.Params.isReconnect.toString(), false));
+        boolean isReconnect = Boolean.parseBoolean((String) data.get(ApplianceVmConstant.Params.isReconnect.toString()));
 
         // no need to reboot agent
         if (!isReconnect && !ApplianceVmGlobalConfig.DEPLOY_AGENT_ON_START.value(Boolean.class)) {
