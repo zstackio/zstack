@@ -3,8 +3,6 @@ package org.zstack.image;
 import edu.emory.mathcs.backport.java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.host.HostSystemTags;
-import org.zstack.compute.vm.VmExtraInfoGetter;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -16,7 +14,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.APIMessage;
@@ -30,14 +27,11 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
-import org.zstack.tag.SystemTagCreator;
 
 import java.util.List;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -184,10 +178,8 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getArchitecture() == null) {
-            String vmUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getRootVolumeUuid())
-                    .select(VolumeVO_.vmInstanceUuid)
-                    .findValue();
-            msg.setArchitecture(VmExtraInfoGetter.New(vmUuid).getArchitecture());
+            String vmUuid = dbf.findByUuid(msg.getRootVolumeUuid(), VolumeVO.class).getVmInstanceUuid();
+            msg.setArchitecture(dbf.findByUuid(vmUuid, VmInstanceVO.class).getArchitecture());
         }
     }
 

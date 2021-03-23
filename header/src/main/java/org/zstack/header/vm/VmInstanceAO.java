@@ -78,6 +78,9 @@ public class VmInstanceAO extends ResourceVO {
     private String platform;
 
     @Column
+    private String architecture;
+
+    @Column
     private String allocatorStrategy;
 
     @Column
@@ -293,5 +296,13 @@ public class VmInstanceAO extends ResourceVO {
 
     public void setInternalId(Long internalId) {
         this.internalId = internalId;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 }
