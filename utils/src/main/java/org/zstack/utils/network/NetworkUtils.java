@@ -857,14 +857,20 @@ public class NetworkUtils {
         }
     }
 
-    public static boolean isHostReachable(String address, int port, int timeout) {
+    public static boolean isReachable(String host, int timeout) {
         try {
-            try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress(address, port), timeout);
-            }
+            InetAddress address = InetAddress.getByName(host);
+            return address.isReachable(timeout);
+        } catch (IOException ignored) {
+            return false;
+        }
+    }
 
+    public static boolean isHostReachable(String address, int port, int timeout) {
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(address, port), timeout);
             return true;
-        } catch (IOException exception) {
+        } catch (IOException ignored) {
             return false;
         }
     }
