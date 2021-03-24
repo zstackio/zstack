@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS `CloudFormationStackEventVO` (
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-# create AccountResourceRefVO for PciDeviceVO
+
 DELIMITER $$
 CREATE PROCEDURE getAdminAccountUUid(OUT adminAccountUuid VARCHAR(32))
     BEGIN

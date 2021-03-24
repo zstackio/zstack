@@ -12,6 +12,7 @@ zstack_user_password="$5"
 base=`dirname $0`
 
 # assign flyway version if not defined
+flywayver=6.3.1
 : "${flywayver:=3.2.1}"
 flyway="$base/tools/flyway-$flywayver/flyway"
 flyway_sql="$base/tools/flyway-$flywayver/sql/"
@@ -31,10 +32,14 @@ DROP DATABASE IF EXISTS zstack;
 CREATE DATABASE zstack;
 DROP DATABASE IF EXISTS zstack_rest;
 CREATE DATABASE zstack_rest;
-grant all privileges on zstack.* to root@'%' identified by "$password";
-grant all privileges on zstack_rest.* to root@'%' identified by "$password";
-grant all privileges on zstack.* to root@'localhost' identified by "$password";
-grant all privileges on zstack_rest.* to root@'localhost' identified by "$password";
+drop user if exists root@'127.0.0.1';
+set global validate_password.policy=0;
+create user 'root'@'127.0.0.1' identified by '$password';
+grant all privileges on zstack.* to root@'%';
+grant all privileges on zstack_rest.* to root@'%';
+grant all privileges on zstack.* to root@'127.0.0.1';
+grant all privileges on zstack_rest.* to root@'127.0.0.1';
+FLUSH PRIVILEGES;
 EOF
 
 rm -rf $flyway_sql
@@ -84,16 +89,22 @@ flush privileges;
 EOF
 else
     mysql --user=$user --password=$password --host=$host --port=$port << EOF
-grant usage on *.* to 'zstack'@'localhost';
-grant usage on *.* to 'zstack'@'%';
-drop user zstack;
-create user 'zstack' identified by "$zstack_user_password";
-grant all privileges on zstack.* to zstack@'localhost' identified by "$zstack_user_password";
-grant all privileges on zstack.* to zstack@'%' identified by "$zstack_user_password";
-grant all privileges on zstack.* to zstack@"$hostname" identified by "$zstack_user_password";
-grant all privileges on zstack_rest.* to zstack@'localhost' identified by "$zstack_user_password";
-grant all privileges on zstack_rest.* to zstack@"$hostname" identified by "$zstack_user_password";
-grant all privileges on zstack_rest.* to zstack@'%' identified by "$zstack_user_password";
+drop user if exists zstack;
+drop user if exists zstack_rest;
+
+create user if not exists 'zstack' identified by "$zstack_user_password";
+create user if not exists 'zstack'@'localhost' identified by "$zstack_user_password";
+create user if not exists 'zstack'@'$hostnmame' identified by "$zstack_user_password";
+
+create user if not exists 'zstack_rest' identified by "$zstack_user_password";
+create user if not exists 'zstack_rest'@'localhost' identified by "$zstack_user_password";
+create user if not exists 'zstack_rest'@'$hostnmame' identified by "$zstack_user_password";
+grant all privileges on zstack.* to zstack@'localhost';
+grant all privileges on zstack.* to zstack@'%';
+grant all privileges on zstack.* to zstack@"$hostname";
+grant all privileges on zstack_rest.* to zstack@'localhost';
+grant all privileges on zstack_rest.* to zstack@"$hostname";
+grant all privileges on zstack_rest.* to zstack@'%';
 flush privileges;
 EOF
 fi

@@ -529,7 +529,6 @@ CREATE TABLE  `zstack`.`VpcRouterVmVO` (
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-# create VpcRouterVmVO from ApplianceVmVO
 DELIMITER $$
 CREATE PROCEDURE generateVpcRouterVmVO()
     BEGIN

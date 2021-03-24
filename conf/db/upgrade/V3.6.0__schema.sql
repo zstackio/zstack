@@ -39,7 +39,6 @@ CREATE PROCEDURE getMaxAccountResourceRefVO(OUT refId bigint(20) unsigned)
     END $$
 DELIMITER ;
 
--- upgrade privilege admin
 DELIMITER $$
 CREATE PROCEDURE upgradePrivilegeAdmin(IN privilege_role_uuid VARCHAR(32), IN role_name VARCHAR(255))
     procedure_label: BEGIN

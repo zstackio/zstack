@@ -1,4 +1,3 @@
--- create VpcRouterVmVO from ApplianceVmVO
 DELIMITER $$
 CREATE PROCEDURE generateVpcRouterVmVO()
     BEGIN

@@ -48,7 +48,7 @@ CREATE TABLE  `zstack`.`VCenterResourcePoolUsageVO` (
      CONSTRAINT `fkVCenterResourcePoolUsageVOVCenterResourcePoolVO` FOREIGN KEY (`vCenterResourcePoolUuid`) REFERENCES `VCenterResourcePoolVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-# create missing tag2 role for IAM2ProjectVO
+
 DELIMITER $$
 CREATE PROCEDURE getRoleUuid(OUT targetRoleUuid VARCHAR(32))
     BEGIN

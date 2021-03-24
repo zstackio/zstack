@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -10,12 +11,9 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;

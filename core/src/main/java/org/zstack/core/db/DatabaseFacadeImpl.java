@@ -1,6 +1,6 @@
 package org.zstack.core.db;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Propagation;
@@ -236,11 +236,11 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         private void updateEO(Object entity, DataIntegrityViolationException de) {
-            if (!MySQLIntegrityConstraintViolationException.class.isAssignableFrom(de.getRootCause().getClass())) {
+            if (!SQLIntegrityConstraintViolationException.class.isAssignableFrom(de.getRootCause().getClass())) {
                 throw de;
             }
 
-            MySQLIntegrityConstraintViolationException me = (MySQLIntegrityConstraintViolationException) de.getRootCause();
+            SQLIntegrityConstraintViolationException me = (SQLIntegrityConstraintViolationException) de.getRootCause();
             if (!(me.getErrorCode() == 1062 && "23000".equals(me.getSQLState()) && me.getMessage().contains("PRIMARY"))) {
                 throw de;
             }
