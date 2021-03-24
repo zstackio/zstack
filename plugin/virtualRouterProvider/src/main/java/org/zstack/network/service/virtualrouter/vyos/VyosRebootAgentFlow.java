@@ -29,10 +29,9 @@ public class VyosRebootAgentFlow extends VyosRunScriptFlow {
             return true;
         }
 
-        boolean isReconnect = Boolean.parseBoolean((String) data.getOrDefault(ApplianceVmConstant.Params.isReconnect.toString(), false));
-
+        boolean needRebootAgent = Boolean.parseBoolean((String) data.getOrDefault(ApplianceVmConstant.Params.needRebootAgent.toString(), "false"));
         // no need to reboot agent
-        return !isReconnect;
+        return !needRebootAgent;
     }
 
     @Override
