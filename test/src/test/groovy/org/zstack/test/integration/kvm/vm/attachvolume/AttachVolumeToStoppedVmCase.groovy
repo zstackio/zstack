@@ -163,9 +163,11 @@ class AttachVolumeToStoppedVmCase extends SubCase {
         deleteHost {
             uuid = host.uuid
         }
-        VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
-        assert vo.getHostUuid() == null
-        assert vo.getLastHostUuid() == null
+        retryInSecs(3,1) {
+            VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+            assert vo.getHostUuid() == null
+            assert vo.getLastHostUuid() == null
+        }
 
         VolumeInventory vol = createDataVolume {
             name = "data"
