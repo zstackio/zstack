@@ -35,6 +35,7 @@ public class Ssh {
     private String password;
     private int port = 22;
     private int timeout = 0;
+    private int execTimeout = 604800;
     private int socketTimeout = 300;
     private List<SshRunner> commands = new ArrayList<SshRunner>();
     private Session session;
@@ -78,7 +79,7 @@ public class Ssh {
                         "PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
                         "{scriptContent}",
                         "EOF1",
-                        "/bin/bash {remotePath} {parameters} 1>{stdout} 2>{stderr}",
+                        "timeout {execTimeout} /bin/bash {remotePath} {parameters} 1>{stdout} 2>{stderr}",
                         "ret=$?",
                         "test -f {stdout} && cat {stdout}",
                         "test -f {stderr} && cat {stderr} 1>&2",
@@ -89,6 +90,7 @@ public class Ssh {
                 ).formatByMap(map(e("remotePath", String.format("/tmp/%s", UUID.randomUUID().toString())),
                         e("scriptContent", scriptContent),
                         e("parameters", parameters),
+                        e("execTimeout", execTimeout),
                         e("stdout", String.format("/tmp/%s", UUID.randomUUID().toString())),
                         e("stderr", String.format("/tmp/%s", UUID.randomUUID().toString()))
                 ));
@@ -105,7 +107,7 @@ public class Ssh {
                     "PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
                     "{scriptContent}",
                     "EOF1",
-                    "/bin/bash {remotePath} 1>{stdout} 2>{stderr}",
+                    "timeout {execTimeout} /bin/bash {remotePath} 1>{stdout} 2>{stderr}",
                     "ret=$?",
                     "test -f {stdout} && cat {stdout}",
                     "test -f {stderr} && cat {stderr} 1>&2",
@@ -115,6 +117,7 @@ public class Ssh {
                     "exit $ret"
             ).formatByMap(map(e("remotePath", String.format("/tmp/%s", UUID.randomUUID().toString())),
                     e("scriptContent", script),
+                    e("execTimeout", execTimeout),
                     e("stdout", String.format("/tmp/%s", UUID.randomUUID().toString())),
                     e("stderr", String.format("/tmp/%s", UUID.randomUUID().toString()))
             ));
@@ -132,6 +135,15 @@ public class Ssh {
                 }
             }
         }
+    }
+
+    public int getExecTimeout() {
+        return execTimeout;
+    }
+
+    public Ssh setExecTimeout(int execTimeout) {
+        this.execTimeout = execTimeout;
+        return this;
     }
 
     public String getHostname() {

@@ -19,4 +19,17 @@ public class TestSshCheckToolFailure {
                 .checkTool("ls", "cp", "mv", "this_tool_is_not_existing", "rm").run();
         res.raiseExceptionIfFailed();
     }
+
+    @Test
+    public void testTimeout() {
+        String srcScript = "sleep 4";
+        SshResult ret = new Ssh().setHostname("localhost")
+                .setUsername("root").setPassword("password").setExecTimeout(2)
+                .shell(srcScript).setTimeout(60).runAndClose();
+        try {
+            ret.raiseExceptionIfFailed();
+        } catch (SshException e) {
+            assert e.toString().contains("code: 124") == true;
+        }
+    }
 }
