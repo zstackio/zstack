@@ -327,4 +327,8 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
         }
         return attachedClusters;
     }
+
+    public void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
+        completion.success();
+    }
 }
