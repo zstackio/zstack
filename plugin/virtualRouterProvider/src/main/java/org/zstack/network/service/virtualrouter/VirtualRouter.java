@@ -182,6 +182,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     public void fail(ErrorCode err) {
                         reply.setDoReconnect(true);
                         reply.setConnected(false);
+                        reply.setError(err);
                         logger.warn(String.format("failed to ping the virtual router vm[uuid:%s], %s. We will reconnect it soon", self.getUuid(), reply.getError()));
                         bus.reply(msg, reply);
                         chain.next();

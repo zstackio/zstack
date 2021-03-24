@@ -127,7 +127,8 @@ class VirtualRouterOperationCase extends SubCase {
             sessionId = adminSession()
         }
 
-        env.simulator(VirtualRouterConstant.VR_PING) { rsp, HttpEntity<String> e ->
+        env.simulator(VirtualRouterConstant.VR_PING) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new VirtualRouterCommands.PingRsp()
 
             rsp.success = true
             return rsp
