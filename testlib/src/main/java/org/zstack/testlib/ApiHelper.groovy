@@ -6071,59 +6071,6 @@ abstract class ApiHelper {
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-    def createAutoScalingRuleSchedulerJobTrigger(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateAutoScalingRuleSchedulerJobTriggerAction.class) Closure c) {
-        def a = new org.zstack.sdk.CreateAutoScalingRuleSchedulerJobTriggerAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def createAutoScalingVmTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateAutoScalingVmTemplateAction.class) Closure c) {
-        def a = new org.zstack.sdk.CreateAutoScalingVmTemplateAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
         
 
         if (System.getProperty("apipath") != null) {
@@ -6228,6 +6175,60 @@ abstract class ApiHelper {
 
     def createAutoScalingRuleAlarmTrigger(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateAutoScalingRuleAlarmTriggerAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateAutoScalingRuleAlarmTriggerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def createAutoScalingRuleSchedulerJobTrigger(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateAutoScalingRuleSchedulerJobTriggerAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateAutoScalingRuleSchedulerJobTriggerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def createAutoScalingVmTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateAutoScalingVmTemplateAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateAutoScalingVmTemplateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -13137,31 +13138,33 @@ abstract class ApiHelper {
         }
     }
 
+
     def deleteVmUserDefinedXmlHookScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
+        
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
+        
             return out
         } else {
             return errorOut(a.call())
         }
     }
+
 
     def deleteVniRange(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteVniRangeAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteVniRangeAction()
@@ -19102,31 +19105,33 @@ abstract class ApiHelper {
         }
     }
 
+
     def getVmXmlHookScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmXmlHookScriptAction.class) Closure c) {
         def a = new org.zstack.sdk.GetVmXmlHookScriptAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
+        
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
+        
             return out
         } else {
             return errorOut(a.call())
         }
     }
+
 
     def getVmsCapabilities(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmsCapabilitiesAction.class) Closure c) {
         def a = new org.zstack.sdk.GetVmsCapabilitiesAction()
@@ -19238,6 +19243,141 @@ abstract class ApiHelper {
 
     def getVolumeSnapshotSize(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVolumeSnapshotSizeAction.class) Closure c) {
         def a = new org.zstack.sdk.GetVolumeSnapshotSizeAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getVpcAttachedEip(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVpcAttachedEipAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetVpcAttachedEipAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getVpcAttachedIpsec(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVpcAttachedIpsecAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetVpcAttachedIpsecAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getVpcAttachedLoadBalancer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVpcAttachedLoadBalancerAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetVpcAttachedLoadBalancerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getVpcAttachedPortForwardingRules(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVpcAttachedPortForwardingRulesAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetVpcAttachedPortForwardingRulesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getVpcAttachedVip(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVpcAttachedVipAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetVpcAttachedVipAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -29362,31 +29502,33 @@ abstract class ApiHelper {
         }
     }
 
+
     def setVmUserDefinedXmlHookScript(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVmUserDefinedXmlHookScriptAction.class) Closure c) {
         def a = new org.zstack.sdk.SetVmUserDefinedXmlHookScriptAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
+        
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
+        
             return out
         } else {
             return errorOut(a.call())
         }
     }
+
 
     def setVolumeQos(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVolumeQosAction.class) Closure c) {
         def a = new org.zstack.sdk.SetVolumeQosAction()
