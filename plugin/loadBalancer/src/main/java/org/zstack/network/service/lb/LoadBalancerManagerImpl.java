@@ -1086,7 +1086,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         HashMap<String, String> ret = new HashMap<>();
         for (LoadBalancerServerGroupVO lbSg : lbSgs) {
             ret.put(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING,
-                    String.format("lb uuid is [%s], serverGroupUuid is [%d]",lbSg.getLoadBalancerUuid(), lbSg.getUuid()));
+                    String.format("lb uuid is [%s], serverGroupUuid is [%s]",lbSg.getLoadBalancerUuid(), lbSg.getUuid()));
         }
         return ret;
     }
