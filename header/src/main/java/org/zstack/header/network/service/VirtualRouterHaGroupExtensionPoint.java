@@ -14,7 +14,7 @@ public interface VirtualRouterHaGroupExtensionPoint {
     void VirtualRouterVmHaDetachL3Network(String vrUuid, String l3NetworkUuid, boolean isRollback, Completion completion);
     Boolean isVirtualRouterInSameHaPair(List<String> vrUuids);
 
-    void syncVirtualRouterHaConfigToBackend(String vrUuid, Completion completion);
+    void syncVirtualRouterHaConfigToBackend(String vrUuid, boolean syncPeer, Completion completion);
 
     String getPeerUuid(String vrUuid);
 

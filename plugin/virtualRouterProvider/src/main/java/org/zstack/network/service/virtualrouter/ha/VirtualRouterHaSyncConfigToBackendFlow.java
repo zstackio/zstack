@@ -14,6 +14,8 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 
@@ -36,10 +38,18 @@ public class VirtualRouterHaSyncConfigToBackendFlow implements Flow {
             return;
         }
 
+        /* only when create a new vpc router, vyos ha config need to be updated to peer router */
+        boolean syncPeer = false;
+        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        if (spec != null && spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate) {
+            syncPeer = true;
+        }
+
+        final boolean fSyncPeer = syncPeer;
         List<ErrorCode> errs = new ArrayList<>();
         List<VirtualRouterHaGroupExtensionPoint> exts = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
         new While<>(exts).each((ext, compl) -> {
-            ext.syncVirtualRouterHaConfigToBackend(vr.getUuid(), new Completion(compl) {
+            ext.syncVirtualRouterHaConfigToBackend(vr.getUuid(), fSyncPeer, new Completion(compl) {
                 @Override
                 public void success() {
                     compl.done();
