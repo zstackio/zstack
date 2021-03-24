@@ -46,7 +46,10 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(KvmBackend.CREATE_TEMPLATE_FROM_VOLUME_PATH) {
-                return new KvmBackend.AgentRsp()
+                def rsp = new KvmBackend.CreateTemplateFromVolumeRsp()
+                rsp.actualSize = 0
+                rsp.size = 0
+                return rsp
             }
 
             simulator(KvmBackend.UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH) {

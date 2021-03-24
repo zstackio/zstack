@@ -10,7 +10,7 @@ import java.util.List;
  * Created by camile on 3/8/2018.
  * copy by APICreateDataVolumeTemplateFromVolumeMsg
  */
-public class CreateDataVolumeTemplateFromVolumeMsg extends NeedReplyMessage {
+public class CreateDataVolumeTemplateFromVolumeMsg extends NeedReplyMessage implements CreateDataVolumeTemplateMessage {
     private String name;
     private String description;
     private String volumeUuid;

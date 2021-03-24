@@ -2091,6 +2091,25 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getVolumeSnapshot().getUuid(), VolumeSnapshotVO.class.getSimpleName());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply r = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
+                r.setError(errorCode);
+                bus.reply(msg, r);
+            }
+        });
+    }
+
+    @Override
     protected void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getVolumeInventory().getUuid(), VolumeVO.class.getSimpleName());
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);

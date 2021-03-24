@@ -115,7 +115,10 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(NfsPrimaryStorageKVMBackend.CREATE_TEMPLATE_FROM_VOLUME_PATH) {
-                return new NfsPrimaryStorageKVMBackendCommands.CreateTemplateFromVolumeRsp()
+                def rsp = new NfsPrimaryStorageKVMBackendCommands.CreateTemplateFromVolumeRsp()
+                rsp.size = 0
+                rsp.actualSize = 0
+                return rsp
             }
 
             simulator(NfsPrimaryStorageKVMBackend.REINIT_IMAGE_PATH) {

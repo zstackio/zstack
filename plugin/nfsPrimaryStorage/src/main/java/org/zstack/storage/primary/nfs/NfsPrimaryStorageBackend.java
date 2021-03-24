@@ -61,9 +61,9 @@ public interface NfsPrimaryStorageBackend {
 
     void createVolumeFromImageCache(PrimaryStorageInventory primaryStorage, ImageCacheInventory image, VolumeInventory volume, ReturnValueCompletion<String> completion);
 
-    void createImageCacheFromVolume(PrimaryStorageInventory primaryStorage, VolumeInventory volume, ImageInventory image, ReturnValueCompletion<String> completion);
+    void createImageCacheFromVolumeResource(PrimaryStorageInventory primaryStorage, String volumeResourceInstallPath, ImageInventory image, ReturnValueCompletion<BitsInfo> completion);
 
-    void createTemplateFromVolume(PrimaryStorageInventory primaryStorage, VolumeInventory volume, ImageInventory image, ReturnValueCompletion<String> completion);
+    void createTemplateFromVolume(PrimaryStorageInventory primaryStorage, VolumeInventory volume, ImageInventory image, ReturnValueCompletion<BitsInfo> completion);
 
     void mergeSnapshotToVolume(PrimaryStorageInventory pinv, VolumeSnapshotInventory snapshot, VolumeInventory volume, boolean fullRebase, Completion completion);
 
@@ -71,7 +71,7 @@ public interface NfsPrimaryStorageBackend {
 
     void updateMountPoint(PrimaryStorageInventory pinv, String clusterUuid, String oldMountPoint, String newMountPoint, Completion completion);
 
-    class CreateBitsFromSnapshotResult {
+    class BitsInfo {
         private String installPath;
         private long size;
         private long actualSize;
@@ -98,6 +98,12 @@ public interface NfsPrimaryStorageBackend {
 
         public void setSize(long size) {
             this.size = size;
+        }
+
+        BitsInfo(String installPath, long size, long actualSize) {
+            this.installPath = installPath;
+            this.size = size;
+            this.actualSize = actualSize;
         }
     }
 }

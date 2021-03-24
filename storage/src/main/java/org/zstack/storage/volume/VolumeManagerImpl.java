@@ -21,6 +21,7 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -122,6 +123,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             handle((VolumeReportPrimaryStorageCapacityUsageMsg) msg);
         } else if (msg instanceof CreateDataVolumeFromVolumeTemplateMsg) {
             handle((CreateDataVolumeFromVolumeTemplateMsg) msg);
+        } else if (msg instanceof CreateDataVolumeFromVolumeSnapshotMsg) {
+            handle((CreateDataVolumeFromVolumeSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -517,33 +520,86 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
 
+        instantiateDataVolumeFromSnapshot(vo, msg.getVolumeSnapshotUuid(), new ReturnValueCompletion<VolumeInventory>(evt) {
+            @Override
+            public void success(VolumeInventory volume) {
+                evt.setInventory(volume);
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(CreateDataVolumeFromVolumeSnapshotMsg msg) {
+        final CreateDataVolumeFromVolumeSnapshotReply reply = new CreateDataVolumeFromVolumeSnapshotReply();
+        final VolumeVO vo = new VolumeVO();
+        vo.setUuid(Platform.getUuid());
+        vo.setName(msg.getName());
+        vo.setDescription(msg.getDescription());
+        vo.setState(VolumeState.Enabled);
+        vo.setStatus(VolumeStatus.Creating);
+        vo.setType(VolumeType.Data);
+        vo.setSize(0);
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
+        VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
+            @Override
+            protected VolumeVO scripts() {
+                persist(vo);
+                reload(vo);
+                tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), VolumeVO.class.getSimpleName());
+                return vo;
+            }
+        }.execute();
+
+        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
+
+        instantiateDataVolumeFromSnapshot(vo, msg.getVolumeSnapshotUuid(), new ReturnValueCompletion<VolumeInventory>(msg) {
+            @Override
+            public void success(VolumeInventory volume) {
+                reply.setInventory(volume);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void instantiateDataVolumeFromSnapshot(VolumeVO vo, String snapshotUuid, ReturnValueCompletion<VolumeInventory> completion) {
         SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
         sq.select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid);
-        sq.add(VolumeSnapshotVO_.uuid, Op.EQ, msg.getVolumeSnapshotUuid());
+        sq.add(VolumeSnapshotVO_.uuid, Op.EQ, snapshotUuid);
         Tuple t = sq.findTuple();
         String volumeUuid = t.get(0, String.class);
         String treeUuid = t.get(1, String.class);
 
-        CreateDataVolumeFromVolumeSnapshotMsg cmsg = new CreateDataVolumeFromVolumeSnapshotMsg();
+
+        InstantiateDataVolumeFromVolumeSnapshotMsg cmsg = new InstantiateDataVolumeFromVolumeSnapshotMsg();
         cmsg.setVolumeUuid(volumeUuid);
         cmsg.setTreeUuid(treeUuid);
-        cmsg.setUuid(msg.getVolumeSnapshotUuid());
+        cmsg.setUuid(snapshotUuid);
         cmsg.setVolume(VolumeInventory.valueOf(vo));
-        cmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
         bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
-        bus.send(cmsg, new CloudBusCallBack(msg) {
+        bus.send(cmsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     VolumeVO vvo = dbf.reload(vo);
                     if (vvo == null) {
-                        reply.setError(operr("target volume is expunged during volume creation"));
-                        bus.reply(msg, reply);
+                        completion.fail(operr("target volume is expunged during volume creation"));
                         return;
                     }
 
-                    CreateDataVolumeFromVolumeSnapshotReply cr = reply.castReply();
+                    InstantiateDataVolumeFromVolumeSnapshotReply cr = reply.castReply();
                     VolumeInventory inv = cr.getInventory();
                     vvo.setSize(inv.getSize());
                     vvo.setActualSize(cr.getActualSize());
@@ -555,12 +611,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
                     new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vvo));
 
-                    evt.setInventory(VolumeInventory.valueOf(vvo));
+                    completion.success(VolumeInventory.valueOf(vvo));
                 } else {
-                    evt.setError(reply.getError());
+                    completion.fail(reply.getError());
                 }
-
-                bus.publish(evt);
             }
         });
     }

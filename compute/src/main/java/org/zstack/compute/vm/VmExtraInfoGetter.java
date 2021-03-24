@@ -8,6 +8,7 @@ import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.header.volume.VolumeType;
 
 import javax.persistence.Tuple;
 import java.util.List;
@@ -55,5 +56,12 @@ public class VmExtraInfoGetter {
                 " and cluster.uuid = host.clusterUuid", String.class)
                 .param("huuid", hostUuid)
                 .find();
+    }
+
+    public String getGuestOsType() {
+        return  SQL.New("select i.guestOsType from VolumeVO v, ImageVO i" +
+                " where v.vmInstanceUuid = :vmUuid" +
+                " and v.rootImageUuid = i.uuid").
+                param("vmUuid", uuid).find();
     }
 }

@@ -39,7 +39,7 @@ public class NfsDownloadImageToCacheJob implements Job {
     @JobContext
     private PrimaryStorageInventory primaryStorage;
     @JobContext
-    private VolumeInventory volume;
+    private String volumeResourceInstallPath;
 
     @Autowired
     private NfsPrimaryStorageFactory nfsFactory;
@@ -69,6 +69,7 @@ public class NfsDownloadImageToCacheJob implements Job {
         chain.setName(String.format("download-image-%s-to-nfs-primary-storage-%s-cache", image.getInventory().getUuid(), primaryStorage.getUuid()));
         chain.then(new ShareFlow() {
             String cacheInstallPath = NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrl(primaryStorage, image.getInventory());
+            long actualSize = image.getInventory().getActualSize();
 
             @Override
             public void setup() {
@@ -119,7 +120,7 @@ public class NfsDownloadImageToCacheJob implements Job {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        if (volume != null) {
+                        if (volumeResourceInstallPath != null) {
                             downloadFromVolume(trigger);
                         } else {
                             downloadFromBackupStorage(trigger);
@@ -128,10 +129,11 @@ public class NfsDownloadImageToCacheJob implements Job {
 
                     private void downloadFromVolume(FlowTrigger trigger) {
                         NfsPrimaryStorageBackend bkd = nfsFactory.getHypervisorBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getInventory().getFormat(), primaryStorage.getUuid()));
-                        bkd.createImageCacheFromVolume(primaryStorage, volume, image.getInventory(), new ReturnValueCompletion<String>(trigger) {
+                        bkd.createImageCacheFromVolumeResource(primaryStorage, volumeResourceInstallPath, image.getInventory(), new ReturnValueCompletion<NfsPrimaryStorageBackend.BitsInfo>(trigger) {
                             @Override
-                            public void success(String path) {
-                                cacheInstallPath = path;
+                            public void success(NfsPrimaryStorageBackend.BitsInfo info) {
+                                cacheInstallPath = info.getInstallPath();
+                                actualSize = info.getActualSize();
                                 trigger.next();
                             }
 
@@ -172,7 +174,7 @@ public class NfsDownloadImageToCacheJob implements Job {
                         cvo.setInstallUrl(cacheInstallPath);
                         cvo.setMd5sum("no md5");
                         cvo.setPrimaryStorageUuid(primaryStorage.getUuid());
-                        cvo.setSize(image.getInventory().getActualSize());
+                        cvo.setSize(actualSize);
                         cvo.setMediaType(ImageMediaType.valueOf(image.getInventory().getMediaType()));
                         cvo = dbf.persistAndRefresh(cvo);
                         logger.debug(String.format("successfully downloaded image[uuid:%s] in image cache[id:%s, path:%s]",
@@ -238,7 +240,7 @@ public class NfsDownloadImageToCacheJob implements Job {
         this.primaryStorage = primaryStorage;
     }
 
-    public void setVolume(VolumeInventory volume) {
-        this.volume = volume;
+    public void setVolumeResourceInstallPath(String volumeResourceInstallPath) {
+        this.volumeResourceInstallPath = volumeResourceInstallPath;
     }
 }
