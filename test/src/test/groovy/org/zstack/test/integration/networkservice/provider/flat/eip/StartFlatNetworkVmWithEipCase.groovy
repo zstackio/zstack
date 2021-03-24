@@ -1,16 +1,20 @@
 package org.zstack.test.integration.networkservice.provider.flat.eip
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
+import org.zstack.network.service.flat.FlatEipBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.vip.StopVipMsg
 import org.zstack.network.service.vip.StopVipReply
 import org.zstack.sdk.EipInventory
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
@@ -60,6 +64,13 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
                     kvm {
                         name = "kvm"
                         managementIp = "localhost"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    kvm {
+                        name = "kvm2"
+                        managementIp = "127.0.0.1"
                         username = "root"
                         password = "password"
                     }
@@ -128,6 +139,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
                 useImage("image")
                 useL3Networks("l3")
                 useInstanceOffering("instanceOffering")
+                useHost("kvm")
             }
         }
     }
@@ -138,6 +150,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             testStartVmWithEip()
             testRecoverVmWithEip()
             testRecoverVmWithEipWithError()
+            testMigrateVmWithEip()
         }
     }
 
@@ -218,6 +231,56 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
 
         startVmInstance {
             uuid = vm.uuid
+        }
+    }
+
+    void testMigrateVmWithEip() {
+        def eip = env.inventoryByName("eip-1") as EipInventory
+        def vm = env.inventoryByName("vm-1") as VmInstanceInventory
+        def host1 = env.inventoryByName("kvm") as HostInventory
+        def host2 = env.inventoryByName("kvm2") as HostInventory
+
+        attachEip {
+            eipUuid = eip.uuid
+            vmNicUuid = vm.vmNics[0].uuid
+        }
+
+        boolean deleteEipOnSrcHostFailed = false
+        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) {
+            deleteEipOnSrcHostFailed = true
+            throw new HttpError(403, "on purpose")
+        }
+
+        boolean applyEipOnDestHostSuccessed = false
+        env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH) { rsp, HttpEntity<String> e ->
+            applyEipOnDestHostSuccessed = true
+            return rsp
+        }
+
+        migrateVm {
+            vmInstanceUuid = vm.uuid
+            hostUuid = host2.uuid
+        }
+
+        retryInSecs {
+            assert deleteEipOnSrcHostFailed == true
+            assert applyEipOnDestHostSuccessed == true
+        }
+
+        applyEipOnDestHostSuccessed = false
+        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp, HttpEntity<String> e ->
+            deleteEipOnSrcHostFailed = false
+            return rsp
+        }
+
+        migrateVm {
+            vmInstanceUuid = vm.uuid
+            hostUuid = host1.uuid
+        }
+
+        retryInSecs {
+            assert deleteEipOnSrcHostFailed == false
+            assert applyEipOnDestHostSuccessed == true
         }
     }
 
