@@ -12,9 +12,14 @@ public class VirtualRouterOperator {
                                                             boolean isRouter, boolean haEnabled) {
         ApplianceVmNicSpec mgmtNicSpec = new ApplianceVmNicSpec();
         mgmtNicSpec.setL3NetworkUuid(mgmtNw.getUuid());
-        if (aspec.getStaticVip().containsKey(mgmtNw.getUuid())) {
-            mgmtNicSpec.setStaticIp(aspec.getStaticVip().get(mgmtNw.getUuid()));
+//        if (aspec.getStaticVip().containsKey(mgmtNw.getUuid())) {
+//            mgmtNicSpec.setStaticIp(aspec.getStaticVip().get(mgmtNw.getUuid()));
+//        }
+
+        if (aspec.getStaticIp().containsKey(mgmtNw.getUuid())) {
+            mgmtNicSpec.setStaticIp(aspec.getStaticIp().get(mgmtNw.getUuid()));
         }
+
         if (isRouter) {
             mgmtNicSpec.setMetaData(VirtualRouterNicMetaData.MANAGEMENT_NIC_MASK.toString());
         }
@@ -26,8 +31,8 @@ public class VirtualRouterOperator {
             if (!haEnabled) {
                 ApplianceVmNicSpec pnicSpec = new ApplianceVmNicSpec();
                 pnicSpec.setL3NetworkUuid(pubNw.getUuid());
-                if (aspec.getStaticVip().containsKey(pubNw.getUuid())) {
-                    pnicSpec.setStaticIp(aspec.getStaticVip().get(pubNw.getUuid()));
+                if (aspec.getStaticIp().containsKey(pubNw.getUuid())) {
+                    pnicSpec.setStaticIp(aspec.getStaticIp().get(pubNw.getUuid()));
                 }
                 if (isRouter) {
                     pnicSpec.setMetaData(VirtualRouterNicMetaData.PUBLIC_NIC_MASK.toString());
@@ -51,8 +56,8 @@ public class VirtualRouterOperator {
         for (L3NetworkInventory pri : priNws) {
             ApplianceVmNicSpec nicSpec = new ApplianceVmNicSpec();
             nicSpec.setL3NetworkUuid(pri.getUuid());
-            if (aspec.getStaticVip().containsKey(pri.getUuid())) {
-                nicSpec.setStaticIp(aspec.getStaticVip().get(pri.getUuid()));
+            if (aspec.getStaticIp().containsKey(pri.getUuid())) {
+                nicSpec.setStaticIp(aspec.getStaticIp().get(pri.getUuid()));
             }
             if (isRouter) {
                 nicSpec.setMetaData(VirtualRouterNicMetaData.GUEST_NIC_MASK.toString());
@@ -63,8 +68,8 @@ public class VirtualRouterOperator {
         for (L3NetworkInventory pub : additionalPubNws) {
             ApplianceVmNicSpec nicSpec = new ApplianceVmNicSpec();
             nicSpec.setL3NetworkUuid(pub.getUuid());
-            if (aspec.getStaticVip().containsKey(pub.getUuid())) {
-                nicSpec.setStaticIp(aspec.getStaticVip().get(pub.getUuid()));
+            if (aspec.getStaticIp().containsKey(pub.getUuid())) {
+                nicSpec.setStaticIp(aspec.getStaticIp().get(pub.getUuid()));
             }
             if (isRouter) {
                 nicSpec.setMetaData(VirtualRouterNicMetaData.ADDITIONAL_PUBLIC_NIC_MASK.toString());

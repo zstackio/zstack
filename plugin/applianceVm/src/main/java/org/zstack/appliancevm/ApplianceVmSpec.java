@@ -40,6 +40,7 @@ public class ApplianceVmSpec implements Serializable {
     private int sshPort = 22;
     private int agentPort = 7759;
     private Map<String,Map<Integer, String>> staticVip = new HashMap<>();
+    private Map<String,Map<Integer, String>> staticIp = new HashMap<>();
     private ApplianceVmHaSpec haSpec;
     private String requiredZoneUuid;
     private String requiredClusterUuid;
@@ -208,6 +209,14 @@ public class ApplianceVmSpec implements Serializable {
 
     public void setStaticVip(Map <String,Map<Integer, String>> staticVip) {
         this.staticVip = staticVip;
+    }
+
+    public Map<String,Map<Integer, String>> getStaticIp() {
+        return staticIp;
+    }
+
+    public void setStaticIp(Map <String,Map<Integer, String>> staticIp) {
+        this.staticIp = staticIp;
     }
 
     public L3NetworkInventory getDefaultL3Network() {
