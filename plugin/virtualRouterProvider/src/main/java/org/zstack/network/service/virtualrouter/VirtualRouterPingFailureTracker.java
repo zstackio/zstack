@@ -9,6 +9,7 @@ import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Map;
@@ -33,6 +34,7 @@ public class VirtualRouterPingFailureTracker implements ManagementNodeReadyExten
     private CloudBus bus;
 
     private final ConcurrentHashMap<String, String> failed = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Boolean> reconnecting = new ConcurrentHashMap<>();
 
     private String getVrMgmtIp(String vrUuid) {
         return SQL.New("select nic.ip from ApplianceVmVO vm, VmNicVO nic " +
@@ -60,6 +62,27 @@ public class VirtualRouterPingFailureTracker implements ManagementNodeReadyExten
         thdf.submitPeriodicTask(new PeriodicTask() {
             final AtomicInteger cnt = new AtomicInteger(0);
 
+            private void reconnectVR(String resUuid) {
+                if (null != reconnecting.putIfAbsent(resUuid, Boolean.TRUE)) {
+                    return;
+                }
+
+                ReconnectVirtualRouterVmMsg msg = new ReconnectVirtualRouterVmMsg();
+                msg.setVirtualRouterVmUuid(resUuid);
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, resUuid);
+                bus.send(msg, new CloudBusCallBack(null) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        reconnecting.remove(resUuid);
+
+                        if (reply.isSuccess()) {
+                            failed.remove(resUuid);
+                            tracker.track(resUuid);
+                        }
+                    }
+                });
+            }
+
             private void checkReachable() {
                 for (Map.Entry<String, String> entry: failed.entrySet()) {
                     final String resUuid = entry.getKey();
@@ -70,13 +93,7 @@ public class VirtualRouterPingFailureTracker implements ManagementNodeReadyExten
                     }
 
                     if (NetworkUtils.isReachable(entry.getValue(), 100)) {
-                        failed.remove(resUuid);
-                        tracker.track(resUuid);
-                        bus.send(tracker.getPingMessage(resUuid), new CloudBusCallBack(null) {
-                            @Override
-                            public void run(MessageReply reply) {
-                            }
-                        });
+                        reconnectVR(resUuid);
                     }
                 }
             }
