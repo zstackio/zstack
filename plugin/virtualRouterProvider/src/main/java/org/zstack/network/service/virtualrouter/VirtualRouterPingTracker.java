@@ -58,17 +58,22 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
         return VirtualRouterGlobalConfig.PING_PARALLELISM_DEGREE.value(Integer.class);
     }
 
+    private void callExtensionPoints(String resourceUuid, MessageReply reply) {
+        for (VirtualRouterTrackerExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterTrackerExtensionPoint.class)) {
+            ext.handleTracerReply(resourceUuid, reply);
+        }
+    }
+
     @Override
     public void handleReply(final String resourceUuid, MessageReply reply) {
         if (!reply.isSuccess()) {
             logger.warn(String.format("[Virtual Router VM Tracker]: unable to ping the virtual router vm[uuid: %s], %s", resourceUuid, reply.getError()));
+            callExtensionPoints(resourceUuid, reply);
             return;
         }
 
         PingVirtualRouterVmReply pr = reply.castReply();
-        for (VirtualRouterTrackerExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterTrackerExtensionPoint.class)) {
-            ext.handleTracerReply(resourceUuid, pr);
-        }
+        callExtensionPoints(resourceUuid, reply);
 
         if (!pr.isDoReconnect() || pr.isConnected()) {
             return;
