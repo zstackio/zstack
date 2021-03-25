@@ -41,6 +41,7 @@ public abstract class VyosRunScriptFlow extends NoRollbackFlow {
     private final Map<String, String> localRemoteMap = new HashMap<>();
     private final List<String> commands = new LinkedList();
     private String scriptContent;
+    private boolean hasBeenExecutedScript = false;
 
     @Autowired
     public AnsibleFacade asf;
@@ -131,7 +132,7 @@ public abstract class VyosRunScriptFlow extends NoRollbackFlow {
         return false;
     }
 
-    private void init(Map data) {
+    protected void init(Map data) {
         final Object vrTmp = data.get(VirtualRouterConstant.Param.VR.toString());
         VmNicInventory mgmtNic;
         if (vrTmp != null) {
@@ -158,7 +159,7 @@ public abstract class VyosRunScriptFlow extends NoRollbackFlow {
         sshTimeout = 300;
     }
 
-    private void executeScript(Completion completion) {
+    protected void executeScript(Completion completion) {
         int timeoutInSeconds = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
         long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeoutInSeconds);
         int sshPort = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
@@ -176,16 +177,19 @@ public abstract class VyosRunScriptFlow extends NoRollbackFlow {
                     }
 
                     if (NetworkUtils.isRemotePortOpen(mgmtNicIp, sshPort, 2000)) {
-                        Ssh ssh = buildSsh(null, asf.getPrivateKey());
+                        if (!hasBeenExecutedScript) {
+                            Ssh ssh = buildSsh(null, asf.getPrivateKey());
 
-                        try {
-                            ssh.runErrorByExceptionAndClose();
-                        } catch (SshException e) {
-                            ssh = buildSsh(VirtualRouterGlobalConfig.VYOS_PASSWORD.value(), null);
-                            ssh.runErrorByExceptionAndClose();
+                            try {
+                                ssh.runErrorByExceptionAndClose();
+                            } catch (SshException e) {
+                                ssh = buildSsh(VirtualRouterGlobalConfig.VYOS_PASSWORD.value(), null);
+                                ssh.runErrorByExceptionAndClose();
+                            }
+
+                            hasBeenExecutedScript = true;
+                            completion.success();
                         }
-
-                        completion.success();
                         return true;
                     } else {
                         errors.add(new Throwable(String.format("vyos agent port %s is not opened on managment nic %s", sshPort, mgmtNicIp)));

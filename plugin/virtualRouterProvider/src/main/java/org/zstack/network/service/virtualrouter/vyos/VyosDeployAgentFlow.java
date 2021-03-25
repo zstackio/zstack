@@ -44,7 +44,11 @@ public class VyosDeployAgentFlow extends VyosRunScriptFlow {
             return true;
         }
 
-        return !isZvrMd5Changed(mgmtNicIp, sshPort);
+        if (isZvrMd5Changed(mgmtNicIp, sshPort)) {
+            data.put(ApplianceVmConstant.Params.needRebootAgent.toString(), Boolean.TRUE.toString());
+            return false;
+        }
+        return true;
     }
 
     @Override

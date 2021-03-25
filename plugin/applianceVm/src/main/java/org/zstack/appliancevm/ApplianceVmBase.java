@@ -735,6 +735,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             chain.setName(String.format("create-appliancevm-%s", msg.getVmInstanceUuid()));
             chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
             chain.getData().put(ApplianceVmConstant.Params.applianceVmFirewallRules.toString(), aspec.getFirewallRules());
+            chain.getData().put(ApplianceVmConstant.Params.isNewCreate.toString(), Boolean.TRUE.toString());
 
             addBootstrapFlows(chain, VolumeFormat.getMasterHypervisorTypeByVolumeFormat(imvo.getFormat()));
 

@@ -32,6 +32,7 @@ public class ApplianceVmConstant {
         applianceVmSpec,
         applianceVmInfoForPostLifeCycle,
         applianceVmFirewallRules,
+        isNewCreate,
         isReconnect,
         needRebootAgent,
         managementNicIp,
