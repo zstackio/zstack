@@ -2913,6 +2913,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIRecoverVmInstanceMsg) msg);
         } else if (msg instanceof APISetVmBootOrderMsg) {
             handle((APISetVmBootOrderMsg) msg);
+        } else if (msg instanceof APISetVmClockTrackMsg) {
+            handle((APISetVmClockTrackMsg) msg);
         } else if (msg instanceof APISetVmConsolePasswordMsg) {
             handle((APISetVmConsolePasswordMsg) msg);
         } else if (msg instanceof APISetVmSoundTypeMsg) {
@@ -3345,6 +3347,21 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void handle(APISetVmClockTrackMsg msg) {
+        APISetVmClockTrackEvent evt = new APISetVmClockTrackEvent(msg.getId());
+        if (msg.getTrack().equals(VmClockTrack.guest.toString())) {
+            SystemTagCreator creator = VmSystemTags.CLOCK_TRACK.newSystemTagCreator(self.getUuid());
+            creator.recreate = true;
+            creator.setTagByTokens(map(e(VmSystemTags.CLOCK_TRACK_TOKEN, msg.getTrack())));
+            creator.create();
+        } else {
+            VmSystemTags.CLOCK_TRACK.delete(self.getUuid());
+        }
+
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     private void handle(APISetVmBootOrderMsg msg) {
