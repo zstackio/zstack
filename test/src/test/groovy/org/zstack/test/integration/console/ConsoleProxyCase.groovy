@@ -45,6 +45,7 @@ class ConsoleProxyCase extends SubCase {
         agent.setUuid(Platform.getManagementServerId())
         agent.setManagementIp(Platform.getManagementServerIp())
         agent.setConsoleProxyOverriddenIp(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)
+        agent.setConsoleProxyPort(CoreGlobalProperty.CONSOLE_PROXY_PORT)
         agent.setState(ConsoleProxyAgentState.Enabled)
         agent.setStatus(ConsoleProxyAgentStatus.Connecting)
         agent.setDescription(String.format("Console proxy agent running on the management node[uuid:%s]", Platform.getManagementServerId()))
@@ -59,9 +60,24 @@ class ConsoleProxyCase extends SubCase {
 
         assert Platform.getGlobalProperties().get("consoleProxyOverriddenIp") == '127.0.0.1'
         assert CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP == '127.0.0.1'
+        //When the console port is 0 (empty), the default CoreGlobalProperty port 4900 is set
+        assert Platform.getGlobalProperties().get("consoleProxyPort") == '4900'
+        assert CoreGlobalProperty.CONSOLE_PROXY_PORT == 4900
         agent = dbf.reload(agent)
         assert agent.consoleProxyOverriddenIp == "127.0.0.1"
+        assert agent.consoleProxyPort == 4900
 
+        updateConsoleProxyAgent {
+            uuid = agent.uuid
+            consoleProxyOverriddenIp = "127.0.0.1"
+            consoleProxyPort = 4789
+        }
+
+        assert Platform.getGlobalProperties().get("consoleProxyPort") == '4789'
+        assert CoreGlobalProperty.CONSOLE_PROXY_PORT == 4789
+        agent = dbf.reload(agent)
+        assert agent.consoleProxyPort == 4789
+        
         // update console proxy agent by none admin account
         SessionInventory testAccountSession = logInByAccount {
             accountName = "test"

@@ -29,6 +29,9 @@ public class ConsoleProxyAgentVO {
     private String consoleProxyOverriddenIp;
 
     @Column
+    private Integer consoleProxyPort;
+
+    @Column
     private String type;
 
     @Column
@@ -48,6 +51,14 @@ public class ConsoleProxyAgentVO {
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    public Integer getConsoleProxyPort() {
+        return consoleProxyPort;
+    }
+
+    public void setConsoleProxyPort(Integer consoleProxyPort) {
+        this.consoleProxyPort = consoleProxyPort;
     }
 
     public String getUuid() {

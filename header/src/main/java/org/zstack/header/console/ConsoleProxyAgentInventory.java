@@ -16,6 +16,7 @@ public class ConsoleProxyAgentInventory {
     private String description;
     private String managementIp;
     private String consoleProxyOverriddenIp;
+    private Integer consoleProxyPort;
     private String type;
     private String status;
     private String state;
@@ -29,6 +30,7 @@ public class ConsoleProxyAgentInventory {
         inv.setDescription(vo.getDescription());
         inv.setManagementIp(vo.getManagementIp());
         inv.setConsoleProxyOverriddenIp(vo.getConsoleProxyOverriddenIp());
+        inv.setConsoleProxyPort(vo.getConsoleProxyPort());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setState(vo.getState().toString());
@@ -42,6 +44,14 @@ public class ConsoleProxyAgentInventory {
             invs.add(valueOf(vo));
         }
         return invs;
+    }
+
+    public Integer getConsoleProxyPort() {
+        return consoleProxyPort;
+    }
+
+    public void setConsoleProxyPort(Integer consoleProxyPort) {
+        this.consoleProxyPort = consoleProxyPort;
     }
 
     public String getUuid() {

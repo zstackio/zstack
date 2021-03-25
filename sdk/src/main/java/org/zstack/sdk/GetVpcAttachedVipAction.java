@@ -20,7 +20,7 @@ public class GetVpcAttachedVipAction extends AbstractAction {
                     String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
-
+            
             return this;
         }
     }
@@ -97,5 +97,5 @@ public class GetVpcAttachedVipAction extends AbstractAction {
         info.parameterName = "params";
         return info;
     }
-    
+
 }

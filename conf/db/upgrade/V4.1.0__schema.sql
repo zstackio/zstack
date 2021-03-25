@@ -64,4 +64,5 @@ CALL upgradeProjectAdminSystemTags();
 
 ALTER TABLE `zstack`.`SNSEmailPlatformVO` modify COLUMN `password` VARCHAR(255) NULL;
 ALTER TABLE `zstack`.`SNSEmailPlatformVO` modify COLUMN `username` VARCHAR(255) NULL;
+alter table `ConsoleProxyAgentVO` add `consoleProxyPort` int NOT NULL;
 

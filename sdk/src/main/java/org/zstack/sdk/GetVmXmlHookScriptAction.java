@@ -55,7 +55,7 @@ public class GetVmXmlHookScriptAction extends AbstractAction {
         }
         
         org.zstack.sdk.GetVmXmlHookScriptResult value = res.getResult(org.zstack.sdk.GetVmXmlHookScriptResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVmXmlHookScriptResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.GetVmXmlHookScriptResult() : value; 
 
         return ret;
     }

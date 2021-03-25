@@ -18,6 +18,16 @@ public class APIUpdateConsoleProxyAgentMsg extends APIMessage implements Console
     private String uuid;
     @APIParam
     private String consoleProxyOverriddenIp;
+    @APIParam
+    private int consoleProxyPort;
+
+    public int getConsoleProxyPort() {
+        return consoleProxyPort;
+    }
+
+    public void setConsoleProxyPort(int consoleProxyPort) {
+        this.consoleProxyPort = consoleProxyPort;
+    }
 
     public String getUuid() {
         return uuid;
@@ -39,6 +49,7 @@ public class APIUpdateConsoleProxyAgentMsg extends APIMessage implements Console
         APIUpdateConsoleProxyAgentMsg msg = new APIUpdateConsoleProxyAgentMsg();
         msg.setUuid(uuid());
         msg.setConsoleProxyOverriddenIp("127.0.0.1");
+        msg.setConsoleProxyPort(4789);
         return msg;
     }
 }
