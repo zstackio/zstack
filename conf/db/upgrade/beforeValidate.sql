@@ -26,6 +26,5 @@ BEGIN
 END $$
 
 DELIMITER  ;
-DELETE FROM schema_version;
 CALL `zstack`.update_schema_checksum();
 DROP PROCEDURE IF EXISTS `zstack`.update_schema_checksum;
