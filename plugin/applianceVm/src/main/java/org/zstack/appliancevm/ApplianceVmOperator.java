@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ApplianceVmOperator {
-    public static Map<String, Map<Integer, String>> parseStaticIpSystemTag(List<String> systemTags) {
+    public static Map<String, Map<Integer, String>> parseStaticVipSystemTag(List<String> systemTags) {
         Map<String, Map<Integer, String>> ret = new HashMap<>();
         for (String sysTag : systemTags) {
             if (ApplianceVmSystemTags.APPLIANCEVM_STATIC_VIP.isMatch(sysTag)) {
