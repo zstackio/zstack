@@ -4,12 +4,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Map;
@@ -23,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class VirtualRouterPingFailureTracker implements ManagementNodeReadyExtensionPoint,
         VirtualRouterTrackerExtensionPoint {
+    private final static CLogger logger = Utils.getLogger(VirtualRouterPingFailureTracker.class);
 
     @Autowired
     private VirtualRouterPingTracker tracker;
@@ -32,6 +36,8 @@ public class VirtualRouterPingFailureTracker implements ManagementNodeReadyExten
     private ThreadFacade thdf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private DatabaseFacade dbf;
 
     private final ConcurrentHashMap<String, String> failed = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Boolean> reconnecting = new ConcurrentHashMap<>();
@@ -67,6 +73,7 @@ public class VirtualRouterPingFailureTracker implements ManagementNodeReadyExten
                     return;
                 }
 
+                logger.info("reconnecting vr: " + resUuid);
                 ReconnectVirtualRouterVmMsg msg = new ReconnectVirtualRouterVmMsg();
                 msg.setVirtualRouterVmUuid(resUuid);
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, resUuid);
@@ -78,6 +85,8 @@ public class VirtualRouterPingFailureTracker implements ManagementNodeReadyExten
                         if (reply.isSuccess()) {
                             failed.remove(resUuid);
                             tracker.track(resUuid);
+                        } else if (!dbf.isExist(resUuid, VirtualRouterVmVO.class)) {
+                            failed.remove(resUuid);
                         }
                     }
                 });
@@ -88,6 +97,7 @@ public class VirtualRouterPingFailureTracker implements ManagementNodeReadyExten
                     final String resUuid = entry.getKey();
 
                     if (!destinationMaker.isManagedByUs(resUuid)) {
+                        logger.info(String.format("skipped vr %s", resUuid));
                         failed.remove(resUuid);
                         continue;
                     }
@@ -126,5 +136,6 @@ public class VirtualRouterPingFailureTracker implements ManagementNodeReadyExten
                 }
             }
         });
+        logger.info("started vrouter failure checker");
     }
 }
