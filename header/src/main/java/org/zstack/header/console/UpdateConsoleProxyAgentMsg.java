@@ -8,6 +8,15 @@ import org.zstack.header.message.NeedReplyMessage;
 public class UpdateConsoleProxyAgentMsg extends NeedReplyMessage implements ConsoleProxyAgentMessage {
     private String uuid;
     private String consoleProxyOverriddenIp;
+    private Integer consoleProxyPort;
+
+    public Integer getConsoleProxyPort() {
+        return consoleProxyPort;
+    }
+
+    public void setConsoleProxyPort(Integer consoleProxyPort) {
+        this.consoleProxyPort = consoleProxyPort;
+    }
 
     public String getUuid() {
         return uuid;

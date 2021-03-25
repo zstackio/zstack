@@ -29,6 +29,9 @@ public class ConsoleProxyAgentVO {
     private String consoleProxyOverriddenIp;
 
     @Column
+    private Integer consoleProxyPort;
+
+    @Column
     private String type;
 
     @Column
@@ -80,6 +83,14 @@ public class ConsoleProxyAgentVO {
 
     public void setConsoleProxyOverriddenIp(String consoleProxyOverriddenIp) {
         this.consoleProxyOverriddenIp = consoleProxyOverriddenIp;
+    }
+
+    public Integer getConsoleProxyPort() {
+        return consoleProxyPort;
+    }
+
+    public void setConsoleProxyPort(Integer consoleProxyPort) {
+        this.consoleProxyPort = consoleProxyPort;
     }
 
     public String getType() {
