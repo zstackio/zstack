@@ -82,6 +82,9 @@
         <name>org.zstack.header.vm.APISetVmBootOrderMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APISetVmClockTrackMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIGetVmBootOrderMsg</name>
     </message>
     <message>

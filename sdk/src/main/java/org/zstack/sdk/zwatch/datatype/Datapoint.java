@@ -4,11 +4,11 @@ package org.zstack.sdk.zwatch.datatype;
 
 public class Datapoint  {
 
-    public double value;
-    public void setValue(double value) {
+    public java.lang.Double value;
+    public void setValue(java.lang.Double value) {
         this.value = value;
     }
-    public double getValue() {
+    public java.lang.Double getValue() {
         return this.value;
     }
 
