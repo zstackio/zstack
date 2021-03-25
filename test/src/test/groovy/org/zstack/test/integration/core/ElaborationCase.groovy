@@ -51,17 +51,17 @@ class ElaborationCase extends SubCase {
     void testElaborationWithLongName() {
         def err = operr("host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", Platform.uuid, "long long long long long long long long long host name", "Connecting") as ErrorCode
         assert err.elaboration != null
-        assert err.elaboration.trim() == "错误信息: 物理机[long long long long long long long long long host name]正处于[Connecting]状态, 当前状态不允许进行该操作"
+        assert err.elaboration.trim() == "错误信息: 物理机 [long long long long long long long long long host name] 正处于 [Connecting] 状态，当前状态不允许进行该操作。"
     }
 
     void testElaboration() {
         def err = operr("certificate has expired or is not yet valid") as ErrorCode
         assert err.elaboration != null
-        assert err.elaboration.trim() == "错误信息: 当前系统时间不在镜像仓库证书有效期内, 调整过镜像仓库服务器的系统时间，或者证书被修改"
+        assert err.elaboration.trim() == "错误信息: 当前系统时间不在镜像仓库证书有效期内，可能因为镜像仓库服务器的系统时间被调整，或者证书被修改。"
 
         err = operr("The state of vm[uuid:%s] is %s. Only these state[Running,Stopped] is allowed to update cpu or memory.", Platform.uuid, "Rebooting") as ErrorCode
         assert err.elaboration != null
-        assert err.elaboration.trim() == "错误信息: 云主机的状态为Rebooting,只有状态[Running,Stopped]允许升级CPU/内存"
+        assert err.elaboration.trim() == "错误信息: 云主机的状态为 Rebooting，只有状态 [Running，Stopped] 允许升级 CPU/内存。"
 
         err = operr("test for missed error") as ErrorCode
         assert err.elaboration == null
@@ -181,6 +181,6 @@ class ElaborationCase extends SubCase {
         def errlist = new ErrorCodeList().causedBy(list)
 
         def err = operr(errlist, "unable to commit backup storage because: %s", err1.details)
-        assert err.messages.message_cn == "物理机[host-1]正处于[Maintenance]状态, 当前状态不允许进行该操作,物理机[host-2]正处于[Maintenance]状态, 当前状态不允许进行该操作"
+        assert err.messages.message_cn == "物理机 [host-1] 正处于 [Maintenance] 状态，当前状态不允许进行该操作。,物理机 [host-2] 正处于 [Maintenance] 状态，当前状态不允许进行该操作。"
     }
 }
