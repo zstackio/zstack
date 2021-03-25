@@ -84,7 +84,7 @@ doc {
 	}
 	field {
 		name "state"
-		desc "云盘是否开启"
+		desc "云盘启用状态"
 		type "String"
 		since "0.6"
 	}
