@@ -95,12 +95,12 @@ public abstract class VyosRunScriptFlow extends NoRollbackFlow {
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
-        init(data);
-
         if (isSkipRunningScript(data)) {
             trigger.next();
             return;
         }
+
+        init(data);
 
         initEnv();
 
@@ -217,10 +217,10 @@ public abstract class VyosRunScriptFlow extends NoRollbackFlow {
     }
 
     private Ssh buildSsh(String password, String privateKey) {
-        DebugUtils.Assert(password != null || privateKey != null, "vyos ssh password and private key all null");
-        DebugUtils.Assert(mgmtNicIp != null, "vyos management nic ip is null");
+        DebugUtils.Assert(password != null || privateKey != null, "no password or private key");
+        DebugUtils.Assert(mgmtNicIp == null, "vyos management nic ip is null");
 
-        Ssh ssh = new Ssh().setUsername(sshUserName).setHostname(mgmtNicIp).setPort(sshPort).setTimeout(sshTimeout);
+        Ssh ssh = new Ssh().setUsername(sshUserName).setHostname(mgmtNicIp).setPort(sshPort);
         if (privateKey != null) {
             ssh.setPrivateKey(privateKey);
         } else {
@@ -228,7 +228,7 @@ public abstract class VyosRunScriptFlow extends NoRollbackFlow {
         }
 
         if (scriptContent != null) {
-            ssh.shell(scriptContent);
+            ssh.script(scriptContent);
         } else {
             if (!commands.isEmpty()) {
                 commands.forEach(ssh::command);
