@@ -559,6 +559,8 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory", "org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory");
 			put("org.zstack.zwatch.api.APIGetAllEventMetadataReply$EventStruct", "org.zstack.sdk.zwatch.api.EventStruct");
 			put("org.zstack.zwatch.api.APIGetAllMetricMetadataReply$MetricStruct", "org.zstack.sdk.zwatch.api.MetricStruct");
+			put("org.zstack.zwatch.api.Histogram", "org.zstack.sdk.zwatch.api.Histogram");
+			put("org.zstack.zwatch.api.Histogram$Tag", "org.zstack.sdk.zwatch.api.Tag");
 			put("org.zstack.zwatch.datatype.AlarmData", "org.zstack.sdk.zwatch.datatype.AlarmData");
 			put("org.zstack.zwatch.datatype.AlarmDataV1", "org.zstack.sdk.zwatch.datatype.AlarmDataV1");
 			put("org.zstack.zwatch.datatype.AlarmDataV2", "org.zstack.sdk.zwatch.datatype.AlarmDataV2");
@@ -1150,7 +1152,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory");
 			put("org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory", "org.zstack.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory");
 			put("org.zstack.sdk.zwatch.api.EventStruct", "org.zstack.zwatch.api.APIGetAllEventMetadataReply$EventStruct");
+			put("org.zstack.sdk.zwatch.api.Histogram", "org.zstack.zwatch.api.Histogram");
 			put("org.zstack.sdk.zwatch.api.MetricStruct", "org.zstack.zwatch.api.APIGetAllMetricMetadataReply$MetricStruct");
+			put("org.zstack.sdk.zwatch.api.Tag", "org.zstack.zwatch.api.Histogram$Tag");
 			put("org.zstack.sdk.zwatch.datatype.AlarmData", "org.zstack.zwatch.datatype.AlarmData");
 			put("org.zstack.sdk.zwatch.datatype.AlarmDataV1", "org.zstack.zwatch.datatype.AlarmDataV1");
 			put("org.zstack.sdk.zwatch.datatype.AlarmDataV2", "org.zstack.zwatch.datatype.AlarmDataV2");
