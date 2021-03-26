@@ -7576,9 +7576,9 @@
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
   },
   {
-    "raw": "invalid project name[%s], there has been an account or project with the same name",
-    "en_US": "invalid project name[{0}], there has been an account or project with the same name",
-    "zh_CN": "无效的项目名[{0}]，已经存在已知账户或者项目使用了相同的名字",
+    "raw": "invalid project name[%s], An account or project with the same name exists.",
+    "en_US": "invalid project name[{0}], An account or project with the same name exists.",
+    "zh_CN": "无效的项目名[{0}]，已有账户或项目使用了相同的名称",
     "arguments": [
       "msg.getName()"
     ],
