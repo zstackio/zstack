@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteVmUserDefinedXmlHookScriptAction extends AbstractAction {
+public class DeleteVxlanL2NetworkAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteVmUserDefinedXmlHookScriptAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptResult value;
+        public org.zstack.sdk.DeleteL2NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,7 @@ public class DeleteVmUserDefinedXmlHookScriptAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.lang.String deleteMode = "Permissive";
@@ -63,8 +63,8 @@ public class DeleteVmUserDefinedXmlHookScriptAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptResult value = res.getResult(org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptResult() : value; 
+        org.zstack.sdk.DeleteL2NetworkResult value = res.getResult(org.zstack.sdk.DeleteL2NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteL2NetworkResult() : value; 
 
         return ret;
     }
@@ -94,7 +94,7 @@ public class DeleteVmUserDefinedXmlHookScriptAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/vm-instances/{vmInstanceUuid}/xml-hook-script";
+        info.path = "/l2-networks/vxlan/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

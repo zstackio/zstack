@@ -1,18 +1,8 @@
 package org.zstack.sdk.sns.platform.email;
 
-import org.zstack.sdk.AbstractAction;
-import org.zstack.sdk.ApiException;
-import org.zstack.sdk.ApiResult;
-import org.zstack.sdk.Completion;
-import org.zstack.sdk.ErrorCode;
-import org.zstack.sdk.InternalCompletion;
-import org.zstack.sdk.NonAPIParam;
-import org.zstack.sdk.Param;
-import org.zstack.sdk.RestInfo;
-import org.zstack.sdk.ZSClient;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateSNSEmailPlatformAction extends AbstractAction {
 

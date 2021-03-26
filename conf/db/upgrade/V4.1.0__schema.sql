@@ -133,3 +133,13 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AuditsVO` (
 CREATE INDEX `idxAuditsVOcreateTimeid` ON AuditsVO (`createTime`,`id`);
 CREATE INDEX `idxAuditsVOresourceUuid` ON AuditsVO (`resourceUuid`);
 CREATE INDEX `idxAuditsVOsuccess` ON AuditsVO (`success`);
+
+alter table AlarmRecordsVO add column hour int(10);
+alter table AlarmRecordsVO add index idxAccountUuidHourEmergencyLevel(`accountUuid`,`hour`,`emergencyLevel`);
+alter table AlarmRecordsVO add index idxCreateTimeReadStatusEmergencyLevel (`createTime`, `emergencyLevel`, `readStatus`, `accountUuid`);
+alter table AlarmRecordsVO add index idxDataUuid (`dataUuid`);
+
+alter table EventRecordsVO add column hour int(10);
+alter table EventRecordsVO add index idxAccountUuidHourEmergencyLevel(`accountUuid`,`hour`,`emergencyLevel`);
+alter table EventRecordsVO add index idxCreateTimeReadStatusEmergencyLevel (`createTime`, `emergencyLevel`, `readStatus`, `accountUuid`);
+alter table EventRecordsVO add index idxDataUuid (`dataUuid`);
