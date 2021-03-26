@@ -26,6 +26,7 @@ import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.trash.InstallPathRecycleVO;
 import org.zstack.header.core.trash.InstallPathRecycleVO_;
 import org.zstack.header.errorcode.ErrorCode;
@@ -407,6 +408,35 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
      * Otherwise, it is DefaultPrimaryStorageAllocationStrategy
      */
     private void handle(AllocatePrimaryStorageMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                allocatePrimaryStore(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "allocate-primary-store";
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return PrimaryStorageGlobalConfig.ALLOCATE_PRIMARYSTORAGE_CONCURRENCY.value(Integer.class);
+            }
+        });
+    }
+
+    private void allocatePrimaryStore(AllocatePrimaryStorageMsg msg, NoErrorCompletion completion) {
         AllocatePrimaryStorageReply reply = new AllocatePrimaryStorageReply(null);
 
         String allocatorStrategyType = null;
@@ -493,6 +523,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         reply.setPrimaryStorageInventory(target);
         reply.setSize(msg.getSize());
         bus.reply(msg, reply);
+
+        completion.done();
     }
 
     private boolean reserve(final PrimaryStorageInventory inv, final long size) {
