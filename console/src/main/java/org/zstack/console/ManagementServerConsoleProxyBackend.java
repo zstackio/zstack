@@ -79,6 +79,17 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         return rst.getRetCode();
     }
 
+    protected int setConsoleProxyPort(int Port) {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return 0;
+        }
+
+        ShellResult rst = ShellUtils.runAndReturn(
+                "/usr/bin/zstack-ctl configure consoleProxyPort=" + Port
+        );
+        return rst.getRetCode();
+    }
+
     protected ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo) {
         return new ConsoleProxyBase(vo, getAgentPort());
     }
@@ -125,6 +136,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     vo.setManagementIp(Platform.getManagementServerIp());
                     vo.setUuid(Platform.getManagementServerId());
                     vo.setConsoleProxyOverriddenIp(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
+                    vo.setConsoleProxyPort(CoreGlobalProperty.CONSOLE_PROXY_PORT);
                     vo.setState(ConsoleProxyAgentState.Enabled);
                     vo.setStatus(ConsoleProxyAgentStatus.Connecting);
                     vo.setDescription(String.format("Console proxy agent running on the management node[uuid:%s]", Platform.getManagementServerId()));
@@ -424,6 +436,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         UpdateConsoleProxyAgentMsg umsg = new UpdateConsoleProxyAgentMsg();
         umsg.setUuid(msg.getUuid());
         umsg.setConsoleProxyOverriddenIp(msg.getConsoleProxyOverriddenIp());
+        umsg.setConsoleProxyPort(msg.getConsoleProxyPort());
         bus.makeServiceIdByManagementNodeId(umsg, ConsoleConstants.SERVICE_ID, msg.getUuid());
         bus.send(umsg, new CloudBusCallBack(evt) {
             @Override
@@ -447,6 +460,9 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         chain.then(new ShareFlow() {
             ConsoleProxyAgentVO vo;
             String oldProxyIp;
+            int oldProxyPort;
+            int newProxyPort = msg.getConsoleProxyPort() == 0 ? CoreGlobalProperty.CONSOLE_PROXY_PORT : msg.getConsoleProxyPort();
+
 
             @Override
             public void setup() {
@@ -456,7 +472,9 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     public void run(FlowTrigger trigger, Map data) {
                         vo = dbf.findByUuid(msg.getUuid(), ConsoleProxyAgentVO.class);
                         oldProxyIp = vo.getConsoleProxyOverriddenIp();
+                        oldProxyPort = vo.getConsoleProxyPort();
                         vo.setConsoleProxyOverriddenIp(msg.getConsoleProxyOverriddenIp());
+                        vo.setConsoleProxyPort(newProxyPort);
                         dbf.update(vo);
                         trigger.next();
                     }
@@ -465,6 +483,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     public void rollback(FlowRollback trigger, Map data) {
                         vo = dbf.reload(vo);
                         vo.setConsoleProxyOverriddenIp(oldProxyIp);
+                        vo.setConsoleProxyPort(oldProxyPort);
                         dbf.update(vo);
                         trigger.rollback();
                     }
@@ -475,14 +494,18 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         Platform.getGlobalProperties().put("consoleProxyOverriddenIp", msg.getConsoleProxyOverriddenIp());
+                        Platform.getGlobalProperties().put("consoleProxyPort", Integer.toString(newProxyPort));
                         CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP = msg.getConsoleProxyOverriddenIp();
+                        CoreGlobalProperty.CONSOLE_PROXY_PORT = newProxyPort;
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         Platform.getGlobalProperties().put("consoleProxyOverriddenIp", oldProxyIp);
+                        Platform.getGlobalProperties().put("consoleProxyPort", Integer.toString(oldProxyPort));
                         CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP = oldProxyIp;
+                        CoreGlobalProperty.CONSOLE_PROXY_PORT = oldProxyPort;
                         trigger.rollback();
                     }
                 });
@@ -492,16 +515,18 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         int rst = setConsoleProxyOverridenIp(msg.getConsoleProxyOverriddenIp());
+                        int portRst = setConsoleProxyPort(newProxyPort);
                         if (rst == 0) {
                             trigger.next();
                         } else {
-                            trigger.fail(operr("failed to configure consoleProxyOverriddenIp"));
+                            trigger.fail(operr("failed to configure consoleProxyOverriddenIp[code:%d] or consoleProxyPort[code:%d]"));
                         }
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         setConsoleProxyOverridenIp(oldProxyIp);
+                        setConsoleProxyPort(oldProxyPort);
                         trigger.rollback();
                     }
                 });

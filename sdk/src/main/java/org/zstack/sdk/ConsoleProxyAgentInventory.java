@@ -36,6 +36,14 @@ public class ConsoleProxyAgentInventory  {
         return this.consoleProxyOverriddenIp;
     }
 
+    public java.lang.Integer consoleProxyPort;
+    public void setConsoleProxyPort(java.lang.Integer consoleProxyPort) {
+        this.consoleProxyPort = consoleProxyPort;
+    }
+    public java.lang.Integer getConsoleProxyPort() {
+        return this.consoleProxyPort;
+    }
+
     public java.lang.String type;
     public void setType(java.lang.String type) {
         this.type = type;
