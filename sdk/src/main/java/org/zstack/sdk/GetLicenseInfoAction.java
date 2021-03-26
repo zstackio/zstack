@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetLicenseInfoAction extends AbstractAction {
 
@@ -24,6 +23,9 @@ public class GetLicenseInfoAction extends AbstractAction {
             return this;
         }
     }
+
+    @Param(required = false)
+    public java.lang.String additionSession;
 
     @Param(required = false)
     public java.util.List systemTags;

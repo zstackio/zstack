@@ -411,7 +411,9 @@ public class Ssh {
             script.cleanup();
         }
 
-        session.disconnect();
+        if (session != null) {
+            session.disconnect();
+        }
     }
 
     public SshResult run() {
