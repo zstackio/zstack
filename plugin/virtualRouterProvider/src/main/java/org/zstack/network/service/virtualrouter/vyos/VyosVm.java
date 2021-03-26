@@ -33,7 +33,6 @@ public class VyosVm extends VirtualRouter {
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
             flows.add(new VyosGetVersionFlow());
             flows.add(new VyosDeployAgentFlow());
-            flows.add(new VyosRebootAgentFlow());
         }
 
         return flows;
