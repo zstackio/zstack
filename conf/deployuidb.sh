@@ -8,24 +8,21 @@ port="$4"
 zstack_ui_db_password="$5"
 
 base=`dirname $0`
-flywayver=6.3.1
-: "${flywayver:=3.2.1}"
-flyway="$base/tools/flyway-$flywayver/flyway"
-flyway_sql="$base/tools/flyway-$flywayver/sql/"
+flyway="$base/tools/flyway-3.2.1/flyway"
+flyway_sql="$base/tools/flyway-3.2.1/sql/"
 
 # give grant option to the new management ip after `zstack-ctl change_ip`
-mysql --user=$user --password=$password --port=$port --host=$host << EOF
-create user if not exists 'root'@'%' identified by "$password";
-grant all privileges on *.* to root@"%";
+mysql --user=$user --password=$password --port=$port << EOF
+grant all privileges on *.* to root@"$host" identified by "$password" with grant option;
 EOF
 
 mysql --user=$user --password=$password --host=$host --port=$port << EOF
-create user if not exists 'root'@'127.0.0.1' identified by "$password";
-create user if not exists 'root'@'%' identified by "$password";
+grant usage on *.* to 'root'@'localhost';
+grant usage on *.* to 'root'@'%';
 DROP DATABASE IF EXISTS zstack_ui;
 CREATE DATABASE zstack_ui;
-grant all privileges on zstack_ui.* to root@'%';
-grant all privileges on zstack_ui.* to root@'127.0.0.1';
+grant all privileges on zstack_ui.* to root@'%' identified by "$password";
+grant all privileges on zstack_ui.* to root@'localhost' identified by "$password";
 flush privileges;
 EOF
 
@@ -54,13 +51,13 @@ flush privileges;
 EOF
 else
     mysql --user=$user --password=$password --host=$host --port=$port << EOF
-drop user if exists zstack_ui;
-create user if not exists 'zstack_ui' identified by "$zstack_ui_db_password";
-create user if not exists 'zstack_ui'@'localhost' identified by "$zstack_ui_db_password";
-create user if not exists 'zstack_ui'@'$hostname' identified by "$zstack_ui_db_password";
-grant all privileges on zstack_ui.* to zstack_ui@'localhost';
-grant all privileges on zstack_ui.* to zstack_ui@'%';
-grant all privileges on zstack_ui.* to zstack_ui@"$hostname";
+grant usage on *.* to 'zstack_ui'@'localhost';
+grant usage on *.* to 'zstack_ui'@'%';
+drop user zstack_ui;
+create user 'zstack_ui' identified by "$zstack_ui_db_password";
+grant all privileges on zstack_ui.* to zstack_ui@'localhost' identified by "$zstack_ui_db_password";
+grant all privileges on zstack_ui.* to zstack_ui@'%' identified by "$zstack_ui_db_password";
+grant all privileges on zstack_ui.* to zstack_ui@"$hostname" identified by "$zstack_ui_db_password";
 flush privileges;
 EOF
 fi
