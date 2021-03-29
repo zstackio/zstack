@@ -287,6 +287,7 @@ public class SourceClassMap {
 			put("org.zstack.header.vm.CloneVmInstanceInventory", "org.zstack.sdk.CloneVmInstanceInventory");
 			put("org.zstack.header.vm.CloneVmInstanceResults", "org.zstack.sdk.CloneVmInstanceResults");
 			put("org.zstack.header.vm.VdiPortInfo", "org.zstack.sdk.VdiPortInfo");
+			put("org.zstack.header.vm.VmCapabilities", "org.zstack.sdk.VmCapabilities");
 			put("org.zstack.header.vm.VmInstanceInventory", "org.zstack.sdk.VmInstanceInventory");
 			put("org.zstack.header.vm.VmNicInventory", "org.zstack.sdk.VmNicInventory");
 			put("org.zstack.header.vm.VmPriorityConfigInventory", "org.zstack.sdk.VmPriorityConfigInventory");
@@ -999,6 +1000,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VirtualRouterVmInventory", "org.zstack.network.service.virtualrouter.VirtualRouterVmInventory");
 			put("org.zstack.sdk.VmCPUBillingInventory", "org.zstack.billing.generator.vm.cpu.VmCPUBillingInventory");
 			put("org.zstack.sdk.VmCPUSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmCPUSpendingDetails");
+			put("org.zstack.sdk.VmCapabilities", "org.zstack.header.vm.VmCapabilities");
 			put("org.zstack.sdk.VmCdRomInventory", "org.zstack.header.vm.cdrom.VmCdRomInventory");
 			put("org.zstack.sdk.VmExternalBackupInfo", "org.zstack.externalbackup.VmExternalBackupInfo");
 			put("org.zstack.sdk.VmInstanceInventory", "org.zstack.header.vm.VmInstanceInventory");
