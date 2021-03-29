@@ -212,6 +212,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APICreateVmInstanceMsg) msg);
         } else if(msg instanceof APICreateVmNicMsg) {
             handle((APICreateVmNicMsg) msg);
+        } else if (msg instanceof APIGetVmNicAttachedNetworkServiceMsg) {
+            handle((APIGetVmNicAttachedNetworkServiceMsg) msg);
         } else if (msg instanceof APIDeleteVmNicMsg) {
             handle((APIDeleteVmNicMsg) msg);
         } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
@@ -892,6 +894,21 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 bus.publish(evt);
             }
         }).start();
+    }
+
+    private void handle(APIGetVmNicAttachedNetworkServiceMsg msg) {
+        APIGetVmNicAttachedNetworkServiceReply reply = new APIGetVmNicAttachedNetworkServiceReply();
+        List<String> networkServices = new ArrayList<>();
+        VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+        for (VmNicChangeNetworkExtensionPoint extension : pluginRgty.getExtensionList(VmNicChangeNetworkExtensionPoint.class)) {
+            Map<String, String> ret = extension.getVmNicAttachedNetworkService(VmNicInventory.valueOf(nicVO));
+            if (ret == null) {
+                continue;
+            }
+            networkServices.addAll(ret.keySet());
+        }
+        reply.setNetworkServices(networkServices);
+        bus.reply(msg, reply);
     }
 
     protected void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<VmInstanceInventory> completion) {

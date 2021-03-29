@@ -29,9 +29,8 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.cluster.ClusterVO_;
+import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
@@ -2723,6 +2722,26 @@ public class KVMHost extends HostBase implements Host {
                             self.getUuid(), self.getManagementIp(), ret.getError()));
                     logger.warn(reply.getError().getDetails());
                     extEmitter.startVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), spec, reply.getError());
+                }
+
+                if (ret.getNicInfos() != null && !ret.getNicInfos().isEmpty()) {
+                    Map<String, VmNicInventory> macNicMap = new HashMap<>();
+                    for (VmNicInventory nic : spec.getDestNics()) {
+                        macNicMap.put(nic.getMac(), nic);
+                    }
+
+                    for (VmNicInfo vmNicInfo : ret.getNicInfos()) {
+                        VmNicInventory nic = macNicMap.get(vmNicInfo.getMacAddress());
+                        if (nic == null) {
+                            continue;
+                        }
+
+                        SystemTagCreator creator = KVMSystemTags.VMNIC_PCI_ADDRESS.newSystemTagCreator(nic.getUuid());
+                        creator.inherent = true;
+                        creator.recreate = true;
+                        creator.setTagByTokens(map(e(KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN, vmNicInfo.getPciInfo().toString())));
+                        creator.create();
+                    }
                 }
                 bus.reply(msg, reply);
                 completion.done();

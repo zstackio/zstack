@@ -1900,7 +1900,38 @@ public class KVMAgentCommands {
     }
 
     public static class StartVmResponse extends AgentResponse {
+        private List<VmNicInfo> nicInfos;
+
+        public List<VmNicInfo> getNicInfos() {
+            return nicInfos;
+        }
+
+        public void setNicInfos(List<VmNicInfo> nicInfos) {
+            this.nicInfos = nicInfos;
+        }
     }
+
+    public static class VmNicInfo {
+        private String macAddress;
+        private PciAddressConfig pciInfo;
+
+        public String getMacAddress() {
+            return macAddress;
+        }
+
+        public void setMacAddress(String macAddress) {
+            this.macAddress = macAddress;
+        }
+
+        public PciAddressConfig getPciInfo() {
+            return pciInfo;
+        }
+
+        public void setPciInfo(PciAddressConfig pciInfo) {
+            this.pciInfo = pciInfo;
+        }
+    }
+
 
     public static class ChangeCpuMemoryCmd extends AgentCommand {
         private String vmUuid;
