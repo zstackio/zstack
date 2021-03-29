@@ -11,4 +11,6 @@ public interface L2NetworkRealizationExtensionPoint {
     L2NetworkType getSupportedL2NetworkType();
 
     HypervisorType getSupportedHypervisorType();
+
+    void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion);
 }
