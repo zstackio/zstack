@@ -872,5 +872,13 @@ public class NetworkUtils {
     public static String generateVlanDeviceName(String ifName, Integer vlanId) {
         return String.format("%s.%s", ifName, vlanId.toString());
     }
+
+    public static boolean isInIpv6Range(String startIp, String endIp, String ip) {
+        IPv6Address startIpv6Addresses = IPv6Address.fromString(startIp);
+        IPv6Address endIpv6Addresses = IPv6Address.fromString(endIp);
+        IPv6Address iPv6Addresses = IPv6Address.fromString(ip);
+
+        return startIpv6Addresses.toBigInteger().compareTo(iPv6Addresses.toBigInteger()) <= 0 && endIpv6Addresses.toBigInteger().compareTo(iPv6Addresses.toBigInteger()) >= 0;
+    }
 }
 
