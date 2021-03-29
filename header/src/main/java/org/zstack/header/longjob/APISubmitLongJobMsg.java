@@ -10,12 +10,14 @@ import org.zstack.header.other.APIAuditor;
 import org.zstack.header.other.APILongJobAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.DebugUtils;
 
 /**
  * Created by GuoYi on 11/13/17.
  */
+@TagResourceType(LongJobVO.class)
 @Action(category = LongJobConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/longjobs",
