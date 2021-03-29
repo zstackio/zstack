@@ -257,6 +257,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         String mode;
         List<String> parameters;
         String  certificateUuid;
+        String securityPolicyType;
 
         public String getListenerUuid() {
             return listenerUuid;
@@ -336,6 +337,14 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         public void setPublicNic(String publicNic) {
             this.publicNic = publicNic;
+        }
+
+        public String getSecurityPolicyType() {
+            return securityPolicyType;
+        }
+
+        public void setSecurityPolicyType(String securityPolicyType) {
+            this.securityPolicyType = securityPolicyType;
         }
     }
 
@@ -456,6 +465,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 to.setListenerUuid(l.getUuid());
                 to.setMode(l.getProtocol());
                 to.setVip(vip.getIp());
+                to.setSecurityPolicyType(l.getSecurityPolicyType());
                 if (l.getCertificateRefs() != null && !l.getCertificateRefs().isEmpty()) {
                     to.setCertificateUuid(l.getCertificateRefs().get(0).getCertificateUuid());
                 }

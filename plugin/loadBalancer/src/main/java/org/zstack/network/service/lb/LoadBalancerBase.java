@@ -25,7 +25,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -1426,6 +1425,7 @@ public class LoadBalancerBase {
         vo.setLoadBalancerPort(msg.getLoadBalancerPort());
         vo.setProtocol(msg.getProtocol());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
+        vo.setSecurityPolicyType(msg.getSecurityPolicyType());
         vo = dbf.persistAndRefresh(vo);
         if (msg.getCertificateUuid() != null) {
             LoadBalancerListenerCertificateRefVO ref = new LoadBalancerListenerCertificateRefVO();
@@ -1800,6 +1800,11 @@ public class LoadBalancerBase {
 
                 if (msg.getSystemTags() != null) {
                     new LoadBalancerWeightOperator().setWeight(msg.getSystemTags(), msg.getLoadBalancerListenerUuid());
+                }
+
+                if (msg.getSecurityPolicyType() != null) {
+                    lblVo.setSecurityPolicyType(msg.getSecurityPolicyType());
+                    dbf.updateAndRefresh(lblVo);
                 }
 
                 boolean refresh = isListenerNeedRefresh(lblVo);

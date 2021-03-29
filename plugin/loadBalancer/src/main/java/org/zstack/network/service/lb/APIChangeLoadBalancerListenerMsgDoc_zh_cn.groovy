@@ -171,6 +171,16 @@ doc {
 					since "3.9"
 					values ("enable","disable")
 				}
+				column {
+					name "securityPolicyType"
+					enclosedIn "changeLoadBalancerListener"
+					desc "TLS安全策略"
+					location "body"
+					type "String"
+					optional true
+					since "4.1"
+					values ("tls_cipher_policy_default","tls_cipher_policy_1_0","tls_cipher_policy_1_1","tls_cipher_policy_1_2","tls_cipher_policy_1_2_strict","tls_cipher_policy_1_2_strict_with_1_3")
+				}
 			}
         }
 
