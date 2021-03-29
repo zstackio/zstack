@@ -17,6 +17,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.image.APIGetUploadImageJobDetailsMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg</name>
     </message>
 
