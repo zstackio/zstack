@@ -10,6 +10,7 @@ public class GetImageDownloadProgressReply extends MessageReply {
     private long actualSize;
     private String installPath;
     private String format;
+    private long lastOpTime;
 
     public boolean isCompleted() {
         return completed;
@@ -57,5 +58,13 @@ public class GetImageDownloadProgressReply extends MessageReply {
 
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    public long getLastOpTime() {
+        return lastOpTime;
+    }
+
+    public void setLastOpTime(long lastOpTime) {
+        this.lastOpTime = lastOpTime;
     }
 }
