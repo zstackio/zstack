@@ -3572,11 +3572,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private void handle(APIUpdateCephPrimaryStorageMonMsg msg) {
         final APIUpdateCephPrimaryStorageMonEvent evt = new APIUpdateCephPrimaryStorageMonEvent(msg.getId());
         CephPrimaryStorageMonVO monvo = dbf.findByUuid(msg.getMonUuid(), CephPrimaryStorageMonVO.class);
+        boolean monParameterChanged = false;
         if (msg.getHostname() != null) {
             monvo.setHostname(msg.getHostname());
+            monParameterChanged = true;
         }
         if (msg.getMonPort() != null && msg.getMonPort() > 0 && msg.getMonPort() <= 65535) {
             monvo.setMonPort(msg.getMonPort());
+            monParameterChanged = true;
         }
         if (msg.getSshPort() != null && msg.getSshPort() > 0 && msg.getSshPort() <= 65535) {
             monvo.setSshPort(msg.getSshPort());
@@ -3590,6 +3593,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         dbf.update(monvo);
         evt.setInventory(CephPrimaryStorageInventory.valueOf((dbf.reload(getSelf()))));
         bus.publish(evt);
+        if (monParameterChanged) {
+            for(CephPrimaryStorageMonAfterModifiedExtensionPoint ext : pluginRgty.getExtensionList(CephPrimaryStorageMonAfterModifiedExtensionPoint.class)) {
+                ext.afterModified(getSelf());
+            }
+        }
     }
 
     private void handle(final APIAddMonToCephPrimaryStorageMsg msg) {
@@ -3737,6 +3745,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     public void handle(Map data) {
                         evt.setInventory(CephPrimaryStorageInventory.valueOf(dbf.reload(getSelf())));
                         bus.publish(evt);
+
+                        for(CephPrimaryStorageMonAfterModifiedExtensionPoint ext : pluginRgty.getExtensionList(CephPrimaryStorageMonAfterModifiedExtensionPoint.class)) {
+                            ext.afterModified(getSelf());
+                        }
                     }
                 });
 
