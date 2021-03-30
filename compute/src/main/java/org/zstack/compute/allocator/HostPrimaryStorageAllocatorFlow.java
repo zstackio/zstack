@@ -118,11 +118,11 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                         " and h.uuid not in (" +
                         " select ref.hostUuid from PrimaryStorageHostRefVO ref" +
                         " where ref.primaryStorageUuid in :psUuids" +
-                        " and ref.status = :phStatus" +
+                        " and ref.status != :phStatus" +
                         " )", String.class)
                         .param("huuids", huuids)
                         .param("psUuids", requiredPsUuids)
-                        .param("phStatus", PrimaryStorageHostStatus.Disconnected)
+                        .param("phStatus", PrimaryStorageHostStatus.Connected)
                         .list();
                 if (huuids.isEmpty()) {
                     return new ArrayList<>();

@@ -93,6 +93,7 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
             testReconnectHostOneNfsNotAccessed()
             testReconnectNfsOneHostNotAccessed()
             testReconnectNfsNoHostAccessed()
+            testCreateVmFailedOnHostConnectingNfs()
             env.cleanSimulatorHandlers()
             testDetachNfsFromCluster()
             testDeleteHost()
@@ -200,6 +201,28 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
 
         recoverConnectHostPS()
     }
+
+    void testCreateVmFailedOnHostConnectingNfs(){
+        connectingHostPS(host1.uuid, ps1.uuid)
+        connectingHostPS(host1.uuid, ps2.uuid)
+        connectingHostPS(host2.uuid, ps1.uuid)
+        connectingHostPS(host2.uuid, ps2.uuid)
+        connectingHostPS(host3.uuid, ps1.uuid)
+        connectingHostPS(host3.uuid, ps2.uuid)
+
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "vm4"
+                instanceOfferingUuid = ins.uuid
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                primaryStorageUuidForRootVolume = ps1.uuid
+                dataDiskOfferingUuids = [diskOffering.uuid]
+                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): ps2.uuid])]
+            }
+        }
+    }
+
     void testReconnectHostNoNfsAccessed(){
         disconnectHostPS(host1.uuid, ps1.uuid)
         disconnectHostPS(host1.uuid, ps2.uuid)
@@ -314,6 +337,14 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
                 .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
                 .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psUuid)
                 .set(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
+                .update()
+    }
+
+    void connectingHostPS(String hostUuid, String psUuid) {
+        SQL.New(PrimaryStorageHostRefVO.class)
+                .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
+                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psUuid)
+                .set(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Connecting)
                 .update()
     }
 
