@@ -1124,7 +1124,13 @@ public abstract class HostBase extends AbstractHost {
                                 changeConnectionState(HostStatusEvent.disconnected);
                                 if (!msg.isNewAdd()) {
                                     tracker.trackHost(self.getUuid());
-                                    new HostDisconnectedCanonicalEvent(self.getUuid(), errCode).fire();
+                                    boolean isESX = Q.New(HostVO.class)
+                                            .eq(HostVO_.uuid, self.getUuid())
+                                            .eq(HostVO_.hypervisorType, "ESX")
+                                            .isExists();
+                                    if (!isESX) {
+                                        new HostDisconnectedCanonicalEvent(self.getUuid(), errCode).fire();
+                                    }
                                 }
                                 completion.fail(errCode);
                             }
