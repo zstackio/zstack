@@ -3,6 +3,7 @@ package org.zstack.kvm;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
@@ -40,6 +41,7 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(validValues = {"none", "writethrough", "writeback"})
     public static GlobalConfig LIBVIRT_CACHE_MODE = new GlobalConfig(CATEGORY, "vm.cacheMode");
     @GlobalConfigValidation(validValues = {"none", "host-model", "host-passthrough"})
+    @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig NESTED_VIRTUALIZATION = new GlobalConfig(CATEGORY, "vm.cpuMode");
     @GlobalConfigValidation
     public static GlobalConfig VM_SYNC_ON_HOST_PING = new GlobalConfig(CATEGORY, "vmSyncOnHostPing");
