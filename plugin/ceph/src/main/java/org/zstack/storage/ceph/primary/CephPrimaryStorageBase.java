@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph.primary;
 
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
@@ -275,6 +276,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class InitRsp extends AgentResponse {
         String fsid;
         String userKey;
+        String manufacturer;
 
         public String getUserKey() {
             return userKey;
@@ -290,6 +292,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setFsid(String fsid) {
             this.fsid = fsid;
+        }
+
+        public String getManufacturer() {
+            return manufacturer;
+        }
+
+        public void setManufacturer(String manufacturer) {
+            this.manufacturer = manufacturer;
         }
     }
 
@@ -810,6 +820,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         @NoLogging(type = NoLogging.Type.Uri)
         public List<String> monUrls;
         public String strategy;
+        public String manufacturer;
     }
 
     public static class KvmCancelSelfFencerCmd extends AgentCommand {
@@ -3239,6 +3250,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 getSelf().setUserKey(ret.userKey);
                                 self = dbf.updateAndRefresh(self);
 
+                                if (!Strings.isEmpty(ret.manufacturer)) {
+                                    SystemTagCreator creator = CephSystemTags.CEPH_MANUFACTURER.newSystemTagCreator(self.getUuid());
+                                    creator.setTagByTokens(map(e(CephSystemTags.CEPH_MANUFACTURER_TOKEN, ret.manufacturer)));
+                                    creator.inherent = true;
+                                    creator.ignoreIfExisting = true;
+                                    creator.recreate = true;
+                                    creator.create();
+                                }
+
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
                                 CephCapacity cephCapacity = new CephCapacity(ret.fsid, ret);
                                 updater.update(cephCapacity, true);
@@ -3572,11 +3592,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private void handle(APIUpdateCephPrimaryStorageMonMsg msg) {
         final APIUpdateCephPrimaryStorageMonEvent evt = new APIUpdateCephPrimaryStorageMonEvent(msg.getId());
         CephPrimaryStorageMonVO monvo = dbf.findByUuid(msg.getMonUuid(), CephPrimaryStorageMonVO.class);
+        boolean monParameterChanged = false;
         if (msg.getHostname() != null) {
             monvo.setHostname(msg.getHostname());
+            monParameterChanged = true;
         }
         if (msg.getMonPort() != null && msg.getMonPort() > 0 && msg.getMonPort() <= 65535) {
             monvo.setMonPort(msg.getMonPort());
+            monParameterChanged = true;
         }
         if (msg.getSshPort() != null && msg.getSshPort() > 0 && msg.getSshPort() <= 65535) {
             monvo.setSshPort(msg.getSshPort());
@@ -3590,6 +3613,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         dbf.update(monvo);
         evt.setInventory(CephPrimaryStorageInventory.valueOf((dbf.reload(getSelf()))));
         bus.publish(evt);
+        if (monParameterChanged) {
+            for(CephPrimaryStorageMonAfterModifiedExtensionPoint ext : pluginRgty.getExtensionList(CephPrimaryStorageMonAfterModifiedExtensionPoint.class)) {
+                ext.afterModified(getSelf());
+            }
+        }
     }
 
     private void handle(final APIAddMonToCephPrimaryStorageMsg msg) {
@@ -3737,6 +3765,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     public void handle(Map data) {
                         evt.setInventory(CephPrimaryStorageInventory.valueOf(dbf.reload(getSelf())));
                         bus.publish(evt);
+
+                        for(CephPrimaryStorageMonAfterModifiedExtensionPoint ext : pluginRgty.getExtensionList(CephPrimaryStorageMonAfterModifiedExtensionPoint.class)) {
+                            ext.afterModified(getSelf());
+                        }
                     }
                 });
 
@@ -3992,6 +4024,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             }
         });
         cmd.strategy = param.getStrategy();
+
+        if (CephSystemTags.CEPH_MANUFACTURER.hasTag(self.getUuid())) {
+            cmd.manufacturer = CephSystemTags.CEPH_MANUFACTURER.getTokenByResourceUuid(self.getUuid(), CephSystemTags.CEPH_MANUFACTURER_TOKEN);
+        }
 
         final SetupSelfFencerOnKvmHostReply reply = new SetupSelfFencerOnKvmHostReply();
         new KvmCommandSender(param.getHostUuid()).send(cmd, KVM_HA_SETUP_SELF_FENCER, new KvmCommandFailureChecker() {
