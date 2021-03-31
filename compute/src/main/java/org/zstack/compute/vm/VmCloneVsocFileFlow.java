@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -42,10 +43,14 @@ public class VmCloneVsocFileFlow implements Flow {
         VmCloneVsocFileMsg msg = new VmCloneVsocFileMsg();
         msg.setDestVmUuid(spec.getVmInventory().getUuid());
         msg.setSrcVmUuid(spec.getSrcVmUuid());
-        msg.setDestSocId(null);
+        if (spec.getDestHost().getUuid().equals(spec.getSrcVmUuid())) {
+            msg.setDestSocId(null);
+        } else {
+            msg.setDestSocId(HostSystemTags.HOST_SSCARDID.getTokenByResourceUuid(spec.getDestHost().getUuid(), HostSystemTags.HOST_SSCARDID_TOKEN));
+        }
         msg.setResource(VmInstanceConstant.NORESOURCE);
         msg.setType(VmInstanceConstant.OFFLINE);
-        msg.setHostUuid(spec.getDestHost().getUuid());
+        msg.setHostUuid(spec.getSrcHost().getUuid());
         msg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
