@@ -783,6 +783,22 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateVmInstanceMsg msg) {
         validate((NewVmInstanceMessage2) msg);
 
+        InstanceOfferingVO instance = Q.New(InstanceOfferingVO.class)
+                .eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid())
+                .find();
+
+        if (msg.getImageUuid() == null && instance != null) {
+            msg.setImageUuid(instance.getImageUuid());
+        }
+
+        if (msg.getRootDiskOfferingUuid() == null && msg.getRootDiskSize() == null && instance != null) {
+            msg.setRootDiskSize(instance.getDiskSize());
+        }
+
+        if (msg.getImageUuid() == null) {
+            throw new ApiMessageInterceptionException(argerr("image uuid cannot be null"));
+        }
+
         SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
         imgq.select(ImageVO_.state, ImageVO_.system, ImageVO_.mediaType, ImageVO_.status);
         imgq.add(ImageVO_.uuid, Op.EQ, msg.getImageUuid());

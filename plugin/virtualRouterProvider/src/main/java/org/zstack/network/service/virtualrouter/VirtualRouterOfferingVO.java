@@ -28,10 +28,6 @@ public class VirtualRouterOfferingVO extends InstanceOfferingVO {
     private String publicNetworkUuid;
     
     @Column
-    @ForeignKey(parentEntityClass = ImageEO.class, onDeleteAction = ReferenceOption.CASCADE)
-    private String imageUuid;
-    
-    @Column
     @ForeignKey(parentEntityClass = ZoneEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String zoneUuid;
     
@@ -52,6 +48,8 @@ public class VirtualRouterOfferingVO extends InstanceOfferingVO {
     	this.setSortKey(vo.getSortKey());
     	this.setType(vo.getType());
     	this.setUuid(vo.getUuid());
+    	this.setImageUuid(vo.getImageUuid());
+    	this.setDiskSize(vo.getDiskSize());
     }
     
     public VirtualRouterOfferingVO() {
@@ -87,13 +85,5 @@ public class VirtualRouterOfferingVO extends InstanceOfferingVO {
 
 	public void setDefault(boolean isDefault) {
 		this.isDefault = isDefault;
-	}
-
-	public String getImageUuid() {
-		return imageUuid;
-	}
-
-	public void setImageUuid(String imageUuid) {
-		this.imageUuid = imageUuid;
 	}
 }

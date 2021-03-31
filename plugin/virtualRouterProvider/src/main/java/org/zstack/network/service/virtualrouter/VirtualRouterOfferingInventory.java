@@ -33,7 +33,6 @@ public class VirtualRouterOfferingInventory extends InstanceOfferingInventory {
     private String publicNetworkUuid;
     private String zoneUuid;	
     private Boolean isDefault;
-    private String imageUuid;
 
 	public VirtualRouterOfferingInventory() {
 	}
@@ -44,7 +43,6 @@ public class VirtualRouterOfferingInventory extends InstanceOfferingInventory {
 		this.setPublicNetworkUuid(vo.getPublicNetworkUuid());
 		this.setZoneUuid(vo.getZoneUuid());
 		this.setDefault(vo.isDefault());
-		this.setImageUuid(vo.getImageUuid());
 	}
 	
 	public static VirtualRouterOfferingInventory valueOf(VirtualRouterOfferingVO vo) {
@@ -90,13 +88,5 @@ public class VirtualRouterOfferingInventory extends InstanceOfferingInventory {
 
 	public void setDefault(Boolean isDefault) {
 		this.isDefault = isDefault;
-	}
-
-	public String getImageUuid() {
-		return imageUuid;
-	}
-
-	public void setImageUuid(String imageUuid) {
-		this.imageUuid = imageUuid;
 	}
 }

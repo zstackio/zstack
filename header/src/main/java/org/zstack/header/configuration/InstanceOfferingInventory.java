@@ -24,6 +24,8 @@ public class InstanceOfferingInventory implements Serializable {
     private Integer cpuNum;
     private Integer cpuSpeed;
     private Long memorySize;
+    private Long diskSize;
+    private String imageUuid;
     private String type;
     private String allocatorStrategy;
     private Integer sortKey;
@@ -47,6 +49,8 @@ public class InstanceOfferingInventory implements Serializable {
         this.setLastOpDate(vo.getLastOpDate());
         this.setType(vo.getType());
         this.setState(vo.getState().toString());
+        this.setImageUuid(vo.getImageUuid());
+        this.setDiskSize(vo.getDiskSize());
     }
 
     protected InstanceOfferingInventory(InstanceOfferingEO vo) {
@@ -175,5 +179,21 @@ public class InstanceOfferingInventory implements Serializable {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public Long getDiskSize() {
+        return diskSize;
+    }
+
+    public void setDiskSize(Long diskSize) {
+        this.diskSize = diskSize;
+    }
+
+    public String getImageUuid() {
+        return imageUuid;
+    }
+
+    public void setImageUuid(String imageUuid) {
+        this.imageUuid = imageUuid;
     }
 }

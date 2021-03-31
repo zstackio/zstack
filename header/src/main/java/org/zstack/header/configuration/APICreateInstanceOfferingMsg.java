@@ -2,6 +2,7 @@ package org.zstack.header.configuration;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
@@ -32,6 +33,11 @@ public class APICreateInstanceOfferingMsg extends APICreateMessage implements AP
     private int cpuSpeed;
     @APIParam(numberRange = {1, Long.MAX_VALUE}, numberRangeUnit = {"byte", "bytes"})
     private long memorySize;
+    @APIParam(required = false, resourceType = ImageVO.class, checkAccount = true)
+    private String imageUuid;
+    @APIParam(required = false)
+    private Long diskSize;
+
     private String allocatorStrategy;
     private int sortKey;
     private String type;
@@ -122,5 +128,21 @@ public class APICreateInstanceOfferingMsg extends APICreateMessage implements AP
             uuid = evt.getInventory().getUuid();
         }
         return new Result(uuid, InstanceOfferingVO.class);
+    }
+
+    public String getImageUuid() {
+        return imageUuid;
+    }
+
+    public void setImageUuid(String imageUuid) {
+        this.imageUuid = imageUuid;
+    }
+
+    public Long getDiskSize() {
+        return diskSize;
+    }
+
+    public void setDiskSize(Long diskSize) {
+        this.diskSize = diskSize;
     }
 }

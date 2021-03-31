@@ -897,6 +897,8 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         vo.setState(InstanceOfferingState.Enabled);
         vo.setMemorySize(msg.getMemorySize());
         vo.setDuration(InstanceOfferingDuration.Permanent);
+        vo.setImageUuid(msg.getImageUuid());
+        vo.setDiskSize(msg.getDiskSize());
         vo.setType(type);
 
         InstanceOfferingInventory inv = new SQLBatchWithReturn<InstanceOfferingInventory>() {

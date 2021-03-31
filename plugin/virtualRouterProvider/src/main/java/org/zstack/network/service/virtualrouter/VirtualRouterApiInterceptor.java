@@ -170,6 +170,10 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
+        if (msg.getImageUuid() == null) {
+            throw new ApiMessageInterceptionException(argerr("image uuid cannot be null"));
+        }
+
         if (msg.getPublicNetworkUuid() == null) {
             msg.setPublicNetworkUuid(msg.getManagementNetworkUuid());
         }
