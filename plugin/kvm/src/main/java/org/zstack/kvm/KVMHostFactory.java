@@ -518,6 +518,10 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             return;
         }
 
+        if (!destMaker.isManagedByUs(hostUuid)) {
+            return;
+        }
+
         PingHostMsg pingHostMsg = new PingHostMsg();
         pingHostMsg.setHostUuid(hostUuid);
         bus.makeLocalServiceId(pingHostMsg, HostConstant.SERVICE_ID);
