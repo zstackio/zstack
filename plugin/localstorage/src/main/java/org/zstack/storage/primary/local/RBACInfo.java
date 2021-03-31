@@ -8,7 +8,8 @@ public class RBACInfo implements RBACDescription {
     public void permissions() {
         permissionBuilder()
                 .adminOnlyAPIs("org.zstack.storage.primary.local.**")
-                .normalAPIs(APILocalStorageGetVolumeMigratableHostsMsg.class, APILocalStorageMigrateVolumeMsg.class)
+                .normalAPIs(APILocalStorageGetVolumeMigratableHostsMsg.class, APILocalStorageMigrateVolumeMsg.class,
+                        APIQueryLocalStorageResourceRefMsg.class)
                 .targetResources(VolumeVO.class)
                 .build();
     }
@@ -17,7 +18,8 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .roleName("other")
-                .actions(APILocalStorageGetVolumeMigratableHostsMsg.class, APILocalStorageMigrateVolumeMsg.class)
+                .actions(APILocalStorageGetVolumeMigratableHostsMsg.class, APILocalStorageMigrateVolumeMsg.class,
+                        APIQueryLocalStorageResourceRefMsg.class)
                 .build();
     }
 
