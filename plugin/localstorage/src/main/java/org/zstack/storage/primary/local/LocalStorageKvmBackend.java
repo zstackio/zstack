@@ -379,6 +379,24 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CreateTemplateFromVolumeRsp extends AgentResponse {
+        private long size;
+        private long actualSize;
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
     }
 
     public static class RevertVolumeFromSnapshotCmd extends AgentCommand {
@@ -1158,7 +1176,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     class ImageCache {
         ImageInventory image;
         BackupStorageInventory backupStorage;
-        VolumeInventory volume;
+        String volumeResourceInstallPath;
         String hostUuid;
         String primaryStorageInstallPath;
         String backupStorageInstallPath;
@@ -1175,7 +1193,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 }
 
                 private void doDownload(final SyncTaskChain chain) {
-                    if (volume == null) {
+                    if (volumeResourceInstallPath == null) {
                         DebugUtils.Assert(backupStorage != null, "backup storage cannot be null");
                         DebugUtils.Assert(backupStorageInstallPath != null, "backupStorageInstallPath cannot be null");
                     }
@@ -1187,6 +1205,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             image.getUuid(), self.getUuid(), hostUuid));
                     fchain.then(new ShareFlow() {
                         String psUuid;
+                        long actualSize = image.getActualSize();
 
                         @Override
                         public void setup() {
@@ -1256,7 +1275,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                 @Override
                                 public void run(final FlowTrigger trigger, Map data) {
-                                    if (volume != null) {
+                                    if (volumeResourceInstallPath != null) {
                                         downloadFromVolume(trigger);
                                     } else {
                                         downloadFromBackupStorage(trigger);
@@ -1266,13 +1285,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 private void downloadFromVolume(FlowTrigger trigger) {
                                     CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
                                     cmd.setInstallPath(primaryStorageInstallPath);
-                                    cmd.setVolumePath(volume.getInstallPath());
+                                    cmd.setVolumePath(volumeResourceInstallPath);
 
                                     httpCall(CREATE_TEMPLATE_FROM_VOLUME, hostUuid, cmd, false,
                                             CreateTemplateFromVolumeRsp.class,
                                             new ReturnValueCompletion<CreateTemplateFromVolumeRsp>(trigger) {
                                                 @Override
                                                 public void success(CreateTemplateFromVolumeRsp rsp) {
+                                                    actualSize = rsp.actualSize;
                                                     trigger.next();
                                                 }
 
@@ -1309,7 +1329,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     vo.setMediaType(ImageMediaType.valueOf(image.getMediaType()));
                                     vo.setImageUuid(image.getUuid());
                                     vo.setPrimaryStorageUuid(self.getUuid());
-                                    vo.setSize(image.getActualSize());
+                                    vo.setSize(actualSize);
                                     vo.setMd5sum("not calculated");
 
                                     CacheInstallPath path = new CacheInstallPath();
@@ -2924,7 +2944,33 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cache.primaryStorageInstallPath = makeCachedImageInstallUrl(msg.getImageInventory());
         cache.hostUuid = ref.getHostUuid();
         cache.image = msg.getImageInventory();
-        cache.volume = msg.getVolumeInventory();
+        cache.volumeResourceInstallPath = msg.getVolumeInventory().getInstallPath();
+        cache.download(new ReturnValueCompletion<ImageCacheInventory>(completion) {
+            @Override
+            public void success(ImageCacheInventory cache) {
+                reply.setLocateHostUuid(ref.getHostUuid());
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg, ReturnValueCompletion<CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply> completion) {
+        CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
+        final LocalStorageResourceRefVO ref = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getVolumeSnapshot().getUuid())
+                .find();
+
+        ImageCache cache = new ImageCache();
+        cache.primaryStorageInstallPath = makeCachedImageInstallUrl(msg.getImageInventory());
+        cache.hostUuid = ref.getHostUuid();
+        cache.image = msg.getImageInventory();
+        cache.volumeResourceInstallPath = msg.getVolumeSnapshot().getPrimaryStorageInstallPath();
         cache.download(new ReturnValueCompletion<ImageCacheInventory>(completion) {
             @Override
             public void success(ImageCacheInventory cache) {

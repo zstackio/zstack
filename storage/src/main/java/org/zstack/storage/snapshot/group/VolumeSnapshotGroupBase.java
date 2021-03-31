@@ -3,6 +3,7 @@ package org.zstack.storage.snapshot.group;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -380,7 +381,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
         });
     }
 
-    private List<VolumeSnapshotVO> getSnapshots() {
+    public List<VolumeSnapshotVO> getSnapshots() {
         return SQL.New("select snap from VolumeSnapshotGroupRefVO ref, VolumeSnapshotVO snap" +
                 " where ref.volumeSnapshotGroupUuid = :groupUuid" +
                 " and snap.uuid = ref.volumeSnapshotUuid", VolumeSnapshotVO.class)
@@ -388,7 +389,8 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                 .list();
     }
 
-    private List<VolumeSnapshotVO> getEffectiveSnapshots() {
+    @Transactional(readOnly = true)
+    public List<VolumeSnapshotVO> getEffectiveSnapshots() {
         List<VolumeSnapshotVO> snapshots = getSnapshots();
         Set<String> attachedVolUuids = new HashSet<>(Q.New(VolumeVO.class)
                 .eq(VolumeVO_.vmInstanceUuid, self.getVmInstanceUuid())

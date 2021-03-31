@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 )
 @TagResourceType(ImageVO.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
-public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateMessage implements APIAuditor {
+public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateMessage implements APIAuditor, CreateRootVolumeTemplateMessage {
     @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
     private String snapshotUuid;
     @APIParam(maxLength = 255)
@@ -47,10 +47,12 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateM
         this.system = system;
     }
 
+    @Override
     public String getPlatform() {
         return platform;
     }
 
+    @Override
     public void setPlatform(String platform) {
         this.platform = platform;
     }
@@ -75,22 +77,32 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateM
         this.description = description;
     }
 
+    @Override
+    public String getMediaType() {
+        return ImageConstant.ImageMediaType.RootVolumeTemplate.toString();
+    }
+
+    @Override
     public String getGuestOsType() {
         return guestOsType;
     }
 
+    @Override
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
     }
 
+    @Override
     public String getArchitecture() {
         return architecture;
     }
 
+    @Override
     public void setArchitecture(String architecture) {
         this.architecture = architecture;
     }
 
+    @Override
     public List<String> getBackupStorageUuids() {
         return backupStorageUuids;
     }

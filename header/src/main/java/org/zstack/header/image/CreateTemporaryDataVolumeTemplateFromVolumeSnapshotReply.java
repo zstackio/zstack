@@ -3,9 +3,9 @@ package org.zstack.header.image;
 import org.zstack.header.message.MessageReply;
 
 /**
- * Created by MaJin on 2020/9/15.
+ * Created by MaJin on 2021/3/18.
  */
-public class CreateTemporaryTemplateFromVolumeReply extends MessageReply {
+public class CreateTemporaryDataVolumeTemplateFromVolumeSnapshotReply extends MessageReply {
     private ImageInventory inventory;
     private String locateHostUuid;
     private String locatePsUuid;

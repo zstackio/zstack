@@ -1222,23 +1222,23 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
-    public void createImageCacheFromVolume(PrimaryStorageInventory primaryStorage, VolumeInventory volume, ImageInventory image, ReturnValueCompletion<String> completion) {
+    public void createImageCacheFromVolumeResource(PrimaryStorageInventory primaryStorage, String volumeResource, ImageInventory image, ReturnValueCompletion<BitsInfo> completion) {
         final String installPath = NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrl(primaryStorage, image);
-        doCreateTemplateFromVolume(installPath, primaryStorage, volume, image, completion);
+        doCreateTemplateFromVolume(installPath, primaryStorage, volumeResource, image, completion);
     }
 
     @Override
-    public void createTemplateFromVolume(final PrimaryStorageInventory primaryStorage, final VolumeInventory volume, final ImageInventory image, final ReturnValueCompletion<String> completion) {
+    public void createTemplateFromVolume(final PrimaryStorageInventory primaryStorage, final VolumeInventory volume, final ImageInventory image, final ReturnValueCompletion<BitsInfo> completion) {
         final String installPath = NfsPrimaryStorageKvmHelper.makeTemplateFromVolumeInWorkspacePath(primaryStorage, image.getUuid());
-        doCreateTemplateFromVolume(installPath, primaryStorage, volume, image, completion);
+        doCreateTemplateFromVolume(installPath, primaryStorage, volume.getInstallPath(), image, completion);
     }
 
-    private void doCreateTemplateFromVolume(final String installPath, final PrimaryStorageInventory primaryStorage, final VolumeInventory volume, final ImageInventory image, final ReturnValueCompletion<String> completion) {
+    private void doCreateTemplateFromVolume(final String installPath, final PrimaryStorageInventory primaryStorage, final String volumeResourceInstallPath, final ImageInventory image, final ReturnValueCompletion<BitsInfo> completion) {
         final HostInventory destHost = nfsFactory.getConnectedHostForOperation(primaryStorage).get(0);
 
-         CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
+        CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
         cmd.setInstallPath(installPath);
-        cmd.setVolumePath(volume.getInstallPath());
+        cmd.setVolumePath(volumeResourceInstallPath);
         cmd.setUuid(primaryStorage.getUuid());
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -1258,7 +1258,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 if (!rsp.isSuccess()) {
                     String sb = String.format("failed to create template from volume, because %s", rsp.getError()) +
                             String.format("\ntemplate:%s", JSONObjectUtil.toJsonString(image)) +
-                            String.format("\nvolume:%s", JSONObjectUtil.toJsonString(volume)) +
+                            String.format("\nvolume resource:%s", volumeResourceInstallPath) +
                             String.format("\nnfs primary storage uuid:%s", primaryStorage.getUuid()) +
                             String.format("\nKVM host uuid:%s, management ip:%s", destHost.getUuid(), destHost.getManagementIp());
                     completion.fail(operr(sb));
@@ -1268,13 +1268,13 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 StringBuilder sb = new StringBuilder();
                 sb.append(String.format("successfully created template from volumes"));
                 sb.append(String.format("\ntemplate:%s", JSONObjectUtil.toJsonString(image)));
-                sb.append(String.format("\nvolume:%s", JSONObjectUtil.toJsonString(volume)));
+                sb.append(String.format("\nvolume resource:%s", volumeResourceInstallPath));
                 sb.append(String.format("\nnfs primary storage uuid:%s", primaryStorage.getUuid()));
                 sb.append(String.format("\nKVM host uuid:%s, management ip:%s", destHost.getUuid(), destHost.getManagementIp()));
 
                 logger.debug(sb.toString());
                 nfsMgr.reportCapacityIfNeeded(primaryStorage.getUuid(), rsp);
-                completion.success(installPath);
+                completion.success(new BitsInfo(installPath, rsp.getSize(), rsp.getActualSize()));
             }
         });
     }
