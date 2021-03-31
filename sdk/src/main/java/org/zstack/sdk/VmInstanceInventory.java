@@ -204,4 +204,12 @@ public class VmInstanceInventory  {
         return this.vmCdRoms;
     }
 
+    public java.lang.String guestOsType;
+    public void setGuestOsType(java.lang.String guestOsType) {
+        this.guestOsType = guestOsType;
+    }
+    public java.lang.String getGuestOsType() {
+        return this.guestOsType;
+    }
+
 }

@@ -28,4 +28,5 @@ public class ImageAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<ImageAO, String> format;
     public static volatile SingularAttribute<ImageAO, String> guestOsType;
     public static volatile SingularAttribute<ImageAO, String> backupStorageUuid;
+    public static volatile SingularAttribute<ImageAO, Boolean> virtio;
 }

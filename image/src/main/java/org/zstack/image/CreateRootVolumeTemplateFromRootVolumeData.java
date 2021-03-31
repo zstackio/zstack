@@ -22,6 +22,7 @@ public class CreateRootVolumeTemplateFromRootVolumeData extends LongJobMessageDa
     private String platform;
     private boolean system;
     private String architecture;
+    private boolean virtio;
 
     private String resourceUuid;
     private SessionInventory session;
@@ -50,6 +51,14 @@ public class CreateRootVolumeTemplateFromRootVolumeData extends LongJobMessageDa
 
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
+    }
+
+    public boolean isVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
 
     public List<String> getBackupStorageUuids() {

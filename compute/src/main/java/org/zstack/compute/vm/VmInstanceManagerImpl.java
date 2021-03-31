@@ -928,7 +928,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo.setCpuSpeed(msg.getCpuSpeed());
         vo.setMemorySize(msg.getMemorySize());
         vo.setAllocatorStrategy(msg.getAllocatorStrategy());
-
+        vo.setGuestOsType(Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.guestOsType).findValue());
         String vmType = msg.getType() == null ? VmInstanceConstant.USER_VM_TYPE : msg.getType();
         VmInstanceType type = VmInstanceType.valueOf(vmType);
         VmInstanceFactory factory = getVmInstanceFactory(type);
@@ -948,6 +948,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
             tagMgr.createTagsFromAPICreateMessage(cmsg, vo.getUuid(), VmInstanceVO.class.getSimpleName());
         } else {
             tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), VmInstanceVO.class.getSimpleName());
+        }
+
+        if ((boolean) Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.virtio).findValue()) {
+            SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(vo.getUuid());
+            creator.recreate = true;
+            creator.inherent = false;
+            creator.tag = VmSystemTags.VIRTIO.getTagFormat();
+            creator.create();
         }
 
         if (instanceOfferingUuid != null) {

@@ -35,6 +35,8 @@ public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
     private String platform;
     @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64el"})
     private String architecture;
+    @APIParam(required = false)
+    private boolean virtio;
 
     public String getPlatform() {
         return platform;
@@ -106,6 +108,14 @@ public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
 
     public void setArchitecture(String architecture) {
         this.architecture = architecture;
+    }
+
+    public boolean getVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
 
     @Override
