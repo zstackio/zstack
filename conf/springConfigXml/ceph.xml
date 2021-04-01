@@ -88,4 +88,22 @@
             <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotDeletionProtector"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="OpenSourceCephPrimaryCapacityUpdater" class="org.zstack.storage.ceph.primary.capacity.OpenSourceCephPrimaryCapacityUpdater">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="XSKYCephPrimaryCapacityBaseUpdater" class="org.zstack.storage.ceph.primary.capacity.XSKYCephPrimaryCapacityBaseUpdater">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="SandStoneCephPrimaryCapacityBaseUpdater" class="org.zstack.storage.ceph.primary.capacity.SandStoneCephPrimaryCapacityBaseUpdater">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater"/>
+        </zstack:plugin>
+    </bean>
 </beans>
