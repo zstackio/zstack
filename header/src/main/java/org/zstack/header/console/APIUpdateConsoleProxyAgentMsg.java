@@ -18,7 +18,7 @@ public class APIUpdateConsoleProxyAgentMsg extends APIMessage implements Console
     private String uuid;
     @APIParam
     private String consoleProxyOverriddenIp;
-    @APIParam
+    @APIParam(required = false)
     private int consoleProxyPort;
 
     public int getConsoleProxyPort() {
