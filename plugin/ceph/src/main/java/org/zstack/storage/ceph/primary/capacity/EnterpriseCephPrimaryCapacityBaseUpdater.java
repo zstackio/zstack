@@ -91,7 +91,7 @@ public abstract class EnterpriseCephPrimaryCapacityBaseUpdater implements CephPr
                 updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
                     @Override
                     public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                        if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {
+                        if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
                             // init
                             cap.setAvailableCapacity(psTotalPhysicalCapacity);
                         }

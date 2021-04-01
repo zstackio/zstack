@@ -51,12 +51,12 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {
+                if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
                     // init
-                    cap.setTotalCapacity(total);
                     cap.setAvailableCapacity(avail);
                 }
 
+                cap.setTotalCapacity(total);
                 cap.setTotalPhysicalCapacity(total);
                 cap.setAvailablePhysicalCapacity(avail);
                 return cap;
