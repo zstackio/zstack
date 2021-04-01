@@ -72,7 +72,6 @@
                 <value>org.zstack.network.service.virtualrouter.lb.VirtualRouterCleanupLoadBalancerOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCleanupVipOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosDhcpCleanUpFlow</value>
-                <value>org.zstack.network.service.virtualrouter.ha.VirtualRouterCleanupHaOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.lifecycle.UntrackVirtualRouterVmFlow</value>
             </list>
         </property>
