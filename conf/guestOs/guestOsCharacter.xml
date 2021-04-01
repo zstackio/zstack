@@ -61,4 +61,10 @@
         <hygonCpu>true</hygonCpu>
         <osRelease>Windows_xp</osRelease>
     </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <hygonCpu>true</hygonCpu>
+        <osRelease>Windows</osRelease>
+    </osInfo>
 </character>
