@@ -1473,6 +1473,7 @@ public class KVMAgentCommands {
         private String clock;
         private String clockTrack;
         private boolean useNuma;
+        private String MemAccess;
         private String usbRedirect;
         private boolean useBootMenu;
         private boolean createPaused;
@@ -1641,6 +1642,14 @@ public class KVMAgentCommands {
 
         public void setUseNuma(boolean useNuma) {
             this.useNuma = useNuma;
+        }
+
+        public String getMemAccess() {
+            return MemAccess;
+        }
+
+        public void setMemAccess(String memAccess) {
+            MemAccess = memAccess;
         }
 
         public long getMaxMemory() {
