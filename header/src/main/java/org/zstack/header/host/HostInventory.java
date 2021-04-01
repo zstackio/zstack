@@ -131,8 +131,6 @@ public class HostInventory implements Serializable {
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "cpuNum"))
     private Integer cpuNum;
 
-    @Queryable(mappingClass = HostCapacityInventory.class,
-            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "cpuSockets"))
     private String architecture;
 
     /**
