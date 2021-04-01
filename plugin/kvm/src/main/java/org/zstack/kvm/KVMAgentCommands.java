@@ -741,6 +741,7 @@ public class KVMAgentCommands {
         private String driverType;
         private VHostAddOn vHostAddOn;
         private PciAddressConfig pci;
+        private String type;
 
         // only for vf nic
         private String vlanId;
@@ -872,6 +873,14 @@ public class KVMAgentCommands {
 
         public void setPci(PciAddressConfig pci) {
             this.pci = pci;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
         }
     }
 
