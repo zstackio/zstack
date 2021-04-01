@@ -31,6 +31,9 @@ public class UpdateLicenseAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String license;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String additionSession;
+
     @Param(required = false)
     public java.util.List systemTags;
 
