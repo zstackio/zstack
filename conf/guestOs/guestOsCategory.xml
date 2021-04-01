@@ -26,25 +26,25 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>RedhatEnterpriseLinux</name>
+        <name>Redhat</name>
         <version>5</version>
         <osRelease>RedhatEnterpriseLinux_5</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>RedhatEnterpriseLinux</name>
+        <name>Redhat</name>
         <version>6</version>
         <osRelease>RedhatEnterpriseLinux_6</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>RedhatEnterpriseLinux</name>
+        <name>Redhat</name>
         <version>7</version>
         <osRelease>RedhatEnterpriseLinux_7</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>RedhatEnterpriseLinux</name>
+        <name>Redhat</name>
         <version>8</version>
         <osRelease>RedhatEnterpriseLinux_8</osRelease>
     </osInfo>
@@ -94,7 +94,7 @@
         <platform>Linux</platform>
         <name>Fedora</name>
         <version></version>
-        <osRelease>Fedora_</osRelease>
+        <osRelease>Fedora</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
@@ -105,13 +105,13 @@
     <osInfo>
         <platform>Linux</platform>
         <name>Kylin</name>
-        <version>v7</version>
+        <version>7</version>
         <osRelease>Kylin_7</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>Kylin</name>
-        <version>v10</version>
+        <version>10</version>
         <osRelease>Kylin_10</osRelease>
     </osInfo>
     <osInfo>
@@ -128,32 +128,32 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>Other</name>
+        <name>Linux</name>
         <version></version>
-        <osRelease>other</osRelease>
+        <osRelease>Linux</osRelease>
     </osInfo>
 
     <osInfo>
         <platform>Windows</platform>
-        <name>WindowsServer</name>
+        <name>Windows</name>
         <version>2008</version>
         <osRelease>WindowsServer_2008</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
-        <name>WindowsServer</name>
+        <name>Windows</name>
         <version>2012</version>
         <osRelease>WindowsServer_2012</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
-        <name>WindowsServer</name>
+        <name>Windows</name>
         <version>2016</version>
         <osRelease>WindowsServer_2016</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
-        <name>WindowsServer</name>
+        <name>Windows</name>
         <version>2019</version>
         <osRelease>WindowsServer_2019</osRelease>
     </osInfo>
@@ -181,16 +181,22 @@
         <version>xp</version>
         <osRelease>Windows_xp</osRelease>
     </osInfo>
+    <osInfo>
+        <platform>Windows</platform>
+        <name>Windows</name>
+        <version></version>
+        <osRelease>Windows</osRelease>
+    </osInfo>
 
     <osInfo>
         <platform>Other</platform>
         <name>FreeBSD</name>
         <version></version>
-        <osRelease>FreeBSD_</osRelease>
+        <osRelease>FreeBSD</osRelease>
     </osInfo>
     <osInfo>
         <platform>Other</platform>
-        <name>Other</name>
+        <name>other</name>
         <version></version>
         <osRelease>other</osRelease>
     </osInfo>
