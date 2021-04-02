@@ -2017,7 +2017,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(completion) {
                                     @Override
                                     public void success(CpRsp rsp) {
-                                        actualSize = rsp.actualSize;
+                                        if (rsp.actualSize != null) {
+                                            actualSize = rsp.actualSize;
+                                        }
                                         cachePath = rsp.installPath;
                                         trigger.next();
                                     }
