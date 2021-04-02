@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.VpcFirewallRuleSetInventory;
+
 public class CreateFirewallRuleSetResult {
     public VpcFirewallRuleSetInventory inventory;
     public void setInventory(VpcFirewallRuleSetInventory inventory) {
