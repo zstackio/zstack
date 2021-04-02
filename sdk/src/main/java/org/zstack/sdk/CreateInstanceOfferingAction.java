@@ -37,6 +37,12 @@ public class CreateInstanceOfferingAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
     public long memorySize = 0L;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String imageUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Long diskSize;
+
     @Param(required = false)
     public java.lang.String allocatorStrategy;
 

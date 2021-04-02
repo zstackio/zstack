@@ -52,6 +52,22 @@ public class InstanceOfferingInventory  {
         return this.memorySize;
     }
 
+    public java.lang.Long diskSize;
+    public void setDiskSize(java.lang.Long diskSize) {
+        this.diskSize = diskSize;
+    }
+    public java.lang.Long getDiskSize() {
+        return this.diskSize;
+    }
+
+    public java.lang.String imageUuid;
+    public void setImageUuid(java.lang.String imageUuid) {
+        this.imageUuid = imageUuid;
+    }
+    public java.lang.String getImageUuid() {
+        return this.imageUuid;
+    }
+
     public java.lang.String type;
     public void setType(java.lang.String type) {
         this.type = type;

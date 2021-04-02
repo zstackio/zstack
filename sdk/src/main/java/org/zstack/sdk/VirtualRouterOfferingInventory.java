@@ -36,12 +36,4 @@ public class VirtualRouterOfferingInventory extends org.zstack.sdk.InstanceOffer
         return this.isDefault;
     }
 
-    public java.lang.String imageUuid;
-    public void setImageUuid(java.lang.String imageUuid) {
-        this.imageUuid = imageUuid;
-    }
-    public java.lang.String getImageUuid() {
-        return this.imageUuid;
-    }
-
 }

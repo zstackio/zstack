@@ -1,5 +1,8 @@
 package org.zstack.header.configuration;
 
+import org.zstack.header.image.ImageEO;
+import org.zstack.header.network.l3.L3NetworkEO;
+import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ResourceVO;
 
@@ -44,6 +47,13 @@ public class InstanceOfferingAO extends ResourceVO {
     private String type;
 
     @Column
+    @ForeignKey(parentEntityClass = ImageEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
+    private String imageUuid;
+
+    @Column
+    private Long diskSize;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private InstanceOfferingDuration duration;
 
@@ -61,6 +71,8 @@ public class InstanceOfferingAO extends ResourceVO {
         this.lastOpDate = other.lastOpDate;
         this.type = other.type;
         this.duration = other.duration;
+        this.diskSize = other.diskSize;
+        this.imageUuid = other.imageUuid;
     }
 
     public InstanceOfferingAO() {
@@ -165,5 +177,21 @@ public class InstanceOfferingAO extends ResourceVO {
 
     public void setState(InstanceOfferingState state) {
         this.state = state;
+    }
+
+    public String getImageUuid() {
+        return imageUuid;
+    }
+
+    public void setImageUuid(String imageUuid) {
+        this.imageUuid = imageUuid;
+    }
+
+    public Long getDiskSize() {
+        return diskSize;
+    }
+
+    public void setDiskSize(Long diskSize) {
+        this.diskSize = diskSize;
     }
 }
