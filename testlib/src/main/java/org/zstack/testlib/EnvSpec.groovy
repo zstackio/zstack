@@ -624,7 +624,7 @@ class EnvSpec extends ApiHelper implements Node  {
                               "BaremetalInstanceSequenceNumberVO", "BaremetalImageCacheVO",
                               "GarbageCollectorVO",
                               "TaskProgressVO", "TaskStepVO",
-                              "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO",
+                              "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO", "FileVerificationVO",
                               "CaptchaVO", "LoginAttemptsVO", "ElaborationVO", "SchedulerJobHistoryVO",
                               "HistoricalPasswordVO", "BuildAppExportHistoryVO", "InstallPathRecycleVO",
                               "PortMirrorSessionSequenceNumberVO", "LuksEncryptedImageVO"]) {

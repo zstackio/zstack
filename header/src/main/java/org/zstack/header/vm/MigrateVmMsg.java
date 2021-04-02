@@ -24,8 +24,6 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
         this.allocationScene = allocationScene;
     }
 
-    private String targetHostUuid;
-
     public List<String> getAvoidHostUuids() {
         return avoidHostUuids;
     }
