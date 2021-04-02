@@ -46,4 +46,19 @@ public class UpdateVmOSJob implements LongJob {
     public void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
         completion.fail(Platform.operr("not supported"));
     }
+
+    @Override
+    public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
+
+    }
+
+    @Override
+    public Class getAuditType() {
+        return null;
+    }
+
+    @Override
+    public String getAuditResourceUuid() {
+        return null;
+    }
 }
