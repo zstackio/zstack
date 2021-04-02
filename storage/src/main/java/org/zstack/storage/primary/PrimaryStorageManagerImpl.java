@@ -488,6 +488,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             AllocatePrimaryStorageDryRunReply r = new AllocatePrimaryStorageDryRunReply();
             r.setPrimaryStorageInventories(ret);
             bus.reply(msg, r);
+            completion.done();
             return;
         }
         Iterator<PrimaryStorageInventory> it = ret.iterator();
