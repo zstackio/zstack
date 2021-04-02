@@ -1757,7 +1757,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 .select(VolumeVO_.primaryStorageUuid)
                                 .findValue();
                         for (BackupStorageInventory bs: targetBackupStorages) {
-                            extEmitter.beforeCreateImage(ImageInventory.valueOf(imageVO), volumePsUuid, bs.getUuid());
+                            extEmitter.beforeCreateImage(ImageInventory.valueOf(imageVO),  bs.getUuid(), volumePsUuid);
                         }
                         trigger.next();
                     }
@@ -2099,7 +2099,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         for (BackupStorageInventory bs: backupStorages) {
-                            extEmitter.beforeCreateImage(ImageInventory.valueOf(image), volumePsUuid, bs.getUuid());
+                            extEmitter.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid(), volumePsUuid);
                         }
 
                         trigger.next();
