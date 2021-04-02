@@ -246,12 +246,7 @@ public class ImageBase implements Image {
                 dbf.remove(ref);
 
                 //TODO remove ref from metadata, this logic should after all refs deleted
-                CollectionUtils.safeForEach(pluginRgty.getExtensionList(ExpungeImageExtensionPoint.class), new ForEachFunction<ExpungeImageExtensionPoint>() {
-                    @Override
-                    public void run(ExpungeImageExtensionPoint ext) {
-                        ext.afterExpungeImage(ImageInventory.valueOf(self), ref.getBackupStorageUuid());
-                    }
-                });
+                runAfterExpungeImageExtension(ref.getBackupStorageUuid());
 
                 logger.debug(String.format("successfully expunged the image[uuid: %s, name: %s] on the backup storage[uuid: %s]",
                         self.getUuid(), self.getName(), ref.getBackupStorageUuid()));
@@ -412,7 +407,8 @@ public class ImageBase implements Image {
                                 } else {
                                     returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getActualSize());
                                     dbf.remove(ref);
-                                    //TODO should delete ref in metadata
+                                    // now delete ref in metadata
+                                    runAfterExpungeImageExtension(ref.getBackupStorageUuid());
                                 }
                                 trigger.next();
                             }
@@ -548,6 +544,11 @@ public class ImageBase implements Image {
                 noErrorCompletion.done();
             }
         });
+    }
+
+    private void runAfterExpungeImageExtension(String backupStorageUuid) {
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(ExpungeImageExtensionPoint.class),
+                ext -> ext.afterExpungeImage(ImageInventory.valueOf(self), backupStorageUuid));
     }
 
     private void handle(SyncSystemTagFromVolumeMsg msg) {
