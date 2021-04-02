@@ -43,7 +43,7 @@
         <category>loadBalancer</category>
         <name>unhealthyThreshold</name>
         <description>The number of consecutive health check failures required before moving the instance to the Unhealthy state.</description>
-        <defaultValue>2</defaultValue>
+        <defaultValue>6</defaultValue>
         <type>java.lang.Long</type>
     </config>
 
