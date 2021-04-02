@@ -638,7 +638,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
             throw new ApiMessageInterceptionException(operr("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
-                            msg.getVmInstanceUuid(), state));
+                            vmUuid, state));
         }
 
         msg.setVmInstanceUuid(vmUuid);
