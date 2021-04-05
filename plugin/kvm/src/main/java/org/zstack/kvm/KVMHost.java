@@ -122,6 +122,9 @@ public class KVMHost extends HostBase implements Host {
     // ///////////////////// REST URL //////////////////////////
     private String baseUrl;
     private String connectPath;
+    private String getTakeOverFlagPath;
+    private String addTakeOverFlagPath;
+    private String deleteTakeOverFlagPath;
     private String pingPath;
     private String updateHostConfigurationPath;
     private String checkPhysicalNetworkInterfacePath;
@@ -174,6 +177,18 @@ public class KVMHost extends HostBase implements Host {
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_CONNECT_PATH);
         connectPath = ub.build().toUriString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_GET_TAKEOVERFLAG_PATH);
+        getTakeOverFlagPath = ub.build().toUriString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_ADD_TAKEOVERFLAG_PATH);
+        addTakeOverFlagPath = ub.build().toUriString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_DELETE_TAKEOVERFLAG_PATH);
+        deleteTakeOverFlagPath = ub.build().toUriString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_PING_PATH);
@@ -3157,6 +3172,17 @@ public class KVMHost extends HostBase implements Host {
     }
 
     @Override
+    protected void deleteTakeOverFlag(Completion completion) {
+        deleteTakeOverFlagCmd cmd = new deleteTakeOverFlagCmd();
+        deleteTakeOverFlagResponse rsp = restf.syncJsonPost(deleteTakeOverFlagPath, cmd, deleteTakeOverFlagResponse.class, TimeUnit.MINUTES, 1);
+        if (!rsp.isSuccess()) {
+            completion.fail(operr(rsp.getError()));
+        } else {
+            completion.success();
+        }
+    }
+
+    @Override
     protected int getVmMigrateQuantity() {
         return KVMGlobalConfig.VM_MIGRATION_QUANTITY.value(Integer.class);
     }
@@ -3238,7 +3264,14 @@ public class KVMHost extends HostBase implements Host {
                     ErrorCodeList errorCodeList = (ErrorCodeList) data.get(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR);
                     completion.fail(operr("host can not access any primary storage, %s", errorCodeList != null && StringUtils.isNotEmpty(errorCodeList.getReadableDetails()) ? errorCodeList.getReadableDetails() : "please check network"));
                 } else {
-                    completion.success();
+                    addTakeOverFlagCmd cmd = new addTakeOverFlagCmd();
+                    cmd.setHostUuid(self.getUuid());
+                    addTakeOverFlagResponse rsp = restf.syncJsonPost(addTakeOverFlagPath, cmd, addTakeOverFlagResponse.class, TimeUnit.MINUTES, 1);
+                    if (!rsp.isSuccess()) {
+                        completion.fail(operr(rsp.getError()));
+                    } else {
+                        completion.success();
+                    }
                 }
             }
         }).error(new FlowErrorHandler(completion) {
@@ -3454,6 +3487,41 @@ public class KVMHost extends HostBase implements Host {
                                 }
                             });
                         }
+
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "check-Host-is-taken-over";
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                getTakeOverFlagCmd cmd = new getTakeOverFlagCmd();
+                                getTakeOverFlagResponse rsp = restf.syncJsonPost(getTakeOverFlagPath, cmd, getTakeOverFlagResponse.class, TimeUnit.MINUTES, 1);
+                                if (!rsp.isSuccess()) {
+                                    trigger.fail(operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
+                                            self.getUuid(), self.getManagementIp(), getTakeOverFlagPath, rsp.getError()));
+                                    return;
+                                } else {
+                                    logger.debug(String.format("flag is [hostUuid:%s]", rsp.getHostUuid()));
+                                    if (rsp.getHostUuid() == null || rsp.getHostUuid().isEmpty()) {
+                                        trigger.next();
+                                        return;
+                                    }
+
+                                    if (rsp.getUTime() < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
+                                        trigger.fail(operr("the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%d] has not exceeded host ping interval[%d]",
+                                                self.getManagementIp(), rsp.getHostUuid(),rsp.getUTime(),HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)));
+                                        return;
+                                    }
+
+                                    HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.uuid, rsp.getHostUuid()).find();
+                                    if (lastHostInv == null) {
+                                        trigger.next();
+                                    } else {
+                                        trigger.fail(operr("the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
+                                                self.getManagementIp(), lastHostInv.getUuid()));
+                                    }
+                                }
+                            }
+                        });
                     }
 
                     flow(new NoRollbackFlow() {

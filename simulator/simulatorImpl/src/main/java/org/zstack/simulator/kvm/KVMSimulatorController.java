@@ -229,6 +229,18 @@ public class KVMSimulatorController {
         return JSONObjectUtil.toJsonString(rsp);
     }
     
+    @RequestMapping(value=KVMConstant.KVM_ADD_TAKEOVERFLAG_PATH, method=RequestMethod.POST)
+    public @ResponseBody String add_takeover_flag(@RequestBody String body) {
+        addTakeOverFlagResponse rsp = new addTakeOverFlagResponse();
+        return JSONObjectUtil.toJsonString(rsp);
+    }
+
+    @RequestMapping(value=KVMConstant.KVM_DELETE_TAKEOVERFLAG_PATH, method=RequestMethod.POST)
+    public @ResponseBody String delete_takeover_flag(@RequestBody String body) {
+        deleteTakeOverFlagResponse rsp = new deleteTakeOverFlagResponse();
+        return JSONObjectUtil.toJsonString(rsp);
+    }
+
     @RequestMapping(value=KVMConstant.KVM_ECHO_PATH, method=RequestMethod.POST)
     public @ResponseBody String echo() {
         return "";
