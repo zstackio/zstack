@@ -422,7 +422,7 @@ public class Platform {
         }
 
         if (ZSha2Helper.isMNHaEnvironment()) {
-            ZSha2Info info = ZSha2Helper.getInfo();
+            ZSha2Info info = ZSha2Helper.getInfo(false);
             SearchGlobalProperty.JGroupInfinispanInitialHosts = String.format("%s[%s],%s[%s]",
                     info.getNodeip(), SearchGlobalProperty.JGroupInfinispanPort,
                     info.getPeerip(), SearchGlobalProperty.JGroupInfinispanPort);
