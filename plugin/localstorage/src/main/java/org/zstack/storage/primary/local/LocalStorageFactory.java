@@ -43,6 +43,7 @@ import org.zstack.header.storage.snapshot.AfterTakeLiveSnapshotsOnVolumes;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.header.storage.snapshot.TakeVolumesSnapshotOnKvmReply;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -52,6 +53,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -1049,9 +1051,48 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void afterAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
-        if (inventory.getType().equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)) {
-            recalculatePrimaryStorageCapacity(clusterUuid);
+        if (!inventory.getType().equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)) {
+            return;
         }
+        recalculatePrimaryStorageCapacity(clusterUuid);
+        initilizedLocalStorageSystemTags(inventory, clusterUuid);
+    }
+
+    public void initilizedLocalStorageSystemTags(PrimaryStorageInventory inventory, String clusterUuid) {
+        List<String> refHostUuids = Q.New(LocalStorageHostRefVO.class)
+                .select(LocalStorageHostRefVO_.hostUuid)
+                .eq(LocalStorageHostRefVO_.primaryStorageUuid, inventory.getUuid())
+                .listValues();
+
+        if (refHostUuids.isEmpty()) {
+            return;
+        }
+
+        List<String> hostUuids = Q.New(HostVO.class)
+                .select(HostVO_.uuid)
+                .in(HostVO_.uuid, refHostUuids)
+                .eq(HostVO_.clusterUuid, clusterUuid)
+                .listValues();
+
+        hostUuids.forEach(hostUuid -> {
+            if (!hostHasInitializedTag(hostUuid, inventory.getUuid())) {
+                SystemTagCreator creator = LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED.newSystemTagCreator(hostUuid);
+                creator.inherent = true;
+                creator.unique = false;
+                creator.setTagByTokens(map(e(LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED_TOKEN, inventory.getUuid())));
+                creator.create();
+            }
+        });
+    }
+
+    public boolean hostHasInitializedTag(String hostUuid, String psUuid) {
+        List<Map<String, String>> tags = LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED.getTokensOfTagsByResourceUuid(hostUuid);
+        for (Map<String, String> tag : tags) {
+            if (tag.get(LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED_TOKEN).equals(psUuid)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -1161,7 +1202,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         if (!inventory.getType().equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)) {
             return;
         }
-        List<String> hostUuids = Q.New(LocalStorageHostRefVO.class).select(LocalStorageHostRefVO_.hostUuid).listValues();
+        List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid).eq(HostVO_.clusterUuid, clusterUuid).listValues();
 
         for (String hostUuid: hostUuids) {
             LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED.deleteInherentTag(hostUuid,
