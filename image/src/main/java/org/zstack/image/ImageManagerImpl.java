@@ -74,6 +74,7 @@ import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1374,7 +1375,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), ext -> ext.beforeAddImage(inv));
         new LoopAsyncBatch<DownloadImageMsg>(msgData.getNeedReplyMessage()) {
-            AtomicBoolean success = new AtomicBoolean(false);
+            ConcurrentHashMap<String, AtomicBoolean> resultMap = new ConcurrentHashMap<>();
 
             class TrackContext {
                 String name;
@@ -1402,6 +1403,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
             @Override
             protected Collection<DownloadImageMsg> collect() {
+                for (DownloadImageMsg dmsg : dmsgs) {
+                    AtomicBoolean success = new AtomicBoolean(false);
+                    resultMap.put(dmsg.getBackupStorageUuid(), success);
+                }
                 return dmsgs;
             }
 
@@ -1441,13 +1446,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                                     dbf.update(ref);
 
-                                    if (success.compareAndSet(false, true)) {
+                                    if (resultMap.get(ref.getBackupStorageUuid()).compareAndSet(false, true)) {
                                         // In case 'Platform' etc. is changed.
                                         ImageVO vo = dbf.reload(ivo);
                                         vo.setMd5Sum(re.getMd5sum());
                                         vo.setSize(re.getSize());
                                         vo.setActualSize(re.getActualSize());
-                                        vo.setStatus(ref.getStatus());
                                         vo.setUrl(URLBuilder.hideUrlPassword(vo.getUrl()));
                                         if (StringUtils.isNotEmpty(re.getFormat())) {
                                             vo.setFormat(re.getFormat());
@@ -1460,6 +1464,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                                 && ImageMediaType.ISO.equals(vo.getMediaType())) {
                                             vo.setMediaType(ImageMediaType.RootVolumeTemplate);
                                         }
+
+                                        if (resultMap.entrySet().stream().allMatch(entry -> entry.getValue().get())) {
+                                            vo.setStatus(ref.getStatus());
+                                        }
+
                                         dbf.update(vo);
                                     }
 
@@ -1495,7 +1504,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     return;
                 }
 
-                if (success.get()) {
+                if (resultMap.entrySet().stream().allMatch(entry -> entry.getValue().get())) {
                     final ImageInventory einv = ImageInventory.valueOf(vo);
 
                     if (vo.getStatus() == ImageStatus.Ready) {
