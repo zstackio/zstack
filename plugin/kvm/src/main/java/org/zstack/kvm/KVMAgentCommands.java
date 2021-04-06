@@ -1105,6 +1105,43 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class GenerateVdpaCmd extends AgentCommand {
+        public String vmUuid;
+        public List<NicTO> nics;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public List<NicTO> getNics() {
+            return nics;
+        }
+
+        public void setNics(List<NicTO> nics) {
+            this.nics = nics;
+        }
+    }
+
+    public static class GenerateVdpaResponse extends AgentResponse {
+        public List<String> vdpaPaths;
+
+        public List<String> getVdpaPaths() {
+            return vdpaPaths;
+        }
+
+        public void setVdpaPaths(List<String> vdpaPaths) {
+            this.vdpaPaths = vdpaPaths;
+        }
+    }
+
+    public static class DeleteVdpaCmd extends AgentCommand {
+        public String vmUuid;
+    }
+
     public static class HardenVmConsoleCmd extends AgentCommand {
         public String vmUuid;
         public Long vmInternalId;
@@ -2487,6 +2524,7 @@ public class KVMAgentCommands {
         private boolean migrateFromDestination;
         private boolean autoConverge;
         private boolean xbzrle;
+        private List<String> vdpaPaths;
         private Long timeout; // in seconds
 
         public boolean isUseNuma() {
@@ -2551,6 +2589,14 @@ public class KVMAgentCommands {
 
         public void setMigrateFromDestination(boolean migrateFromDestination) {
             this.migrateFromDestination = migrateFromDestination;
+        }
+
+        public List<String> getVdpaPaths() {
+            return vdpaPaths;
+        }
+
+        public void setVdpaPaths(List<String> vdpaPaths) {
+            this.vdpaPaths = vdpaPaths;
         }
 
         public Long getTimeout() {
