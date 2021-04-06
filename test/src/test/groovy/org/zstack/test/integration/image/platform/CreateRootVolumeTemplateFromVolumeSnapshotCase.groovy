@@ -17,6 +17,7 @@ class CreateRootVolumeTemplateFromVolumeSnapshotCase extends SubCase {
     VmInstanceInventory vm
 
     String osType = "centos63"
+    String archType = "x86_64"
 
     VolumeSnapshotInventory rootVolumeSnapshot
     VolumeSnapshotInventory dataVolumeSnapshot
@@ -149,6 +150,7 @@ class CreateRootVolumeTemplateFromVolumeSnapshotCase extends SubCase {
         }
         assert ImagePlatform.Windows.name() == image.platform
         assert osType == image.guestOsType
+        assert archType == image.architecture
 
         VmInstanceInventory newVm = createVmInstance {
             name = "new-image-vm"
@@ -169,6 +171,7 @@ class CreateRootVolumeTemplateFromVolumeSnapshotCase extends SubCase {
         }
         assert ImagePlatform.Windows.name() == image.platform
         assert newOsType == image.guestOsType
+        assert archType == image.architecture
     }
 
     void testCreateImageFromDataVolumeSnapshot() {
