@@ -27,8 +27,6 @@ import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -56,7 +54,9 @@ import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagValidator;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg;
+import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -500,6 +500,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 vo.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
                 vo.setUrl(String.format("volumeSnapshot://%s", msg.getSnapshotUuid()));
                 vo.setAccountUuid(msg.getSession().getAccountUuid());
+                vo.setArchitecture(msg.getArchitecture());
                 persist(vo);
 
                 tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
