@@ -38,7 +38,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         return KVMHostUtils.getNormalizedBridgeName(l2Uuid, "br_%s_" + vlan);
     }
 
-    public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
+    public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion, final String cmdPath) {
         final L2VlanNetworkInventory l2vlan = (L2VlanNetworkInventory) l2Network;
         final CreateVlanBridgeCmd cmd = new CreateVlanBridgeCmd();
         cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
@@ -52,7 +52,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         msg.setHostUuid(hostUuid);
         msg.setCommand(cmd);
         msg.setNoStatusCheck(noStatusCheck);
-        msg.setPath(KVMConstant.KVM_REALIZE_L2VLAN_NETWORK_PATH);
+        msg.setPath(cmdPath);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -87,12 +87,20 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         });
     }
 
+    public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
+        if (l2Network.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+            realize(l2Network, hostUuid, noStatusCheck, completion, KVMConstant.KVM_REALIZE_OVSDPDK_NETWORK_PATH);
+        } else {
+            realize(l2Network, hostUuid, noStatusCheck, completion, KVMConstant.KVM_REALIZE_L2VLAN_NETWORK_PATH);
+        }
+    }
+
     @Override
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, final Completion completion) {
         realize(l2Network, hostUuid, false, completion);
     }
 
-    public void check(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
+    public void check(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion, final String cmdPath) {
         final L2VlanNetworkInventory l2vlan = (L2VlanNetworkInventory) l2Network;
         final KVMAgentCommands.CheckVlanBridgeCmd cmd = new KVMAgentCommands.CheckVlanBridgeCmd();
         cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
@@ -102,7 +110,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
         msg.setCommand(cmd);
-        msg.setPath(KVMConstant.KVM_CHECK_L2VLAN_NETWORK_PATH);
+        msg.setPath(cmdPath);
         msg.setNoStatusCheck(noStatusCheck);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -128,6 +136,14 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
                 completion.success();
             }
         });
+    }
+
+    public void check(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
+        if (l2Network.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+            realize(l2Network, hostUuid, false, completion, KVMConstant.KVM_CHECK_OVSDPDK_NETWORK_PATH);
+        } else {
+            realize(l2Network, hostUuid, false, completion, KVMConstant.KVM_CHECK_L2VLAN_NETWORK_PATH);
+        }
     }
 
     @Override
@@ -162,6 +178,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 		to.setNicInternalName(nic.getInternalName());
 		to.setMetaData(String.valueOf(vlanId));
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
+        to.setType(nic.getType());
 
 		return to;
 	}

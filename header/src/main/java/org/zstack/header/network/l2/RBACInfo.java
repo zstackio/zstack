@@ -12,6 +12,7 @@ public class RBACInfo implements RBACDescription {
                 .normalAPIs(
                         APIUpdateL2NetworkMsg.class,
                         APIGetL2NetworkTypesMsg.class,
+                        APIGetVSwitchTypesMsg.class,
                         APIQueryL2NetworkMsg.class,
                         APIQueryL2VlanNetworkMsg.class
                 )

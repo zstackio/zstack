@@ -42,6 +42,7 @@ public class L2NetworkVO extends L2NetworkAO implements ToInventory, OwnedByAcco
         this.setName(vo.getName());
         this.setPhysicalInterface(vo.getPhysicalInterface());
         this.setType(vo.getType());
+        this.setvSwitchType(vo.getvSwitchType());
         this.setZoneUuid(vo.getZoneUuid());
         this.setAccountUuid(vo.getAccountUuid());
     }
