@@ -68,6 +68,11 @@ public abstract class APICreateL2NetworkMsg extends APICreateMessage implements 
      * @desc l2Network type
      */
     private String type;
+    /**
+     * @desc vSwitch type
+     */
+    @APIParam(required = false, maxLength = 1024)
+    private String vSwitchType;
 
     public String getName() {
         return name;
@@ -107,6 +112,14 @@ public abstract class APICreateL2NetworkMsg extends APICreateMessage implements 
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getvSwitchType() {
+        return vSwitchType;
+    }
+
+    public void setvSwitchType(String vSwitchType) {
+        this.vSwitchType = vSwitchType;
     }
 
     public Result audit(APIMessage msg, APIEvent rsp) {

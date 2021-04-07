@@ -21,6 +21,8 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
@@ -112,8 +114,11 @@ public class VmAllocateNicFlow implements Flow {
             logger.debug(String.format("create %s on l3 network[uuid:%s] inside VmAllocateNicFlow",
                     enableSriov ? "vf nic" : "vnic", nw.getUuid()));
 
+            L2NetworkVO l2nw =  dbf.findByUuid(nw.getL2NetworkUuid(), L2NetworkVO.class);
             if (enableSriov) {
                 vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VF"));
+            } else if (l2nw.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+                vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("vDPA"));
             } else {
                 vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VNIC"));
             }

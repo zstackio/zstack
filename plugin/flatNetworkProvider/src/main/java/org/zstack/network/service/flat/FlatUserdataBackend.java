@@ -179,6 +179,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         continue;
                     }
 
+                    if (bridgeNames.get(l.l3Uuid) == null) {
+                        continue;
+                    }
+
                     to.dhcpServerIp = l.dhcpServerIp;
                     to.vmIp = l.vmIp;
                     to.netmask = l.netmask;

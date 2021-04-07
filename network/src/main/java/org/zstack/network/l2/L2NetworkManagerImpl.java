@@ -23,6 +23,8 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.*;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
@@ -48,6 +50,8 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     private TagManager tagMgr;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private Map<String, L2NetworkFactory> l2NetworkFactories = Collections.synchronizedMap(new HashMap<String, L2NetworkFactory>());
     private Map<L2NetworkType, Map<HypervisorType, L2NetworkRealizationExtensionPoint>> realizationExts = new HashMap<>();
@@ -82,6 +86,8 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
             handle((APICreateL2NetworkMsg)msg);
         } else if (msg instanceof APIGetL2NetworkTypesMsg) {
             handle((APIGetL2NetworkTypesMsg) msg);
+        } else if (msg instanceof APIGetVSwitchTypesMsg) {
+            handle((APIGetVSwitchTypesMsg) msg);
         } else if (msg instanceof APIGetCandidateL2NetworksForAttachingClusterMsg) {
             handle((APIGetCandidateL2NetworksForAttachingClusterMsg)msg);
         } else if (msg instanceof APIGetCandidateClustersForAttachingL2NetworkMsg) {
@@ -141,6 +147,30 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     }
 
     private boolean canAttachL2ToThisCluster(L2NetworkVO l2NetworkVO, ClusterVO clusterVO) {
+
+        String vSwitchType = l2NetworkVO.getvSwitchType();
+        if (vSwitchType.equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+
+            String memAccessMode = "private";
+            boolean isHugePageEnable = false;
+
+            ResourceConfig memAccess = rcf.getResourceConfig("premiumCluster.memAccess.mode");
+            if (memAccess != null) {
+                memAccessMode = memAccess.getResourceConfigValue(clusterVO.getUuid(), String.class);
+            }
+            ResourceConfig hugePage = rcf.getResourceConfig("premiumCluster.hugepage.enable");
+            if (hugePage != null) {
+                isHugePageEnable = hugePage.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
+            }
+
+            ResourceConfig numa = rcf.getResourceConfig("vm.numa");
+            boolean isNumaEnable = numa.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
+
+            if (memAccessMode.equals("private") || !isHugePageEnable || !isNumaEnable){
+                return false;
+            }
+        }
+
         StringBuilder sqlBuilder = new StringBuilder();
         if (l2NetworkVO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
             sqlBuilder.append("select l2 from L2VlanNetworkVO l2,L2NetworkClusterRefVO ref where");
@@ -221,6 +251,33 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
                 .contains(l2.getUuid()))
                 .collect(Collectors.toList());
 
+        //if cluster set memeAccess to 'private', filter l2 with OVSDPDK vSwitch type
+        String memAccessMode = "private";
+        boolean isHugePageEnable = false;
+
+        ResourceConfig memAccess = rcf.getResourceConfig("premiumCluster.memAccess.mode");
+        if (memAccess != null) {
+            memAccessMode = memAccess.getResourceConfigValue(clusterVO.getUuid(), String.class);
+        }
+        ResourceConfig hugePage = rcf.getResourceConfig("premiumCluster.hugepage.enable");
+        if (hugePage != null) {
+            isHugePageEnable = hugePage.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
+        }
+
+        ResourceConfig numa = rcf.getResourceConfig("vm.numa");
+        boolean isNumaEnable = numa.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
+
+        if (memAccessMode.equals("private") || !isHugePageEnable || !isNumaEnable) {
+            final List<L2NetworkVO> DpdkL2s =  SQL.New("select distinct l2 from L2NetworkVO l2 where" +
+                    " l2.vSwitchType = :l2vSwitchType")
+                    .param("l2vSwitchType", "OvsDpdk")
+                    .list();
+            l2s = l2s.stream().filter(l2 -> !DpdkL2s.stream()
+                    .map(L2NetworkVO::getUuid)
+                    .collect(Collectors.toList())
+                    .contains(l2.getUuid()))
+                    .collect(Collectors.toList());
+        }
 
         return getCandidateL2(clusterVO, l2s, attachClusterL2s);
     }
@@ -331,6 +388,20 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         }
     }
 
+    private void handle(APIGetVSwitchTypesMsg msg) {
+        List<String> vSwitchTypes = new ArrayList<String>();
+
+        /* maybe we should get supported vSwitch type according to the L2Network type.
+         * L2NetworkFactory factory = getL2NetworkFactory(L2NetworkType.valueOf(msg.getType()));
+         * APIGetVSwitchTypesReply reply = new APIGetVSwitchTypesReply();
+         * reply.setVSwitchTypes(factory.getVSwitchTypes());
+         */
+        vSwitchTypes.addAll(VSwitchType.getAllTypeNames());
+        APIGetVSwitchTypesReply reply = new APIGetVSwitchTypesReply();
+        reply.setVSwitchTypes(vSwitchTypes);
+        bus.reply(msg, reply);
+    }
+
     private void handle(APIGetL2NetworkTypesMsg msg) {
         List<String> types = new ArrayList<String>();
         types.addAll(L2NetworkType.getAllTypeNames());
@@ -372,6 +443,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     	}
 
         L2NetworkType type = L2NetworkType.valueOf(msg.getType());
+    	VSwitchType vSwitchType = VSwitchType.valueOf(msg.getvSwitchType());
         L2NetworkFactory factory = getL2NetworkFactory(type);
         L2NetworkVO vo = new L2NetworkVO();
         if (msg.getResourceUuid() != null) {
@@ -383,6 +455,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         vo.setName(msg.getName());
         vo.setPhysicalInterface(msg.getPhysicalInterface());
         vo.setType(type.toString());
+        vo.setvSwitchType(vSwitchType.toString());
         vo.setZoneUuid(msg.getZoneUuid());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         factory.createL2Network(vo, msg, new ReturnValueCompletion<L2NetworkInventory>(msg) {

@@ -9,7 +9,6 @@ public interface KVMConstant {
 
     @PythonClass
     String KVM_HYPERVISOR_TYPE = "KVM";
-
     String KVM_CONNECT_PATH = "/host/connect";
     String KVM_PING_PATH = "/host/ping";
     String KVM_UPDATE_HOST_CONFIGURATION_PATH = "/host/update/configuration";
@@ -23,6 +22,10 @@ public interface KVMConstant {
     String KVM_CHECK_L2NOVLAN_NETWORK_PATH = "/network/l2novlan/checkbridge";
     String KVM_REALIZE_L2VLAN_NETWORK_PATH = "/network/l2vlan/createbridge";
     String KVM_CHECK_L2VLAN_NETWORK_PATH = "/network/l2vlan/checkbridge";
+    String KVM_REALIZE_OVSDPDK_NETWORK_PATH = "/network/ovsdpdk/createbridge";
+    String KVM_CHECK_OVSDPDK_NETWORK_PATH = "/network/ovsdpdk/checkbridge";
+    String KVM_GENERATE_VDPA_PATH = "/network/ovsdpdk/generatevdpa";
+    String KVM_DELETE_VDPA_PATH = "/network/ovsdpdk/deletevdpa";
     String KVM_ATTACH_ISO_PATH = "/vm/iso/attach";
     String KVM_DETACH_ISO_PATH = "/vm/iso/detach";
     String KVM_START_VM_PATH = "/vm/start";

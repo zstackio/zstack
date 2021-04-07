@@ -741,6 +741,7 @@ public class KVMAgentCommands {
         private String driverType;
         private VHostAddOn vHostAddOn;
         private PciAddressConfig pci;
+        private String type;
 
         // only for vf nic
         private String vlanId;
@@ -872,6 +873,14 @@ public class KVMAgentCommands {
 
         public void setPci(PciAddressConfig pci) {
             this.pci = pci;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
         }
     }
 
@@ -1094,6 +1103,43 @@ public class KVMAgentCommands {
         public void setBootOrder(int bootOrder) {
             this.bootOrder = bootOrder;
         }
+    }
+
+    public static class GenerateVdpaCmd extends AgentCommand {
+        public String vmUuid;
+        public List<NicTO> nics;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public List<NicTO> getNics() {
+            return nics;
+        }
+
+        public void setNics(List<NicTO> nics) {
+            this.nics = nics;
+        }
+    }
+
+    public static class GenerateVdpaResponse extends AgentResponse {
+        public List<String> vdpaPaths;
+
+        public List<String> getVdpaPaths() {
+            return vdpaPaths;
+        }
+
+        public void setVdpaPaths(List<String> vdpaPaths) {
+            this.vdpaPaths = vdpaPaths;
+        }
+    }
+
+    public static class DeleteVdpaCmd extends AgentCommand {
+        public String vmUuid;
     }
 
     public static class HardenVmConsoleCmd extends AgentCommand {
@@ -1473,6 +1519,7 @@ public class KVMAgentCommands {
         private String clock;
         private String clockTrack;
         private boolean useNuma;
+        private String MemAccess;
         private String usbRedirect;
         private boolean useBootMenu;
         private boolean createPaused;
@@ -1641,6 +1688,14 @@ public class KVMAgentCommands {
 
         public void setUseNuma(boolean useNuma) {
             this.useNuma = useNuma;
+        }
+
+        public String getMemAccess() {
+            return MemAccess;
+        }
+
+        public void setMemAccess(String memAccess) {
+            MemAccess = memAccess;
         }
 
         public long getMaxMemory() {
@@ -2469,6 +2524,7 @@ public class KVMAgentCommands {
         private boolean migrateFromDestination;
         private boolean autoConverge;
         private boolean xbzrle;
+        private List<String> vdpaPaths;
         private Long timeout; // in seconds
 
         public boolean isUseNuma() {
@@ -2533,6 +2589,14 @@ public class KVMAgentCommands {
 
         public void setMigrateFromDestination(boolean migrateFromDestination) {
             this.migrateFromDestination = migrateFromDestination;
+        }
+
+        public List<String> getVdpaPaths() {
+            return vdpaPaths;
+        }
+
+        public void setVdpaPaths(List<String> vdpaPaths) {
+            this.vdpaPaths = vdpaPaths;
         }
 
         public Long getTimeout() {

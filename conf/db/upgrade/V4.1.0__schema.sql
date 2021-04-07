@@ -65,3 +65,7 @@ CALL upgradeProjectAdminSystemTags();
 ALTER TABLE `zstack`.`SNSEmailPlatformVO` modify COLUMN `password` VARCHAR(255) NULL;
 ALTER TABLE `zstack`.`SNSEmailPlatformVO` modify COLUMN `username` VARCHAR(255) NULL;
 alter table `ConsoleProxyAgentVO` add `consoleProxyPort` int NOT NULL;
+ALTER TABLE `zstack`.`L2NetworkEO` ADD column `vSwitchType` varchar(32) not null default 'LinuxBridge';
+DROP VIEW if exists `zstack`.L2NetworkVO;
+CREATE VIEW `zstack`.`L2NetworkVO` AS SELECT uuid, name, description, type, vSwitchType, zoneUuid, physicalInterface, createDate, lastOpDate FROM `zstack`.`L2NetworkEO` WHERE deleted IS NULL;
+ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD column `offloadStatus` varchar(128) default null;
