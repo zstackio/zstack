@@ -174,12 +174,12 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
             return null;
         }
 
+        VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
         struct.setUseFor(NetworkServiceType.SNAT.toString());
-        struct.setServiceUuid(ipv4Vip.getUuid());
+        struct.setServiceUuid(vr.getUuid());
 
         Vip vip = new Vip(ipv4Vip.getUuid());
-        VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         if (!vr.getGuestL3Networks().isEmpty()){
             String l3NetworkUuuid = vr.getGuestL3Networks().get(0);
             try {

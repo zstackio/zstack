@@ -199,7 +199,7 @@ public class VirtualRouterCreatePublicVipFlow implements Flow {
 
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE);
-                struct.setServiceUuid(ipv4Vip.getUuid());
+                struct.setServiceUuid(vr.getUuid());
                 String l3NetworkUuuid = vr.getGuestL3Networks().get(0);
                 try {
                     NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(l3NetworkUuuid, NetworkServiceType.SNAT);

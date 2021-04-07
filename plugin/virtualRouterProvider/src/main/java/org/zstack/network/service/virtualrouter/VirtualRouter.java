@@ -478,7 +478,7 @@ public class VirtualRouter extends ApplianceVmBase {
                 data.put("oldVip", vipVO);
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(NetworkServiceType.SNAT.toString());
-                struct.setServiceUuid(vipVO.getUuid());
+                struct.setServiceUuid(vrVO.getUuid());
                 Vip vip = new Vip(vipVO.getUuid());
                 vip.setStruct(struct);
                 vip.release(new Completion(trigger) {
@@ -504,7 +504,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(NetworkServiceType.SNAT.toString());
-                struct.setServiceUuid(vipVO.getUuid());
+                struct.setServiceUuid(vrVO.getUuid());
                 Vip vip = new Vip(vipVO.getUuid());
                 vip.setStruct(struct);
                 vip.acquire(new Completion(trigger) {
@@ -557,7 +557,7 @@ public class VirtualRouter extends ApplianceVmBase {
                 data.put("newVip", vipVO);
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(NetworkServiceType.SNAT.toString());
-                struct.setServiceUuid(vipVO.getUuid());
+                struct.setServiceUuid(vrVO.getUuid());
                 Vip vip = new Vip(vipVO.getUuid());
                 vip.setStruct(struct);
                 vip.acquire(new Completion(trigger) {
@@ -583,7 +583,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(NetworkServiceType.SNAT.toString());
-                struct.setServiceUuid(vipVO.getUuid());
+                struct.setServiceUuid(vrVO.getUuid());
                 Vip vip = new Vip(vipVO.getUuid());
                 vip.setStruct(struct);
                 vip.release(new Completion(trigger) {
