@@ -3487,41 +3487,6 @@ public class KVMHost extends HostBase implements Host {
                                 }
                             });
                         }
-
-                        flow(new NoRollbackFlow() {
-                            String __name__ = "check-Host-is-taken-over";
-
-                            @Override
-                            public void run(FlowTrigger trigger, Map data) {
-                                getTakeOverFlagCmd cmd = new getTakeOverFlagCmd();
-                                getTakeOverFlagResponse rsp = restf.syncJsonPost(getTakeOverFlagPath, cmd, getTakeOverFlagResponse.class, TimeUnit.MINUTES, 1);
-                                if (!rsp.isSuccess()) {
-                                    trigger.fail(operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
-                                            self.getUuid(), self.getManagementIp(), getTakeOverFlagPath, rsp.getError()));
-                                    return;
-                                } else {
-                                    logger.debug(String.format("flag is [hostUuid:%s]", rsp.getHostUuid()));
-                                    if (rsp.getHostUuid() == null || rsp.getHostUuid().isEmpty()) {
-                                        trigger.next();
-                                        return;
-                                    }
-
-                                    if (rsp.getUTime() < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
-                                        trigger.fail(operr("the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%d] has not exceeded host ping interval[%d]",
-                                                self.getManagementIp(), rsp.getHostUuid(),rsp.getUTime(),HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)));
-                                        return;
-                                    }
-
-                                    HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.uuid, rsp.getHostUuid()).find();
-                                    if (lastHostInv == null) {
-                                        trigger.next();
-                                    } else {
-                                        trigger.fail(operr("the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
-                                                self.getManagementIp(), lastHostInv.getUuid()));
-                                    }
-                                }
-                            }
-                        });
                     }
 
                     flow(new NoRollbackFlow() {
@@ -3555,6 +3520,52 @@ public class KVMHost extends HostBase implements Host {
                             trigger.next();
                         }
                     });
+
+                    if (info.isNewAdded()) {
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "check-Host-is-taken-over";
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                try {
+                                    getTakeOverFlagCmd cmd = new getTakeOverFlagCmd();
+                                    getTakeOverFlagResponse rsp = restf.syncJsonPost(getTakeOverFlagPath, cmd, getTakeOverFlagResponse.class, TimeUnit.MINUTES, 1);
+                                    if (!rsp.isSuccess()) {
+                                        trigger.fail(operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
+                                                self.getUuid(), self.getManagementIp(), getTakeOverFlagPath, rsp.getError()));
+                                        return;
+                                    } else {
+                                        logger.debug(String.format("flag is [hostUuid:%s]", rsp.getHostUuid()));
+                                        if (rsp.getHostUuid() == null || rsp.getHostUuid().isEmpty()) {
+                                            trigger.next();
+                                            return;
+                                        }
+
+                                        if (rsp.getUTime() < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
+                                            trigger.fail(operr("the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%d] has not exceeded host ping interval[%d]",
+                                                    self.getManagementIp(), rsp.getHostUuid(), rsp.getUTime(), HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)));
+                                            return;
+                                        }
+
+                                        HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.uuid, rsp.getHostUuid()).find();
+                                        if (lastHostInv == null) {
+                                            trigger.next();
+                                        } else {
+                                            trigger.fail(operr("the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
+                                                    self.getManagementIp(), lastHostInv.getUuid()));
+                                        }
+                                    }
+                                } catch (OperationFailureException e) {
+                                    if (e.getMessage().contains("404 Not Found")) {
+                                        trigger.next();
+                                    } else {
+                                        throw e;
+                                    }
+
+                                }
+                            }
+                        });
+                    }
 
                     flow(new NoRollbackFlow() {
                         String __name__ = "check-host-cpu-arch";
