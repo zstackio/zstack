@@ -150,7 +150,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                     Ssh ssh1 = new Ssh();
                                     ssh1.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                                             .setHostname(mgmtNic.getIp()).setTimeout(interval);
-                                    SshResult ret1 = ssh1.command("sudo cat /home/vyos/zvr/zvrboot.log").runAndClose();
+                                    SshResult ret1 = ssh1.command("sudo tail -n 300 /home/vyos/zvr/zvrboot.log").runAndClose();
                                     if (ret1.getReturnCode() == 0) {
                                         logger.debug(String.format("vyos bootup log %s", ret1.getStdout()));
                                     } else {
@@ -160,7 +160,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                     Ssh ssh2 = new Ssh();
                                     ssh2.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                                             .setHostname(mgmtNic.getIp()).setTimeout(interval);
-                                    SshResult ret2 = ssh2.command("sudo cat /home/vyos/zvr/zvrstartup.log").runAndClose();
+                                    SshResult ret2 = ssh2.command("sudo tail -n 300 /home/vyos/zvr/zvrstartup.log").runAndClose();
                                     if (ret2.getReturnCode() == 0) {
                                         logger.debug(String.format("zvr startup log %s", ret2.getStdout()));
                                     } else {
@@ -170,7 +170,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                     Ssh ssh3 = new Ssh();
                                     ssh3.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                                             .setHostname(mgmtNic.getIp()).setTimeout(interval);
-                                    SshResult ret3 = ssh3.command("sudo cat /home/vyos/zvr/zvr.log").runAndClose();
+                                    SshResult ret3 = ssh3.command("sudo tail -n 300 /home/vyos/zvr/zvr.log").runAndClose();
                                     if (ret3.getReturnCode() == 0) {
                                         logger.debug(String.format("zvr log %s", ret3.getStdout()));
                                     } else {
