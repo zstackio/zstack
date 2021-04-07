@@ -844,7 +844,7 @@
     "code": "1009",
     "method": "regex",
     "regex": ".*unable to connect the shared block group primary storage\\[uuid:.*, name:.*] to the cluster\\[uuid:.*], Can't access shared block group primary storage on host\\[uuid:.*].*",
-    "message_cn": "无法将主机上的 SharedBlock 主存储加载到集群。",
+    "message_cn": "无法将 SharedBlock 主存储加载到集群。",
     "message_en": "Could not attach SharedBlock storage to cluster."
   },
   {
@@ -926,6 +926,14 @@
     "regex": ".*can not find vg .* and create vg with forceWipw=.*",
     "message_cn": "无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。",
     "message_en": "Could not attach shared block storage to cluster, because device is not empty. Please select the checkbox \"Clear LUN\" and try again."
+  },
+  {
+    "category": "PS",
+    "code": "1020",
+    "method": "regex",
+    "regex": ".*unable to connect the shared block group primary storage[uuid:.*, name:.*] to the cluster[uuid:.*], Can't access shared block[diskUuid: [.*]] on host[uuid:.*] ",
+    "message_cn": "无法将 SharedBlock 主存储加载到集群。",
+    "message_en": "Could not attach SharedBlock storage to cluster."
   },
   {
     "category": "QUOTA",
