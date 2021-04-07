@@ -33,6 +33,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.network.l2.APIGetVSwitchTypesMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.network.l2.APIUpdateL2NetworkMsg</name>
     </message>
 

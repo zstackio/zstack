@@ -118,7 +118,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         List<String> vmUuids = vmVos.stream().map(VmInstanceVO::getUuid).collect(Collectors.toList());
         sql = "select nic.uuid from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
-                " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
+                " where nic.uuid = ip.vmNicUuid and nic.type <> :nicType and ip.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
                 " and ref.networkServiceType = :dhcpType " +
                 " and provider.type = :ptype and nic.vmInstanceUuid in (:vmUuids) group by nic.uuid";
@@ -127,6 +127,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         nq.setParameter("ptype", FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
         nq.setParameter("dhcpType", NetworkServiceType.DHCP.toString());
         nq.setParameter("vmUuids", vmUuids);
+        // TODO: we will support vDPA dhcp in future
+        nq.setParameter("nicType", "vDPA");
         List<String> nicUuids = nq.getResultList();
         if (nicUuids.isEmpty()) {
             return null;
@@ -908,7 +910,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         String sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
-                " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
+                " where nic.uuid = ip.vmNicUuid and nic.type <> :nicType and ip.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
                 " and ref.networkServiceType = :dhcpType " +
                 " and provider.type = :ptype and nic.vmInstanceUuid = :vmUuid group by nic.uuid";
@@ -917,6 +919,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         nq.setParameter("dhcpType", NetworkServiceType.DHCP.toString());
         nq.setParameter("ptype", FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
         nq.setParameter("vmUuid", vm.getUuid());
+        // TODO: we will support vDPA dhcp in future
+        nq.setParameter("nicType", "vDPA");
         List<VmNicVO> nics = nq.getResultList();
 
         if (l3Uuid != null) {

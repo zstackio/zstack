@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.kvm.KVMSystemTags;
 import org.zstack.utils.TagUtils;
@@ -44,16 +45,19 @@ public class BridgeNameFinder {
     @Transactional(readOnly = true)
     public Map<String, String> findByL3Uuids(Collection<String> l3Uuids) {
         String sql = "select t.tag, l3.uuid" +
-                " from SystemTagVO t, L3NetworkVO l3" +
+                " from SystemTagVO t, L3NetworkVO l3, L2NetworkVO l2" +
                 " where t.resourceType = :ttype" +
                 " and t.tag like :tag" +
                 " and t.resourceUuid = l3.l2NetworkUuid" +
                 " and l3.uuid in (:l3Uuids)" +
+                " and l2.uuid = l3.l2NetworkUuid and l2.vSwitchType <> :vSwitchType" +
                 " group by l3.uuid";
         TypedQuery<Tuple> tq = dbf.getEntityManager().createQuery(sql, Tuple.class);
         tq.setParameter("tag", TagUtils.tagPatternToSqlPattern(KVMSystemTags.L2_BRIDGE_NAME.getTagFormat()));
         tq.setParameter("l3Uuids", l3Uuids);
         tq.setParameter("ttype", L2NetworkVO.class.getSimpleName());
+        // TODO: we will support vDPA dhcp in future
+        tq.setParameter("vSwitchType", L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK);
         List<Tuple> ts = tq.getResultList();
 
         Map<String, String> bridgeNames = new HashMap<>();

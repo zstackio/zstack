@@ -73,6 +73,10 @@ public class L2NetworkInventory implements Serializable {
     @TypeField
     private String type;
     /**
+     * @desc l2Network vSwitch Type
+     */
+    private String vSwitchType;
+    /**
      * @desc the time this resource gets created
      */
     private Timestamp createDate;
@@ -94,6 +98,7 @@ public class L2NetworkInventory implements Serializable {
         this.setUuid(vo.getUuid());
         this.setZoneUuid(vo.getZoneUuid());
         this.setType(vo.getType());
+        this.setvSwitchType(vo.getvSwitchType());
         this.setDescription(vo.getDescription());
         this.setName(vo.getName());
         this.setPhysicalInterface(vo.getPhysicalInterface());
@@ -163,6 +168,14 @@ public class L2NetworkInventory implements Serializable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getvSwitchType() {
+        return vSwitchType;
+    }
+
+    public void setvSwitchType(String vSwitchType) {
+        this.vSwitchType = vSwitchType;
     }
 
     public Timestamp getCreateDate() {
