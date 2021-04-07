@@ -2,7 +2,6 @@ package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.vm.VmExtraInfoGetter;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
@@ -175,9 +174,28 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         msg.setGuestOsType(guestOsTypes.get(0));
     }
 
+    private void fillArchitecture(APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg) {
+        if (msg.getArchitecture() != null) {
+            return;
+        }
+
+        List<String> vmUuids = SQL.New("select vmInstanceUuid from VolumeVO where uuid = " +
+                "(select volumeUuid from VolumeSnapshotVO where uuid = :snapshotUuid) " +
+                "and type = :volumeType")
+                .param("snapshotUuid", msg.getSnapshotUuid())
+                .param("volumeType", VolumeType.Root)
+                .list();
+        if (vmUuids.size() != 1) {
+            return;
+        }
+        String vmUuid = vmUuids.get(0);
+        msg.setArchitecture(VmExtraInfoGetter.New(vmUuid).getArchitecture());
+    }
+
     private void validate(APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg) {
         fillPlatform(msg);
         fillGuestOsType(msg);
+        fillArchitecture(msg);
     }
 
     @Transactional(readOnly = true)
