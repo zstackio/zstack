@@ -2297,6 +2297,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     callVmJustBeforeDeleteFromDbExtensionPoint();
                     dbf.removeCollection(self.getVmCdRoms(), VmCdRomVO.class);
                     dbf.remove(getSelf());
+                    dbf.eoCleanup(VmInstanceVO.class, self.getUuid());
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly || deletionPolicy == VmInstanceDeletionPolicy.KeepVolume) {
                     String accountUuid = acntMgr.getOwnerAccountUuidOfResource(inv.getUuid());
                     new SQLBatch() {
