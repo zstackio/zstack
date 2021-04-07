@@ -122,10 +122,11 @@ CREATE VIEW `zstack`.`VmInstanceVO` AS SELECT uuid, name, description, zoneUuid,
 
 ALTER TABLE `zstack`.`ImageEO` ADD COLUMN `virtio` boolean DEFAULT TRUE;
 UPDATE `zstack`.`ImageEO` SET virtio = FALSE, guestOsType = "Windows" WHERE platform="Windows";
-UPDATE `zstack`.`ImageEO` SET platform = "Windows", virtio = TRUE, guestOsType = "other" WHERE platform = "WindowsVirtio";
+UPDATE `zstack`.`ImageEO` SET platform = "Windows", virtio = TRUE, guestOsType = "Windows" WHERE platform = "WindowsVirtio";
 UPDATE `zstack`.`ImageEO` SET virtio = TRUE, guestOsType = "Linux" WHERE platform = "Linux";
-UPDATE `zstack`.`ImageEO` SET platform = "Other", virtio = TRUE, guestOsType = "other" WHERE platform = "Paravirtualization";
 UPDATE `zstack`.`ImageEO` SET virtio = FALSE, guestOsType = "other" WHERE platform = "Other";
+UPDATE `zstack`.`ImageEO` SET platform = "Other", virtio = TRUE, guestOsType = "other" WHERE platform = "Paravirtualization";
+
 DROP VIEW IF EXISTS `zstack`.`ImageVO`;
 CREATE VIEW `zstack`.`ImageVO` AS SELECT uuid, name, description, status, state, size, actualSize, md5Sum, platform, type, format, url, `system`, mediaType, guestOsType, architecture, virtio, createDate, lastOpDate FROM `zstack`.`ImageEO` WHERE deleted IS NULL;
 
