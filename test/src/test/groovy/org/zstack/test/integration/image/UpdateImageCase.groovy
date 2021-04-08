@@ -40,6 +40,7 @@ class UpdateImageCase extends SubCase{
             testAddImageBootMode()
             testSetImageBootMode()
             testUpdateImageBootMode()
+            testUpdateVRouterImage()
         }
     }
 
@@ -127,5 +128,43 @@ class UpdateImageCase extends SubCase{
         } as List<SystemTagInventory>
         assert tags.size() == 1
 
+    }
+
+    void testUpdateVRouterImage(){
+
+        def image4 = addImage {
+            name = "test-image4"
+            url = "http://my-site/vpc.qcow2"
+            backupStorageUuids = [bs.uuid]
+            format = ImageConstant.QCOW2_FORMAT_STRING
+            architecture = ImageArchitecture.aarch64.toString()
+            system = true
+            systemTags = ["applianceType::vrouter"]
+        } as ImageInventory
+
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, image4.uuid)
+                .like(SystemTagVO_.tag, "bootMode%")
+                .select(SystemTagVO_.tag)
+                .findValue() == "bootMode::UEFI"
+
+        updateImage {
+            uuid = image4.uuid
+            architecture = "x86_64"
+        }
+
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, image4.uuid)
+                .like(SystemTagVO_.tag, "bootMode%")
+                .select(SystemTagVO_.tag)
+                .findValue() == "bootMode::Legacy"
+
+        updateImage {
+            uuid = image4.uuid
+            architecture = "aarch64"
+        }
+
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, image4.uuid)
+                .like(SystemTagVO_.tag, "bootMode%")
+                .select(SystemTagVO_.tag)
+                .findValue() == "bootMode::UEFI"
     }
 }
