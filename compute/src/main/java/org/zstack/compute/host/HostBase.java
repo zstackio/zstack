@@ -565,7 +565,7 @@ public abstract class HostBase extends AbstractHost {
         ChangeHostStateMsg cmsg = new ChangeHostStateMsg();
         cmsg.setStateEvent(stateEvent.toString());
         cmsg.setUuid(msg.getUuid());
-        cmsg.setFromApiMsg(true);
+        cmsg.setJustChangeState(false);
         bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, cmsg.getUuid());
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
@@ -1194,7 +1194,7 @@ public abstract class HostBase extends AbstractHost {
     private void doHostStateChange(ChangeHostStateMsg msg, Completion completion) {
         HostStateEvent stateEvent = HostStateEvent.valueOf(msg.getStateEvent());
 
-        if (!msg.isFromApiMsg()) {
+        if (msg.isJustChangeState()) {
             if (self.getState() == HostState.Enabled || self.getState() == HostState.Disabled) {
                 changeState(stateEvent);
             }

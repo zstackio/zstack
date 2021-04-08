@@ -8,7 +8,7 @@ public class ChangeHostStateMsg extends NeedReplyMessage implements HostMessage 
     private boolean forceChange;
 
     // different behaviours for APIChangeHostStateMsg and ChangeHostStateMsg
-    private boolean fromApiMsg = false;
+    private boolean justChangeState = true;
 
     public ChangeHostStateMsg() {
     }
@@ -39,12 +39,12 @@ public class ChangeHostStateMsg extends NeedReplyMessage implements HostMessage 
         return getUuid();
     }
 
-    public boolean isFromApiMsg() {
-        return fromApiMsg;
+    public boolean isJustChangeState() {
+        return justChangeState;
     }
 
-    public void setFromApiMsg(boolean fromApiMsg) {
-        this.fromApiMsg = fromApiMsg;
+    public void setJustChangeState(boolean justChangeState) {
+        this.justChangeState = justChangeState;
     }
 
     public boolean isForceChange() {
