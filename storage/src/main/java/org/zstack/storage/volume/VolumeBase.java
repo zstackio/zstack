@@ -1121,6 +1121,7 @@ public class VolumeBase implements Volume {
                             String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
                             VolumeInventory volumeInventory = getSelfInventory();
                             dbf.remove(self);
+                            cleanupVolumeEO(self.getUuid());
                             new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, volumeInventory, accountUuid);
                         } else if (deletionPolicy == VolumeDeletionPolicy.Delay) {
                             self.setStatus(VolumeStatus.Deleted);
