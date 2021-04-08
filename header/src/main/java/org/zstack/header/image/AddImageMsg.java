@@ -18,6 +18,7 @@ public class AddImageMsg extends NeedReplyMessage {
     private String url;
     private String mediaType;
     private String guestOsType;
+    private boolean virtio;
     private boolean system;
     private String format;
     private String platform;
@@ -104,6 +105,14 @@ public class AddImageMsg extends NeedReplyMessage {
 
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
+    }
+
+    public boolean isVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
 
     public String getType() {
