@@ -22,10 +22,11 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.NormalIpRangeVO;
+import org.zstack.header.network.l3.NormalIpRangeVO_;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.service.AfterApplyFlatEipExtensionPoint;
 import org.zstack.header.network.service.NetworkServiceProviderType;
-import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
@@ -55,8 +56,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.core.Platform.*;
 
 /**
  * Created by xing5 on 2016/4/4.
@@ -136,17 +137,39 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             return;
         }
 
-        batchDeleteEips(eips, srcHostUuid, new NopeCompletion());
-        batchApplyEips(eips, inv.getHostUuid(), new Completion(null) {
+        batchDeleteEips(eips, srcHostUuid, new Completion(null) {
             @Override
             public void success() {
-                // pass
+                batchApplyEips(eips, inv.getHostUuid(), new Completion(null) {
+                    @Override
+                    public void success() {
+                        logger.warn(String.format("after migration, successfully applied EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s] after delete eip on src host[uuid:%s] succeeded",
+                                eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(), inv.getName(), inv.getHostUuid(), srcHostUuid));
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.warn(String.format("after migration, failed to apply EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s] after delete eip on src host[uuid:%s] succeeded, %s",
+                                eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(), inv.getName(), inv.getHostUuid(), srcHostUuid, errorCode));
+                    }
+                });
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("after migration, failed to apply EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s], %s",
-                        eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(), inv.getName(), inv.getHostUuid(), errorCode));
+                batchApplyEips(eips, inv.getHostUuid(), new Completion(null) {
+                    @Override
+                    public void success() {
+                        logger.warn(String.format("after migration, successfully applied EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s] after delete eip on src host[uuid:%s] failed",
+                                eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(), inv.getName(), inv.getHostUuid(), srcHostUuid));
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.warn(String.format("after migration, failed to apply EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s] after delete eip on src host[uuid:%s] failed, %s",
+                                eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(), inv.getName(), inv.getHostUuid(), srcHostUuid, errorCode));
+                    }
+                });
             }
         });
     }
