@@ -6,20 +6,15 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.ApplianceVmConstant;
 import org.zstack.appliancevm.ApplianceVmGlobalConfig;
 import org.zstack.appliancevm.ApplianceVmSpec;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.asyncbatch.While;
-import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -27,27 +22,22 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitRsp;
+import org.zstack.network.service.virtualrouter.*;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.DebugUtils;
-
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
-import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
-import org.zstack.utils.ssh.SshException;
 import org.zstack.utils.ssh.SshResult;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -186,10 +176,8 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                         struct.setVyosVersion(ret.getVyosVersion());
                                         struct.setZvrVersion(ret.getZvrVersion());
                                         new VirtualRouterMetadataOperator().updateVirtualRouterMetadata(struct);
+                                        errs.clear();
                                         wcompl.allDone();
-                                        for (ErrorCode e : errs) {
-                                            errs.remove(e);
-                                        }
                                     } else {
                                         debug();
                                         errs.add(operr("vyos init command failed, because:%s", ret.getError()));
