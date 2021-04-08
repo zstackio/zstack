@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetZWatchAlertHistogramAction extends AbstractAction {
+public class QueryEventRecordAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetZWatchAlertHistogramAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zwatch.api.GetZWatchAlertHistogramResult value;
+        public org.zstack.sdk.zwatch.api.QueryEventRecordResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class GetZWatchAlertHistogramAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String tableName;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long startTime;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long endTime;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,24L}, noTrim = false)
-    public java.lang.Integer intervalHours = 1;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List groupColumns;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class GetZWatchAlertHistogramAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zwatch.api.GetZWatchAlertHistogramResult value = res.getResult(org.zstack.sdk.zwatch.api.GetZWatchAlertHistogramResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zwatch.api.GetZWatchAlertHistogramResult() : value; 
+        org.zstack.sdk.zwatch.api.QueryEventRecordResult value = res.getResult(org.zstack.sdk.zwatch.api.QueryEventRecordResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.api.QueryEventRecordResult() : value; 
 
         return ret;
     }
@@ -97,7 +65,7 @@ public class GetZWatchAlertHistogramAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/zwatch/alert-histories/histogram";
+        info.path = "/zwatch/event-records";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
