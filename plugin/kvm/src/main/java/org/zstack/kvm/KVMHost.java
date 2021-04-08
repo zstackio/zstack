@@ -3556,7 +3556,7 @@ public class KVMHost extends HostBase implements Host {
                                         }
                                     }
                                 } catch (OperationFailureException e) {
-                                    if (e.getMessage().contains("404 Not Found")) {
+                                    if (e.getMessage().contains("404 Not Found") || e.getMessage().contains("Connection refused")) {
                                         trigger.next();
                                     } else {
                                         throw e;
