@@ -1681,6 +1681,13 @@ public class LoadBalancerBase {
                             )));
                 }
 
+                if (msg.getNbprocess() != null) {
+                    LoadBalancerSystemTags.NUMBER_OF_PROCESS.update(msg.getUuid(),
+                            LoadBalancerSystemTags.NUMBER_OF_PROCESS.instantiateTag(map(
+                                    e(LoadBalancerSystemTags.NUMBER_OF_PROCESS_TOKEN, msg.getNbprocess())
+                            )));
+                }
+
                 if (msg.getHealthCheckTarget() != null) {
                     String[] ts = getHeathCheckTarget(msg.getLoadBalancerListenerUuid());
                     LoadBalancerSystemTags.HEALTH_TARGET.update(msg.getUuid(),
