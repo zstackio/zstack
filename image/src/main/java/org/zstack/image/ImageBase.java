@@ -823,6 +823,13 @@ public class ImageBase implements Image {
             creator.recreate = true;
             creator.create();
         }
+
+        if (ImageArchitecture.x86_64.toString().equals(msg.getArchitecture()) && self.isSystem()) {
+            SystemTagCreator creator = ImageSystemTags.BOOT_MODE.newSystemTagCreator(msg.getUuid());
+            creator.setTagByTokens(Collections.singletonMap(ImageSystemTags.BOOT_MODE_TOKEN, ImageBootMode.Legacy.toString()));
+            creator.recreate = true;
+            creator.create();
+        }
     }
 
     private void handle(UpdateImageMsg msg) {
