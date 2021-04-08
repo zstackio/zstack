@@ -27,4 +27,10 @@ public class APIGetUploadImageJobDetailsMsg extends APISyncCallMessage {
     public void setImageId(String imageId) {
         this.imageId = imageId;
     }
+
+    public static APIGetUploadImageJobDetailsMsg __example__() {
+        APIGetUploadImageJobDetailsMsg msg = new APIGetUploadImageJobDetailsMsg();
+        msg.imageId = "d41d8cd98f00b204e9800998ecf8427e";
+        return msg;
+    }
 }

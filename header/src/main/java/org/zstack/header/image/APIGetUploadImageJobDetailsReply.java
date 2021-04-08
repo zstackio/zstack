@@ -1,9 +1,13 @@
 package org.zstack.header.image;
 
+import org.zstack.header.longjob.LongJob;
+import org.zstack.header.longjob.LongJobState;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
+import org.zstack.utils.data.SizeUnit;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -74,5 +78,17 @@ public class APIGetUploadImageJobDetailsReply extends APIReply {
         public void setOffset(long offset) {
             this.offset = offset;
         }
+    }
+
+    public static APIGetUploadImageJobDetailsReply __example__() {
+        APIGetUploadImageJobDetailsReply reply = new APIGetUploadImageJobDetailsReply();
+        JobDetails detail = new JobDetails();
+        detail.imageUuid = uuid();
+        detail.imageUploadUrl = "http://127.0.0.1:8001/imagestore/upload";
+        detail.longJobUuid = uuid();
+        detail.longJobState = LongJobState.Suspended.toString();
+        detail.offset = SizeUnit.MEGABYTE.toByte(16) * 27;
+        reply.existingJobDetails = Collections.singletonList(detail);
+        return reply;
     }
 }
