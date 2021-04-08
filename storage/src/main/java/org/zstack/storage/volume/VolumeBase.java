@@ -1696,19 +1696,19 @@ public class VolumeBase implements Volume {
                     " and ref.primaryStorageUuid = vol.primaryStorageUuid" +
                     (vmUuids == null ? "" : " and vm.uuid in (:vmUuids)") +
                     " and vm.clusterUuid = ref.clusterUuid" +
-                    " and vm.type = :vmType" +
+                    " and vm.type in (:vmTypes)" +
                     " and vm.state in (:vmStates)" +
                     " and vm.hypervisorType in (:hvTypes)" +
                     " group by vm.uuid")
                     .param("volUuid", self.getUuid())
-                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                    .param("vmTypes", Arrays.asList(VmInstanceConstant.USER_VM_TYPE, "baremetal2"))
                     .param("hvTypes", hvTypes);
         } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
             sql = SQL.New("select vm" +
                     " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, PrimaryStorageEO ps, PrimaryStorageCapacityVO capacity" +
                     " where "+ (vmUuids == null ? "" : " vm.uuid in (:vmUuids) and") +
                     " vm.state in (:vmStates)" +
-                    " and vm.type = :vmType" +
+                    " and vm.type in (:vmTypes)" +
                     " and vm.clusterUuid = ref.clusterUuid" +
                     " and capacity.uuid = ps.uuid" +
                     " and capacity.availableCapacity > :volumeSize" +
@@ -1716,7 +1716,7 @@ public class VolumeBase implements Volume {
                     " and ps.state in (:psState)" +
                     " group by vm.uuid")
                     .param("volumeSize", self.getSize())
-                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                    .param("vmTypes", Arrays.asList(VmInstanceConstant.USER_VM_TYPE, "baremetal2"))
                     .param("psState", PrimaryStorageState.Enabled);
         } else {
             DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
