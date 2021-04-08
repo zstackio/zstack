@@ -581,6 +581,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.metricpusher.MetricDataHttpReceiverInventory", "org.zstack.sdk.zwatch.metricpusher.MetricDataHttpReceiverInventory");
 			put("org.zstack.zwatch.metricpusher.MetricTemplateInventory", "org.zstack.sdk.zwatch.metricpusher.MetricTemplateInventory");
 			put("org.zstack.zwatch.metricpusher.ReceiverState", "org.zstack.sdk.zwatch.metricpusher.ReceiverState");
+			put("org.zstack.zwatch.migratedb.EventRecordsInventory", "org.zstack.sdk.zwatch.migratedb.EventRecordsInventory");
 			put("org.zstack.zwatch.monitorgroup.entity.EventRuleTemplateInventory", "org.zstack.sdk.zwatch.monitorgroup.entity.EventRuleTemplateInventory");
 			put("org.zstack.zwatch.monitorgroup.entity.MetricRuleTemplateInventory", "org.zstack.sdk.zwatch.monitorgroup.entity.MetricRuleTemplateInventory");
 			put("org.zstack.zwatch.monitorgroup.entity.MonitorGroupAlarmInventory", "org.zstack.sdk.zwatch.monitorgroup.entity.MonitorGroupAlarmInventory");
@@ -1175,6 +1176,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.metricpusher.MetricDataHttpReceiverInventory", "org.zstack.zwatch.metricpusher.MetricDataHttpReceiverInventory");
 			put("org.zstack.sdk.zwatch.metricpusher.MetricTemplateInventory", "org.zstack.zwatch.metricpusher.MetricTemplateInventory");
 			put("org.zstack.sdk.zwatch.metricpusher.ReceiverState", "org.zstack.zwatch.metricpusher.ReceiverState");
+			put("org.zstack.sdk.zwatch.migratedb.EventRecordsInventory", "org.zstack.zwatch.migratedb.EventRecordsInventory");
 			put("org.zstack.sdk.zwatch.monitorgroup.entity.EventRuleTemplateInventory", "org.zstack.zwatch.monitorgroup.entity.EventRuleTemplateInventory");
 			put("org.zstack.sdk.zwatch.monitorgroup.entity.MetricRuleTemplateInventory", "org.zstack.zwatch.monitorgroup.entity.MetricRuleTemplateInventory");
 			put("org.zstack.sdk.zwatch.monitorgroup.entity.MonitorGroupAlarmInventory", "org.zstack.zwatch.monitorgroup.entity.MonitorGroupAlarmInventory");
