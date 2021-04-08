@@ -1,21 +1,21 @@
 package org.zstack.header.vm
 
-import org.zstack.header.vm.APICreateVmInstanceFromVolumeEvent
+import org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotGroupEvent
 
 doc {
-    title "CreateVmInstanceFromVolume"
+    title "CreateVmInstanceFromVolumeSnapshotGroup"
 
     category "vmInstance"
 
-    desc """从云盘创建虚拟机"""
+    desc """从快照组创建云主机"""
 
     rest {
         request {
-			url "POST /v1/vm-instances/from/volume"
+			url "POST /v1/vm-instances/from/volume-snapshots/group/{volumeSnapshotGroupUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateVmInstanceFromVolumeMsg.class
+            clz APICreateVmInstanceFromVolumeSnapshotGroupMsg.class
 
             desc """"""
             
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
@@ -38,7 +38,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
@@ -48,7 +48,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
@@ -58,7 +58,7 @@ doc {
 					location "body"
 					type "Integer"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
@@ -68,7 +68,7 @@ doc {
 					location "body"
 					type "Long"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
@@ -78,7 +78,7 @@ doc {
 					location "body"
 					type "List"
 					optional false
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
@@ -88,28 +88,18 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					values ("UserVm","ApplianceVm")
 				}
 				column {
-					name "volumeUuid"
+					name "volumeSnapshotGroupUuid"
 					enclosedIn "params"
-					desc "云盘UUID"
-					location "body"
+					desc "快照组UUID"
+					location "url"
 					type "String"
 					optional false
-					since "3.10.0"
+					since "4.1.0"
 					
-				}
-				column {
-					name "platform"
-					enclosedIn "params"
-					desc "云盘系统平台"
-					location "body"
-					type "String"
-					optional true
-					since "3.10.0"
-					values ("Linux","Windows","Other","Paravirtualization","WindowsVirtio")
 				}
 				column {
 					name "zoneUuid"
@@ -118,7 +108,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
@@ -128,7 +118,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
@@ -138,17 +128,17 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
-					name "primaryStorageUuid"
+					name "primaryStorageUuidForRootVolume"
 					enclosedIn "params"
-					desc "主存储UUID"
+					desc "根盘的主存储UUID"
 					location "body"
 					type "String"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
@@ -158,17 +148,17 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
 					name "strategy"
 					enclosedIn "params"
-					desc "云主机创建策略"
+					desc "创建策略"
 					location "body"
 					type "String"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					values ("InstantStart","CreateStopped")
 				}
 				column {
@@ -178,7 +168,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
@@ -188,7 +178,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
@@ -198,7 +188,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 				column {
@@ -208,14 +198,14 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "3.10.0"
+					since "4.1.0"
 					
 				}
 			}
         }
 
         response {
-            clz APICreateVmInstanceFromVolumeEvent.class
+            clz APICreateVmInstanceFromVolumeSnapshotGroupEvent.class
         }
     }
 }
