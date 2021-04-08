@@ -36,11 +36,21 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         return KVMHostUtils.getNormalizedBridgeName(l2Uuid, "br_%s_" + vlan);
     }
 
+    private static String makeOvsBridgeName(String l2Uuid) {
+        return KVMHostUtils.getNormalizedBridgeName(l2Uuid, "br_%s");
+    }
+
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion, final String cmdPath) {
         final L2VlanNetworkInventory l2vlan = (L2VlanNetworkInventory) l2Network;
         final CreateVlanBridgeCmd cmd = new CreateVlanBridgeCmd();
         cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
-        cmd.setBridgeName(makeBridgeName(l2vlan.getUuid(), l2vlan.getVlan()));
+
+        if (l2Network.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+            cmd.setBridgeName(makeOvsBridgeName(l2vlan.getUuid()));
+        } else {
+            cmd.setBridgeName(makeBridgeName(l2vlan.getUuid(), l2vlan.getVlan()));
+        }
+
         cmd.setVlan(l2vlan.getVlan());
         cmd.setL2NetworkUuid(l2Network.getUuid());
         cmd.setDisableIptables(NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES);
@@ -177,6 +187,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 		to.setMetaData(String.valueOf(vlanId));
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         to.setType(nic.getType());
+        to.setVlanId(String.valueOf(vlanId));
 
 		return to;
 	}
