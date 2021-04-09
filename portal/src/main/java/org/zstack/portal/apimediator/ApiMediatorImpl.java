@@ -1,7 +1,6 @@
 package org.zstack.portal.apimediator;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -19,12 +18,14 @@ import org.zstack.header.message.*;
 import org.zstack.header.rest.RestAPIExtensionPoint;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
-import org.zstack.utils.VersionComparator;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Query;
-import java.util.*;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
@@ -126,6 +127,8 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
                     handle((APIGetVersionMsg) msg);
                 } else if (msg instanceof APIGetCurrentTimeMsg) {
                     handle((APIGetCurrentTimeMsg) msg);
+                } else if (msg instanceof APIGetPlatformTimeZoneMsg) {
+                    handle((APIGetPlatformTimeZoneMsg) msg);
                 } else if (msg instanceof APIMessage) {
                     dispatchMessage((APIMessage) msg);
                 } else {
@@ -139,6 +142,14 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
                 return null;
             }
         });
+    }
+
+    private void handle(APIGetPlatformTimeZoneMsg msg) {
+        APIGetPlatformTimeZoneReply reply = new APIGetPlatformTimeZoneReply();
+        ZonedDateTime time = ZonedDateTime.now();
+        reply.setOffset(time.getOffset().getId());
+        reply.setTimezone(time.getZone().getId());
+        bus.reply(msg, reply);
     }
 
     private void handle(APIGetVersionMsg msg) {
