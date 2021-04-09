@@ -12,11 +12,14 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.retry.Retry;
+import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -147,6 +150,47 @@ public class VirtualRouter extends ApplianceVmBase {
         }
     }
 
+    void doPing(String vrUuid, ReturnValueCompletion<PingVirtualRouterVmReply> completion) {
+        PingCmd cmd = new PingCmd();
+        cmd.setUuid(vrUuid);
+        restf.asyncJsonPost(buildUrl(vr.getManagementNic().getIp(), VirtualRouterConstant.VR_PING), cmd, new JsonAsyncRESTCallback<PingRsp>(completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                completion.fail(err);
+            }
+
+            @Override
+            public void success(PingRsp ret) {
+                PingVirtualRouterVmReply reply = new PingVirtualRouterVmReply();
+                reply.setDoReconnect(true);
+                if (!ret.isSuccess()) {
+                    logger.warn(String.format("failed to ping the virtual router vm[uuid:%s], %s. We will reconnect it soon", self.getUuid(), ret.getError()));
+                    reply.setConnected(false);
+                } else {
+                    boolean connected = self.getUuid().equals(ret.getUuid());
+                    if (!connected) {
+                        logger.warn(String.format("a signature lost on the virtual router vm[uuid:%s] changed, it's probably caused by the agent restart. We will issue a reconnect soon", self.getUuid()));
+                    } else {
+                        connected = ApplianceVmStatus.Connected == getSelf().getStatus();
+                    }
+                    reply.setConnected(connected);
+                    reply.setHaStatus(ret.getHaStatus());
+                    if ((ret.getHealthy() != null) && (!ret.getHealthy()) && (ret.getHealthDetail() != null)) {
+                        fireServiceUnhealthyCanonicalEvent(inerr("virtual router %s unhealthy, detail %s", getSelf().getUuid(), ret.getHealthDetail()));
+                    } else {
+                        fireServicehealthyCanonicalEvent();
+                    }
+                }
+                completion.success(reply);
+            }
+
+            @Override
+            public Class<PingRsp> getReturnClass() {
+                return PingRsp.class;
+            }
+        }, TimeUnit.SECONDS, (long)ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class));
+    }
+
     private void handle(final PingVirtualRouterVmMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -165,48 +209,46 @@ public class VirtualRouter extends ApplianceVmBase {
                     return;
                 }
 
-                PingCmd cmd = new PingCmd();
-                cmd.setUuid(self.getUuid());
-                restf.asyncJsonPost(buildUrl(vr.getManagementNic().getIp(), VirtualRouterConstant.VR_PING), cmd, new JsonAsyncRESTCallback<PingRsp>(msg, chain) {
-                    @Override
-                    public void fail(ErrorCode err) {
-                        reply.setDoReconnect(true);
-                        reply.setConnected(false);
-                        logger.warn(String.format("failed to ping the virtual router vm[uuid:%s], %s. We will reconnect it soon", self.getUuid(), reply.getError()));
-                        bus.reply(msg, reply);
-                        chain.next();
-                    }
-
-                    @Override
-                    public void success(PingRsp ret) {
-                        reply.setDoReconnect(true);
-                        if (!ret.isSuccess()) {
-                            logger.warn(String.format("failed to ping the virtual router vm[uuid:%s], %s. We will reconnect it soon", self.getUuid(), ret.getError()));
-                            reply.setConnected(false);
-                        } else {
-                            boolean connected = self.getUuid().equals(ret.getUuid());
-                            if (!connected) {
-                                logger.warn(String.format("a signature lost on the virtual router vm[uuid:%s] changed, it's probably caused by the agent restart. We will issue a reconnect soon", self.getUuid()));
-                            } else {
-                                connected = ApplianceVmStatus.Connected == getSelf().getStatus();
-                            }
-                            reply.setConnected(connected);
-                            reply.setHaStatus(ret.getHaStatus());
-                            if ((ret.getHealthy() != null) && (!ret.getHealthy()) && (ret.getHealthDetail() != null)) {
-                                fireServiceUnhealthyCanonicalEvent(inerr("virtual router %s unhealthy, detail %s", getSelf().getUuid(), ret.getHealthDetail()));
-                            } else {
-                                fireServicehealthyCanonicalEvent();
-                            }
+                /* retry 3 times */
+                List<Integer> steps = new ArrayList<>();
+                for (int i = 0; i < 3; i++) {
+                    steps.add(i);
+                }
+                List<PingVirtualRouterVmReply> replies = new ArrayList<>();
+                new While<>(steps).each((s, wcompl) -> {
+                    doPing(self.getUuid(), new ReturnValueCompletion<PingVirtualRouterVmReply>(wcompl) {
+                        @Override
+                        public void success(PingVirtualRouterVmReply returnValue) {
+                            wcompl.allDone();
+                            replies.removeAll(replies);
+                            replies.add(returnValue);
                         }
-                        bus.reply(msg, reply);
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.warn(String.format("failed to ping the virtual router vm[uuid:%s], %s. We will try again", self.getUuid(), reply.getError()));
+                            PingVirtualRouterVmReply reply1 = new PingVirtualRouterVmReply();
+                            reply1.setDoReconnect(true);
+                            reply1.setConnected(false);
+                            replies.add(reply1);
+                            /* wait 1 second and try again */
+                            new Retry<Boolean>() {
+                                @Override
+                                @RetryCondition(times = 1, interval = 1)
+                                protected Boolean call() {
+                                    return false;
+                                }
+                            }.run();
+                            wcompl.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(chain) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        bus.reply(msg, replies.get(0));
                         chain.next();
                     }
-
-                    @Override
-                    public Class<PingRsp> getReturnClass() {
-                        return PingRsp.class;
-                    }
-                }, TimeUnit.SECONDS, (long)ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class));
+                });
             }
 
             @Override
