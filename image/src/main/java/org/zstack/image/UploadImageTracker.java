@@ -209,7 +209,7 @@ public class UploadImageTracker {
                     return true;
                 }
 
-                if (overMaxIdleTime(reply.getLastOpTime())) {
+                if (overMaxIdleTime(reply.getLastOpTime()) && reply.isSupportSuspend()) {
                     markFailure(err(ImageErrors.UPLOAD_IMAGE_INTERRUPTED, reply.getError(),
                             "uploading has been inactive more than %d sec", maxIdleSecond));
                     return true;
