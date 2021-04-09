@@ -28,6 +28,7 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
 
     private Set<String> notSupportCancelJobType = new HashSet<>();
     private Set<String> notSupportResumeJobType = new HashSet<>();
+    private Set<String> notSupportCleanJobType = new HashSet<>();
 
     @Override
     public LongJob getLongJob(String jobName) {
@@ -74,6 +75,11 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
         return !notSupportResumeJobType.contains(jobName);
     }
 
+    @Override
+    public boolean supportClean(String jobName) {
+        return !notSupportCleanJobType.contains(jobName);
+    }
+
     private void checkBehaviorSupported(String jobName, LongJob job) {
         for (Method method : job.getClass().getMethods()) {
             if (method.getName().equals("cancel") && method.isDefault()) {
@@ -83,6 +89,11 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
             if (method.getName().equals("resume") && method.isDefault()) {
                 notSupportResumeJobType.add(jobName);
             }
+
+            if (method.getName().equals("clean") && method.isDefault()) {
+                notSupportCleanJobType.add(jobName);
+            }
+
         }
     }
 

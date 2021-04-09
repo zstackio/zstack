@@ -5,6 +5,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -100,8 +101,8 @@ public class UploadImageTracker {
     }
 
     void trackUpload(String name, String imageUuid, String bsUuid, String hostname) {
-        final int maxNumOfFailure = 3;
-        final int maxIdleSecond = 30;
+        final int maxNumOfFailure = CoreGlobalProperty.UNIT_TEST_ON ? 1 : 3;
+        final int maxIdleSecond = CoreGlobalProperty.UNIT_TEST_ON ? 1 : 30;
 
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             private long numError = 0;

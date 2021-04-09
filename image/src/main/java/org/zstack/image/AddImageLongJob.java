@@ -10,6 +10,8 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.*;
@@ -212,6 +214,18 @@ public class AddImageLongJob implements LongJob {
                 } else {
                     completion.fail(reply.getError());
                 }
+            }
+        });
+    }
+
+    @Override
+    public void clean(LongJobVO job, NoErrorCompletion completion) {
+        AddImageMsg amsg = JSONObjectUtil.toObject(job.getJobData(), AddImageMsg.class);
+        ImageDeletionMsg dmsg = buildDeletionMsg(amsg);
+        bus.send(dmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                completion.done();
             }
         });
     }
