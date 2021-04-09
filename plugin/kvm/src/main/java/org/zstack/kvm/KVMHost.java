@@ -92,6 +92,7 @@ import static org.zstack.kvm.KVMHostFactory.allGuestOsCategory;
 import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.StringDSL.ln;
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
     private static final ZTester tester = Utils.getTester();
@@ -167,6 +168,7 @@ public class KVMHost extends HostBase implements Host {
     private String registerPrimaryVmHeartbeatPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
+    private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
 
     public KVMHost(KVMHostVO self, KVMHostContext context) {
         super(self);
@@ -3173,6 +3175,26 @@ public class KVMHost extends HostBase implements Host {
     }
 
     @Override
+    protected void deleteTakeOverFlag(Completion completion) {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            completion.success();
+            return;
+        }
+
+        SshShell sshShell = new SshShell();
+        sshShell.setHostname(getSelf().getManagementIp());
+        sshShell.setUsername(getSelf().getUsername());
+        sshShell.setPassword(getSelf().getPassword());
+        sshShell.setPort(getSelf().getPort());
+        SshResult ret = sshShell.runCommand(String.format("rm -rf %s", hostTakeOverFlagPath));
+        if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+            completion.fail(operr(ret.getExitErrorMessage()));
+            return;
+        }
+        completion.success();
+    }
+
+    @Override
     protected int getVmMigrateQuantity() {
         return KVMGlobalConfig.VM_MIGRATION_QUANTITY.value(Integer.class);
     }
@@ -3254,6 +3276,22 @@ public class KVMHost extends HostBase implements Host {
                     ErrorCodeList errorCodeList = (ErrorCodeList) data.get(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR);
                     completion.fail(operr("host can not access any primary storage, %s", errorCodeList != null && StringUtils.isNotEmpty(errorCodeList.getReadableDetails()) ? errorCodeList.getReadableDetails() : "please check network"));
                 } else {
+                    if (CoreGlobalProperty.UNIT_TEST_ON) {
+                        completion.success();
+                        return;
+                    }
+
+                    SshShell sshShell = new SshShell();
+                    sshShell.setHostname(getSelf().getManagementIp());
+                    sshShell.setUsername(getSelf().getUsername());
+                    sshShell.setPassword(getSelf().getPassword());
+                    sshShell.setPort(getSelf().getPort());
+                    SshResult ret = sshShell.runCommand(String.format("echo %s > %s", self.getUuid(), hostTakeOverFlagPath));
+
+                    if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+                        completion.fail(operr(ret.getExitErrorMessage()));
+                        return;
+                    }
                     completion.success();
                 }
             }
@@ -3508,6 +3546,64 @@ public class KVMHost extends HostBase implements Host {
                             }
 
                             trigger.next();
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "check-Host-is-taken-over";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            if (!info.isNewAdded() || CoreGlobalProperty.UNIT_TEST_ON) {
+                                trigger.next();
+                                return;
+                            }
+                            SshShell sshShell = new SshShell();
+                            sshShell.setHostname(getSelf().getManagementIp());
+                            sshShell.setUsername(getSelf().getUsername());
+                            sshShell.setPassword(getSelf().getPassword());
+                            sshShell.setPort(getSelf().getPort());
+                            String takeOverScript = ln(
+                                    "#!/bin/sh",
+                                    "file=''",
+                                    "time=''",
+                                    "if [ -f {filepath} ]; then",
+                                    "file=$(cat {filepath})",
+                                    "time=$(($(date +%s) - $(date +%s -r {filepath})))",
+                                    "fi",
+                                    "echo \"$time $file\"",
+                                    "exit 0"
+                            ).formatByMap(map(
+                                    e("filepath", hostTakeOverFlagPath)
+                            ));
+                            SshResult ret = sshShell.runScript(takeOverScript);
+
+                            if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+                                trigger.fail(operr("unable to Check whether the host is taken over,  because %s", ret.getExitErrorMessage()));
+                                return;
+                            }
+
+                            String result = ret.getStdout().trim();
+                            logger.debug(String.format("result is [%s]", result));
+                            if (result == null || result.isEmpty()) {
+                                trigger.next();
+                                return;
+                            }
+                            String[] results = result.split(" ");
+                            logger.debug(String.format("results is [%s:%s]", results[0], results[1]));
+                            if (Integer.parseInt(results[0]) < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
+                                trigger.fail(operr("the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%s] has not exceeded host ping interval[%d]",
+                                        self.getManagementIp(), results[1], results[0], HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)));
+                                return;
+                            }
+
+                            HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.uuid, results[1]).find();
+                            if (lastHostInv == null) {
+                                trigger.next();
+                            } else {
+                                trigger.fail(operr("the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
+                                        self.getManagementIp(), lastHostInv.getUuid()));
+                            }
                         }
                     });
 
