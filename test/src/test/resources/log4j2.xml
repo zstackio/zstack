@@ -169,6 +169,8 @@
 
         <Logger name="org.apache.tomcat" level="DEBUG" />
 
+        <Logger name="org.zstack.testlib.util.Retry" level="INFO" />
+
         <Root level="WARN" additivity="false">
             <AppenderRef ref="Rewrite"/>
         </Root>

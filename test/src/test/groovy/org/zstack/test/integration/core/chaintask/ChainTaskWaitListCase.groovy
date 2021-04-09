@@ -122,6 +122,7 @@ class ChainTaskWaitListCase extends SubCase {
         //def latches = [new LatchTask("task1"), new LatchTask("task2"), new LatchTask("task3"), new LatchTask("task4")]
 
         latches.each {
+            long start = System.currentTimeMillis();
             def lat = it
             thdf.chainSubmit(new ChainTask(null) {
                 @Override
@@ -156,6 +157,8 @@ class ChainTaskWaitListCase extends SubCase {
                 }
             })
             sleep 4
+            long end = System.currentTimeMillis();
+            logger.info(String.format("thdf.chainSubmit cost %s", end - start))
         }
 
         sleep 500
