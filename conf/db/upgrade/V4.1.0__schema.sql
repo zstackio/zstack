@@ -51,3 +51,8 @@ CREATE TABLE IF NOT EXISTS `GuestOsCategoryVO` (
 
 INSERT IGNORE INTO SystemTagVO (`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`, `createDate`, `lastOpDate`)
 SELECT REPLACE(UUID(),'-',''), t.uuid, 'VmInstanceVO', 0, 'System', 'driver::virtio', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() FROM VmInstanceVO t WHERE t.platform IN ('Paravirtualization', 'WindowsVirtio', 'Linux');
+UPDATE `zstack`.`VmInstanceVO` SET guestOsType = "Windows" WHERE platform="Windows";
+UPDATE `zstack`.`VmInstanceVO` SET platform = "Windows", guestOsType = "Windows" WHERE platform = "WindowsVirtio";
+UPDATE `zstack`.`VmInstanceVO` SET guestOsType = "Linux" WHERE platform = "Linux";
+UPDATE `zstack`.`VmInstanceVO` SET guestOsType = "other" WHERE platform = "Other";
+UPDATE `zstack`.`VmInstanceVO` SET platform = "Other", guestOsType = "other" WHERE platform = "Paravirtualization";
