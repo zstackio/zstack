@@ -24,9 +24,7 @@ import org.zstack.core.timeout.ApiTimeoutExtensionPoint;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Constants;
-import org.zstack.header.core.AsyncBackup;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -320,6 +318,12 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         job.cancel(vo, new ReturnValueCompletion<Boolean>(completion) {
             @Override
             public void success(Boolean cancelled) {
+                boolean needClean = !cancelled && originState != LongJobState.Running && longJobFactory.supportClean(vo.getJobName());
+                if (needClean) {
+                    doCleanJob(vo, completion);
+                    return;
+                }
+
                 if (cancelled || originState != LongJobState.Running) {
                     changeState(uuid, LongJobStateEvent.canceled);
                     logger.info(String.format("longjob [uuid:%s, name:%s] has been canceled", vo.getUuid(), vo.getName()));
@@ -411,7 +415,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 .findValue();
 
         if (longJobFactory.supportResume(jobName)) {
-            completion.success(doResumeJob(uuid, null));
+            completion.success(doResumeJob(uuid, new NopeCompletion()));
         } else {
             completion.fail(err(LongJobErrors.NOT_SUPPORTED, "not supported"));
         }
@@ -504,6 +508,25 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             @Override
             public String getName() {
                 return getSyncSignature();
+            }
+        });
+    }
+
+    @Deferred
+    private void doCleanJob(LongJobVO vo, Completion completion) {
+        LongJob job = longJobFactory.getLongJob(vo.getJobName());
+
+        Runnable cleanup = ThreadContextUtils.saveThreadContext();
+        Defer.defer(cleanup);
+        ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
+        ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
+
+        logger.info(String.format("start to clean longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
+        job.clean(vo, new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                changeState(vo.getUuid(), LongJobStateEvent.fail);
+                completion.success();
             }
         });
     }
@@ -746,15 +769,21 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         }
 
         if (operation == LongJobOperation.Start) {
-            doStartJob(vo.getUuid(), null);
+            doStartJob(vo.getUuid(), new NopeCompletion());
         } else if (operation == LongJobOperation.Resume) {
             if (longJobFactory.supportResume(vo.getJobName())) {
-                doResumeJob(vo.getUuid(), null);
+                doResumeJob(vo.getUuid(), new NopeCompletion());
+            } else if (longJobFactory.supportClean(vo.getJobName())) {
+                doCleanJob(vo, new NopeCompletion());
             } else {
-                LongJobUtils.changeState(vo.getUuid(), LongJobStateEvent.fail);
+                changeState(vo.getUuid(), LongJobStateEvent.fail);
             }
         } else if (operation == LongJobOperation.Cancel) {
-            LongJobUtils.changeState(vo.getUuid(), LongJobStateEvent.canceled);
+            if (longJobFactory.supportClean(vo.getJobName())) {
+                doCleanJob(vo, new NopeCompletion());
+            } else {
+                changeState(vo.getUuid(), LongJobStateEvent.canceled);
+            }
         }
     }
 
