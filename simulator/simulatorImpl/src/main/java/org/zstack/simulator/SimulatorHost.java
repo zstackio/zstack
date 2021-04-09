@@ -94,6 +94,12 @@ class SimulatorHost extends HostBase {
     }
 
     @Override
+    protected void deleteTakeOverFlag(Completion completion) {
+        logger.debug("takeOverFlag deleted successfully");
+        completion.success();
+    }
+
+    @Override
     protected int getVmMigrateQuantity() {
         return 1;
     }
