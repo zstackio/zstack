@@ -33,6 +33,7 @@ import java.util.List;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.config.schema.GuestOsCategory.getDefaultGuestOsTypeByPlatform;
 
 /**
  * Created with IntelliJ IDEA.
@@ -168,6 +169,14 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         }
 
         ImageMessageFiller.fillDefault(msg);
+
+        if (msg.getPlatform().equals(ImagePlatform.Paravirtualization.toString())) {
+            msg.setPlatform(ImagePlatform.Other.toString());
+        }
+
+        if (msg.getPlatform().equals(ImagePlatform.WindowsVirtio.toString())) {
+            msg.setPlatform(ImagePlatform.Windows.toString());
+        }
 
         if (msg.getBackupStorageUuids() != null) {
             SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);

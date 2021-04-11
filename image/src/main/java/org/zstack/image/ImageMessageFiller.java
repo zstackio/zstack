@@ -24,7 +24,7 @@ public class ImageMessageFiller {
             msg.setPlatform(ImagePlatform.Linux.toString());
         }
 
-        if (msg.getArchitecture() == null) {
+        if (msg.getArchitecture() == null && !ImageConstant.ImageMediaType.DataVolumeTemplate.toString().equals(msg.getMediaType())) {
             msg.setArchitecture(CoreGlobalProperty.UNIT_TEST_ON ?
                     ImageArchitecture.x86_64.toString() : ImageArchitecture.defaultArch());
         }
