@@ -12,6 +12,7 @@ public class GetImageDownloadProgressReply extends MessageReply {
     private String installPath;
     private String format;
     private long lastOpTime;
+    private boolean supportSuspend;
 
     public boolean isCompleted() {
         return completed;
@@ -75,5 +76,13 @@ public class GetImageDownloadProgressReply extends MessageReply {
 
     public void setDownloadSize(long downloadSize) {
         this.downloadSize = downloadSize;
+    }
+
+    public boolean isSupportSuspend() {
+        return supportSuspend;
+    }
+
+    public void setSupportSuspend(boolean supportSuspend) {
+        this.supportSuspend = supportSuspend;
     }
 }
