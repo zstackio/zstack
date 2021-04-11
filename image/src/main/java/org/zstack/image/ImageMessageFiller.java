@@ -24,6 +24,14 @@ public class ImageMessageFiller {
             msg.setPlatform(ImagePlatform.Linux.toString());
         }
 
+        if (msg.getPlatform().equals(ImagePlatform.Paravirtualization.toString())) {
+            msg.setPlatform(ImagePlatform.Other.toString());
+        }
+
+        if (msg.getPlatform().equals(ImagePlatform.WindowsVirtio.toString())) {
+            msg.setPlatform(ImagePlatform.Windows.toString());
+        }
+
         if (msg.getArchitecture() == null) {
             msg.setArchitecture(CoreGlobalProperty.UNIT_TEST_ON ?
                     ImageArchitecture.x86_64.toString() : ImageArchitecture.defaultArch());

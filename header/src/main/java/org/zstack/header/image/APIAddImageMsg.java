@@ -46,7 +46,7 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddI
     private List<String> backupStorageUuids;
     private String type;
     @APIParam(required = false)
-    private boolean virtio;
+    private boolean virtio = true;
 
     public String getFormat() {
         return format;

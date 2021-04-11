@@ -29,10 +29,12 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.config.schema.GuestOsCategory.getDefaultGuestOsTypeByPlatform;
 
 /**
  * Created with IntelliJ IDEA.
@@ -167,6 +169,21 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         }
 
         ImageMessageFiller.fillDefault(msg);
+
+        if (msg.getArchitecture() == null && !ImageMediaType.DataVolumeTemplate.toString().equals(msg.getMediaType())) {
+            msg.setArchitecture(CoreGlobalProperty.UNIT_TEST_ON ?
+                    ImageArchitecture.x86_64.toString() : ImageArchitecture.defaultArch());
+        }
+
+        if (ImageArchitecture.aarch64.toString().equals(msg.getArchitecture())) {
+            if (msg.getSystemTags() != null) {
+                msg.getSystemTags().removeIf(tag -> ImageSystemTags.BOOT_MODE.isMatch(tag));
+            }
+
+            msg.addSystemTag(ImageSystemTags.BOOT_MODE.instantiateTag(Collections.singletonMap(
+                    ImageSystemTags.BOOT_MODE_TOKEN, ImageBootMode.UEFI.toString()
+            )));
+        }
 
         if (msg.getBackupStorageUuids() != null) {
             SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);

@@ -60,6 +60,7 @@ import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -215,15 +216,17 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         String format = t.get(2, String.class);
 
         t = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volumeUuid)
-                .select(VolumeVO_.size, VolumeVO_.primaryStorageUuid)
+                .select(VolumeVO_.size, VolumeVO_.primaryStorageUuid, VolumeVO_.vmInstanceUuid)
                 .findTuple();
         long size = t.get(0, Long.class);
         String volumePsUuid = t.get(1, String.class);
+        String vmInstanceUuid = t.get(2, String.class);
 
         ImageVO vo = createTemporaryImageInDb(msg, imgvo -> {
             imgvo.setSize(size);
             imgvo.setFormat(format);
             imgvo.setUrl(String.format("volumeSnapshot://%s", msg.getSnapshotUuid()));
+            imgvo.setVirtio(VmSystemTags.VIRTIO.hasTag(vmInstanceUuid));
         });
 
         CreateImageCacheFromVolumeSnapshotMsg cmsg = new CreateImageCacheFromVolumeSnapshotMsg();

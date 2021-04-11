@@ -1,5 +1,7 @@
 package org.zstack.core.config.schema;
 
+import org.zstack.header.image.ImagePlatform;
+
 import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +23,18 @@ public class GuestOsCategory {
 
     public static String getDefaultOsRelease() {
         return "other";
+    }
+
+    public static String getDefaultGuestOsTypeByPlatform(String platform) {
+        if (platform.equals(ImagePlatform.Windows.toString())) {
+            return ImagePlatform.Windows.toString();
+        } else if (platform.equals(ImagePlatform.Linux.toString())) {
+            return ImagePlatform.Linux.toString();
+        } else if (platform.equals(ImagePlatform.Other.toString())) {
+            return platform.toLowerCase();
+        } else {
+            return null;
+        }
     }
 
     @XmlAccessorType(XmlAccessType.FIELD)
