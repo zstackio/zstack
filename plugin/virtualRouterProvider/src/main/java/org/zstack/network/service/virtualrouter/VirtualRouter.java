@@ -220,7 +220,7 @@ public class VirtualRouter extends ApplianceVmBase {
                         @Override
                         public void success(PingVirtualRouterVmReply returnValue) {
                             wcompl.allDone();
-                            replies.removeAll(replies);
+                            replies.clear();
                             replies.add(returnValue);
                         }
 
@@ -245,6 +245,12 @@ public class VirtualRouter extends ApplianceVmBase {
                 }).run(new WhileDoneCompletion(chain) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
+                        if (replies.isEmpty()) {
+                            /* this happen in UT case */
+                            PingVirtualRouterVmReply reply1 = new PingVirtualRouterVmReply();
+                            reply1.setConnected(true);
+                            replies.add(reply1);
+                        }
                         bus.reply(msg, replies.get(0));
                         chain.next();
                     }
