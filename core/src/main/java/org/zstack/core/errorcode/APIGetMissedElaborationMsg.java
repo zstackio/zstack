@@ -13,8 +13,8 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.GET,
         responseClass = APIGetMissedElaborationReply.class
 )
+@Deprecated
 public class APIGetMissedElaborationMsg extends APISyncCallMessage {
-    // at least repeat times in ElaborationVO
     @APIParam(required = false, numberRange = {1, Long.MAX_VALUE})
     private Long repeats;
     @APIParam(required = false)

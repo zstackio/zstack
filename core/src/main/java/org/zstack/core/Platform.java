@@ -13,19 +13,19 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.ComponentLoaderImpl;
 import org.zstack.core.config.GlobalConfigFacade;
-import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DatabaseGlobalProperty;
-import org.zstack.core.db.Q;
 import org.zstack.core.encrypt.EncryptRSA;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.propertyvalidator.ValidatorTool;
 import org.zstack.core.search.SearchGlobalProperty;
 import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
-import org.zstack.core.propertyvalidator.ValidatorTool;
 import org.zstack.header.Component;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.core.encrypt.ENCRYPT;
-import org.zstack.header.errorcode.*;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.vo.BaseResource;
@@ -882,37 +882,21 @@ public class Platform {
         }
     }
 
-    private synchronized static void insertLogError(String content, boolean matched) {
-        if (!CoreGlobalProperty.RECORD_TO_DB_ELABORATION) {
-            return;
-        }
-        DatabaseFacade dbf = getComponentLoader().getComponent(DatabaseFacade.class);
-        String md5Sum = StringDSL.getMd5Sum(content);
-        ElaborationVO mvo = Q.New(ElaborationVO.class).eq(ElaborationVO_.md5sum, md5Sum).find();
-        if (mvo != null) {
-            mvo.setMatched(matched);
-            mvo.setRepeats(mvo.getRepeats() + 1);
-            dbf.updateAndRefresh(mvo);
-        } else {
-            mvo = new ElaborationVO();
-            mvo.setRepeats(1L);
-            mvo.setMatched(matched);
-            mvo.setMd5sum(md5Sum);
-            mvo.setErrorInfo(content);
-            dbf.persistAndRefresh(mvo);
-        }
-    }
-
     private static ErrorCodeElaboration elaborate(String details, Object...args) {
-        if (String.format(details, args).length() > StringSimilarity.maxElaborationRegex) {
-            return null;
-        }
-        ErrorCodeElaboration elaboration = StringSimilarity.findSimilar(details, args);
-        if (elaboration == null) {
-            return null;
-        }
-        if (StringSimilarity.matched(elaboration)) {
-            return elaboration;
+        try {
+            if (String.format(details, args).length() > StringSimilarity.maxElaborationRegex) {
+                return null;
+            }
+            ErrorCodeElaboration elaboration = StringSimilarity.findSimilar(details, args);
+            if (elaboration == null) {
+                return null;
+            }
+            if (StringSimilarity.matched(elaboration)) {
+                return elaboration;
+            }
+        } catch (Throwable e) {
+            logger.warn("exception happened when found elaboration");
+            logger.warn(e.getMessage());
         }
         return null;
     }
@@ -967,22 +951,27 @@ public class Platform {
 
                 if (result.getElaboration() == null && cause == null) {
                     long start = System.currentTimeMillis();
+                    /**
+                     * try details first, then descriptions
+                     */
                     ErrorCodeElaboration ela = elaborate(fmt, args);
                     if (ela == null && allowCode.contains(errCode)) {
                         ela = elaborate(result.getDescription());
                     }
                     if (ela != null) {
-                        StringSimilarity.addErrors(fmt, ela);
-                        insertLogError(fmt, true);
-
-                        result.setCost((System.currentTimeMillis() - start) + "ms");
-                        result.setElaboration(StringSimilarity.formatElaboration(ela, args));
-                        result.setMessages(new ErrorCodeElaboration(ela.getCode(), ela.getMessage_en(), ela.getMessage_cn(),
-                                ela.getDistance(), ela.getMethod(), args));
+                        if (args != null && args.length == 1 && StringSimilarity.isRegexMatched(ela.getRegex(), String.valueOf(args[0]))) {
+                            result.setMessages(new ErrorCodeElaboration(ela));
+                            result.setElaboration(StringSimilarity.formatElaboration(String.valueOf(args[0])));
+                            StringSimilarity.addErrors(fmt, ela);
+                        } else {
+                            result.setMessages(new ErrorCodeElaboration(ela, args));
+                            result.setElaboration(StringSimilarity.formatElaboration(ela.getMessage_cn(), args));
+                            StringSimilarity.addErrors(fmt, ela);
+                        }
                     } else {
                         StringSimilarity.addMissed(fmt);
-                        insertLogError(fmt, false);
                     }
+                    result.setCost((System.currentTimeMillis() - start) + "ms");
                 }
             } catch (Throwable e) {
                 logger.warn("exception happened when found elaboration");

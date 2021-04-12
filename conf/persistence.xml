@@ -156,7 +156,6 @@
         <class>org.zstack.header.identity.role.SystemRoleVO</class>
         <class>org.zstack.header.identity.role.RolePolicyStatementVO</class>
         <class>org.zstack.header.core.captcha.CaptchaVO</class>
-        <class>org.zstack.header.errorcode.ElaborationVO</class>
         <class>org.zstack.header.vm.cdrom.VmCdRomVO</class>
         <class>org.zstack.header.core.trash.InstallPathRecycleVO</class>
         <class>org.zstack.header.vm.VmPriorityConfigVO</class>

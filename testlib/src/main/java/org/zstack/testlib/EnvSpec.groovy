@@ -17,11 +17,10 @@ import org.zstack.core.asyncbatch.While
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.DatabaseFacadeImpl
 import org.zstack.core.db.SQL
-import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.core.WhileDoneCompletion
 import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.core.WhileCompletion
-import org.zstack.header.errorcode.ElaborationVO
+
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.SessionVO
 import org.zstack.header.image.ImageDeletionPolicyManager
@@ -646,7 +645,7 @@ class EnvSpec extends ApiHelper implements Node  {
                               "GarbageCollectorVO",
                               "TaskProgressVO", "TaskStepVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO",
-                              "CaptchaVO", "LoginAttemptsVO", "ElaborationVO", "SchedulerJobHistoryVO",
+                              "CaptchaVO", "LoginAttemptsVO", "SchedulerJobHistoryVO",
                               "HistoricalPasswordVO", "BuildAppExportHistoryVO", "InstallPathRecycleVO", 
                               "PortMirrorSessionSequenceNumberVO", "LicenseHistoryVO"]) {
                 // those tables will continue having entries during running a test suite
@@ -794,7 +793,6 @@ class EnvSpec extends ApiHelper implements Node  {
 
             SQL.New(TaskProgressVO.class).hardDelete()
             SQL.New(SessionVO.class).hardDelete()
-            SQL.New(ElaborationVO.class).hardDelete()
 
             if (GLOBAL_DELETE_HOOK != null) {
                 GLOBAL_DELETE_HOOK()

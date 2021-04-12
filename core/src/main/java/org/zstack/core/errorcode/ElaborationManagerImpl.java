@@ -11,9 +11,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -23,7 +20,8 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
-import org.zstack.header.errorcode.*;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.Message;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.TimeUtils;
@@ -36,9 +34,7 @@ import org.zstack.utils.string.StringSimilarity;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -308,48 +304,9 @@ public class ElaborationManagerImpl extends AbstractService {
         });
     }
 
-    private List<ElaborationVO> getMissedElatorations(Long repeats, String from) {
-        Long times = repeats != null ? repeats : 1L;
-        if (from == null) {
-            return Q.New(ElaborationVO.class).eq(ElaborationVO_.matched, false).gte(ElaborationVO_.repeats, times).list();
-        } else {
-            if (TimeUtils.isValidTimestampFormat(from)) {
-                long start = TimeUtils.parseFormatStringToTimeStamp(from);
-                return Q.New(ElaborationVO.class).eq(ElaborationVO_.matched, false).gte(ElaborationVO_.repeats, times).
-                        gte(ElaborationVO_.lastOpDate, new Timestamp(start)).list();
-            } else if (NumberUtils.isNumber(from)) {
-                try {
-                    return Q.New(ElaborationVO.class).eq(ElaborationVO_.matched, false).gte(ElaborationVO_.repeats, times).
-                            gte(ElaborationVO_.lastOpDate, new Timestamp(Long.parseLong(from))).list();
-                } catch (NumberFormatException e) {
-                    throw new OperationFailureException(argerr("%s is not a Long value Number", from));
-                }
-            } else {
-                throw new OperationFailureException(argerr("arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'"));
-            }
-        }
-    }
-
     private void handle(final APIGetMissedElaborationMsg msg) {
         APIGetMissedElaborationReply reply = new APIGetMissedElaborationReply();
-        List<ElaborationVO> vos = getMissedElatorations(msg.getRepeats(), msg.getStartTime());
-
-        vos.forEach(vo -> {
-            ErrorCodeElaboration e = StringSimilarity.findSimilar(vo.getErrorInfo());
-            if (!StringSimilarity.matched(e)) {
-                reply.getInventories().add(ElaborationInventory.valueOf(vo));
-            }
-        });
         bus.reply(msg, reply);
-    }
-
-    private void eliminateErrors() {
-        String time = ElaborateGlobalConfig.ELIMILATE_TIME.value();
-        long count = Q.New(ElaborationVO.class).eq(ElaborationVO_.matched, false).lt(ElaborationVO_.lastOpDate, new Timestamp(new Date().getTime() - TimeUtils.parseTimeInMillis(time))).count();
-        if (count > 0) {
-            logger.debug(String.format("clean [%s] records which are not matched error code in db", count));
-            UpdateQuery.New(ElaborationVO.class).eq(ElaborationVO_.matched, false).lt(ElaborationVO_.lastOpDate, new Timestamp(new Date().getTime() - TimeUtils.parseTimeInMillis(time))).delete();
-        }
     }
 
     private void refreshElaboration(final Completion completion) {
@@ -380,17 +337,6 @@ public class ElaborationManagerImpl extends AbstractService {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 StringSimilarity.refreshErrorTemplates();
-                eliminateErrors();
-                List<ElaborationVO> vos = Q.New(ElaborationVO.class).gte(ElaborationVO_.repeats, 1).eq(ElaborationVO_.matched, false).orderBy(ElaborationVO_.lastOpDate, SimpleQuery.Od.DESC).list();
-                if (!vos.isEmpty()) {
-                    List<String> messages = StringSimilarity.getElaborations().stream().map(ErrorCodeElaboration::getMessage_cn).collect(Collectors.toList());
-                    for (ElaborationVO vo: vos) {
-                        if (messages.contains(vo.getErrorInfo())) {
-                            vo.setMatched(true);
-                            dbf.updateAndRefresh(vo);
-                        }
-                    }
-                }
                 StringSimilarity.resetCachedErrors();
                 trigger.next();
             }

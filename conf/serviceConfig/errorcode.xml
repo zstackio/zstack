@@ -12,9 +12,6 @@
         <name>org.zstack.core.errorcode.APIGetElaborationsMsg</name>
     </message>
     <message>
-        <name>org.zstack.core.errorcode.APIGetMissedElaborationMsg</name>
-    </message>
-    <message>
         <name>org.zstack.core.errorcode.APICheckElaborationContentMsg</name>
     </message>
 

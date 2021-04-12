@@ -88,3 +88,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseHistoryVO`
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 CREATE INDEX idxLicenseHistoryVOUploadDate ON LicenseHistoryVO (uploadDate);
+drop table ElaborationVO;
+drop table ResourceUsageVO;
