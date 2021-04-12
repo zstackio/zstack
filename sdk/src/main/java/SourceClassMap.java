@@ -173,7 +173,6 @@ public class SourceClassMap {
 			put("org.zstack.header.core.webhooks.WebhookInventory", "org.zstack.sdk.WebhookInventory");
 			put("org.zstack.header.datacenter.DataCenterInventory", "org.zstack.sdk.DataCenterInventory");
 			put("org.zstack.header.datacenter.DataCenterProperty", "org.zstack.sdk.DataCenterProperty");
-			put("org.zstack.header.errorcode.ElaborationInventory", "org.zstack.sdk.ElaborationInventory");
 			put("org.zstack.header.errorcode.ErrorCode", "org.zstack.sdk.ErrorCode");
 			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
 			put("org.zstack.header.flowMeter.FlowCollectorInventory", "org.zstack.sdk.FlowCollectorInventory");
@@ -710,7 +709,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ElaborationCategory", "org.zstack.core.errorcode.ElaborationCategory");
 			put("org.zstack.sdk.ElaborationCheckResult", "org.zstack.core.errorcode.ElaborationCheckResult");
 			put("org.zstack.sdk.ElaborationContent", "org.zstack.core.errorcode.ElaborationContent");
-			put("org.zstack.sdk.ElaborationInventory", "org.zstack.header.errorcode.ElaborationInventory");
 			put("org.zstack.sdk.EmailMediaInventory", "org.zstack.monitoring.media.EmailMediaInventory");
 			put("org.zstack.sdk.EmailTriggerActionInventory", "org.zstack.monitoring.actions.EmailTriggerActionInventory");
 			put("org.zstack.sdk.ErrorCode", "org.zstack.header.errorcode.ErrorCode");

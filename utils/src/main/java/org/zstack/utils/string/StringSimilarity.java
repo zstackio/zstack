@@ -273,12 +273,7 @@ public class StringSimilarity {
             err = findSimilarDistance(sub);
         }
 
-        if (err != null) {
-            logSearchSpend(sub, start, true);
-            err.setFormatSrcError(sub);
-        } else {
-            logSearchSpend(sub, start, false);
-        }
+        logSearchSpend(sub, start, err != null);
 
         return err;
     }
@@ -326,9 +321,9 @@ public class StringSimilarity {
         return result;
     }
 
-    public static String formatElaboration(ErrorCodeElaboration elaboration, Object...args) {
+    public static String formatElaboration(String message_cn, Object...args) {
         StringBuilder buffer = new StringBuilder();
-        buffer.append(String.format("错误信息: %s\n", elaboration.getMessage_cn()));
+        buffer.append(String.format("错误信息: %s\n", message_cn));
 
         buffer.deleteCharAt(buffer.lastIndexOf("\n"));
         return String.format(buffer.toString(), args);
@@ -338,7 +333,7 @@ public class StringSimilarity {
         return new ReMatcher(retrees, sub).find();
     }
 
-    private static boolean isRegexMatched(String regex, String sub) {
+    public static boolean isRegexMatched(String regex, String sub) {
         if (patterns.get(regex) == null) {
             return false;
         }

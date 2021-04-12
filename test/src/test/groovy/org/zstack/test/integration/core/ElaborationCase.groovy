@@ -1,13 +1,9 @@
 package org.zstack.test.integration.core
 
 import org.zstack.core.Platform
-import org.zstack.core.db.Q
-import org.zstack.header.errorcode.ElaborationVO
-import org.zstack.header.errorcode.ElaborationVO_
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.errorcode.ErrorCodeList
 import org.zstack.header.identity.IdentityErrors
-import org.zstack.sdk.ElaborationInventory
 import org.zstack.sdk.GetElaborationCategoriesResult
 import org.zstack.sdk.GetElaborationsResult
 import org.zstack.testlib.EnvSpec
@@ -40,11 +36,11 @@ class ElaborationCase extends SubCase {
         env.create {
             testGetElaborationCategory()
             testGetElaboration()
-            testGetMissedElaboration()
             testRefreshElaboration()
             testElaborationWithLongName()
             testElaborationWithUnknownFormatConversion()
             testErrorList()
+            testNestedError()
         }
     }
 
@@ -65,15 +61,9 @@ class ElaborationCase extends SubCase {
 
         err = operr("test for missed error") as ErrorCode
         assert err.elaboration == null
-        assert Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "test for missed error").eq(ElaborationVO_.matched, false).exists
-
-        err = operr("test for missed error") as ErrorCode
-        assert err.elaboration == null
-        assert Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "test for missed error").eq(ElaborationVO_.matched, false).exists
 
         err = Platform.err(IdentityErrors.INVALID_SESSION, "xxxxxxxxx") as ErrorCode
         assert err.elaboration != null
-        assert Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "xxxxxxxxx").eq(ElaborationVO_.matched, true).exists
     }
 
     void testGetElaborationCategory() {
@@ -117,38 +107,6 @@ class ElaborationCase extends SubCase {
         assert result.contents.size() == 0
     }
 
-    void testGetMissedElaboration() {
-        def result = getMissedElaboration {
-            startTime = "1999-01-01 10:00:00"
-        } as List<ElaborationInventory>
-        assert result.size() > 0
-
-        result = getMissedElaboration {
-            startTime = "1543593600000"   // 2018-12-01 00:00:00
-        } as List<ElaborationInventory>
-        assert result.size() > 0
-
-        result = getMissedElaboration {
-            startTime = "4099737600000"   // 2099-12-01 00:00:00
-        } as List<ElaborationInventory>
-        assert result.size() == 0
-
-        result = getMissedElaboration {
-            startTime = "2049-01-01 10:00:00"
-        } as List<ElaborationInventory>
-        assert result.size() == 0
-
-        getMissedElaboration {
-            startTime = "2019-01-01 300:00:00"
-        }
-
-        expect(AssertionError.class) {
-            getMissedElaboration {
-                startTime = "123456122222222222222222222"
-            }
-        }
-    }
-
     void testRefreshElaboration() {
         def result = getElaborationCategories {
             sessionId = adminSession()
@@ -169,7 +127,6 @@ class ElaborationCase extends SubCase {
         def err = operr("%!s(int=0) %!s(bytes.readOp=0)", "nowadays") as ErrorCode
         assert err.elaboration == null
         assert err.details == "%!s(int=0) %!s(bytes.readOp=0)"
-        assert !Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "%!s(int=0) %!s(bytes.readOp=0)").exists
     }
 
     void testErrorList() {
@@ -182,5 +139,23 @@ class ElaborationCase extends SubCase {
 
         def err = operr(errlist, "unable to commit backup storage because: %s", err1.details)
         assert err.messages.message_cn == "物理机 [host-1] 正处于 [Maintenance] 状态，当前状态不允许进行该操作。,物理机 [host-2] 正处于 [Maintenance] 状态，当前状态不允许进行该操作。"
+    }
+
+    void testNestedError() {
+        // VM.1004
+        def str = "no Connected hosts found in the [%d] candidate hosts"
+        def err = operr(str, 3)
+        assert err.elaboration != null
+
+        def errEla = err.elaboration
+        def errCn = err.messages.message_cn
+
+        def err1 = operr(err, "test %s err", String.format(str, 3))
+        assert err1.elaboration == errEla
+        assert err1.messages.message_cn == errCn
+
+        def err2 = operr("test %s err", String.format(str, 3))
+        assert err2.messages.message_cn != null
+        assert err2.elaboration == "错误信息: no Connected hosts found in the [3] candidate hosts"
     }
 }

@@ -17,17 +17,17 @@ public class ErrorCodeElaboration {
     public ErrorCodeElaboration() {
     }
 
-    public ErrorCodeElaboration(String code, String en, String cn, double distance, ElaborationSearchMethod method, Object...args) {
+    public ErrorCodeElaboration(ErrorCodeElaboration other, Object...args) {
         if (args != null) {
-            this.message_en = String.format(en, args);
-            this.message_cn = String.format(cn, args);
+            this.message_en = String.format(other.message_en, args);
+            this.message_cn = String.format(other.message_cn, args);
         } else {
-            this.message_en = en;
-            this.message_cn = cn;
+            this.message_en = other.message_en;
+            this.message_cn = other.message_cn;
         }
-        this.distance = distance;
-        this.method = method;
-        this.code = code;
+        this.distance = other.distance;
+        this.method = other.method;
+        this.code = other.code;
     }
 
     public ErrorCodeElaboration(ErrorCodeElaboration other) {
