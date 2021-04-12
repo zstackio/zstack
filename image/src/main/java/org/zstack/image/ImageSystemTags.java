@@ -1,6 +1,7 @@
 package org.zstack.image;
 
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTag;
@@ -50,4 +51,6 @@ public class ImageSystemTags {
     public static String APPLIANCE_IMAGE_TYPE_TOKEN = "applianceType";
     public static PatternedSystemTag APPLIANCE_IMAGE_TYPE = new PatternedSystemTag(String.format("applianceType::{%s}", APPLIANCE_IMAGE_TYPE_TOKEN), ImageVO.class);
 
+    public static String IMAGE_ID ="imageId";
+    public static PatternedSystemTag UPLOAD_IMAGE_INFO = new PatternedSystemTag(String.format("uploadImage::{%s}", IMAGE_ID), LongJobVO.class);
 }

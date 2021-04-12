@@ -1,6 +1,7 @@
 package org.zstack.image;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +41,7 @@ import org.zstack.header.identity.*;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
+import org.zstack.header.longjob.*;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTFacade;
@@ -50,6 +52,8 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
@@ -57,11 +61,13 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
+import org.zstack.longjob.LongJobUtils;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.zql.ZQL;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -107,8 +113,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     private ResourceDestinationMaker destMaker;
     @Autowired
     private ImageDeletionPolicyManager deletionPolicyMgr;
-    @Autowired
-    private EventFacade evtf;
     @Autowired
     protected RESTFacade restf;
     @Autowired
@@ -431,6 +435,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     private void handleApiMessage(Message msg) {
         if (msg instanceof APIAddImageMsg) {
             handle((APIAddImageMsg) msg);
+        } else if (msg instanceof APIGetUploadImageJobDetailsMsg) {
+            handle((APIGetUploadImageJobDetailsMsg) msg);
         } else if (msg instanceof APICreateRootVolumeTemplateFromRootVolumeMsg) {
             handle((APICreateRootVolumeTemplateFromRootVolumeMsg) msg);
         } else if (msg instanceof APICreateRootVolumeTemplateFromVolumeSnapshotMsg) {
@@ -625,6 +631,66 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 ImageSystemTags.TEMPORARY_IMAGE.getTagFormat(),
                 ImageVO.class.getSimpleName());
         return image;
+    }
+
+    private void handle(final APIGetUploadImageJobDetailsMsg msg) {
+        APIGetUploadImageJobDetailsReply reply = new APIGetUploadImageJobDetailsReply();
+
+        String tag = ImageSystemTags.UPLOAD_IMAGE_INFO.instantiateTag(Collections.singletonMap(ImageSystemTags.IMAGE_ID, msg.getImageId()));
+        List<String> longjobUuids = SQL.New("select job.uuid from SystemTagVO tag, LongJobVO job" +
+                " where tag.tag = :tag" +
+                " and tag.resourceUuid = job.uuid" +
+                " and job.state not in :finalState", String.class)
+                .param("tag", tag)
+                .param("finalState", LongJobState.finalStates)
+                .list();
+
+        if (longjobUuids.isEmpty()) {
+            bus.reply(msg, reply);
+            return;
+        }
+
+        List jobs = ZQL.fromString(String.format("query longjob where uuid in ('%s')", String.join("','", longjobUuids)))
+                .getSingleResultWithSession(msg.getSession()).inventories;
+        for (Object j : jobs) {
+            LongJobInventory job = (LongJobInventory) j;
+            APIGetUploadImageJobDetailsReply.JobDetails detail = new APIGetUploadImageJobDetailsReply.JobDetails();
+            detail.setLongJobUuid(job.getUuid());
+            detail.setLongJobState(job.getState().toString());
+            detail.setImageUuid(job.getTargetResourceUuid());
+
+            ImageBackupStorageRefVO ref = Q.New(ImageBackupStorageRefVO.class)
+                    .eq(ImageBackupStorageRefVO_.imageUuid, job.getTargetResourceUuid())
+                    .limit(1)
+                    .find();
+
+            if (ref == null) {
+                continue;
+            }
+
+            GetImageDownloadProgressMsg gmsg = new GetImageDownloadProgressMsg();
+            gmsg.setBackupStorageUuid(ref.getBackupStorageUuid());
+            gmsg.setImageUuid(ref.getImageUuid());
+            try {
+                String hostname = new URI(ref.getInstallPath()).getHost();
+                gmsg.setHostname(hostname);
+            } catch (URISyntaxException e) {
+                continue;
+            }
+
+            bus.makeLocalServiceId(gmsg, BackupStorageConstant.SERVICE_ID);
+            final MessageReply r = bus.call(gmsg);
+            if (!r.isSuccess()) {
+                continue;
+            }
+
+            GetImageDownloadProgressReply gr = r.castReply();
+            detail.setOffset(gr.getDownloadSize());
+            detail.setImageUploadUrl(ref.getInstallPath());
+            reply.addExistingJobDetails(detail);
+        }
+
+        bus.reply(msg, reply);
     }
 
     private void passThrough(ImageMessage msg) {
@@ -1158,164 +1224,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         dbf.persistCollection(refs);
     }
 
-    private void doReportProgress(String apiId, String taskName, long progress) {
-        ThreadContext.put(THREAD_CONTEXT_API, apiId);
-        ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
-        reportProgress(String.valueOf(progress));
-    }
-
-    private void trackUpload(String name, String imageUuid, String bsUuid, String hostname) {
-        final int maxNumOfFailure = 3;
-        final int maxIdleSecond = 30;
-
-        thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
-            private long numError = 0;
-            private int numTicks = 0;
-
-            private void markCompletion(final GetImageDownloadProgressReply dr) {
-                ImageVO ivo = new SQLBatchWithReturn<ImageVO>() {
-                    @Override
-                    protected ImageVO scripts() {
-                        ImageVO vo = findByUuid(imageUuid, ImageVO.class);
-                        if (StringUtils.isNotEmpty(dr.getFormat())) {
-                            vo.setFormat(dr.getFormat());
-                        }
-                        if (vo.getFormat().equals(ImageConstant.ISO_FORMAT_STRING)
-                                && ImageMediaType.RootVolumeTemplate.equals(vo.getMediaType())) {
-                            vo.setMediaType(ImageMediaType.ISO);
-                        }
-                        if (ImageConstant.QCOW2_FORMAT_STRING.equals(vo.getFormat())
-                                && ImageMediaType.ISO.equals(vo.getMediaType())) {
-                            vo.setMediaType(ImageMediaType.RootVolumeTemplate);
-                        }
-                        vo.setStatus(ImageStatus.Ready);
-                        vo.setSize(dr.getSize());
-                        vo.setActualSize(dr.getActualSize());
-                        merge(vo);
-                        sql(ImageBackupStorageRefVO.class)
-                                .eq(ImageBackupStorageRefVO_.backupStorageUuid, bsUuid)
-                                .eq(ImageBackupStorageRefVO_.imageUuid, imageUuid)
-                                .set(ImageBackupStorageRefVO_.status, ImageStatus.Ready)
-                                .set(ImageBackupStorageRefVO_.installPath, dr.getInstallPath())
-                                .update();
-                        return vo;
-                    }
-                }.execute();
-
-                logger.debug(String.format("added image [name: %s, uuid: %s]", name, imageUuid));
-
-                final ImageInventory einv = ImageInventory.valueOf(dbf.reload(ivo));
-                fireEvent(einv, null);
-
-                extEmitter.afterAddImage(einv);
-            }
-
-            private void markFailure(ErrorCode reason) {
-                logger.error(String.format("upload image [name: %s, uuid: %s] failed: %s",
-                        name, imageUuid, reason.toString()));
-
-                fireEvent(null, reason);
-
-                // Note, the handler of ImageDeletionMsg will deal with storage capacity.
-                ImageDeletionMsg msg = new ImageDeletionMsg();
-                msg.setImageUuid(imageUuid);
-                msg.setBackupStorageUuids(Collections.singletonList(bsUuid));
-                msg.setDeletionPolicy(ImageDeletionPolicy.Direct.toString());
-                msg.setForceDelete(true);
-                bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, imageUuid);
-                bus.send(msg);
-            }
-
-            private void fireEvent(ImageInventory img, ErrorCode error) {
-                ImageCanonicalEvents.ImageTrackData data = new ImageCanonicalEvents.ImageTrackData();
-                data.setUuid(imageUuid);
-                data.setError(error);
-                data.setInventory(img);
-                evtf.fire(ImageCanonicalEvents.IMAGE_TRACK_RESULT_PATH, data);
-            }
-
-            @Override
-            public boolean run() {
-                final ImageVO ivo = dbf.findByUuid(imageUuid, ImageVO.class);
-                if (ivo == null) {
-                    // If image VO not existed, stop tracking.
-                    return true;
-                }
-
-                numTicks += 1;
-                if (ivo.getActualSize() == 0 && numTicks * getInterval() >= maxIdleSecond) {
-                    markFailure(operr("upload session expired"));
-                    return true;
-                }
-
-                final GetImageDownloadProgressMsg dmsg = new GetImageDownloadProgressMsg();
-                dmsg.setBackupStorageUuid(bsUuid);
-                dmsg.setImageUuid(imageUuid);
-                dmsg.setHostname(hostname);
-                bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
-
-                final MessageReply reply = bus.call(dmsg);
-                if (reply.isSuccess()) {
-                    // reset the error counter
-                    numError = 0;
-
-                    final GetImageDownloadProgressReply dr = reply.castReply();
-
-                    if (dr.isCompleted()) {
-                        if (!dr.isSuccess()) {
-                            markFailure(dr.getError());
-                        } else {
-                            doReportProgress(imageUuid, "adding to image store", 100);
-                            markCompletion(dr);
-                        }
-                        return true;
-                    }
-
-                    doReportProgress(imageUuid, "uploading image", dr.getProgress());
-                    if (ivo.getActualSize() == 0 && dr.getActualSize() != 0) {
-                        ivo.setActualSize(dr.getActualSize());
-                        dbf.updateAndRefresh(ivo);
-
-                        AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
-                        amsg.setBackupStorageUuid(bsUuid);
-                        amsg.setSize(dr.getActualSize());
-                        bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
-                        MessageReply areply = bus.call(amsg);
-                        if (!areply.isSuccess()) {
-                            markFailure(areply.getError());
-                            return true;
-                        }
-                    }
-
-                    return false;
-                }
-
-                numError++;
-                if (numError <= maxNumOfFailure) {
-                    return false;
-                }
-
-                markFailure(reply.getError());
-                return true;
-            }
-
-            @Override
-            public TimeUnit getTimeUnit() {
-                return TimeUnit.SECONDS;
-            }
-
-            @Override
-            public long getInterval() {
-                return 3;
-            }
-
-            @Override
-            public String getName() {
-                return String.format("tracking upload image [name: %s, uuid: %s]", name, imageUuid);
-            }
-        });
-    }
-
     @Deferred
     private void handleAddImageMsg(AddImageLongJobData msgData, Message evt) {
         class InnerEvent extends Message {
@@ -1428,30 +1336,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
         new LoopAsyncBatch<DownloadImageMsg>(msgData.getNeedReplyMessage()) {
             AtomicBoolean success = new AtomicBoolean(false);
-
-            class TrackContext {
-                String name;
-                String imageUuid;
-                String bsUuid;
-                String hostname;
-            }
-
-            List<TrackContext> ctxs = new ArrayList<>();
-
-            private void addTrackTask(String name, String imageUuid, String bsUuid, String installPath) throws URISyntaxException {
-                TrackContext ctx = new TrackContext();
-                ctx.name = name;
-                ctx.imageUuid = imageUuid;
-                ctx.bsUuid = bsUuid;
-                ctx.hostname = new URI(installPath).getHost();
-                ctxs.add(ctx);
-            }
-
-            private void runTrackTask() {
-                for (TrackContext ctx : ctxs) {
-                    trackUpload(ctx.name, ctx.imageUuid, ctx.bsUuid, ctx.hostname);
-                }
-            }
+            UploadImageTracker tracker = new UploadImageTracker();
 
             @Override
             protected Collection<DownloadImageMsg> collect() {
@@ -1475,16 +1360,13 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     dbf.remove(ref);
                                 } else {
                                     DownloadImageReply re = reply.castReply();
+                                    ref.setInstallPath(re.getInstallPath());
+
                                     if (isUpload(msgData.getUrl())) {
-                                        try {
-                                            addTrackTask(ivo.getName(), ivo.getUuid(), ref.getBackupStorageUuid(), re.getInstallPath());
-                                        } catch (URISyntaxException e) {
-                                            throw new OperationFailureException(operr(e.getMessage()));
-                                        }
+                                        tracker.addTrackTask(ivo, ref);
                                     } else {
                                         ref.setStatus(ImageStatus.Ready);
                                     }
-                                    ref.setInstallPath(re.getInstallPath());
 
                                     if (dbf.reload(ref) == null) {
                                         logger.debug(String.format("image[uuid: %s] has been deleted", ref.getImageUuid()));
@@ -1566,7 +1448,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     event.error = err;
                 }
 
-                runTrackTask();
+                tracker.runTrackTask();
                 event.reply(evt);
             }
         }.start();

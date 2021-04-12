@@ -9,6 +9,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.*;
@@ -103,6 +106,8 @@ public class AddImageLongJob implements LongJob {
                 private void handleResult(ImageCanonicalEvents.ImageTrackData data) {
                     if (data.isSuccess()) {
                         success(data.getInventory());
+                    } else if (data.getError().isError(ImageErrors.UPLOAD_IMAGE_INTERRUPTED)){
+                        fail(LongJobUtils.interruptedErr(job.getUuid(), data.getError()));
                     } else {
                         fail(data.getError());
                     }
@@ -117,6 +122,9 @@ public class AddImageLongJob implements LongJob {
         if (msg.getResourceUuid() == null) {
             msg.setResourceUuid(Platform.getUuid());
             job.setJobData(JSONObjectUtil.toJsonString(msg));
+            job.setTargetResourceUuid(msg.getResourceUuid());
+            dbf.updateAndRefresh(job);
+        } else {
             job.setTargetResourceUuid(msg.getResourceUuid());
             dbf.updateAndRefresh(job);
         }
@@ -158,6 +166,15 @@ public class AddImageLongJob implements LongJob {
     @Override
     public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
         AddImageMsg msg = JSONObjectUtil.toObject(job.getJobData(), AddImageMsg.class);
+        ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getResourceUuid()).find();
+
+        if (msg.needTrack() && image != null && !image.getBackupStorageRefs().isEmpty()) {
+            APIAddImageEvent evt = new APIAddImageEvent(job.getApiId());
+            new AddImageCompletion(evt, job, completion).startTrack();
+            new UploadImageTracker().trackUpload(image, image.getBackupStorageRefs().iterator().next());
+            return;
+        }
+
         ImageDeletionMsg dmsg = buildDeletionMsg(msg);
         bus.send(dmsg, new CloudBusCallBack(null) {
             @Override
@@ -202,6 +219,18 @@ public class AddImageLongJob implements LongJob {
     }
 
     @Override
+    public void clean(LongJobVO job, NoErrorCompletion completion) {
+        AddImageMsg amsg = JSONObjectUtil.toObject(job.getJobData(), AddImageMsg.class);
+        ImageDeletionMsg dmsg = buildDeletionMsg(amsg);
+        bus.send(dmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                completion.done();
+            }
+        });
+    }
+
+    @Override
     public Class getAuditType() {
         return ImageVO.class;
     }
@@ -220,4 +249,6 @@ public class AddImageLongJob implements LongJob {
         bus.makeTargetServiceIdByResourceUuid(dmsg, ImageConstant.SERVICE_ID, dmsg.getImageUuid());
         return dmsg;
     }
+
+
 }
