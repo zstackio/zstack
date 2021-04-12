@@ -13,10 +13,12 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.header.volume.VolumeDeletionStruct;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.storage.snapshot.group.VolumeSnapshotGroup;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -58,10 +60,12 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
                 sinvs.forEach(s -> dbf.eoCleanup(VolumeSnapshotVO.class, s.getUuid()));
             } else {
                 dbf.eoCleanup(VolumeSnapshotVO.class);
+                dbf.eoCleanup(VolumeSnapshotGroupVO.class);
             }
         } catch (NullPointerException e) {
             logger.warn(e.getLocalizedMessage());
             dbf.eoCleanup(VolumeSnapshotVO.class);
+            dbf.eoCleanup(VolumeSnapshotGroupVO.class);
         } finally {
             completion.success();
         }

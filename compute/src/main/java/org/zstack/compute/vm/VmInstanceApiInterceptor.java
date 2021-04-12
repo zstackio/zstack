@@ -85,6 +85,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateVmInstanceMsg) msg);
         } else if (msg instanceof APICreateVmInstanceFromVolumeMsg) {
             validate((APICreateVmInstanceFromVolumeMsg) msg);
+        } else if (msg instanceof APICreateVmInstanceFromVolumeSnapshotMsg) {
+            validate((APICreateVmInstanceFromVolumeSnapshotMsg) msg);
+        } else if (msg instanceof APICreateVmInstanceFromVolumeSnapshotGroupMsg) {
+            validate((APICreateVmInstanceFromVolumeSnapshotGroupMsg) msg);
         } else if (msg instanceof APIGetVmAttachableDataVolumeMsg) {
             validate((APIGetVmAttachableDataVolumeMsg) msg);
         } else if (msg instanceof APIDetachL3NetworkFromVmMsg) {
@@ -854,6 +858,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (volume.getStatus() != VolumeStatus.Ready || volume.getState() != VolumeState.Enabled) {
             throw new ApiMessageInterceptionException(operr("volume[uuid:%s] could not satisfy conditions[state:Enabled status:Ready]", msg.getVolumeUuid()));
         }
+    }
+
+    private void validate(APICreateVmInstanceFromVolumeSnapshotMsg msg) {
+        validate((NewVmInstanceMessage2) msg);
+    }
+
+    private void validate(APICreateVmInstanceFromVolumeSnapshotGroupMsg msg) {
+        validate((NewVmInstanceMessage2) msg);
     }
 
     private void validate(NewVmInstanceMessage2 msg) {

@@ -1955,6 +1955,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             chain.then(new ShareFlow() {
                 String cachePath;
                 String snapshotPath;
+                long actualSize = image.getInventory().getActualSize();
 
                 @Override
                 public void setup() {
@@ -2016,6 +2017,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(completion) {
                                     @Override
                                     public void success(CpRsp rsp) {
+                                        if (rsp.actualSize != null) {
+                                            actualSize = rsp.actualSize;
+                                        }
                                         cachePath = rsp.installPath;
                                         trigger.next();
                                     }
@@ -2153,6 +2157,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             cvo.setPrimaryStorageUuid(self.getUuid());
                             cvo.setMediaType(ImageMediaType.valueOf(image.getInventory().getMediaType()));
                             cvo.setState(ImageCacheState.ready);
+                            cvo.setSize(actualSize);
                             cvo = dbf.persistAndRefresh(cvo);
 
                             completion.success(cvo);
@@ -2496,6 +2501,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         cache.download(new ReturnValueCompletion<ImageCacheVO>(trigger) {
                             @Override
                             public void success(ImageCacheVO cache) {
+                                reply.setActualSize(cache.getSize());
                                 reportProgress(stage.getEnd().toString());
                                 trigger.next();
                             }
@@ -2526,6 +2532,29 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
             }
         }).start();
+    }
+
+    @Override
+    protected void handle(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
+
+        DownloadToCache cache = new DownloadToCache();
+        cache.image = new ImageSpec();
+        cache.image.setInventory(msg.getImageInventory());
+        cache.snapshot = msg.getVolumeSnapshot();
+        cache.download(new ReturnValueCompletion<ImageCacheVO>(msg) {
+            @Override
+            public void success(ImageCacheVO cache) {
+                reportProgress(getTaskStage().getEnd().toString());
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override

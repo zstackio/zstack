@@ -171,7 +171,6 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CpCmd.class)
                 def rsp = new CephPrimaryStorageBase.CpRsp()
                 rsp.size = 0
-                rsp.actualSize = 0
                 rsp.installPath = cmd.dstPath
                 return rsp
             }

@@ -97,7 +97,7 @@ doc {
 					desc "云盘UUID"
 					location "body"
 					type "String"
-					optional true
+					optional false
 					since "3.10.0"
 					
 				}
