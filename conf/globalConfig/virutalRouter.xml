@@ -24,7 +24,7 @@
     <config>
         <name>ping.interval</name>
         <description>The interval management nodes ping the virtual router agents running virtual router VMs, in seconds</description>
-        <defaultValue>10</defaultValue>
+        <defaultValue>15</defaultValue>
         <category>virtualRouter</category>
         <type>java.lang.Integer</type>
     </config>
