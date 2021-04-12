@@ -3507,7 +3507,7 @@ public class KVMHost extends HostBase implements Host {
 
                             String hostArchitecture = ret.getStdout().trim();
                             ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
-                            if (cluster.getArchitecture() != null && !hostArchitecture.equals(cluster.getArchitecture())) {
+                            if (cluster.getArchitecture() != null && !hostArchitecture.equals(cluster.getArchitecture()) && !cluster.getHypervisorType().equals("baremetal2")) {
                                 trigger.fail(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, cluster.getArchitecture()));
                                 return;
                             }
