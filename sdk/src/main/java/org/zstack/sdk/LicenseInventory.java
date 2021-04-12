@@ -76,6 +76,14 @@ public class LicenseInventory  {
         return this.uploadDate;
     }
 
+    public java.lang.String prodInfo;
+    public void setProdInfo(java.lang.String prodInfo) {
+        this.prodInfo = prodInfo;
+    }
+    public java.lang.String getProdInfo() {
+        return this.prodInfo;
+    }
+
     public java.lang.String managementNodeUuid;
     public void setManagementNodeUuid(java.lang.String managementNodeUuid) {
         this.managementNodeUuid = managementNodeUuid;
