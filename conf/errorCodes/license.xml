@@ -25,5 +25,10 @@
         <id>1004</id>
         <description>The issue date of uploaded license is early than the existing license issue date</description>
     </code>
+
+    <code>
+        <id>1005</id>
+        <description>The add-on modules license is not supported</description>
+    </code>
 </error>
 
