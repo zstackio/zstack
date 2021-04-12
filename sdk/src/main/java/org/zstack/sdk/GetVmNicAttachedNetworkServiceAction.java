@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSchedulerJobAction extends AbstractAction {
+public class GetVmNicAttachedNetworkServiceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateSchedulerJobResult value;
+        public org.zstack.sdk.GetVmNicAttachedNetworkServiceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,8 @@ public class CreateSchedulerJobAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String targetResourceUuid;
-
-    @Param(required = true, validValues = {"startVm","stopVm","rebootVm","volumeSnapshot","volumeBackup","rootVolumeBackup","vmBackup","databaseBackup","localRaidSelfTest","runAutoScalingGroup"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map parameters;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String vmNicUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -64,12 +46,6 @@ public class CreateSchedulerJobAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -78,8 +54,8 @@ public class CreateSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateSchedulerJobResult value = res.getResult(org.zstack.sdk.CreateSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateSchedulerJobResult() : value; 
+        org.zstack.sdk.GetVmNicAttachedNetworkServiceResult value = res.getResult(org.zstack.sdk.GetVmNicAttachedNetworkServiceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmNicAttachedNetworkServiceResult() : value; 
 
         return ret;
     }
@@ -108,11 +84,11 @@ public class CreateSchedulerJobAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/scheduler/jobs";
+        info.httpMethod = "GET";
+        info.path = "/vm-instances/nics/{vmNicUuid}/attached-networkservices";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

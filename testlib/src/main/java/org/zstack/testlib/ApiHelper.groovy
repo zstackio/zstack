@@ -5012,6 +5012,33 @@ abstract class ApiHelper {
     }
 
 
+    def changeVmNicNetwork(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeVmNicNetworkAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeVmNicNetworkAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def changeVmNicType(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeVmNicTypeAction.class) Closure c) {
         def a = new org.zstack.sdk.ChangeVmNicTypeAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -13544,6 +13571,33 @@ abstract class ApiHelper {
     }
 
 
+    def deleteVxlanL2Network(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteVxlanL2NetworkAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteVxlanL2NetworkAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def deleteWebhook(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteWebhookAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteWebhookAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -15652,6 +15706,33 @@ abstract class ApiHelper {
 
     def getCandidateL2NetworksForAttachingCluster(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetCandidateL2NetworksForAttachingClusterAction.class) Closure c) {
         def a = new org.zstack.sdk.GetCandidateL2NetworksForAttachingClusterAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getCandidateL3NetworksForChangeVmNicNetwork(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetCandidateL3NetworksForChangeVmNicNetworkAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetCandidateL3NetworksForChangeVmNicNetworkAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -19000,6 +19081,33 @@ abstract class ApiHelper {
 
     def getVmMonitorNumber(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmMonitorNumberAction.class) Closure c) {
         def a = new org.zstack.sdk.GetVmMonitorNumberAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getVmNicAttachedNetworkService(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmNicAttachedNetworkServiceAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetVmNicAttachedNetworkServiceAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -29181,6 +29289,33 @@ abstract class ApiHelper {
 
     def setVmCleanTraffic(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVmCleanTrafficAction.class) Closure c) {
         def a = new org.zstack.sdk.SetVmCleanTrafficAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def setVmClockTrack(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVmClockTrackAction.class) Closure c) {
+        def a = new org.zstack.sdk.SetVmClockTrackAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

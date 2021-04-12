@@ -304,7 +304,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
     public void vmDefaultL3NetworkChanged(VmInstanceInventory vm, String previousL3, String nowL3, Completion completion) {
         completion.success();
     }
-
+    
     protected boolean isVRouterDhcpEnabled(String l3Uuid) {
         boolean enableDhcp = false;
         try {

@@ -212,6 +212,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APICreateVmInstanceMsg) msg);
         } else if(msg instanceof APICreateVmNicMsg) {
             handle((APICreateVmNicMsg) msg);
+        } else if (msg instanceof APIGetVmNicAttachedNetworkServiceMsg) {
+            handle((APIGetVmNicAttachedNetworkServiceMsg) msg);
         } else if (msg instanceof APIDeleteVmNicMsg) {
             handle((APIDeleteVmNicMsg) msg);
         } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
@@ -892,6 +894,21 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 bus.publish(evt);
             }
         }).start();
+    }
+
+    private void handle(APIGetVmNicAttachedNetworkServiceMsg msg) {
+        APIGetVmNicAttachedNetworkServiceReply reply = new APIGetVmNicAttachedNetworkServiceReply();
+        List<String> networkServices = new ArrayList<>();
+        VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+        for (VmNicChangeNetworkExtensionPoint extension : pluginRgty.getExtensionList(VmNicChangeNetworkExtensionPoint.class)) {
+            Map<String, String> ret = extension.getVmNicAttachedNetworkService(VmNicInventory.valueOf(nicVO));
+            if (ret == null) {
+                continue;
+            }
+            networkServices.addAll(ret.keySet());
+        }
+        reply.setNetworkServices(networkServices);
+        bus.reply(msg, reply);
     }
 
     protected void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<VmInstanceInventory> completion) {
@@ -1659,12 +1676,43 @@ public class VmInstanceManagerImpl extends AbstractService implements
         VmSystemTags.MACHINE_TYPE.installValidator(validator);
     }
 
+    private void installClockTrackValidator() {
+        class ClockTrackValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                Optional.ofNullable(msg.getSystemTags()).ifPresent(it -> it.forEach(this::validateClockTrack));
+            }
+
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                validateClockTrack(systemTag);
+            }
+
+            private void validateClockTrack(String systemTag) {
+                if (!VmSystemTags.CLOCK_TRACK.isMatch(systemTag)) {
+                    return;
+                }
+
+                String track = VmSystemTags.CLOCK_TRACK.getTokenByTag(systemTag, VmSystemTags.CLOCK_TRACK_TOKEN);
+                VmClockTrack value = VmClockTrack.get(track);
+                if (value == null || !value.equals(VmClockTrack.guest)) {
+                    throw new ApiMessageInterceptionException(argerr("vm clock track requires guest, but get [%s]", track));
+                }
+            }
+        }
+
+        ClockTrackValidator validator = new ClockTrackValidator();
+        tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), validator);
+        VmSystemTags.CLOCK_TRACK.installValidator(validator);
+    }
+
     private void installSystemTagValidator() {
         installHostnameValidator();
         installUserdataValidator();
         installBootModeValidator();
         installCleanTrafficValidator();
         installMachineTypeValidator();
+        installClockTrackValidator();
     }
 
     @Override

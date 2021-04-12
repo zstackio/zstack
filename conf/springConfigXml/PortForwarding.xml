@@ -21,6 +21,7 @@
 			<zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
 			<zstack:extension interface="org.zstack.network.service.vip.VipGetUsedPortRangeExtensionPoint" />
             <zstack:extension interface="org.zstack.network.service.vip.VipGetServiceReferencePoint" />
+			<zstack:extension interface="org.zstack.header.vm.VmNicChangeNetworkExtensionPoint"/>
 		</zstack:plugin>
 	</bean>
 

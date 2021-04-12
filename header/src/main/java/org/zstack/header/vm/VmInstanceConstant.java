@@ -50,6 +50,7 @@ public interface VmInstanceConstant {
         Migrate,
         AttachVolume,
         AttachNic,
+        ChangeNicNetwork,
         DetachNic,
         AttachIso,
         DetachIso,
