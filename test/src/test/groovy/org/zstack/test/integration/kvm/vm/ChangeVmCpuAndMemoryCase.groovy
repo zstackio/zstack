@@ -313,6 +313,14 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         expect(AssertionError.class) {
             updateVmInstance {
                 uuid = vm2.uuid
+                name = ""
+                sessionId = session.uuid
+            }
+        }
+
+        expect(AssertionError.class) {
+            updateVmInstance {
+                uuid = vm2.uuid
                 memorySize = SizeUnit.GIGABYTE.toByte(4)
                 sessionId = session.uuid
             }

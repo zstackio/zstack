@@ -21,7 +21,7 @@ import org.zstack.header.rest.RestRequest;
 public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
-    @APIParam(maxLength = 255, required = false)
+    @APIParam(maxLength = 255, minLength = 1, required = false)
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
