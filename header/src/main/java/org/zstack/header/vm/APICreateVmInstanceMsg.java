@@ -81,7 +81,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     /**
      * @desc max length of 255 characters
      */
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, minLength = 1)
     private String name;
     /**
      * @desc uuid of instance offering. See :ref:`InstanceOfferingInventory`

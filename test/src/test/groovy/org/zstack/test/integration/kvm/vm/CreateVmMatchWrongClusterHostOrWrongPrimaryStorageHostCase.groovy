@@ -138,6 +138,17 @@ class CreateVmMatchWrongClusterHostOrWrongPrimaryStorageHostCase extends SubCase
         ClusterInventory cluster2 = env.inventoryByName("cluster2")
         HostInventory host1 = env.inventoryByName("kvm1")
 
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = ""
+                l3NetworkUuids = [l3NetworkInventory.uuid]
+                imageUuid = image.uuid
+                clusterUuid = cluster1.uuid
+                primaryStorageUuidForRootVolume = ps1.uuid
+                instanceOfferingUuid = instanceOffering.uuid
+            }
+        }
+
         createVmInstance {
             name = "test"
             l3NetworkUuids = [l3NetworkInventory.uuid]
