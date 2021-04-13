@@ -90,3 +90,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseHistoryVO`
 CREATE INDEX idxLicenseHistoryVOUploadDate ON LicenseHistoryVO (uploadDate);
 drop table ElaborationVO;
 drop table ResourceUsageVO;
+
+alter table BillingVO drop index idxBillingVOaccountUuid;
+alter table BillingVO add index idxAccountUuidEndTime (`accountUuid`,`endTime`);
+alter table BillingVO add index idxAccountUuidStartTime (`accountUuid`,`startTime`);
