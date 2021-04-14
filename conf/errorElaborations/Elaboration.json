@@ -40,6 +40,14 @@
     "message_en": "This user is locked. Please try again %1$s seconds later."
   },
   {
+    "category": "ACCOUNT",
+    "code": "1005",
+    "method": "regex",
+    "regex": "invalid project name[.*], an account or project with the same name exists",
+    "message_cn": "无效的项目名 [%1$s]，已有账户或项目使用了这个名称。",
+    "message_en": "Invalid project name [%1$s]. An account or a project with the same name already exists."
+  },
+  {
     "category": "BS",
     "code": "1000",
     "method": "regex",
