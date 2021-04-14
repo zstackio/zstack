@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -43,14 +44,16 @@ public class VmCloneVsocFileFlow implements Flow {
         VmCloneVsocFileMsg msg = new VmCloneVsocFileMsg();
         msg.setDestVmUuid(spec.getVmInventory().getUuid());
         msg.setSrcVmUuid(spec.getSrcVmUuid());
-        if (spec.getDestHost().getUuid().equals(spec.getSrcVmUuid())) {
+        VmInstanceVO srcVmInstanceVO = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, spec.getSrcVmUuid()).find();
+        String scrHostUuid = srcVmInstanceVO.getHostUuid() != null ? srcVmInstanceVO.getHostUuid() : srcVmInstanceVO.getLastHostUuid();
+        if (spec.getDestHost().getUuid().equals(scrHostUuid)) {
             msg.setDestSocId(null);
         } else {
             msg.setDestSocId(HostSystemTags.HOST_SSCARDID.getTokenByResourceUuid(spec.getDestHost().getUuid(), HostSystemTags.HOST_SSCARDID_TOKEN));
         }
         msg.setResource(VmInstanceConstant.NORESOURCE);
         msg.setType(VmInstanceConstant.OFFLINE);
-        msg.setHostUuid(spec.getSrcHost().getUuid());
+        msg.setHostUuid(scrHostUuid);
         msg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
