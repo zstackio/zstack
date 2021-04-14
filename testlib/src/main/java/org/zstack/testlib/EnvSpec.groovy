@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate
 import org.zstack.compute.vm.VmGlobalConfig
@@ -17,6 +18,8 @@ import org.zstack.core.asyncbatch.While
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.DatabaseFacadeImpl
 import org.zstack.core.db.SQL
+import org.zstack.core.retry.Retry
+import org.zstack.core.retry.RetryCondition
 import org.zstack.header.core.WhileDoneCompletion
 import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.core.WhileCompletion
@@ -97,7 +100,7 @@ class EnvSpec extends ApiHelper implements Node  {
     private ConcurrentHashMap<Class, List<Tuple>> defaultMessageHandlers = [:]
     private ConcurrentHashMap<String, List<Tuple>> httpConditionHandlers = [:]
     private ConcurrentHashMap<String, List<Tuple>> defaultHttpConditionHandlers = [:]
-    private static RestTemplate restTemplate
+    protected static RestTemplate restTemplate
     protected static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
     static Set<Closure> cleanupClosures = []
@@ -839,7 +842,14 @@ class EnvSpec extends ApiHelper implements Node  {
         headers.setContentLength(rspBody.length())
         headers.set(RESTConstant.TASK_UUID, taskUuid)
         HttpEntity<String> rreq = new HttpEntity<String>(rspBody, headers)
-        restTemplate.exchange(callbackUrl, HttpMethod.POST, rreq, String.class)
+
+        new Retry<ResponseEntity<String>>() {
+            @Override
+            @RetryCondition(onExceptions = org.springframework.web.client.ResourceAccessException.class)
+            protected ResponseEntity<String> call() {
+                restTemplate.exchange(callbackUrl, HttpMethod.POST, rreq, String.class)
+            }
+        }.run();
     }
 
     void simulator(String path, Closure c) {

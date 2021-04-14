@@ -528,9 +528,16 @@ public class RESTFacadeImpl implements RESTFacade {
         }
 
         ResponseEntity<String> rsp;
+
         try {
             if (CoreGlobalProperty.UNIT_TEST_ON) {
-                rsp = template.exchange(url, method, req, String.class);
+                rsp = new Retry<ResponseEntity<String>>() {
+                    @Override
+                    @RetryCondition(onExceptions = {ResourceAccessException.class})
+                    protected ResponseEntity<String> call() {
+                        return template.exchange(url, method, req, String.class);
+                    }
+                }.run();
             } else {
                 rsp = new Retry<ResponseEntity<String>>() {
                     @Override
