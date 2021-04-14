@@ -171,7 +171,6 @@ doc {
 					since "3.9"
 					values ("enable","disable")
 				}
-
 				column {
 					name "nbprocess"
 					enclosedIn "changeLoadBalancerListener"
@@ -180,6 +179,17 @@ doc {
 					type "Integer"
 					optional true
 					since "4.1"
+					
+				}
+				column {
+					name "httpMode"
+					enclosedIn "changeLoadBalancerListener"
+					desc "负载均衡HTTP模式"
+					location "body"
+					type "String"
+					optional true
+					since "4.1"
+					values ("http-keep-alive","http-server-close","http-tunnel","httpclose","forceclose")
 				}
 			}
         }
