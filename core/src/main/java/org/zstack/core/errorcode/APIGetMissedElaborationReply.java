@@ -9,6 +9,16 @@ import org.zstack.header.rest.RestResponse;
 @RestResponse(allTo = "inventories")
 @Deprecated
 public class APIGetMissedElaborationReply extends APIReply {
+    private String inventories;
+
+    public String getInventories() {
+        return inventories;
+    }
+
+    public void setInventories(String inventories) {
+        this.inventories = inventories;
+    }
+
     public static APIGetMissedElaborationReply __example__() {
         APIGetMissedElaborationReply reply = new APIGetMissedElaborationReply();
 
