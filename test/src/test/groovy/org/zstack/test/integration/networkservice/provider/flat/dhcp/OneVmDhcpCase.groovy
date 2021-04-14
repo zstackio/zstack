@@ -75,8 +75,10 @@ class OneVmDhcpCase extends SubCase {
             assert cmd.bridgeName == brName
         }
 
-        // make sure the DHCP server IP has been returned
-        assert dbFindByUuid(dhcpServerIpUuid, UsedIpVO.class) == null
+        retryInSecs {
+            // make sure the DHCP server IP has been returned
+            assert dbFindByUuid(dhcpServerIpUuid, UsedIpVO.class) == null
+        }
 
         // assure relevant tags are deleted
         assert !FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.hasTag(l3.uuid)
