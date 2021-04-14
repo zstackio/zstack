@@ -154,6 +154,9 @@ class AddRulesRemoteGroupsCase extends SubCase{
             }
         }
 
+        /* add vm userdata ip */
+        vmIps.add("169.254.169.254")
+
         // action
         SecurityGroupInventory sg = createSecurityGroup{
             name = "sg"
@@ -348,6 +351,9 @@ class AddRulesRemoteGroupsCase extends SubCase{
                 ret.add(inv.getIpRanges().get(0).getGateway())
             }
         }
+
+        ret.add("169.254.169.254")
+
         return ret
     }
 
@@ -403,8 +409,8 @@ class AddRulesRemoteGroupsCase extends SubCase{
         }
         List<String> expectTransportVmIps = getVmIpsInSecurityGroup(sgUuid)
         List<String> actuallyTransportVmIps = ucmd.updateGroupTOs.get(0).securityGroupVmIps
-        /* IpsCount include vmnic ips + gateway ip  */
-        int IpsCount = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, sgUuid).count() + 1
+        /* IpsCount include vmnic ips + gateway ip + 169.254.169.254 */
+        int IpsCount = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, sgUuid).count() + 2
 
         assert actuallyHostUuids.containsAll(expectHostUuids)
         assert ucmd.updateGroupTOs.size() == 1
@@ -453,8 +459,8 @@ class AddRulesRemoteGroupsCase extends SubCase{
         }
         List<String> expectTransportVmIps = getVmIpsInSecurityGroup(sgUuid)
         List<String> actuallyTransportVmIps = ucmd.updateGroupTOs.get(0).securityGroupVmIps
-        /* IpsCount include vmnic ips + gateway ip  */
-        int IpsCount = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, sgUuid).count() + 1
+        /* IpsCount include vmnic ips + gateway ip + 169.254.169.254  */
+        int IpsCount = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, sgUuid).count() + 2
 
         assert actuallyHostUuids.containsAll(expectHostUuids)
         assert ucmd.updateGroupTOs.size() == 1

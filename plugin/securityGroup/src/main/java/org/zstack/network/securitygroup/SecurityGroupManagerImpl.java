@@ -410,6 +410,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 }
             }
 
+            for (SecurityGroupGetDefaultRuleExtensionPoint exp : pluginRgty.getExtensionList(SecurityGroupGetDefaultRuleExtensionPoint.class)) {
+                ret.addAll(exp.getGroupMembers(sgUuid, ipVersion));
+            }
+
             return ret;
         }
 
