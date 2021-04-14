@@ -127,14 +127,9 @@ class VirtualRouterOperationCase extends SubCase {
             sessionId = adminSession()
         }
 
-        env.simulator(VirtualRouterConstant.VR_PING) { rsp, HttpEntity<String> e ->
-
-            rsp.success = true
-            return rsp
-        }
-        VirtualRouterCommands.InitCommand cmd = null
-        env.afterSimulator(VirtualRouterConstant.VR_INIT) { rsp, HttpEntity<String> e ->
-            cmd = JSONObjectUtil.toObject(e.body, VirtualRouterCommands.InitCommand.class)
+        VirtualRouterCommands.PingCmd cmd = null
+        env.afterSimulator(VirtualRouterConstant.VR_PING) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, VirtualRouterCommands.PingCmd.class)
             return rsp
         }
         retryInSecs(5, 1) {
