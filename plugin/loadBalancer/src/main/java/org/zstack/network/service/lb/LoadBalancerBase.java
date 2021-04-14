@@ -25,7 +25,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -45,7 +44,6 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -1703,6 +1701,13 @@ public class LoadBalancerBase {
                     LoadBalancerSystemTags.NUMBER_OF_PROCESS.update(msg.getUuid(),
                             LoadBalancerSystemTags.NUMBER_OF_PROCESS.instantiateTag(map(
                                     e(LoadBalancerSystemTags.NUMBER_OF_PROCESS_TOKEN, msg.getNbprocess())
+                            )));
+                }
+
+                if (msg.getHttpMode() != null) {
+                    LoadBalancerSystemTags.HTTP_MODE.update(msg.getUuid(),
+                            LoadBalancerSystemTags.HTTP_MODE.instantiateTag(map(
+                                    e(LoadBalancerSystemTags.HTTP_MODE_TOKEN, msg.getHttpMode())
                             )));
                 }
 
