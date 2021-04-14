@@ -317,7 +317,7 @@
     "method": "regex",
     "regex": ".*can not update host\\[uuid:.*]which is connecting or creating, please wait.*",
     "message_cn": "无法更新正在连接或创建的物理机 [uuid：%1$s] 状态，请稍候。",
-    "message_en": "Could not update host [uuid:%1$s] that is being connected or created. Please wait."
+    "message_en": "Could not update host [uuid: %1$s] that is being connected or created. Please wait."
   },
   {
     "category": "HOST",
@@ -405,7 +405,7 @@
     "method": "regex",
     "regex": "failed to start vm\\[.*] on kvm host.*KvmError: vm\\[.*] is already running.*",
     "message_cn": "无法启动云主机 [名称：%2$s，uuid：%1$s]，因为它已在运行。",
-    "message_en": "Failed to start VM [name:%2$s, uuid:%1$s], because it is already running."
+    "message_en": "Failed to start VM [name: %2$s, uuid: %1$s], because it is already running."
   },
   {
     "category": "HOST",
@@ -509,7 +509,7 @@
     "method": "regex",
     "regex": ".*image \\[uuid:.*] has been deleted.*",
     "message_cn": "镜像 [uuid：%1$s] 已经被删除。",
-    "message_en": "Image [uuid:%1$s] has been deleted."
+    "message_en": "Image [uuid: %1$s] has been deleted."
   },
   {
     "category": "IMAGE",
@@ -573,7 +573,7 @@
     "method": "regex",
     "regex": ".*cannot allocate vni\\[.*] in l2Network\\[uuid:.*], out of vni range",
     "message_cn": "不能在二层网络 [uuid：%2$s] 中创建 vni [%1$s]，vni 超出范围。",
-    "message_en": "Could not create VNI range [%1$s] in L2 network [uuid:%2$s]. The VNI is out of range."
+    "message_en": "Could not create VNI range [%1$s] in L2 network [uuid: %2$s]. The VNI is out of range."
   },
   {
     "category": "L2NETWORK",
@@ -949,7 +949,7 @@
     "method": "regex",
     "regex": "quota exceeding. The account\\[uuid: .*] exceeds a quota\\[name: .*, value: .*], Current used:.*, Request:.*. Please contact the administrator.",
     "message_cn": "帐户 [%1$s] 的配额超出限制 [配额名称：%2$s，配额总量：%3$s]，当前已使用：%4$s，本次请求数量：%5$s，如需继续操作请联系管理员。",
-    "message_en": "Quota [name: %2$s, amount: %3$s] of the account [uuid:%1$s] exceeds the limit. Current used: %4$s, requests: %5$s. Please contact the administrator."
+    "message_en": "Quota [name: %2$s, amount: %3$s] of the account [uuid: %1$s] exceeds the limit. Current used: %4$s, requests: %5$s. Please contact the administrator."
   },
   {
     "category": "QUOTA",
@@ -957,7 +957,7 @@
     "method": "regex",
     "regex": ".*quota exceeding.The resource owner\\(or target resource owner\\) account\\[uuid:.*] exceeds a quota\\[name:.*, value: .*], Current used:.*, Request:.*. Please contact the administrator.",
     "message_cn": "请求资源超出配额。资源所有者或目标资源所有者帐户 [uuid：%1$s] 超出配额 [配额名称：%2$s，配额总量：%3$s]，当前已使用：%4$s，本次请求数量：%5$s。如需继续操作请联系管理员。",
-    "message_en": "Quota [name: %2$s, amount: %3$s] of the resource owner or target resource owner account [uuid:%1$s] exceeds the limit. Current used: %4$s, requests: %5$s. Please contact the administrator."
+    "message_en": "Quota [name: %2$s, amount: %3$s] of the resource owner or target resource owner account [uuid: %1$s] exceeds the limit. Current used: %4$s, requests: %5$s. Please contact the administrator."
   },
   {
     "category": "QUOTA",
@@ -1356,7 +1356,7 @@
     "code": "1031",
     "method": "regex",
     "regex": ".*user \\[.*] not exist on vm\\[.*]!",
-    "message_cn": "云主机用戶不存在。",
+    "message_cn": "云主机用户不存在。",
     "message_en": "VM user does not exist."
   },
   {
@@ -1453,7 +1453,7 @@
     "method": "regex",
     "regex": "IP\\[.*] is not available on the L3 network\\[uuid:.*] because:.*it is not in this range.*",
     "message_cn": "在三层网络 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 不在网络段范围内。",
-    "message_en": "IP[%1$s] is not available on L3 network[uuid:%2$s], because the IP is not in the network range."
+    "message_en": "IP[%1$s] is not available on L3 network[uuid: %2$s], because the IP is not in the network range."
   },
   {
     "category": "VM",
@@ -1461,7 +1461,7 @@
     "method": "regex",
     "regex": "IP\\[.*] is not available on the L3 network\\[uuid:.*] because:.*it is used.*",
     "message_cn": "在三层网络 [uuid：%2$s] 中，IP [%1$s] 不可用，因为该 IP 已被占用。",
-    "message_en": "IP [%1$s] is not available on L3 network [uuid:%2$s], because the IP is occupied."
+    "message_en": "IP [%1$s] is not available on L3 network [uuid: %2$s], because the IP is occupied."
   },
   {
     "category": "VM",
@@ -1485,7 +1485,15 @@
     "method": "regex",
     "regex": "unable to attach the L3 network.*L3 network is providing EIP.*",
     "message_cn": "无法为云主机 [名称：%4$s，uuid：%3$s] 分配指定的 IP 地址，因为该地址已经被用于为一个网络接口控制设备提供 EIP 服务。",
-    "message_en": "Could not assign a specific IP to VM [name:%4$s, uuid:%3$s], because this IP is occupied by a NIC to provide EIP services."
+    "message_en": "Could not assign a specific IP to VM [name: %4$s, uuid: %3$s], because this IP is occupied by a NIC to provide EIP services."
+  },
+  {
+    "category": "VM",
+    "code": "1048",
+    "method": "regex",
+    "regex": "failed to increase vm cpu, error details:.*",
+    "message_cn": "升级云主机 CPU 失败，错误详情：%1$s",
+    "message_en": "Failed to upgrade CPU of this VM. Error details: %1$s"
   },
   {
     "category": "VOLUME",
@@ -1525,7 +1533,7 @@
     "method": "regex",
     "regex": "failed to attach data volume\\[.*] on kvm host\\[.*], because failed to execute shell command:.*: No such file or directory.*",
     "message_cn": "将云盘[ %1$s，%2$s] 挂载到云主机 [uuid：%3$s，name：%4$s] 时失败，因为云盘路径 [%2$s] 不存在。",
-    "message_en": "Failed to attach data volume [uuid:%1$s, name:%2$s] to VM [uuid:%3$s, name:%4$s], because data volume path [%2$s] not found."
+    "message_en": "Failed to attach data volume [uuid: %1$s, name: %2$s] to VM [uuid: %3$s, name: %4$s], because data volume path [%2$s] not found."
   },
   {
     "category": "VOLUME",

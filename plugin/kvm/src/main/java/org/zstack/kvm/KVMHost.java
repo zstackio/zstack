@@ -905,7 +905,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(IncreaseCpuResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    reply.setError(operr("failed to increase vm cpu, error details: %s", ret.getError()));
                 } else {
                     reply.setCpuNum(ret.getCpuNum());
                 }
