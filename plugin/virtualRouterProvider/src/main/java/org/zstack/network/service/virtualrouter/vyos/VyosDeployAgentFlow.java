@@ -6,14 +6,12 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.*;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -37,7 +35,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2016/10/31.
@@ -112,9 +109,9 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     if (NetworkUtils.isRemotePortOpen(mgmtNicIp, sshPort, 2000)) {
                         if(isZvrMd5Changed(mgmtNicIp,sshPort)){
                             deployAgent();
-                        } else{
-                            trigger.next();
                         }
+                        rebootAgent();
+                        trigger.next();
                         return true;
                     } else {
                         errors.add(new Throwable(String.format("vyos agent port %s is not opened on managment nic %s", sshPort, mgmtNicIp)));
@@ -128,10 +125,6 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
             }
 
             private void deployAgent() {
-                String script = "sudo bash /home/vyos/zvrboot.bin\n" +
-                        "sudo bash /home/vyos/zvr.bin\n" +
-                        "sudo bash /etc/init.d/zstack-virtualrouteragent restart\n";
-
                 try {
                     new Ssh().setTimeout(300).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
@@ -144,8 +137,6 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                             "/home/vyos/zvr/version"
                     ).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
 
-                    new Ssh().shell(script
-                    ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
                 } catch (SshException  e ) {
                     /*
                     ZSTAC-18352, try again with password when key fail
@@ -161,13 +152,25 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                             PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
                             "/home/vyos/zvr/version"
                     ).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                }
+            }
 
+            private void rebootAgent() {
+                String script = "sudo bash /home/vyos/zvrboot.bin\n" +
+                        "sudo bash /home/vyos/zvr.bin\n" +
+                        "sudo bash /home/vyos/zvr/ssh/zvr-reboot.sh\n";
+
+                try {
+                    new Ssh().shell(script
+                    ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                } catch (SshException  e ) {
+                    /*
+                    ZSTAC-18352, try again with password when key fail
+                     */
+                    String password = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
                     new Ssh().shell(script
                     ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
-
-
                 }
-                trigger.next();
             }
 
             @Override
@@ -247,5 +250,4 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
         return false;
     }
-
 }
