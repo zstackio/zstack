@@ -46,6 +46,9 @@ public class CreateL2VxlanNetworkAction extends AbstractAction {
     @Param(required = false)
     public java.lang.String type;
 
+    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vSwitchType;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
