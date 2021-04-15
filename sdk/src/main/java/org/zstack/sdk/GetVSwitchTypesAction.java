@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateL2NoVlanNetworkAction extends AbstractAction {
+public class GetVSwitchTypesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateL2NoVlanNetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateL2NetworkResult value;
+        public org.zstack.sdk.GetVSwitchTypesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,30 +24,6 @@ public class CreateL2NoVlanNetworkAction extends AbstractAction {
             return this;
         }
     }
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String physicalInterface;
-
-    @Param(required = false)
-    public java.lang.String type;
-
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vSwitchType;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -67,12 +43,6 @@ public class CreateL2NoVlanNetworkAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -81,8 +51,8 @@ public class CreateL2NoVlanNetworkAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateL2NetworkResult value = res.getResult(org.zstack.sdk.CreateL2NetworkResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateL2NetworkResult() : value; 
+        org.zstack.sdk.GetVSwitchTypesResult value = res.getResult(org.zstack.sdk.GetVSwitchTypesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVSwitchTypesResult() : value; 
 
         return ret;
     }
@@ -111,11 +81,11 @@ public class CreateL2NoVlanNetworkAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/l2-networks/no-vlan";
+        info.httpMethod = "GET";
+        info.path = "/l2-networks/vSwitchTypes";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
