@@ -1,7 +1,12 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter
 
+import org.zstack.appliancevm.ApplianceVm
+import org.zstack.appliancevm.ApplianceVmStatus
+import org.zstack.appliancevm.ApplianceVmVO
+import org.zstack.appliancevm.ApplianceVmVO_
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.vm.VmInstanceEO
 import org.zstack.header.vm.VmInstanceEO_
 import org.zstack.header.vm.VmInstanceState
@@ -70,6 +75,16 @@ test the vr is set to never stop
         }
         retryInSecs {
             assert dbf.listAll(VirtualRouterVmVO.class).size() == 1 && dbf.listAll(VirtualRouterVmVO.class).get(0).state == VmInstanceState.Running
+        }
+
+        vr = dbf.listAll(VirtualRouterVmVO.class).get(0)
+        /* manully set VirtualRouter to disconnected state, ping tracker will recover it back to connected state */
+        SQL.New(ApplianceVmVO.class).eq(ApplianceVmVO_.uuid, vr.uuid)
+                .set(ApplianceVmVO_.status, ApplianceVmStatus.Disconnected).update()
+
+        retryInSecs(15) {
+            Q.New(ApplianceVmVO.class).eq(ApplianceVmVO_.uuid, vr.uuid)
+                    .eq(ApplianceVmVO_.status, ApplianceVmStatus.Connected).isExists()
         }
     }
     @Override
