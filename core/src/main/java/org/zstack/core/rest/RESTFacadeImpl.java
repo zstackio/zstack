@@ -16,6 +16,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
+import org.zstack.core.debug.DebugManager;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.AsyncThread;
@@ -88,6 +89,22 @@ public class RESTFacadeImpl implements RESTFacade {
     final private Map<String, AsyncHttpWrapper> wrappers = new ConcurrentHashMap<String, AsyncHttpWrapper>();
 
     void init() {
+        DebugManager.registerDebugSignalHandler("DumpRestStats", () -> {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n================ BEGIN: REST CALL Statistics ===================\n");
+            if (!CoreGlobalProperty.PROFILER_HTTP_CALL) {
+                sb.append("# rest call profiler is off");
+            } else {
+                List<HttpCallStatistic> hstats = new ArrayList<HttpCallStatistic>(getStatistics().values());
+                hstats.sort((o1, o2) -> (int) (o2.getTotalTime() - o1.getTotalTime()));
+                for (HttpCallStatistic stat : hstats) {
+                    sb.append(stat.toString());
+                }
+            }
+            sb.append("================ END: REST CALL Statistics =====================\n");
+            logger.debug(sb.toString());
+        });
+
         port =  Integer.parseInt(System.getProperty("RESTFacade.port", "8080"));
 
         IptablesUtils.insertRuleToFilterTable(String.format("-A INPUT -p tcp -m state --state NEW -m tcp --dport %s -j ACCEPT", port));
