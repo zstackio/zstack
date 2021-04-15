@@ -54,4 +54,8 @@ public class LoadBalancerSystemTags {
 
     public static final String BALANCER_ACL_TOKEN = "accessControlStatus";
     public static PatternedSystemTag BALANCER_ACL = new PatternedSystemTag(String.format("accessControlStatus::{%s}", BALANCER_ACL_TOKEN), LoadBalancerListenerVO.class);
+
+    public static final String HTTP_MODE_TOKEN = "httpMode";
+    public static PatternedSystemTag HTTP_MODE= new PatternedSystemTag(String.format("httpMode::{%s}", HTTP_MODE_TOKEN), LoadBalancerListenerVO.class);
+
 }

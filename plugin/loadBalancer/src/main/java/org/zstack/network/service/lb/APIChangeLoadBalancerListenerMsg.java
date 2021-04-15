@@ -53,6 +53,12 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(validValues = {"enable", "disable"}, required = false)
     private String aclStatus;
 
+    @APIParam(numberRange = {LoadBalancerConstants.NUMBER_OF_PROCESS_MIN, LoadBalancerConstants.NUMBER_OF_PROCESS_MAX}, required = false)
+    private Integer nbprocess;
+
+    @APIParam(validValues = {"http-keep-alive", "http-server-close", "http-tunnel", "httpclose", "forceclose"}, required = false)
+    private String httpMode;
+
     @APINoSee
     private String loadBalancerUuid;
 
@@ -173,6 +179,22 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
         return uuid;
     }
 
+    public Integer getNbprocess() {
+        return nbprocess;
+    }
+
+    public void setNbprocess(Integer nbprocess) {
+        this.nbprocess = nbprocess;
+    }
+
+    public String getHttpMode() {
+        return httpMode;
+    }
+
+    public void setHttpMode(String httpMode) {
+        this.httpMode = httpMode;
+    }
+
     public static APIChangeLoadBalancerListenerMsg __example__() {
         APIChangeLoadBalancerListenerMsg msg = new APIChangeLoadBalancerListenerMsg();
 
@@ -184,6 +206,8 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
         msg.setHealthyThreshold(2);
         msg.setMaxConnection(5000);
         msg.setUnhealthyThreshold(3);
+        msg.setNbprocess(1);
+        msg.setHttpMode("http-keep-alive");
 
         return msg;
     }

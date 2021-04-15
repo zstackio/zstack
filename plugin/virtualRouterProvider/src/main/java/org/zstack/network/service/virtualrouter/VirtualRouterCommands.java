@@ -37,6 +37,7 @@ public class VirtualRouterCommands {
         private int restartDnsmasqAfterNumberOfSIGUSER1;
 		private String mgtCidr;
 		private String logLevel;
+		private Map<String,String> parms;
 
 		public String getUuid() {
 			return uuid;
@@ -68,6 +69,14 @@ public class VirtualRouterCommands {
 
 		public void setLogLevel(String logLevel) {
 			this.logLevel = logLevel;
+		}
+
+		public Map<String, String> getParms() {
+			return parms;
+		}
+
+		public void setParms(Map<String, String> parms) {
+			this.parms = parms;
 		}
 	}
 
@@ -529,6 +538,7 @@ public class VirtualRouterCommands {
 
     public static class SyncSNATCmd extends AgentCommand {
         private List<SNATInfo> snats;
+        private Boolean enable;
 
         public List<SNATInfo> getSnats() {
             return snats;

@@ -8,8 +8,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.GlobalConfigException;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -44,9 +44,7 @@ import org.zstack.header.vm.VmNicVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.vip.*;
-import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.resourceconfig.ResourceConfigUpdateExtensionPoint;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.RangeSet;
@@ -375,9 +373,27 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             backends.put(bkd.getNetworkServiceProviderType(), bkd);
         }
 
+        installConfigValidateExtension();
         prepareSystemTags();
-
         return true;
+    }
+
+    private void installConfigValidateExtension(){
+        LoadBalancerGlobalConfig.HTTP_MODE.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
+                List<String> httpModes = new ArrayList<>(Arrays.asList("http-keep-alive",
+                                                                        "http-server-close",
+                                                                        " http-tunnel",
+                                                                        "httpclose",
+                                                                        "forceclose"));
+                if (!httpModes.contains(value)) {
+                    throw new GlobalConfigException(String.format("%s must be in %s",
+                            LoadBalancerGlobalConfig.HTTP_MODE.getName(),String.join(", ",httpModes)));
+                }
+            }
+        });
+
     }
 
     private void prepareSystemTags() {
@@ -791,9 +807,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 param("protocols", protocols).
                 param("vipUuid", vipUuid).list();
 
-        Iterator<Tuple> it = lbPortList.iterator();
-        while (it.hasNext()) {
-            Tuple strRange = it.next();
+        for (Tuple strRange : lbPortList) {
             int start = strRange.get(0, Integer.class);
             int end = strRange.get(1, Integer.class);
 
