@@ -229,9 +229,9 @@ public class VirtualRouter extends ApplianceVmBase {
                     doPing(self.getUuid(), new ReturnValueCompletion<PingVirtualRouterVmReply>(wcompl) {
                         @Override
                         public void success(PingVirtualRouterVmReply returnValue) {
-                            wcompl.allDone();
                             replies.clear();
                             replies.add(returnValue);
+                            wcompl.allDone();
                         }
 
                         @Override
@@ -257,12 +257,6 @@ public class VirtualRouter extends ApplianceVmBase {
 
                     @Override
                     public void done() {
-                        if (replies.isEmpty()) {
-                            /* this happen in UT case */
-                            PingVirtualRouterVmReply reply1 = new PingVirtualRouterVmReply();
-                            reply1.setConnected(true);
-                            replies.add(reply1);
-                        }
                         bus.reply(msg, replies.get(0));
                         chain.next();
                     }
