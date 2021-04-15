@@ -1,6 +1,7 @@
 package org.zstack.network.service.userdata;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -11,11 +12,12 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
-import org.zstack.header.network.service.NetworkServiceProviderInventory;
-import org.zstack.header.network.service.NetworkServiceProviderVO;
-import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
+import org.zstack.network.securitygroup.SecurityGroupGetDefaultRuleExtensionPoint;
+import org.zstack.network.securitygroup.SecurityGroupRuleProtocolType;
+import org.zstack.network.securitygroup.SecurityGroupRuleType;
+import org.zstack.network.securitygroup.SecurityGroupRuleVO;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -23,6 +25,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +34,7 @@ import java.util.stream.Collectors;
 /**
  * Created by frank on 10/13/2015.
  */
-public class UserdataExtension extends AbstractNetworkServiceExtension implements Component {
+public class UserdataExtension extends AbstractNetworkServiceExtension implements Component, SecurityGroupGetDefaultRuleExtensionPoint {
     private CLogger logger = Utils.getLogger(UserdataExtension.class);
 
     @Autowired
@@ -132,6 +135,17 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
 
         UserdataBackend bkd = getUserdataBackend(provider.getType());
         bkd.applyUserdata(struct, completion);
+    }
+
+    @Override
+    public List<String> getGroupMembers(String sgUuid, int ipVersion) {
+        List<String> members = new ArrayList<>();
+        if (ipVersion != IPv6Constants.IPv4) {
+            return members;
+        }
+
+        members.add(NetworkServiceConstants.METADATA_HOST_PREFIX.split("/")[0]);
+        return members;
     }
 
     @Override
