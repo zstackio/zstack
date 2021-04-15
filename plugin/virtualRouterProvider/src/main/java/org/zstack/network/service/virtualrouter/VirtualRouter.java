@@ -219,9 +219,9 @@ public class VirtualRouter extends ApplianceVmBase {
                     doPing(self.getUuid(), new ReturnValueCompletion<PingVirtualRouterVmReply>(wcompl) {
                         @Override
                         public void success(PingVirtualRouterVmReply returnValue) {
-                            wcompl.allDone();
                             replies.clear();
                             replies.add(returnValue);
+                            wcompl.allDone();
                         }
 
                         @Override
