@@ -319,7 +319,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         return false;
     }
 
-    private VirtualRouterVmInventory getVirtualRouterForVyosDhcp(L3NetworkInventory l3Nw) {
+    public VirtualRouterVmInventory getVirtualRouterForVyosDhcp(L3NetworkInventory l3Nw) {
         /* only public l3 network has systemTag: PUBLIC_NETWORK_DHCP_SERVER_UUID  */
         String uuid = L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID.getTokenByResourceUuid(l3Nw.getUuid(), L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN);
         if (uuid == null && l3Nw.getCategory().equals(L3NetworkCategory.Public.toString())) {
