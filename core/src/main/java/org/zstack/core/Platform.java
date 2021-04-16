@@ -377,6 +377,18 @@ public class Platform {
 
             File globalPropertiesFile = PathUtil.findFileOnClassPath("zstack.properties", true);
 
+
+
+            //decrypt properties
+//            List<String> confs = FileUtils.readLines(globalPropertiesFile);
+//            List<String> decryptConfs = confs.stream().map(it -> new String(Base64.getDecoder().decode(it))).collect(Collectors.toList());
+//            File decryptPropertiesFile = File.createTempFile("zstack.properties", null);
+//            //File encryptProperties = new File(PathUtil.join(globalPropertiesFile.getParent(), "zstack.properties"));
+//            decryptPropertiesFile.deleteOnExit();
+//            FileUtils.writeLines(decryptPropertiesFile, decryptConfs);
+//            logger.debug(String.format("use tmp properties on [%s], it will be deleted while stopping zstack.", decryptPropertiesFile.getAbsolutePath()));
+//            in = new FileInputStream(decryptPropertiesFile);
+            
             in = new FileInputStream(globalPropertiesFile);
             System.getProperties().load(in);
 

@@ -11,6 +11,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.SwxaUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -44,7 +45,8 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         }
 
         try {
-            return rsa.encrypt1(decryptString);
+            //return rsa.encrypt1(decryptString);
+            return SwxaUtils.genCipherData1(decryptString);
         } catch (Exception e) {
             throw new CloudRuntimeException(e.getMessage());
         }
@@ -58,7 +60,8 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         }
 
         try {
-            return (String) rsa.decrypt1(encryptString);
+            //return (String) rsa.decrypt1(encryptString);
+            return SwxaUtils.verifyAndDecryptCipherData1(encryptString);
         } catch (Exception e) {
             throw new CloudRuntimeException(e.getMessage());
         }
@@ -78,7 +81,8 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                         String value = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
 
                         try {
-                            String encryptedString = rsa.encrypt1(value);
+                            //String encryptedString = rsa.encrypt1(value);
+                            String encryptedString = SwxaUtils.genCipherData1(value);
 
                             String sql = String.format("update %s set %s = :encrypted where uuid = :uuid", className, field.getName());
 
@@ -108,7 +112,8 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                         String encryptedString = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
 
                         try {
-                            String decryptString = (String) rsa.decrypt1(encryptedString);
+                            //String decryptString = (String) rsa.decrypt1(encryptedString);
+                            String decryptString = SwxaUtils.verifyAndDecryptCipherData1(encryptedString);
 
                             String sql = String.format("update %s set %s = :decrypted where uuid = :uuid", className, field.getName());
 

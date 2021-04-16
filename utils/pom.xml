@@ -126,6 +126,16 @@
             <artifactId>java-string-similarity</artifactId>
             <version>RELEASE</version>
         </dependency>
+        <dependency>
+            <groupId>com.sansec</groupId>
+            <artifactId>swxajce</artifactId>
+            <version>5.3.2.8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sansec</groupId>
+            <artifactId>crypto</artifactId>
+            <version>5.3.2.8</version>
+        </dependency>
     </dependencies>
 
     <build>

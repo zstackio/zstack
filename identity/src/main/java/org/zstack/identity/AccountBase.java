@@ -27,10 +27,7 @@ import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
 import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.ExceptionDSL;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -100,7 +97,8 @@ public class AccountBase extends AbstractAccount {
         String oldPassword = null;
         if (msg.getPassword() != null && !msg.getPassword().equals(account.getPassword())) {
             oldPassword = account.getPassword();
-            account.setPassword(msg.getPassword());
+            String encryptedPassword = SwxaUtils.genCipherData1(msg.getPassword());
+            account.setPassword(encryptedPassword);
             passwordUpdated = true;
 
         }
