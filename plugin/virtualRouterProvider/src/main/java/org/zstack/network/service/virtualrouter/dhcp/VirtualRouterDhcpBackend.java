@@ -319,7 +319,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         return enableDhcp;
     }
 
-    private VirtualRouterVmInventory getVirtualRouterForVyosDhcp(L3NetworkInventory l3Nw) {
+    public VirtualRouterVmInventory getVirtualRouterForVyosDhcp(L3NetworkInventory l3Nw) {
         /* for vyos dhcp, it will not create virtual router, if virtual router not existed return error */
         String sql = "select vr from VirtualRouterVmVO vr, VmNicVO nic where vr.uuid = nic.vmInstanceUuid and nic.l3NetworkUuid = :l3Uuid and nic.metaData in (:meta)";
         TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
