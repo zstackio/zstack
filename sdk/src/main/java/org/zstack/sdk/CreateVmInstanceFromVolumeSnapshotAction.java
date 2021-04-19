@@ -70,6 +70,9 @@ public class CreateVmInstanceFromVolumeSnapshotAction extends AbstractAction {
     @Param(required = false, validValues = {"InstantStart","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String strategy = "InstantStart";
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List rootVolumeSystemTags;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

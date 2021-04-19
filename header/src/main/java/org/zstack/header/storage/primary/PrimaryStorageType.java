@@ -17,6 +17,7 @@ public class PrimaryStorageType {
     private boolean supportVolumeMigrationInCurrentPrimaryStorage;
     private boolean supportVolumeMigrationToOtherPrimaryStorage;
     private boolean supportSharedVolume;
+    private boolean supportConfigVolumeProvisioningStrategy;
     private int order;
     private PrimaryStorageFindBackupStorage primaryStorageFindBackupStorage;
     private  boolean supportCreateVolumeSnapshotCheckCapacity = true;

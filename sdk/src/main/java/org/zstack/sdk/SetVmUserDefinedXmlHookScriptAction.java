@@ -70,7 +70,7 @@ public class SetVmUserDefinedXmlHookScriptAction extends AbstractAction {
         }
         
         org.zstack.sdk.SetVmUserDefinedXmlHookScriptResult value = res.getResult(org.zstack.sdk.SetVmUserDefinedXmlHookScriptResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVmUserDefinedXmlHookScriptResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.SetVmUserDefinedXmlHookScriptResult() : value; 
 
         return ret;
     }

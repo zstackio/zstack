@@ -551,6 +551,15 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             protected VolumeVO scripts() {
                 persist(vo);
                 reload(vo);
+
+                if (msg.getSystemTags() == null || msg.getSystemTags().isEmpty()) {
+                    List<String> originSysTags = sql("select tag.tag from VolumeSnapshotVO snapshot, SystemTagVO tag" +
+                            " where tag.resourceUuid = snapshot.volumeUuid" +
+                            " and snapshot.uuid = :snapshotUuid", String.class)
+                            .param("snapshotUuid", msg.getVolumeSnapshotUuid())
+                            .list();
+                    msg.setSystemTags(originSysTags);
+                }
                 tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), VolumeVO.class.getSimpleName());
                 return vo;
             }

@@ -20,6 +20,14 @@ public class LicenseInventory  {
         return this.user;
     }
 
+    public java.lang.String prodInfo;
+    public void setProdInfo(java.lang.String prodInfo) {
+        this.prodInfo = prodInfo;
+    }
+    public java.lang.String getProdInfo() {
+        return this.prodInfo;
+    }
+
     public java.lang.Integer cpuNum;
     public void setCpuNum(java.lang.Integer cpuNum) {
         this.cpuNum = cpuNum;
@@ -74,14 +82,6 @@ public class LicenseInventory  {
     }
     public java.lang.String getUploadDate() {
         return this.uploadDate;
-    }
-
-    public java.lang.String prodInfo;
-    public void setProdInfo(java.lang.String prodInfo) {
-        this.prodInfo = prodInfo;
-    }
-    public java.lang.String getProdInfo() {
-        return this.prodInfo;
     }
 
     public java.lang.String managementNodeUuid;

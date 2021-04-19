@@ -100,6 +100,9 @@ public class APICreateVmInstanceFromVolumeSnapshotMsg extends APICreateMessage i
     @APIParam(required = false, validValues = {"InstantStart", "CreateStopped"})
     private String strategy = VmCreationStrategy.InstantStart.toString();
 
+    @APIParam(required = false)
+    private List<String> rootVolumeSystemTags;
+
     public String getName() {
         return name;
     }
@@ -220,6 +223,14 @@ public class APICreateVmInstanceFromVolumeSnapshotMsg extends APICreateMessage i
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
+    }
+
+    public List<String> getRootVolumeSystemTags() {
+        return rootVolumeSystemTags;
+    }
+
+    public void setRootVolumeSystemTags(List<String> rootVolumeSystemTags) {
+        this.rootVolumeSystemTags = rootVolumeSystemTags;
     }
 
     public static APICreateVmInstanceFromVolumeSnapshotMsg __example__() {

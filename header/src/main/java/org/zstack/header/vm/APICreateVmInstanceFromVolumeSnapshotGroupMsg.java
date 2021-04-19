@@ -19,6 +19,7 @@ import org.zstack.header.zone.ZoneVO;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by MaJin on 2021/3/10.
@@ -98,6 +99,12 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
 
     @APIParam(required = false, validValues = {"InstantStart", "CreateStopped"})
     private String strategy = VmCreationStrategy.InstantStart.toString();
+
+    @APIParam(required = false)
+    private List<String> rootVolumeSystemTags;
+
+    @APIParam(required = false)
+    private Map<String, List<String>> dataVolumeSystemTags;
 
     public String getName() {
         return name;
@@ -227,5 +234,25 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
     @Override
     public APIAuditor.Result audit(APIMessage msg, APIEvent rsp) {
         return new APIAuditor.Result(rsp.isSuccess() ? ((APICreateVmInstanceFromVolumeSnapshotGroupEvent)rsp).getInventory().getUuid() : "", VmInstanceVO.class);
+    }
+
+    public List<String> getRootVolumeSystemTags() {
+        return rootVolumeSystemTags;
+    }
+
+    public void setRootVolumeSystemTags(List<String> rootVolumeSystemTags) {
+        this.rootVolumeSystemTags = rootVolumeSystemTags;
+    }
+
+    public List<String> getDataVolumeSystemTags(String snapshotUuid) {
+        return dataVolumeSystemTags == null ? null : dataVolumeSystemTags.get(snapshotUuid);
+    }
+
+    public Map<String, List<String>> getDataVolumeSystemTags() {
+        return dataVolumeSystemTags;
+    }
+
+    public void setDataVolumeSystemTags(Map<String, List<String>> dataVolumeSystemTags) {
+        this.dataVolumeSystemTags = dataVolumeSystemTags;
     }
 }
