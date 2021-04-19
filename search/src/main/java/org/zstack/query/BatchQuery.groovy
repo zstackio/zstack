@@ -450,6 +450,7 @@ class BatchQuery {
             binding.setVariable("zql", zql)
 
             def cc = new CompilerConfiguration()
+            cc.addCompilationCustomizers(new RejectASTTransformsCustomizer())
             cc.addCompilationCustomizers(new SandboxTransformer())
 
             def shell = new GroovyShell(new GroovyClassLoader(), binding, cc)
