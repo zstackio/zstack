@@ -59,8 +59,6 @@ public class ElaborationManagerImpl extends AbstractService {
             handle((APIGetElaborationsMsg) msg);
         } else if (msg instanceof APIGetElaborationCategoriesMsg) {
             handle((APIGetElaborationCategoriesMsg) msg);
-        } else if (msg instanceof APIGetMissedElaborationMsg) {
-            handle((APIGetMissedElaborationMsg) msg);
         } else if (msg instanceof APICheckElaborationContentMsg) {
             handle((APICheckElaborationContentMsg) msg);
         } else {
@@ -302,11 +300,6 @@ public class ElaborationManagerImpl extends AbstractService {
                 bus.reply(msg, reply);
             }
         });
-    }
-
-    private void handle(final APIGetMissedElaborationMsg msg) {
-        APIGetMissedElaborationReply reply = new APIGetMissedElaborationReply();
-        bus.reply(msg, reply);
     }
 
     private void refreshElaboration(final Completion completion) {
