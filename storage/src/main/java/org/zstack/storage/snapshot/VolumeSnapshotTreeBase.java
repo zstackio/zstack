@@ -417,6 +417,57 @@ public class VolumeSnapshotTreeBase {
             }
         });
 
+        chain.then(new Flow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                VmVsocDeleteSnapshotMsg vmsg = new VmVsocDeleteSnapshotMsg();
+                vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
+                vmsg.setSnapshotUuid(msg.getSnapshotUuid());
+                String hostUuid = Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue();
+                hostUuid = hostUuid != null ? hostUuid : Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.lastHostUuid).findValue();
+                vmsg.setHostUuid(hostUuid);
+                vmsg.setVmUuid(Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
+
+                bus.makeTargetServiceIdByResourceUuid(vmsg, HostConstant.SERVICE_ID, vmsg.getHostUuid());
+                bus.send(vmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                VmVsocCreateSnapshotMsg vmsg = new VmVsocCreateSnapshotMsg();
+                String hostUuid = Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue();
+                if (hostUuid == null) {
+                    hostUuid = Q.New(VmInstanceVO.class)
+                            .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.lastHostUuid).findValue();
+                }
+                vmsg.setHostUuid(hostUuid);
+                vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
+                vmsg.setSnapshotUuid(msg.getSnapshotUuid());
+                vmsg.setVmUuid(Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
+                bus.makeTargetServiceIdByResourceUuid(vmsg, HostConstant.SERVICE_ID, vmsg.getHostUuid());
+                bus.send(vmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        trigger.rollback();
+                    }
+                });
+            }
+        });
+
         if (!msg.isVolumeDeletion()) {
             // this deletion is caused by snapshot deletion, check if merge need
             SimpleQuery<VolumeSnapshotTreeVO> tq = dbf.createQuery(VolumeSnapshotTreeVO.class);
@@ -1878,7 +1929,7 @@ public class VolumeSnapshotTreeBase {
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                VmSocDeleteSnapshotMsg vmsg = new VmSocDeleteSnapshotMsg();
+                VmVsocDeleteSnapshotMsg vmsg = new VmVsocDeleteSnapshotMsg();
                 vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
                 vmsg.setSnapshotUuid(msg.getSnapshotUuid());
                 vmsg.setHostUuid(Q.New(VmInstanceVO.class)
