@@ -3,7 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.NeedReplyMessage;
 
-public class VmSocCreateSnapshotMsg extends NeedReplyMessage implements HostMessage {
+public class VmVsocCreateSnapshotMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
     private String platformId;
     private String snapshotUuid;

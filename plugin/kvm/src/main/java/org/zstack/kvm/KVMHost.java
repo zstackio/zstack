@@ -532,10 +532,10 @@ public class KVMHost extends HostBase implements Host {
             handle((VmVsocMigrateMsg) msg);
         } else if (msg instanceof VmBootFromNewNodeMsg) {
             handle((VmBootFromNewNodeMsg) msg);
-        } else if (msg instanceof VmSocCreateSnapshotMsg) {
-            handle ((VmSocCreateSnapshotMsg) msg);
-        } else if (msg instanceof VmSocDeleteSnapshotMsg) {
-            handle((VmSocDeleteSnapshotMsg) msg);
+        } else if (msg instanceof VmVsocCreateSnapshotMsg) {
+            handle ((VmVsocCreateSnapshotMsg) msg);
+        } else if (msg instanceof VmVsocDeleteSnapshotMsg) {
+            handle((VmVsocDeleteSnapshotMsg) msg);
         } else if (msg instanceof VmSocUseSnapshotMsg) {
             handle((VmSocUseSnapshotMsg) msg);
         } else if (msg instanceof VmCloneVsocFileMsg) {
@@ -554,16 +554,16 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(VmCloneVsocFileMsg msg) {
-        VsocCloneCommand cmd = new VsocCloneCommand();
+        VsocCommand cmd = new VsocCommand();
         cmd.destSocId = msg.getDestSocId();
-        cmd.destVmUuid = msg.getDestVmUuid();
-        cmd.srcVmUuid = msg.getSrcVmUuid();
-        cmd.resource = msg.getResource();
+        cmd.destVmName = msg.getDestVmUuid();
+        cmd.srcVmName = msg.getSrcVmUuid();
+        cmd.cloneResource = msg.getResource();
         cmd.platformId = msg.getPlatformId();
-        cmd.type = msg.getType();
-        new Http<>(cloneVsocPath, cmd, VsocCloneRsp.class).call(new ReturnValueCompletion<VsocCloneRsp>(msg) {
+        cmd.cloneType = msg.getType();
+        new Http<>(cloneVsocPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
             @Override
-            public void success(VsocCloneRsp ret) {
+            public void success(VsocRsp ret) {
                 VmCloneVsocReply reply = new VmCloneVsocReply();
                 if (!ret.isSuccess()) {
                     reply.setError(operr("Fail:call create_snapshot, because:%s", ret.getError()));
@@ -580,15 +580,15 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void handle(VmSocCreateSnapshotMsg msg) {
-        SocCreateSnaphotCommand cmd = new SocCreateSnaphotCommand();
+    private void handle(VmVsocCreateSnapshotMsg msg) {
+        VsocCommand cmd = new VsocCommand();
         cmd.platformId = msg.getPlatformId();
-        cmd.vmUuid = msg.getVmUuid();
-        cmd.snapshotUuid = msg.getSnapshotUuid();
+        cmd.vmName = msg.getVmUuid();
+        cmd.ssId = msg.getSnapshotUuid();
 
-        new Http<>(socCreateSnapshotPath, cmd, SocCreateSnapshotRsp.class).call(new ReturnValueCompletion<SocCreateSnapshotRsp>(msg) {
+        new Http<>(socCreateSnapshotPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
             @Override
-            public void success(SocCreateSnapshotRsp ret) {
+            public void success(VsocRsp ret) {
                 VmSocCreateSnapshotReply reply = new VmSocCreateSnapshotReply();
                 if (!ret.isSuccess()) {
                     reply.setError(operr("Fail:call create_snapshot, because:%s", ret.getError()));
@@ -605,17 +605,18 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void handle(VmSocDeleteSnapshotMsg msg) {
-        SocDeleteSnapshotCommand cmd = new SocDeleteSnapshotCommand();
+    private void handle(VmVsocDeleteSnapshotMsg msg) {
+        VsocCommand cmd = new VsocCommand();
         cmd.platformId = msg.getPlatformId();
-        cmd.vmUuid = msg.getVmUuid();
-        cmd.snapshotUuid = msg.getSnapshotUuid();
+        cmd.vmName = msg.getVmUuid();
+        cmd.ssId = msg.getSnapshotUuid();
+        cmd.delSsFlag = 0;
 
-        new Http<>(socDeleteSnapshotPath, cmd, SocDeleteSnapshotRsp.class).call(new ReturnValueCompletion<SocDeleteSnapshotRsp>(msg) {
+        new Http<>(socDeleteSnapshotPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
             @Override
-            public void success(SocDeleteSnapshotRsp ret) {
+            public void success(VsocRsp ret) {
                 VmSocDeleteSnapshotReply reply = new VmSocDeleteSnapshotReply();
-                if (ret.isSuccess()) {
+                if (!ret.isSuccess()) {
                     reply.setError(operr("Fail:call delete_snapshot, because:%s", ret.getError()));
                 }
                 bus.reply(msg, reply);
@@ -631,14 +632,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(VmSocUseSnapshotMsg msg) {
-        SocUseSnapshotCommand cmd = new SocUseSnapshotCommand();
+        VsocCommand cmd = new VsocCommand();
         cmd.platformId = msg.getPlatformId();
-        cmd.vmUuid = msg.getVmUuid();
-        cmd.snapshotUuid = msg.getSnapshotUuid();
+        cmd.vmName = msg.getVmUuid();
+        cmd.ssId = msg.getSnapshotUuid();
 
-        new Http<>(socUseSnapshotPath, cmd, SocUseSnapshotRsp.class).call(new ReturnValueCompletion<SocUseSnapshotRsp>(msg) {
+        new Http<>(socUseSnapshotPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
             @Override
-            public void success(SocUseSnapshotRsp ret) {
+            public void success(VsocRsp ret) {
                 VmSocUseSnapshotReply reply = new VmSocUseSnapshotReply();
                 if (!ret.isSuccess()) {
                     reply.setError(operr("Fail:call use_snapshot, because:%s", ret.getError()));
@@ -656,14 +657,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(VmBootFromNewNodeMsg msg) {
-        BootFromNewNodeCommand cmd = new BootFromNewNodeCommand();
+        VsocCommand cmd = new VsocCommand();
         cmd.platformId = msg.getPlatformId();
-        cmd.vmUuid = msg.getVmUuid();
+        cmd.vmName = msg.getVmUuid();
         cmd.prvSocId = msg.getPrvSocId();
 
-        new Http<>(bootFromNewNodePath, cmd, BootFromNewNodeRsp.class).call(new ReturnValueCompletion<BootFromNewNodeRsp>(msg) {
+        new Http<>(bootFromNewNodePath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
             @Override
-            public void success(BootFromNewNodeRsp ret) {
+            public void success(VsocRsp ret) {
                 VmBootFromNewNodeReply rsp = new VmBootFromNewNodeReply();
                 if (!ret.isSuccess()) {
                     logger.warn(String.format("Fail:call boot_from_new_node, because: %s", ret.getError()));
@@ -686,15 +687,15 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(VmVsocMigrateMsg msg) {
-        VsocMigrateCommand cmd = new VsocMigrateCommand();
-        cmd.vmUuid = msg.getVmUuid();
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmUuid();
         cmd.socId = msg.getDestSocId();
-        cmd.type = msg.getMigrateType();
+        cmd.migrateType = msg.getMigrateType();
         cmd.platformId = PLATFORM_ID;
 
-        new Http<>(vsocMigratePath, cmd, VsocMigrateRsp.class).call(new ReturnValueCompletion<VsocMigrateRsp>(msg) {
+        new Http<>(vsocMigratePath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
             @Override
-            public void success(VsocMigrateRsp ret) {
+            public void success(VsocRsp ret) {
                 VmVsocMigrateReply rsp = new VmVsocMigrateReply();
                 if (!ret.isSuccess()) {
                     rsp.setError(operr("migrate vm vsoc fail,becauese:%s", ret.getError()));
@@ -712,13 +713,13 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(VmVsocCreateBackupMsg msg) {
-        VsocCreateBackupCommand cmd = new VsocCreateBackupCommand();
-        cmd.vmUuid = msg.getVmUuid();
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmUuid();
         cmd.backupUuid = msg.getBackUuid();
         cmd.platformId = msg.getPlatformId();
-        new Http<>(vsocCreateBackup, cmd, VsocCreateBackupRsp.class).call(new ReturnValueCompletion<VsocCreateBackupRsp>(msg) {
+        new Http<>(vsocCreateBackup, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
             @Override
-            public void success(VsocCreateBackupRsp ret) {
+            public void success(VsocRsp ret) {
                 VmVsocCreateBackupReply rsp = new VmVsocCreateBackupReply();
                 if (!ret.isSuccess()) {
                     rsp.setError(operr("Fail: create_backup,becauese:%s", ret.getError()));
@@ -736,14 +737,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(VmVsocCreateVmFromBackupMsg msg) {
-        VsocCreateVmFromBackupCommand cmd = new VsocCreateVmFromBackupCommand();
-        cmd.vmUuid = msg.getVmUuid();
+        VsocCommand cmd = new VsocCommand();
+        cmd.srcVmName = msg.getVmUuid();
         cmd.backupUuid = msg.getBackupUuid();
         cmd.platformId = msg.getPlatformId();
-        cmd.srcVmUuid = msg.getSrcVmUuid();
-        new Http<>(vsocCreateVmFromBackup, cmd, VsocCreateVmFromBackupRsp.class).call(new ReturnValueCompletion<VsocCreateVmFromBackupRsp>(msg) {
+        cmd.destVmName = msg.getSrcVmUuid();
+        new Http<>(vsocCreateVmFromBackup, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
             @Override
-            public void success(VsocCreateVmFromBackupRsp ret) {
+            public void success(VsocRsp ret) {
                 VmVsocCreateVmFromBackupReply rsp = new VmVsocCreateVmFromBackupReply();
                 if (!ret.isSuccess()) {
                     rsp.setError(operr("Fail: delete_backup,becauese:%s", ret.getError()));
@@ -761,13 +762,13 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(VmVsocDeleteBackupMsg msg) {
-        VsocDeleteBackupCommand cmd = new VsocDeleteBackupCommand();
-        cmd.vmUuid = msg.getVmUuid();
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmUuid();
         cmd.backupUuid = msg.getBackUuid();
         cmd.platformId = msg.getPlatformId();
-        new Http<>(vsocDeleteBackup, cmd, VsocDeleteBackupRsp.class).call(new ReturnValueCompletion<VsocDeleteBackupRsp>(msg) {
+        new Http<>(vsocDeleteBackup, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
             @Override
-            public void success(VsocDeleteBackupRsp ret) {
+            public void success(VsocRsp ret) {
                 VmVsocDeleteBackupReply rsp = new VmVsocDeleteBackupReply();
                 if (!ret.isSuccess()) {
                     rsp.setError(operr("Fail: create_backup,becauese:%s", ret.getError()));
@@ -785,13 +786,13 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(VmVsocUseBackupMsg msg) {
-        VsocUseBackupCommand cmd = new VsocUseBackupCommand();
-        cmd.vmUuid = msg.getVmUuid();
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmUuid();
         cmd.backupUuid = msg.getBackupUuid();
         cmd.platformId = msg.getPlatformId();
-        new Http<>(vsocUseBackup, cmd, VsocUseBackupRsp.class).call(new ReturnValueCompletion<VsocUseBackupRsp>(msg) {
+        new Http<>(vsocUseBackup, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
             @Override
-            public void success(VsocUseBackupRsp ret) {
+            public void success(VsocRsp ret) {
                 VmVsocUseBackupReply rsp = new VmVsocUseBackupReply();
                 if (!ret.isSuccess()) {
                     rsp.setError(operr("Fail: use_backup,becauese:%s", ret.getError()));
@@ -820,14 +821,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(CreateVmVsocFileMsg msg) {
-        CreateVmVsocCommand cmd = new CreateVmVsocCommand();
-        cmd.vmUuid = msg.getVmInstanceUuid();
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmInstanceUuid();
         cmd.platformId = msg.getPlatformId();
 
-        new Http<>(vmCreateVsocPath, cmd, CreateVmVsocRsp.class).call(new ReturnValueCompletion<CreateVmVsocRsp>(msg) {
+        new Http<>(vmCreateVsocPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
 
             @Override
-            public void success(CreateVmVsocRsp ret) {
+            public void success(VsocRsp ret) {
                 final CreateVmVsocFileReply reply = new CreateVmVsocFileReply();
                 if (!ret.isSuccess()) {
                     reply.setError(operr("Error: %s", ret.getError()));
@@ -847,13 +848,13 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(DeleteVmVsocFileMsg msg) {
-        DeleteVmVsocCommand cmd = new DeleteVmVsocCommand();
-        cmd.vmUuid = msg.getVmInstanceUuid();
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmInstanceUuid();
         cmd.platformId = msg.getPlatformId();
 
-        new Http<>(vmDeleteVsocPath, cmd, DeleteVmVsocRsp.class).call(new ReturnValueCompletion<DeleteVmVsocRsp>(msg) {
+        new Http<>(vmDeleteVsocPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
             @Override
-            public void success(DeleteVmVsocRsp ret) {
+            public void success(VsocRsp ret) {
                 final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
                 if (!ret.isSuccess()) {
                     reply.setError(operr("Error: %s", ret.getError()));

@@ -41,9 +41,9 @@ public class VmDeleteVsocFileFlow extends NoRollbackFlow {
 
         DeleteVmVsocFileMsg msg = new DeleteVmVsocFileMsg();
         msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
-        msg.setHostUuid(spec.getDestHost().getUuid());
+        msg.setHostUuid(spec.getVmInventory().getHostUuid() != null ? spec.getVmInventory().getHostUuid() : spec.getVmInventory().getLastHostUuid());
         msg.setPlatformId(PLATFORM_ID);
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override
             public void run(MessageReply reply) {

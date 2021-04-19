@@ -2467,4 +2467,24 @@ public class KVMAgentCommands {
 
     public static class VsocUseBackupRsp extends AgentResponse {
     }
+
+    public static class VsocCommand extends AgentCommand {
+        public String vmName = "";
+        public String prvSocId = "";
+        public String socId = "";
+        public int migrateType = 0;
+        public String ssId = "123456f96f3c4e4ea61add45084eb9da";
+        public int delSsFlag = 0;
+        public String srcVmName = "";
+        public String destVmName = "";
+        public String destSocId = "";
+        public int cloneResource = 0;
+        public int cloneType = 0;
+        public String backupUuid = "123457f96f3c4e4ea61add45084eb9da";
+        public String platformId;
+    }
+
+    public static class VsocRsp extends AgentResponse {
+
+    }
 }
