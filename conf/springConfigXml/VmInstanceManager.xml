@@ -94,7 +94,6 @@
                 <value>org.zstack.compute.vm.VmReturnHostFlow</value>
                 <value>org.zstack.compute.vm.VmReleaseResourceFlow</value>
                 <value>org.zstack.compute.vm.VmReturnReleaseNicFlow</value>
-                <value>org.zstack.compute.vm.VmDeleteVsocFileFlow</value>
                 <value>org.zstack.compute.vm.VmDeleteVolumeFlow</value>
             </list>
         </property>
@@ -121,6 +120,7 @@
         </property>
         <property name="expungeVmWorkFlowElements">
             <list>
+                <value>org.zstack.compute.vm.VmDeleteVsocFileFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeRootVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeMemoryVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeCacheVolumeFlow</value>

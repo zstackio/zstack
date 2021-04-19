@@ -63,12 +63,14 @@ public interface KVMConstant {
     String KVM_REGISTER_PRIMARY_VM_HEARTBEAT = "/register/primary/vm/heartbeat";
     String KVM_VM_CREATE_VSOC = "/vm/createvsoc";
     String KVM_VM_DELETE_VSOC = "/vm/deletevsoc";
+    String KVM_VM_CREATE_VSOC = "/vm/vsoccreate";
+    String KVM_VM_DELETE_VSOC = "/vm/vsocdelete";
     String KVM_VSOC_MIGRATE = "/vm/vsocmigrate";
-    String KVM_BOOT_FROM_NEW_NODE = "/vm/bootfromnewnode";
+    String KVM_BOOT_FROM_NEW_NODE = "/vm/vsocbootfromnewnode";
     String KVM_VSOC_CREATE_SNAPSHOT_PATH = "/vm/vsoccreatesnapshot";
     String KVM_VSOC_DELETE_SNAPSHOT_PATH = "/vm/vsocdeletesnapshot";
     String KVM_VSOC_USE_SNAPSHOT = "/vm/vsocusesnapshot";
-    String KVM_CLONE_VSOC = "/vm/clonevsoc";
+    String KVM_CLONE_VSOC = "/vm/vsocclone";
     String KVM_VSOC_CREATE_BACKUP_PATH = "/vm/vsoccreatebackup";
     String KVM_VSOC_DELETE_BACKUP_PATH = "/vm/vsocdeletebackup";
     String KVM_VSOC_CREATE_FROM_BACKUP_PATH = "/vm/vsoccreatefrombackup";
