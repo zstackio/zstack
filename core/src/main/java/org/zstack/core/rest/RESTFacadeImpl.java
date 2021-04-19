@@ -93,12 +93,13 @@ public class RESTFacadeImpl implements RESTFacade {
             StringBuilder sb = new StringBuilder();
             sb.append("\n================ BEGIN: REST CALL Statistics ===================\n");
             if (!CoreGlobalProperty.PROFILER_HTTP_CALL) {
-                sb.append("# rest call profiler is off");
+                sb.append("# rest call profiler is off\n");
             } else {
                 List<HttpCallStatistic> hstats = new ArrayList<HttpCallStatistic>(getStatistics().values());
                 hstats.sort((o1, o2) -> (int) (o2.getTotalTime() - o1.getTotalTime()));
                 for (HttpCallStatistic stat : hstats) {
                     sb.append(stat.toString());
+                    sb.append("\n");
                 }
             }
             sb.append("================ END: REST CALL Statistics =====================\n");
@@ -333,7 +334,7 @@ public class RESTFacadeImpl implements RESTFacade {
                 timeoutTaskReceipt.cancel();
             }
 
-            ReturnValueCompletion<HttpEntity<String>> completion = new ReturnValueCompletion<HttpEntity<String>>(callback) {
+            final ReturnValueCompletion<HttpEntity<String>> completion = new ReturnValueCompletion<HttpEntity<String>>(callback) {
                 @Override
                 @AsyncThread
                 public void success(HttpEntity<String> responseEntity) {
@@ -415,7 +416,7 @@ public class RESTFacadeImpl implements RESTFacade {
             wrappers.put(taskUuid, wrapper);
 
             if (logger.isTraceEnabled()) {
-                logger.trace(String.format("json %s [%s], %s", method.toString(), url, req.toString()));
+                logger.trace(String.format("json %s [%s], %s", method.toString(), url, req));
             }
 
             ListenableFuture<ResponseEntity<String>> f = asyncRestTemplate.exchange(url, HttpMethod.POST, req, String.class);
@@ -541,7 +542,7 @@ public class RESTFacadeImpl implements RESTFacade {
         requestHeaders.setContentLength(body.length());
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("json %s[%s], %s", method.toString().toLowerCase(), url, req.toString()));
+            logger.trace(String.format("json %s[%s], %s", method.toString().toLowerCase(), url, req));
         }
 
         ResponseEntity<String> rsp;
