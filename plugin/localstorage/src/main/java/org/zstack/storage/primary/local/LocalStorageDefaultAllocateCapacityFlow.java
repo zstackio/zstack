@@ -239,6 +239,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
                         if (msg == rmsg) {
                             vspec.setSize(ar.getSize());
                             vspec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
+                            vspec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
                             vspec.setType(VolumeType.Root.toString());
                         } else {
                             vspec.setSize(ar.getSize());

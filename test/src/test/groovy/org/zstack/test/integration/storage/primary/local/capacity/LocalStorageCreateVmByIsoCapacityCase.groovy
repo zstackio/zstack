@@ -12,6 +12,7 @@ import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
 import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
@@ -91,7 +92,7 @@ class LocalStorageCreateVmByIsoCapacityCase extends SubCase {
             l3NetworkUuids = [l3.uuid]
             rootDiskOfferingUuid = diskOffering.uuid
             hostUuid = host.uuid
-        }
+        } as VmInstanceInventory
 
         GetPrimaryStorageCapacityResult capacityResult = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
@@ -100,7 +101,7 @@ class LocalStorageCreateVmByIsoCapacityCase extends SubCase {
         def hostRef = Q.New(LocalStorageHostRefVO.class).eq(LocalStorageHostRefVO_.hostUuid, host.uuid).find() as LocalStorageHostRefVO
         assert hostRef.availableCapacity == hostCapacity.availableCapacity - SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(1)
         assert hostRef.availablePhysicalCapacity == hostCapacity.availablePhysicalCapacity - SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(1)
-
+        assert vm.allVolumes[0].diskOfferingUuid == diskOffering.uuid
         // ImageCache(1G) + VolumeSize(20G)
         assert beforeCapacityResult.availableCapacity == capacityResult.availableCapacity +
                 SizeUnit.GIGABYTE.toByte(1) + SizeUnit.GIGABYTE.toByte(20)
