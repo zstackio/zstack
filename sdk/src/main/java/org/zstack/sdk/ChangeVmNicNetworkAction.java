@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ChangeVmNicNetworkAction extends AbstractAction {
 
@@ -29,6 +30,9 @@ public class ChangeVmNicNetworkAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String destL3NetworkUuid;
+
+    @Param(required = false)
+    public java.lang.String staticIp;
 
     @Param(required = false)
     public java.util.List systemTags;

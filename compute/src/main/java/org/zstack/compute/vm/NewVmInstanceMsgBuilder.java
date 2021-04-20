@@ -71,6 +71,8 @@ public class NewVmInstanceMsgBuilder {
         cmsg.setStrategy(msg.getStrategy());
         cmsg.setServiceId(api.getServiceId());
         cmsg.setHeaders(api.getHeaders());
+        cmsg.setSystemTags(api.getSystemTags());
+        cmsg.setUserTags(api.getUserTags());
 
         return cmsg;
     }

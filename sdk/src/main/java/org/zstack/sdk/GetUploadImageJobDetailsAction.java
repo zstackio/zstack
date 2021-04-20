@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetVpcAttachedVipAction extends AbstractAction {
+public class GetUploadImageJobDetailsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetVpcAttachedVipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVpcAttachedVipResult value;
+        public org.zstack.sdk.GetUploadImageJobDetailsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,13 +26,7 @@ public class GetVpcAttachedVipAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.lang.Integer limit = 1000;
-
-    @Param(required = false)
-    public java.lang.Integer start = 0;
+    public java.lang.String imageId;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +54,8 @@ public class GetVpcAttachedVipAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetVpcAttachedVipResult value = res.getResult(org.zstack.sdk.GetVpcAttachedVipResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVpcAttachedVipResult() : value; 
+        org.zstack.sdk.GetUploadImageJobDetailsResult value = res.getResult(org.zstack.sdk.GetUploadImageJobDetailsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetUploadImageJobDetailsResult() : value; 
 
         return ret;
     }
@@ -90,11 +84,11 @@ public class GetVpcAttachedVipAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/vpc/virtual-routers/{uuid}/attached-vip";
+        info.httpMethod = "GET";
+        info.path = "/images/upload-job/details/{imageId}";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

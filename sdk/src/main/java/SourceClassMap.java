@@ -213,6 +213,7 @@ public class SourceClassMap {
 			put("org.zstack.header.identityzone.IdentityZoneProperty", "org.zstack.sdk.IdentityZoneProperty");
 			put("org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotEvent$Failure", "org.zstack.sdk.CreateDataVolumeTemplateFromVolumeSnapshotFailure");
 			put("org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure", "org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure");
+			put("org.zstack.header.image.APIGetUploadImageJobDetailsReply$JobDetails", "org.zstack.sdk.JobDetails");
 			put("org.zstack.header.image.ImageBackupStorageRefInventory", "org.zstack.sdk.ImageBackupStorageRefInventory");
 			put("org.zstack.header.image.ImageInventory", "org.zstack.sdk.ImageInventory");
 			put("org.zstack.header.longjob.LongJobInventory", "org.zstack.sdk.LongJobInventory");
@@ -339,6 +340,8 @@ public class SourceClassMap {
 			put("org.zstack.kvm.KVMIsoTO", "org.zstack.sdk.KVMIsoTO");
 			put("org.zstack.ldap.LdapAccountRefInventory", "org.zstack.sdk.LdapAccountRefInventory");
 			put("org.zstack.ldap.LdapServerInventory", "org.zstack.sdk.LdapServerInventory");
+			put("org.zstack.license.AdditionalLicenseInfo", "org.zstack.sdk.AdditionalLicenseInfo");
+			put("org.zstack.license.AdditionalLicenseType", "org.zstack.sdk.AdditionalLicenseType");
 			put("org.zstack.license.LicenseAddOnInventory", "org.zstack.sdk.LicenseAddOnInventory");
 			put("org.zstack.license.LicenseInventory", "org.zstack.sdk.LicenseInventory");
 			put("org.zstack.login.entity.LdapResourceRefInventory", "org.zstack.sdk.LdapResourceRefInventory");
@@ -604,6 +607,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ActionType", "org.zstack.vpcfirewall.entity.ActionType");
 			put("org.zstack.sdk.AddHostFromFileResult", "org.zstack.header.host.AddHostFromFileResult");
 			put("org.zstack.sdk.AddingNewVmRuleInventory", "org.zstack.autoscaling.group.rule.AddingNewVmRuleInventory");
+			put("org.zstack.sdk.AdditionalLicenseInfo", "org.zstack.license.AdditionalLicenseInfo");
+			put("org.zstack.sdk.AdditionalLicenseType", "org.zstack.license.AdditionalLicenseType");
 			put("org.zstack.sdk.AddressPoolInventory", "org.zstack.header.network.l3.AddressPoolInventory");
 			put("org.zstack.sdk.AffinityGroupInventory", "org.zstack.header.affinitygroup.AffinityGroupInventory");
 			put("org.zstack.sdk.AffinityGroupUsageInventory", "org.zstack.header.affinitygroup.AffinityGroupUsageInventory");
@@ -765,6 +770,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.IscsiServerInventory", "org.zstack.storage.device.iscsi.IscsiServerInventory");
 			put("org.zstack.sdk.IscsiTargetInventory", "org.zstack.storage.device.iscsi.IscsiTargetInventory");
 			put("org.zstack.sdk.ItemInventory", "org.zstack.monitoring.items.ItemInventory");
+			put("org.zstack.sdk.JobDetails", "org.zstack.header.image.APIGetUploadImageJobDetailsReply$JobDetails");
 			put("org.zstack.sdk.JsonLabelInventory", "org.zstack.core.jsonlabel.JsonLabelInventory");
 			put("org.zstack.sdk.KVMHostInventory", "org.zstack.kvm.KVMHostInventory");
 			put("org.zstack.sdk.KVMIsoTO", "org.zstack.kvm.KVMIsoTO");

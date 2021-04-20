@@ -24,7 +24,9 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -49,7 +51,7 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         SimpleQuery<PrimaryStorageClusterRefVO> pq = dbf.createQuery(PrimaryStorageClusterRefVO.class);
         pq.select(PrimaryStorageClusterRefVO_.primaryStorageUuid);
         pq.add(PrimaryStorageClusterRefVO_.clusterUuid, Op.IN, clusterUuids);
-        List<String> psUuids = pq.listValue();
+        Set<String> psUuids = new HashSet<>(pq.listValue());
         if (psUuids.isEmpty()) {
             return true;
         }
