@@ -4,10 +4,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Timestamp;
 
@@ -57,6 +54,11 @@ public class VolumeSnapshotGroupRefVO implements Serializable {
 
     @Column
     private Timestamp lastOpDate;
+
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
     public String getVolumeSnapshotUuid() {
         return volumeSnapshotUuid;

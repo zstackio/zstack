@@ -41,6 +41,11 @@ public class AccessControlListEntryVO implements ToInventory {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public String getUuid() {
         return uuid;
     }

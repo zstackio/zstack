@@ -36,6 +36,10 @@ public class TagPatternVO extends ResourceVO implements OwnedByAccount {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
     @Override
     public String getAccountUuid() {

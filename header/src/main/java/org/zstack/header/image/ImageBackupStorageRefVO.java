@@ -53,6 +53,11 @@ public class ImageBackupStorageRefVO implements Serializable {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public ImageStatus getStatus() {
         return status;
     }
