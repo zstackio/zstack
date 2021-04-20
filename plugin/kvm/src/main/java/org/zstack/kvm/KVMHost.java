@@ -7,10 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.zstack.compute.host.HostBase;
-import org.zstack.compute.host.HostGlobalConfig;
-import org.zstack.compute.host.HostSystemTags;
-import org.zstack.compute.host.MigrateNetworkExtensionPoint;
+import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
@@ -524,9 +521,39 @@ public class KVMHost extends HostBase implements Host {
             handle((StartColoSyncMsg) msg);
         } else if (msg instanceof RegisterColoPrimaryCheckMsg) {
             handle((RegisterColoPrimaryCheckMsg) msg);
+        } else if (msg instanceof AllocateHostPortMsg) {
+            handle((AllocateHostPortMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(AllocateHostPortMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("allocate-host-%s-port", msg.getHostUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                AllocateHostPortReply reply = new AllocateHostPortReply();
+                reply.setHostPortIds(new ArrayList<>());
+                HostPortGetter portGetter = new HostPortGetter();
+                for (int i = 0; i < msg.getAllocateCount(); i++) {
+                    HostPortVO vo = portGetter.getNextHostPort(msg.getHostUuid(), "");
+                    reply.getHostPortIds().add(vo.getId());
+                }
+
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("allocate-host-%s-port", msg.getHostUuid());
+            }
+        });
     }
 
     private void handle(CheckHostCapacityMsg msg) {
