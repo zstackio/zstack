@@ -51,7 +51,7 @@
         <category>loadBalancer</category>
         <name>maxConnection</name>
         <description>The number of max concurrent connections.</description>
-        <defaultValue>100000</defaultValue>
+        <defaultValue>200000</defaultValue>
         <type>java.lang.Long</type>
     </config>
 
