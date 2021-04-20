@@ -1715,6 +1715,7 @@ public class KVMHost extends HostBase implements Host {
                     public void run(final FlowTrigger trigger, Map data) {
                         if (vDPANics.isEmpty()) {
                             trigger.next();
+                            return;
                         }
                         GenerateVdpaCmd cmd = new GenerateVdpaCmd();
                         cmd.vmUuid = vmUuid;
@@ -1881,6 +1882,7 @@ public class KVMHost extends HostBase implements Host {
                     public void run(final FlowTrigger trigger, Map data) {
                         if (vDPANics.isEmpty()) {
                             trigger.next();
+                            return;
                         }
                         DeleteVdpaCmd cmd = new DeleteVdpaCmd();
                         cmd.vmUuid = vmUuid;
