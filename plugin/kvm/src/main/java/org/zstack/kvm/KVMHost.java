@@ -3599,6 +3599,9 @@ public class KVMHost extends HostBase implements Host {
                                     runner.putArgument("isMini", "true");
                                 }
                             }
+                            if ("baremetal2".equals(self.getHypervisorType())) {
+                                runner.putArgument("isBareMetal2Gateway", "true");
+                            }
                             if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
                                 runner.putArgument("bridgeDisableIptables", "true");
                             }
