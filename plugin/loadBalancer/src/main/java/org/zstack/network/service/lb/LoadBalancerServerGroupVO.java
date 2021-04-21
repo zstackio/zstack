@@ -65,6 +65,10 @@ public class LoadBalancerServerGroupVO extends ResourceVO  implements OwnedByAcc
     @NoView
     private Set<LoadBalancerServerGroupVmNicRefVO> loadBalancerServerGroupVmNicRefs = new HashSet<LoadBalancerServerGroupVmNicRefVO>();
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
     public String getName() {
         return name;

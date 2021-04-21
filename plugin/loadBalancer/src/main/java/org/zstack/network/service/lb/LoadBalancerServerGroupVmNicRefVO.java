@@ -44,6 +44,11 @@ public class LoadBalancerServerGroupVmNicRefVO {
     @Column
     private Timestamp lastOpDate;
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public LoadBalancerVmNicStatus getStatus() {
         return status;
     }

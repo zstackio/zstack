@@ -43,6 +43,11 @@ public class VolumeSnapshotGroupVO extends ResourceVO implements OwnedByAccount 
     @NoView
     private Set<VolumeSnapshotGroupRefVO> volumeSnapshotRefs = new HashSet<>();
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public Integer getSnapshotCount() {
         return snapshotCount;
     }
