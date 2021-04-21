@@ -43,6 +43,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
+import org.zstack.network.service.virtualrouter.lifecycle.TrackVirtualRouterVmFlow;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterCreatePublicVipFlow;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -124,6 +125,13 @@ public class VirtualRouter extends ApplianceVmBase {
 
     protected FlowChain getReconnectChain() {
         return vrMgr.getReconnectFlowChain();
+    }
+
+    @Override
+    protected List<Flow> createAfterConnectNewCreatedVirtualRouterFlows() {
+        List<Flow> flows = new ArrayList<>();
+        flows.add(new TrackVirtualRouterVmFlow());
+        return flows;
     }
 
     @Override

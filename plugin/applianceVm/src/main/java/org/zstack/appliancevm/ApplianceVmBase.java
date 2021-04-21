@@ -91,6 +91,10 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         return flows;
     }
 
+    protected List<Flow> createAfterConnectNewCreatedVirtualRouterFlows() {
+        return new ArrayList<>();
+    }
+
     @Override
     protected void destroyHook(VmInstanceDeletionPolicy deletionPolicy, Message msg, final Completion completion){
         logger.debug(String.format("deleting appliance vm[uuid:%s], always use Direct deletion policy", self.getUuid()));
@@ -658,6 +662,14 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         return chain;
     }
 
+    private FlowChain addAfterConnectNewCreatedVirtualRouterFlows(FlowChain chain) {
+        for (Flow flow : createAfterConnectNewCreatedVirtualRouterFlows()) {
+            chain.then(flow);
+        }
+
+        return chain;
+    }
+
     @Override
     protected void instantiateVmFromNewCreate(final InstantiateNewCreatedVmInstanceMsg msg, final SyncTaskChain taskChain) {
         boolean callNext = true;
@@ -755,6 +767,8 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                     trigger.next();
                 }
             });
+
+            addAfterConnectNewCreatedVirtualRouterFlows(chain);
 
             boolean noRollbackOnFailure = ApplianceVmGlobalProperty.NO_ROLLBACK_ON_POST_FAILURE;
             chain.noRollback(noRollbackOnFailure);

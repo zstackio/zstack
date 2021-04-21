@@ -28,7 +28,6 @@
                 <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterSyncPortForwardingRulesOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.eip.VirtualRouterSyncEipOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.lb.VirtualRouterSyncLbOnStartFlow</value>
-                <value>org.zstack.network.service.virtualrouter.lifecycle.TrackVirtualRouterVmFlow</value>
             </list>
         </property>
 
