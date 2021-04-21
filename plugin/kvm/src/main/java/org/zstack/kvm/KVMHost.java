@@ -1696,6 +1696,12 @@ public class KVMHost extends HostBase implements Host {
                 .eq(VmNicVO_.type, "vDPA")
                 .list();
         List<NicTO> nicTos = VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList());
+        List<NicTO> vDPANics = new ArrayList<NicTO>();
+        for (NicTO nicTo : nicTos) {
+            if (nicTo.getType().equals("vDPA")) {
+                vDPANics.add(nicTo);
+            }
+        }
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-vm-%s-on-kvm-host-%s", vmUuid, self.getUuid()));
@@ -1707,8 +1713,9 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        if (nicTos.isEmpty()) {
+                        if (vDPANics.isEmpty()) {
                             trigger.next();
+                            return;
                         }
                         GenerateVdpaCmd cmd = new GenerateVdpaCmd();
                         cmd.vmUuid = vmUuid;
@@ -1873,8 +1880,9 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        if (nicTos.isEmpty()) {
+                        if (vDPANics.isEmpty()) {
                             trigger.next();
+                            return;
                         }
                         DeleteVdpaCmd cmd = new DeleteVdpaCmd();
                         cmd.vmUuid = vmUuid;

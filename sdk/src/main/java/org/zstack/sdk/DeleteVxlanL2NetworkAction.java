@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetVpcAttachedVipAction extends AbstractAction {
+public class DeleteVxlanL2NetworkAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetVpcAttachedVipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVpcAttachedVipResult value;
+        public org.zstack.sdk.DeleteL2NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -29,10 +29,7 @@ public class GetVpcAttachedVipAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.Integer limit = 1000;
-
-    @Param(required = false)
-    public java.lang.Integer start = 0;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -52,6 +49,12 @@ public class GetVpcAttachedVipAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -60,8 +63,8 @@ public class GetVpcAttachedVipAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetVpcAttachedVipResult value = res.getResult(org.zstack.sdk.GetVpcAttachedVipResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVpcAttachedVipResult() : value; 
+        org.zstack.sdk.DeleteL2NetworkResult value = res.getResult(org.zstack.sdk.DeleteL2NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteL2NetworkResult() : value; 
 
         return ret;
     }
@@ -90,11 +93,11 @@ public class GetVpcAttachedVipAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/vpc/virtual-routers/{uuid}/attached-vip";
+        info.httpMethod = "DELETE";
+        info.path = "/l2-networks/vxlan/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "params";
+        info.needPoll = true;
+        info.parameterName = "";
         return info;
     }
 

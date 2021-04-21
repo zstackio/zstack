@@ -92,6 +92,14 @@ public class HostNetworkInterfaceInventory  {
         return this.pciDeviceAddress;
     }
 
+    public java.lang.String offloadStatus;
+    public void setOffloadStatus(java.lang.String offloadStatus) {
+        this.offloadStatus = offloadStatus;
+    }
+    public java.lang.String getOffloadStatus() {
+        return this.offloadStatus;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
