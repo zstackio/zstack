@@ -33,6 +33,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
@@ -41,6 +42,7 @@ import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.vip.ModifyVipAttributesStruct;
 import org.zstack.network.service.vip.Vip;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -1660,67 +1662,41 @@ public class LoadBalancerBase {
                 LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getUuid(), LoadBalancerListenerVO.class);
 
                 if (msg.getBalancerAlgorithm() != null) {
-                    LoadBalancerSystemTags.BALANCER_ALGORITHM.update(msg.getUuid(),
-                            LoadBalancerSystemTags.BALANCER_ALGORITHM.instantiateTag(map(
-                                    e(LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, msg.getBalancerAlgorithm())
-                            )));
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.BALANCER_ALGORITHM, msg.getUuid(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, msg.getBalancerAlgorithm());
                 }
 
                 if (msg.getConnectionIdleTimeout() != null) {
-                    LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.update(msg.getUuid(),
-                            LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.instantiateTag(map(
-                                    e(LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN, msg.getConnectionIdleTimeout())
-                            )));
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN, msg.getConnectionIdleTimeout());
                 }
 
+
                 if (msg.getHealthCheckInterval() != null) {
-                    LoadBalancerSystemTags.HEALTH_INTERVAL.update(msg.getUuid(),
-                            LoadBalancerSystemTags.HEALTH_INTERVAL.instantiateTag(map(
-                                    e(LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN, msg.getHealthCheckInterval())
-                            )));
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_INTERVAL, msg.getUuid(), LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN, msg.getHealthCheckInterval());
                 }
 
                 if (msg.getNbprocess() != null) {
-                    LoadBalancerSystemTags.NUMBER_OF_PROCESS.update(msg.getUuid(),
-                            LoadBalancerSystemTags.NUMBER_OF_PROCESS.instantiateTag(map(
-                                    e(LoadBalancerSystemTags.NUMBER_OF_PROCESS_TOKEN, msg.getNbprocess())
-                            )));
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.NUMBER_OF_PROCESS, msg.getUuid(), LoadBalancerSystemTags.NUMBER_OF_PROCESS_TOKEN, msg.getNbprocess());
                 }
 
                 if (msg.getHttpMode() != null) {
-                    LoadBalancerSystemTags.HTTP_MODE.update(msg.getUuid(),
-                            LoadBalancerSystemTags.HTTP_MODE.instantiateTag(map(
-                                    e(LoadBalancerSystemTags.HTTP_MODE_TOKEN, msg.getHttpMode())
-                            )));
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_MODE, msg.getUuid(), LoadBalancerSystemTags.HTTP_MODE_TOKEN, msg.getHttpMode());
                 }
 
                 if (msg.getHealthCheckTarget() != null) {
                     String[] ts = getHeathCheckTarget(msg.getLoadBalancerListenerUuid());
-                    LoadBalancerSystemTags.HEALTH_TARGET.update(msg.getUuid(),
-                            LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(map(
-                                    e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, String.format("%s:%s", ts[0], msg.getHealthCheckTarget())))
-                            ));
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_TARGET, msg.getUuid(), LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, String.format("%s:%s", ts[0], msg.getHealthCheckTarget()));
                 }
 
                 if (msg.getHealthyThreshold() != null) {
-                    LoadBalancerSystemTags.HEALTHY_THRESHOLD.update(msg.getUuid(),
-                            LoadBalancerSystemTags.HEALTHY_THRESHOLD.instantiateTag(map(
-                                    e(LoadBalancerSystemTags.HEALTHY_THRESHOLD_TOKEN, msg.getHealthyThreshold())
-                            )));
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTHY_THRESHOLD, msg.getUuid(), LoadBalancerSystemTags.HEALTHY_THRESHOLD_TOKEN, msg.getHealthyThreshold());
                 }
 
                 if (msg.getUnhealthyThreshold() != null) {
-                    LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.update(msg.getUuid(),
-                            LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.instantiateTag(map(
-                                    e(LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN, msg.getUnhealthyThreshold())
-                            )));
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.UNHEALTHY_THRESHOLD, msg.getUuid(), LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN, msg.getUnhealthyThreshold());
                 }
 
                 if (msg.getMaxConnection() != null) {
-                    LoadBalancerSystemTags.MAX_CONNECTION.update(msg.getUuid(),
-                            LoadBalancerSystemTags.MAX_CONNECTION.instantiateTag(map(
-                                    e(LoadBalancerSystemTags.MAX_CONNECTION_TOKEN, msg.getMaxConnection())
-                            )));
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.MAX_CONNECTION, msg.getUuid(), LoadBalancerSystemTags.MAX_CONNECTION_TOKEN, msg.getMaxConnection());
                 }
 
                 String[] ts = getHeathCheckTarget(msg.getUuid());
@@ -1828,6 +1804,16 @@ public class LoadBalancerBase {
                 return "change-lb-listener";
             }
         });
+    }
+
+    private <K, V> void updateLoadBalancerListenerSystemTag(PatternedSystemTag systemTag, String resourceUuid, K token, V value) {
+        SystemTagInventory systemTagInventory = systemTag.update(resourceUuid, systemTag.instantiateTag(map(e(token, value))));
+
+        if (systemTagInventory == null) {
+            SystemTagCreator creator = systemTag.newSystemTagCreator(resourceUuid);
+            creator.setTagByTokens(map(e(token, value)));
+            creator.create();
+        }
     }
 
     private void handle(APIAddCertificateToLoadBalancerListenerMsg msg) {
