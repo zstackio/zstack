@@ -1,5 +1,6 @@
 package org.zstack.test.integration.core.chaintask
 
+import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
 import org.zstack.core.debug.DebugSignal
 import org.zstack.core.thread.ChainTask
@@ -93,6 +94,24 @@ class ChainTaskCase extends SubCase {
         }
     }
 
+    void testDumpRestStats() {
+        def inv = loginAsAdmin()
+        def orig = CoreGlobalProperty.PROFILER_HTTP_CALL
+
+        debugSignal {
+            signals = ["DumpRestStats"]
+            sessionId = inv.uuid
+        }
+
+        CoreGlobalProperty.PROFILER_HTTP_CALL = !orig
+        debugSignal {
+            signals = ["DumpRestStats"]
+            sessionId = inv.uuid
+        }
+
+        CoreGlobalProperty.PROFILER_HTTP_CALL = orig
+    }
+
     void testChainTaskAsyncLevel() {
         ThreadFacade thdf = bean(ThreadFacade.class)
         String signature = Platform.uuid
@@ -155,5 +174,6 @@ class ChainTaskCase extends SubCase {
         testChainTaskAsyncLevel()
         testChainTaskIncreaseAsyncLevel()
         testDumpQueueSignal()
+        testDumpRestStats()
     }
 }
