@@ -3526,7 +3526,7 @@ public class KVMHost extends HostBase implements Host {
 
                             String hostArchitecture = ret.getStdout().trim();
                             ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
-                            if (cluster.getArchitecture() != null && !hostArchitecture.equals(cluster.getArchitecture())) {
+                            if (cluster.getArchitecture() != null && !hostArchitecture.equals(cluster.getArchitecture()) && !cluster.getHypervisorType().equals("baremetal2")) {
                                 trigger.fail(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, cluster.getArchitecture()));
                                 return;
                             }
@@ -3617,6 +3617,9 @@ public class KVMHost extends HostBase implements Host {
                                 if (ext.isMini()) {
                                     runner.putArgument("isMini", "true");
                                 }
+                            }
+                            if ("baremetal2".equals(self.getHypervisorType())) {
+                                runner.putArgument("isBareMetal2Gateway", "true");
                             }
                             if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
                                 runner.putArgument("bridgeDisableIptables", "true");

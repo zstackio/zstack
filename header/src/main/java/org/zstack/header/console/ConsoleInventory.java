@@ -8,6 +8,7 @@ package org.zstack.header.console;
  */
 public class ConsoleInventory {
     private String scheme;
+    private String targetScheme;
     private String hostname;
     private int port;
     private String token;
@@ -18,6 +19,7 @@ public class ConsoleInventory {
         inv.setHostname(vo.getProxyHostname());
         inv.setPort(vo.getProxyPort());
         inv.setScheme(vo.getScheme());
+        inv.setTargetScheme(vo.getTargetSchema());
         return inv;
     }
 
@@ -27,6 +29,14 @@ public class ConsoleInventory {
 
     public void setScheme(String scheme) {
         this.scheme = scheme;
+    }
+
+    public String getTargetScheme() {
+        return targetScheme;
+    }
+
+    public void setTargetScheme(String targetScheme) {
+        this.targetScheme = targetScheme;
     }
 
     public String getHostname() {

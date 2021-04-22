@@ -2845,6 +2845,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         PrimaryStorageType psType = PrimaryStorageType.valueOf(ps.getType());
         List<String> bsUuids = psType.findBackupStorage(psUuid);
 
+        String architecture = Q.New(ClusterVO.class)
+                .eq(ClusterVO_.uuid, getSelfInventory().getClusterUuid())
+                .select(ClusterVO_.architecture)
+                .findValue();
+
         if (!bsUuids.isEmpty()) {
             String sql = "select distinct img" +
                     " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
@@ -2853,6 +2858,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     " and img.state = :state" +
                     " and img.status = :status" +
                     " and img.system = :system" +
+                    " and img.architecture = :arch" +
                     " and bs.uuid = ref.backupStorageUuid" +
                     " and bs.uuid in (:bsUuids)" +
                     " and bs.uuid = bsRef.backupStorageUuid" +
@@ -2865,8 +2871,14 @@ public class VmInstanceBase extends AbstractVmInstance {
             q.setParameter("state", ImageState.Enabled);
             q.setParameter("status", ImageStatus.Ready);
             q.setParameter("system", false);
+            q.setParameter("arch", architecture);
             q.setParameter("bsUuids", bsUuids);
-            return ImageInventory.valueOf(q.getResultList());
+            List<ImageInventory> candidates = ImageInventory.valueOf(q.getResultList());
+            CollectionUtils.safeForEach(
+                    pluginRgty.getExtensionList(ChangeVmImageCandidateFilterExtensionPoint.class),
+                    ext -> ext.filterImageCandidates(getSelfInventory(), candidates)
+            );
+            return candidates;
         } else {
             return new ArrayList<>();
         }

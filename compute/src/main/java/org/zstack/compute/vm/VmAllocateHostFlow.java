@@ -24,7 +24,9 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +36,8 @@ import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateHostFlow implements Flow {
+    private static final CLogger logger = Utils.getLogger(VmAllocateHostFlow.class);
+
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -119,6 +123,13 @@ public class VmAllocateHostFlow implements Flow {
         if (VmOperation.NewCreate != spec.getCurrentVmOperation()
                 && VmOperation.ChangeImage != spec.getCurrentVmOperation()) {
             throw new CloudRuntimeException("VmAllocateHostFlow is only for creating new VM or changing image");
+        }
+
+        if (VmOperation.ChangeImage == spec.getCurrentVmOperation() && spec.getDestHost() != null) {
+            logger.debug(String.format("changing image for vm[uuid:%s] and spec.getDestHost() != null, " +
+                    "so skip VmAllocateHostFlow", spec.getVmInventory().getUuid()));
+            chain.next();
+            return;
         }
 
         AllocateHostMsg msg = this.prepareMsg(spec);

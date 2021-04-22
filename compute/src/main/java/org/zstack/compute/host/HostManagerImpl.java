@@ -370,6 +370,12 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             }
         }).then(new NoRollbackFlow() {
             @Override
+            public boolean skip(Map data) {
+                // no need to check baremetal2 gateway architecture with the cluster architecture
+                return vo.getHypervisorType().equals("baremetal2");
+            }
+
+            @Override
             public void run(FlowTrigger trigger, Map data) {
                 String arch = HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN);
 

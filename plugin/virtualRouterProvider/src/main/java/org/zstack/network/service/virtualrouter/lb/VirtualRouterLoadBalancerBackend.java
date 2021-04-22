@@ -2094,10 +2094,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         }
 
         sql = "select nic from VmInstanceVO vm, VmNicVO nic " +
-                " where vm.uuid=nic.vmInstanceUuid and vm.type = 'UserVm' and vm.state in (:vmStates)  " +
+                " where vm.uuid=nic.vmInstanceUuid and vm.type in ('UserVM', 'baremetal2') and vm.state in (:vmStates)  " +
                 " and nic.l3NetworkUuid in (:l3NetworkUuids) and nic.metaData is null ";
-        List<VmNicVO> nicVOS = SQL.New(sql, VmNicVO.class).param("l3NetworkUuids", l3NetworkUuids)
-                .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
+        List<VmNicVO> nicVOS = SQL.New(sql, VmNicVO.class)
+                .param("l3NetworkUuids", l3NetworkUuids)
+                .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped))
+                .list();
         nicVOS = nicVOS.stream().filter(n -> !VmNicInventory.valueOf(n).isIpv6OnlyNic()).collect(Collectors.toList());
 
         if (groupVO != null) {
