@@ -46,7 +46,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
 
         try {
             //return rsa.encrypt1(decryptString);
-            return SwxaUtils.genCipherData1(decryptString);
+            return SwxaUtils.genCipherData(decryptString);
         } catch (Exception e) {
             throw new CloudRuntimeException(e.getMessage());
         }
@@ -61,7 +61,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
 
         try {
             //return (String) rsa.decrypt1(encryptString);
-            return SwxaUtils.verifyAndDecryptCipherData1(encryptString);
+            return SwxaUtils.verifyAndDecryptCipherData(encryptString);
         } catch (Exception e) {
             throw new CloudRuntimeException(e.getMessage());
         }
@@ -82,7 +82,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
 
                         try {
                             //String encryptedString = rsa.encrypt1(value);
-                            String encryptedString = SwxaUtils.genCipherData1(value);
+                            String encryptedString = SwxaUtils.genCipherData(value);
 
                             String sql = String.format("update %s set %s = :encrypted where uuid = :uuid", className, field.getName());
 
@@ -113,7 +113,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
 
                         try {
                             //String decryptString = (String) rsa.decrypt1(encryptedString);
-                            String decryptString = SwxaUtils.verifyAndDecryptCipherData1(encryptedString);
+                            String decryptString = SwxaUtils.verifyAndDecryptCipherData(encryptedString);
 
                             String sql = String.format("update %s set %s = :decrypted where uuid = :uuid", className, field.getName());
 

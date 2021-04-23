@@ -17,7 +17,7 @@ public class EncryptGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig ENCRYPT_ALGORITHM = new GlobalConfig(CATEGORY, "encrypt.algorithm");
 
-    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "enable encrypt host " +
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable encrypt host " +
             "password to database")
     public static GlobalConfig ENABLE_PASSWORD_ENCRYPT = new GlobalConfig(CATEGORY, "enable.password.encrypt");
 }

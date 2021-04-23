@@ -1,5 +1,6 @@
 package org.zstack.utils;
 
+import com.sansec.devicev4.util.BytesUtil;
 import org.apache.commons.codec.binary.Hex;
 
 import java.io.UnsupportedEncodingException;
@@ -37,8 +38,7 @@ public class DigestUtils {
             md.reset();
             md.update(input.getBytes("utf8"));
             byte[] hex = md.digest();
-//            return BytesUtil.bytes2hex(hex);
-            return Hex.encodeHexString(hex);
+            return BytesUtil.bytes2hex(hex).split(",")[0];
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -97,7 +97,7 @@ public class AccountBase extends AbstractAccount {
         String oldPassword = null;
         if (msg.getPassword() != null && !msg.getPassword().equals(account.getPassword())) {
             oldPassword = account.getPassword();
-            String encryptedPassword = SwxaUtils.genCipherData1(msg.getPassword());
+            String encryptedPassword = SwxaUtils.genCipherData(msg.getPassword());
             account.setPassword(encryptedPassword);
             passwordUpdated = true;
 
