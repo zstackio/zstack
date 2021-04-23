@@ -201,6 +201,26 @@ doc {
 					since "4.1.0"
 					
 				}
+				column {
+					name "rootVolumeSystemTags"
+					enclosedIn "params"
+					desc "根云盘的系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "4.1.0"
+					
+				}
+				column {
+					name "dataVolumeSystemTags"
+					enclosedIn "params"
+					desc "数据云盘的系统标签，键值为快照UUID"
+					location "body"
+					type "Map"
+					optional true
+					since "4.1.0"
+					
+				}
 			}
         }
 

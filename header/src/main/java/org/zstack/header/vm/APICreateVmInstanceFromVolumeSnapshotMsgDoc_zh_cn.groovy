@@ -211,6 +211,16 @@ doc {
 					since "4.1.0"
 					
 				}
+				column {
+					name "rootVolumeSystemTags"
+					enclosedIn "params"
+					desc "根云盘的系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "4.1.0"
+					
+				}
 			}
         }
 
