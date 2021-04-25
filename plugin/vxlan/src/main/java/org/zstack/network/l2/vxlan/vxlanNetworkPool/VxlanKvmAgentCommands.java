@@ -46,9 +46,18 @@ public class VxlanKvmAgentCommands {
         private String bridgeName;
         private String vtepIp;
         private Integer vni;
+        private Integer dstport;
         private String l2NetworkUuid;
         private List<String> peers;
         private Integer mtu;
+
+        public Integer getDstport() {
+            return dstport;
+        }
+
+        public void setDstport(Integer dstport) {
+            this.dstport = dstport;
+        }
 
         public String getL2NetworkUuid() {
             return l2NetworkUuid;

@@ -221,6 +221,13 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                     return;
                 }
 
+                List<Integer> dstports = Q.New(VtepVO.class).select(VtepVO_.port)
+                        .eq(VtepVO_.poolUuid,  l2Network.getUuid())
+                        .eq(VtepVO_.hostUuid,hostUuid)
+                        .eq(VtepVO_.vtepIp,(String) data.get(VTEP_IP))
+                        .listValues();
+                Integer dstport = dstports.get(0);
+
                 final VxlanKvmAgentCommands.CreateVxlanBridgesCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgesCmd();
                 cmd.setBridgeCmds(new ArrayList<>());
                 for (VxlanNetworkVO vo : vxlanNetworkVOS) {
@@ -228,6 +235,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                     bridgeCmd.setVtepIp((String) data.get(VTEP_IP));
                     bridgeCmd.setBridgeName(KVMRealizeL2VxlanNetworkBackend.makeBridgeName(vo.getVni()));
                     bridgeCmd.setVni(vo.getVni());
+                    bridgeCmd.setDstport(dstport);
                     bridgeCmd.setL2NetworkUuid(vo.getUuid());
                     bridgeCmd.setMtu(new MtuGetter().getL2Mtu(L2VxlanNetworkInventory.valueOf(vo)));
                     cmd.getBridgeCmds().add(bridgeCmd);
