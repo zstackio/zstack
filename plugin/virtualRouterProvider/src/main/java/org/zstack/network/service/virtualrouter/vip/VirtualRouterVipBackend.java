@@ -18,10 +18,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.*;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
-import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.vm.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
@@ -29,11 +26,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -41,7 +34,8 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements VirtualRouterHaGetCallbackExtensionPoint,
-        VipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint, PreVipReleaseExtensionPoint {
+        VipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint, PreVipReleaseExtensionPoint,
+        ReleaseNetworkServiceOnDetachingNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterVipBackend.class);
 
     @Autowired
@@ -433,5 +427,32 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         structs.add(releaseVip);
 
         return structs;
+    }
+
+    @Override
+    public void releaseResourceOnDetachingNic(VmInstanceSpec spec, VmNicInventory nic, NoErrorCompletion completion) {
+        if (!VirtualRouterNicMetaData.isGuestNic(nic)) {
+            completion.done();
+            return;
+        }
+
+        logger.debug(String.format("check detaching nic[uuid:%s] in peer l3 of vip", nic.getUuid()));
+        List<VipPeerL3NetworkRefVO> refVOS = Q.New(VipPeerL3NetworkRefVO.class).eq(VipPeerL3NetworkRefVO_.l3NetworkUuid,
+                nic.getL3NetworkUuid()).list();
+        if (refVOS == null || refVOS.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        Set<String> refUuids = refVOS.stream().map(r -> r.getVipUuid()).collect(Collectors.toSet());
+        logger.debug(String.format("release peer l3[uuid:%s] from vips[uuid:%s] for detaching nic[uuid:%s]",
+                nic.getL3NetworkUuid(), refUuids, nic.getUuid()));
+        List<VipVO> vipVOS = Q.New(VipVO.class).in(VipVO_.uuid, refUuids).list();
+        for (VipVO vipVO : vipVOS) {
+            VipBase v = new VipBase(vipVO);
+            v.deletePeerL3NetworkUuid(nic.getL3NetworkUuid());
+        }
+
+        completion.done();
     }
 }

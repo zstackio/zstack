@@ -58,8 +58,7 @@ import static org.zstack.utils.CollectionDSL.list;
 
 /**
  */
-public class VipManagerImpl extends AbstractService implements VipManager, ReportQuotaExtensionPoint,
-        ReleaseNetworkServiceOnDetachingNicExtensionPoint, PrepareDbInitialValueExtensionPoint {
+public class VipManagerImpl extends AbstractService implements VipManager, ReportQuotaExtensionPoint, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VipManagerImpl.class);
 
     @Autowired
@@ -488,35 +487,6 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         quota.addPair(p);
 
         return list(quota);
-    }
-
-    @Override
-    public void releaseResourceOnDetachingNic(VmInstanceSpec spec, VmNicInventory nic, NoErrorCompletion completion) {
-        // Todo(WeiW): Need to check router rather than not only user vm
-        if (spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
-            completion.done();
-            return;
-        }
-
-        /* FIXME shixin: nic.getL3NetworkUuid() should be change to nic.getUesedIp for appliancevm */
-        logger.debug(String.format("check detaching nic[uuid:%s] in peer l3 of vip", nic.getUuid()));
-        List<VipPeerL3NetworkRefVO> refVOS = Q.New(VipPeerL3NetworkRefVO.class).eq(VipPeerL3NetworkRefVO_.l3NetworkUuid,
-                nic.getL3NetworkUuid()).list();
-        if (refVOS == null || refVOS.isEmpty()) {
-            completion.done();
-            return;
-        }
-
-        Set<String> refUuids = refVOS.stream().map(r -> r.getVipUuid()).collect(Collectors.toSet());
-        logger.debug(String.format("release peer l3[uuid:%s] from vips[uuid:%s] for detaching nic[uuid:%s]",
-                nic.getL3NetworkUuid(), refUuids, nic.getUuid()));
-        List<VipVO> vipVOS = Q.New(VipVO.class).in(VipVO_.uuid, refUuids).list();
-        for (VipVO vipVO : vipVOS) {
-            VipBase v = new VipBase(vipVO);
-            v.deletePeerL3NetworkUuid(nic.getL3NetworkUuid());
-        }
-
-        completion.done();
     }
 
     @Override
