@@ -13,7 +13,7 @@ import javax.persistence.Transient;
 @Entity
 @Table
 @BaseResource
-public class GuestOsCategoryVO extends ResourceVO implements ToInventory, OwnedByAccount {
+public class GuestOsCategoryVO extends ResourceVO implements ToInventory {
     @Column
     private String platform;
     @Column
@@ -55,15 +55,5 @@ public class GuestOsCategoryVO extends ResourceVO implements ToInventory, OwnedB
 
     public void setVersion(String version) {
         this.version = version;
-    }
-
-    @Override
-    public String getAccountUuid() {
-        return accountUuid;
-    }
-
-    @Override
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
     }
 }

@@ -445,7 +445,6 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 vo.setVersion(config.getVersion());
                 vo.setOsRelease(config.getOsRelease());
                 vo.setUuid(Platform.getUuid());
-                vo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
                 dbf.persist(vo);
             }
         }

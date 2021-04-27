@@ -46,7 +46,7 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddI
     private List<String> backupStorageUuids;
     private String type;
     @APIParam(required = false)
-    private boolean virtio = true;
+    private Boolean virtio = true;
 
     public String getFormat() {
         return format;
@@ -140,11 +140,11 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddI
     }
 
 
-    public boolean getVirtio() {
+    public Boolean getVirtio() {
         return virtio;
     }
 
-    public void setVirtio(boolean virtio) {
+    public void setVirtio(Boolean virtio) {
         this.virtio = virtio;
     }
  
