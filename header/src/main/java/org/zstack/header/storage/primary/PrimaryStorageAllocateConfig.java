@@ -8,6 +8,8 @@ public class PrimaryStorageAllocateConfig {
 
     private String uuid;
 
+    private String hostUuid;
+
     public String getType() {
         return type;
     }
@@ -22,5 +24,13 @@ public class PrimaryStorageAllocateConfig {
 
     public void setUuid(String primaryStorageUuid) {
         this.uuid = primaryStorageUuid;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 }
