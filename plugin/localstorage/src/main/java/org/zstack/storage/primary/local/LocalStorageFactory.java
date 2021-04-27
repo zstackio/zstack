@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.MigrateNetworkExtensionPoint;
 import org.zstack.compute.vm.*;
+import org.zstack.configuration.DiskOfferingSystemTags;
+import org.zstack.configuration.OfferingUserConfigUtils;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
@@ -14,6 +16,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.trash.CreateRecycleExtensionPoint;
 import org.zstack.header.Component;
+import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -70,7 +73,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
         RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
         InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint, PostMarkRootVolumeAsSnapshotExtension,
-        AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint, CreateRecycleExtensionPoint, AfterInstantiateVolumeExtensionPoint {
+        AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint, CreateRecycleExtensionPoint,
+        AfterInstantiateVolumeExtensionPoint, CreateDataVolumeExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
         @Override
@@ -1224,5 +1228,60 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         if (!hostUuids.isEmpty()) {
             vo.setHostUuid(hostUuids.get(0));
         }
+    }
+
+    @Override
+    public void preCreateVolume(APICreateDataVolumeMsg msg) {
+        String diskOffering = msg.getDiskOfferingUuid();
+        if (diskOffering == null) {
+            return;
+        }
+
+        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+
+            if (config.getAllocate() == null) {
+                return;
+            }
+
+            if (config.getAllocate().getPrimaryStorage() == null) {
+                return;
+            }
+
+            if (msg.getSystemTags() == null) {
+                msg.setSystemTags(new ArrayList<>());
+            }
+
+            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
+            if (msg.getPrimaryStorageUuid() != null && !msg.getPrimaryStorageUuid().equals(psUuid)) {
+                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
+                        psUuid, msg.getPrimaryStorageUuid()));
+            }
+            msg.setPrimaryStorageUuid(psUuid);
+
+            PrimaryStorageVO psVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+            if (psVO.getType().equals(type.toString())) {
+                List<String> refHostUuids = Q.New(LocalStorageHostRefVO.class)
+                        .select(LocalStorageHostRefVO_.hostUuid)
+                        .eq(LocalStorageHostRefVO_.primaryStorageUuid, psUuid)
+                        .listValues();
+
+                if (refHostUuids.isEmpty()) {
+                    return;
+                }
+
+                msg.getSystemTags().add(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.instantiateTag(
+                        map(e(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN, refHostUuids.get(0)))));
+            }
+        }
+    }
+
+    @Override
+    public void beforeCreateVolume(VolumeInventory volume) {
+    }
+
+    @Override
+    public void afterCreateVolume(VolumeVO volume) {
+
     }
 }
