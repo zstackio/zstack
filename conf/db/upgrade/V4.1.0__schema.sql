@@ -31,8 +31,8 @@ ALTER TABLE `zstack`.`ImageEO` ADD COLUMN `virtio` boolean DEFAULT TRUE;
 UPDATE `zstack`.`ImageEO` SET virtio = FALSE, guestOsType = "Windows" WHERE platform="Windows";
 UPDATE `zstack`.`ImageEO` SET platform = "Windows", virtio = TRUE, guestOsType = "Windows" WHERE platform = "WindowsVirtio";
 UPDATE `zstack`.`ImageEO` SET virtio = TRUE, guestOsType = "Linux" WHERE platform = "Linux";
-UPDATE `zstack`.`ImageEO` SET virtio = FALSE, guestOsType = "other" WHERE platform = "Other";
-UPDATE `zstack`.`ImageEO` SET platform = "Other", virtio = TRUE, guestOsType = "other" WHERE platform = "Paravirtualization";
+UPDATE `zstack`.`ImageEO` SET virtio = FALSE, guestOsType = "Other" WHERE platform = "Other";
+UPDATE `zstack`.`ImageEO` SET platform = "Other", virtio = TRUE, guestOsType = "Other" WHERE platform = "Paravirtualization";
 
 DROP VIEW IF EXISTS `zstack`.`ImageVO`;
 CREATE VIEW `zstack`.`ImageVO` AS SELECT uuid, name, description, status, state, size, actualSize, md5Sum, platform, type, format, url, `system`, mediaType, guestOsType, architecture, virtio, createDate, lastOpDate FROM `zstack`.`ImageEO` WHERE deleted IS NULL;
@@ -55,5 +55,5 @@ SELECT REPLACE(UUID(),'-',''), t.uuid, 'VmInstanceVO', 0, 'System', 'driver::vir
 UPDATE `zstack`.`VmInstanceVO` SET guestOsType = "Windows" WHERE platform="Windows";
 UPDATE `zstack`.`VmInstanceVO` SET platform = "Windows", guestOsType = "Windows" WHERE platform = "WindowsVirtio";
 UPDATE `zstack`.`VmInstanceVO` SET guestOsType = "Linux" WHERE platform = "Linux";
-UPDATE `zstack`.`VmInstanceVO` SET guestOsType = "other" WHERE platform = "Other";
-UPDATE `zstack`.`VmInstanceVO` SET platform = "Other", guestOsType = "other" WHERE platform = "Paravirtualization";
+UPDATE `zstack`.`VmInstanceVO` SET guestOsType = "Other" WHERE platform = "Other";
+UPDATE `zstack`.`VmInstanceVO` SET platform = "Other", guestOsType = "Other" WHERE platform = "Paravirtualization";

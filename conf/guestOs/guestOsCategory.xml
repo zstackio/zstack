@@ -196,8 +196,8 @@
     </osInfo>
     <osInfo>
         <platform>Other</platform>
-        <name>other</name>
+        <name>Other</name>
         <version></version>
-        <osRelease>other</osRelease>
+        <osRelease>Other</osRelease>
     </osInfo>
 </category>
