@@ -364,7 +364,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
     }
 
     private void releaseNetworkServices(final VmInstanceSpec spec, NetworkServiceExtensionPosition position, final NoErrorCompletion completion) {
-        if (!spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
+        if (!supportedVmTypes.contains(spec.getVmInventory().getType())) {
             completion.done();
             return;
         }

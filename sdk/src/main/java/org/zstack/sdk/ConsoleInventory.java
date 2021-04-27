@@ -12,6 +12,14 @@ public class ConsoleInventory  {
         return this.scheme;
     }
 
+    public java.lang.String targetScheme;
+    public void setTargetScheme(java.lang.String targetScheme) {
+        this.targetScheme = targetScheme;
+    }
+    public java.lang.String getTargetScheme() {
+        return this.targetScheme;
+    }
+
     public java.lang.String hostname;
     public void setHostname(java.lang.String hostname) {
         this.hostname = hostname;
