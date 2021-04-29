@@ -172,9 +172,7 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
 
         if (msg.getPlatform().equals(ImagePlatform.Paravirtualization.toString())) {
             msg.setPlatform(ImagePlatform.Other.toString());
-        }
-
-        if (msg.getPlatform().equals(ImagePlatform.WindowsVirtio.toString())) {
+        } else if (msg.getPlatform().equals(ImagePlatform.WindowsVirtio.toString())) {
             msg.setPlatform(ImagePlatform.Windows.toString());
         }
 
