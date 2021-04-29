@@ -1,0 +1,1 @@
+UPDATE VtepVO SET port=8472 WHERE port=4789

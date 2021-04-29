@@ -286,6 +286,7 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
 
         assert record.get(0).contains("vtep")
         assert vxlanCmd.mtu == 9600
+        assert vxlanCmd.dstport == VxlanNetworkPoolConstant.VXLAN_PORT
 
         createVmInstance {
             delegate.name = "TestVm3"
