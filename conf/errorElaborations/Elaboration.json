@@ -804,8 +804,8 @@
     "code": "1003",
     "method": "regex",
     "regex": "the required host.*, size \u003e .* or doesn't belong to a local primary storage satisfying conditions.* or its cluster doesn't attach to any local primary storage",
-    "message_cn": "所需要的物理机都不满足以下条件：1 状态为 Enabled/Connected，并且存储容量 \u003c %4$s 字节； 2 所属于的本地主存储状态为 Enabled/Connected； 3 有符合条件的本地主存储加载到物理机所属的集群上。",
-    "message_en": "The required host does not meet the following requirements: 1 Status/State: Enabled/Connected, size: \u003c %4$s bytes. 2 Status/State of the local primary storages: Enabled/Connected. 3 The cluster is attached to a local primary storage."
+    "message_cn": "所需要的物理机都不满足以下条件：1 状态为 Enabled/Connected，并且存储容量 \u003e %4$s 字节； 2 所属于的本地主存储状态为 Enabled/Connected； 3 有符合条件的本地主存储加载到物理机所属的集群上。",
+    "message_en": "The required host does not meet the following requirements: 1 Status/State: Enabled/Connected, size: \u003e %4$s bytes. 2 Status/State of the local primary storages: Enabled/Connected. 3 The cluster is attached to a local primary storage."
   },
   {
     "category": "PS",
