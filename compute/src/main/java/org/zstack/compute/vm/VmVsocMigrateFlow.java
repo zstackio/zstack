@@ -72,6 +72,7 @@ public class VmVsocMigrateFlow implements Flow {
             }
         });
 
+        /*
         CreateVmVsocFileMsg msgCreate = new CreateVmVsocFileMsg();
         msgCreate.setVmInstanceUuid(spec.getVmInventory().getUuid());
         msgCreate.setHostUuid(spec.getDestHost().getUuid());
@@ -87,6 +88,7 @@ public class VmVsocMigrateFlow implements Flow {
                 }
             }
         });
+         */
 
         trigger.rollback();
     }

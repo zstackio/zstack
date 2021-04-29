@@ -80,8 +80,8 @@
                 <value>org.zstack.compute.vm.VmAllocateHostForMigrateVmFlow</value>
                 <value>org.zstack.compute.vm.VmMigrateCallExtensionFlow</value>
                 <value>org.zstack.compute.vm.VmVsocMigrateFlow</value>
-                <value>org.zstack.compute.vm.VmDeleteVsocFileFlow</value>
                 <value>org.zstack.compute.vm.VmMigrateOnHypervisorFlow</value>
+                <value>org.zstack.compute.vm.VmDeleteVsocFileFlow</value>
                 <value>org.zstack.compute.vm.VmReturnHostFlow</value>
             </list>
         </property>
