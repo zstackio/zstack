@@ -2,7 +2,6 @@ package org.zstack.header.image;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -36,7 +35,7 @@ public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
     @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64el"})
     private String architecture;
     @APIParam(required = false)
-    private boolean virtio;
+    private Boolean virtio;
 
     public String getPlatform() {
         return platform;
@@ -110,11 +109,11 @@ public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
         this.architecture = architecture;
     }
 
-    public boolean getVirtio() {
+    public Boolean getVirtio() {
         return virtio;
     }
 
-    public void setVirtio(boolean virtio) {
+    public void setVirtio(Boolean virtio) {
         this.virtio = virtio;
     }
 
