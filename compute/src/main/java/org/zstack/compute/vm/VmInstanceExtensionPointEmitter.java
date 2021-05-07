@@ -16,6 +16,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -43,13 +44,15 @@ public class VmInstanceExtensionPointEmitter implements Component {
     private List<CleanUpAfterVmFailedToStartExtensionPoint> cleanUpAfterVmFailedToStartExtensionPoints;
     private List<CleanUpAfterVmChangeImageExtensionPoint> cleanUpAfterVmChangeImageExtensionPoints;
 
-    public void handleSystemTag(String vmUuid, List<String> tags){
-        CollectionUtils.safeForEach(VmInstanceBeforeStartExtensions, new ForEachFunction<VmInstanceBeforeStartExtensionPoint>() {
-            @Override
-            public void run(VmInstanceBeforeStartExtensionPoint arg) {
-                arg.handleSystemTag(vmUuid, tags);
+    public List<ErrorCode> handleSystemTag(String vmUuid, List<String> tags){
+        List<ErrorCode> errorCodes = new ArrayList<>();
+        CollectionUtils.safeForEach(VmInstanceBeforeStartExtensions, extension -> {
+            ErrorCode errorCode = extension.handleSystemTag(vmUuid, tags);
+            if (errorCode != null) {
+                errorCodes.add(errorCode);
             }
         });
+        return errorCodes;
     }
 
     public ErrorCode preStartNewCreatedVm(VmInstanceInventory inv) {

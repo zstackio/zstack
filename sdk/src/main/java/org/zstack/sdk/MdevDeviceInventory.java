@@ -3,6 +3,7 @@ package org.zstack.sdk;
 import org.zstack.sdk.MdevDeviceType;
 import org.zstack.sdk.MdevDeviceState;
 import org.zstack.sdk.MdevDeviceStatus;
+import org.zstack.sdk.MdevDeviceChooser;
 
 public class MdevDeviceInventory  {
 
@@ -84,6 +85,14 @@ public class MdevDeviceInventory  {
     }
     public MdevDeviceStatus getStatus() {
         return this.status;
+    }
+
+    public MdevDeviceChooser chooser;
+    public void setChooser(MdevDeviceChooser chooser) {
+        this.chooser = chooser;
+    }
+    public MdevDeviceChooser getChooser() {
+        return this.chooser;
     }
 
     public java.sql.Timestamp createDate;
