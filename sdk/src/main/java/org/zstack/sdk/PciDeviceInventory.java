@@ -4,6 +4,7 @@ import org.zstack.sdk.PciDeviceType;
 import org.zstack.sdk.PciDeviceState;
 import org.zstack.sdk.PciDeviceStatus;
 import org.zstack.sdk.PciDeviceVirtStatus;
+import org.zstack.sdk.PciDeviceChooser;
 import org.zstack.sdk.PciDeviceMetaData;
 
 public class PciDeviceInventory  {
@@ -94,6 +95,14 @@ public class PciDeviceInventory  {
     }
     public PciDeviceVirtStatus getVirtStatus() {
         return this.virtStatus;
+    }
+
+    public PciDeviceChooser chooser;
+    public void setChooser(PciDeviceChooser chooser) {
+        this.chooser = chooser;
+    }
+    public PciDeviceChooser getChooser() {
+        return this.chooser;
     }
 
     public java.lang.String vendorId;

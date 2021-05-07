@@ -1,7 +1,9 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.errorcode.ErrorCode;
+
 import java.util.List;
 
 public interface VmInstanceBeforeStartExtensionPoint {
-    void handleSystemTag(String vmUuid, List<String> tags);
+    ErrorCode handleSystemTag(String vmUuid, List<String> tags);
 }
