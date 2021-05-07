@@ -167,4 +167,41 @@ class ChangeImageVirtioCase extends SubCase{
         }
         assert cmd.rootVolume.useVirtio
     }
+
+    void testGuestOsCharacter() {
+        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
+        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+        ImageInventory image = env.inventoryByName("image")
+
+        KVMAgentCommands.StartVmCmd cmd = null
+        env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            return rsp
+        }
+
+        createVmInstance {
+            name = "vm1"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
+        }
+        assert !cmd.hygonCpu
+
+        ImageInventory imageInventory = updateImage {
+            uuid = image.uuid
+            guestOsType = "Windows 10"
+            platform = "Windows"
+        }
+
+        createVmInstance {
+            name = "vm1"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
+        }
+        assert cmd.hygonCpu
+    }
 }

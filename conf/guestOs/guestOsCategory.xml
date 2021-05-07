@@ -2,93 +2,93 @@
 <category xmlns="http://zstack.org/schema/zstack">
     <osInfo>
         <platform>Linux</platform>
-        <name>Centos</name>
+        <name>CentOS</name>
         <version>5</version>
-        <osRelease>Centos_5</osRelease>
+        <osRelease>CentOS 5</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>Centos</name>
+        <name>CentOS</name>
         <version>6</version>
-        <osRelease>Centos_6</osRelease>
+        <osRelease>CentOS 6</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>Centos</name>
+        <name>CentOS</name>
         <version>7</version>
-        <osRelease>Centos_7</osRelease>
+        <osRelease>CentOS 7</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>Centos</name>
+        <name>CentOS</name>
         <version>8</version>
-        <osRelease>Centos_8</osRelease>
+        <osRelease>CentOS 8</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>Redhat</name>
+        <name>RedHat</name>
         <version>5</version>
-        <osRelease>RedhatEnterpriseLinux_5</osRelease>
+        <osRelease>RHEL 5</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>Redhat</name>
+        <name>RedHat</name>
         <version>6</version>
-        <osRelease>RedhatEnterpriseLinux_6</osRelease>
+        <osRelease>RHEL 6</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>Redhat</name>
+        <name>RedHat</name>
         <version>7</version>
-        <osRelease>RedhatEnterpriseLinux_7</osRelease>
+        <osRelease>RHEL 7</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>Redhat</name>
+        <name>RedHat</name>
         <version>8</version>
-        <osRelease>RedhatEnterpriseLinux_8</osRelease>
+        <osRelease>RHEL 8</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>Ubuntu</name>
         <version>16</version>
-        <osRelease>Ubuntu_16</osRelease>
+        <osRelease>Ubuntu 16</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>Ubuntu</name>
         <version>18</version>
-        <osRelease>Ubuntu_18</osRelease>
+        <osRelease>Ubuntu 18</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>Ubuntu</name>
         <version>20</version>
-        <osRelease>Ubuntu_20</osRelease>
+        <osRelease>Ubuntu 20</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>Debian</name>
         <version>7</version>
-        <osRelease>Debian_7</osRelease>
+        <osRelease>Debian 7</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>Debian</name>
         <version>8</version>
-        <osRelease>Debian_8</osRelease>
+        <osRelease>Debian 8</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>Debian</name>
         <version>9</version>
-        <osRelease>Debian_9</osRelease>
+        <osRelease>Debian 9</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>Debian</name>
         <version>10</version>
-        <osRelease>Debian_10</osRelease>
+        <osRelease>Debian 10</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
@@ -100,31 +100,31 @@
         <platform>Linux</platform>
         <name>Kylin</name>
         <version>4</version>
-        <osRelease>Kylin_4</osRelease>
+        <osRelease>Kylin 4</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>Kylin</name>
         <version>7</version>
-        <osRelease>Kylin_7</osRelease>
+        <osRelease>Kylin 7</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>Kylin</name>
         <version>10</version>
-        <osRelease>Kylin_10</osRelease>
+        <osRelease>Kylin 10</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
         <name>UOS</name>
         <version>20</version>
-        <osRelease>UOS_20</osRelease>
+        <osRelease>UOS 20</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
-        <name>OpenEuler</name>
+        <name>openEuler</name>
         <version>20.03</version>
-        <osRelease>OpenEuler_20.03</osRelease>
+        <osRelease>openEuler 20.03</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
@@ -137,49 +137,49 @@
         <platform>Windows</platform>
         <name>Windows</name>
         <version>2008</version>
-        <osRelease>WindowsServer_2008</osRelease>
+        <osRelease>WindowsServer 2008</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
         <version>2012</version>
-        <osRelease>WindowsServer_2012</osRelease>
+        <osRelease>WindowsServer 2012</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
         <version>2016</version>
-        <osRelease>WindowsServer_2016</osRelease>
+        <osRelease>WindowsServer 2016</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
         <version>2019</version>
-        <osRelease>WindowsServer_2019</osRelease>
+        <osRelease>WindowsServer 2019</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
         <version>7</version>
-        <osRelease>Windows_7</osRelease>
+        <osRelease>Windows 7</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
         <version>8</version>
-        <osRelease>Windows_8</osRelease>
+        <osRelease>Windows 8</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
         <version>10</version>
-        <osRelease>Windows_10</osRelease>
+        <osRelease>Windows 10</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
         <version>xp</version>
-        <osRelease>Windows_xp</osRelease>
+        <osRelease>Windows xp</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>

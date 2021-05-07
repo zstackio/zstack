@@ -3,13 +3,13 @@
     <osInfo>
         <architecture>aarch64</architecture>
         <platform>Linux</platform>
-        <osRelease>Kylin_10</osRelease>
+        <osRelease>Kylin 10</osRelease>
         <acpi>true</acpi>
     </osInfo>
     <osInfo>
         <architecture>aarch64</architecture>
         <platform>Linux</platform>
-        <osRelease>OpenEuler_20.03</osRelease>
+        <osRelease>openEuler 20.03</osRelease>
         <acpi>true</acpi>
     </osInfo>
 
@@ -17,49 +17,49 @@
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
         <hygonCpu>true</hygonCpu>
-        <osRelease>WindowsServer_2008</osRelease>
+        <osRelease>WindowsServer 2008</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
         <hygonCpu>true</hygonCpu>
-        <osRelease>WindowsServer_2012</osRelease>
+        <osRelease>WindowsServer 2012</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
         <hygonCpu>true</hygonCpu>
-        <osRelease>WindowsServer_2016</osRelease>
+        <osRelease>WindowsServer 2016</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
         <hygonCpu>true</hygonCpu>
-        <osRelease>WindowsServer_2019</osRelease>
+        <osRelease>WindowsServer 2019</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
         <hygonCpu>true</hygonCpu>
-        <osRelease>Windows_7</osRelease>
+        <osRelease>Windows 7</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
         <hygonCpu>true</hygonCpu>
-        <osRelease>Windows_8</osRelease>
+        <osRelease>Windows 8</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
         <hygonCpu>true</hygonCpu>
-        <osRelease>Windows_10</osRelease>
+        <osRelease>Windows 10</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
         <hygonCpu>true</hygonCpu>
-        <osRelease>Windows_xp</osRelease>
+        <osRelease>Windows xp</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
