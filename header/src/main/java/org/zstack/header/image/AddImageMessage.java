@@ -18,9 +18,11 @@ public interface AddImageMessage {
 
     String getGuestOsType();
 
+    void setGuestOsType(String guestOsType);
+
     boolean getVirtio();
 
-    void setGuestOsType(String guestOsType);
+    void setVirtio(boolean virtio);
 
     String getArchitecture();
 

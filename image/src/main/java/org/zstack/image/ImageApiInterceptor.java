@@ -125,24 +125,6 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
     @Transactional(readOnly = true)
     protected void validate(APICreateRootVolumeTemplateFromRootVolumeMsg msg) {
         ImageMessageFiller.fillFromVolume(msg, msg.getRootVolumeUuid());
-
-        if (msg.getPlatform() == null) {
-            String platform = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.rootVolumeUuid, msg.getRootVolumeUuid()).select(VmInstanceVO_.platform).findValue();
-            msg.setPlatform(platform == null ? ImagePlatform.Linux.toString() : platform);
-        }
-
-        if (msg.getGuestOsType() == null) {
-            List<String> osTypes = SQL.New("select i.guestOsType from VolumeVO v, ImageVO i where v.uuid=:vol and v.rootImageUuid = i.uuid").
-                    param("vol", msg.getRootVolumeUuid()).list();
-            if (osTypes != null && osTypes.size() > 0) {
-                msg.setGuestOsType(osTypes.get(0));
-            }
-        }
-
-        if (msg.getArchitecture() == null) {
-            String vmUuid = dbf.findByUuid(msg.getRootVolumeUuid(), VolumeVO.class).getVmInstanceUuid();
-            msg.setArchitecture(dbf.findByUuid(vmUuid, VmInstanceVO.class).getArchitecture());
-        }
     }
 
     private void validate(APIAddImageMsg msg) {
@@ -169,12 +151,6 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         }
 
         ImageMessageFiller.fillDefault(msg);
-
-        if (msg.getPlatform().equals(ImagePlatform.Paravirtualization.toString())) {
-            msg.setPlatform(ImagePlatform.Other.toString());
-        } else if (msg.getPlatform().equals(ImagePlatform.WindowsVirtio.toString())) {
-            msg.setPlatform(ImagePlatform.Windows.toString());
-        }
 
         if (msg.getBackupStorageUuids() != null) {
             SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);

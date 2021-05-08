@@ -36,6 +36,7 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
     private String platform;
     private boolean system;
     private String architecture;
+    private boolean virtio = true;
 
     public boolean isSystem() {
         return system;
@@ -89,6 +90,16 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
     @Override
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
+    }
+
+    @Override
+    public boolean getVirtio() {
+        return virtio;
+    }
+
+    @Override
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
 
     public String getRootVolumeUuid() {

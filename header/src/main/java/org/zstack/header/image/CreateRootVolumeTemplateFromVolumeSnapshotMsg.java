@@ -18,7 +18,7 @@ public class CreateRootVolumeTemplateFromVolumeSnapshotMsg extends NeedReplyMess
     private String platform;
     private String architecture;
     private boolean system;
-    private boolean virtio;
+    private boolean virtio = true;
     private SessionInventory session;
 
     public void setSnapshotUuid(String snapshotUuid) {

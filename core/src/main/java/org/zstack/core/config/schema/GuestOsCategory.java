@@ -31,7 +31,7 @@ public class GuestOsCategory {
         } else if (platform.equals(ImagePlatform.Linux.toString())) {
             return ImagePlatform.Linux.toString();
         } else if (platform.equals(ImagePlatform.Other.toString())) {
-            return platform.toLowerCase();
+            return ImagePlatform.Other.toString();
         } else {
             return null;
         }

@@ -797,7 +797,6 @@ class EnvSpec extends ApiHelper implements Node  {
 
             SQL.New(TaskProgressVO.class).hardDelete()
             SQL.New(SessionVO.class).hardDelete()
-            SQL.New(ElaborationVO.class).hardDelete()
             SQL.New(GuestOsCategoryVO.class).hardDelete()
 
             if (GLOBAL_DELETE_HOOK != null) {

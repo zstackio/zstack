@@ -38,6 +38,9 @@ public class HostSystemTags {
     public static final String SYSTEM_SERIAL_NUMBER_TOKEN = "systemSerialNumber";
     public static PatternedSystemTag SYSTEM_SERIAL_NUMBER = new PatternedSystemTag(String.format("systemSerialNumber::{%s}", SYSTEM_SERIAL_NUMBER_TOKEN), HostVO.class);
 
+    public static final String CPU_ARCHITECTURE_TOKEN = "cpuArchitecture";
+    public static PatternedSystemTag CPU_ARCHITECTURE = new PatternedSystemTag(String.format("cpuArchitecture::{%s}", CPU_ARCHITECTURE_TOKEN), HostVO.class);
+
     public static final String CPU_GHZ_TOKEN = "cpuGHz";
     public static PatternedSystemTag CPU_GHZ = new PatternedSystemTag(String.format("cpuGHz::{%s}", CPU_GHZ_TOKEN), HostVO.class);
 

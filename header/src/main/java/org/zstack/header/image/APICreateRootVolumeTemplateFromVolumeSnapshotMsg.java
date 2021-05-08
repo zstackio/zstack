@@ -38,7 +38,7 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateM
     private String platform;
     private String architecture;
     private boolean system;
-    private boolean virtio;
+    private boolean virtio = true;
 
     public boolean isSystem() {
         return system;

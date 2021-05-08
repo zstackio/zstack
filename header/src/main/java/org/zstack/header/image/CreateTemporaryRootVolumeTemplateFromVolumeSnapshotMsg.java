@@ -13,6 +13,7 @@ public class CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg extends Need
     private String architecture;
     private boolean system;
     private SessionInventory session;
+    private boolean virtio = true;
 
     public void setSnapshotUuid(String snapshotUuid) {
         this.snapshotUuid = snapshotUuid;
@@ -35,6 +36,16 @@ public class CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg extends Need
     @Override
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
+    }
+
+    @Override
+    public boolean getVirtio() {
+        return virtio;
+    }
+
+    @Override
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
 
     @Override

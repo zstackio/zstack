@@ -354,7 +354,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             vo.setActualSize(actualSize);
                             vo.setFormat(format);
                             vo.setUrl(String.format("volume://%s", msg.getVolumeUuid()));
-                            vo.setVirtio(false);
                         });
 
                         trigger.next();
@@ -1529,7 +1528,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             imgvo.setSize(volvo.getSize());
                             imgvo.setActualSize(imageActualSize);
                             imgvo.setArchitecture(dbf.findByUuid(rootVolume.getVmInstanceUuid(), VmInstanceVO.class).getArchitecture());
-                            imgvo.setVirtio(VmSystemTags.VIRTIO.hasTag(rootVolume.getVmInstanceUuid()));
                         });
 
                         trigger.next();
@@ -1867,7 +1865,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             imgvo.setUrl(String.format("volume://%s", volumeUuid));
                             imgvo.setSize(size);
                             imgvo.setActualSize(actualSize);
-                            imgvo.setVirtio(false);
                         });
 
                         trigger.next();

@@ -13,6 +13,7 @@ public class CreateTemporaryRootVolumeTemplateFromVolumeMsg extends NeedReplyMes
     private String architecture;
     private boolean system;
     private SessionInventory session;
+    private boolean virtio = true;
 
     @Override
     public String getName() {
@@ -35,6 +36,16 @@ public class CreateTemporaryRootVolumeTemplateFromVolumeMsg extends NeedReplyMes
     @Override
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
+    }
+
+    @Override
+    public boolean getVirtio() {
+        return virtio;
+    }
+
+    @Override
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
 
     @Override
