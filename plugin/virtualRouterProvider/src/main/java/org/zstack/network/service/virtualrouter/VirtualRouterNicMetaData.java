@@ -21,6 +21,7 @@ public class VirtualRouterNicMetaData {
     public static final List<String> PUBLIC_NIC_MASK_STRING_LIST = new ArrayList<String>();
     public static final List<String> MANAGEMENT_NIC_MASK_STRING_LIST = new ArrayList<String>();
     public static final List<String> GUEST_NIC_MASK_STRING_LIST = new ArrayList<String>();
+    public static final List<String> ALL_PUBLIC_NIC_MASK_STRING_LIST = new ArrayList<String>();
 
     static {
         PUBLIC_NIC_MASK_STRING_LIST.add(PUBLIC_NIC_MASK.toString());
@@ -37,6 +38,9 @@ public class VirtualRouterNicMetaData {
         GUEST_NIC_MASK_STRING_LIST.add(PUBLIC_AND_GUEST_NIC_MASK.toString());
         GUEST_NIC_MASK_STRING_LIST.add(MANAGEMENT_AND_GUEST_NIC_MASK.toString());
         GUEST_NIC_MASK_STRING_LIST.add(PUBLIC_MANAGEMENT_GUEST_NIC_MASK.toString());
+
+        ALL_PUBLIC_NIC_MASK_STRING_LIST.addAll(PUBLIC_NIC_MASK_STRING_LIST);
+        ALL_PUBLIC_NIC_MASK_STRING_LIST.add(ADDITIONAL_PUBLIC_NIC_MASK.toString());
     }
 
     @PythonClass
