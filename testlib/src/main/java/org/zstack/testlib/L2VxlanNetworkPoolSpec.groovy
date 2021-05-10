@@ -71,5 +71,9 @@ class L2VxlanNetworkPoolSpec extends L2NetworkSpec implements Simulator {
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             return new VxlanKvmAgentCommands.CreateVxlanBridgesCmd()
         }
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_DELETE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            return new VxlanKvmAgentCommands.DeleteVxlanBridgeCmd()
+        }
+
     }
 }

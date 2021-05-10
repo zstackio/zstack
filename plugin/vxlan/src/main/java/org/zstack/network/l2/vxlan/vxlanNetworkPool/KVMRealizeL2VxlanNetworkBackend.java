@@ -426,4 +426,48 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     public void releaseResourceOnAttachingNic(VmInstanceSpec spec, L3NetworkInventory l3, NoErrorCompletion completion) {
         completion.done();
     }
+
+    public void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
+        L2VxlanNetworkInventory l2vxlan = (L2VxlanNetworkInventory) l2Network;
+
+        final VxlanKvmAgentCommands.DeleteVxlanBridgeCmd cmd = new VxlanKvmAgentCommands.DeleteVxlanBridgeCmd();
+        cmd.setBridgeName(makeBridgeName(l2vxlan.getVni()));
+        cmd.setVni(l2vxlan.getVni());
+        cmd.setL2NetworkUuid(l2Network.getUuid());
+
+        final List<String> vtepIps = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.hostUuid, hostUuid).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).listValues();
+        String vtepIp = vtepIps.get(0);
+        cmd.setVtepIp(vtepIp);
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(hostUuid);
+        msg.setCommand(cmd);
+        msg.setPath(VXLAN_KVM_DELETE_L2VXLAN_NETWORK_PATH);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                VxlanKvmAgentCommands.DeleteVxlanBridgeResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.DeleteVxlanBridgeResponse.class);
+                if (!rsp.isSuccess()) {
+                    ErrorCode err = operr("failed to delete bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s], because %s",
+                            cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid, rsp.getError());
+                    completion.fail(err);
+                    return;
+                }
+
+                String message = String.format(
+                        "successfully delete bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s]", cmd
+                                .getBridgeName(), l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid);
+                logger.debug(message);
+
+                completion.success();
+            }
+        });
+    }
 }

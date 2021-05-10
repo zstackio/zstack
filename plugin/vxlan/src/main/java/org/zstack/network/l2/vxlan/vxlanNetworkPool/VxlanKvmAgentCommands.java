@@ -1,6 +1,7 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.zstack.core.validation.ConditionalValidation;
+import org.zstack.kvm.KVMAgentCommands;
 
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,66 @@ public class VxlanKvmAgentCommands {
 
     public static class CreateBridgeResponse extends AgentResponse {
     }
+
+    public static class DeleteVxlanBridgeCmd extends AgentCommand {
+        private String bridgeName;
+        private Integer vni;
+        private String l2NetworkUuid;
+        private String vtepIp;
+
+        public String getL2NetworkUuid() {
+            return l2NetworkUuid;
+        }
+
+        public void setL2NetworkUuid(String l2NetworkUuid) {
+            this.l2NetworkUuid = l2NetworkUuid;
+        }
+
+        public String getBridgeName() {
+            return bridgeName;
+        }
+
+        public void setBridgeName(String bridgeName) {
+            this.bridgeName = bridgeName;
+        }
+
+        public Integer getVni() {
+            return vni;
+        }
+
+        public void setVni(Integer vni) {
+            this.vni = vni;
+        }
+
+        public String getVtepIp() {
+            return vtepIp;
+        }
+
+        public void setVtepIp(String vtepIp) {
+            this.vtepIp = vtepIp;
+        }
+    }
+
+    public static class DeleteVxlanBridgeResponse extends AgentResponse {
+    }
+
+
+    public static class DeleteVxlanBridgesCmd extends AgentCommand {
+        List<DeleteVxlanBridgeCmd> bridgeCmds;
+
+        public List<DeleteVxlanBridgeCmd> getBridgeCmds() {
+            return bridgeCmds;
+        }
+
+        public void setBridgeCmds(List<DeleteVxlanBridgeCmd> bridgeCmds) {
+            this.bridgeCmds = bridgeCmds;
+        }
+    }
+
+    public static class DeleteVxlanBridgesResponse extends AgentResponse {
+    }
+
+
 
     public static class CreateVxlanBridgeCmd extends AgentCommand {
         private String bridgeName;
