@@ -16,6 +16,7 @@ public class PrimaryStorageType {
     private boolean supportVolumeMigration;
     private boolean supportVolumeMigrationInCurrentPrimaryStorage;
     private boolean supportVolumeMigrationToOtherPrimaryStorage;
+    private boolean supportConfigVolumeProvisionStrategy;
     private boolean supportSharedVolume;
     private boolean supportConfigVolumeProvisioningStrategy;
     private int order;
@@ -147,6 +148,14 @@ public class PrimaryStorageType {
 
     public void setSupportVolumeMigration(boolean supportVolumeMigration) {
         this.supportVolumeMigration = supportVolumeMigration;
+    }
+
+    public boolean isSupportConfigVolumeProvisionStrategy() {
+        return supportConfigVolumeProvisionStrategy;
+    }
+
+    public void setSupportConfigVolumeProvisionStrategy(boolean supportConfigVolumeProvisionStrategy) {
+        this.supportConfigVolumeProvisionStrategy = supportConfigVolumeProvisionStrategy;
     }
 
     public boolean isSupportVolumeMigrationInCurrentPrimaryStorage() {

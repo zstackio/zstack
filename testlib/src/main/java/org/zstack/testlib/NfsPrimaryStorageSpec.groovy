@@ -193,6 +193,10 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new NfsPrimaryStorageKVMBackendCommands.NfsRebaseVolumeBackingFileRsp()
             }
 
+            simulator(NfsPrimaryStorageKVMBackend.DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
+                return new NfsPrimaryStorageKVMBackendCommands.DownloadBitsFromKVMHostRsp()
+            }
+
             simulator(NfsPrimaryStorageKVMBackend.GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH) {
                 def rsp = new NfsPrimaryStorageKVMBackendCommands.GetDownloadBitsFromKVMHostProgressRsp()
                 rsp.totalSize = 1L
