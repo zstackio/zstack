@@ -25,7 +25,7 @@ public class AsyncSingleFlight<V> extends AbstractSingleFlight<V> {
             notifyResult(rcs, v);
         } catch (Exception ex) {
             Collection<ReturnValueCompletion<V>> rcs = dequeAll(key);
-            nofityFailure(rcs, ex);
+            notifyFailure(rcs, ex);
         }
     }
 }
