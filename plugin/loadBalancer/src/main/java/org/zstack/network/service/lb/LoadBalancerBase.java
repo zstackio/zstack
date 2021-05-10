@@ -1429,6 +1429,7 @@ public class LoadBalancerBase {
         vo.setLoadBalancerPort(msg.getLoadBalancerPort());
         vo.setProtocol(msg.getProtocol());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
+        vo.setSecurityPolicyType(msg.getSecurityPolicyType());
         vo = dbf.persistAndRefresh(vo);
         if (msg.getCertificateUuid() != null) {
             LoadBalancerListenerCertificateRefVO ref = new LoadBalancerListenerCertificateRefVO();
@@ -1790,6 +1791,11 @@ public class LoadBalancerBase {
 
                 if (msg.getSystemTags() != null) {
                     new LoadBalancerWeightOperator().setWeight(msg.getSystemTags(), msg.getLoadBalancerListenerUuid());
+                }
+
+                if (msg.getSecurityPolicyType() != null) {
+                    lblVo.setSecurityPolicyType(msg.getSecurityPolicyType());
+                    dbf.updateAndRefresh(lblVo);
                 }
 
                 boolean refresh = isListenerNeedRefresh(lblVo);
