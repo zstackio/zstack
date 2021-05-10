@@ -1,12 +1,14 @@
 package org.zstack.network.service.virtualrouter;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.appliancevm.ApplianceVmStatus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.tacker.PingTracker;
 import org.zstack.core.thread.AsyncThread;
@@ -138,5 +140,27 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
     @AsyncThread
     public void managementNodeReady() {
         trackOurs();
+    }
+
+    @Override
+    protected void trackHook(String resourceUuid) {
+        ApplianceVmStatus status = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, resourceUuid).select(VirtualRouterVmVO_.status).findValue();
+
+        if (status == ApplianceVmStatus.Connecting) {
+            ReconnectVirtualRouterVmMsg msg = new ReconnectVirtualRouterVmMsg();
+            msg.setVirtualRouterVmUuid(resourceUuid);
+            msg.setStatusChange(false);
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, resourceUuid);
+            bus.send(msg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(String.format("virtual router[uuid:%s] reconnection failed, because %s", resourceUuid, reply.getError()));
+                    } else {
+                        logger.debug(String.format("virtual router[uuid:%s] reconnect successfully", resourceUuid));
+                    }
+                }
+            });
+        }
     }
 }
