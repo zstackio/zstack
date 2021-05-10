@@ -17,6 +17,7 @@
     <bean class="org.zstack.core.aspect.LogSafeAspect" factory-method="aspectOf" />
     <bean class="org.zstack.core.aspect.MessageSafeAspect" factory-method="aspectOf" />
     <bean class="org.zstack.core.aspect.AsyncSafeAspect" factory-method="aspectOf" />
+    <bean class="org.zstack.core.aspect.BackAspect" factory-method="aspectOf" />
 
 </beans>
 
