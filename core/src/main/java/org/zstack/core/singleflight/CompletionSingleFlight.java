@@ -27,12 +27,12 @@ public class CompletionSingleFlight<V> extends AbstractSingleFlight<V> {
                 @Override
                 public void fail(ErrorCode errorCode) {
                     Collection<ReturnValueCompletion<V>> rcs = dequeAll(key);
-                    nofityFailure(rcs, errorCode);
+                    notifyFailure(rcs, errorCode);
                 }
             });
         } catch (RuntimeException e) {
             Collection<ReturnValueCompletion<V>> rcs = dequeAll(key);
-            this.nofityFailure(rcs, e);
+            this.notifyFailure(rcs, e);
         }
     }
 }

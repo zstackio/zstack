@@ -58,11 +58,11 @@ public abstract class AbstractSingleFlight<V> {
         consumers.forEach(c -> success(c, v));
     }
     
-    protected void nofityFailure(Collection<ReturnValueCompletion<V>> consumers, ErrorCode errorCode) {
+    protected void notifyFailure(Collection<ReturnValueCompletion<V>> consumers, ErrorCode errorCode) {
         consumers.forEach(c -> fail(c, errorCode));
     }
     
-    protected void nofityFailure(Collection<ReturnValueCompletion<V>> consumers, Exception ex) {
+    protected void notifyFailure(Collection<ReturnValueCompletion<V>> consumers, Exception ex) {
         consumers.forEach(c -> fail(c, ex));
     }
 }
