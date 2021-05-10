@@ -152,21 +152,16 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         if (vSwitchType.equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
 
             String memAccessMode = "private";
-            boolean isHugePageEnable = false;
 
             ResourceConfig memAccess = rcf.getResourceConfig("premiumCluster.memAccess.mode");
             if (memAccess != null) {
                 memAccessMode = memAccess.getResourceConfigValue(clusterVO.getUuid(), String.class);
             }
-            ResourceConfig hugePage = rcf.getResourceConfig("premiumCluster.hugepage.enable");
-            if (hugePage != null) {
-                isHugePageEnable = hugePage.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
-            }
 
             ResourceConfig numa = rcf.getResourceConfig("vm.numa");
             boolean isNumaEnable = numa.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
 
-            if (memAccessMode.equals("private") || !isHugePageEnable || !isNumaEnable){
+            if (memAccessMode.equals("private") || !isNumaEnable){
                 return false;
             }
         }
@@ -253,21 +248,16 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
 
         //if cluster set memeAccess to 'private', filter l2 with OVSDPDK vSwitch type
         String memAccessMode = "private";
-        boolean isHugePageEnable = false;
 
         ResourceConfig memAccess = rcf.getResourceConfig("premiumCluster.memAccess.mode");
         if (memAccess != null) {
             memAccessMode = memAccess.getResourceConfigValue(clusterVO.getUuid(), String.class);
         }
-        ResourceConfig hugePage = rcf.getResourceConfig("premiumCluster.hugepage.enable");
-        if (hugePage != null) {
-            isHugePageEnable = hugePage.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
-        }
 
         ResourceConfig numa = rcf.getResourceConfig("vm.numa");
         boolean isNumaEnable = numa.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
 
-        if (memAccessMode.equals("private") || !isHugePageEnable || !isNumaEnable) {
+        if (memAccessMode.equals("private") || !isNumaEnable) {
             final List<L2NetworkVO> DpdkL2s =  SQL.New("select distinct l2 from L2NetworkVO l2 where" +
                     " l2.vSwitchType = :l2vSwitchType")
                     .param("l2vSwitchType", "OvsDpdk")
