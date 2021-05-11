@@ -3757,7 +3757,7 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            if (!CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT) {
+                            if (info.isNewAdded() || !CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT) {
                                 trigger.next();
                                 return;
                             }
