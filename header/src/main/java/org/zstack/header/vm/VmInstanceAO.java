@@ -78,7 +78,13 @@ public class VmInstanceAO extends ResourceVO {
     private String platform;
 
     @Column
+    private String architecture;
+
+    @Column
     private String allocatorStrategy;
+
+    @Column
+    private String guestOsType;
 
     @Column
     private Timestamp createDate;
@@ -116,6 +122,7 @@ public class VmInstanceAO extends ResourceVO {
         this.lastOpDate = other.lastOpDate;
         this.state = other.state;
         this.platform = other.platform;
+        this.guestOsType = other.guestOsType;
     }
 
     @PreUpdate
@@ -293,5 +300,21 @@ public class VmInstanceAO extends ResourceVO {
 
     public void setInternalId(Long internalId) {
         this.internalId = internalId;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
+    public String getGuestOsType() {
+        return guestOsType;
+    }
+
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
     }
 }

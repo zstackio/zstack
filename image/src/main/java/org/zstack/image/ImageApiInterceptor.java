@@ -6,6 +6,7 @@ import org.zstack.compute.vm.VmExtraInfoGetter;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.schema.GuestOsCategory;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -24,12 +25,15 @@ import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotState;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 
 import java.util.List;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.config.schema.GuestOsCategory.getDefaultGuestOsTypeByPlatform;
 
 /**
  * Created with IntelliJ IDEA.

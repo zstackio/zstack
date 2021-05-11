@@ -92,6 +92,14 @@ public class VmInstanceInventory  {
         return this.platform;
     }
 
+    public java.lang.String architecture;
+    public void setArchitecture(java.lang.String architecture) {
+        this.architecture = architecture;
+    }
+    public java.lang.String getArchitecture() {
+        return this.architecture;
+    }
+
     public java.lang.String defaultL3NetworkUuid;
     public void setDefaultL3NetworkUuid(java.lang.String defaultL3NetworkUuid) {
         this.defaultL3NetworkUuid = defaultL3NetworkUuid;
@@ -194,6 +202,14 @@ public class VmInstanceInventory  {
     }
     public java.util.List getVmCdRoms() {
         return this.vmCdRoms;
+    }
+
+    public java.lang.String guestOsType;
+    public void setGuestOsType(java.lang.String guestOsType) {
+        this.guestOsType = guestOsType;
+    }
+    public java.lang.String getGuestOsType() {
+        return this.guestOsType;
     }
 
 }

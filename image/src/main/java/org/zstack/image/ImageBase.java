@@ -809,6 +809,10 @@ public class ImageBase implements Image {
             self.setArchitecture(msg.getArchitecture());
             update = true;
         }
+        if (msg.getVirtio() != null) {
+            self.setVirtio(msg.getVirtio());
+            update = true;
+        }
 
         if (update) {
             self = dbf.updateAndRefresh(self);
@@ -817,6 +821,13 @@ public class ImageBase implements Image {
         if (ImageArchitecture.aarch64.toString().equals(msg.getArchitecture())){
             SystemTagCreator creator = ImageSystemTags.BOOT_MODE.newSystemTagCreator(msg.getImageUuid());
             creator.setTagByTokens(Collections.singletonMap(ImageSystemTags.BOOT_MODE_TOKEN, ImageBootMode.UEFI.toString()));
+            creator.recreate = true;
+            creator.create();
+        }
+
+        if (ImageArchitecture.x86_64.toString().equals(msg.getArchitecture()) && self.isSystem()) {
+            SystemTagCreator creator = ImageSystemTags.BOOT_MODE.newSystemTagCreator(msg.getUuid());
+            creator.setTagByTokens(Collections.singletonMap(ImageSystemTags.BOOT_MODE_TOKEN, ImageBootMode.Legacy.toString()));
             creator.recreate = true;
             creator.create();
         }

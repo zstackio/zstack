@@ -3,6 +3,7 @@ package org.zstack.image;
 import edu.emory.mathcs.backport.java.util.Collections;
 import org.zstack.compute.vm.VmExtraInfoGetter;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.config.schema.GuestOsCategory;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.image.*;
@@ -24,9 +25,19 @@ public class ImageMessageFiller {
             msg.setPlatform(ImagePlatform.Linux.toString());
         }
 
-        if (msg.getArchitecture() == null) {
+        if (msg.getPlatform().equals(ImagePlatform.Paravirtualization.toString())) {
+            msg.setPlatform(ImagePlatform.Other.toString());
+        } else if (msg.getPlatform().equals(ImagePlatform.WindowsVirtio.toString())) {
+            msg.setPlatform(ImagePlatform.Windows.toString());
+        }
+
+        if (msg.getArchitecture() == null && !ImageConstant.ImageMediaType.DataVolumeTemplate.toString().equals(msg.getMediaType())) {
             msg.setArchitecture(CoreGlobalProperty.UNIT_TEST_ON ?
                     ImageArchitecture.x86_64.toString() : ImageArchitecture.defaultArch());
+        }
+
+        if (msg.getGuestOsType() == null) {
+            msg.setGuestOsType(GuestOsCategory.getDefaultGuestOsTypeByPlatform(msg.getPlatform()));
         }
 
         setBootModeIfAarch64(msg);
@@ -49,6 +60,8 @@ public class ImageMessageFiller {
         if (msg.getArchitecture() == null) {
             msg.setArchitecture(VmExtraInfoGetter.New(vmUuid).getArchitecture());
         }
+
+        msg.setVirtio(VmExtraInfoGetter.New(vmUuid).getVirtio());
 
         setBootModeIfAarch64(msg);
     }

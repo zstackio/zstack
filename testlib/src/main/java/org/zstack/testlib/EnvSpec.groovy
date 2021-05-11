@@ -26,6 +26,7 @@ import org.zstack.header.core.WhileCompletion
 
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.SessionVO
+import org.zstack.header.image.GuestOsCategoryVO
 import org.zstack.header.image.ImageDeletionPolicyManager
 import org.zstack.header.message.Message
 import org.zstack.header.rest.RESTConstant
@@ -796,6 +797,7 @@ class EnvSpec extends ApiHelper implements Node  {
 
             SQL.New(TaskProgressVO.class).hardDelete()
             SQL.New(SessionVO.class).hardDelete()
+            SQL.New(GuestOsCategoryVO.class).hardDelete()
 
             if (GLOBAL_DELETE_HOOK != null) {
                 GLOBAL_DELETE_HOOK()

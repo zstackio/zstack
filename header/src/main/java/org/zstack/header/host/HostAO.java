@@ -35,6 +35,9 @@ public class HostAO extends ResourceVO {
     private String hypervisorType;
 
     @Column
+    private String architecture;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private HostState state;
 
@@ -134,5 +137,13 @@ public class HostAO extends ResourceVO {
 
     public void setClusterUuid(String clusterUuid) {
         this.clusterUuid = clusterUuid;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 }

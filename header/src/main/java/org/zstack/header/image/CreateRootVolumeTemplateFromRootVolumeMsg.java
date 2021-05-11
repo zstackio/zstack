@@ -20,6 +20,7 @@ public class CreateRootVolumeTemplateFromRootVolumeMsg extends NeedReplyMessage 
     private boolean system;
     private String resourceUuid;
     private SessionInventory session;
+    private boolean virtio;
 
     public String getName() {
         return name;
@@ -43,6 +44,16 @@ public class CreateRootVolumeTemplateFromRootVolumeMsg extends NeedReplyMessage 
 
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
+    }
+
+    @Override
+    public boolean getVirtio() {
+        return virtio;
+    }
+
+    @Override
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
 
     @Override

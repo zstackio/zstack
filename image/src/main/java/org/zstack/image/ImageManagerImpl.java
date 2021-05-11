@@ -5,7 +5,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.vm.VmExtraInfoGetter;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -14,6 +14,8 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.schema.GuestOsCategory;
+import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
@@ -58,6 +60,7 @@ import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -68,6 +71,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
+import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -607,6 +611,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setDescription(msg.getDescription());
         vo.setPlatform(msg.getPlatform() == null ? null : ImagePlatform.valueOf(msg.getPlatform()));
         vo.setGuestOsType(msg.getGuestOsType());
+        vo.setVirtio(msg.getVirtio());
         vo.setArchitecture(msg.getArchitecture());
         vo.setStatus(ImageStatus.Creating);
         vo.setState(ImageState.Enabled);
@@ -1278,6 +1283,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setState(ImageState.Enabled);
         vo.setUrl(msgData.getUrl());
         vo.setDescription(msgData.getDescription());
+        vo.setVirtio(msgData.getVirtio());
         if (msgData.getFormat().equals(ImageConstant.VMTX_FORMAT_STRING)) {
             vo.setArchitecture(ImageArchitecture.x86_64.toString());
         } else {
@@ -1521,7 +1527,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             imgvo.setUrl(String.format("volume://%s", rootVolumeUuid));
                             imgvo.setSize(volvo.getSize());
                             imgvo.setActualSize(imageActualSize);
+                            imgvo.setArchitecture(dbf.findByUuid(rootVolume.getVmInstanceUuid(), VmInstanceVO.class).getArchitecture());
                         });
+
                         trigger.next();
                     }
 
@@ -2161,31 +2169,15 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }
 
         if (architecture == null && spec.getVmInstance() != null) {
-            architecture = VmExtraInfoGetter.New(spec.getVmInstance().getUuid()).getArchitecture();
+            architecture = spec.getVmInstance().getArchitecture();
         }
 
         if (architecture == null) {
             return candidates;
         }
 
-        List<String> archTypes = SQL.New("select distinct c.architecture from ClusterVO c", String.class).list();
-
         String finalArchitecture = architecture;
-        long matchCount = archTypes.stream().filter(it -> it == null || it.equals(finalArchitecture)).count();
-        if (matchCount == archTypes.size()) {
-            return candidates;
-        } else if (matchCount == 0) {
-            return Collections.emptyList();
-        }
-
-        Set<String> sameArchClusterUuids = new HashSet<>(SQL.New("select c.uuid from ClusterVO c" +
-                " where c.architecture = :arch" +
-                " or c.architecture is null", String.class)
-                .param("arch", finalArchitecture)
-                .list());
-
-        return candidates.stream().filter(it -> sameArchClusterUuids.contains(it.getClusterUuid()))
-                .collect(Collectors.toList());
+        return candidates.stream().filter(it -> it.getArchitecture().equals(finalArchitecture)).collect(Collectors.toList());
     }
 
     @Override

@@ -6,7 +6,6 @@ import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.rest.APINoSee;
@@ -198,6 +197,8 @@ public class VmInstanceInventory implements Serializable, Cloneable {
 
     private String platform;
 
+    private String architecture;
+
     private String defaultL3NetworkUuid;
     /**
      * @desc - UserVm: normal vm
@@ -266,6 +267,8 @@ public class VmInstanceInventory implements Serializable, Cloneable {
 
     private List<VmCdRomInventory> vmCdRoms;
 
+    private String guestOsType;
+
     protected VmInstanceInventory(VmInstanceVO vo) {
         this.setUuid(vo.getUuid());
         this.setName(vo.getName());
@@ -292,6 +295,8 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setMemorySize(vo.getMemorySize());
         this.setAllocatorStrategy(vo.getAllocatorStrategy());
         this.setPlatform(vo.getPlatform());
+        this.setArchitecture(vo.getArchitecture());
+        this.setGuestOsType(vo.getGuestOsType());
     }
 
     public static VmInstanceInventory valueOf(VmInstanceVO vo) {
@@ -375,6 +380,8 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setCpuSpeed(inv.getCpuSpeed());
         this.setMemorySize(inv.getMemorySize());
         this.setAllocatorStrategy(inv.getAllocatorStrategy());
+        this.setArchitecture(inv.getArchitecture());
+        this.setGuestOsType(inv.getGuestOsType());
     }
 
     public VolumeInventory getRootVolume() {
@@ -578,5 +585,21 @@ public class VmInstanceInventory implements Serializable, Cloneable {
 
     public void setVmCdRoms(List<VmCdRomInventory> vmCdRoms) {
         this.vmCdRoms = vmCdRoms;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
+    public String getGuestOsType() {
+        return guestOsType;
+    }
+
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
     }
 }

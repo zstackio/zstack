@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<character xmlns="http://zstack.org/schema/zstack">
+    <osInfo>
+        <architecture>aarch64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Kylin 10</osRelease>
+        <acpi>true</acpi>
+    </osInfo>
+    <osInfo>
+        <architecture>aarch64</architecture>
+        <platform>Linux</platform>
+        <osRelease>openEuler 20.03</osRelease>
+        <acpi>true</acpi>
+    </osInfo>
+
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <hygonCpu>true</hygonCpu>
+        <osRelease>WindowsServer 2008</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <hygonCpu>true</hygonCpu>
+        <osRelease>WindowsServer 2012</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <hygonCpu>true</hygonCpu>
+        <osRelease>WindowsServer 2016</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <hygonCpu>true</hygonCpu>
+        <osRelease>WindowsServer 2019</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <hygonCpu>true</hygonCpu>
+        <osRelease>Windows 7</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <hygonCpu>true</hygonCpu>
+        <osRelease>Windows 8</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <hygonCpu>true</hygonCpu>
+        <osRelease>Windows 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <hygonCpu>true</hygonCpu>
+        <osRelease>Windows xp</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <hygonCpu>true</hygonCpu>
+        <osRelease>Windows</osRelease>
+    </osInfo>
+</character>

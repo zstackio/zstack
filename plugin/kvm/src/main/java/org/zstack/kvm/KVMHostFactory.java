@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -12,8 +13,11 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
+import org.zstack.core.config.schema.GuestOsCategory;
+import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.PeriodicTask;
@@ -25,6 +29,9 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.image.GuestOsCategoryVO;
+import org.zstack.header.image.GuestOsCategoryVO_;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -45,7 +52,11 @@ import org.zstack.utils.form.Form;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.function.ValidateFunction;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
+import java.io.File;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
@@ -77,6 +88,10 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private List<KVMHostConnectExtensionPoint> connectExtensions = new ArrayList<>();
     private Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<>();
     private int maxDataVolumeNum;
+    private static final String GUEST_OS_CATEGORY_FILE = "guestOs/guestOsCategory.xml";
+    private static final String GUEST_OS_CHARACTER_FILE = "guestOs/guestOsCharacter.xml";
+    public static Map<String, GuestOsCategory.Config> allGuestOsCategory = new ConcurrentHashMap<>();
+    public static Map<String, GuestOsCharacter.Config> allGuestOsCharacter = new ConcurrentHashMap<>();
 
     private final Map<SocketChannel, Long> socketTimeoutMap = new ConcurrentHashMap<>();
 
@@ -258,6 +273,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         deployAnsibleModule();
         populateExtensions();
         configKVMDeviceType();
+        initGuestOsCategory();
+        initGuestOsCharacter();
 
         if (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
             try {
@@ -407,6 +424,48 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
             return tos;
         });
+    }
+
+    private void initGuestOsCategory() {
+        GuestOsCategory configs;
+        File guestOsCategoryFile = PathUtil.findFileOnClassPath(GUEST_OS_CATEGORY_FILE);
+        try {
+            JAXBContext context = JAXBContext.newInstance("org.zstack.core.config.schema");
+            Unmarshaller unmarshaller = context.createUnmarshaller();
+            configs = (GuestOsCategory) unmarshaller.unmarshal(guestOsCategoryFile);
+        } catch (Exception e){
+            throw new CloudRuntimeException(e);
+        }
+        for (GuestOsCategory.Config config : configs.getOsInfo()) {
+            allGuestOsCategory.put(config.getOsRelease(), config);
+            if (!Q.New(GuestOsCategoryVO.class).eq(GuestOsCategoryVO_.osRelease, config.getOsRelease()).isExists()) {
+                GuestOsCategoryVO vo = new GuestOsCategoryVO();
+                vo.setPlatform(config.getPlatform());
+                vo.setName(config.getName());
+                vo.setVersion(config.getVersion());
+                vo.setOsRelease(config.getOsRelease());
+                vo.setUuid(Platform.getUuid());
+                dbf.persist(vo);
+            }
+        }
+
+        //delete release not in config
+        SQL.New(GuestOsCategoryVO.class).notIn(GuestOsCategoryVO_.osRelease, allGuestOsCategory.keySet()).delete();
+    }
+
+    private void initGuestOsCharacter() {
+        GuestOsCharacter configs;
+        File guestOsCharacterFile = PathUtil.findFileOnClassPath(GUEST_OS_CHARACTER_FILE);
+        try {
+            JAXBContext context = JAXBContext.newInstance("org.zstack.core.config.schema");
+            Unmarshaller unmarshaller = context.createUnmarshaller();
+            configs = (GuestOsCharacter) unmarshaller.unmarshal(guestOsCharacterFile);
+        } catch (Exception e){
+            throw new CloudRuntimeException(e);
+        }
+        for (GuestOsCharacter.Config config : configs.getOsInfo()) {
+            allGuestOsCharacter.put(String.format("%s_%s_%s", config.getArchitecture(), config.getPlatform(), config.getOsRelease()), config);
+        }
     }
 
     private void startTcpChannelTimeoutChecker() {

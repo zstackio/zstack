@@ -917,6 +917,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
 
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
+        final String architecture = dbf.findByUuid(msg.getImageUuid(), ImageVO.class).getArchitecture();
         VmInstanceVO vo = new VmInstanceVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -932,6 +933,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo.setZoneUuid(msg.getZoneUuid());
         vo.setInternalId(dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class));
         vo.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
+        vo.setArchitecture(architecture);
 
         SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
         imgq.select(ImageVO_.platform);
@@ -943,7 +945,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo.setCpuSpeed(msg.getCpuSpeed());
         vo.setMemorySize(msg.getMemorySize());
         vo.setAllocatorStrategy(msg.getAllocatorStrategy());
-
+        vo.setGuestOsType(Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.guestOsType).findValue());
         String vmType = msg.getType() == null ? VmInstanceConstant.USER_VM_TYPE : msg.getType();
         VmInstanceType type = VmInstanceType.valueOf(vmType);
         VmInstanceFactory factory = getVmInstanceFactory(type);
@@ -965,6 +967,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
             tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), VmInstanceVO.class.getSimpleName());
         }
 
+        if ((boolean) Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.virtio).findValue()) {
+            SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(vo.getUuid());
+            creator.recreate = true;
+            creator.inherent = false;
+            creator.tag = VmSystemTags.VIRTIO.getTagFormat();
+            creator.create();
+        }
+
         if (instanceOfferingUuid != null) {
             tagMgr.copySystemTag(
                     instanceOfferingUuid,
@@ -980,7 +990,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     vo.getUuid(),
                     VmInstanceVO.class.getSimpleName(), false);
 
-            String architecture = dbf.findByUuid(msg.getImageUuid(), ImageVO.class).getArchitecture();
             if (ImageArchitecture.aarch64.toString().equals(architecture)) {
                 SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(vo.getUuid());
                 creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, VmMachineType.virt.toString())));

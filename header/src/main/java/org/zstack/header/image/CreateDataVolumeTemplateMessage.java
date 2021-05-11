@@ -37,4 +37,10 @@ public interface CreateDataVolumeTemplateMessage extends AddImageMessage {
 
     @Override
     default void setPlatform(String platform) {}
+
+    @Override
+    default void setVirtio(boolean virtio) {}
+
+    @Override
+    default boolean getVirtio() {return false;}
 }

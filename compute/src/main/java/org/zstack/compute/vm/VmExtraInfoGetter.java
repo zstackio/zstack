@@ -64,4 +64,8 @@ public class VmExtraInfoGetter {
                 " and v.rootImageUuid = i.uuid").
                 param("vmUuid", uuid).find();
     }
+
+    public boolean getVirtio() {
+        return VmSystemTags.VIRTIO.hasTag(uuid);
+    }
 }

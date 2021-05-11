@@ -94,9 +94,6 @@ class CreateVmWithHybridClusterCase extends SubCase {
                         managementIp = "localhost"
                         username = "root"
                         password = "password"
-                        systemTags = [
-                                "${HostSystemTags.CPU_ARCHITECTURE_TOKEN}::x86_64".toString()
-                        ]
                     }
 
                     kvm {
@@ -104,9 +101,6 @@ class CreateVmWithHybridClusterCase extends SubCase {
                         managementIp = "127.0.0.2"
                         username = "root"
                         password = "password"
-                        systemTags = [
-                                "${HostSystemTags.CPU_ARCHITECTURE_TOKEN}::x86_64".toString()
-                        ]
                     }
 
                     attachPrimaryStorage("local")
@@ -123,9 +117,6 @@ class CreateVmWithHybridClusterCase extends SubCase {
                         managementIp = "127.0.0.3"
                         username = "root"
                         password = "password"
-                        systemTags = [
-                                "${HostSystemTags.CPU_ARCHITECTURE_TOKEN}::aarch64".toString()
-                        ]
                     }
 
                     kvm {
@@ -133,9 +124,6 @@ class CreateVmWithHybridClusterCase extends SubCase {
                         managementIp = "127.0.0.4"
                         username = "root"
                         password = "password"
-                        systemTags = [
-                                "${HostSystemTags.CPU_ARCHITECTURE_TOKEN}::aarch64".toString()
-                        ]
                     }
 
                     attachPrimaryStorage("local")

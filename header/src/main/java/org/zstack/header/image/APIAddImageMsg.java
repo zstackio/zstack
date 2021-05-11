@@ -45,6 +45,8 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddI
     @APIParam(nonempty = true, resourceType = BackupStorageVO.class, noOwnerCheck = true)
     private List<String> backupStorageUuids;
     private String type;
+    @APIParam(required = false)
+    private boolean virtio = true;
 
     public String getFormat() {
         return format;
@@ -135,6 +137,15 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddI
 
     public void setType(String imageType) {
         this.type = imageType;
+    }
+
+
+    public boolean getVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(boolean virtio) {
+        this.virtio = virtio;
     }
  
     public static APIAddImageMsg __example__() {
