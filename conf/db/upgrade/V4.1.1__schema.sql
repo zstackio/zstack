@@ -109,3 +109,5 @@ UPDATE `zstack`.`VmInstanceEO` SET platform = "Windows", guestOsType = "Windows"
 UPDATE `zstack`.`VmInstanceEO` SET guestOsType = "Linux" WHERE platform = "Linux";
 UPDATE `zstack`.`VmInstanceEO` SET guestOsType = "Other" WHERE platform = "Other";
 UPDATE `zstack`.`VmInstanceEO` SET platform = "Other", guestOsType = "Other" WHERE platform = "Paravirtualization";
+
+UPDATE `zstack`.`VtepVO` SET port=8472 WHERE port=4789
