@@ -33,4 +33,6 @@ public class VolumeGlobalConfig {
     @GlobalConfigDef(defaultValue = "0", type = Integer.class, description = "physical block size of the underlying storage")
     @BindResourceConfig({VolumeVO.class, PrimaryStorageVO.class})
     public static GlobalConfig VOLUME_PHYSICAL_BLOCK_SIZE = new GlobalConfig(CATEGORY, "physical.block.size");
+
+    public static GlobalConfig AUTO_SNAPSHOT_BEFORE_CHANGE_OPERATION = new GlobalConfig(CATEGORY, "auto.snapshot.before.change");
 }

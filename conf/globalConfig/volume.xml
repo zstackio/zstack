@@ -39,4 +39,11 @@
         <type>java.lang.Long</type>
     </config>
 
+	<config>
+		<name>auto.snapshot.before.change</name>
+		<description>create snapshot automatically before volume change</description>
+		<category>volume</category>
+		<defaultValue>false</defaultValue>
+		<type>java.lang.Boolean</type>
+	</config>
 </globalConfig>
