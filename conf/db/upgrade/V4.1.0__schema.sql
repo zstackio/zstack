@@ -125,7 +125,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AuditsVO` (
     `operator` varchar(256) DEFAULT NULL,
     `requestDump` text DEFAULT NULL,
     `resourceType` VARCHAR(256) NOT NULL,
-    `resourceUuid` varchar(32) ,
+    `resourceUuid` varchar(32),
+    `requestUuid` varchar(32),
     `responseDump`  text DEFAULT NULL,
     `success` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'api call success or failed',
     PRIMARY KEY  (`id`)
