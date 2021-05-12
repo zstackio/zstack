@@ -12,7 +12,7 @@ public class VxlanNetworkPoolConstant {
     @PythonClass
     public static final String RANDOM_VNI_ALLOCATOR_STRATEGY = "RandomVniAllocatorStrategy";
     @PythonClass
-    public static final Integer VXLAN_PORT = 4789;
+    public static final Integer VXLAN_PORT = 8472;
     @PythonClass
     public static final String KVM_VXLAN_TYPE = "KVM_HOST_VXLAN";
 

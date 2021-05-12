@@ -89,12 +89,20 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 vtepIp, l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid);
         logger.debug(info);
 
+        List<Integer> dstports = Q.New(VtepVO.class).select(VtepVO_.port)
+                .eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid())
+                .eq(VtepVO_.hostUuid,hostUuid)
+                .eq(VtepVO_.vtepIp,vtepIp)
+                .listValues();
+        Integer dstport = dstports.get(0);
+
         final VxlanKvmAgentCommands.CreateVxlanBridgeCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgeCmd();
         cmd.setVtepIp(vtepIp);
         cmd.setBridgeName(makeBridgeName(l2vxlan.getVni()));
         cmd.setVni(l2vxlan.getVni());
         cmd.setL2NetworkUuid(l2Network.getUuid());
         cmd.setPeers(peers);
+        cmd.setDstport(dstport);
         cmd.setMtu(new MtuGetter().getL2Mtu(l2Network));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
