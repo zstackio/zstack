@@ -1292,6 +1292,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public Integer mtu;
         public boolean vmMultiGateway;
         public List<HostRouteInfo> hostRoutes;
+        public String nicType;
     }
 
     public static class ApplyDhcpCmd extends KVMAgentCommands.AgentCommand {
@@ -1479,6 +1480,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     info.endIp = arg.getEndIP();
                     info.prefixLength = arg.getPrefixLength();
                 }
+                info.nicType = arg.getNicType();
                 return info;
             }
         });

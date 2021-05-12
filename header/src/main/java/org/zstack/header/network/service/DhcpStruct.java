@@ -28,6 +28,7 @@ public class DhcpStruct implements Serializable {
     private String  endIP;
     private Integer prefixLength;
     private String  vmUuid;
+    private String  nicType;
 
     @Override
     public String toString() {
@@ -186,5 +187,13 @@ public class DhcpStruct implements Serializable {
 
     public void setGateway6(String gateway6) {
         this.gateway6 = gateway6;
+    }
+
+    public String getNicType() {
+        return nicType;
+    }
+
+    public void setNicType(String nicType) {
+        this.nicType = nicType;
     }
 }
