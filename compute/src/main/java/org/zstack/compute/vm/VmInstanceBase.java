@@ -5454,11 +5454,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                                     if (allocateIps.size() == 2) {
                                         if (ip.getIpVersion() == IPv6Constants.IPv4) {
                                             nicVO.setIp(ip.getIp());
+                                            nicVO.setGateway(ip.getGateway());
+                                            nicVO.setNetmask(ip.getNetmask());
                                             nicVO.setL3NetworkUuid(ip.getL3NetworkUuid());
                                             nicVO.setUsedIpUuid(ip.getUuid());
                                         }
                                     } else {
                                         nicVO.setIp(ip.getIp());
+                                        nicVO.setGateway(ip.getGateway());
+                                        nicVO.setNetmask(ip.getNetmask());
                                         nicVO.setL3NetworkUuid(ip.getL3NetworkUuid());
                                         nicVO.setUsedIpUuid(ip.getUuid());
                                     }
