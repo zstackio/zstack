@@ -325,7 +325,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
         q.setParameter("l3Uuid", l3Nw.getUuid());
         if (l3Nw.getCategory().equals(L3NetworkCategory.Public.toString())) {
-            q.setParameter("meta", VirtualRouterNicMetaData.PUBLIC_NIC_MASK_STRING_LIST);
+            q.setParameter("meta", VirtualRouterNicMetaData.ALL_PUBLIC_NIC_MASK_STRING_LIST);
         } else {
             q.setParameter("meta", VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST);
         }
