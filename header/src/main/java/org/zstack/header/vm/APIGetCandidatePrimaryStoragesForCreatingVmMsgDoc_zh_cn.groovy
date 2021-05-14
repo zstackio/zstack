@@ -111,6 +111,16 @@ doc {
 					since "2.1"
 					
 				}
+				column {
+					name "rootDiskSize"
+					enclosedIn ""
+					desc "根云盘规格大小。仅在`imageUuid`指定的镜像是ISO时且`rootDiskOfferingUuid`为空需要指定"
+					location "query"
+					type "Long"
+					optional true
+					since "4.1.2"
+					
+				}
 			}
         }
 

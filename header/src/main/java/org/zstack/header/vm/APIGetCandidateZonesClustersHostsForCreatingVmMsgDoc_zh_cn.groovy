@@ -105,21 +105,21 @@ doc {
 					name "cpuNum"
 					enclosedIn ""
 					desc "CPU数目"
-					location "body"
-					type "int"
+					location "query"
+					type "Integer"
 					optional true
 					since "3.10.0"
-
+					
 				}
 				column {
 					name "memorySize"
 					enclosedIn ""
 					desc "内存大小, 单位Byte"
-					location "body"
-					type "long"
+					location "query"
+					type "Long"
 					optional true
 					since "3.10.0"
-
+					
 				}
 				column {
 					name "systemTags"
@@ -139,6 +139,16 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
+					
+				}
+				column {
+					name "rootDiskSize"
+					enclosedIn ""
+					desc "根云盘规格大小。仅在`imageUuid`指定的镜像是ISO时且`rootDiskOfferingUuid`为空：需要指定"
+					location "query"
+					type "Long"
+					optional true
+					since "4.1.2"
 					
 				}
 			}

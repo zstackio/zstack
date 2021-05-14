@@ -1,6 +1,5 @@
 package org.zstack.test.integration.network.l3network.ipv6
 
-import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.header.image.ImageConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
@@ -16,6 +15,17 @@ import java.util.stream.Collectors
  */
 class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
     EnvSpec env
+    L3NetworkInventory l3_statefull
+    L3NetworkInventory l3
+    InstanceOfferingInventory offering
+    DiskOfferingInventory diskOffering
+    ImageInventory image
+    HostInventory h1
+    HostInventory h2
+    BackupStorageInventory bs
+    BackupStorageInventory bs2
+    ZoneInventory zone
+    PrimaryStorageInventory ps
 
     @Override
     void clean() {
@@ -28,6 +38,7 @@ class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
         useSpring(KvmTest.springSpec)
 
     }
+
     @Override
     void environment() {
         env = Env.Ipv6FlatL3Network()
@@ -36,21 +47,82 @@ class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
     @Override
     void test() {
         env.create {
+            prepareEnv()
             testGetCandidateZonesClustersHostsForCreatingVm()
+            testGetCandidatePrimaryStoragesAndClustersHostsForCreatingVmMsg()
+        }
+    }
+
+    void prepareEnv() {
+        l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
+        l3 = env.inventoryByName("l3")
+        offering = env.inventoryByName("instanceOffering")
+        diskOffering = env.inventoryByName("diskOffering")
+        image = env.inventoryByName("image1")
+        h1 = env.inventoryByName("kvm-1")
+        h2 = env.inventoryByName("kvm-2")
+        bs = env.inventoryByName("sftp")
+        bs2 = env.inventoryByName("sftp2")
+        zone = env.inventoryByName("zone")
+        ps = env.inventoryByName("nfs")
+    }
+
+    void testGetCandidatePrimaryStoragesAndClustersHostsForCreatingVmMsg() {
+        ImageInventory iso = addImage {
+            name = "iso-image"
+            url = "http://my-site/image.iso"
+            backupStorageUuids = [bs.uuid, bs2.uuid]
+            format = ImageConstant.ISO_FORMAT_STRING
+        }
+
+        //test GetCandidateZonesClustersHostsForCreatingVm
+        GetCandidateZonesClustersHostsForCreatingVmAction failAction = new GetCandidateZonesClustersHostsForCreatingVmAction()
+        failAction.sessionId = adminSession()
+        failAction.zoneUuid = zone.uuid
+        failAction.imageUuid = iso.uuid
+        failAction.l3NetworkUuids = [l3_statefull.uuid, l3.uuid]
+        failAction.cpuNum = offering.cpuNum
+        failAction.memorySize = offering.memorySize
+        GetCandidateZonesClustersHostsForCreatingVmAction.Result failRes = failAction.call()
+        assert failRes.error.details.contains("必须设置根云盘大小")
+
+        GetCandidateZonesClustersHostsForCreatingVmResult successres = getCandidateZonesClustersHostsForCreatingVm {
+            zoneUuid = zone.uuid
+            rootDiskSize = diskOffering.diskSize
+            instanceOfferingUuid = offering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3_statefull.uuid, l3.uuid]
+        }
+        assert successres.hosts.stream().map { h -> h.getUuid() }.collect(Collectors.toList()).contains(h1.uuid)
+        assert successres.hosts.stream().map { h -> h.getUuid() }.collect(Collectors.toList()).contains(h2.uuid)
+        assert successres.zones.size() == 1
+        assert successres.clusters.size() == 1
+
+        //test GetCandidatePrimaryStoragesForCreatingVm
+        GetCandidatePrimaryStoragesForCreatingVmAction getPsAction = new GetCandidatePrimaryStoragesForCreatingVmAction(
+                l3NetworkUuids: [l3.uuid],
+                imageUuid: iso.uuid,
+                dataDiskOfferingUuids: [diskOffering.uuid],
+                sessionId: adminSession()
+        )
+        GetCandidatePrimaryStoragesForCreatingVmAction.Result getPsResult = getPsAction.call()
+        assert getPsResult.error.details.contains("当镜像类型是ISO时根云盘大小需要设置")
+
+        GetCandidatePrimaryStoragesForCreatingVmResult getPsSuccessres = getCandidatePrimaryStoragesForCreatingVm {
+            zoneUuid = zone.uuid
+            rootDiskSize = diskOffering.diskSize
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+        }
+        assert getPsSuccessres.rootVolumePrimaryStorages.stream().map { psInv -> psInv.getUuid() }.collect(Collectors.toList()).contains(ps.uuid)
+
+        deleteImage {
+            uuid = iso.uuid
         }
     }
 
     void testGetCandidateZonesClustersHostsForCreatingVm() {
-        L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
-        L3NetworkInventory l3 = env.inventoryByName("l3")
-        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
-        ImageInventory image = env.inventoryByName("image1")
-        HostInventory h1 = env.inventoryByName("kvm-1")
-        HostInventory h2 = env.inventoryByName("kvm-2")
-        BackupStorageInventory bs = env.inventoryByName("sftp")
-        BackupStorageInventory bs2 = env.inventoryByName("sftp2")
-        ZoneInventory zone = env.inventoryByName("zone")
 
         ImageInventory iso = addImage {
             name = "sized-image"
@@ -81,8 +153,8 @@ class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
             imageUuid = image.uuid
             l3NetworkUuids = [l3_statefull.uuid]
         }
-        assert res.hosts.stream().map{h -> h.getUuid()}.collect(Collectors.toList()).contains(h1.uuid)
-        assert res.hosts.stream().map{h -> h.getUuid()}.collect(Collectors.toList()).contains(h2.uuid)
+        assert res.hosts.stream().map { h -> h.getUuid() }.collect(Collectors.toList()).contains(h1.uuid)
+        assert res.hosts.stream().map { h -> h.getUuid() }.collect(Collectors.toList()).contains(h2.uuid)
         assert res.zones.size() == 1
         assert res.clusters.size() == 1
 
@@ -91,8 +163,8 @@ class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
             imageUuid = image.uuid
             l3NetworkUuids = [l3_statefull.uuid, l3.uuid]
         }
-        assert res.hosts.stream().map{h -> h.getUuid()}.collect(Collectors.toList()).contains(h1.uuid)
-        assert res.hosts.stream().map{h -> h.getUuid()}.collect(Collectors.toList()).contains(h2.uuid)
+        assert res.hosts.stream().map { h -> h.getUuid() }.collect(Collectors.toList()).contains(h1.uuid)
+        assert res.hosts.stream().map { h -> h.getUuid() }.collect(Collectors.toList()).contains(h2.uuid)
         assert res.zones.size() == 1
         assert res.clusters.size() == 1
 
@@ -103,8 +175,8 @@ class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
             imageUuid = iso.uuid
             l3NetworkUuids = [l3_statefull.uuid, l3.uuid]
         }
-        assert res.hosts.stream().map{h -> h.getUuid()}.collect(Collectors.toList()).contains(h1.uuid)
-        assert res.hosts.stream().map{h -> h.getUuid()}.collect(Collectors.toList()).contains(h2.uuid)
+        assert res.hosts.stream().map { h -> h.getUuid() }.collect(Collectors.toList()).contains(h1.uuid)
+        assert res.hosts.stream().map { h -> h.getUuid() }.collect(Collectors.toList()).contains(h2.uuid)
         assert res.zones.size() == 1
         assert res.clusters.size() == 1
 
@@ -126,8 +198,8 @@ class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
             memorySize = offering.memorySize
         }
 
-        assert res.hosts.stream().map{h -> h.getUuid()}.collect(Collectors.toList()).contains(h1.uuid)
-        assert res.hosts.stream().map{h -> h.getUuid()}.collect(Collectors.toList()).contains(h2.uuid)
+        assert res.hosts.stream().map { h -> h.getUuid() }.collect(Collectors.toList()).contains(h1.uuid)
+        assert res.hosts.stream().map { h -> h.getUuid() }.collect(Collectors.toList()).contains(h2.uuid)
         assert res.zones.size() == 1
         assert res.clusters.size() == 1
 
@@ -135,7 +207,4 @@ class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
             uuid = iso.uuid
         }
     }
-
-
 }
-

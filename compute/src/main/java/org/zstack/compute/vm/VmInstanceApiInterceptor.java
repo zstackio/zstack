@@ -325,6 +325,16 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(operr("Missing CPU/memory settings"));
             }
         }
+
+        ImageVO image = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
+        if (image != null && image.getMediaType() == ImageMediaType.ISO) {
+            if (msg.getRootDiskOfferingUuid() == null) {
+                if (msg.getRootDiskSize() == null || msg.getRootDiskSize() <= 0) {
+                    throw new OperationFailureException(argerr("the image[name:%s, uuid:%s] is an ISO, rootDiskSize must be set",
+                            image.getName(), image.getUuid()));
+                }
+            }
+        }
     }
 
     private void validate(final APICreateVmCdRomMsg msg) {
@@ -352,8 +362,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(final APIGetCandidatePrimaryStoragesForCreatingVmMsg msg) {
         ImageMediaType mediaType = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.mediaType).findValue();
-        if (ImageMediaType.ISO == mediaType && msg.getRootDiskOfferingUuid() == null) {
-            throw new ApiMessageInterceptionException(argerr("rootVolumeOffering is needed when image media type is ISO"));
+        if (ImageMediaType.ISO == mediaType) {
+            if (msg.getRootDiskOfferingUuid() == null) {
+                if (msg.getRootDiskSize() == null || msg.getRootDiskSize() <= 0) {
+                    throw new ApiMessageInterceptionException(argerr("rootDiskSize is needed when image media type is ISO"));
+                }
+            }
         }
     }
 
