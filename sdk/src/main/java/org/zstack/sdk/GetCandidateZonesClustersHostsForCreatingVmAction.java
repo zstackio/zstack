@@ -37,6 +37,9 @@ public class GetCandidateZonesClustersHostsForCreatingVmAction extends AbstractA
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String rootDiskOfferingUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
+    public java.lang.Long rootDiskSize;
+
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataDiskOfferingUuids;
 
