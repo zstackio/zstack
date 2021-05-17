@@ -120,6 +120,14 @@
     "message_en": "Could not find pool [%1$s] in Ceph cluster. You need to create one manually."
   },
   {
+    "category": "BS",
+    "code": "1009",
+    "method": "regex",
+    "regex": "failed to download image[url: .*] on backup storage[uuid: .*], because: .*",
+    "message_cn": "在镜像服务器上下载镜像失败。",
+    "message_en": "Failed to download image on backup storage [%2$s]."
+  },
+  {
     "category": "CEPH",
     "code": "1000",
     "method": "regex",
@@ -758,6 +766,14 @@
     "regex": "Parse license error.*",
     "message_cn": "解析许可证失败。",
     "message_en": "Failed to parse license."
+  },
+  {
+    "category": "LONGJOB",
+    "code": "1000",
+    "method": "regex",
+    "regex": "long job\\[uuid:.*] has been canceled",
+    "message_cn": "任务被取消。",
+    "message_en": "This job has been canceled."
   },
   {
     "category": "MANAGEMENTNODE",

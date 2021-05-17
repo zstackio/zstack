@@ -131,7 +131,10 @@ public class SftpBackupStorage extends BackupStorageBase {
                         res.format = ret.format;
                         completion.success(res);
                     } else {
-                        completion.fail(operr("fail to download image, because %s", ret.getError()));
+                        completion.fail(
+                                operr("failed to download image[url: %s] on backup storage[uuid: %s], because: %s",
+                                        url, self.getUuid(), ret.getError())
+                        );
                     }
                 }
 
