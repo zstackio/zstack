@@ -673,11 +673,18 @@ public class KVMHost extends HostBase implements Host {
         cmd.setSecondaryVmHostIp(msg.getSecondaryVmHostIp());
         cmd.setCheckpointDelay(msg.getCheckpointDelay());
         cmd.setFullSync(msg.isFullSync());
-        cmd.setNicNumber(msg.getNicNumber());
 
         VmInstanceVO vm = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
         List<VolumeInventory> volumes = vm.getAllVolumes().stream().filter(v -> v.getType() == VolumeType.Data || v.getType() == VolumeType.Root).map(VolumeInventory::valueOf).collect(Collectors.toList());
         cmd.setVolumes(VolumeTO.valueOf(volumes, KVMHostInventory.valueOf(getSelf())));
+
+        List<NicTO> nics = new ArrayList<>();
+        for (VmNicInventory nic : msg.getNics()) {
+            NicTO to = completeNicInfo(nic);
+            nics.add(to);
+        }
+        nics = nics.stream().sorted(Comparator.comparing(NicTO::getDeviceId)).collect(Collectors.toList());
+        cmd.setNics(nics);
         new Http<>(startColoSyncPath, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(msg, completion) {
             @Override
             public void success(AgentResponse ret) {
