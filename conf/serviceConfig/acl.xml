@@ -16,6 +16,14 @@
     </message>
 
     <message>
+        <name>org.zstack.header.acl.APIChangeAccessControlListRedirectRuleMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.acl.APIAddAccessControlListRedirectRuleMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.acl.APIRemoveAccessControlListEntryMsg</name>
     </message>
 

@@ -61,6 +61,16 @@ doc {
 					since "3.9"
 					
 				}
+				column {
+					name "serverGroupUuids"
+					enclosedIn ""
+					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 
