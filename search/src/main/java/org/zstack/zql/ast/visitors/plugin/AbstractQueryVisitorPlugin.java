@@ -5,6 +5,7 @@ import org.zstack.header.zql.ASTNode;
 import org.zstack.zql.ast.ZQLMetadata;
 import org.zstack.zql.ast.visitors.*;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,6 +31,35 @@ public abstract class AbstractQueryVisitorPlugin extends QueryVisitorPlugin {
         List<String> fieldNames = node.getTarget().getFields() == null ? new ArrayList<>() : node.getTarget().getFields();
         fieldNames.forEach(inventory::errorIfNoField);
         return fieldNames;
+    }
+
+    public List<String> buildFieldsWithoutFunction() {
+        ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.getTarget().getEntity());
+        List<String> fieldNames = node.getTarget().getFieldsWithoutFunction() == null ? new ArrayList<>() : node.getTarget().getFieldsWithoutFunction();
+        fieldNames.forEach(inventory::errorIfNoField);
+        return fieldNames.stream().map(f->String.format("%s.%s", inventory.simpleInventoryName(), f)).collect(Collectors.toList());
+    }
+
+    public List<String> buildFieldsWithFunction() {
+        List<ASTNode.FieldWithFunction> fields = node.getTarget().getFieldsWithFunction() == null ? new ArrayList<>() : node.getTarget().getFieldsWithFunction();
+        return fields.stream().map(this::buildFieldWithFunction).collect(Collectors.toList());
+    }
+
+    private String buildFieldWithFunction(ASTNode.FieldWithFunction field) {
+        String functions = "%s";
+        ASTNode.Function function;
+        while((function = field.getFunction()) != null) {
+            functions = String.format(functions, ((ASTNode) function).accept(new FunctionVisitor()));
+            if ((field = field.getSubFieldWithFunction()) == null) {
+                break;
+            }
+        }
+
+        ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.getTarget().getEntity());
+        List<String> fs = field.getFields().stream()
+                .peek(inventory::errorIfNoField)
+                .map(f->String.format("%s.%s", inventory.simpleInventoryName(), f)).collect(Collectors.toList());
+        return String.format(functions,  StringUtils.join(fs, ","));
     }
 
     @Override

@@ -188,6 +188,12 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link ZQLParser#fieldWithFunction}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFieldWithFunction(ZQLParser.FieldWithFunctionContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ZQLParser#function}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

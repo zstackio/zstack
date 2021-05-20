@@ -199,7 +199,7 @@ public class ZQL {
             voPrimaryKeyName = priKey.getName();
             if (!node.getTarget().getFields().contains(voPrimaryKeyName)) {
                 primaryKeyAdded = true;
-                node.getTarget().getFields().add(voPrimaryKeyName);
+                node.getTarget().addField(voPrimaryKeyName);
             }
         }
 
