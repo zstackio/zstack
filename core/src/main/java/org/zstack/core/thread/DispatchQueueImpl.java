@@ -101,6 +101,37 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     }
 
     @Override
+    public ChainInfo cleanChainTaskInfo(String signature, int index, Boolean clean) {
+        long now = System.currentTimeMillis();
+        synchronized (chainTasks) {
+            ChainInfo info = new ChainInfo();
+            ChainTaskQueueWrapper w = chainTasks.get(signature);
+            if (w == null) {
+                logger.warn(String.format("no queue with a corresponding signatureName[%s]", signature));
+                return info;
+            }
+            if (clean == true) {
+                w.runningQueue.clear();
+                return info;
+            }
+            int start = 0;
+            for (Object obj : w.runningQueue) {
+                if (start != index) {
+                    start++;
+                    continue;
+                }
+                ChainFuture cf = (ChainFuture) obj;
+                info.addRunningTask(TaskInfoBuilder.buildRunningTaskInfo(cf, now, start));
+                w.runningQueue.remove(cf);
+            }
+            if (w.runningQueue.isEmpty() && w.pendingQueue.isEmpty()) {
+                chainTasks.remove(signature);
+            }
+            return info;
+        }
+    }
+
+    @Override
     public Set<String> getApiRunningTaskSignature(String apiId) {
         return new HashSet<>(apiRunningSignature.getOrDefault(apiId, Collections.emptyList()));
     }

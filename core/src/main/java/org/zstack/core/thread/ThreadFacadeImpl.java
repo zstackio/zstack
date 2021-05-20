@@ -234,6 +234,11 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     }
 
     @Override
+    public ChainInfo cleanChainTaskInfo(String signature, int index, Boolean clean) {
+        return dpq.cleanChainTaskInfo(signature, index, clean);
+    }
+
+    @Override
     public Set<String> getApiRunningTaskSignature(String apiId) {
         return dpq.getApiRunningTaskSignature(apiId);
     }

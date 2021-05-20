@@ -127,6 +127,15 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     private abstract class Envelope {
         long startTime;
+        String serviceId;
+
+        public String getServiceId() {
+            return serviceId;
+        }
+
+        public void setServiceId(String serviceId) {
+            this.serviceId = serviceId;
+        }
 
         {
             if (CloudBusGlobalConfig.STATISTICS_ON.value(Boolean.class)) {
@@ -324,6 +333,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 callback.run(createTimeoutReply(msg));
             }
         };
+        e.serviceId = msg.getServiceId();
 
         envelopes.put(msg.getId(), e);
         msgExts.forEach(m -> m.afterAddEnvelopes(msg.getId()));
@@ -440,6 +450,20 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
 
         doSend(reply);
+    }
+
+    @Override
+    public void reply(String correlationId) {
+        Envelope e = envelopes.get(correlationId);
+        if (e == null) {
+            logger.warn(String.format("received a correlationId[%s] but no envelope found,", correlationId));
+            return;
+        }
+        MessageReply r = new MessageReply();
+        r.putHeaderEntry(CORRELATION_ID, correlationId);
+        r.setError(operr("on purpose return for clean queue"));
+        r.setServiceId(e.getServiceId());
+        e.ack(r);
     }
 
     @Override

@@ -1731,6 +1731,11 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     @Override
+    public void reply(String correlationId) {
+        logger.warn("Unsupported cloudBus2");
+    }
+
+    @Override
     public void publish(List<Event> events) {
         for (Event e : events) {
             publish(e);
