@@ -1,5 +1,6 @@
 package org.zstack.acl;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -65,11 +66,26 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
             handle((APIDeleteAccessControlListMsg) msg);
         } else if (msg instanceof APIAddAccessControlListEntryMsg) {
             handle((APIAddAccessControlListEntryMsg) msg);
+        } else if (msg instanceof APIChangeAccessControlListRedirectRuleMsg) {
+            handle((APIChangeAccessControlListRedirectRuleMsg)msg);
+        } else if (msg instanceof APIAddAccessControlListRedirectRuleMsg) {
+            handle((APIAddAccessControlListRedirectRuleMsg) msg);
         } else if (msg instanceof APIRemoveAccessControlListEntryMsg) {
             handle((APIRemoveAccessControlListEntryMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIChangeAccessControlListRedirectRuleMsg msg) {
+        APIChangeAccessControlListRedirectRuleEvent evt = new APIChangeAccessControlListRedirectRuleEvent(msg.getId());
+        AccessControlListEntryVO entryVO = Q.New(AccessControlListEntryVO.class).eq(AccessControlListEntryVO_.uuid, msg.getUuid()).find();
+        if (!StringUtils.equals(msg.getName(), entryVO.getName())) {
+            entryVO.setName(msg.getName());
+            dbf.update(entryVO);
+        }
+        evt.setInventory(AccessControlListEntryInventory.valueOf(entryVO));
+        bus.publish(evt);
     }
 
     private void handle(APICreateAccessControlListMsg msg) {
@@ -155,6 +171,7 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
                 APIAddAccessControlListEntryEvent evt = new APIAddAccessControlListEntryEvent(msg.getId());
                 AccessControlListVO aclVO = dbf.findByUuid(msg.getAclUuid(), AccessControlListVO.class);
                 AccessControlListEntryVO entry = new AccessControlListEntryVO();
+                entry.setType(AclEntryType.IpEntry.toString());
                 entry.setUuid(Platform.getUuid());
                 entry.setAclUuid(msg.getAclUuid());
                 entry.setIpEntries(msg.getEntries());
@@ -192,6 +209,61 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
             }
         });
 
+    }
+
+    private void handle(APIAddAccessControlListRedirectRuleMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("operate-acl-%s", msg.getAclUuid());
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                APIAddAccessControlListEntryEvent evt = new APIAddAccessControlListEntryEvent(msg.getId());
+                AccessControlListVO aclVO = dbf.findByUuid(msg.getAclUuid(), AccessControlListVO.class);
+                AccessControlListEntryVO entry = new AccessControlListEntryVO();
+                entry.setName(msg.getName());
+                entry.setUuid(Platform.getUuid());
+                entry.setAclUuid(msg.getAclUuid());
+                entry.setType(AclEntryType.RedirectRule.toString());
+                entry.setCriterion(msg.getCriterion());
+                entry.setMatchMethod(msg.getMatchMethod());
+                entry.setDomain(msg.getDomain());
+                entry.setUrl(msg.getUrl());
+                entry.setDescription(msg.getDescription());
+
+                final AccessControlListEntryVO fentry = entry;
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(RefreshAccessControlListExtensionPoint.class),
+                        new ForEachFunction<RefreshAccessControlListExtensionPoint>() {
+                            @Override
+                            public void run(RefreshAccessControlListExtensionPoint ext) {
+                                logger.debug(String.format("execute before add acl ip entry extension point %s", ext));
+                                ext.beforeAddIpEntry(aclVO.toInventory(), fentry.toInventory());
+                            }
+                        });
+
+                entry = dbf.persistAndRefresh(entry);
+                /*apply acl*/
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(RefreshAccessControlListExtensionPoint.class),
+                        new ForEachFunction<RefreshAccessControlListExtensionPoint>() {
+                            @Override
+                            public void run(RefreshAccessControlListExtensionPoint ext) {
+                                logger.debug(String.format("execute after add acl ip entry extension point %s", ext));
+                                ext.afterAddIpEntry(aclVO.toInventory(), fentry.toInventory());
+                            }
+                        });
+
+                evt.setInventory(entry.toInventory());
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "add-acl-ip-entry";
+            }
+        });
     }
 
     private void handle(APIRemoveAccessControlListEntryMsg msg) {

@@ -31,6 +31,7 @@ import java.util.List;
 public class LoadBalancerListenerACLRefInventory {
     private Long id;
     private String listenerUuid;
+    private String serverGroupUuid;
     private String aclUuid;
     private String type;
     private Timestamp createDate;
@@ -50,6 +51,7 @@ public class LoadBalancerListenerACLRefInventory {
         inv.setAclUuid(vo.getAclUuid());
         inv.setId(vo.getId());
         inv.setListenerUuid(vo.getListenerUuid());
+        inv.setServerGroupUuid(vo.getServerGroupUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
 
@@ -70,6 +72,14 @@ public class LoadBalancerListenerACLRefInventory {
 
     public void setListenerUuid(String listenerUuid) {
         this.listenerUuid = listenerUuid;
+    }
+
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
+    }
+
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 
     public String getAclUuid() {

@@ -6,5 +6,6 @@ package org.zstack.network.service.lb;
  **/
 public enum LoadBalancerAclType {
     white,
-    black
+    black,
+    redirect
 }
