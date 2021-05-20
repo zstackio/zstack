@@ -4401,9 +4401,9 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
-    "raw": "rootVolumeOffering is needed when image media type is ISO",
-    "en_US": "rootVolumeOffering is needed when image media type is ISO",
-    "zh_CN": "当镜像类型是ISO时根云盘计算规格需要设置",
+    "raw": "rootDiskSize is needed when image media type is ISO",
+    "en_US": "rootDiskSize is needed when image media type is ISO",
+    "zh_CN": "当镜像类型是ISO时根云盘大小需要设置",
     "arguments": [],
     "line": 141,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
@@ -5097,9 +5097,9 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
-    "raw": "the image[name:%s, uuid:%s] is an ISO, rootDiskOfferingUuid must be set",
-    "en_US": "the image[name:{0}, uuid:{1}] is an ISO, rootDiskOfferingUuid must be set",
-    "zh_CN": "镜像[name:{0}, uuid:{1}]是一个IOS, 必须设置根云盘规格",
+    "raw": "the image[name:%s, uuid:%s] is an ISO, rootDiskSize must be set",
+    "en_US": "the image[name:{0}, uuid:{1}] is an ISO, rootDiskSize must be set",
+    "zh_CN": "镜像[name:{0}, uuid:{1}]是一个IOS, 必须设置根云盘大小",
     "arguments": [
       "image.getName()",
       "image.getUuid()"
