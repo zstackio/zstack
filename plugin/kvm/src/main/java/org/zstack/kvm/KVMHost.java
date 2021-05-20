@@ -3170,7 +3170,7 @@ public class KVMHost extends HostBase implements Host {
         sshShell.setUsername(getSelf().getUsername());
         sshShell.setPassword(getSelf().getPassword());
         sshShell.setPort(getSelf().getPort());
-        SshResult ret = sshShell.runCommand(String.format("rm -rf %s", hostTakeOverFlagPath));
+        SshResult ret = sshShell.runCommand(String.format("sudo /bin/sh -c 'rm -rf %s'", hostTakeOverFlagPath));
         if (ret.isSshFailure() || ret.getReturnCode() != 0) {
             completion.fail(operr(ret.getExitErrorMessage()));
             return;
@@ -3270,7 +3270,7 @@ public class KVMHost extends HostBase implements Host {
                     sshShell.setUsername(getSelf().getUsername());
                     sshShell.setPassword(getSelf().getPassword());
                     sshShell.setPort(getSelf().getPort());
-                    SshResult ret = sshShell.runCommand(String.format("echo %s > %s", self.getUuid(), hostTakeOverFlagPath));
+                    SshResult ret = sshShell.runCommand(String.format("sudo /bin/sh -c 'echo %s > %s'", self.getUuid(), hostTakeOverFlagPath));
 
                     if (ret.isSshFailure() || ret.getReturnCode() != 0) {
                         completion.fail(operr(ret.getExitErrorMessage()));
