@@ -692,7 +692,8 @@ public class L2NoVlanNetwork implements L2Network {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (errs.size() > 0) {
-                    completion.fail(errs.get(0));
+                    logger.debug(String.format("delete bridge fail [error is %s ], but ignore",errs.get(0).toString()));
+                    completion.success();
                 } else {
                     completion.success();
                 }
