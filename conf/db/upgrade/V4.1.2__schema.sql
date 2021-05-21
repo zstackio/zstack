@@ -110,10 +110,11 @@ UPDATE `zstack`.`VmInstanceEO` SET guestOsType = "Linux" WHERE platform = "Linux
 UPDATE `zstack`.`VmInstanceEO` SET guestOsType = "Other" WHERE platform = "Other";
 UPDATE `zstack`.`VmInstanceEO` SET platform = "Other", guestOsType = "Other" WHERE platform = "Paravirtualization";
 
-UPDATE `zstack`.`VtepVO` SET port=8472 WHERE port=4789
+UPDATE `zstack`.`VtepVO` SET port=8472 WHERE port=4789;
 
-ALTER TABLE `zstack`.`L2NetworkEO` ADD column `vSwitchType` varchar(32) not null default 'LinuxBridge';
-DROP VIEW if exists `zstack`.L2NetworkVO;
+ALTER TABLE `zstack`.`L2NetworkEO` ADD COLUMN `vSwitchType` varchar(32) NOT NULL DEFAULT 'LinuxBridge';
+DROP VIEW IF EXISTS `zstack`.L2NetworkVO;
 CREATE VIEW `zstack`.`L2NetworkVO` AS SELECT uuid, name, description, type, vSwitchType, zoneUuid, physicalInterface, createDate, lastOpDate FROM `zstack`.`L2NetworkEO` WHERE deleted IS NULL;
-ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD column `offloadStatus` varchar(128) default null;
+ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `offloadStatus` varchar(128) DEFAULT NULL;
+
 
