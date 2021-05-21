@@ -72,6 +72,16 @@ doc {
 					
 				}
 				column {
+					name "vSwitchType"
+					enclosedIn "params"
+					desc "虚拟交换机类型"
+					location "body"
+					type "String"
+					optional true
+					since "4.1.0"
+
+				}
+				column {
 					name "resourceUuid"
 					enclosedIn "params"
 					desc "资源UUID。若指定，二层网络会使用该字段值作为UUID"

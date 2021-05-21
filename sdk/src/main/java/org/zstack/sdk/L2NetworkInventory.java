@@ -52,6 +52,14 @@ public class L2NetworkInventory  {
         return this.type;
     }
 
+    public java.lang.String vSwitchType;
+    public void setVSwitchType(java.lang.String vSwitchType) {
+        this.vSwitchType = vSwitchType;
+    }
+    public java.lang.String getVSwitchType() {
+        return this.vSwitchType;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

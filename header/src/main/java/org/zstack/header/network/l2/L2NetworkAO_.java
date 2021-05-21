@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 public class L2NetworkAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<L2NetworkAO, String> name;
     public static volatile SingularAttribute<L2NetworkAO, String> type;
+    public static volatile SingularAttribute<L2NetworkAO, String> vSwitchType;
     public static volatile SingularAttribute<L2NetworkAO, String> description;
     public static volatile SingularAttribute<L2NetworkAO, String> zoneUuid;
     public static volatile SingularAttribute<L2NetworkAO, String> physicalInterface;
