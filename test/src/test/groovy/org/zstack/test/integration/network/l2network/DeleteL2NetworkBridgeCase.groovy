@@ -12,6 +12,10 @@ import org.apache.commons.collections.list.SynchronizedList
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
+import org.zstack.core.db.SQL
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
+import org.zstack.header.host.HostStatus
 
 class DeleteL2NetworkBridgeCase extends SubCase {
     EnvSpec env
@@ -100,6 +104,7 @@ class DeleteL2NetworkBridgeCase extends SubCase {
             testDetachL2NoVlanNetworkFromCluster()
             testDetachL2VlanNetworkFromCluster()
             testDetachL2VxlanPoolFromCluster()
+            testDeleteL2VOSuccessEvenIfResponseFail()
         }
     }
 
@@ -402,6 +407,52 @@ class DeleteL2NetworkBridgeCase extends SubCase {
 
 
         assert cmds.size()==4
+    }
+
+
+    void testDeleteL2VOSuccessEvenIfResponseFail(){
+        def nicName = "eth0"
+
+        def l2_noVlan = createL2NoVlanNetwork {
+            name = "l2-noVlan"
+            zoneUuid = zone.uuid
+            physicalInterface = nicName
+        } as L2NetworkInventory
+
+        attachL2NetworkToCluster {
+            l2NetworkUuid = l2_noVlan.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        env.simulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) {
+            def resp = new KVMAgentCommands.DeleteBridgeResponse()
+            resp.setSuccess(false)
+            resp.setError("on purpose")
+            return resp
+        }
+
+        def cmds = [] as SynchronizedList<KVMAgentCommands.DeleteBridgeCmd>
+        env.afterSimulator(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
+            def deleteBridgeCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.DeleteBridgeCmd.class)
+            cmds.add(deleteBridgeCmd)
+            return rsp
+        }
+
+
+        SQL.New(HostVO.class).eq(HostVO_.uuid, host1.uuid)
+                .set(HostVO_.status, HostStatus.Disconnected).update()
+
+        deleteL2Network {
+            uuid = l2_noVlan.uuid
+        }
+
+        assert cmds.size()==1
+
+        def l2s = queryL2Network {
+            conditions=["uuid=${l2_noVlan.uuid}".toString()]
+        }
+
+        assert  l2s.size() == 0
     }
 
 }
