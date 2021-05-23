@@ -32,7 +32,8 @@ public class EipConfigProxy extends VirtualRouterConfigProxy implements Applianc
 
     @Override
     protected void detachNetworkServiceFromNoHaVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
-        SQL.New(VirtualRouterEipRefVO.class).in(VirtualRouterEipRefVO_.eipUuid, serviceUuids).delete();
+        SQL.New(VirtualRouterEipRefVO.class).eq(VirtualRouterEipRefVO_.virtualRouterVmUuid, vrUuid)
+                .in(VirtualRouterEipRefVO_.eipUuid, serviceUuids).delete();
     }
 
     @Override
