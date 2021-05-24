@@ -381,6 +381,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class CloneRsp extends AgentResponse {
+        public Long size;
+        public Long actualSize;
+        public String installPath;
     }
 
     public static class FlattenCmd extends AgentCommand {
@@ -4035,6 +4038,81 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        if (msg.hasSystemTag(VolumeSystemTags.FAST_CREATE::isMatch)) {
+            fastCreateVolumeFromSnapshot(msg);
+        } else {
+            createVolumeFromSnapshot(msg);
+        }
+    }
+
+    private void fastCreateVolumeFromSnapshot(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+        final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
+
+        final String volPath = makeDataVolumeInstallPath(msg.getVolumeUuid());
+        VolumeSnapshotInventory sp = msg.getSnapshot();
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "protect-snapshot";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                ProtectSnapshotCmd cmd = new ProtectSnapshotCmd();
+                cmd.snapshotPath = sp.getPrimaryStorageInstallPath();
+                cmd.ignoreError = true;
+                httpCall(PROTECT_SNAPSHOT_PATH, cmd, ProtectSnapshotRsp.class, new ReturnValueCompletion<ProtectSnapshotRsp>(trigger) {
+                    @Override
+                    public void success(ProtectSnapshotRsp returnValue) {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "clone-snapshot";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                CloneCmd cmd = new CloneCmd();
+                cmd.srcPath = sp.getPrimaryStorageInstallPath();
+                cmd.dstPath = volPath;
+                httpCall(CLONE_PATH, cmd, CloneRsp.class, new ReturnValueCompletion<CloneRsp>(msg) {
+                    @Override
+                    public void success(CloneRsp rsp) {
+                        reply.setInstallPath(volPath);
+                        reply.setSize(rsp.size);
+
+                        // current ceph has no way to get the actual size
+                        long asize = rsp.actualSize == null ? 1 : rsp.actualSize;
+                        reply.setActualSize(asize);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                reply.setError(errCode);
+                bus.reply(msg, reply);
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, reply);
+            }
+        }).start();
+    }
+
+    private void createVolumeFromSnapshot(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
         final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
 
         final String volPath = makeDataVolumeInstallPath(msg.getVolumeUuid());
