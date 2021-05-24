@@ -5,6 +5,8 @@ import org.zstack.header.rest.APINoSee;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public abstract class NeedReplyMessage extends Message {
     /**
@@ -22,6 +24,10 @@ public abstract class NeedReplyMessage extends Message {
 
     public void setSystemTags(List<String> systemTags) {
         this.systemTags = systemTags;
+    }
+
+    public boolean hasSystemTag(Predicate<String> isMatch) {
+        return systemTags != null && systemTags.stream().anyMatch(isMatch);
     }
 
     public void addSystemTag(String systemTag){
