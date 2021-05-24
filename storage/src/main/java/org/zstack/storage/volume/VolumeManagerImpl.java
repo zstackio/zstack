@@ -514,7 +514,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setSize(0);
         vo.setAccountUuid(msg.getSession().getAccountUuid());
 
-        if (msg.getSystemTags() != null && msg.getSystemTags().stream().anyMatch(VolumeSystemTags.FAST_CREATE::isMatch)) {
+        if (msg.hasSystemTag(VolumeSystemTags.FAST_CREATE::isMatch)) {
             String rootImageUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volumeUuid).select(VolumeVO_.rootImageUuid).findValue();
             vo.setRootImageUuid(rootImageUuid);
         }
