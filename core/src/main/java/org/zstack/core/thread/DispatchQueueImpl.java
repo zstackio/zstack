@@ -101,29 +101,42 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     }
 
     @Override
-    public ChainInfo cleanChainTaskInfo(String signature, int index, Boolean clean) {
+    public ChainInfo cleanChainTaskInfo(String signature, Integer index, Boolean cleanUp, Boolean isRunningTask) {
         long now = System.currentTimeMillis();
         synchronized (chainTasks) {
             ChainInfo info = new ChainInfo();
             ChainTaskQueueWrapper w = chainTasks.get(signature);
             if (w == null) {
                 logger.warn(String.format("no queue with a corresponding signatureName[%s]", signature));
-                return info;
+                return null;
             }
-            if (clean == true) {
-                w.runningQueue.clear();
-                return info;
+
+            ChainInfo Tmp = getChainTaskInfo(signature);
+            if (cleanUp == true) {
+                chainTasks.remove(signature);
+                return Tmp;
             }
-            int start = 0;
-            for (Object obj : w.runningQueue) {
-                if (start != index) {
-                    start++;
-                    continue;
+            if (index == null) {
+                if (isRunningTask == true) {
+                    info.setRunningTask(Tmp.getRunningTask());
+                    w.runningQueue.clear();
+                    return info;
                 }
-                ChainFuture cf = (ChainFuture) obj;
-                info.addRunningTask(TaskInfoBuilder.buildRunningTaskInfo(cf, now, start));
-                w.runningQueue.remove(cf);
+                info.setPendingTask(Tmp.getPendingTask());
+                w.pendingQueue.clear();
+                return info;
             }
+
+            if (isRunningTask == true) {
+                ChainFuture cf = (ChainFuture) w.runningQueue.get(index);
+                info.addRunningTask(TaskInfoBuilder.buildRunningTaskInfo(cf, now, index));
+                w.runningQueue.remove(index.intValue());
+            } else {
+                ChainFuture cf = (ChainFuture) w.pendingQueue.get(index);
+                info.addPendingTask(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index));
+                w.pendingQueue.remove(index.intValue());
+            }
+
             if (w.runningQueue.isEmpty() && w.pendingQueue.isEmpty()) {
                 chainTasks.remove(signature);
             }

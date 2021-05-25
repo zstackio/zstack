@@ -10,17 +10,16 @@ import org.zstack.header.rest.RestRequest;
 /**
  * Created by LiangHanYu on 2021/5/20 14:51
  */
-@SuppressCredentialCheck
 @RestRequest(
         path = "/clean/queue",
         isAction = true,
         method = HttpMethod.PUT,
         responseClass = APICleanQueueEvent.class)
-public class APICleanQueueMsg extends APISyncCallMessage {
+public class APICleanQueueMsg extends APIMessage {
     @APIParam()
     private String signatureName;
 
-    @APIParam()
+    @APIParam(required = false)
     private Integer taskIndex;
 
     @APIParam(required = false)

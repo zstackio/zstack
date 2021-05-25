@@ -9,4 +9,8 @@
     <message>
         <name>org.zstack.core.debug.APIGetDebugSignalMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.core.debug.APICleanQueueMsg</name>
+    </message>
 </service>

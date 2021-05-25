@@ -31,6 +31,7 @@ public class L2NetworkVO extends L2NetworkAO implements ToInventory, OwnedByAcco
     private String accountUuid;
 
     public L2NetworkVO() {
+        this.setvSwitchType(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
     }
 
     public L2NetworkVO(L2NetworkVO vo) {
