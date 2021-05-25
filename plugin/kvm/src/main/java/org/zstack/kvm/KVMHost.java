@@ -160,6 +160,7 @@ public class KVMHost extends HostBase implements Host {
     private String vsocDeleteBackup;
     private String vsocCreateVmFromBackup;
     private String vsocUseBackup;
+    private String vsocCreateFromSnapshot;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -348,6 +349,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VSOC_USE_BACKUP_PATH);
         vsocUseBackup = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_CREATE_FROM_SNAPSHOT_PATH);
+        vsocCreateFromSnapshot = ub.build().toString();
     }
 
     class Http<T> {
@@ -530,8 +535,8 @@ public class KVMHost extends HostBase implements Host {
             handle((DeleteVmVsocFileMsg) msg);
         } else if (msg instanceof VmVsocMigrateMsg) {
             handle((VmVsocMigrateMsg) msg);
-        } else if (msg instanceof VmBootFromNewNodeMsg) {
-            handle((VmBootFromNewNodeMsg) msg);
+        } else if (msg instanceof VmVsocBootFromNewNodeMsg) {
+            handle((VmVsocBootFromNewNodeMsg) msg);
         } else if (msg instanceof VmVsocCreateSnapshotMsg) {
             handle ((VmVsocCreateSnapshotMsg) msg);
         } else if (msg instanceof VmVsocDeleteSnapshotMsg) {
@@ -548,6 +553,8 @@ public class KVMHost extends HostBase implements Host {
             handle((VmVsocCreateVmFromBackupMsg) msg);
         } else if (msg instanceof VmVsocUseBackupMsg) {
             handle((VmVsocUseBackupMsg) msg);
+        } else if (msg instanceof VmVsocCreateFromSnapshotMsg) {
+            handle((VmVsocCreateFromSnapshotMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -656,7 +663,7 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void handle(VmBootFromNewNodeMsg msg) {
+    private void handle(VmVsocBootFromNewNodeMsg msg) {
         VsocCommand cmd = new VsocCommand();
         cmd.platformId = msg.getPlatformId();
         cmd.vmName = msg.getVmUuid();
@@ -803,6 +810,31 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void fail(ErrorCode err) {
                 VmVsocUseBackupReply rsp = new VmVsocUseBackupReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
+            }
+        });
+    }
+
+    private void handle(VmVsocCreateFromSnapshotMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmUuid();
+        cmd.srcVmName = msg.getSrcVmUuid();
+        cmd.ssId = msg.getSnapshotUuid();
+        cmd.platformId = msg.getPlatformId();
+        new Http<>(vsocCreateFromSnapshot, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                VmVsocCreateFromSnapshotReply rsp = new VmVsocCreateFromSnapshotReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("Fail: vsoc_create_from_snapshot, because:%s", ret.getError()));
+                }
+                bus.reply(msg, rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocCreateFromSnapshotReply rsp = new VmVsocCreateFromSnapshotReply();
                 rsp.setError(err);
                 bus.reply(msg, rsp);
             }

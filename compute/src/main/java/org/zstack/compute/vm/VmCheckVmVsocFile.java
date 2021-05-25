@@ -12,9 +12,8 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostConstant;
-import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.vm.VmBootFromNewNodeMsg;
+import org.zstack.header.vm.VmVsocBootFromNewNodeMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.utils.Utils;
@@ -38,8 +37,8 @@ public class VmCheckVmVsocFile implements Flow {
         if (spec.getRequiredHostUuid() == null || spec.getRequiredHostUuid().equals(spec.getVmInventory().getLastHostUuid())) {
             chain.next();
         } else {
-            VmBootFromNewNodeMsg msg = new VmBootFromNewNodeMsg();
-            msg.setUuid(spec.getRequiredHostUuid());
+            VmVsocBootFromNewNodeMsg msg = new VmVsocBootFromNewNodeMsg();
+            msg.setHostUuid(spec.getRequiredHostUuid());
             msg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
             msg.setVmUuid(spec.getVmInventory().getUuid());
             msg.setPrvSocId(HostSystemTags.HOST_SSCARDID.getTokenByResourceUuid(spec.getVmInventory().getLastHostUuid(), HostSystemTags.HOST_SSCARDID_TOKEN));

@@ -38,7 +38,10 @@
                 <value>org.zstack.compute.vm.VmAttachL3NetworkToNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateCdRomFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
+                <!--
                 <value>org.zstack.compute.vm.VmCloneVsocFileFlow</value>
+                -->
+                <value>org.zstack.compute.vm.VmVsocCreateFromSnapshotFlow</value>
                 <value>org.zstack.compute.vm.VmCreateOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
             </list>

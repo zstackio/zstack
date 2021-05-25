@@ -3,11 +3,11 @@ package org.zstack.header.vm;
 import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.NeedReplyMessage;
 
-public class VmBootFromNewNodeMsg extends NeedReplyMessage implements HostMessage {
+public class VmVsocBootFromNewNodeMsg extends NeedReplyMessage implements HostMessage {
     private String vmUuid;
     private String platformId;
     private String prvSocId;
-    private String uuid;
+    private String hostUuid;
 
     public String getPrvSocId() {
         return prvSocId;
@@ -33,16 +33,13 @@ public class VmBootFromNewNodeMsg extends NeedReplyMessage implements HostMessag
         this.vmUuid = vmUuid;
     }
 
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
     @Override
     public String getHostUuid() {
-        return getUuid();
+        return hostUuid;
+    }
+
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 }
