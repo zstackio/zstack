@@ -75,6 +75,7 @@ public interface KVMConstant {
     String KVM_VSOC_DELETE_BACKUP_PATH = "/vm/vsocdeletebackup";
     String KVM_VSOC_CREATE_FROM_BACKUP_PATH = "/vm/vsoccreatefrombackup";
     String KVM_VSOC_USE_BACKUP_PATH = "/vm/vsocusebackup";
+    String KVM_VSOC_CREATE_FROM_SNAPSHOT_PATH = "/vm/vsoccreatefromsnapshot";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
