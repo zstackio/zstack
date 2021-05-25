@@ -18,6 +18,8 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
@@ -81,12 +83,19 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         inv.setHypervisorType(vmSpec.getVmInventory().getHypervisorType());
         inv.setDriverType(ImagePlatform.valueOf(vmSpec.getVmInventory().getPlatform()).isParaVirtualization() ?
                 nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
-        inv.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
+
+        L3NetworkVO l3NetworkVO = dbf.findByUuid(nicSpec.getL3NetworkUuid(), L3NetworkVO.class);
+        L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
+        if (l2NetworkVO.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+            inv.setType("vDPA");
+        } else {
+            inv.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
+        }
+
         inv.setUsedIps(new ArrayList<>());
 
         if (nicSpec.getIp() == null) {
             /* for vpc router, code comes here */
-            L3NetworkVO l3NetworkVO = dbf.findByUuid(nicSpec.getL3NetworkUuid(), L3NetworkVO.class);
             List<Integer> ipVersions = l3NetworkVO.getIpVersions();
             for (Integer version : ipVersions) {
                 String strategy = nicSpec.getAllocatorStrategy();

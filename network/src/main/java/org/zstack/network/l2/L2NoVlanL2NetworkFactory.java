@@ -3,19 +3,19 @@ package org.zstack.network.l2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.header.Component;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.network.l2.*;
-import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.logging.CLogger;
 
-public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint {
+import java.util.ArrayList;
+import java.util.List;
+
+public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint, VSwitch {
     private static L2NetworkType type = new L2NetworkType(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE);
     private static CLogger logger = Utils.getLogger(L2NoVlanL2NetworkFactory.class);
     private static FieldPrinter printer = Utils.getFieldPrinter();
@@ -26,7 +26,15 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
     private DatabaseFacade dbf;
     @Autowired
     private ResourceConfigFacade rcf;
-    
+
+    @Override
+    public List<VSwitchType> getVSwitchTypes() {
+        List<VSwitchType> vSwitchTypes = new ArrayList<>();
+        vSwitchTypes.add(linuxBridge);
+        vSwitchTypes.add(ovsDpdk);
+        return vSwitchTypes;
+    }
+
     @Override
     public L2NetworkType getType() {
         return type;

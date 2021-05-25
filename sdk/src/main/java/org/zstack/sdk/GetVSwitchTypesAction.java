@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractAction {
+public class GetVSwitchTypesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult value;
+        public org.zstack.sdk.GetVSwitchTypesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,30 +24,6 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
             return this;
         }
     }
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageUuid;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List l3NetworkUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String rootDiskOfferingUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
-    public java.lang.Long rootDiskSize;
-
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List dataDiskOfferingUuids;
-
-    @Param(required = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false)
-    public java.lang.String clusterUuid;
-
-    @Param(required = false)
-    public java.lang.String defaultL3NetworkUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -75,8 +51,8 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
             return ret;
         }
         
-        org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult value = res.getResult(org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult() : value; 
+        org.zstack.sdk.GetVSwitchTypesResult value = res.getResult(org.zstack.sdk.GetVSwitchTypesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVSwitchTypesResult() : value; 
 
         return ret;
     }
@@ -106,7 +82,7 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vm-instances/candidate-storages";
+        info.path = "/l2-networks/vSwitchTypes";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

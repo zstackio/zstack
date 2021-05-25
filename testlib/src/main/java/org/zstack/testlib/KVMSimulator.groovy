@@ -247,6 +247,33 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.CreateVlanBridgeResponse()
         }
 
+        spec.simulator(KVMConstant.KVM_CHECK_OVSDPDK_NETWORK_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_REALIZE_OVSDPDK_NETWORK_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_GENERATE_VDPA_PATH) { HttpEntity<String> e ->
+            KVMAgentCommands.GenerateVdpaCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.GenerateVdpaCmd.class)
+            def rsp = new KVMAgentCommands.GenerateVdpaResponse()
+
+            ArrayList<KVMAgentCommands.NicTO> nics = cmd.getNics()
+            def vdpaPaths = new ArrayList<String>()
+
+            nics.each { KVMAgentCommands.NicTO it ->
+                vdpaPaths.add("/var/run/zstack-vdpa/" + it.bridgeName + "/" + it.nicInternalName)
+            }
+            rsp.setVdpaPaths(vdpaPaths)
+
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_DELETE_VDPA_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
         spec.simulator(KVMConstant.KVM_START_VM_PATH) { HttpEntity<String> e ->
             KVMAgentCommands.StartVmCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
             assert new HashSet<>(cmd.dataVolumes.deviceId).size() == cmd.dataVolumes.size()

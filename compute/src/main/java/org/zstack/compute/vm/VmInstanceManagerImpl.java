@@ -536,11 +536,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
 
         ImageVO image = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
-        if (image != null && image.getMediaType() == ImageMediaType.ISO && msg.getRootDiskOfferingUuid() == null) {
-            throw new OperationFailureException(argerr("the image[name:%s, uuid:%s] is an ISO, rootDiskOfferingUuid must be set",
-                            image.getName(), image.getUuid()));
-        }
-
         amsg.setImage(ImageInventory.valueOf(image));
         amsg.setZoneUuid(msg.getZoneUuid());
         amsg.setClusterUuid(msg.getClusterUuid());
@@ -565,8 +560,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
 
         if (image.getMediaType() == ImageMediaType.ISO) {
-            DiskOfferingVO rootDiskOffering = dbf.findByUuid(msg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
-            diskOfferings.add(DiskOfferingInventory.valueOf(rootDiskOffering));
+            if (msg.getRootDiskOfferingUuid() == null) {
+                diskSize = msg.getRootDiskSize();
+            } else {
+                DiskOfferingVO rootDiskOffering = dbf.findByUuid(msg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
+                diskOfferings.add(DiskOfferingInventory.valueOf(rootDiskOffering));
+            }
         } else {
             diskSize = image.getSize();
         }
@@ -692,11 +691,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
         rmsg.setImageUuid(msg.getImageUuid());
         rmsg.setRequiredClusterUuids(clusterUuids);
         if (ImageMediaType.ISO.toString().equals(imageInv.getMediaType())) {
-            Tuple t = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, msg.getRootDiskOfferingUuid())
-                    .select(DiskOfferingVO_.diskSize, DiskOfferingVO_.allocatorStrategy).findTuple();
-            rmsg.setSize((long)t.get(0));
-            rmsg.setAllocationStrategy((String)t.get(1));
-            rmsg.setDiskOfferingUuid(msg.getRootDiskOfferingUuid());
+            if (msg.getRootDiskOfferingUuid() == null) {
+                rmsg.setSize(msg.getRootDiskSize());
+            } else {
+                Tuple t = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, msg.getRootDiskOfferingUuid())
+                        .select(DiskOfferingVO_.diskSize, DiskOfferingVO_.allocatorStrategy).findTuple();
+                rmsg.setSize((long) t.get(0));
+                rmsg.setAllocationStrategy((String) t.get(1));
+                rmsg.setDiskOfferingUuid(msg.getRootDiskOfferingUuid());
+            }
         } else {
             rmsg.setSize(imageInv.getSize());
         }
