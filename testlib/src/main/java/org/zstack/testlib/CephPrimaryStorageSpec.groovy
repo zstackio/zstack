@@ -156,7 +156,10 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(CephPrimaryStorageBase.CLONE_PATH) {
-                return new CephPrimaryStorageBase.CloneRsp()
+                def rsp = new CephPrimaryStorageBase.CloneRsp()
+                rsp.size = 0
+                rsp.actualSize = 0
+                return rsp
             }
 
             simulator(CephPrimaryStorageBase.FLATTEN_PATH) {
