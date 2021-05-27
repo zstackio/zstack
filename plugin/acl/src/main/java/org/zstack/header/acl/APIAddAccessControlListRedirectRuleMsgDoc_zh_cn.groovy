@@ -1,21 +1,21 @@
 package org.zstack.header.acl
 
-import org.zstack.header.acl.APICreateAccessControlListEvent
+import org.zstack.header.acl.APIAddAccessControlListEntryEvent
 
 doc {
-    title "CreateAccessControlList"
+    title "AddAccessControlListRedirectRule"
 
     category "acl"
 
-    desc """创建访问控制策略组"""
+    desc """在这里填写API描述"""
 
     rest {
         request {
-			url "POST /v1/access-control-lists"
+			url "POST /v1/access-control-lists/{aclUuid}/redirectRules"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateAccessControlListMsg.class
+            clz APIAddAccessControlListRedirectRuleMsg.class
 
             desc """"""
             
@@ -28,7 +28,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "3.9"
+					since "0.6"
 					
 				}
 				column {
@@ -38,18 +38,38 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "3.9"
+					since "0.6"
 					
 				}
 				column {
-					name "ipVersion"
+					name "domain"
 					enclosedIn "params"
-					desc "IP协议版本"
+					desc ""
 					location "body"
-					type "Integer"
+					type "String"
 					optional true
-					since "3.9"
-					values ("4","6")
+					since "0.6"
+					
+				}
+				column {
+					name "url"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "aclUuid"
+					enclosedIn "params"
+					desc ""
+					location "url"
+					type "String"
+					optional false
+					since "0.6"
+					
 				}
 				column {
 					name "resourceUuid"
@@ -58,7 +78,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "3.9"
+					since "0.6"
 					
 				}
 				column {
@@ -68,7 +88,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "3.9"
+					since "0.6"
 					
 				}
 				column {
@@ -78,7 +98,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "3.9"
+					since "0.6"
 					
 				}
 				column {
@@ -88,14 +108,14 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "3.9"
+					since "0.6"
 					
 				}
 			}
         }
 
         response {
-            clz APICreateAccessControlListEvent.class
+            clz APIAddAccessControlListEntryEvent.class
         }
     }
 }

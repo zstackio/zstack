@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddAccessControlListToLoadBalancerAction extends AbstractAction {
+public class AddAccessControlListRedirectRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddAccessControlListToLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddAccessControlListToLoadBalancerResult value;
+        public org.zstack.sdk.AddAccessControlListEntryResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,26 @@ public class AddAccessControlListToLoadBalancerAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List aclUuids;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
-    @Param(required = true, validValues = {"white","black","redirect"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String aclType;
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String domain;
+
+    @Param(required = false, maxLength = 80, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String url;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String listenerUuid;
+    public java.lang.String aclUuid;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List serverGroupUuids;
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -69,8 +78,8 @@ public class AddAccessControlListToLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddAccessControlListToLoadBalancerResult value = res.getResult(org.zstack.sdk.AddAccessControlListToLoadBalancerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddAccessControlListToLoadBalancerResult() : value; 
+        org.zstack.sdk.AddAccessControlListEntryResult value = res.getResult(org.zstack.sdk.AddAccessControlListEntryResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddAccessControlListEntryResult() : value; 
 
         return ret;
     }
@@ -100,7 +109,7 @@ public class AddAccessControlListToLoadBalancerAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/load-balancers/listeners/{listenerUuid}/access-control-lists";
+        info.path = "/access-control-lists/{aclUuid}/redirectRules";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

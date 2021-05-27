@@ -90,6 +90,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.lb.APIGetLoadBalancerListenerACLEntriesMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.lb.APIRemoveAccessControlListFromLoadBalancerMsg</name>
     </message>
 
