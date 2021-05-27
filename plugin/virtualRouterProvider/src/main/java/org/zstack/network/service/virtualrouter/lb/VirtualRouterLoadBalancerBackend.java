@@ -1,5 +1,6 @@
 package org.zstack.network.service.virtualrouter.lb;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -22,8 +23,8 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -52,7 +53,6 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
@@ -258,6 +258,112 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         List<String> parameters;
         String  certificateUuid;
         String securityPolicyType;
+        List<ServerGroup> serverGroups;
+        List<RedirectRule> redirectRules;
+
+        static class ServerGroup {
+            private String name;
+            private String serverGroupUuid;
+            private List<BackendServer> backendServers;
+            private boolean isDefault = false;
+
+            public String getName() {
+                return name;
+            }
+
+            public void setName(String name) {
+                this.name = name;
+            }
+
+            public String getServerGroupUuid() {
+                return serverGroupUuid;
+            }
+
+            public void setServerGroupUuid(String serverGroupUuid) {
+                this.serverGroupUuid = serverGroupUuid;
+            }
+
+            public List<BackendServer> getBackendServers() {
+                return backendServers;
+            }
+
+            public void setBackendServers(List<BackendServer> backendServers) {
+                this.backendServers = backendServers;
+            }
+
+            public boolean isDefault() {
+                return isDefault;
+            }
+
+            public void setDefault(boolean aDefault) {
+                isDefault = aDefault;
+            }
+        }
+
+        static class BackendServer {
+            private String ip;
+            private long weight;
+
+            public BackendServer(String ip, long weight) {
+                this.ip = ip;
+                this.weight = weight;
+            }
+
+            public String getIp() {
+                return ip;
+            }
+
+            public void setIp(String ip) {
+                this.ip = ip;
+            }
+
+            public long getWeight() {
+                return weight;
+            }
+
+            public void setWeight(long weight) {
+                this.weight = weight;
+            }
+        }
+
+        static class RedirectRule {
+            private String redirectRuleUuid;
+            private String aclUuid;
+            private String redirectRule;
+            private String serverGroupUuid;
+
+            public String getRedirectRuleUuid() {
+                return redirectRuleUuid;
+            }
+
+            public void setRedirectRuleUuid(String redirectRuleUuid) {
+                this.redirectRuleUuid = redirectRuleUuid;
+            }
+
+            public String getAclUuid() {
+                return aclUuid;
+            }
+
+            public void setAclUuid(String aclUuid) {
+                this.aclUuid = aclUuid;
+            }
+
+            public String getRedirectRule() {
+                return redirectRule;
+            }
+
+            public void setRedirectRule(String redirectRule) {
+                this.redirectRule = redirectRule;
+            }
+
+            public String getServerGroupUuid() {
+                return serverGroupUuid;
+            }
+
+            public void setServerGroupUuid(String serverGroupUuid) {
+                this.serverGroupUuid = serverGroupUuid;
+            }
+        }
 
         public String getListenerUuid() {
             return listenerUuid;
@@ -345,6 +451,22 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         public void setSecurityPolicyType(String securityPolicyType) {
             this.securityPolicyType = securityPolicyType;
+        }
+
+        public List<ServerGroup> getServerGroups() {
+            return serverGroups;
+        }
+
+        public void setServerGroups(List<ServerGroup> serverGroups) {
+            this.serverGroups = serverGroups;
+        }
+
+        public List<RedirectRule> getRedirectRules() {
+            return redirectRules;
+        }
+
+        public void setRedirectRules(List<RedirectRule> redirectRules) {
+            this.redirectRules = redirectRules;
         }
     }
 
@@ -444,9 +566,14 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     return aclRules;
                 }
 
-                aclRules.add(String.format("aclType::%s", refs.get(0).getType()));
+                List<LoadBalancerListenerACLRefInventory> aclRefInventories = refs.stream().filter(ref -> !ref.getType().equals(LoadBalancerAclType.redirect.toString())).collect(Collectors.toList());
+                if (aclRefInventories.isEmpty()) {
+                    return aclRules;
+                }
 
-                List<String> aclUuids = refs.stream().map(LoadBalancerListenerACLRefInventory::getAclUuid).collect(Collectors.toList());
+                aclRules.add(String.format("aclType::%s", aclRefInventories.get(0).getType()));
+
+                List<String> aclUuids = aclRefInventories.stream().map(LoadBalancerListenerACLRefInventory::getAclUuid).collect(Collectors.toList());
                 List<String> entry = Q.New(AccessControlListEntryVO.class).select(AccessControlListEntryVO_.ipEntries)
                                       .in(AccessControlListEntryVO_.aclUuid, aclUuids).listValues();
                 if (!entry.isEmpty()) {
@@ -454,6 +581,137 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 }
                 aclRules.add(String.format("aclEntry::%s", aclEntry));
                 return aclRules;
+            }
+
+            private List<AccessControlListEntryVO> sortAclEntry(List<AccessControlListEntryVO> entries) {
+                if (entries == null || entries.size() <= 1) {
+                    return entries;
+                }
+                Collections.sort(entries, (Comparator) (entry1, entry2) -> {
+                    if (entry1 instanceof AccessControlListEntryVO && entry2 instanceof AccessControlListEntryVO)
+                        return ((AccessControlListEntryVO) entry2).getDomain().length() - ((AccessControlListEntryVO) entry1).getDomain().length();
+                    throw new ClassCastException("cant translate to AccessControlListEntryVO");
+                });
+                return entries;
+            }
+
+            private List<LbTO.RedirectRule> makeRedirectAcl(LoadBalancerListenerInventory listenerInv, LbTO lbTO) {
+                if (lbTO.getServerGroups() == null) {
+                    lbTO.setServerGroups(new ArrayList<>());
+                }
+
+                List<LoadBalancerListenerACLRefInventory> refs = listenerInv.getAclRefs();
+                ArrayList<LbTO.RedirectRule> redirectRules = new ArrayList<>();
+                if (refs.isEmpty()) {
+                    return redirectRules;
+                }
+
+                List<String> aclUuids = refs.stream().filter(ref -> ref.getType().equals(LoadBalancerAclType.redirect.toString())).map(LoadBalancerListenerACLRefInventory::getAclUuid).collect(Collectors.toList());
+                if (aclUuids.isEmpty()) {
+                    return redirectRules;
+                }
+                List<AccessControlListEntryVO> entries = Q.New(AccessControlListEntryVO.class).in(AccessControlListEntryVO_.aclUuid, aclUuids).list();
+                List<String> usedSgUuids = new ArrayList<>();
+                List<String> usedAggSgUuids = new ArrayList<>();
+                //sort acl entry:  The more accurate, the more forward
+                //accurate forward, longer forward
+                List<AccessControlListEntryVO> domainWildWordMatchEntries = new ArrayList<>();
+                List<AccessControlListEntryVO> domainAccurateMatchEntries = new ArrayList<>();
+                List<AccessControlListEntryVO> onlyUrlEntries = new ArrayList<>();
+                List<AccessControlListEntryVO> afterSortEntries = new ArrayList<>();
+                for (AccessControlListEntryVO entryVO : entries) {
+                    if (entryVO.getMatchMethod().equals("Url")) {
+                        onlyUrlEntries.add(entryVO);
+                    } else if ("AccurateMatch".equals(entryVO.getCriterion())) {
+                        domainAccurateMatchEntries.add(entryVO);
+                    } else {
+                        domainWildWordMatchEntries.add(entryVO);
+                    }
+                }
+                sortAclEntry(domainAccurateMatchEntries);
+                sortAclEntry(domainWildWordMatchEntries);
+                afterSortEntries.addAll(domainAccurateMatchEntries);
+                afterSortEntries.addAll(domainWildWordMatchEntries);
+                afterSortEntries.addAll(onlyUrlEntries);
+
+                for (AccessControlListEntryVO entry : afterSortEntries) {
+                    List<String> serverGroupUuids = refs.stream()
+                            .filter(ref -> ref.getListenerUuid().equals(listenerInv.getUuid()) && ref.getAclUuid().equals(entry.getAclUuid()) && ref.getServerGroupUuid() != null)
+                            .map(LoadBalancerListenerACLRefInventory::getServerGroupUuid).collect(Collectors.toList());
+                    if (serverGroupUuids.isEmpty()) {
+                        continue;
+                    }
+
+                    LbTO.RedirectRule redirectRule = new LbTO.RedirectRule();
+                    if (serverGroupUuids.size() == 1) {
+                        usedSgUuids.addAll(serverGroupUuids);
+                        redirectRule.setAclUuid(entry.getAclUuid());
+                        redirectRule.setRedirectRuleUuid(entry.getUuid());
+                        redirectRule.setServerGroupUuid(serverGroupUuids.get(0));
+                        redirectRule.setRedirectRule(entry.getRedirectRule());
+                    } else {
+                        usedAggSgUuids.addAll(serverGroupUuids);
+                        redirectRule.setAclUuid(entry.getAclUuid());
+                        redirectRule.setRedirectRuleUuid(entry.getUuid());
+                        redirectRule.setRedirectRule(entry.getRedirectRule());
+
+                        StringBuilder stringBuilder = new StringBuilder();
+                        for (String sgUuid : serverGroupUuids) {
+                            stringBuilder.append(sgUuid);
+                        }
+                        String polymerizedUuid = DigestUtils.md5Hex(stringBuilder.toString());
+
+                        boolean needAddServerGroup = true;
+                        if (!lbTO.getServerGroups().isEmpty()) {
+                            needAddServerGroup = !lbTO.getServerGroups().stream().anyMatch(sg -> sg.getServerGroupUuid().equals(polymerizedUuid));
+                        }
+
+                        if (needAddServerGroup) {
+                            LbTO.ServerGroup serverGroup = new LbTO.ServerGroup();
+                            serverGroup.setBackendServers(new ArrayList<>());
+                            for (LbTO.ServerGroup serverGroup1 : lbTO.serverGroups) {
+                                if (serverGroupUuids.contains(serverGroup1.getServerGroupUuid())) {
+                                    serverGroup.getBackendServers().addAll(serverGroup1.getBackendServers());
+                                }
+                            }
+                            serverGroup.setName(polymerizedUuid);
+                            serverGroup.setServerGroupUuid(polymerizedUuid);
+                            lbTO.getServerGroups().add(serverGroup);
+                        }
+                        redirectRule.setServerGroupUuid(polymerizedUuid);
+                        usedSgUuids.add(polymerizedUuid);
+                    }
+                    redirectRules.add(redirectRule);
+                }
+
+                ArrayList<LbTO.BackendServer> backendServers = new ArrayList<>();
+                Iterator<LbTO.ServerGroup> iterator = lbTO.getServerGroups().iterator();
+                if (!usedAggSgUuids.isEmpty()) {
+                    if (!usedSgUuids.isEmpty()) {
+                        usedAggSgUuids = usedAggSgUuids.stream().filter(sgUuid -> !usedSgUuids.contains(sgUuid)).collect(Collectors.toList());
+                    }
+                }
+                while (iterator.hasNext()) {
+                    LbTO.ServerGroup sg = iterator.next();
+                    if (!usedSgUuids.contains(sg.getServerGroupUuid()) && !usedAggSgUuids.contains(sg.getServerGroupUuid())) {
+                        backendServers.addAll(sg.getBackendServers());
+                        iterator.remove();
+                    }
+                    if (usedAggSgUuids.contains(sg.getServerGroupUuid())) {
+                        iterator.remove();
+                    }
+                }
+                if (!backendServers.isEmpty()) {
+                    LbTO.ServerGroup serverGroup = new LbTO.ServerGroup();
+                    serverGroup.setBackendServers(backendServers);
+                    serverGroup.setName("default-server-group");
+                    StringBuilder stringBuilder = new StringBuilder();
+                    serverGroup.setDefault(true);
+                    serverGroup.setServerGroupUuid("defaultServerGroup");
+                    lbTO.getServerGroups().add(serverGroup);
+                }
+
+                return redirectRules;
             }
 
             @Override
@@ -473,8 +731,15 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 List<LoadBalancerServerGroupInventory> groupInvs = struct.getListenerServerGroupMap().get(l.getUuid());
                 List<String> params = new ArrayList<>();
                 List<String> ips = new ArrayList<>();
+                List<LbTO.ServerGroup> serverGroups = new ArrayList<>();
                 if (groupInvs != null) {
                     for (LoadBalancerServerGroupInventory groupInv : groupInvs) {
+                        LbTO.ServerGroup serverGroup = new LbTO.ServerGroup();
+                        serverGroup.setName(groupInv.getName());
+                        serverGroup.setServerGroupUuid(groupInv.getUuid());
+                        List<LbTO.BackendServer> backendServers = new ArrayList<>();
+                        serverGroup.setBackendServers(backendServers);
+                        serverGroups.add(serverGroup);
                         for (LoadBalancerServerGroupVmNicRefInventory nicRef : groupInv.getVmNicRefs()) {
                             if (nicRef.getStatus().equals(LoadBalancerVmNicStatus.Inactive.toString())) {
                                 continue;
@@ -489,6 +754,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             }
                             ips.add(nic.getIp());
                             params.add(String.format("balancerWeight::%s::%s", nic.getIp(), nicRef.getWeight()));
+                            backendServers.add(new LbTO.BackendServer(nic.getIp(), nicRef.getWeight()));
                         }
 
                         for (LoadBalancerServerGroupServerIpInventory ipRef : groupInv.getServerIps()) {
@@ -501,11 +767,13 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             }
                             ips.add(ipRef.getIpAddress());
                             params.add(String.format("balancerWeight::%s::%s",ipRef.getIpAddress(), ipRef.getWeight()));
+                            backendServers.add(new LbTO.BackendServer(ipRef.getIpAddress(), ipRef.getWeight()));
                         }
                     }
                 }
                 to.setNicIps(ips);
                 to.setPublicNic(publicNic.get().getMac());
+                to.setServerGroups(serverGroups);
                 params.addAll(CollectionUtils.transformToList(struct.getTags().get(l.getUuid()), new Function<String, String>() {
                     // vnicUuid::weight
                     @Override
@@ -519,6 +787,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         return arg;
                     }
                 }));
+                to.setRedirectRules(makeRedirectAcl(l, to));
                 params.addAll(makeAcl(l));
                 to.setParameters(params);
                 return to;

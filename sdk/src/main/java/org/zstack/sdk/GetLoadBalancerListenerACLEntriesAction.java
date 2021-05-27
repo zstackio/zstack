@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddAccessControlListToLoadBalancerAction extends AbstractAction {
+public class GetLoadBalancerListenerACLEntriesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddAccessControlListToLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddAccessControlListToLoadBalancerResult value;
+        public org.zstack.sdk.GetLoadBalancerListenerACLEntriesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,11 @@ public class AddAccessControlListToLoadBalancerAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List aclUuids;
-
-    @Param(required = true, validValues = {"white","black","redirect"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String aclType;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String listenerUuid;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List listenerUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List serverGroupUuids;
+    public java.lang.String type;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -55,12 +49,6 @@ public class AddAccessControlListToLoadBalancerAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -69,8 +57,8 @@ public class AddAccessControlListToLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddAccessControlListToLoadBalancerResult value = res.getResult(org.zstack.sdk.AddAccessControlListToLoadBalancerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddAccessControlListToLoadBalancerResult() : value; 
+        org.zstack.sdk.GetLoadBalancerListenerACLEntriesResult value = res.getResult(org.zstack.sdk.GetLoadBalancerListenerACLEntriesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetLoadBalancerListenerACLEntriesResult() : value; 
 
         return ret;
     }
@@ -99,11 +87,11 @@ public class AddAccessControlListToLoadBalancerAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/load-balancers/listeners/{listenerUuid}/access-control-lists";
+        info.httpMethod = "GET";
+        info.path = "/load-balancers/listeners/access-control-lists/entries";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

@@ -40,6 +40,9 @@ public class LoadBalancerListenerACLRefVO implements ToInventory {
     private LoadBalancerAclType type;
 
     @Column
+    private String serverGroupUuid;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -91,5 +94,13 @@ public class LoadBalancerListenerACLRefVO implements ToInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
+    }
+
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 }
