@@ -113,6 +113,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validate((APIRemoveCertificateFromLoadBalancerListenerMsg) msg);
         } else if(msg instanceof APIChangeLoadBalancerListenerMsg){
             validate((APIChangeLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APIChangeAccessControlListServerGroupMsg) {
+            validate((APIChangeAccessControlListServerGroupMsg)msg);
         } else if (msg instanceof APIAddAccessControlListToLoadBalancerMsg) {
             validate((APIAddAccessControlListToLoadBalancerMsg) msg);
         } else if (msg instanceof APIRemoveAccessControlListFromLoadBalancerMsg) {
@@ -511,6 +513,40 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             msg.setLoadBalancerUuid(lbUuid);
 
             validateAcl(msg.getAclUuids(), refVOs.stream().map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList()), lbUuid);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private void validate(APIChangeAccessControlListServerGroupMsg msg) {
+        String lbUuid = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.loadBalancerUuid).eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid()).findValue();
+        msg.setLoadBalancerUuid(lbUuid);
+
+
+        List<String> sgUuids = Q.New(LoadBalancerListenerServerGroupRefVO.class).eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid()).select(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid).listValues();
+        List<String> newSgUuids = msg.getServerGroupUuids().stream().filter(sg -> sgUuids.contains(sg)).collect(Collectors.toList());
+
+        if (newSgUuids.isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("server group[%s] not attach to load balancer listener[%s]", msg.getServerGroupUuids(), msg.getListenerUuid()));
+        }
+        msg.setServerGroupUuids(newSgUuids);
+
+        List<LoadBalancerListenerACLRefVO> refVOs = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuid()).eq(LoadBalancerListenerACLRefVO_.type, LoadBalancerAclType.redirect).list();
+
+        List<String> attachedAclUuids = new ArrayList<>();
+        List<String> aclUuids = new ArrayList<>();
+        for (LoadBalancerListenerACLRefVO ref : refVOs) {
+            if (!aclUuids.contains(ref.getAclUuid()) && ref.getListenerUuid().equals(msg.getListenerUuid())) {
+                aclUuids.add(ref.getAclUuid());
+            }
+
+            if (ref.getListenerUuid().equals(msg.getListenerUuid())) {
+                attachedAclUuids.add(ref.getAclUuid());
+            }
+
+            //when acl is used to redirect, only can attach to one listener
+            if (!ref.getListenerUuid().equals(msg.getListenerUuid())) {
+                throw new ApiMessageInterceptionException(argerr("acl[%s] not attach to load balancer listener[%s]", msg.getAclUuid(), msg.getListenerUuid()));
+            }
         }
     }
 
