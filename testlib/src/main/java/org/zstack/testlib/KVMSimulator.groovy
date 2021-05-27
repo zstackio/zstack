@@ -252,7 +252,7 @@ class KVMSimulator implements Simulator {
         }
 
         spec.simulator(KVMConstant.KVM_REALIZE_OVSDPDK_NETWORK_PATH) {
-            return new KVMAgentCommands.AgentResponse()
+            return new KVMAgentCommands.CreateBridgeResponse()
         }
 
         spec.simulator(KVMConstant.KVM_GENERATE_VDPA_PATH) { HttpEntity<String> e ->
