@@ -17,10 +17,8 @@ import org.zstack.header.acl.AccessControlListInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeWhileDoneCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -321,7 +319,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
             if (nicUuids.isEmpty() && serverIps.isEmpty()) {
                 /* listener is not bound any vmnic or server ips */
                 listenerUuids.remove(listenerVO.getUuid());
-                return;
+                continue;
             }
         }
         if (listenerUuids.isEmpty()) {
@@ -377,6 +375,6 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
 
     @Override
     public void afterDeleteAcl(AccessControlListInventory acl) {
-        return;
+        refreshLoadBalancerByAcl(acl.getUuid());
     }
 }

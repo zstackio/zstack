@@ -22,7 +22,7 @@ import org.zstack.header.tag.TagResourceType;
         parameterName = "params"
 )
 public class APIAddAccessControlListRedirectRuleMsg extends APICreateMessage implements APIAuditor {
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, required = false)
     private String name;
 
     @APIParam(maxLength = 2048, required = false)

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddAccessControlListRedirectRuleAction extends AbstractAction {
+public class ChangeAccessControlListServerGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddAccessControlListRedirectRuleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddAccessControlListEntryResult value;
+        public org.zstack.sdk.ChangeAccessControlListServerGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,14 @@ public class AddAccessControlListRedirectRuleAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List serverGroupUuids;
 
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String domain;
-
-    @Param(required = false, maxLength = 80, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String listenerUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String aclUuid;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +66,8 @@ public class AddAccessControlListRedirectRuleAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddAccessControlListEntryResult value = res.getResult(org.zstack.sdk.AddAccessControlListEntryResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddAccessControlListEntryResult() : value; 
+        org.zstack.sdk.ChangeAccessControlListServerGroupResult value = res.getResult(org.zstack.sdk.ChangeAccessControlListServerGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeAccessControlListServerGroupResult() : value; 
 
         return ret;
     }
@@ -108,11 +96,11 @@ public class AddAccessControlListRedirectRuleAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/access-control-lists/{aclUuid}/redirectRules";
+        info.httpMethod = "PUT";
+        info.path = "/load-balancers/listener/acl/{aclUuid}/servergroup/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "changeAccessControlListServerGroup";
         return info;
     }
 
