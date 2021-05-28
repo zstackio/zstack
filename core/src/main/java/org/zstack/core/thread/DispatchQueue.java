@@ -21,5 +21,7 @@ public interface DispatchQueue {
 
     ChainInfo getChainTaskInfo(String signature);
 
+    ChainInfo cleanChainTaskInfo(String signature, Integer index, Boolean cleanUp, Boolean isRunningTask);
+
     Set<String> getApiRunningTaskSignature(String apiId);
 }

@@ -901,6 +901,10 @@ public class Platform {
         return err(SysErrors.OPERATION_ERROR, cause, fmt, args);
     }
 
+    public static ErrorCode canerr(String fmt, Object...args) {
+        return err(SysErrors.CANCEL_ERROR, fmt, args);
+    }
+
     public static ErrorCode argerr(String fmt, Object...args) {
         return err(SysErrors.INVALID_ARGUMENT_ERROR, fmt, args);
     }

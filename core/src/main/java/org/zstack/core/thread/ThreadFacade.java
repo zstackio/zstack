@@ -20,6 +20,8 @@ public interface ThreadFacade extends Component {
 
     ChainInfo getChainTaskInfo(String signature);
 
+    ChainInfo cleanChainTaskInfo(String signature, Integer index, Boolean cleanUp, Boolean isRunningTask);
+
     Set<String> getApiRunningTaskSignature(String apiId);
 
     Future<Void> submitPeriodicTask(PeriodicTask task, long delay);
