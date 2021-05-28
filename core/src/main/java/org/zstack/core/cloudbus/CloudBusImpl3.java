@@ -148,6 +148,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
         abstract void ack(MessageReply reply);
 
+        abstract void cancel();
+
         abstract void timeout();
     }
 
@@ -314,6 +316,19 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             }
 
             @Override
+            void cancel() {
+                envelopes.remove(msg.getId());
+
+                if (!called.compareAndSet(false, true)) {
+                    return;
+                }
+
+                timeoutTaskReceipt.cancel();
+
+                callback.run(createErrorReply(msg, canerr("on purpose return for clean queue")));
+            }
+
+            @Override
             public void timeout() {
                 envelopes.remove(msg.getId());
 
@@ -440,6 +455,16 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
 
         doSend(reply);
+    }
+
+    @Override
+    public void cancel(String correlationId) {
+        Envelope e = envelopes.get(correlationId);
+        if (e == null) {
+            logger.warn(String.format("received a correlationId[%s] but no envelope found,", correlationId));
+            return;
+        }
+        e.cancel();
     }
 
     @Override
