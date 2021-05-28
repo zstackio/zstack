@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -17,6 +18,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.acl.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
@@ -1523,6 +1525,107 @@ public class LoadBalancerBase {
             @Override
             public String getName() {
                 return "update-lb-listener";
+            }
+        });
+    }
+
+    private void handle(APIChangeAccessControlListServerGroupMsg msg) {
+        APIChangeAccessControlListServerGroupEvent evt = new APIChangeAccessControlListServerGroupEvent(msg.getId());
+
+        List<String> currentSgUuids= Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuid())
+                .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).notNull(LoadBalancerListenerACLRefVO_.serverGroupUuid).select(LoadBalancerListenerACLRefVO_.serverGroupUuid).listValues();
+
+        APIChangeAccessControlListServerGroupEvent.LoadBalancerListerAcl loadBalancerListerAcl = new APIChangeAccessControlListServerGroupEvent.LoadBalancerListerAcl();
+        loadBalancerListerAcl.setAclUuid(msg.getAclUuid());
+        loadBalancerListerAcl.setServerGroupUuids(msg.getServerGroupUuids());
+        loadBalancerListerAcl.setListenerUuid(msg.getListenerUuid());
+
+        List<String> tmpDetachSgUuids = new ArrayList<>();
+        List<String> tmpAttachSgUuids = new ArrayList<>();
+        if (currentSgUuids.isEmpty()) {
+            tmpAttachSgUuids.addAll(msg.getServerGroupUuids());
+        } else {
+            tmpDetachSgUuids = currentSgUuids.stream().filter(sgUuid -> !msg.getServerGroupUuids().contains(sgUuid)).collect(Collectors.toList());
+            tmpAttachSgUuids = msg.getServerGroupUuids().stream().filter(sgUuid -> !currentSgUuids.contains(sgUuid)).collect(Collectors.toList());
+        }
+        if (tmpDetachSgUuids.isEmpty() && tmpAttachSgUuids.isEmpty()) {
+            evt.setInventory(loadBalancerListerAcl);
+            bus.publish(evt);
+            return;
+        }
+
+        final List<String> detachSgUuids = tmpDetachSgUuids;
+        final List<String> attachSgUuids = tmpAttachSgUuids;
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+
+                boolean needRefresh = false;
+                if (!detachSgUuids.isEmpty()) {
+                    SQL.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.serverGroupUuid, detachSgUuids).delete();
+                    needRefresh = needRefresh | Q.New(LoadBalancerServerGroupVmNicRefVO.class).in(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, detachSgUuids).isExists();
+                }
+                if (!attachSgUuids.isEmpty()) {
+                    List<LoadBalancerListenerACLRefVO> refs = new ArrayList<>();
+                    for (String sgUuid : attachSgUuids) {
+                        LoadBalancerListenerACLRefVO ref = new LoadBalancerListenerACLRefVO();
+                        ref.setAclUuid(msg.getAclUuid());
+                        ref.setType(LoadBalancerAclType.redirect);
+                        ref.setListenerUuid(msg.getListenerUuid());
+                        ref.setServerGroupUuid(sgUuid);
+                        refs.add(ref);
+                    }
+                    dbf.persistCollection(refs);
+                    needRefresh = needRefresh | Q.New(LoadBalancerServerGroupVmNicRefVO.class).in(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, attachSgUuids).isExists();
+                }
+                if (needRefresh) {
+                    RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
+                    rmsg.setUuid(msg.getLoadBalancerUuid());
+                    bus.makeLocalServiceId(rmsg, LoadBalancerConstants.SERVICE_ID);
+                    bus.send(rmsg, new CloudBusCallBack(chain) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                if (!detachSgUuids.isEmpty()) {
+                                    List<LoadBalancerListenerACLRefVO> refs = new ArrayList<>();
+                                    for (String sgUuid : detachSgUuids) {
+                                        LoadBalancerListenerACLRefVO ref = new LoadBalancerListenerACLRefVO();
+                                        ref.setAclUuid(msg.getAclUuid());
+                                        ref.setType(LoadBalancerAclType.redirect);
+                                        ref.setListenerUuid(msg.getListenerUuid());
+                                        ref.setServerGroupUuid(sgUuid);
+                                        refs.add(ref);
+                                    }
+                                    dbf.persistCollection(refs);
+                                }
+                                if (!attachSgUuids.isEmpty()) {
+                                    SQL.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.serverGroupUuid, attachSgUuids).delete();
+                                }
+                                logger.warn(String.format("update listener [uuid:%s] failed", msg.getLoadBalancerUuid()));
+                                evt.setError(reply.getError());
+                            } else {
+                                evt.getInventory().getServerGroupUuids().removeAll(detachSgUuids);
+                                evt.getInventory().getServerGroupUuids().addAll(attachSgUuids);
+                            }
+                            bus.publish(evt);
+                        }
+                    });
+                    chain.next();
+                    return;
+                }
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "change-acl-server-group";
             }
         });
     }
