@@ -101,6 +101,50 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     }
 
     @Override
+    public ChainInfo cleanChainTaskInfo(String signature, Integer index, Boolean cleanUp, Boolean isRunningTask) {
+        long now = System.currentTimeMillis();
+        synchronized (chainTasks) {
+            ChainInfo info = new ChainInfo();
+            ChainTaskQueueWrapper w = chainTasks.get(signature);
+            if (w == null) {
+                logger.warn(String.format("no queue with a corresponding signatureName[%s]", signature));
+                return null;
+            }
+
+            ChainInfo Tmp = getChainTaskInfo(signature);
+            if (cleanUp) {
+                chainTasks.remove(signature);
+                return Tmp;
+            }
+            if (index == null) {
+                if (isRunningTask) {
+                    info.setRunningTask(Tmp.getRunningTask());
+                    w.runningQueue.clear();
+                    return info;
+                }
+                info.setPendingTask(Tmp.getPendingTask());
+                w.pendingQueue.clear();
+                return info;
+            }
+
+            if (isRunningTask) {
+                ChainFuture cf = (ChainFuture) w.runningQueue.get(index);
+                info.addRunningTask(TaskInfoBuilder.buildRunningTaskInfo(cf, now, index));
+                w.runningQueue.remove(index.intValue());
+            } else {
+                ChainFuture cf = (ChainFuture) w.pendingQueue.get(index);
+                info.addPendingTask(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index));
+                w.pendingQueue.remove(index.intValue());
+            }
+
+            if (w.runningQueue.isEmpty() && w.pendingQueue.isEmpty()) {
+                chainTasks.remove(signature);
+            }
+            return info;
+        }
+    }
+
+    @Override
     public Set<String> getApiRunningTaskSignature(String apiId) {
         return new HashSet<>(apiRunningSignature.getOrDefault(apiId, Collections.emptyList()));
     }
