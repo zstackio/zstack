@@ -191,3 +191,7 @@ alter table EventRecordsVO add column hour int(10);
 alter table EventRecordsVO add index idxAccountUuidHourEmergencyLevel(`accountUuid`,`hour`,`emergencyLevel`);
 alter table EventRecordsVO add index idxCreateTimeReadStatusEmergencyLevel (`createTime`, `emergencyLevel`, `readStatus`, `accountUuid`);
 alter table EventRecordsVO add index idxDataUuid (`dataUuid`);
+
+alter table AuditsVO add column operatorAccountUuid varchar(32);
+alter table AuditsVO add index idxOperatorAccountUuid (`operatorAccountUuid`);
+alter table AuditsVO add index idxRequestUuid (`requestUuid`);
