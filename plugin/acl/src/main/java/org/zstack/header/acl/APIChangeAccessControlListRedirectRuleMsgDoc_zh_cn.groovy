@@ -7,11 +7,11 @@ doc {
 
     category "acl"
 
-    desc """在这里填写API描述"""
+    desc """修改控制策略组转发规则的名称"""
 
     rest {
         request {
-			url "PUT /v1/access-control-lists/{aclUuid}/redirectRules/actions"
+			url "PUT /v1/access-control-lists/redirectRules/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -25,20 +25,20 @@ doc {
 					name "uuid"
 					enclosedIn "changeAccessControlListRedirectRule"
 					desc "资源的UUID，唯一标示该资源"
-					location "body"
+					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.1.3"
 					
 				}
 				column {
 					name "name"
 					enclosedIn "changeAccessControlListRedirectRule"
-					desc "资源名称"
+					desc "转发规则名称"
 					location "body"
 					type "String"
-					optional false
-					since "0.6"
+					optional true
+					since "4.1.3"
 					
 				}
 				column {
@@ -48,7 +48,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 				column {
@@ -58,7 +58,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 			}

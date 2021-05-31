@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
 public class APIChangeAccessControlListRedirectRuleMsg extends APIMessage implements APIAuditor {
     @APIParam(resourceType = AccessControlListEntryVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
-    @APIParam(maxLength = 255)
+    @APIParam(required = false, maxLength = 255)
     private String name;
 
     public String getUuid() {

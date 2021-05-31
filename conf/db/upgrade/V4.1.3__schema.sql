@@ -9,3 +9,6 @@ ALTER TABLE `zstack`.`AccessControlListEntryVO` ADD COLUMN `redirectRule` varcha
 
 ALTER TABLE `zstack`.`LoadBalancerListenerACLRefVO` ADD COLUMN `serverGroupUuid` varchar (32) DEFAULT NULL;
 ALTER TABLE `zstack`.`LoadBalancerListenerACLRefVO` ADD CONSTRAINT fkLoadBalancerListenerACLRefVOLoadBalancerServerGroupVO FOREIGN KEY (serverGroupUuid) REFERENCES `zstack`.`LoadBalancerServerGroupVO` (uuid) ON DELETE CASCADE;
+
+ALTER TABLE `zstack`.`LoadBalancerListenerACLRefVO` DROP FOREIGN KEY fkLoadbalancerListenerACLRefVOAccessControlListVO;
+ALTER TABLE `zstack`.`LoadBalancerListenerACLRefVO` ADD CONSTRAINT fkLoadbalancerListenerACLRefVOAccessControlListVO FOREIGN KEY (aclUuid) REFERENCES `zstack`.`AccessControlListVO` (uuid) ON DELETE CASCADE;
