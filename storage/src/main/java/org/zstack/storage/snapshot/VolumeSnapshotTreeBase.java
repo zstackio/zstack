@@ -37,10 +37,7 @@ import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.SyncSystemTagFromVolumeMsg;
-import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.*;
 import org.zstack.header.storage.backup.AllocateBackupStorageMsg;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.ReturnBackupStorageMsg;
@@ -405,50 +402,58 @@ public class VolumeSnapshotTreeBase {
         });
 
         chain.then(new Flow() {
+            String __name__ = "vsoc-delete-snapshot";
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                VmVsocDeleteSnapshotMsg vmsg = new VmVsocDeleteSnapshotMsg();
-                vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
-                vmsg.setSnapshotUuid(msg.getSnapshotUuid());
-                String hostUuid = Q.New(VmInstanceVO.class)
-                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue();
-                hostUuid = hostUuid != null ? hostUuid : Q.New(VmInstanceVO.class)
-                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.lastHostUuid).findValue();
-                vmsg.setHostUuid(hostUuid);
-                vmsg.setVmUuid(Q.New(VmInstanceVO.class)
-                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
-
-                bus.makeTargetServiceIdByResourceUuid(vmsg, HostConstant.SERVICE_ID, vmsg.getHostUuid());
-                bus.send(vmsg, new CloudBusCallBack(trigger) {
+                List<VmVsocDeleteSnapshotMsg> dmsgs = new ArrayList<>();
+                for (VolumeSnapshotInventory s : currentLeaf.getDescendants()) {
+                    VmVsocDeleteSnapshotMsg vmsg = new VmVsocDeleteSnapshotMsg();
+                    vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
+                    vmsg.setSnapshotUuid(s.getUuid());
+                    String hostUuid = Q.New(VmInstanceVO.class)
+                            .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue();
+                    hostUuid = hostUuid != null ? hostUuid : Q.New(VmInstanceVO.class)
+                            .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.lastHostUuid).findValue();
+                    vmsg.setHostUuid(hostUuid);
+                    vmsg.setVmUuid(Q.New(VmInstanceVO.class)
+                            .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
+                    bus.makeTargetServiceIdByResourceUuid(vmsg, HostConstant.SERVICE_ID, vmsg.getSnapshotUuid());
+                    dmsgs.add(vmsg);
+                }
+                bus.send(dmsgs, new CloudBusListCallBack(trigger) {
                     @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                        } else {
-                            trigger.next();
+                    public void run(List<MessageReply> replies) {
+                        for (MessageReply reply : replies) {
+                            if (!reply.isSuccess()) {
+                                trigger.fail(reply.getError());
+                                return;
+                            }
                         }
+                        trigger.next();
                     }
                 });
             }
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
-                VmVsocCreateSnapshotMsg vmsg = new VmVsocCreateSnapshotMsg();
-                String hostUuid = Q.New(VmInstanceVO.class)
-                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue();
-                if (hostUuid == null) {
-                    hostUuid = Q.New(VmInstanceVO.class)
+                List<VmVsocCreateSnapshotMsg> cmsgs = new ArrayList<>();
+                for (VolumeSnapshotInventory s : currentLeaf.getDescendants()) {
+                    VmVsocCreateSnapshotMsg vmsg = new VmVsocCreateSnapshotMsg();
+                    vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
+                    vmsg.setSnapshotUuid(s.getUuid());
+                    String hostUuid = Q.New(VmInstanceVO.class)
+                            .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue();
+                    hostUuid = hostUuid != null ? hostUuid : Q.New(VmInstanceVO.class)
                             .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.lastHostUuid).findValue();
+                    vmsg.setHostUuid(hostUuid);
+                    vmsg.setVmUuid(Q.New(VmInstanceVO.class)
+                            .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
+                    bus.makeTargetServiceIdByResourceUuid(vmsg, HostConstant.SERVICE_ID, vmsg.getSnapshotUuid());
+                    cmsgs.add(vmsg);
                 }
-                vmsg.setHostUuid(hostUuid);
-                vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
-                vmsg.setSnapshotUuid(msg.getSnapshotUuid());
-                vmsg.setVmUuid(Q.New(VmInstanceVO.class)
-                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
-                bus.makeTargetServiceIdByResourceUuid(vmsg, HostConstant.SERVICE_ID, vmsg.getHostUuid());
-                bus.send(vmsg, new CloudBusCallBack(trigger) {
+                bus.send(cmsgs, new CloudBusListCallBack(trigger) {
                     @Override
-                    public void run(MessageReply reply) {
+                    public void run(List<MessageReply> replys) {
                         trigger.rollback();
                     }
                 });
