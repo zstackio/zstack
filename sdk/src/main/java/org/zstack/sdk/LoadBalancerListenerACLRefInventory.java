@@ -20,6 +20,14 @@ public class LoadBalancerListenerACLRefInventory  {
         return this.listenerUuid;
     }
 
+    public java.lang.String serverGroupUuid;
+    public void setServerGroupUuid(java.lang.String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
+    }
+    public java.lang.String getServerGroupUuid() {
+        return this.serverGroupUuid;
+    }
+
     public java.lang.String aclUuid;
     public void setAclUuid(java.lang.String aclUuid) {
         this.aclUuid = aclUuid;

@@ -33,6 +33,22 @@ public class AccessControlListEntryVO implements ToInventory {
     private String aclUuid;
 
     @Column
+    private String type;
+
+    @Column
+    private String name;
+    @Column
+    private String matchMethod;
+    @Column
+    private String criterion;
+    @Column
+    private String domain;
+    @Column
+    private String url;
+    @Column
+    private String redirectRule;
+
+    @Column
     private String ipEntries;
     @Column
     private String description;
@@ -92,5 +108,61 @@ public class AccessControlListEntryVO implements ToInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getMatchMethod() {
+        return matchMethod;
+    }
+
+    public void setMatchMethod(String matchMethod) {
+        this.matchMethod = matchMethod;
+    }
+
+    public String getCriterion() {
+        return criterion;
+    }
+
+    public void setCriterion(String criterion) {
+        this.criterion = criterion;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getRedirectRule() {
+        return redirectRule;
+    }
+
+    public void setRedirectRule(String redirectRule) {
+        this.redirectRule = redirectRule;
     }
 }

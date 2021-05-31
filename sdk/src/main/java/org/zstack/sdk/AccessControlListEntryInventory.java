@@ -20,6 +20,38 @@ public class AccessControlListEntryInventory  {
         return this.aclUuid;
     }
 
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
+    }
+
+    public java.lang.String name;
+    public void setName(java.lang.String name) {
+        this.name = name;
+    }
+    public java.lang.String getName() {
+        return this.name;
+    }
+
+    public java.lang.String domain;
+    public void setDomain(java.lang.String domain) {
+        this.domain = domain;
+    }
+    public java.lang.String getDomain() {
+        return this.domain;
+    }
+
+    public java.lang.String url;
+    public void setUrl(java.lang.String url) {
+        this.url = url;
+    }
+    public java.lang.String getUrl() {
+        return this.url;
+    }
+
     public java.lang.String ipEntries;
     public void setIpEntries(java.lang.String ipEntries) {
         this.ipEntries = ipEntries;

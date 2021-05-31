@@ -18,6 +18,12 @@ public class AccessControlListEntryInventory {
     private String uuid;
     private String aclUuid;
 
+    private String type;
+
+    private String name;
+    private String domain;
+    private String url;
+
     private String ipEntries;
 
     private String description;
@@ -44,6 +50,10 @@ public class AccessControlListEntryInventory {
     public AccessControlListEntryInventory(AccessControlListEntryVO vo) {
         this.uuid = vo.getUuid();
         this.aclUuid = vo.getAclUuid();
+        this.domain = vo.getDomain();
+        this.url = vo.getUrl();
+        this.name = vo.getName();
+        this.type = vo.getType();
         this.description = vo.getDescription();
         this.ipEntries = vo.getIpEntries();
         this.createDate = vo.getCreateDate();
@@ -64,6 +74,38 @@ public class AccessControlListEntryInventory {
 
     public void setAclUuid(String aclUuid) {
         this.aclUuid = aclUuid;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     public String getIpEntries() {

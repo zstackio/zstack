@@ -2,6 +2,7 @@ package org.zstack.header.acl
 
 import org.zstack.header.acl.APIQueryAccessControlListReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryAccessControlList"

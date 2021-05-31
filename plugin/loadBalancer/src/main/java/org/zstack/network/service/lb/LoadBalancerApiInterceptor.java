@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -23,7 +24,9 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.AddressPoolVO;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.header.vm.VmNicVO;
@@ -34,10 +37,7 @@ import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.IpRangeSet;
-import org.zstack.utils.VipUseForList;
+import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.network.service.lb.LoadBalancerConstants.LB_PROTOCOL_HTTP;
 import static org.zstack.network.service.lb.LoadBalancerConstants.LB_PROTOCOL_HTTPS;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -79,6 +80,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         List<Class> ret = new ArrayList<>();
         ret.add(APIDeleteAccessControlListMsg.class);
         ret.add(APIAddAccessControlListEntryMsg.class);
+        ret.add(APIAddAccessControlListRedirectRuleMsg.class);
         return ret;
     }
 
@@ -117,6 +119,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validate((APIRemoveAccessControlListFromLoadBalancerMsg) msg);
         } else if (msg instanceof APIAddAccessControlListEntryMsg) {
             validate((APIAddAccessControlListEntryMsg) msg);
+        } else if (msg instanceof APIAddAccessControlListRedirectRuleMsg) {
+            validate((APIAddAccessControlListRedirectRuleMsg) msg);
         } else if (msg instanceof APIDeleteAccessControlListMsg) {
             validate((APIDeleteAccessControlListMsg) msg);
         } else if (msg instanceof APIAddServerGroupToLoadBalancerListenerMsg){
@@ -347,31 +351,167 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         }
     }
 
+    private void validate(APIAddAccessControlListRedirectRuleMsg msg) {
+        List<String> listenerUuids = Q.New(LoadBalancerListenerACLRefVO.class).select(LoadBalancerListenerACLRefVO_.listenerUuid)
+                .eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuid()).listValues();
+        if (listenerUuids.isEmpty()) {
+            return;
+        }
+
+        List<String> aclUuids = Q.New(LoadBalancerListenerACLRefVO.class).select(LoadBalancerListenerACLRefVO_.aclUuid)
+                .in(LoadBalancerListenerACLRefVO_.listenerUuid, listenerUuids).listValues();
+        if (aclUuids.isEmpty()) {
+            return;
+        }
+        List<AccessControlListVO> acls = Q.New(AccessControlListVO.class).in(AccessControlListVO_.uuid, aclUuids).list();
+
+        for (AccessControlListVO acl : acls) {
+            if (acl.getEntries().isEmpty()) {
+                continue;
+            }
+            Set<AccessControlListEntryVO> aclEntries = acl.getEntries();
+            for (AccessControlListEntryVO aclEntry : aclEntries) {
+                if (StringDSL.equals(msg.getDomain(), aclEntry.getDomain())) {
+                    if (StringDSL.equals(msg.getUrl(), aclEntry.getUrl())) {
+                        throw new ApiMessageInterceptionException(argerr("domian[%s], url[%s] duplicate/overlap redirect rule with access-control-list group:%s", aclEntry.getDomain(), aclEntry.getUrl(), acl.getUuid()));
+                    }
+                }
+            }
+        }
+    }
+
     @Transactional(readOnly = true)
     private void validate(APIAddAccessControlListToLoadBalancerMsg msg) {
-        List<LoadBalancerListenerACLRefVO> refVOs = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
-        if ( !refVOs.isEmpty()) {
-            /*check if duplicated*/
-            List<String> existingAcls = refVOs.stream().filter(vo -> msg.getAclUuids().contains(vo.getAclUuid())).map(vo -> vo.getAclUuid()).collect(Collectors.toList());
-            if (!existingAcls.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("the access-control-list groups[uuid:%s] are already on the load balancer listener[uuid:%s]", existingAcls, msg.getListenerUuid()));
+
+        List<String> aclEntriesType = SQL.New("select aclEntry.type from AccessControlListEntryVO aclEntry where" +
+                " aclEntry.aclUuid in (:aclUuids)")
+                .param("aclUuids", msg.getAclUuids())
+                .list();
+        if (msg.getAclType().equals(LoadBalancerAclType.redirect.toString())) {
+            if (!aclEntriesType.isEmpty()) {
+                boolean ipEntryExsit = aclEntriesType.stream().anyMatch(entry -> entry.equals(AclEntryType.IpEntry.toString()));
+                if (ipEntryExsit) {
+                    throw new ApiMessageInterceptionException(argerr("access-control-list groups[uuid:%s] use to redirect, but there some access-control-list not has redirect rule but ip entry", msg.getAclUuids()));
+                }
             }
 
-            /*check if type is same*/
-            LoadBalancerAclType type = refVOs.get(0).getType();
-            if (!type.equals(LoadBalancerAclType.valueOf(msg.getAclType()))) {
-                throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] just only attach the %s type access-control-list group", msg.getListenerUuid(), type.toString()));
+            String protocol = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.protocol).eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid()).findValue();
+            if (StringUtils.isBlank(protocol) || (!protocol.equals(LB_PROTOCOL_HTTPS) && !protocol.equals(LB_PROTOCOL_HTTP))) {
+                throw new ApiMessageInterceptionException(argerr("access-control-list groups[uuid:%s] attach to load balancer listener[uuid:%s] not https or http", msg.getAclUuids(), msg.getListenerUuid()));
             }
+
+            String lbUuid = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.loadBalancerUuid).eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid()).findValue();
+            msg.setLoadBalancerUuid(lbUuid);
+
+            List<LoadBalancerListenerACLRefVO> refVOs = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).eq(LoadBalancerListenerACLRefVO_.type, LoadBalancerAclType.redirect).list();
+
+            if (msg.getServerGroupUuids() != null && !msg.getServerGroupUuids().isEmpty()) {
+                /*filter the server group own acl and servergroup not attach to listen*/
+                //if server group not attach listener, ignore it
+                List<String> sgUuids = Q.New(LoadBalancerListenerServerGroupRefVO.class).eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid()).select(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid).listValues();
+                List<String> newSgUuids = msg.getServerGroupUuids().stream().filter(sg -> sgUuids.contains(sg)).collect(Collectors.toList());
+                msg.setServerGroupUuids(newSgUuids);
+                if (!refVOs.isEmpty()) {
+                    // when acl attach to server group of listener, not need to attach again
+                    for (LoadBalancerListenerACLRefVO refVO : refVOs) {
+                        if (msg.getAclUuids().contains(refVO.getAclUuid())) {
+                            if (msg.getServerGroupUuids().contains(refVO.getServerGroupUuid())) {
+                                msg.getServerGroupUuids().remove(refVO.getServerGroupUuid());
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (msg.getServerGroupUuids() == null || msg.getServerGroupUuids().isEmpty()) {
+                if (!refVOs.isEmpty()) {
+                    /*check if duplicated, if acl attach to listener, not need to attach again*/
+                    List<String> existAclUuids = refVOs.stream().map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList());
+                    List<String> newAclUuids = msg.getAclUuids().stream().filter(acl -> !existAclUuids.contains(acl)).collect(Collectors.toList());
+
+                    if (newAclUuids.isEmpty()) {
+                        throw new ApiMessageInterceptionException(argerr("access-control-list groups[uuid:%s] has attach to load balancer listener[uuid:%s]", msg.getAclUuids(), msg.getListenerUuid()));
+                    }
+                    msg.setAclUuids(newAclUuids);
+
+                    //check if exist duplicate rule
+                    List<String> aclUuids = new ArrayList<>();
+                    for (LoadBalancerListenerACLRefVO ref : refVOs) {
+                        if (!aclUuids.contains(ref.getAclUuid())) {
+                            aclUuids.add(ref.getAclUuid());
+                        }
+                    }
+
+                    List<AccessControlListEntryVO> aclEntries = Q.New(AccessControlListEntryVO.class).in(AccessControlListEntryVO_.aclUuid, aclUuids).eq(AccessControlListEntryVO_.type, AclEntryType.RedirectRule.toString()).list();
+                    if (aclEntries.isEmpty()) {
+                        return;
+                    }
+
+                    List<AccessControlListEntryVO> newAclEntries = Q.New(AccessControlListEntryVO.class).in(AccessControlListEntryVO_.aclUuid, msg.getAclUuids()).list();
+                    if (newAclEntries.isEmpty()) {
+                        return;
+                    }
+
+                    List<String> redireRuleExistAclUuid = new ArrayList<>();
+                    for (AccessControlListEntryVO newAclEntry : newAclEntries) {
+                        for (AccessControlListEntryVO aclEntry : aclEntries) {
+                            if (StringDSL.equals(newAclEntry.getDomain(), aclEntry.getDomain())) {
+                                if (StringDSL.equals(newAclEntry.getUrl(), aclEntry.getUrl())) {
+                                    redireRuleExistAclUuid.add(newAclEntry.getAclUuid());
+                                    msg.getAclUuids().remove(newAclEntry.getAclUuid());
+                                }
+                            }
+                        }
+                    }
+                    if (msg.getAclUuids().isEmpty()) {
+                        throw new ApiMessageInterceptionException(argerr("load balancer listener [uuid:%s] had redirect rule of access-control-list groups[uuid:%s]", msg.getListenerUuid(), redireRuleExistAclUuid));
+                    }
+                }
+            }
+            //check if all acl has no redirect rule that can not attach to server group
+            List<AccessControlListEntryVO> newAclEntries = Q.New(AccessControlListEntryVO.class).in(AccessControlListEntryVO_.aclUuid, msg.getAclUuids()).list();
+            List<String> ruleExistAclUuids = newAclEntries.stream().map(AccessControlListEntryVO::getAclUuid).collect(Collectors.toList());
+            List<String>newAclUuids = msg.getAclUuids().stream().filter(acl -> ruleExistAclUuids.contains(acl)).collect(Collectors.toList());
+            if (newAclUuids.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("access-control-list groups[uuid:%s] has no redirect rule", msg.getAclUuids()));
+            }
+            msg.setAclUuids(newAclUuids);
+            int size = refVOs.stream().filter(ref -> ref.getServerGroupUuid() == null).collect(Collectors.toList()).size();
+            if (msg.getAclUuids().size() + size > LoadBalancerGlobalConfig.ACL_REDIRECT_MAX_COUNT.value(Long.class)) {
+                throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] can't  attach more than %d redirect rule access-control-list groups", msg.getListenerUuid(), LoadBalancerGlobalConfig.ACL_REDIRECT_MAX_COUNT.value(Long.class)));
+            }
+        } else {
+            if (!aclEntriesType.isEmpty()) {
+                boolean ipEntryExsit = aclEntriesType.stream().anyMatch(entry -> entry.equals(AclEntryType.RedirectRule.toString()));
+                if (ipEntryExsit) {
+                    throw new ApiMessageInterceptionException(argerr("access-control-list groups[uuid:%s] use to %s, but there some access-control-list not has ip entry but redirect rule", msg.getAclType(), msg.getAclUuids()));
+                }
+            }
+
+            List<LoadBalancerListenerACLRefVO> refVOs = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).notEq(LoadBalancerListenerACLRefVO_.type, LoadBalancerAclType.redirect).list();
+            if (!refVOs.isEmpty()) {
+                /*check if duplicated*/
+                List<String> existingAcls = refVOs.stream().filter(vo -> msg.getAclUuids().contains(vo.getAclUuid())).map(vo -> vo.getAclUuid()).collect(Collectors.toList());
+                if (!existingAcls.isEmpty()) {
+                    throw new ApiMessageInterceptionException(argerr("the access-control-list groups[uuid:%s] are already on the load balancer listener[uuid:%s]", existingAcls, msg.getListenerUuid()));
+                }
+
+                /*when use for white list or black list, check if type is same*/
+                LoadBalancerAclType type = refVOs.get(0).getType();
+                if (!type.equals(LoadBalancerAclType.valueOf(msg.getAclType()))) {
+                    throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] just only attach the %s type access-control-list group", msg.getListenerUuid(), type.toString()));
+                }
+            }
+
+            if (msg.getAclUuids().size() + refVOs.size() > LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)) {
+                throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] can't  attach more than %d access-control-list groups", msg.getListenerUuid(), LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)));
+            }
+
+            String lbUuid = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.loadBalancerUuid).eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid()).findValue();
+            msg.setLoadBalancerUuid(lbUuid);
+
+            validateAcl(msg.getAclUuids(), refVOs.stream().map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList()), lbUuid);
         }
-
-        if (msg.getAclUuids().size() + refVOs.size() > LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)) {
-            throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] can't  attach more than %d access-control-list groups", msg.getListenerUuid(), LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)));
-        }
-
-        String lbUuid = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.loadBalancerUuid).eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid()).findValue();
-        msg.setLoadBalancerUuid(lbUuid);
-
-        validateAcl(msg.getAclUuids(), refVOs.stream().map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList()), lbUuid );
     }
 
     @Transactional(readOnly = true)

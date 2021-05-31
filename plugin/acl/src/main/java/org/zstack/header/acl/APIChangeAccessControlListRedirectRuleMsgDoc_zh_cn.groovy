@@ -1,21 +1,21 @@
 package org.zstack.header.acl
 
-import org.zstack.header.acl.APIDeleteAccessControlListEvent
+import org.zstack.header.acl.APIChangeAccessControlListRedirectRuleEvent
 
 doc {
-    title "DeleteAccessControlList"
+    title "ChangeAccessControlListRedirectRule"
 
     category "acl"
 
-    desc """删除访问控制策略组"""
+    desc """在这里填写API描述"""
 
     rest {
         request {
-			url "DELETE /v1/access-control-lists/{uuid}"
+			url "PUT /v1/access-control-lists/{aclUuid}/redirectRules/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIDeleteAccessControlListMsg.class
+            clz APIChangeAccessControlListRedirectRuleMsg.class
 
             desc """"""
             
@@ -23,22 +23,22 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn ""
+					enclosedIn "changeAccessControlListRedirectRule"
 					desc "资源的UUID，唯一标示该资源"
-					location "url"
+					location "body"
 					type "String"
 					optional false
-					since "3.9"
+					since "0.6"
 					
 				}
 				column {
-					name "deleteMode"
-					enclosedIn ""
-					desc "删除模式(Permissive / Enforcing，Permissive)"
+					name "name"
+					enclosedIn "changeAccessControlListRedirectRule"
+					desc "资源名称"
 					location "body"
 					type "String"
-					optional true
-					since "3.9"
+					optional false
+					since "0.6"
 					
 				}
 				column {
@@ -48,7 +48,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "3.9"
+					since "0.6"
 					
 				}
 				column {
@@ -58,14 +58,14 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "3.9"
+					since "0.6"
 					
 				}
 			}
         }
 
         response {
-            clz APIDeleteAccessControlListEvent.class
+            clz APIChangeAccessControlListRedirectRuleEvent.class
         }
     }
 }

@@ -32,6 +32,8 @@ public class LoadBalancerGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig ACL_MAX_COUNT = new GlobalConfig(CATEGORY, "aclMaxCount");
     @GlobalConfigValidation
+    public static GlobalConfig ACL_REDIRECT_MAX_COUNT = new GlobalConfig(CATEGORY, "redirectRuleMaxCount");
+    @GlobalConfigValidation
     public static GlobalConfig HTTP_MODE = new GlobalConfig(CATEGORY, "httpMode");
 
 
