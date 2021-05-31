@@ -635,10 +635,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 afterSortEntries.addAll(domainWildWordMatchEntries);
                 afterSortEntries.addAll(onlyUrlEntries);
 
-                List<String> sgOfListenerUuids = listenerInv.getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefInventory::getServerGroupUuid).collect(Collectors.toList());
+                List<String> sgOwnBackenServerUuids = lbTO.getServerGroups().stream().map(LbTO.ServerGroup::getServerGroupUuid).collect(Collectors.toList());
                 for (AccessControlListEntryVO entry : afterSortEntries) {
                     List<String> serverGroupUuids = refs.stream()
-                            .filter(ref -> ref.getListenerUuid().equals(listenerInv.getUuid()) && ref.getAclUuid().equals(entry.getAclUuid()) && ref.getServerGroupUuid() != null && sgOfListenerUuids.contains(ref.getServerGroupUuid()))
+                            .filter(ref -> ref.getListenerUuid().equals(listenerInv.getUuid()) && ref.getAclUuid().equals(entry.getAclUuid()) && ref.getServerGroupUuid() != null && sgOwnBackenServerUuids.contains(ref.getServerGroupUuid()))
                             .map(LoadBalancerListenerACLRefInventory::getServerGroupUuid).collect(Collectors.toList());
                     if (serverGroupUuids.isEmpty()) {
                         continue;
@@ -704,13 +704,15 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 }
                 if (!backendServers.isEmpty()) {
-                    LbTO.ServerGroup serverGroup = new LbTO.ServerGroup();
-                    serverGroup.setBackendServers(backendServers);
-                    serverGroup.setName("default-server-group");
-                    StringBuilder stringBuilder = new StringBuilder();
-                    serverGroup.setDefault(true);
-                    serverGroup.setServerGroupUuid("defaultServerGroup");
-                    lbTO.getServerGroups().add(serverGroup);
+                    if (!redirectRules.isEmpty()) {
+                        LbTO.ServerGroup serverGroup = new LbTO.ServerGroup();
+                        serverGroup.setBackendServers(backendServers);
+                        serverGroup.setName("default-server-group");
+                        StringBuilder stringBuilder = new StringBuilder();
+                        serverGroup.setDefault(true);
+                        serverGroup.setServerGroupUuid("defaultServerGroup");
+                        lbTO.getServerGroups().add(serverGroup);
+                    }
                 }
 
                 return redirectRules;
