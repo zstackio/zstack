@@ -998,21 +998,57 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         def sg =  lbTO.getServerGroups().stream().filter{sg -> sg.getBackendServers().size() == 2}.collect(Collectors.toList())
         assert sg.size() == 2
 
+        cmd == null
+        /*remove vm from sg7*/
+        removeBackendServerFromServerGroup {
+            serverGroupUuid = servergroup7.uuid
+            vmNicUuids = [vm2.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
+        }
+        lbTO =cmd.lbs.stream().filter{lb -> lb.listenerUuid.equals(lblRes.value.inventory.uuid)}.collect(Collectors.toList())[0] as VirtualRouterLoadBalancerBackend.LbTO
+        assert lbTO.getServerGroups().size() == 2
+        sg =  lbTO.getServerGroups().stream().filter{ it.getBackendServers().size() == 2}.collect(Collectors.toList())
+        assert !lbTO.getServerGroups().stream().anyMatch({it.serverGroupUuid == servergroup7.uuid})
+        assert lbTO.getServerGroups().stream().anyMatch({it.serverGroupUuid == servergroup8.uuid})
+        assert sg.size() == 0
+
         removeServerGroupFromLoadBalancerListener {
             serverGroupUuid = listenerVO.serverGroupUuid
             listenerUuid = listenerVO.uuid
         }
         lbTO =cmd.lbs.stream().filter{lb -> lb.listenerUuid.equals(lblRes.value.inventory.uuid)}.collect(Collectors.toList())[0] as VirtualRouterLoadBalancerBackend.LbTO
-        assert lbTO.getServerGroups().size() == 2
-        assert lbTO.getServerGroups()[0].getBackendServers().size() == 1 || lbTO.getServerGroups()[1].getBackendServers().size() == 1
-        assert lbTO.getRedirectRules().size() == 2
+        assert lbTO.getServerGroups().size() == 1
+        assert lbTO.getServerGroups()[0].getBackendServers().size() == 1
+        assert lbTO.getServerGroups()[0].getServerGroupUuid() == servergroup8.uuid
+        assert lbTO.getRedirectRules().size() == 1
 
         /*remove acl from listener*/
+        /*remove acl from listener sg7*/
         removeAccessControlListFromLoadBalancer {
             aclUuids = [acl.uuid]
             listenerUuid = lblRes.value.inventory.uuid
             serverGroupUuids = [servergroup7.uuid]
         }
+
+        cmd = null
+        /*remove acl from sg8 when sg has backend server*/
+        removeAccessControlListFromLoadBalancer {
+            aclUuids = [acl2.uuid]
+            listenerUuid = lblRes.value.inventory.uuid
+            serverGroupUuids = [servergroup8.uuid]
+        }
+        lbTO =cmd.lbs.stream().filter{lb -> lb.listenerUuid.equals(lblRes.value.inventory.uuid)}.collect(Collectors.toList())[0] as VirtualRouterLoadBalancerBackend.LbTO
+        assert lbTO.getServerGroups().size() == 0
+        assert lbTO.getRedirectRules().size() == 0
+
+        cmd == null
+        /*delete acl when acl has serverGroup and sg has vm nic*/
+        deleteAccessControlList {
+            uuid = acl.uuid
+        }
+        lbTO =cmd.lbs.stream().filter{lb -> lb.listenerUuid.equals(lblRes.value.inventory.uuid)}.collect(Collectors.toList())[0] as VirtualRouterLoadBalancerBackend.LbTO
+        assert lbTO.getServerGroups().size() == 0
+        assert lbTO.getRedirectRules().size() == 0
+
 
         //delete load balancer listener
         deleteLoadBalancerListener {

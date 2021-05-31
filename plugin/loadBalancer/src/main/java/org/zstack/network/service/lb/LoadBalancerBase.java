@@ -1715,8 +1715,16 @@ public class LoadBalancerBase {
             @Override
             public void run(SyncTaskChain chain) {
                 APIRemoveAccessControlListFromLoadBalancerEvent evt = new APIRemoveAccessControlListFromLoadBalancerEvent(msg.getId());
-                List<LoadBalancerListenerACLRefVO> refs = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids())
-                                                           .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
+                List<LoadBalancerListenerACLRefVO> refs;
+
+                if (msg.getServerGroupUuids() == null || msg.getServerGroupUuids().isEmpty()) {
+                    refs = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids())
+                            .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
+                } else {
+                    refs = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids())
+                            .in(LoadBalancerListenerACLRefVO_.serverGroupUuid, msg.getServerGroupUuids())
+                            .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
+                }
 
                 if (refs.isEmpty()) {
                     final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
@@ -1726,13 +1734,7 @@ public class LoadBalancerBase {
                     return;
                 }
 
-                if (msg.getServerGroupUuids() == null || msg.getServerGroupUuids().isEmpty()) {
-                    dbf.removeCollection(refs, LoadBalancerListenerACLRefVO.class);
-                } else {
-                    SQL.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids())
-                            .in(LoadBalancerListenerACLRefVO_.serverGroupUuid, msg.getServerGroupUuids())
-                            .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).delete();
-                }
+                dbf.removeCollection(refs, LoadBalancerListenerACLRefVO.class);
 
                 final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
 
