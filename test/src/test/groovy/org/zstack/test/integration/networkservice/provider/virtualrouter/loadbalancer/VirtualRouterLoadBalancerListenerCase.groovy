@@ -390,6 +390,10 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             name = "redirect-acl2"
         }
 
+        AccessControlListInventory acl3 = createAccessControlList {
+            name = "redirect-acl2"
+        }
+
         /*redirect operate*/
         //add redirect rule
          AccessControlListEntryInventory redirectRule = addAccessControlListRedirectRule {
@@ -403,8 +407,8 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         expectError {
             addAccessControlListRedirectRule {
                 name = "redirect rule"
-                domain = ""
-                url = ""
+                domain = "zstack.io"
+                url = "/test"
                 aclUuid = acl.uuid
             }
         }
@@ -415,6 +419,16 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
                 name = "redirect rule"
                 domain = ""
                 url = ""
+                aclUuid = acl2.uuid
+            }
+        }
+
+        //constraint: domain and url cannot all null
+        expectError {
+            addAccessControlListRedirectRule {
+                name = "redirect rule"
+                domain = ""
+                url = "/"
                 aclUuid = acl2.uuid
             }
         }
@@ -438,14 +452,18 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             }
         }
 
-        //constraint: url must start with /
-        expectError {
-            addAccessControlListRedirectRule {
-                name = "redirect rule"
-                domain = ""
-                url = "/"
-                aclUuid = acl2.uuid
-            }
+        addAccessControlListRedirectRule {
+            name = "redirect rule"
+            domain = "zstack.io"
+            url = ""
+            aclUuid = acl2.uuid
+        }
+
+        addAccessControlListRedirectRule {
+            name = "redirect rule"
+            domain = "zstack.io"
+            url = "/"
+            aclUuid = acl3.uuid
         }
 
         AccessControlListEntryVO rlVO = Q.New(AccessControlListEntryVO.class).eq(AccessControlListEntryVO_.uuid, redirectRule.uuid).find()
@@ -456,6 +474,18 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         assert rlVO.getCriterion() == "AccurateMatch"
         assert rlVO.getDomain() == "zstack.io"
         assert rlVO.getUrl() == "/test"
+
+        List<AccessControlListEntryVO> rlVOs = Q.New(AccessControlListEntryVO.class).eq(AccessControlListEntryVO_.aclUuid, acl2.uuid).list()
+        rlVOs[0].getUrl() == "/"
+        assert rlVOs[0].getType() == "RedirectRule"
+        assert rlVOs[0].getMatchMethod() == "Domain"
+        assert rlVOs[0].getDomain() == "zstack.io"
+
+        rlVOs = Q.New(AccessControlListEntryVO.class).eq(AccessControlListEntryVO_.aclUuid, acl3.uuid).list()
+        rlVOs[0].getUrl() == "/"
+        assert rlVOs[0].getType() == "RedirectRule"
+        assert rlVOs[0].getMatchMethod() == "Domain"
+        assert rlVOs[0].getDomain() == "zstack.io"
 
         //query acl
         List<AccessControlListInventory> aclList = queryAccessControlList {
@@ -489,6 +519,9 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         }
         deleteAccessControlList {
             uuid = acl2.uuid
+        }
+        deleteAccessControlList {
+            uuid = acl3.uuid
         }
         rlVO = Q.New(AccessControlListEntryVO.class).eq(AccessControlListEntryVO_.aclUuid, acl.uuid).find()
         assert rlVO == null

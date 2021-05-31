@@ -158,7 +158,7 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own one redirect rule, can not add redirect rule", acl.getUuid()));
         }
 
-        if (StringUtils.isBlank(msg.getDomain()) && StringUtils.isBlank(msg.getUrl())) {
+        if (StringUtils.isBlank(msg.getDomain()) && (StringUtils.isBlank(msg.getUrl()) || msg.getUrl().length() == 1)) {
             throw new ApiMessageInterceptionException(operr("domain and url can not both empty"));
         }
 
@@ -173,12 +173,16 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
                 msg.setCriterion("AccurateMatch");
             }
 
-            if (StringUtils.isNotBlank(msg.getUrl())) {
+            if (StringUtils.isNotBlank(msg.getUrl()) && msg.getUrl().length() > 1) {
                 if (!AccessControlListUtils.isValidateUrl(msg.getUrl())) {
-                    throw new ApiMessageInterceptionException(argerr("url[%s] is not validate url", msg.getDomain()));
+                    throw new ApiMessageInterceptionException(argerr("url[%s] is not validate url", msg.getUrl()));
                 }
                 msg.setMatchMethod("DomainAndUrl");
             } else {
+                if (msg.getUrl().length() == 1 && !msg.getUrl().equals("/")) {
+                    throw new ApiMessageInterceptionException(argerr("url[%s] is not validate url", msg.getUrl()));
+                }
+                msg.setUrl("/");
                 msg.setMatchMethod("Domain");
             }
         } else {
