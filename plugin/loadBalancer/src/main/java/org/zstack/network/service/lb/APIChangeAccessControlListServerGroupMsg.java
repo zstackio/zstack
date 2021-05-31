@@ -22,7 +22,7 @@ import java.util.List;
 )
 public class APIChangeAccessControlListServerGroupMsg extends APIMessage implements LoadBalancerMessage, APIAuditor {
     @APIParam(resourceType = LoadBalancerServerGroupVO.class, checkAccount = true, operationTarget = true, nonempty = true)
-    private List<String> serverGroupUuid;
+    private List<String> serverGroupUuids;
     @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
     private String listenerUuid;
     @APIParam(resourceType = AccessControlListVO.class, checkAccount = true, operationTarget = true)
@@ -32,11 +32,11 @@ public class APIChangeAccessControlListServerGroupMsg extends APIMessage impleme
     private String loadBalancerUuid;
 
     public List<String> getServerGroupUuids() {
-        return serverGroupUuid;
+        return serverGroupUuids;
     }
 
     public void setServerGroupUuids(List<String> serverGroupUuid) {
-        this.serverGroupUuid = serverGroupUuid;
+        this.serverGroupUuids = serverGroupUuid;
     }
 
     public String getListenerUuid() {

@@ -3986,6 +3986,33 @@ abstract class ApiHelper {
     }
 
 
+    def changeAccessControlListServerGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeAccessControlListServerGroupAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeAccessControlListServerGroupAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def changeAccessKeyState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeAccessKeyStateAction.class) Closure c) {
         def a = new org.zstack.sdk.ChangeAccessKeyStateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid

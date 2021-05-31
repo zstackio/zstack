@@ -236,14 +236,15 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
                 if (entry.getMatchMethod().equals("Url")) {
                    redirectRule = "path_beg -i " + entry.getUrl();
                 } else {
-                    String domain = "";
+                    String domain = entry.getDomain();
                     if (entry.getCriterion().equals("WildcardMatch")) {
-                        domain = entry.getDomain().replace("*", ".*");
+                        domain = domain.replace("*", ".*");
                     }
+                    domain = domain.replace(".", "\\.");
                     if (entry.getMatchMethod().equals("Domain")) {
-                        redirectRule = "hdr_beg(host) -i " + entry.getDomain();
+                        redirectRule = "hdr_beg(host) -i " + domain;
                     } else {
-                        redirectRule = "base_reg -i " + entry.getDomain()+entry.getUrl();
+                        redirectRule = "base_reg -i " + domain;
                     }
                 }
                 entry.setRedirectRule(redirectRule);

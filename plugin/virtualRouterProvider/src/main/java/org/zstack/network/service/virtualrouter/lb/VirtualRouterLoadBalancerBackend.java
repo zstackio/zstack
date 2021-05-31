@@ -596,12 +596,13 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             }
 
             private List<LbTO.RedirectRule> makeRedirectAcl(LoadBalancerListenerInventory listenerInv, LbTO lbTO) {
-                if (lbTO.getServerGroups() == null) {
-                    lbTO.setServerGroups(new ArrayList<>());
+                ArrayList<LbTO.RedirectRule> redirectRules = new ArrayList<>();
+
+                if (lbTO.getServerGroups() == null || lbTO.getServerGroups().isEmpty()) {
+                    return redirectRules;
                 }
 
                 List<LoadBalancerListenerACLRefInventory> refs = listenerInv.getAclRefs();
-                ArrayList<LbTO.RedirectRule> redirectRules = new ArrayList<>();
                 if (refs.isEmpty()) {
                     return redirectRules;
                 }
@@ -634,9 +635,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 afterSortEntries.addAll(domainWildWordMatchEntries);
                 afterSortEntries.addAll(onlyUrlEntries);
 
+                List<String> sgOfListenerUuids = listenerInv.getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefInventory::getServerGroupUuid).collect(Collectors.toList());
                 for (AccessControlListEntryVO entry : afterSortEntries) {
                     List<String> serverGroupUuids = refs.stream()
-                            .filter(ref -> ref.getListenerUuid().equals(listenerInv.getUuid()) && ref.getAclUuid().equals(entry.getAclUuid()) && ref.getServerGroupUuid() != null)
+                            .filter(ref -> ref.getListenerUuid().equals(listenerInv.getUuid()) && ref.getAclUuid().equals(entry.getAclUuid()) && ref.getServerGroupUuid() != null && sgOfListenerUuids.contains(ref.getServerGroupUuid()))
                             .map(LoadBalancerListenerACLRefInventory::getServerGroupUuid).collect(Collectors.toList());
                     if (serverGroupUuids.isEmpty()) {
                         continue;
@@ -739,7 +741,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         serverGroup.setServerGroupUuid(groupInv.getUuid());
                         List<LbTO.BackendServer> backendServers = new ArrayList<>();
                         serverGroup.setBackendServers(backendServers);
-                        serverGroups.add(serverGroup);
                         for (LoadBalancerServerGroupVmNicRefInventory nicRef : groupInv.getVmNicRefs()) {
                             if (nicRef.getStatus().equals(LoadBalancerVmNicStatus.Inactive.toString())) {
                                 continue;
@@ -768,6 +769,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             ips.add(ipRef.getIpAddress());
                             params.add(String.format("balancerWeight::%s::%s",ipRef.getIpAddress(), ipRef.getWeight()));
                             backendServers.add(new LbTO.BackendServer(ipRef.getIpAddress(), ipRef.getWeight()));
+                        }
+
+                        if (!backendServers.isEmpty()) {
+                            serverGroups.add(serverGroup);
                         }
                     }
                 }

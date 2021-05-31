@@ -16,7 +16,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.IpRangeSet;
-import org.zstack.utils.StringDSL;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 import org.zstack.utils.network.IPv6Constants;
@@ -24,7 +23,6 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -123,6 +121,12 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
     private void validate (APIAddAccessControlListEntryMsg msg) {
         AccessControlListVO acl = dbf.findByUuid(msg.getAclUuid(), AccessControlListVO.class);
 
+        boolean redirectRuleExisted = acl.getEntries().stream().anyMatch(entry -> entry.getType().equals(AclEntryType.RedirectRule.toString()));
+
+        if (redirectRuleExisted) {
+            throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own redirect rule, can not add IP Entry", acl.getUuid()));
+        }
+
         /*check if the entry is exist*/
         if (acl.getEntries()!= null && !acl.getEntries().isEmpty()) {
             if (acl.getEntries().size() >= AccessControlListConstants.MAX_ENTRY_COUNT_PER_GROUP) {
@@ -144,10 +148,18 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
 
     private void validate (APIAddAccessControlListRedirectRuleMsg msg) {
         AccessControlListVO acl = dbf.findByUuid(msg.getAclUuid(), AccessControlListVO.class);
-        Boolean ipEntryExists = acl.getEntries().stream().anyMatch(entry -> entry.getType().equals(AclEntryType.IpEntry.toString()));
+        boolean ipEntryExisted = acl.getEntries().stream().anyMatch(entry -> entry.getType().equals(AclEntryType.IpEntry.toString()));
+        boolean redirectRuleExisted = acl.getEntries().stream().anyMatch(entry -> entry.getType().equals(AclEntryType.RedirectRule.toString()));
+        if (ipEntryExisted) {
+            throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own ip entry, can not add redirect rule", acl.getUuid()));
+        }
+
+        if (redirectRuleExisted) {
+            throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own one redirect rule, can not add redirect rule", acl.getUuid()));
+        }
 
         if (StringUtils.isBlank(msg.getDomain()) && StringUtils.isBlank(msg.getUrl())) {
-            throw new ApiMessageInterceptionException(operr("domian and url can not both empty"));
+            throw new ApiMessageInterceptionException(operr("domain and url can not both empty"));
         }
 
         if (StringUtils.isNotBlank(msg.getDomain())) {
@@ -174,27 +186,6 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("url[%s] is not validate url", msg.getDomain()));
             }
             msg.setMatchMethod("Url");
-        }
-
-        if (ipEntryExists) {
-            throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own ip entry, can not add redirect rule", acl.getUuid()));
-        }
-
-        /*check if the redirect rule is exist*/
-        //TODO: check domain and url is validate
-        if (acl.getEntries()!= null && !acl.getEntries().isEmpty()) {
-            if (acl.getEntries().size() >= AccessControlListConstants.MAX_ENTRY_COUNT_PER_GROUP) {
-                throw new ApiMessageInterceptionException(argerr("the access-control-list groups[%s] can't be added more than %d ip entries", acl.getUuid(), AccessControlListConstants.MAX_ENTRY_COUNT_PER_GROUP));
-            }
-
-            Set<AccessControlListEntryVO> aclEntries = acl.getEntries();
-            for (AccessControlListEntryVO aclEntry : aclEntries) {
-                if (StringDSL.equals(msg.getDomain(), aclEntry.getDomain())) {
-                    if (StringDSL.equals(msg.getUrl(), aclEntry.getUrl())) {
-                        throw new ApiMessageInterceptionException(argerr("domian[%s], url[%s] duplicate/overlap redirect rule with access-control-list group:%s", aclEntry.getDomain(), aclEntry.getUrl(), acl.getUuid()));
-                    }
-                }
-            }
         }
     }
 }

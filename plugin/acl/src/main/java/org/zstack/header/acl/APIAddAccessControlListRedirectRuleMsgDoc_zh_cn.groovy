@@ -7,7 +7,7 @@ doc {
 
     category "acl"
 
-    desc """在这里填写API描述"""
+    desc """向访问控制策略组添加转发规则"""
 
     rest {
         request {
@@ -27,8 +27,8 @@ doc {
 					desc "资源名称"
 					location "body"
 					type "String"
-					optional false
-					since "0.6"
+					optional true
+					since "4.1.3"
 					
 				}
 				column {
@@ -38,37 +38,37 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 				column {
 					name "domain"
 					enclosedIn "params"
-					desc ""
+					desc "域名"
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 				column {
 					name "url"
 					enclosedIn "params"
-					desc ""
+					desc "url"
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 				column {
 					name "aclUuid"
 					enclosedIn "params"
-					desc ""
+					desc "访问控制策略组的唯一标识"
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.1.3"
 					
 				}
 				column {
@@ -78,7 +78,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 				column {
@@ -88,7 +88,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 				column {
@@ -98,7 +98,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 				column {
@@ -108,7 +108,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 			}
