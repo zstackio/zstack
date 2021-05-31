@@ -25,7 +25,7 @@ field
     ;
 
 multiFields
-    : ID (',' ID)+
+    : ID (',' ID)*
     ;
 
 operator
@@ -104,13 +104,20 @@ queryTarget
     | entity '.' multiFields #withMultiFields
     ;
 
+fieldWithFunction
+    : multiFields
+    | function '(' multiFields ')'
+    | function '(' fieldWithFunction ')'
+    ;
+
 function
     : DISTINCT
+    | MAX | MIN
     ;
 
 queryTargetWithFunction
     : queryTarget #withoutFunction
-    | function '(' queryTargetWithFunction ')' #withFunction
+    | function '(' queryTargetWithFunction ')' (',' fieldWithFunction)* #withFunction
     ;
 
 orderByExpr
@@ -242,6 +249,10 @@ SUM: 'sum';
 SEARCH: 'search';
 
 DISTINCT: 'distinct';
+
+MAX: 'max';
+
+MIN: 'min';
 
 ORDER_BY: 'order by';
 

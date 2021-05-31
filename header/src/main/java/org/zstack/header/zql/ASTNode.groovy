@@ -1,5 +1,7 @@
 package org.zstack.header.zql
 
+import java.util.stream.Collector
+
 class ASTNode {
     private static final Map<Class, List<String>> childrenNames = [:]
 
@@ -26,9 +28,46 @@ class ASTNode {
     }
 
     interface Function {
+        String functionName()
     }
 
     static class Distinct extends ASTNode implements Function {
+        @Override
+        String functionName() {
+            return "distinct"
+        }
+    }
+
+    static class Max extends ASTNode implements Function {
+        @Override
+        String functionName() {
+            return "max"
+        }
+    }
+
+    static class Min extends ASTNode implements Function {
+        @Override
+        String functionName() {
+            return "min"
+        }
+    }
+
+    static class Field extends ASTNode {
+        List<String> fields
+    }
+
+    static class FieldWithFunction extends Field {
+        Function function
+        FieldWithFunction subFieldWithFunction
+
+        @Override
+        List<String> getFields() {
+            if (subFieldWithFunction != null) {
+                return subFieldWithFunction.fields
+            } else {
+                return super.fields
+            }
+        }
     }
 
     static class QueryTarget extends ASTNode {
@@ -39,6 +78,7 @@ class ASTNode {
     static class QueryTargetWithFunction extends QueryTarget {
         Function function
         QueryTargetWithFunction subTarget
+        List<FieldWithFunction> fieldsWithFunction
 
         static QueryTargetWithFunction valueOf(QueryTarget q) {
             return new QueryTargetWithFunction(entity: q.entity, fields: q.fields)
@@ -55,8 +95,28 @@ class ASTNode {
 
         @Override
         List<String> getFields() {
+            List<String> allFields = new ArrayList<>()
+            List<String> fieldWithoutFunction = getFieldsWithoutFunction()
+            if (fieldWithoutFunction != null) {
+                allFields.addAll(fieldWithoutFunction)
+            }
+            if (fieldsWithFunction != null) {
+                fieldsWithFunction.forEach{allFields.addAll(it.getFields())}
+            }
+            return allFields.isEmpty() ? null : allFields
+        }
+
+        void addField(String f) {
+            getFieldsWithoutFunction().add(f)
+        }
+
+        List<FieldWithFunction> getFieldsWithFunction() {
+            return fieldsWithFunction
+        }
+
+        List<String> getFieldsWithoutFunction() {
             if (subTarget != null) {
-                return subTarget.getFields()
+                return subTarget.getFieldsWithoutFunction()
             } else {
                 return super.getFields()
             }

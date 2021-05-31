@@ -1,10 +1,10 @@
 package org.zstack.zql.ast.visitors.plugin;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.zstack.header.zql.ASTNode;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class QueryPlugin extends AbstractQueryVisitorPlugin {
     public QueryPlugin() {
@@ -22,11 +22,16 @@ public class QueryPlugin extends AbstractQueryVisitorPlugin {
         if (fieldNames.isEmpty()) {
             queryTarget = entityAlias;
         } else {
-            List<String> qt = fieldNames.stream().map(f->String.format("%s.%s", inventory.simpleInventoryName(), f)).collect(Collectors.toList());
-            queryTarget = StringUtils.join(qt, ",");
+            queryTarget = StringUtils.join(buildFieldsWithoutFunction(), ",");
         }
 
-        return String.format(functions(), queryTarget);
+        String target = String.format(functions(), queryTarget);
+        String fieldWithFunction = StringUtils.join(buildFieldsWithFunction(), ",");
+        if (Strings.isNotEmpty(fieldWithFunction)) {
+            target = target + "," + fieldWithFunction;
+        }
+
+        return target;
     }
 
 

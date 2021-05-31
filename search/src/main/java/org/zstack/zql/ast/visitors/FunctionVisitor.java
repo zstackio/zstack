@@ -13,7 +13,7 @@ public class FunctionVisitor implements ASTVisitor<String, ASTNode> {
         if (node instanceof ASTNode.Distinct) {
             return (String) node.accept(new DistinctVistor());
         } else {
-            throw new CloudRuntimeException(String.format("should not be here, %s", node.getClass()));
+            return ((ASTNode.Function) node).functionName() + "(%s)";
         }
     }
 }

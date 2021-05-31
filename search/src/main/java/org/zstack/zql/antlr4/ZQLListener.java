@@ -306,6 +306,16 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link ZQLParser#fieldWithFunction}.
+	 * @param ctx the parse tree
+	 */
+	void enterFieldWithFunction(ZQLParser.FieldWithFunctionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#fieldWithFunction}.
+	 * @param ctx the parse tree
+	 */
+	void exitFieldWithFunction(ZQLParser.FieldWithFunctionContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ZQLParser#function}.
 	 * @param ctx the parse tree
 	 */

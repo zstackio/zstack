@@ -12,6 +12,10 @@ public class FunctionVistor extends ZQLBaseVisitor<ASTNode.Function> {
     public ASTNode.Function visitFunction(ZQLParser.FunctionContext ctx) {
         if (ctx.DISTINCT() != null) {
             return new ASTNode.Distinct();
+        } else if (ctx.MAX() != null) {
+            return new ASTNode.Max();
+        } else if (ctx.MIN() != null) {
+            return new ASTNode.Min();
         }
 
         return null;

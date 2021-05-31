@@ -78,19 +78,14 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
                 .map(uuid -> String.format("'%s'", uuid))
                 .collect(Collectors.joining(","));
 
-        if (src.simpleInventoryName().equals("IAM2VirtualIDInventory")) {
-            return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
-                            "  accountresourcerefvo.ownerAccountUuid in (%s) OR (accountresourcerefvo.resourceUuid" +
-                            " IN (SELECT sharedresourcevo.resourceUuid FROM SharedResourceVO sharedresourcevo WHERE" +
-                            " sharedresourcevo.receiverAccountUuid in (%s)))))",
-                    src.simpleInventoryName(), primaryKey, accountStr, accountStr);
-        } else {
-            return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
-                            "  accountresourcerefvo.ownerAccountUuid in (%s) OR (accountresourcerefvo.resourceUuid" +
-                            " IN (SELECT sharedresourcevo.resourceUuid FROM SharedResourceVO sharedresourcevo WHERE" +
-                            " sharedresourcevo.receiverAccountUuid in (%s) OR sharedresourcevo.toPublic = 1))))",
-                    src.simpleInventoryName(), primaryKey, accountStr, accountStr);
-        }
+        return getAccountResourceSql(src.simpleInventoryName(), primaryKey, accountStr);
+    }
 
+    protected String getAccountResourceSql(String inventoryName, String primaryKey, String accountStr) {
+        return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
+                        "  accountresourcerefvo.ownerAccountUuid in (%s) OR (accountresourcerefvo.resourceUuid" +
+                        " IN (SELECT sharedresourcevo.resourceUuid FROM SharedResourceVO sharedresourcevo WHERE" +
+                        " sharedresourcevo.receiverAccountUuid in (%s) OR sharedresourcevo.toPublic = 1))))",
+                inventoryName, primaryKey, accountStr, accountStr);
     }
 }
