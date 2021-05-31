@@ -370,11 +370,10 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
     @Override
     public void beforeDeleteAcl(AccessControlListInventory acl) {
         return;
-
     }
 
     @Override
     public void afterDeleteAcl(AccessControlListInventory acl) {
-        refreshLoadBalancerByAcl(acl.getUuid());
+        return;
     }
 }

@@ -1,6 +1,5 @@
 package org.zstack.network.service.virtualrouter.lb;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -589,8 +588,15 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     return entries;
                 }
                 Collections.sort(entries, (Comparator) (entry1, entry2) -> {
-                    if (entry1 instanceof AccessControlListEntryVO && entry2 instanceof AccessControlListEntryVO)
-                        return ((AccessControlListEntryVO) entry2).getDomain().length() - ((AccessControlListEntryVO) entry1).getDomain().length();
+                    if (entry1 instanceof AccessControlListEntryVO && entry2 instanceof AccessControlListEntryVO) {
+                        int i = ((AccessControlListEntryVO) entry2).getDomain().length() - ((AccessControlListEntryVO) entry1).getDomain().length();
+                        if (i == 0) {
+                            int urlLength1 = ((AccessControlListEntryVO) entry1).getUrl() == null ? 0 : ((AccessControlListEntryVO) entry1).getUrl().length();
+                            int urlLength2 = ((AccessControlListEntryVO) entry2).getUrl() == null ? 0 : ((AccessControlListEntryVO) entry2).getUrl().length();
+                            return urlLength2 - urlLength1;
+                        }
+                        return i;
+                    }
                     throw new ClassCastException("cant translate to AccessControlListEntryVO");
                 });
                 return entries;

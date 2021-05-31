@@ -9,7 +9,10 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.workflow.SimpleFlowChain;
+import org.zstack.header.acl.AccessControlListInventory;
+import org.zstack.header.acl.AccessControlListVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
@@ -27,10 +30,11 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -61,6 +65,44 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
     }
 
     private void handleDeletion(CascadeAction action, final Completion completion) {
+        if (AccessControlListVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            List<AccessControlListInventory> acls = (List<AccessControlListInventory>) action.getParentIssuerContext();
+            AccessControlListInventory acl = acls.get(0);
+
+            List<LoadBalancerListenerACLRefVO> refVOS = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.aclUuid, acl.getUuid()).list();
+            if (refVOS.isEmpty()) {
+                completion.success();
+                return;
+            }
+
+            LoadBalancerListenerVO listenerVO = Q.New(LoadBalancerListenerVO.class).eq(LoadBalancerListenerVO_.uuid, refVOS.get(0).getListenerUuid()).find();
+            if (listenerVO.getLoadBalancerUuid() == null) {
+                completion.success();
+                return;
+            }
+
+            RemoveAccessControlListFromLoadBalancerMsg msg = new RemoveAccessControlListFromLoadBalancerMsg();
+            msg.setLoadBalancerUuid(listenerVO.getLoadBalancerUuid());
+            msg.setAclUuids(Collections.singletonList(acl.getUuid()));
+            msg.setServerGroupUuids(refVOS.stream().filter(ref -> ref.getServerGroupUuid() != null).map(LoadBalancerListenerACLRefVO::getServerGroupUuid).collect(Collectors.toList()));
+            msg.setListenerUuid(listenerVO.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, listenerVO.getLoadBalancerUuid());
+
+            bus.send(msg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        completion.fail(reply.getError());
+                        return;
+                    }
+                    completion.success();
+                }
+            });
+
+            return;
+        }
+
+
         FlowChain chain = new SimpleFlowChain();
         chain.setName("delete-lb-and-lb-certs");
         chain.then(new NoRollbackFlow() {
@@ -167,6 +209,7 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
         List<String> ret = new ArrayList<>();
         ret.add(AccountVO.class.getSimpleName());
         ret.add(VipVO.class.getSimpleName());
+        ret.add(AccessControlListVO.class.getSimpleName());
         return ret;
     }
 
