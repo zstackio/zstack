@@ -17,7 +17,7 @@ public class APIGetLoadBalancerListenerACLEntriesMsg extends APISyncCallMessage 
     @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true, required = false)
     private List<String> listenerUuids;
 
-    @APIParam(required = false)
+    @APIParam(required = false, validValues = {"RedirectRule", "IpEntry"})
     private String type;
 
     public List<String> getListenerUuids() {

@@ -159,15 +159,16 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             List<String> aclOfListenerUuids = new ArrayList<>();
             if (StringUtils.isBlank(msg.getType())) {
                 aclOfListenerUuids = loadBalancerListenerACLRefVOS.stream().filter(ref -> ref.getListenerUuid().equals(listenUuid))
-                        .map(LoadBalancerListenerACLRefVO::getAclUuid).distinct().collect(Collectors.toList());
+                        .map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList());
             } else {
                 aclOfListenerUuids = loadBalancerListenerACLRefVOS.stream().filter(ref -> ref.getListenerUuid().equals(listenUuid) && ref.getType().equals(msg.getType()))
-                        .map(LoadBalancerListenerACLRefVO::getAclUuid).distinct().collect(Collectors.toList());
+                        .map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList());
             }
+            aclOfListenerUuids = aclOfListenerUuids.stream().distinct().collect(Collectors.toList());
             ArrayList<APIGetLoadBalancerListenerACLEntriesReply.LoadBalancerACLEntry> entries = new ArrayList<>();
             for (String aclUuid : aclOfListenerUuids) {
                 List<AccessControlListEntryVO> aclEntriesOfAcl = aclEntries.stream().filter(aclEntry -> StringUtils.equals(aclEntry.getAclUuid(), aclUuid)).collect(Collectors.toList());
-                for (AccessControlListEntryVO entryVO : aclEntries) {
+                for (AccessControlListEntryVO entryVO : aclEntriesOfAcl) {
                     APIGetLoadBalancerListenerACLEntriesReply.LoadBalancerACLEntry loadBalancerACLEntry = new APIGetLoadBalancerListenerACLEntriesReply.LoadBalancerACLEntry();
                     loadBalancerACLEntry.valueOf(entryVO);
                     List<String> serverGroupUuids = loadBalancerListenerACLRefVOS.stream().filter(ref -> ref.getAclUuid().equals(aclUuid) && ref.getListenerUuid().equals(listenUuid) && ref.getServerGroupUuid()!=null).map(LoadBalancerListenerACLRefVO::getServerGroupUuid).collect(Collectors.toList());
