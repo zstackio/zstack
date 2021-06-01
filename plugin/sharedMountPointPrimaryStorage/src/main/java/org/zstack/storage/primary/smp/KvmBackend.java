@@ -53,6 +53,9 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
+import org.zstack.storage.snapshot.VolumeSnapshotSystemTags;
+import org.zstack.storage.volume.VolumeSystemTags;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -112,6 +115,17 @@ public class KvmBackend extends HypervisorBackend {
         public String templatePathInCache;
         public String installPath;
         public String volumeUuid;
+    }
+
+    public static class CreateVolumeWithBackingCmd extends AgentCmd {
+        public String templatePathInCache;
+        public String installPath;
+        public String volumeUuid;
+    }
+
+    public static class CreateVolumeWithBackingRsp extends AgentRsp {
+        public long actualSize;
+        public long size;
     }
 
     public static class CreateFolderCmd extends AgentCmd {
@@ -248,6 +262,7 @@ public class KvmBackend extends HypervisorBackend {
 
     public static final String CONNECT_PATH = "/sharedmountpointprimarystorage/connect";
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/sharedmountpointprimarystorage/createrootvolume";
+    public static final String CREATE_VOLUME_WITH_BACKING_PATH = "/sharedmountpointprimarystorage/createvolumewithbacking";
     public static final String DELETE_BITS_PATH = "/sharedmountpointprimarystorage/bits/delete";
     public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/sharedmountpointprimarystorage/createtemplatefromvolume";
     public static final String UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/upload";
@@ -1109,8 +1124,15 @@ public class KvmBackend extends HypervisorBackend {
 
     @Override
     void handle(CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, final ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion) {
-        final String installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
-        VolumeSnapshotInventory latest = msg.getSnapshot();
+        if (msg.hasSystemTag(VolumeSystemTags.FAST_CREATE::isMatch)) {
+            createIncrementalVolumeFromSnapshot(msg.getSnapshot(), msg.getVolumeUuid(), completion);
+        } else {
+            createNormalVolumeFromSnapshot(msg.getSnapshot(), msg.getVolumeUuid(), completion);
+        }
+    }
+
+    private void createNormalVolumeFromSnapshot(VolumeSnapshotInventory latest, String volumeUuid, final ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion) {
+        final String installPath = makeDataVolumeInstallUrl(volumeUuid);
         MergeSnapshotCmd cmd = new MergeSnapshotCmd();
         cmd.volumeUuid = latest.getVolumeUuid();
         cmd.snapshotInstallPath = latest.getPrimaryStorageInstallPath();
@@ -1134,7 +1156,40 @@ public class KvmBackend extends HypervisorBackend {
         });
     }
 
-    @Override
+    private void createIncrementalVolumeFromSnapshot(VolumeSnapshotInventory latest, String volumeUuid, final ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion) {
+        final String installPath = makeDataVolumeInstallUrl(volumeUuid);
+        CreateVolumeWithBackingCmd cmd = new CreateVolumeWithBackingCmd();
+        cmd.volumeUuid = latest.getVolumeUuid();
+        cmd.templatePathInCache = latest.getPrimaryStorageInstallPath();
+        cmd.installPath = installPath;
+
+        new Do().go(CREATE_VOLUME_WITH_BACKING_PATH, cmd, CreateVolumeWithBackingRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+            @Override
+            public void success(AgentRsp returnValue) {
+                CreateVolumeWithBackingRsp rsp = (CreateVolumeWithBackingRsp) returnValue;
+                CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
+                reply.setActualSize(rsp.actualSize);
+                reply.setInstallPath(installPath);
+                reply.setSize(rsp.size);
+                createProtectTag();
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+
+            private void createProtectTag() {
+                SystemTagCreator creator = VolumeSnapshotSystemTags.BACKING_TO_VOLUME.newSystemTagCreator(latest.getUuid());
+                creator.unique = false;
+                creator.setTagByTokens(Collections.singletonMap(VolumeSnapshotSystemTags.BACKING_VOLUME_TOKEN, volumeUuid));
+                creator.create();
+            }
+        });
+    }
+
+        @Override
     void handle(GetDownloadBitsFromKVMHostProgressMsg msg, final ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressReply> completion) {
         GetDownloadBitsFromKVMHostProgressCmd cmd = new GetDownloadBitsFromKVMHostProgressCmd();
         cmd.volumePaths = msg.getVolumePaths();
