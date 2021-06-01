@@ -6,13 +6,12 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.rest.RestResponse;
-import org.zstack.utils.BeanUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.FieldUtils;
-import org.zstack.utils.TypeUtils;
+import org.zstack.utils.*;
+import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,6 +21,7 @@ import static java.util.Arrays.asList;
 
 
 public abstract class APIMessage extends NeedReplyMessage implements ConfigurableTimeoutMessage {
+    private static final CLogger logger = Utils.getLogger(APIMessage.class);
     /**
      * @ignore
      */
@@ -272,6 +272,10 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
                 }
             }
 
+            if (f.getName() == "name" && value instanceof String && StringUtils.isEmpty((String) value)) {
+                throw new InvalidApiMessageException("field[%s] cannot be an empty string", f.getName());
+            }
+
             if (value != null &&!at.emptyString()) {
                 if (value instanceof String && StringUtils.isEmpty((String) value)) {
                     throw new InvalidApiMessageException("field[%s] cannot be an empty string", f.getName());
@@ -288,6 +292,11 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
                 DebugUtils.Assert(at.numberRange().length == 2, String.format("invalid field[%s], APIParam.numberRange must have and only have 2 items", f.getName()));
                 long low = at.numberRange()[0];
                 long high = at.numberRange()[1];
+                BigDecimal bdval = new BigDecimal(String.valueOf(value));
+                if (bdval.compareTo(new BigDecimal(String.valueOf(Long.MAX_VALUE))) == 1){
+                    throw new InvalidApiMessageException("field[%s] must be in range of [%s, %s]", f.getName(), low, high);
+                }
+
                 long val = ((Number) value).longValue();
                 if (val < low || val > high) {
                     if (at.numberRangeUnit().length > 0) {

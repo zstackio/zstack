@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 @TagResourceType(ImageVO.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
 public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessage implements APIAuditor {
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, emptyString = false)
     private String name;
     @APIParam(required = false, maxLength = 2048)
     private String description;

@@ -99,7 +99,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
 
     @Override
     public String getId() {
-        return bus.makeLocalServiceId(SERVICE_ID);
+        return bus.makeLocalServiceId(ResourceConfigConstant.SERVICE_ID);
     }
 
     @Override

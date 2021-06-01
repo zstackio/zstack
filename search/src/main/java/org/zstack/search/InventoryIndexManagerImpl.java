@@ -300,11 +300,7 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
 
             /* only for debugging */
             if (deleteAllIndexWhenStart) {
-                try {
-                    deleteIndex(null);
-                } catch (Exception ex) {
-                    logger.warn(String.format("Failed to delete all index"), ex);
-                }
+                deleteNull();
             }
 
             populateExtensions();
@@ -347,6 +343,14 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
 
     @Override
     public void beforeCompletion(Operation op, Class<?>... entityClass) {
+    }
+
+    private void deleteNull() {
+        try {
+            deleteIndex(null);
+        } catch (Exception ex) {
+            logger.warn(String.format("Failed to delete all index"), ex);
+        }
     }
 
     private void sendBulk(final String requestBody, final String inventoryName) {

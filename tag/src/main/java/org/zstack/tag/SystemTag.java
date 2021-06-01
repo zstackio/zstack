@@ -185,7 +185,7 @@ public class SystemTag {
         Map<String, List<String>> ret = new HashMap<>();
         for (Tuple t : ts) {
             String uuid = t.get(1, String.class);
-            List<String> tags = ret.get(uuid);
+            List<String> tags = ret.computeIfAbsent(uuid, null);
             if (tags == null) {
                 tags = new ArrayList<>();
                 ret.put(uuid, tags);

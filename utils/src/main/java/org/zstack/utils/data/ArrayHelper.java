@@ -36,7 +36,7 @@ public class ArrayHelper {
             }
             return lst.toArray((T[]) Array.newInstance(returnClassType, lst.size()));
         } catch (Exception e) {
-            throw new RuntimeException(String.format("Unable to extract field[%s] from array[%s] to array of type[%s]", fieldName, c.toString(),
+            throw new RuntimeException(String.format("Unable to extract field[%s] from array[%s] to array of type[%s]", fieldName, Arrays.toString(c),
                     returnClassType.getName()));
         }
     }

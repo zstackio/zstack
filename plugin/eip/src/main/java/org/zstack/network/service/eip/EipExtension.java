@@ -217,7 +217,9 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
         Map<String, List<EipStruct>> map = workOutEipStruct(spec);
         Map<String, List<EipStruct>> applieds = new HashMap<String, List<EipStruct>>();
         data.put(SUCCESS, applieds);
-        applyNetworkService(map.entrySet().iterator(), applieds, completion);
+        if (map != null) {
+            applyNetworkService(map.entrySet().iterator(), applieds, completion);
+        }
     }
 
 
@@ -280,9 +282,11 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
             map = (Map<String, List<EipStruct>>) data.get(SUCCESS);
         } else {
             map = workOutEipStruct(spec);
-            for (Map.Entry<String, List<EipStruct>> e : map.entrySet()) {
-                for (EipStruct struct : e.getValue()) {
-                    struct.setHostUuid(spec.getDestHost().getUuid());
+            if (map != null){
+                for (Map.Entry<String, List<EipStruct>> e : map.entrySet()) {
+                    for (EipStruct struct : e.getValue()) {
+                        struct.setHostUuid(spec.getDestHost().getUuid());
+                    }
                 }
             }
         }

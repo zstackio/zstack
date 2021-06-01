@@ -32,7 +32,7 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, HasS
     @APIParam(maxLength = 1024)
     @NoLogging(type = NoLogging.Type.Uri)
     private String url;
-    @APIParam(required = false, validValues = {"RootVolumeTemplate", "ISO", "DataVolumeTemplate"})
+    @APIParam(required = false, validValues = {"RootVolumeTemplate", "ISO", "DataVolumeTemplate", "Kernel"})
     private String mediaType;
     @APIParam(maxLength = 255, required = false)
     private String guestOsType;
@@ -41,11 +41,13 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, HasS
     private boolean system;
     @APIParam(required = false)
     private String format;
-    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
+    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio", "Embedded"})
     private String platform;
     @APIParam(nonempty = true, resourceType = BackupStorageVO.class, noOwnerCheck = true)
     private List<String> backupStorageUuids;
     private String type;
+    private String dtbUrl;
+    private String initrdUrl;
 
     public String getFormat() {
         return format;
@@ -137,7 +139,23 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, HasS
     public void setType(String imageType) {
         this.type = imageType;
     }
- 
+
+    public String getDtbUrl() {
+        return dtbUrl;
+    }
+
+    public void setDtbUrl(String dtbUrl) {
+        this.dtbUrl = dtbUrl;
+    }
+
+    public String getInitrdUrl() {
+        return initrdUrl;
+    }
+
+    public void setInitrdUrl(String initrdUrl) {
+        this.initrdUrl = initrdUrl;
+    }
+
     public static APIAddImageMsg __example__() {
         APIAddImageMsg msg = new APIAddImageMsg();
 
