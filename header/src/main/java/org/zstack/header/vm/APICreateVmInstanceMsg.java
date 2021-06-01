@@ -110,7 +110,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
      * @choices - UserVm
      * - ApplianceVm
      */
-    @APIParam(validValues = {"UserVm", "ApplianceVm"}, required = false)
+    @APIParam(validValues = {"UserVm", "ApplianceVm", "LiveVm"}, required = false)
     private String type;
     /**
      * @desc disk offering uuid for root volume. Optional when vm is created from RootVolumeTemplate,

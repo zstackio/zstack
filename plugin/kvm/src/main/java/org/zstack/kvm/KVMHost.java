@@ -42,6 +42,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
+import org.zstack.header.image.Image;
 import org.zstack.header.image.ImageArchitecture;
 import org.zstack.header.image.ImageBootMode;
 import org.zstack.header.image.ImagePlatform;
@@ -2545,6 +2546,9 @@ public class KVMHost extends HostBase implements Host {
 
         int cpuNum = spec.getVmInventory().getCpuNum();
         cmd.setCpuNum(cpuNum);
+        String imageUuid = spec.getImageSpec().getInventory().getUuid();
+        cmd.setImageUuid(imageUuid);
+        cmd.setPsUrl(dbf.findByUuid(spec.getDestRootVolume().getPrimaryStorageUuid(), PrimaryStorageVO.class).getUrl());
 
         int socket;
         int cpuOnSocket;
@@ -2616,7 +2620,7 @@ public class KVMHost extends HostBase implements Host {
                 cmd.setPredefinedPciBridgeNum(1);
             }
         }
-
+        cmd.setGuestOsType(spec.getImageSpec().getInventory().getGuestOsType());
         VmPriorityLevel level = new VmPriorityOperator().getVmPriority(spec.getVmInventory().getUuid());
         VmPriorityConfigVO priorityVO = Q.New(VmPriorityConfigVO.class).eq(VmPriorityConfigVO_.level, level).find();
         cmd.setPriorityConfigStruct(new PriorityConfigStruct(priorityVO, spec.getVmInventory().getUuid()));
