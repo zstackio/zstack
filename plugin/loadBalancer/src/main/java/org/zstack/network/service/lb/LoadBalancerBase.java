@@ -1571,7 +1571,7 @@ public class LoadBalancerBase {
 
                 boolean needRefresh = false;
                 if (!detachSgUuids.isEmpty()) {
-                    SQL.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.serverGroupUuid, detachSgUuids).delete();
+                    SQL.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuid()).in(LoadBalancerListenerACLRefVO_.serverGroupUuid, detachSgUuids).delete();
                     needRefresh = needRefresh | isServerGroupsOwnActiveBackenServer(detachSgUuids);
                 }
                 if (!attachSgUuids.isEmpty()) {
@@ -1608,7 +1608,7 @@ public class LoadBalancerBase {
                                     dbf.persistCollection(refs);
                                 }
                                 if (!attachSgUuids.isEmpty()) {
-                                    SQL.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.serverGroupUuid, attachSgUuids).delete();
+                                    SQL.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuid()).in(LoadBalancerListenerACLRefVO_.serverGroupUuid, attachSgUuids).delete();
                                 }
                                 logger.warn(String.format("update listener [uuid:%s] failed", msg.getLoadBalancerUuid()));
                                 evt.setError(reply.getError());
