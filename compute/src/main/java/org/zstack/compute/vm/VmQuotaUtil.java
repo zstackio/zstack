@@ -77,8 +77,8 @@ public class VmQuotaUtil {
                 " and ref.accountUuid = :auuid" +
                 " and ref.resourceType = :rtype" +
                 " and not (vm.state = :starting and vm.hostUuid is null)" +
-                " and vm.state not in (:states)";
-
+                " and vm.state not in (:states)" +
+                " and vm.type != :vmtype";
         if (excludeVmUuid != null) {
             sql += " and vm.uuid != (:excludeVmUuid)";
         }
@@ -89,6 +89,7 @@ public class VmQuotaUtil {
         q.setParameter("starting", VmInstanceState.Starting);
         q.setParameter("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying,
                 VmInstanceState.Destroyed, VmInstanceState.Created));
+        q.setParameter("vmtype", "baremetal2");
 
         if (excludeVmUuid != null) {
             q.setParameter("excludeVmUuid", excludeVmUuid);
@@ -108,11 +109,13 @@ public class VmQuotaUtil {
                 " and ref.accountUuid = :auuid" +
                 " and ref.resourceType = :rtype" +
                 " and not (vm.hostUuid is null and vm.lastHostUuid is null)" +
-                " and vm.state not in (:states)";
+                " and vm.state not in (:states)" +
+                " and vm.type != :vmtype";
         TypedQuery<Long> q2 = dbf.getEntityManager().createQuery(sql2, Long.class);
         q2.setParameter("auuid", accountUUid);
         q2.setParameter("rtype", VmInstanceVO.class.getSimpleName());
         q2.setParameter("states", list(VmInstanceState.Destroyed));
+        q2.setParameter("vmtype", "baremetal2");
         Long totalVmNum = q2.getSingleResult();
         quota.totalVmNum = totalVmNum == null ? 0 : totalVmNum;
 
