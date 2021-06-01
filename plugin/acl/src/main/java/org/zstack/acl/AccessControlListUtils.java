@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 
 public class AccessControlListUtils {
     private static String domainStr = "^((\\*)[-a-zA-Z0-9]{0,62}|[a-zA-Z0-9][-a-zA-Z0-9]{0,62})(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$";
-    private static String urlStr= "^(/[a-zA-Z0-9\\.\\-\\?%#&]+)([a-zA-Z0-9\\.\\-\\?/%#&])?$";
+    private static String urlStr= "^(/[a-zA-Z0-9\\.\\-\\?%#&]+)([a-zA-Z0-9\\.\\-\\?/%#&])*$";
 
     public static Pattern domainPattern = Pattern.compile(domainStr);
     public static Pattern urlPattern = Pattern.compile(urlStr);

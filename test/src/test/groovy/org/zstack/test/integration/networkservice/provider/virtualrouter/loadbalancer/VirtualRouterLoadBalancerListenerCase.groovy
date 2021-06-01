@@ -905,7 +905,6 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         //assert redirectRule.redirectRule.matches('base_reg -i zstack\\.io/test')
         assert redirectRule.redirectRuleUuid.equals(redirectRule1.uuid)
 
-        cmd = null
         /*create other redirect rule, add to acl2*/
         AccessControlListEntryInventory redirectRule2 = addAccessControlListRedirectRule {
             name = "redirect rule"
@@ -913,6 +912,15 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             url = "/test"
             aclUuid = acl2.uuid
         }
+
+        /*attach acl2 to sg7*/
+        addAccessControlListToLoadBalancer {
+            aclUuids = [acl2.uuid]
+            aclType = "redirect"
+            listenerUuid = lblRes.value.inventory.uuid
+            serverGroupUuids = [servergroup7.uuid]
+        }
+
         LoadBalancerServerGroupInventory servergroup8 = createLoadBalancerServerGroup{
             loadBalancerUuid =  load.uuid
             name = "lb-sg-8"
@@ -926,13 +934,31 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             vmNics = [['uuid':vm3.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid,'weight':'100']]
         }
         /*attach acl to server group, not refresh because no vm nic*/
+        cmd = null
+        LoadBalancerListerAcl res = changeAccessControlListServerGroup {
+            listenerUuid = lblRes.value.inventory.uuid
+            aclUuid = acl2.uuid
+            serverGroupUuids = [servergroup8.uuid]
+        } as LoadBalancerListerAcl
+        listenerACLRefVOs = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.aclUuid, acl.uuid).eq(LoadBalancerListenerACLRefVO_.listenerUuid, lblRes.value.inventory.uuid).list()
+        assert listenerACLRefVOs.size() == 1
+        assert listenerACLRefVOs[0].serverGroupUuid == servergroup7.uuid
+
+        removeAccessControlListFromLoadBalancer {
+            serverGroupUuids = [servergroup8.uuid]
+            listenerUuid = lblRes.value.inventory.uuid
+            aclUuids = [acl2.uuid]
+        }
+
+
+        cmd = null
         addAccessControlListToLoadBalancer {
             aclUuids = [acl2.uuid]
             aclType = "redirect"
             listenerUuid = lblRes.value.inventory.uuid
             serverGroupUuids = [servergroup8.uuid]
         }
-        sleep(5000)
+        sleep(2000)
         lbTO =cmd.lbs.stream().filter{lb -> lb.listenerUuid.equals(lblRes.value.inventory.uuid)}.collect(Collectors.toList())[0] as VirtualRouterLoadBalancerBackend.LbTO
         assert lbTO.getServerGroups().size() == 3
         assert lbTO.getRedirectRules().size() == 2
@@ -961,11 +987,12 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
 
         /*change acl server group*/
         cmd = null
-        LoadBalancerListerAcl res = changeAccessControlListServerGroup {
+        res = changeAccessControlListServerGroup {
             listenerUuid = lblRes.value.inventory.uuid
             aclUuid = acl2.uuid
             serverGroupUuids = [servergroup7.uuid, servergroup8.uuid]
         } as LoadBalancerListerAcl
+
         assert res.getServerGroupUuids().size() == 2
         assert res.getServerGroupUuids().contains(servergroup7.uuid)
         assert res.getServerGroupUuids().contains(servergroup8.uuid)
@@ -974,7 +1001,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         assert lblAclRefVOs.size() == 2
         assert [servergroup7.uuid, servergroup8.uuid].contains(lblAclRefVOs[0].getServerGroupUuid()) &&  [servergroup7.uuid, servergroup8.uuid].contains(lblAclRefVOs[1].getServerGroupUuid())
 
-        sleep(3000)
+        sleep(2000)
         lbTO =cmd.lbs.stream().filter{lb -> lb.listenerUuid.equals(lblRes.value.inventory.uuid)}.collect(Collectors.toList())[0] as VirtualRouterLoadBalancerBackend.LbTO
         assert lbTO.getServerGroups().size() == 3
         assert lbTO.getRedirectRules().size() == 2
