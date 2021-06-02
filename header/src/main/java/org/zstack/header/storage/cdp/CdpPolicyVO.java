@@ -21,11 +21,11 @@ public class CdpPolicyVO extends CdpPolicyAO {
 
     protected CdpPolicyVO(CdpPolicyVO vo) {
         this.setUuid(vo.getUuid());
-        this.setCdpPolicyName(vo.getCdpPolicyNameName());
-        this.setPolicyDescription(vo.getPolicyDescription());
-        this.setCdpPreserveTime(vo.getCdpPreserveTime());
-        this.setCdpBpInMinutes(vo.getCdpBpInMinutes());
-        this.setCdpRpInSeconds(vo.getCdpRpInSeconds());
+        this.setCdpPolicyName(vo.getCdpPolicyName());
+        this.setCdpPolicyDescription(vo.getCdpPolicyDescription());
+        this.setCdpRetentionTime(vo.getCdpRetentionTime());
+        this.setCdpIncrementalPointInMinutes(vo.getCdpIncrementalPointInMinutes());
+        this.setCdpRecoveryPointInSeconds(vo.getCdpRecoveryPointInSeconds());
     }
 
 }

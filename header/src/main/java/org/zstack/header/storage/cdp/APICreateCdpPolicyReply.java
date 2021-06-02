@@ -8,53 +8,53 @@ import org.zstack.header.rest.RestResponse;
  */
 @RestResponse(allTo = "inventory")
 public class APICreateCdpPolicyReply extends APIReply {
-    private String policyName;
-    private String policyDescription;
-    private Integer PreserveTimeInDays;
-    private Integer bpInMinutes;
-    private Integer rpInSeconds;
+    private String name;
+    private String description;
+    private Integer retentionTimeInDays;
+    private Integer incrementalPointInMinutes;
+    private Integer recoveryPointInSeconds;
 
-    public void setCdpPolicyName(String policyName) {
-        this.policyName = policyName;
+    public void setCdpPolicyName(String name) {
+        this.name = name;
     }
-    public String getCdpPolicyNameName() {
-        return policyName;
-    }
-
-    public void setPolicyDescription(String policyDescription) {this.policyDescription = policyDescription; }
-    public String getPolicyDescription() {
-        return policyDescription;
+    public String getCdpPolicyName() {
+        return name;
     }
 
-    public void setCdpPreserveTime(Integer PreserveTimeInDays) {
-        this.PreserveTimeInDays = PreserveTimeInDays;
-    }
-    public Integer getCdpPreserveTime() {
-        return PreserveTimeInDays;
+    public void setCdpPolicyDescription(String description) {this.description = description; }
+    public String getCdpPolicyDescription() {
+        return description;
     }
 
-    public void setCdpBpInMinutes(Integer bpInMinutes) {
-        this.bpInMinutes = bpInMinutes;
+    public void setCdpRetentionTime(Integer retentionTimeInDays) {
+        this.retentionTimeInDays = retentionTimeInDays;
     }
-    public Integer getCdpBpInMinutes() {
-        return bpInMinutes;
+    public Integer getCdpRetentionTime() {
+        return retentionTimeInDays;
     }
 
-    public void setCdpRpInSeconds(Integer rpInSeconds) {
-        this.rpInSeconds = rpInSeconds;
+    public void setCdpIncrementalPointInMinutes(Integer incrementalPointInMinutes) {
+        this.incrementalPointInMinutes = incrementalPointInMinutes;
     }
-    public Integer getCdpRpInSeconds() {
-        return rpInSeconds;
+    public Integer getCdpIncrementalPointInMinutes() {
+        return incrementalPointInMinutes;
+    }
+
+    public void setCdpRecoveryPointInSeconds(Integer recoveryPointInSeconds) {
+        this.recoveryPointInSeconds = recoveryPointInSeconds;
+    }
+    public Integer getCdpRecoveryPointInSeconds() {
+        return recoveryPointInSeconds;
     }
 
     public static APICreateCdpPolicyReply __example__() {
         APICreateCdpPolicyReply reply = new APICreateCdpPolicyReply();
 
         reply.setCdpPolicyName("MyCdpPolicyName");
-        reply.setPolicyDescription("MyCdpDescription");
-        reply.setCdpPreserveTime(7);
-        reply.setCdpBpInMinutes(60);
-        reply.setCdpRpInSeconds(5);
+        reply.setCdpPolicyDescription("MyCdpDescription");
+        reply.setCdpRetentionTime(7);
+        reply.setCdpIncrementalPointInMinutes(60);
+        reply.setCdpRecoveryPointInSeconds(5);
 
         return reply;
     }

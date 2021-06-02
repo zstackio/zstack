@@ -119,18 +119,18 @@ public class CdpBackupStorageManagerImpl extends AbstractService implements CdpB
         }
 
         vo.setCdpPolicyName(msg.getCdpPolicyNameName());
-        vo.setPolicyDescription(msg.getPolicyDescription());
-        vo.setCdpPreserveTime(msg.getCdpPreserveTime());
-        vo.setCdpBpInMinutes(msg.getCdpBpInMinutes());
-        vo.setCdpRpInSeconds(msg.getCdpRpInSeconds());
+        vo.setCdpPolicyDescription(msg.getCdpPolicyDescription());
+        vo.setCdpRetentionTime(msg.getCdpRetentionTime());
+        vo.setCdpIncrementalPointInMinutes(msg.getCdpIncrementalPointInMinutes());
+        vo.setCdpRecoveryPointInSeconds(msg.getCdpRecoveryPointInSeconds());
         dbf.persistAndRefresh(vo);
 
         APICreateCdpPolicyReply reply = new APICreateCdpPolicyReply();
         reply.setCdpPolicyName(msg.getCdpPolicyNameName());
-        reply.setPolicyDescription(msg.getPolicyDescription());
-        reply.setCdpPreserveTime(msg.getCdpPreserveTime());
-        reply.setCdpBpInMinutes(msg.getCdpBpInMinutes());
-        reply.setCdpRpInSeconds(msg.getCdpRpInSeconds());
+        reply.setCdpPolicyDescription(msg.getCdpPolicyDescription());
+        reply.setCdpRetentionTime(msg.getCdpRetentionTime());
+        reply.setCdpIncrementalPointInMinutes(msg.getCdpIncrementalPointInMinutes());
+        reply.setCdpRecoveryPointInSeconds(msg.getCdpRecoveryPointInSeconds());
         bus.reply(msg, reply);
     }
 
