@@ -226,6 +226,7 @@ public class CephPrimaryStorageSimulator {
         CreateSnapshotRsp rsp = new CreateSnapshotRsp();
         Long size = config.createSnapshotCmdSize.get(cmd.getVolumeUuid());
         rsp.setActualSize(size == null ? 0 : size);
+        rsp.setInstallPath(cmd.getSnapshotPath());
 
         reply(entity, rsp);
         return null;
