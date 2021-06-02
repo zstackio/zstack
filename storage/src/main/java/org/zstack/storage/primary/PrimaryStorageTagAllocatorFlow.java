@@ -8,9 +8,9 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.storage.primary.PrimaryStorageAllocationSpec;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
@@ -22,10 +22,10 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.DebugUtils;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -74,7 +74,7 @@ public class PrimaryStorageTagAllocatorFlow extends NoRollbackFlow {
     }
 
     protected List<PrimaryStorageVO> callTagExtensions(List<SystemTagInventory> tags, List<PrimaryStorageVO> candidates) {
-        List<PrimaryStorageVO> ret = null;
+        List<PrimaryStorageVO> ret;
         for (PrimaryStorageTagAllocatorExtensionPoint extp : tagExtensions) {
             ret = extp.allocatePrimaryStorage(tags, candidates);
             if (ret == null) {

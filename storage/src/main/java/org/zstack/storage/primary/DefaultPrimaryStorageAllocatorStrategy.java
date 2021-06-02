@@ -23,7 +23,7 @@ import static org.zstack.utils.CollectionDSL.map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 class DefaultPrimaryStorageAllocatorStrategy implements PrimaryStorageAllocatorStrategy {
-    private FlowChainBuilder allocateBuilder;
+    private final FlowChainBuilder allocateBuilder;
     private FlowChainBuilder sortBuilder;
 
     @Autowired

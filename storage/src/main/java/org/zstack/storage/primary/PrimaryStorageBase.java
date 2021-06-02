@@ -412,7 +412,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected void handle(final CleanUpTrashOnPrimaryStroageMsg msg) {
         MessageReply reply = new MessageReply();
         thdf.chainSubmit(new ChainTask(msg) {
-            private String name = String.format("cleanup-trash-on-%s", self.getUuid());
+            private final String name = String.format("cleanup-trash-on-%s", self.getUuid());
 
             @Override
             public String getSyncSignature() {
@@ -938,7 +938,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected void handle(final CleanUpTrashOnPrimaryStorageMsg msg) {
         MessageReply reply = new MessageReply();
         thdf.chainSubmit(new ChainTask(msg) {
-            private String name = String.format("cleanup-trash-on-%s", self.getUuid());
+            private final String name = String.format("cleanup-trash-on-%s", self.getUuid());
 
             @Override
             public String getSyncSignature() {
@@ -984,7 +984,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
 
         List<ErrorCode> errs = new ArrayList<>();
-        new While<>(trashs).all((trash, coml) -> {
+        new While<>(trashs).step((trash, coml) -> {
             cleanTrash(trash.getTrashId(), new ReturnValueCompletion<CleanTrashResult>(coml) {
                 @Override
                 public void success(CleanTrashResult res) {
@@ -999,7 +999,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     coml.done();
                 }
             });
-        }).run(new WhileDoneCompletion(completion) {
+        }, 5).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (errs.isEmpty()) {
@@ -1014,7 +1014,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected void handle(final APICleanUpTrashOnPrimaryStorageMsg msg) {
         APICleanUpTrashOnPrimaryStorageEvent evt = new APICleanUpTrashOnPrimaryStorageEvent(msg.getId());
         thdf.chainSubmit(new ChainTask(msg) {
-            private String name = String.format("cleanup-trash-on-%s", self.getUuid());
+            private final String name = String.format("cleanup-trash-on-%s", self.getUuid());
 
             @Override
             public String getSyncSignature() {
@@ -1545,7 +1545,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
 
         final String issuer = PrimaryStorageVO.class.getSimpleName();
-        final List<PrimaryStorageInventory> ctx = PrimaryStorageInventory.valueOf(Arrays.asList(self));
+        final List<PrimaryStorageInventory> ctx = PrimaryStorageInventory.valueOf(Collections.singletonList(self));
         self.setState(PrimaryStorageState.Deleting);
         self = dbf.updateAndRefresh(self);
 

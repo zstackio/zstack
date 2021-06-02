@@ -1,7 +1,6 @@
 package org.zstack.storage.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.storage.primary.*;

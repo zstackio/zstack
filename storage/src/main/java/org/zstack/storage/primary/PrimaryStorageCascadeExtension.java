@@ -8,7 +8,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
@@ -36,8 +35,6 @@ public class PrimaryStorageCascadeExtension extends AbstractAsyncCascadeExtensio
     private PrimaryStorageExtensionPointEmitter extpEmitter;
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private ErrorFacade errf;
 
     private static final String NAME = PrimaryStorageVO.class.getSimpleName();
 
@@ -163,12 +160,7 @@ public class PrimaryStorageCascadeExtension extends AbstractAsyncCascadeExtensio
         List<PrimaryStorageInventory> ret = null;
         if (ZoneVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<String> zuuids = CollectionUtils.transformToList(
-                    (List<ZoneInventory>) action.getParentIssuerContext(), new Function<String, ZoneInventory>() {
-                        @Override
-                        public String call(ZoneInventory arg) {
-                            return arg.getUuid();
-                        }
-                    });
+                    action.getParentIssuerContext(), ZoneInventory::getUuid);
 
             SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
             q.add(PrimaryStorageVO_.zoneUuid, SimpleQuery.Op.IN, zuuids);
