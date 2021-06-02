@@ -17,7 +17,6 @@ import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.*;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -40,8 +39,6 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagValidator;
@@ -81,12 +78,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
-    private DbEntityLister dl;
-    @Autowired
-    private ErrorFacade errf;
-    @Autowired
-    private EventFacade evtf;
-    @Autowired
     private TagManager tagMgr;
     @Autowired
     private ThreadFacade thdf;
@@ -99,8 +90,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     @Autowired
     private PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
 
-    private Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<>());
-    private Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections.synchronizedMap(new HashMap<>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
     private final Map<String, AutoDeleteTrashTask> autoDeleteTrashTask = new HashMap<>();
     private AutoDeleteTrashTask globalTrashTask;
@@ -1055,12 +1046,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     @Override
     public void afterCreateVolume(VolumeVO vo) {
-        return;
     }
 
     @Override
     public void beforeCreateVolume(VolumeInventory volume) {
-        return;
     }
 
     @Override
