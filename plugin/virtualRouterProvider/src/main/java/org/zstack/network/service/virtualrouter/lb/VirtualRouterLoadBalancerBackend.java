@@ -683,6 +683,13 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         redirectRule.setServerGroupUuid(polymerizedUuid);
                         usedSgUuids.add(polymerizedUuid);
                     }
+
+                    if (  (lbTO.getMode() == LoadBalancerConstants.LB_PROTOCOL_HTTP && lbTO.getLoadBalancerPort() == 80 ) || (lbTO.getMode() == LoadBalancerConstants.LB_PROTOCOL_HTTPS && lbTO.getLoadBalancerPort() == 443)   ){
+                        redirectRules.add(redirectRule);
+                    }
+
+                    formatRedirectRule(redirectRule, lbTO);
+
                     redirectRules.add(redirectRule);
                 }
 
@@ -716,6 +723,16 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 }
 
                 return redirectRules;
+            }
+
+            private void formatRedirectRule(LbTO.RedirectRule redirectRule,LbTO lbTO){
+                StringBuffer rule = new StringBuffer(redirectRule.getRedirectRule());
+                String insertRule = ":" + lbTO.getLoadBalancerPort();
+                int index = rule.indexOf("/");
+                if (index != -1) {
+                    rule.insert(index,insertRule);
+                }
+                redirectRule.setRedirectRule(rule.toString());
             }
 
             @Override
