@@ -40,4 +40,10 @@ public class CephSystemTags {
 
     public static final String USE_CEPH_ROOT_POOL_TOKEN = "rootPoolName";
     public static PatternedSystemTag USE_CEPH_ROOT_POOL = new PatternedSystemTag(String.format("ceph::rootPoolName::{%s}", USE_CEPH_ROOT_POOL_TOKEN), VolumeVO.class);
+
+    public static final String THIRDPARTY_PLATFORM_TOKEN = "thirdPartyPlatformToken";
+    public static PatternedSystemTag THIRDPARTY_PLATFORM = new PatternedSystemTag(String.format("ceph::thirdPartyPlatform::{%s}", THIRDPARTY_PLATFORM_TOKEN), PrimaryStorageVO.class);
+
+    public static final String CEPH_MANUFACTURER_TOKEN = "cephManufacturerToken";
+    public static PatternedSystemTag CEPH_MANUFACTURER = new PatternedSystemTag(String.format("ceph::manufacturer::{%s}", CEPH_MANUFACTURER_TOKEN), PrimaryStorageVO.class);
 }
