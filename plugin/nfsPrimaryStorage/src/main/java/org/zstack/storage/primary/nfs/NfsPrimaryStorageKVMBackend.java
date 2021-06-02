@@ -54,6 +54,9 @@ import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
+import org.zstack.storage.snapshot.VolumeSnapshotSystemTags;
+import org.zstack.storage.volume.VolumeSystemTags;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -112,6 +115,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String REVERT_VOLUME_FROM_SNAPSHOT_PATH = "/nfsprimarystorage/revertvolumefromsnapshot";
     public static final String REINIT_IMAGE_PATH = "/nfsprimarystorage/reinitimage";
     public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/nfsprimarystorage/sftp/createtemplatefromvolume";
+    public static final String CREATE_VOLUME_WITH_BACKING_PATH = "/nfsprimarystorage/createvolumewithbacking";
     public static final String OFFLINE_SNAPSHOT_MERGE = "/nfsprimarystorage/offlinesnapshotmerge";
     public static final String REMOUNT_PATH = "/nfsprimarystorage/remount";
     public static final String GET_VOLUME_SIZE_PATH = "/nfsprimarystorage/getvolumesize";
@@ -607,11 +611,20 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public void handle(PrimaryStorageInventory inv, CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, final ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion) {
         HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
         VolumeSnapshotInventory sp = msg.getSnapshot();
-        final String workspaceInstallPath = NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(inv, msg.getVolumeUuid());
+
+        if (msg.hasSystemTag(VolumeSystemTags.FAST_CREATE::isMatch)) {
+            createIncrementalVolumeFromSnapshot(sp, msg.getVolumeUuid(), inv, host, completion);
+        } else {
+            createNormalVolumeFromSnapshot(sp, msg.getVolumeUuid(), inv, host, completion);
+        }
+    }
+
+    private void createNormalVolumeFromSnapshot(VolumeSnapshotInventory sp, String volumeUuid, PrimaryStorageInventory inv, HostInventory host, final ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion) {
+        final String volPath = NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(inv, volumeUuid);
 
         MergeSnapshotCmd cmd = new MergeSnapshotCmd();
         cmd.setSnapshotInstallPath(sp.getPrimaryStorageInstallPath());
-        cmd.setWorkspaceInstallPath(workspaceInstallPath);
+        cmd.setWorkspaceInstallPath(volPath);
         cmd.setUuid(inv.getUuid());
         cmd.setVolumeUuid(sp.getVolumeUuid());
 
@@ -628,13 +641,56 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 MergeSnapshotResponse rsp = wrapper.getResponse(MergeSnapshotResponse.class);
                 reply.setActualSize(rsp.getActualSize());
                 reply.setSize(rsp.getSize());
-                reply.setInstallPath(workspaceInstallPath);
+                reply.setInstallPath(volPath);
                 completion.success(reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
+            }
+        });
+    }
+
+    private void createIncrementalVolumeFromSnapshot(VolumeSnapshotInventory sp, String volumeUuid, PrimaryStorageInventory inv, HostInventory host, final ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion) {
+        final String volPath = NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(inv, volumeUuid);
+
+        String accounUuid = acntMgr.getOwnerAccountUuidOfResource(volumeUuid);
+
+        CreateVolumeWithBackingCmd cmd = new CreateVolumeWithBackingCmd();
+        cmd.setTemplatePathInCache(sp.getPrimaryStorageInstallPath());
+        cmd.setInstallUrl(volPath);
+
+        cmd.setUuid(inv.getUuid());
+        cmd.setVolumeUuid(sp.getVolumeUuid());
+        cmd.setAccountUuid(accounUuid);
+        cmd.setHypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE);
+
+        new KvmCommandSender(host.getUuid()).send(cmd, CREATE_VOLUME_WITH_BACKING_PATH, wrapper -> {
+            CreateVolumeWithBackingRsp rsp = wrapper.getResponse(CreateVolumeWithBackingRsp.class);
+            return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper wrapper) {
+                CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
+                CreateVolumeWithBackingRsp rsp = wrapper.getResponse(CreateVolumeWithBackingRsp.class);
+                reply.setActualSize(rsp.getActualSize());
+                reply.setSize(rsp.getSize());
+                reply.setInstallPath(volPath);
+                createProtectTag();
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+
+            private void createProtectTag() {
+                SystemTagCreator creator = VolumeSnapshotSystemTags.BACKING_TO_VOLUME.newSystemTagCreator(sp.getUuid());
+                creator.unique = false;
+                creator.setTagByTokens(Collections.singletonMap(VolumeSnapshotSystemTags.BACKING_VOLUME_TOKEN, volumeUuid));
+                creator.create();
             }
         });
     }
