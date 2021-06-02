@@ -21,10 +21,4 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="CdpBackupStorageExtensionPointEmitter" class="org.zstack.storage.cdp.CdpBackupStorageExtensionPointEmitter">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
-        </zstack:plugin>
-    </bean>
-
 </beans>
