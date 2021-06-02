@@ -118,7 +118,7 @@ public class CdpBackupStorageManagerImpl extends AbstractService implements CdpB
             vo.setUuid(Platform.getUuid());
         }
 
-        vo.setCdpPolicyName(msg.getCdpPolicyNameName());
+        vo.setCdpPolicyName(msg.getCdpPolicyName());
         vo.setCdpPolicyDescription(msg.getCdpPolicyDescription());
         vo.setCdpRetentionTime(msg.getCdpRetentionTime());
         vo.setCdpIncrementalPointInMinutes(msg.getCdpIncrementalPointInMinutes());
@@ -126,7 +126,7 @@ public class CdpBackupStorageManagerImpl extends AbstractService implements CdpB
         dbf.persistAndRefresh(vo);
 
         APICreateCdpPolicyReply reply = new APICreateCdpPolicyReply();
-        reply.setCdpPolicyName(msg.getCdpPolicyNameName());
+        reply.setCdpPolicyName(msg.getCdpPolicyName());
         reply.setCdpPolicyDescription(msg.getCdpPolicyDescription());
         reply.setCdpRetentionTime(msg.getCdpRetentionTime());
         reply.setCdpIncrementalPointInMinutes(msg.getCdpIncrementalPointInMinutes());

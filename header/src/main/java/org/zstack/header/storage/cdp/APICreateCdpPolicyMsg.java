@@ -38,7 +38,7 @@ public class APICreateCdpPolicyMsg extends APICreateMessage {
     public void setCdpPolicyName(String name) {
         this.name = name;
     }
-    public String getCdpPolicyNameName() {
+    public String getCdpPolicyName() {
         return name;
     }
 
