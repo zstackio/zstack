@@ -1,5 +1,6 @@
 package org.zstack.network.service.virtualrouter.lb;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -683,13 +684,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         redirectRule.setServerGroupUuid(polymerizedUuid);
                         usedSgUuids.add(polymerizedUuid);
                     }
-
-                    if (  (lbTO.getMode() == LoadBalancerConstants.LB_PROTOCOL_HTTP && lbTO.getLoadBalancerPort() == 80 ) || (lbTO.getMode() == LoadBalancerConstants.LB_PROTOCOL_HTTPS && lbTO.getLoadBalancerPort() == 443)   ){
-                        redirectRules.add(redirectRule);
-                    }
-
-                    formatRedirectRule(redirectRule, lbTO);
-
                     redirectRules.add(redirectRule);
                 }
 
@@ -722,7 +716,22 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 }
 
-                return redirectRules;
+                ArrayList<LbTO.RedirectRule> formatRedirectRules = new ArrayList<>();
+                if ( (lbTO.getMode().equals(LoadBalancerConstants.LB_PROTOCOL_HTTP) && lbTO.getLoadBalancerPort() == LoadBalancerConstants.PROTOCOL_HTTP_DEFAULT_PORT ) || (lbTO.getMode().equals(LoadBalancerConstants.LB_PROTOCOL_HTTPS) && lbTO.getLoadBalancerPort() == LoadBalancerConstants.PROTOCOL_HTTPS_DEFAULT_PORT) ){
+                    formatRedirectRules.addAll(redirectRules);
+                }
+
+                for(LbTO.RedirectRule rule:redirectRules){
+                    LbTO.RedirectRule formatRule = new LbTO.RedirectRule();
+                    formatRule.setRedirectRule(rule.getRedirectRule());
+                    formatRule.setRedirectRuleUuid(rule.getRedirectRuleUuid());
+                    formatRule.setAclUuid(rule.getAclUuid());
+                    formatRule.setServerGroupUuid(rule.getServerGroupUuid());
+                    formatRedirectRule(formatRule, lbTO);
+
+                    formatRedirectRules.add(formatRule);
+                }
+                return formatRedirectRules;
             }
 
             private void formatRedirectRule(LbTO.RedirectRule redirectRule,LbTO lbTO){

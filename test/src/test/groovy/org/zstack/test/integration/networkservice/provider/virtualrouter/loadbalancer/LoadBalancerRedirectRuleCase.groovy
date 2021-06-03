@@ -192,8 +192,8 @@ class LoadBalancerRedirectRuleCase extends SubCase {
         LoadBalancerListenerInventory lbl = createLoadBalancerListener {
             protocol = LoadBalancerConstants.LB_PROTOCOL_HTTP
             loadBalancerUuid = load.uuid
-            loadBalancerPort = 8903
-            instancePort = 8903
+            loadBalancerPort = 80
+            instancePort = 100
             name = "test-listener"
         }
 
@@ -234,8 +234,9 @@ class LoadBalancerRedirectRuleCase extends SubCase {
         }
 
         def lbTO = cmd.lbs.stream().filter{lb -> lb.listenerUuid.equals(lbl.uuid)}.collect(Collectors.toList())[0] as VirtualRouterLoadBalancerBackend.LbTO
-        def redirectRule= lbTO.redirectRules.stream().filter{ it -> it.getServerGroupUuid().equals(sg1.uuid)}.collect(Collectors.toList())[0]
-        assert redirectRule.redirectRule.contains(":8903")
+        def redirectRules= lbTO.redirectRules.stream().filter{ it -> it.getServerGroupUuid().equals(sg1.uuid)}.collect(Collectors.toList())
+        assert !redirectRules[0].redirectRule.contains(":80")
+        assert redirectRules[1].redirectRule.contains(":80")
 
         deleteAccessControlList {
             uuid = acl1.uuid
