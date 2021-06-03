@@ -76,6 +76,56 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         logger.debug(sb.toString());
     }
 
+    public void beforeCleanQueuedumpThread(String signatureName) {
+        String title = "\n================= Before Clean Task Queue Dump ================";
+        dumpsignatureNameThread(signatureName,title);
+    }
+
+    public void afterCleanQueuedumpThread(String signatureName) {
+        String title = "\n================= After Clean Task Queue Dump ================";
+        dumpsignatureNameThread(signatureName,title);
+    }
+
+    public void dumpsignatureNameThread(String signatureName,String title) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(title);
+        sb.append("\nASYNC TASK QUEUE DUMP:");
+        sb.append(String.format("\nTASK QUEUE NUMBER: %s\n", chainTasks.size()));
+        List<String> asyncTasks = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        synchronized (chainTasks) {
+            ChainTaskQueueWrapper w = chainTasks.get(signatureName);
+            if (w == null) {
+                sb.append(String.format("\n===== NO QUEUE SYNC SIGNATURE: %s =====", signatureName));
+                sb.append(StringUtils.join(asyncTasks, "\n"));
+                sb.append("\n================= END TASK QUEUE DUMP ==================\n");
+                _threadFacade.printThreadsAndTasks();
+                logger.debug(sb.toString());
+                return;
+            }
+            StringBuilder tb = new StringBuilder(String.format("\nQUEUE SYNC SIGNATURE: %s", signatureName));
+            tb.append(String.format("\nRUNNING TASK NUMBER: %s", w.runningQueue.size()));
+            tb.append(String.format("\nPENDING TASK NUMBER: %s", w.pendingQueue.size()));
+            tb.append(String.format("\nASYNC LEVEL: %s", w.maxThreadNum));
+            int index = 0;
+            for (Object obj : w.runningQueue) {
+                ChainFuture cf = (ChainFuture) obj;
+                tb.append(TaskInfoBuilder.buildRunningTaskInfo(cf, now, index++));
+            }
+
+            for (Object obj : w.pendingQueue) {
+                ChainFuture cf = (ChainFuture) obj;
+                tb.append(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index++));
+            }
+            asyncTasks.add(tb.toString());
+        }
+
+        sb.append(StringUtils.join(asyncTasks, "\n"));
+        sb.append("\n================= END TASK QUEUE DUMP ==================\n");
+        _threadFacade.printThreadsAndTasks();
+        logger.debug(sb.toString());
+    }
+
     @Override
     public ChainInfo getChainTaskInfo(String signature) {
         long now = System.currentTimeMillis();
@@ -96,6 +146,55 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                 ChainFuture cf = (ChainFuture) obj;
                 info.addPendingTask(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index++));
             }
+            return info;
+        }
+    }
+
+    @Override
+    public ChainInfo cleanChainTaskInfo(String signature, Integer index, Boolean cleanUp, Boolean isRunningTask) {
+        beforeCleanQueuedumpThread(signature);
+        long now = System.currentTimeMillis();
+        synchronized (chainTasks) {
+            ChainInfo info = new ChainInfo();
+            ChainTaskQueueWrapper w = chainTasks.get(signature);
+            if (w == null) {
+                logger.warn(String.format("no queue with a corresponding signatureName[%s]", signature));
+                return null;
+            }
+
+            ChainInfo Tmp = getChainTaskInfo(signature);
+            if (cleanUp) {
+                chainTasks.remove(signature);
+                afterCleanQueuedumpThread(signature);
+                return Tmp;
+            }
+            if (index == null) {
+                if (isRunningTask) {
+                    info.setRunningTask(Tmp.getRunningTask());
+                    w.runningQueue.clear();
+                    afterCleanQueuedumpThread(signature);
+                    return info;
+                }
+                info.setPendingTask(Tmp.getPendingTask());
+                w.pendingQueue.clear();
+                afterCleanQueuedumpThread(signature);
+                return info;
+            }
+
+            if (isRunningTask) {
+                ChainFuture cf = (ChainFuture) w.runningQueue.get(index);
+                info.addRunningTask(TaskInfoBuilder.buildRunningTaskInfo(cf, now, index));
+                w.runningQueue.remove(index.intValue());
+            } else {
+                ChainFuture cf = (ChainFuture) w.pendingQueue.get(index);
+                info.addPendingTask(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index));
+                w.pendingQueue.remove(index.intValue());
+            }
+
+            if (w.runningQueue.isEmpty() && w.pendingQueue.isEmpty()) {
+                chainTasks.remove(signature);
+            }
+            afterCleanQueuedumpThread(signature);       
             return info;
         }
     }
