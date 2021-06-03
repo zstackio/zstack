@@ -639,7 +639,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 for (AccessControlListEntryVO entry : afterSortEntries) {
                     List<String> serverGroupUuids = refs.stream()
                             .filter(ref -> ref.getListenerUuid().equals(listenerInv.getUuid()) && ref.getAclUuid().equals(entry.getAclUuid()) && ref.getServerGroupUuid() != null && sgOwnBackenServerUuids.contains(ref.getServerGroupUuid()))
-                            .map(LoadBalancerListenerACLRefInventory::getServerGroupUuid).collect(Collectors.toList());
+                            .map(LoadBalancerListenerACLRefInventory::getServerGroupUuid).sorted().collect(Collectors.toList());
                     if (serverGroupUuids.isEmpty()) {
                         continue;
                     }
@@ -671,9 +671,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         if (needAddServerGroup) {
                             LbTO.ServerGroup serverGroup = new LbTO.ServerGroup();
                             serverGroup.setBackendServers(new ArrayList<>());
-                            for (LbTO.ServerGroup serverGroup1 : lbTO.serverGroups) {
-                                if (serverGroupUuids.contains(serverGroup1.getServerGroupUuid())) {
-                                    serverGroup.getBackendServers().addAll(serverGroup1.getBackendServers());
+                            for (String sgUuid : serverGroupUuids) {
+                                for (LbTO.ServerGroup serverGroup1 : lbTO.serverGroups) {
+                                    if (sgUuid.equals(serverGroup1.serverGroupUuid)) {
+                                        serverGroup.getBackendServers().addAll(serverGroup1.getBackendServers());
+                                    }
                                 }
                             }
                             serverGroup.setName(polymerizedUuid);
@@ -760,7 +762,21 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         serverGroup.setServerGroupUuid(groupInv.getUuid());
                         List<LbTO.BackendServer> backendServers = new ArrayList<>();
                         serverGroup.setBackendServers(backendServers);
-                        for (LoadBalancerServerGroupVmNicRefInventory nicRef : groupInv.getVmNicRefs()) {
+                        List<LoadBalancerServerGroupVmNicRefInventory> nicRefInventories = Optional.ofNullable(groupInv.getVmNicRefs()).orElse(new ArrayList<>()).stream()
+                                .sorted(new Comparator<LoadBalancerServerGroupVmNicRefInventory>() {
+                                    @Override
+                                    public int compare(LoadBalancerServerGroupVmNicRefInventory r1, LoadBalancerServerGroupVmNicRefInventory r2) {
+                                        return (int) (r1.getId() - r2.getId());
+                                    }
+                                }).collect(Collectors.toList());
+                        List<LoadBalancerServerGroupServerIpInventory> ipRefInventories = Optional.ofNullable(groupInv.getServerIps()).orElse(new ArrayList<>()).stream()
+                                .sorted(new Comparator<LoadBalancerServerGroupServerIpInventory>() {
+                                    @Override
+                                    public int compare(LoadBalancerServerGroupServerIpInventory r1, LoadBalancerServerGroupServerIpInventory r2) {
+                                        return (int) (r1.getId() - r2.getId());
+                                    }
+                                }).collect(Collectors.toList());
+                        for (LoadBalancerServerGroupVmNicRefInventory nicRef : nicRefInventories) {
                             if (nicRef.getStatus().equals(LoadBalancerVmNicStatus.Inactive.toString())) {
                                 continue;
                             }
@@ -777,7 +793,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             backendServers.add(new LbTO.BackendServer(nic.getIp(), nicRef.getWeight()));
                         }
 
-                        for (LoadBalancerServerGroupServerIpInventory ipRef : groupInv.getServerIps()) {
+                        for (LoadBalancerServerGroupServerIpInventory ipRef : ipRefInventories) {
                             if (ipRef.getStatus().equals(LoadBalancerBackendServerStatus.Inactive.toString())) {
                                 continue;
                             }
@@ -795,7 +811,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         }
                     }
                 }
-                to.setNicIps(ips);
+                to.setNicIps(ips.stream().sorted().collect(Collectors.toList()));
                 to.setPublicNic(publicNic.get().getMac());
                 to.setServerGroups(serverGroups);
                 params.addAll(CollectionUtils.transformToList(struct.getTags().get(l.getUuid()), new Function<String, String>() {
@@ -2146,7 +2162,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             struct.setListenerServerGroupMap(new HashMap<>());
             List<String> serverGroupUuids = new ArrayList<>();
             for (LoadBalancerListenerVO listenerVO : e.getValue()) {
-                List<String> uuids = listenerVO.getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefVO::getServerGroupUuid).collect(Collectors.toList());
+                List<String> uuids = listenerVO.getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefVO::getServerGroupUuid).sorted().collect(Collectors.toList());
                 if (!uuids.isEmpty()) {
                     List<LoadBalancerServerGroupVO> groupVOS = Q.New(LoadBalancerServerGroupVO.class)
                             .in(LoadBalancerServerGroupVO_.uuid, uuids).list();
