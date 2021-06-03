@@ -56,3 +56,4 @@ DROP PROCEDURE Alter_Ceph_Table;
 
 UPDATE `zstack`.`BareMetal2ChassisVO` SET status = "IPxeBootFailed" WHERE status = "iPxeBootFailed";
 UPDATE `zstack`.`BareMetal2ChassisVO` SET status = "IPxeBooting" WHERE status = "iPxeBooting";
+ALTER TABLE QuotaVO MODIFY COLUMN `value` bigint DEFAULT 0;

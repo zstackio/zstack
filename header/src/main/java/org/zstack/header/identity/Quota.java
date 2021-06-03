@@ -10,6 +10,7 @@ import java.util.*;
  * Created by frank on 7/13/2015.
  */
 public class Quota {
+    public final static long DEFAULT_NO_LIMITATION = -1;
     public interface QuotaOperator {
         void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs);
 
