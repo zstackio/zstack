@@ -50,6 +50,9 @@ public class CreateDataVolumeTemplateFromVolumeBackupAction extends AbstractActi
     public boolean system = false;
 
     @Param(required = false)
+    public java.lang.Boolean virtio;
+
+    @Param(required = false)
     public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
