@@ -385,6 +385,11 @@ class AccountCase extends SubCase {
     }
 
     void testAdminAccountDeleteSystemAdmin() {
+        env.session = logInByAccount {
+            accountName = AccountConstant.INITIAL_SYSTEM_ADMIN_NAME
+            password = AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD
+        } as SessionInventory
+
         def userpass = "password"
         def newAdmin = createAccount {
             name = "testAdmAccount"

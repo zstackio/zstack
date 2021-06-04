@@ -37,7 +37,7 @@
 	<config>
 		<name>enable.unique.session</name>
 		<description>Force logout session before current login, and only one session exists</description>
-		<defaultValue>true</defaultValue>
+		<defaultValue>false</defaultValue>
 		<category>identity</category>
 	</config>
 </globalConfig>

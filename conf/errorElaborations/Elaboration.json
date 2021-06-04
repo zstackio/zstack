@@ -1032,14 +1032,6 @@
     "message_en": "[%1$s] is not a standard cidr, do you mean [%2$s]?"
   },
   {
-    "category": "UTILS",
-    "code": "1003",
-    "method": "regex",
-    "regex": "\\[.*] is not a standard cidr, do you mean \\[.*]?",
-    "message_cn": "[%1$s]不是一个标准CIDR,您是否想使用[%2$s]?",
-    "message_en": "[%1$s] is not a standard cidr, do you mean [%2$s]?"
-  },
-  {
     "category": "V2V",
     "code": "1000",
     "method": "regex",
