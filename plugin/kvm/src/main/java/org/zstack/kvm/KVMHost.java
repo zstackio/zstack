@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.host.HostBase;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.host.HostSystemTags;
@@ -29,8 +30,6 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.cluster.Cluster;
-import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.*;
@@ -88,7 +87,6 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
-import static org.zstack.kvm.KVMHostFactory.allGuestOsCategory;
 import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -3945,6 +3943,11 @@ public class KVMHost extends HostBase implements Host {
 
                             UpdateDependencyCmd cmd = new UpdateDependencyCmd();
                             cmd.hostUuid = self.getUuid();
+
+                            if (info.isNewAdded()) {
+                                cmd.enableExpRepo = rcf.getResourceConfigValue(
+                                        ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_REPO, self.getClusterUuid(), Boolean.class);
+                            }
                             new Http<>(updateDependencyPath, cmd, UpdateDependencyRsp.class)
                                     .call(new ReturnValueCompletion<UpdateDependencyRsp>(trigger) {
                                         @Override
