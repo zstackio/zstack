@@ -384,7 +384,6 @@ public class VmInstanceExtensionPointEmitter implements Component {
     }
 
     public void afterDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume, final Completion completion) {
-        removeBootVolumeTagIfExists(vm.getUuid(), volume.getUuid());
         if (detachVolumeExtensions.isEmpty()) {
             completion.success();
             return;
@@ -423,14 +422,6 @@ public class VmInstanceExtensionPointEmitter implements Component {
                 completion.fail(errCode);
             }
         }).start();
-    }
-
-    @ExceptionSafe
-    private void removeBootVolumeTagIfExists(String vmUuid, String detachedVolumeUuid) {
-        String bootVolUuid = VmSystemTags.BOOT_VOLUME.getTokenByResourceUuid(vmUuid, VmSystemTags.BOOT_VOLUME_TOKEN);
-        if (detachedVolumeUuid.equals(bootVolUuid)) {
-            VmSystemTags.BOOT_VOLUME.delete(vmUuid);
-        }
     }
 
     public void failedToDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume, final ErrorCode errorCode) {

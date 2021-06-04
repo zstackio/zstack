@@ -98,6 +98,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
             this.mountPath = mountPath;
         }
     }
+
     
     public static class MountAgentResponse extends NfsPrimaryStorageAgentResponse {
     }
@@ -790,5 +791,14 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class NfsRebaseVolumeBackingFileRsp extends NfsPrimaryStorageAgentResponse {
 
+    }
+
+    public static class LinkVolumeNewDirCmd extends NfsPrimaryStorageAgentCommand {
+        public String volumeUuid;
+        public String srcDir;
+        public String dstDir;
+    }
+
+    public static class LinkVolumeNewDirRsp extends NfsPrimaryStorageAgentResponse {
     }
 }
