@@ -3,6 +3,8 @@ package org.zstack.acl;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
+import org.zstack.core.cascade.CascadeConstant;
+import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -13,9 +15,14 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.acl.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.identity.AccountManager;
@@ -25,7 +32,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author: zhanyong.miao
@@ -48,6 +57,8 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
     private PluginRegistry pluginRgty;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    protected CascadeFacade casf;
 
     @Override
     @MessageSafe
@@ -109,52 +120,17 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
     }
 
     private void handle(APIDeleteAccessControlListMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
+        APIDeleteAccessControlListEvent evt = new APIDeleteAccessControlListEvent(msg.getId());
+        deleteAccessControlList(msg.getUuid(), msg.getDeletionMode(), new Completion(msg) {
             @Override
-            public String getSyncSignature() {
-                return String.format("operate-acl-%s", msg.getUuid());
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                APIDeleteAccessControlListEvent evt = new APIDeleteAccessControlListEvent(msg.getId());
-                AccessControlListVO aclVO = dbf.findByUuid(msg.getUuid(), AccessControlListVO.class);
-
-                /*check if the acl group used*/
-                CollectionUtils.safeForEach(pluginRgty.getExtensionList(RefreshAccessControlListExtensionPoint.class),
-                        new ForEachFunction<RefreshAccessControlListExtensionPoint>() {
-                            @Override
-                            public void run(RefreshAccessControlListExtensionPoint ext) {
-                                logger.debug(String.format("execute before del acl group extension point %s", ext));
-                                ext.beforeDeleteAcl(aclVO.toInventory());
-                            }
-                        });
-                new SQLBatch() {
-                    @Override
-                    protected void scripts() {
-                        List<AccessControlListEntryVO> entrys = Q.New(AccessControlListEntryVO.class)
-                                .eq(AccessControlListEntryVO_.aclUuid, aclVO.getUuid()).list();
-                        if (!entrys.isEmpty()) {
-                            entrys.forEach( entry-> remove(entry));
-                        }
-                        remove(aclVO);
-                    }
-                }.execute();
-                CollectionUtils.safeForEach(pluginRgty.getExtensionList(RefreshAccessControlListExtensionPoint.class),
-                        new ForEachFunction<RefreshAccessControlListExtensionPoint>() {
-                            @Override
-                            public void run(RefreshAccessControlListExtensionPoint ext) {
-                                logger.debug(String.format("execute after del acl group extension point %s", ext));
-                                ext.afterDeleteAcl(aclVO.toInventory());
-                            }
-                        });
+            public void success() {
                 bus.publish(evt);
-                chain.next();
             }
 
             @Override
-            public String getName() {
-                return "del-acl";
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
             }
         });
     }
@@ -237,14 +213,15 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
                    redirectRule = "path_beg -i " + entry.getUrl();
                 } else {
                     String domain = entry.getDomain();
+
+                    domain = domain.replace(".", "\\.");
                     if (entry.getCriterion().equals("WildcardMatch")) {
                         domain = domain.replace("*", ".*");
                     }
 
                     if (entry.getMatchMethod().equals("Domain")) {
-                        redirectRule = "hdr_beg(host) -i " + domain;
+                        redirectRule = "hdr_reg(host) -i " + domain;
                     } else {
-                        domain = domain.replace(".", "\\.");
                         redirectRule = "base_reg -i " + domain + entry.getUrl();
                     }
                 }
@@ -333,7 +310,135 @@ public class AccessControlListManagerImpl extends AbstractService implements Acc
     }
 
     protected void handleLocalMessage(Message msg) {
+        if (msg instanceof DeleteAccessControlListMsg) {
+            handle((DeleteAccessControlListMsg)msg);
+        }
         bus.dealWithUnknownMessage(msg);
+    }
+
+    private void handle(DeleteAccessControlListMsg msg) {
+        deleteAccessControlList(msg.getUuid(), msg.isForceDelete() ? APIDeleteMessage.DeletionMode.Enforcing : APIDeleteMessage.DeletionMode.Permissive, new Completion(msg) {
+            @Override
+            public void success() {
+                DeleteAccessControlListReply reply = new DeleteAccessControlListReply();
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                DeleteAccessControlListReply reply = new DeleteAccessControlListReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void deleteAccessControlList(String uuid, APIDeleteMessage.DeletionMode mode, Completion completion) {
+        if (uuid == null) {
+            completion.success();
+            return;
+        }
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("operate-acl-%s", uuid);
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                AccessControlListVO aclVO = Q.New(AccessControlListVO.class).eq(AccessControlListVO_.uuid, uuid).find();
+                if (aclVO == null) {
+                    completion.success();
+                    chain.next();
+                    return;
+                }
+
+                final String issuer = AccessControlListVO.class.getSimpleName();
+                final List<AccessControlListInventory> ctx = Arrays.asList(AccessControlListInventory.valueOf(aclVO));
+                FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
+                fchain.setName(String.format("delete-acl-%s", uuid));
+
+                if (mode == APIDeleteMessage.DeletionMode.Permissive) {
+                    fchain.then(new NoRollbackFlow() {
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    }).then(new NoRollbackFlow() {
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    fchain.then(new NoRollbackFlow() {
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+                }
+                fchain.done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                List<AccessControlListEntryVO> entrys = Q.New(AccessControlListEntryVO.class)
+                                        .eq(AccessControlListEntryVO_.aclUuid, aclVO.getUuid()).list();
+                                if (!entrys.isEmpty()) {
+                                    entrys.forEach( entry-> remove(entry));
+                                }
+                                remove(aclVO);
+                            }
+                        }.execute();
+                        completion.success();
+                        chain.next();
+                    }
+                }).error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                        chain.next();
+                    }
+                }).start();
+            }
+
+            @Override
+            public String getName() {
+                return "del-acl";
+            }
+        });
     }
 
     @Override

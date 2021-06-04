@@ -456,7 +456,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
 
         addAccessControlListRedirectRule {
             name = "redirect rule"
-            domain = "zstack.io"
+            domain = "*test.zstack.io"
             url = ""
             aclUuid = acl2.uuid
         }
@@ -481,7 +481,8 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         rlVOs[0].getUrl() == "/"
         assert rlVOs[0].getType() == "RedirectRule"
         assert rlVOs[0].getMatchMethod() == "Domain"
-        assert rlVOs[0].getDomain() == "zstack.io"
+        assert rlVOs[0].getDomain() == "*test.zstack.io"
+        assert rlVOs[0].getRedirectRule() == "hdr_reg(host) -i *test.zstack.io".replace(".", "\\.").replace("*", ".*")
 
         rlVOs = Q.New(AccessControlListEntryVO.class).eq(AccessControlListEntryVO_.aclUuid, acl3.uuid).list()
         rlVOs[0].getUrl() == "/"
@@ -1079,6 +1080,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         assert lbTO.getServerGroups()[0].getServerGroupUuid() == servergroup8.uuid
         assert lbTO.getRedirectRules().size() == 1
 
+        cmd = null
         /*remove acl from listener*/
         /*remove acl from listener sg7*/
         removeAccessControlListFromLoadBalancer {
@@ -1086,6 +1088,8 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             listenerUuid = lblRes.value.inventory.uuid
             serverGroupUuids = [servergroup7.uuid]
         }
+        sleep(1000)
+        assert cmd == null
 
         cmd = null
         /*remove acl from sg8 when sg has backend server*/
@@ -1102,13 +1106,104 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         cmd = null
         /*delete acl when acl has serverGroup and sg has vm nic*/
         deleteAccessControlList {
-            uuid = acl.uuid
+            uuid = acl2.uuid
         }
-        /*sleep(1000)
-        lbTO =cmd.lbs.stream().filter{lb -> lb.listenerUuid.equals(lblRes.value.inventory.uuid)}.collect(Collectors.toList())[0] as VirtualRouterLoadBalancerBackend.LbTO
-        assert lbTO.getServerGroups().size() == 0
-        assert lbTO.getRedirectRules().size() == 0*/
+        sleep(1000)
+        assert cmd == null
 
+        /*test sort*/
+        AccessControlListInventory acl3 = createAccessControlList {
+            name = "redirect-acl-test-7-3"
+        }
+        AccessControlListInventory acl4 = createAccessControlList {
+            name = "redirect-acl-test-7-4"
+        }
+        AccessControlListInventory acl5 = createAccessControlList {
+            name = "redirect-acl-test-7-5"
+        }
+        AccessControlListInventory acl6 = createAccessControlList {
+            name = "redirect-acl-test-7-6"
+        }
+        AccessControlListInventory acl7 = createAccessControlList {
+            name = "redirect-acl-test-7-7"
+        }
+        AccessControlListInventory acl8 = createAccessControlList {
+            name = "redirect-acl-test-7-8"
+        }
+        AccessControlListEntryInventory redirectRule3 = addAccessControlListRedirectRule {
+            name = "redirect rule"
+            domain = "*.zstack.io"
+            url = "/index.html"
+            aclUuid = acl3.uuid
+        }
+        AccessControlListEntryInventory redirectRule4 = addAccessControlListRedirectRule {
+            name = "redirect rule"
+            domain = "*.zstack.io"
+            url = ""
+            aclUuid = acl4.uuid
+        }
+        AccessControlListEntryInventory redirectRule5 = addAccessControlListRedirectRule {
+            name = "redirect rule"
+            domain = "zstack.io"
+            url = "/test"
+            aclUuid = acl5.uuid
+        }
+        AccessControlListEntryInventory redirectRule6 = addAccessControlListRedirectRule {
+            name = "redirect rule"
+            domain = "zstack.io"
+            url = "/"
+            aclUuid = acl6.uuid
+        }
+        AccessControlListEntryInventory redirectRule7 = addAccessControlListRedirectRule {
+            name = "redirect rule"
+            domain = "*est.zstack.io"
+            url = "/"
+            aclUuid = acl8.uuid
+        }
+
+        cmd = null
+        addAccessControlListToLoadBalancer {
+            aclUuids = [acl3.uuid, acl4.uuid, acl5.uuid, acl6.uuid, acl7.uuid, acl8.uuid]
+            listenerUuid = lblRes.value.inventory.uuid
+            serverGroupUuids = [servergroup8.uuid]
+            aclType = "redirect"
+        }
+        sleep(1000)
+        lbTO = cmd.lbs.stream().filter{lb -> lb.listenerUuid.equals(lblRes.value.inventory.uuid)}.collect(Collectors.toList())[0] as VirtualRouterLoadBalancerBackend.LbTO
+        List<VirtualRouterLoadBalancerBackend.LbTO.RedirectRule> redirectRules = lbTO.getRedirectRules()
+        assert redirectRules.get(0).getRedirectRule().equals(("base_reg -i zstack.io:8903/test").replace(".", "\\."))
+        assert redirectRules.get(1).getRedirectRule().equals(("hdr_reg(host) -i zstack.io").replace(".", "\\."))
+        assert redirectRules.get(2).getRedirectRule().equals(("hdr_reg(host) -i *est.zstack.io").replace(".", "\\.").replace("*", ".*"))
+        assert redirectRules.get(3).getRedirectRule().equals(("base_reg -i *.zstack.io:8903").replace(".", "\\.").replace("*", ".*")+"/index.html")
+        assert redirectRules.get(4).getRedirectRule().equals(("hdr_reg(host) -i *.zstack.io").replace(".", "\\.").replace("*", ".*"))
+
+        cmd = null
+        /*delete acl when acl has serverGroup and sg has vm nic*/
+        deleteAccessControlList {
+            uuid = acl3.uuid
+        }
+        sleep(1000)
+        lbTO = cmd.lbs.stream().filter{lb -> lb.listenerUuid.equals(lblRes.value.inventory.uuid)}.collect(Collectors.toList())[0] as VirtualRouterLoadBalancerBackend.LbTO
+        assert lbTO.getRedirectRules().size() == 4
+
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            rsp.error = "failed"
+            rsp.success = false
+            return rsp
+        }
+        expectError {
+            /*delete acl when acl has serverGroup and sg has vm nic*/
+            deleteAccessControlList {
+                uuid = acl4.uuid
+            }
+        }
+        List<LoadBalancerListenerACLRefVO> aclRefVOList = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.listenerUuid, lblRes.value.inventory.uuid).list()
+        aclRefVOList.size() == 4
+
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class)
+            return rsp
+        }
 
         //delete load balancer listener
         deleteLoadBalancerListener {
@@ -1121,6 +1216,26 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         }
         deleteAccessControlList {
             uuid = acl2.uuid
+        }
+
+        //delete acl
+        deleteAccessControlList {
+            uuid = acl4.uuid
+        }
+        deleteAccessControlList {
+            uuid = acl5.uuid
+        }
+
+        //delete acl
+        deleteAccessControlList {
+            uuid = acl6.uuid
+        }
+        deleteAccessControlList {
+            uuid = acl7.uuid
+        }
+
+        deleteAccessControlList {
+            uuid = acl8.uuid
         }
     }
 
