@@ -2,6 +2,7 @@ package org.zstack.storage.primary.nfs;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
@@ -48,6 +49,7 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
@@ -120,6 +122,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String OFFLINE_SNAPSHOT_MERGE = "/nfsprimarystorage/offlinesnapshotmerge";
     public static final String REMOUNT_PATH = "/nfsprimarystorage/remount";
     public static final String GET_VOLUME_SIZE_PATH = "/nfsprimarystorage/getvolumesize";
+    public static final String HARD_LINK_VOLUME = "/nfsprimarystorage/volume/hardlink";
     public static final String PING_PATH = "/nfsprimarystorage/ping";
     public static final String GET_VOLUME_BASE_IMAGE_PATH = "/nfsprimarystorage/getvolumebaseimage";
     public static final String UPDATE_MOUNT_POINT_PATH = "/nfsprimarystorage/updatemountpoint";
@@ -1519,6 +1522,50 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 }
             }
         }.start();
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory pinv, ChangeVolumeTypeOnPrimaryStorageMsg msg, ReturnValueCompletion<ChangeVolumeTypeOnPrimaryStorageReply> completion) {
+        ChangeVolumeTypeOnPrimaryStorageReply reply = new ChangeVolumeTypeOnPrimaryStorageReply();
+
+        String originType = msg.getVolume().getType();
+        LinkVolumeNewDirCmd cmd = new LinkVolumeNewDirCmd();
+        cmd.srcDir = NfsPrimaryStorageKvmHelper.makeVolumeInstallDir(pinv, msg.getVolume());
+        msg.getVolume().setType(msg.getTargetType().toString());
+        cmd.dstDir = NfsPrimaryStorageKvmHelper.makeVolumeInstallDir(pinv, msg.getVolume());
+        msg.getVolume().setType(originType);
+        cmd.volumeUuid = msg.getVolume().getUuid();
+        cmd.setUuid(pinv.getUuid());
+
+        if (!msg.getVolume().getInstallPath().startsWith(cmd.srcDir)) {
+            completion.fail(operr("why volume[uuid:%s, installPath:%s] not in directory %s",
+                    cmd.volumeUuid, msg.getVolume().getInstallPath(), cmd.srcDir));
+            return;
+        }
+
+        HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
+        asyncHttpCall(HARD_LINK_VOLUME, host.getUuid(), cmd, LinkVolumeNewDirRsp.class, pinv, new ReturnValueCompletion<LinkVolumeNewDirRsp>(completion) {
+            @Override
+            public void success(LinkVolumeNewDirRsp rsp) {
+                VolumeInventory vol = msg.getVolume();
+                String newPath = vol.getInstallPath().replace(cmd.srcDir, cmd.dstDir);
+                vol.setInstallPath(newPath);
+                reply.setVolume(vol);
+
+                for (VolumeSnapshotInventory snapshot : msg.getSnapshots()) {
+                    newPath = snapshot.getPrimaryStorageInstallPath().replace(cmd.srcDir, cmd.dstDir);
+                    snapshot.setPrimaryStorageInstallPath(newPath);
+                }
+                reply.getSnapshots().addAll(msg.getSnapshots());
+                reply.setInstallPathToGc(cmd.srcDir);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override

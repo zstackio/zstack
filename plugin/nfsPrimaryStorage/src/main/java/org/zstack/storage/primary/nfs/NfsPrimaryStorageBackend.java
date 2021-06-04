@@ -37,6 +37,8 @@ public interface NfsPrimaryStorageBackend {
 
     void handle(PrimaryStorageInventory inv, GetDownloadBitsFromKVMHostProgressMsg msg, ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressReply> completion);
 
+    void handle(PrimaryStorageInventory inv, ChangeVolumeTypeOnPrimaryStorageMsg msg, ReturnValueCompletion<ChangeVolumeTypeOnPrimaryStorageReply> changeVolumeTypeOnPrimaryStorageReplyReturnValueCompletion);
+
     void getPhysicalCapacity(PrimaryStorageInventory inv, ReturnValueCompletion<PhysicalCapacityUsage> completion);
 
     void checkIsBitsExisting(PrimaryStorageInventory inv, String installPath, ReturnValueCompletion<Boolean> completion);

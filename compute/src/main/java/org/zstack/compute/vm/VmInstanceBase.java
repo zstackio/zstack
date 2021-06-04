@@ -3428,13 +3428,24 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                refreshVO();
-                setBootVolume(msg);
-
                 APISetVmBootVolumeEvent event = new APISetVmBootVolumeEvent(msg.getId());
-                event.setInventory(getSelfInventory());
-                bus.publish(event);
-                chain.next();
+                setBootVolume(msg, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        refreshVO();
+                        event.setInventory(getSelfInventory());
+                        bus.publish(event);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        event.setError(errorCode);
+                        bus.publish(event);
+                        chain.next();
+                    }
+                });
+
             }
 
             @Override
@@ -3444,70 +3455,33 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void setBootVolume(APISetVmBootVolumeMsg msg) {
-        if (msg.getVolumeUuid().equals(self.getRootVolumeUuid())) {
-            return;
-        }
-
-        if (self.getState() == VmInstanceState.Stopped) {
-            doSetBootVolume(msg.getVolumeUuid());
-            refreshVO();
-            return;
-        }
-
-        SystemTagCreator creator = VmSystemTags.BOOT_VOLUME.newSystemTagCreator(self.getUuid());
-        creator.setTagByTokens(Collections.singletonMap(VmSystemTags.BOOT_VOLUME_TOKEN, msg.getVolumeUuid()));
-        creator.recreate = true;
-        creator.create();
-    }
-
-    private VolumeInventory getBootVolume(VmInstanceInventory inv, VmOperation operation) {
-        if (operation != VmOperation.Start && operation != VmOperation.Reboot) {
-            return inv.getRootVolume();
-        }
-
-        String newBootVolUuid = VmSystemTags.BOOT_VOLUME.getTokenByResourceUuid(self.getUuid(), VmSystemTags.BOOT_VOLUME_TOKEN);
-        if (newBootVolUuid == null ||
-                newBootVolUuid.equals(self.getRootVolumeUuid()) ||
-                self.getAllVolumes().stream().noneMatch(vol -> vol.getUuid().equals(newBootVolUuid))) {
-            return inv.getRootVolume();
-        }
-
-        doSetBootVolume(newBootVolUuid);
+    private void setBootVolume(APISetVmBootVolumeMsg msg, Completion completion) {
         refreshVO();
-        inv.setAllVolumes(VolumeInventory.valueOf(self.getAllVolumes()));
-        inv.setRootVolumeUuid(newBootVolUuid);
-        return inv.getAllVolumes().stream().filter(it -> it.getUuid().equals(newBootVolUuid))
-                .findFirst().orElse(inv.getRootVolume());
-    }
-
-    @Transactional
-    protected void doSetBootVolume(String volumeUuid) {
-        if (volumeUuid.equals(self.getRootVolumeUuid())) {
+        if (msg.getVolumeUuid().equals(self.getRootVolumeUuid())) {
+            completion.success();
             return;
         }
 
-        VolumeVO originRootVolume = self.getRootVolume();
-        VolumeVO targetVolume = self.getAllVolumes().stream().filter(it -> it.getUuid().equals(volumeUuid))
-                .findFirst().orElseThrow(() -> new OperationFailureException(
-                        operr("volume[uuid%s] should be attached.")
-                ));
+        ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
+        if (allowed != null) {
+            completion.fail(allowed);
+            return;
+        }
 
-        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, originRootVolume.getUuid())
-                .set(VolumeVO_.deviceId, targetVolume.getDeviceId())
-                .set(VolumeVO_.type, VolumeType.Data)
-                .update();
-
-        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, targetVolume.getUuid())
-                .set(VolumeVO_.deviceId, 0)
-                .set(VolumeVO_.type, VolumeType.Root)
-                .update();
-
-        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid())
-                .set(VmInstanceVO_.rootVolumeUuid, volumeUuid)
-                .update();
-
-        VmSystemTags.BOOT_VOLUME.delete(self.getUuid());
+        SetVmBootVolumeMsg smsg = new SetVmBootVolumeMsg();
+        smsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        smsg.setVolumeUuid(msg.getVolumeUuid());
+        bus.makeTargetServiceIdByResourceUuid(smsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+        bus.send(smsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                } else {
+                    completion.success();
+                }
+            }
+        });
     }
 
     private void handle(APISetVmConsolePasswordMsg msg) {
@@ -6603,7 +6577,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
-        VolumeInventory rootVol = getBootVolume(inv, operation);
+        VolumeInventory rootVol = inv.getRootVolume();
         Optional.ofNullable(rootVol).ifPresent(it -> {
             spec.setDestRootVolume(it);
             spec.setRequiredPrimaryStorageUuidForRootVolume(it.getPrimaryStorageUuid());
