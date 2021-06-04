@@ -764,6 +764,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CHECK_MD5_PATH = "/localstorage/checkmd5";
     public static final String GET_BACKING_FILE_PATH = "/localstorage/volume/getbackingfile";
     public static final String GET_VOLUME_SIZE = "/localstorage/volume/getsize";
+    public static final String HARD_LINK_VOLUME = "/localstorage/volume/hardlink";
     public static final String GET_BASE_IMAGE_PATH = "/localstorage/volume/getbaseimagepath";
     public static final String GET_QCOW2_REFERENCE = "/localstorage/getqcow2reference";
     public static final String CHECK_INITIALIZED_FILE = "/localstorage/check/initializedfile";
@@ -771,7 +772,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/localstorage/kvmhost/download/progress";
-    public static final String LINK_VOLUME_NEW_DIR = "/localstorage/volume/linknewdir";
 
     public LocalStorageKvmBackend() {
     }
@@ -3219,7 +3219,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         String hostUuid = getHostUuidByResourceUuid(cmd.volumeUuid, VolumeVO.class.toString());
 
-        httpCall(LINK_VOLUME_NEW_DIR, hostUuid, cmd, LinkVolumeNewDirRsp.class, new ReturnValueCompletion<LinkVolumeNewDirRsp>(completion) {
+        httpCall(HARD_LINK_VOLUME, hostUuid, cmd, LinkVolumeNewDirRsp.class, new ReturnValueCompletion<LinkVolumeNewDirRsp>(completion) {
             @Override
             public void success(LinkVolumeNewDirRsp rsp) {
                 VolumeInventory vol = msg.getVolume();

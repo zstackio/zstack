@@ -121,6 +121,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String OFFLINE_SNAPSHOT_MERGE = "/nfsprimarystorage/offlinesnapshotmerge";
     public static final String REMOUNT_PATH = "/nfsprimarystorage/remount";
     public static final String GET_VOLUME_SIZE_PATH = "/nfsprimarystorage/getvolumesize";
+    public static final String HARD_LINK_VOLUME = "/nfsprimarystorage/volume/hardlink";
     public static final String PING_PATH = "/nfsprimarystorage/ping";
     public static final String GET_VOLUME_BASE_IMAGE_PATH = "/nfsprimarystorage/getvolumebaseimage";
     public static final String UPDATE_MOUNT_POINT_PATH = "/nfsprimarystorage/updatemountpoint";
@@ -129,7 +130,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/nfsprimarystorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/nfsprimarystorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/nfsprimarystorage/kvmhost/download/progress";
-    public static final String LINK_VOLUME_NEW_DIR = "/nfsprimarystorage/volume/linknewdir";
 
 
     //////////////// For unit test //////////////////////////
@@ -1488,7 +1488,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         }
 
         HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
-        asyncHttpCall(LINK_VOLUME_NEW_DIR, host.getUuid(), cmd, LinkVolumeNewDirRsp.class, pinv, new ReturnValueCompletion<LinkVolumeNewDirRsp>(completion) {
+        asyncHttpCall(HARD_LINK_VOLUME, host.getUuid(), cmd, LinkVolumeNewDirRsp.class, pinv, new ReturnValueCompletion<LinkVolumeNewDirRsp>(completion) {
             @Override
             public void success(LinkVolumeNewDirRsp rsp) {
                 VolumeInventory vol = msg.getVolume();
