@@ -218,6 +218,10 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return new LocalStorageKvmBackend.AgentResponse()
             }
 
+            simulator(LocalStorageKvmBackend.LINK_VOLUME_NEW_DIR) {
+                return new LocalStorageKvmBackend.LinkVolumeNewDirRsp()
+            }
+
             simulator(LocalStorageKvmBackend.GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH) {
                 LocalStorageKvmBackend.GetDownloadBitsFromKVMHostProgressRsp rsp = new LocalStorageKvmBackend.GetDownloadBitsFromKVMHostProgressRsp()
                 rsp.totalSize = 1L

@@ -736,6 +736,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public long totalSize;
     }
 
+    public static class LinkVolumeNewDirCmd extends AgentCommand {
+        public String volumeUuid;
+        public String srcDir;
+        public String dstDir;
+    }
+
+    public static class LinkVolumeNewDirRsp extends AgentResponse {
+    }
+
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
@@ -762,6 +771,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/localstorage/kvmhost/download/progress";
+    public static final String LINK_VOLUME_NEW_DIR = "/localstorage/volume/linknewdir";
 
     public LocalStorageKvmBackend() {
     }
@@ -3180,6 +3190,50 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void success(AgentResponse rsp) {
                 completion.success(new CancelDownloadBitsFromKVMHostToPrimaryStorageReply());
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(ChangeVolumeTypeOnPrimaryStorageMsg msg, ReturnValueCompletion<ChangeVolumeTypeOnPrimaryStorageReply> completion) {
+        ChangeVolumeTypeOnPrimaryStorageReply reply = new ChangeVolumeTypeOnPrimaryStorageReply();
+
+        String originType = msg.getVolume().getType();
+        LinkVolumeNewDirCmd cmd = new LinkVolumeNewDirCmd();
+        cmd.srcDir = makeVolumeInstallDir(msg.getVolume());
+        msg.getVolume().setType(msg.getTargetType().toString());
+        cmd.dstDir = makeVolumeInstallDir(msg.getVolume());
+        msg.getVolume().setType(originType);
+        cmd.volumeUuid = msg.getVolume().getUuid();
+
+        if (!msg.getVolume().getInstallPath().startsWith(cmd.srcDir)) {
+             completion.fail(operr("why volume[uuid:%s, installPath:%s] not in directory %s",
+                     cmd.volumeUuid, msg.getVolume().getInstallPath(), cmd.srcDir));
+             return;
+        }
+
+        String hostUuid = getHostUuidByResourceUuid(cmd.volumeUuid, VolumeVO.class.toString());
+
+        httpCall(LINK_VOLUME_NEW_DIR, hostUuid, cmd, LinkVolumeNewDirRsp.class, new ReturnValueCompletion<LinkVolumeNewDirRsp>(completion) {
+            @Override
+            public void success(LinkVolumeNewDirRsp rsp) {
+                VolumeInventory vol = msg.getVolume();
+                String newPath = vol.getInstallPath().replace(cmd.srcDir, cmd.dstDir);
+                vol.setInstallPath(newPath);
+                reply.setVolume(vol);
+
+                for (VolumeSnapshotInventory snapshot : msg.getSnapshots()) {
+                    newPath = snapshot.getPrimaryStorageInstallPath().replace(cmd.srcDir, cmd.dstDir);
+                    snapshot.setPrimaryStorageInstallPath(newPath);
+                }
+                reply.getSnapshots().addAll(msg.getSnapshots());
+                reply.setInstallPathToGc(cmd.srcDir);
+                completion.success(reply);
             }
 
             @Override

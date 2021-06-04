@@ -18,8 +18,8 @@ public class VolumeSnapshotGroupRefVO_ {
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> volumeUuid;
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> volumeType;
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> volumeInstallPath;
-    public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> snapshotName;
-    public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> snapshotInstallPath;
+    public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> volumeSnapshotName;
+    public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> volumeSnapshotInstallPath;
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, Timestamp> createDate;
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, Timestamp> lastOpDate;
 }

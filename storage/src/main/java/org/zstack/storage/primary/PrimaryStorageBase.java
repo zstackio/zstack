@@ -371,6 +371,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handleBase((CheckVolumeSnapshotOperationOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ShrinkVolumeSnapshotOnPrimaryStorageMsg) {
             handle((ShrinkVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof ChangeVolumeTypeOnPrimaryStorageMsg) {
+            handle((ChangeVolumeTypeOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1597,6 +1599,13 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         reply.setActualSize(snapshotVO.getSize());
         bus.reply(msg, reply);
     }
+
+    protected void handle(ChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        ChangeVolumeTypeOnPrimaryStorageReply reply = new ChangeVolumeTypeOnPrimaryStorageReply();
+        reply.setSnapshots(msg.getSnapshots());
+        reply.setVolume(msg.getVolume());
+        bus.reply(msg, reply);
+    };
 
     // don't attach any cluster
     public boolean isUnmounted() {

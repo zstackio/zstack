@@ -2834,6 +2834,24 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bus.reply(msg, r);
     }
 
+    @Override
+    protected void handle(ChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory factory = getHypervisorBackendFactoryByResourceUuid(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName());
+        factory.getHypervisorBackend(self).handle(msg, new ReturnValueCompletion<ChangeVolumeTypeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(ChangeVolumeTypeOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                ChangeVolumeTypeOnPrimaryStorageReply r = new ChangeVolumeTypeOnPrimaryStorageReply();
+                r.setError(errorCode);
+                bus.reply(msg, r);
+            }
+        });
+    }
+
     public static class LocalStoragePhysicalCapacityUsage extends PrimaryStorageBase.PhysicalCapacityUsage {
         public long localStorageUsedSize;
     }
