@@ -7,11 +7,14 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.CollectionUtils;
@@ -23,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.*;
 
 /**
  */
@@ -140,6 +143,18 @@ public class PrimaryStorageCascadeExtension extends AbstractAsyncCascadeExtensio
 
         try {
             for (PrimaryStorageInventory prinv : prinvs) {
+                if (!PrimaryStorageGlobalConfig.DELETION_POLICY.value().equals("Force")) {
+                    Long count = SQL.New("select count(*) from VolumeVO volume, PrimaryStorageVO ps where ps.uuid = :psUuid" +
+                            " and volume.primaryStorageUuid = ps.uuid and volume.type = :type", Long.class)
+                            .param("psUuid", prinv.getUuid())
+                            .param("type", VolumeType.Root)
+                            .find();
+
+                    if (count > 0) {
+                        throw new PrimaryStorageException(String.format("can not delete primary storage[uuid:%s] because there are still vm on it", prinv.getUuid()));
+                    }
+                }
+
                 extpEmitter.preDelete(prinv);
             }
 

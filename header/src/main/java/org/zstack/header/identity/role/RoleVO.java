@@ -1,7 +1,6 @@
 package org.zstack.header.identity.role;
 
 import org.zstack.header.identity.OwnedByAccount;
-import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ResourceVO;

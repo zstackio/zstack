@@ -35,6 +35,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
@@ -90,6 +91,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private HostCpuOverProvisioningManager cpuRatioMgr;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private RESTFacade restf;
     @Autowired
     private ResourceConfigFacade rcf;
 
@@ -704,6 +707,14 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 }
             }
         });
+
+        // listen to the kvm agent and fire usb storage device detection event
+        restf.registerSyncHttpCallHandler(HostCanonicalEvents.HOST_USB_STORAGE_DEVICE_DETECTED,
+                HostCanonicalEvents.HostUsbStorageDeviceData.class,
+                data -> {
+                    new HostUsbStorageDeviceDetectedCanonicalEvent(data).fire();
+                    return null;
+                });
     }
 
     @Transactional(readOnly = true)
@@ -937,6 +948,18 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             info.setUuid(uuid);
             info.setResourceType(HostVO.class.getSimpleName());
             return info;
+        }
+    }
+
+    public static class HostUsbStorageDeviceDetectedCanonicalEvent extends CanonicalEventEmitter {
+        HostCanonicalEvents.HostUsbStorageDeviceData data;
+
+        public HostUsbStorageDeviceDetectedCanonicalEvent(HostCanonicalEvents.HostUsbStorageDeviceData data) {
+            this.data = data;
+        }
+
+        public void fire() {
+            fire(HostCanonicalEvents.HOST_USB_STORAGE_DEVICE_DETECTED, data);
         }
     }
 }

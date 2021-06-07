@@ -44,9 +44,11 @@ import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.header.volume.VolumeJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
@@ -707,6 +709,22 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                                 trigger.next();
                             }
                         });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "after-create-volume-snapshot";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<AfterCreateVolumeSnapshotExtensionPoint> extensions = pluginRgty.getExtensionList(AfterCreateVolumeSnapshotExtensionPoint.class);
+                        CollectionUtils.safeForEach(extensions, new ForEachFunction<AfterCreateVolumeSnapshotExtensionPoint>() {
+                            @Override
+                            public void run(AfterCreateVolumeSnapshotExtensionPoint ext) {
+                                ext.afterCreateVolumeSnapshot(snapshot);
+                            }
+                        });
+                        trigger.next();
                     }
                 });
 

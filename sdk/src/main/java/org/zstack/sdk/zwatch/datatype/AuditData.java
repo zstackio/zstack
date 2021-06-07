@@ -124,4 +124,20 @@ public class AuditData  {
         return this.time;
     }
 
+    public java.lang.String resourceBefore;
+    public void setResourceBefore(java.lang.String resourceBefore) {
+        this.resourceBefore = resourceBefore;
+    }
+    public java.lang.String getResourceBefore() {
+        return this.resourceBefore;
+    }
+
+    public java.lang.String level;
+    public void setLevel(java.lang.String level) {
+        this.level = level;
+    }
+    public java.lang.String getLevel() {
+        return this.level;
+    }
+
 }

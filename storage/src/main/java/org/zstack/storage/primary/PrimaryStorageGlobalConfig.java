@@ -1,6 +1,7 @@
 package org.zstack.storage.primary;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
@@ -31,4 +32,7 @@ public class PrimaryStorageGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = 0)
     @BindResourceConfig({PrimaryStorageVO.class})
     public static GlobalConfig PRIMARY_STORAGE_AUTO_DELETE_TRASH = new GlobalConfig(CATEGORY, "primarystorage.auto.delete.trash.interval");
+    @GlobalConfigValidation(validValues = {"Force", "Permissive"})
+    @GlobalConfigDef(defaultValue = "Force", description = "Deletion policy for primary storage")
+    public static GlobalConfig DELETION_POLICY = new GlobalConfig(CATEGORY, "deletion.policy");
 }

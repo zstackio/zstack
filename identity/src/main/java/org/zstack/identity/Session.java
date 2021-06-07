@@ -47,6 +47,7 @@ public class Session implements Component {
         if (IdentityGlobalConfig.ENABLE_UNIQUE_SESSION.value(Boolean.class)) {
             List<String> currentSessionUuids = Q.New(SessionVO.class)
                     .select(SessionVO_.uuid)
+                    .eq(SessionVO_.accountUuid, accountUuid)
                     .eq(SessionVO_.userUuid, userUuid)
                     .listValues();
             IdentityCanonicalEvents.SessionForceLogoutData data = new IdentityCanonicalEvents.SessionForceLogoutData();

@@ -218,6 +218,11 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
+            <artifactId>authentication</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
             <artifactId>sdk</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -348,7 +353,7 @@
                 </configuration>
             </plugin>
 
-	    <plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.6.1</version>

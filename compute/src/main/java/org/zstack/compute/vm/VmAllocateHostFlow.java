@@ -126,6 +126,7 @@ public class VmAllocateHostFlow implements Flow {
                 if (reply.isSuccess()) {
                     AllocateHostReply areply = (AllocateHostReply) reply;
                     spec.setDestHost(areply.getHost());
+                    spec.getVmInventory().setClusterUuid(areply.getHost().getClusterUuid());
 
                     // the vm instance will still be stopped after ChangeImage
                     if (spec.getCurrentVmOperation() == VmOperation.ChangeImage) {

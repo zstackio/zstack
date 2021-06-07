@@ -487,6 +487,21 @@
                     <artifactId>acl</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>authentication</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>encryption</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>networkSecurityInspection</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
     </profiles>
@@ -700,6 +715,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>longjob</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>authentication</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

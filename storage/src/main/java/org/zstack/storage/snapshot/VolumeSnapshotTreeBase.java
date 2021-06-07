@@ -1551,7 +1551,6 @@ public class VolumeSnapshotTreeBase {
         });
     }
 
-
     private void revert(final RevertVolumeSnapshotMessage msg, final Completion completion) {
         refreshVO();
         final ErrorCode err = isOperationAllowed((Message) msg);

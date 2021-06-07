@@ -156,5 +156,7 @@
         <class>org.zstack.header.core.trash.InstallPathRecycleVO</class>
         <class>org.zstack.header.vm.VmPriorityConfigVO</class>
         <class>org.zstack.header.host.HostPortVO</class>
+        <class>org.zstack.authentication.checkfile.FileVerificationVO</class>
+        <class>org.zstack.header.encryption.LuksEncryptedImageVO</class>
     </persistence-unit>
 </persistence>

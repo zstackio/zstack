@@ -18,6 +18,7 @@ public class SourceClassMap {
 			put("org.zstack.aliyunproxy.vpc.AliyunProxyVSwitchInventory", "org.zstack.sdk.AliyunProxyVSwitchInventory");
 			put("org.zstack.aliyunproxy.vpc.AliyunProxyVpcInventory", "org.zstack.sdk.AliyunProxyVpcInventory");
 			put("org.zstack.appliancevm.ApplianceVmInventory", "org.zstack.sdk.ApplianceVmInventory");
+			put("org.zstack.authentication.checkfile.FileVerificationInventory", "org.zstack.sdk.FileVerificationInventory");
 			put("org.zstack.autoscaling.group.AutoScalingGroupInventory", "org.zstack.sdk.AutoScalingGroupInventory");
 			put("org.zstack.autoscaling.group.activity.AutoScalingGroupActivityInventory", "org.zstack.sdk.AutoScalingGroupActivityInventory");
 			put("org.zstack.autoscaling.group.instance.AutoScalingGroupInstanceInventory", "org.zstack.sdk.AutoScalingGroupInstanceInventory");
@@ -92,6 +93,11 @@ public class SourceClassMap {
 			put("org.zstack.externalbackup.zbox.ZBoxVmBackupInfo", "org.zstack.sdk.ZBoxVmBackupInfo");
 			put("org.zstack.externalbackup.zbox.ZBoxVolumeBackupInfo", "org.zstack.sdk.ZBoxVolumeBackupInfo");
 			put("org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory", "org.zstack.sdk.FaultToleranceVmGroupInventory");
+			put("org.zstack.drs.data.DRSAutomationLevel", "org.zstack.sdk.DRSAutomationLevel");
+			put("org.zstack.drs.data.DRSState", "org.zstack.sdk.DRSState");
+			put("org.zstack.drs.entity.ClusterDRSInventory", "org.zstack.sdk.ClusterDRSInventory");
+			put("org.zstack.drs.entity.DRSAdviceInventory", "org.zstack.sdk.DRSAdviceInventory");
+			put("org.zstack.drs.entity.DRSVmMigrationActivityInventory", "org.zstack.sdk.DRSVmMigrationActivityInventory");
 			put("org.zstack.guesttools.GuestToolsInventory", "org.zstack.sdk.GuestToolsInventory");
 			put("org.zstack.header.acl.AccessControlListEntryInventory", "org.zstack.sdk.AccessControlListEntryInventory");
 			put("org.zstack.header.acl.AccessControlListInventory", "org.zstack.sdk.AccessControlListInventory");
@@ -638,6 +644,13 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure");
 			put("org.zstack.sdk.DRSAdviceInventory", "org.zstack.drs.entity.DRSAdviceInventory");
 			put("org.zstack.sdk.DRSVmMigrationActivityInventory", "org.zstack.drs.entity.DRSVmMigrationActivityInventory");
+			put("org.zstack.sdk.DRSAutomationLevel", "org.zstack.drs.data.DRSAutomationLevel");
+			put("org.zstack.sdk.DRSState", "org.zstack.drs.data.DRSState");
+			put("org.zstack.sdk.DRSVmMigrationActivityInventory", "org.zstack.drs.entity.DRSVmMigrationActivityInventory");
+			put("org.zstack.sdk.DahoCloudConnectionInventory", "org.zstack.header.daho.process.DahoCloudConnectionInventory");
+			put("org.zstack.sdk.DahoConnectionInventory", "org.zstack.header.daho.process.DahoConnectionInventory");
+			put("org.zstack.sdk.DahoVllVbrRefInventory", "org.zstack.header.daho.process.DahoVllVbrRefInventory");
+			put("org.zstack.sdk.DahoVllsInventory", "org.zstack.header.daho.process.DahoVllsInventory");
 			put("org.zstack.sdk.DataCenterInventory", "org.zstack.header.datacenter.DataCenterInventory");
 			put("org.zstack.sdk.DataCenterProperty", "org.zstack.header.datacenter.DataCenterProperty");
 			put("org.zstack.sdk.DataVolumeBillingInventory", "org.zstack.billing.generator.volume.data.DataVolumeBillingInventory");
@@ -667,6 +680,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
+			put("org.zstack.sdk.FileVerificationInventory", "org.zstack.authentication.checkfile.FileVerificationInventory");
 			put("org.zstack.sdk.FirewallRuleState", "org.zstack.vpcfirewall.entity.FirewallRuleState");
 			put("org.zstack.sdk.FlowCollectorInventory", "org.zstack.header.flowMeter.FlowCollectorInventory");
 			put("org.zstack.sdk.FlowCounter", "org.zstack.header.flowMeter.FlowCounter");

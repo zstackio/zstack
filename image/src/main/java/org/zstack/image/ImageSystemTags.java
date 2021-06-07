@@ -40,8 +40,12 @@ public class ImageSystemTags {
     public static String IMAGE_GUEST_TOOLS_VERSION_TOKEN = "guestToolsVersion";
     public static PatternedSystemTag IMAGE_GUEST_TOOLS =
             new PatternedSystemTag(String.format("GuestTools::{%s}", IMAGE_GUEST_TOOLS_VERSION_TOKEN), ImageVO.class);
+
     public static String APPCENTER_BUILD_TOKEN = "buildapp";
     public static PatternedSystemTag APPCENTER_BUILD = new PatternedSystemTag(String.format("buildapp::{%s}", APPCENTER_BUILD_TOKEN), ImageVO.class);
 
     public static PatternedSystemTag PACKER_BUILD = new PatternedSystemTag("packer", ImageVO.class);
+
+    public static String IMAGE_HASH_TOKEN = "imageHash";
+    public static PatternedSystemTag IMAGE_HASH = new PatternedSystemTag(String.format("imageHash::{%s}", IMAGE_HASH_TOKEN), ImageVO.class);
 }

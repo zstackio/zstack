@@ -7,4 +7,8 @@ import org.zstack.header.core.Completion;
  */
 public interface AfterTakeLiveSnapshotsOnVolumes {
     void afterTakeLiveSnapshotsOnVolumes(CreateVolumesSnapshotOverlayInnerMsg msg, TakeVolumesSnapshotOnKvmReply treply, Completion completion);
+
+    default int orderOfAfterTakeLiveSnapshotsExtensions() {
+        return 0;
+    }
 }

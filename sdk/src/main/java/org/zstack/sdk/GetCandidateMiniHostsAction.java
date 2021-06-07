@@ -28,9 +28,6 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean local = false;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean configure = false;
-
     @Param(required = false)
     public java.util.List systemTags;
 

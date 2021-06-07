@@ -49,6 +49,16 @@ public abstract class Bash {
         }
     }
 
+    protected void writeFile(String filePath, String content) {
+        mkdirs(dirname(filePath));
+
+        try {
+            FileUtils.writeStringToFile(new File(filePath), content);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * @return return true if @content is equal to @filePath's content
      */
@@ -63,16 +73,6 @@ public abstract class Bash {
         } catch (IOException e) {
             logger.warn(e.getLocalizedMessage());
             return false;
-        }
-    }
-
-    protected void writeFile(String filePath, String content) {
-        mkdirs(dirname(filePath));
-
-        try {
-            FileUtils.writeStringToFile(new File(filePath), content);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 

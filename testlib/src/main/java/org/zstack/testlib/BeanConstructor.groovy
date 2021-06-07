@@ -32,6 +32,7 @@ class BeanConstructor {
             "encrypt.xml",
             "rest.xml",
             "Progress.xml",
+            "FileVerificationFacade.xml",
             "externalService.xml"
     ]
 
