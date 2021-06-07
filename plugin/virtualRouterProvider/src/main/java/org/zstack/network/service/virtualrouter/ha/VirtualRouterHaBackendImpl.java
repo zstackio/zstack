@@ -111,6 +111,8 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
             if (state == null || state.isEmpty()) {
                 return false;
             } else {
+                /* state.get(0) == true --> snat is disabled,
+                                == false --> sant is not disabled */
                 return Boolean.parseBoolean(state.get(0));
             }
         }
