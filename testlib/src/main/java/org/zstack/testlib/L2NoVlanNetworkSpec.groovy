@@ -27,6 +27,7 @@ class L2NoVlanNetworkSpec extends L2NetworkSpec implements Simulator{
             delegate.userTags = userTags
             delegate.systemTags = systemTags
             delegate.zoneUuid = (parent as ZoneSpec).inventory.uuid
+            delegate.vSwitchType = vSwitchType
         }
 
         postCreate {

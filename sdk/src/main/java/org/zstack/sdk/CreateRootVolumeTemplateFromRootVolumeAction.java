@@ -50,6 +50,9 @@ public class CreateRootVolumeTemplateFromRootVolumeAction extends AbstractAction
     public java.lang.String architecture;
 
     @Param(required = false)
+    public boolean virtio = true;
+
+    @Param(required = false)
     public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

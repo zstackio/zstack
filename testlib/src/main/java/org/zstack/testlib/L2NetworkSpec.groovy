@@ -12,6 +12,8 @@ abstract class L2NetworkSpec extends Spec {
     String description
     @SpecParam(required = true)
     String physicalInterface
+    @SpecParam
+    String vSwitchType
 
     L2NetworkInventory inventory
 
