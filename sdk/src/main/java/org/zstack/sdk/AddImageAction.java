@@ -59,7 +59,7 @@ public class AddImageAction extends AbstractAction {
     public java.lang.String type;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean virtio = true;
+    public boolean virtio = false;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

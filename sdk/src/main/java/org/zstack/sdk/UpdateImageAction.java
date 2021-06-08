@@ -53,7 +53,7 @@ public class UpdateImageAction extends AbstractAction {
     public java.lang.String architecture;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean virtio;
+    public boolean virtio = false;
 
     @Param(required = false)
     public java.util.List systemTags;
