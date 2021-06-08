@@ -83,10 +83,6 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
         * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
         * */
         boolean disabled = haBackend.isSnatDisabledOnRouter(vr.getUuid());
-        if (disabled && !rebuildSnat) {
-            chain.next();
-            return;
-        }
 
         new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
 
