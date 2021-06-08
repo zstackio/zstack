@@ -1,10 +1,10 @@
-package org.zstack.heder.storage.volume.backup;
+package org.zstack.sdk.zwatch.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateDataVolumeTemplateFromVolumeBackupAction extends AbstractAction {
+public class GetZWatchAlertStatisticsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateDataVolumeTemplateFromVolumeBackupAction extends AbstractActi
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.heder.storage.volume.backup.CreateDataVolumeTemplateFromVolumeBackupResult value;
+        public org.zstack.sdk.zwatch.api.GetZWatchAlertStatisticsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,37 +26,19 @@ public class CreateDataVolumeTemplateFromVolumeBackupAction extends AbstractActi
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupUuid;
+    public java.lang.String tableName;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long startTime;
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.lang.String guestOsType;
-
-    @Param(required = false, validValues = {"Linux","Windows","Other","Paravirtualization","WindowsVirtio"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String platform;
-
-    @Param(required = false)
-    public java.lang.String architecture;
-
-    @Param(required = false)
-    public boolean system = false;
-
-    @Param(required = false)
-    public java.lang.Boolean virtio;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long endTime;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.util.List groupColumns;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public int limit = 20;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -76,12 +58,6 @@ public class CreateDataVolumeTemplateFromVolumeBackupAction extends AbstractActi
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -90,8 +66,8 @@ public class CreateDataVolumeTemplateFromVolumeBackupAction extends AbstractActi
             return ret;
         }
         
-        org.zstack.heder.storage.volume.backup.CreateDataVolumeTemplateFromVolumeBackupResult value = res.getResult(org.zstack.heder.storage.volume.backup.CreateDataVolumeTemplateFromVolumeBackupResult.class);
-        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.CreateDataVolumeTemplateFromVolumeBackupResult() : value; 
+        org.zstack.sdk.zwatch.api.GetZWatchAlertStatisticsResult value = res.getResult(org.zstack.sdk.zwatch.api.GetZWatchAlertStatisticsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.api.GetZWatchAlertStatisticsResult() : value; 
 
         return ret;
     }
@@ -120,11 +96,11 @@ public class CreateDataVolumeTemplateFromVolumeBackupAction extends AbstractActi
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/images/data-volume-templates/from/volume-template/{backupUuid}";
+        info.httpMethod = "GET";
+        info.path = "/zwatch/alert-histories/statistics";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
