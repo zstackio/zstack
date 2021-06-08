@@ -256,6 +256,7 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.backup.SyncBackupResult", "org.zstack.sdk.SyncBackupResult");
 			put("org.zstack.header.storage.backup.VolumeBackupInventory", "org.zstack.sdk.VolumeBackupInventory");
 			put("org.zstack.header.storage.backup.VolumeBackupStorageRefInventory", "org.zstack.sdk.VolumeBackupStorageRefInventory");
+			put("org.zstack.header.storage.cdp.CdpPolicyInventory", "org.zstack.sdk.CdpPolicyInventory");
 			put("org.zstack.header.storage.database.backup.DatabaseBackupInventory", "org.zstack.sdk.databasebackup.DatabaseBackupInventory");
 			put("org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory", "org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.header.storage.database.backup.DatabaseBackupStruct", "org.zstack.sdk.databasebackup.DatabaseBackupStruct");
@@ -450,6 +451,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.backup.imagestore.ImageStoreGcResult", "org.zstack.sdk.ImageStoreGcResult");
 			put("org.zstack.storage.backup.imagestore.ImageStoreImageStruct", "org.zstack.sdk.ImageStoreImageStruct");
 			put("org.zstack.storage.backup.sftp.SftpBackupStorageInventory", "org.zstack.sdk.SftpBackupStorageInventory");
+			put("org.zstack.storage.cdp.CdpBackupStorageInventory", "org.zstack.sdk.CdpBackupStorageInventory");
 			put("org.zstack.storage.ceph.backup.CephBackupStorageInventory", "org.zstack.sdk.CephBackupStorageInventory");
 			put("org.zstack.storage.ceph.backup.CephBackupStorageMonInventory", "org.zstack.sdk.CephBackupStorageMonInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageInventory", "org.zstack.sdk.CephPrimaryStorageInventory");
@@ -671,6 +673,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BillingInventory", "org.zstack.billing.generator.BillingInventory");
 			put("org.zstack.sdk.BuildAppExportHistoryInventory", "org.zstack.header.buildapp.BuildAppExportHistoryInventory");
 			put("org.zstack.sdk.BuildApplicationInventory", "org.zstack.header.buildapp.BuildApplicationInventory");
+			put("org.zstack.sdk.CdpBackupStorageInventory", "org.zstack.storage.cdp.CdpBackupStorageInventory");
+			put("org.zstack.sdk.CdpPolicyInventory", "org.zstack.header.storage.cdp.CdpPolicyInventory");
 			put("org.zstack.sdk.CephBackupStorageInventory", "org.zstack.storage.ceph.backup.CephBackupStorageInventory");
 			put("org.zstack.sdk.CephBackupStorageMonInventory", "org.zstack.storage.ceph.backup.CephBackupStorageMonInventory");
 			put("org.zstack.sdk.CephPrimaryStorageInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageInventory");
