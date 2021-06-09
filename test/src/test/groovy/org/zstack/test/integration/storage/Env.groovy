@@ -69,6 +69,7 @@ class Env {
 
                     kvm {
                         name = "kvm1"
+                        managementIp = "127.0.0.2"
                         username = "root"
                         password = "password"
                     }
