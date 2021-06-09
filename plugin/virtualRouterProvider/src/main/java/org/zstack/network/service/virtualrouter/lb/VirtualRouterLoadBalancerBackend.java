@@ -30,6 +30,9 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccountVO_;
+import org.zstack.header.identity.role.RoleVO;
+import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -724,9 +727,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 }
 
+                boolean isDefaultPort = false;  // http 80;https 443
                 ArrayList<LbTO.RedirectRule> formatRedirectRules = new ArrayList<>();
                 if ( (lbTO.getMode().equals(LoadBalancerConstants.LB_PROTOCOL_HTTP) && lbTO.getLoadBalancerPort() == LoadBalancerConstants.PROTOCOL_HTTP_DEFAULT_PORT ) || (lbTO.getMode().equals(LoadBalancerConstants.LB_PROTOCOL_HTTPS) && lbTO.getLoadBalancerPort() == LoadBalancerConstants.PROTOCOL_HTTPS_DEFAULT_PORT) ){
                     formatRedirectRules.addAll(redirectRules);
+                    isDefaultPort = true;
                 }
 
                 for(LbTO.RedirectRule rule:redirectRules){
@@ -735,14 +740,23 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     formatRule.setRedirectRuleUuid(rule.getRedirectRuleUuid());
                     formatRule.setAclUuid(rule.getAclUuid());
                     formatRule.setServerGroupUuid(rule.getServerGroupUuid());
-                    formatRedirectRule(formatRule, lbTO);
 
-                    formatRedirectRules.add(formatRule);
+                    String matchMethod = Q.New(AccessControlListEntryVO.class).select(AccessControlListEntryVO_.matchMethod).eq(AccessControlListEntryVO_.uuid, rule.getRedirectRuleUuid()).findValue();
+                    boolean isSkipInsertPort = ( LoadBalancerConstants.MatchMethod.Domain.toString().equals(matchMethod) || LoadBalancerConstants.MatchMethod.Url.toString().equals(matchMethod) );
+                    if ( isSkipInsertPort && isDefaultPort ){
+                        continue;
+                    } else if( isSkipInsertPort){
+                        formatRedirectRules.add(formatRule);
+                    } else{
+                        insertPortToRedirectRule(formatRule, lbTO);
+                        formatRedirectRules.add(formatRule);
+                    }
                 }
                 return formatRedirectRules;
             }
 
-            private void formatRedirectRule(LbTO.RedirectRule redirectRule,LbTO lbTO){
+            private void insertPortToRedirectRule(LbTO.RedirectRule redirectRule,LbTO lbTO){
+                //add lbport after domain name
                 StringBuffer rule = new StringBuffer(redirectRule.getRedirectRule());
                 String insertRule = ":" + lbTO.getLoadBalancerPort();
                 int index = rule.indexOf("/");

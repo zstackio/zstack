@@ -34,6 +34,12 @@ public class LoadBalancerConstants {
         HEAD
     }
 
+    public static enum MatchMethod {
+        Domain,
+        Url,
+        DomainAndUrl
+    }
+
     public static enum HealthCheckStatusCode {
         http_2xx,
         http_3xx,
