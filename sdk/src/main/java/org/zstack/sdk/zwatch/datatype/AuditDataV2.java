@@ -68,6 +68,14 @@ public class AuditDataV2 extends org.zstack.sdk.zwatch.datatype.AuditData {
         return this.FIELD_API_NAME;
     }
 
+    public java.lang.String FIELD_REQUEST_UUID;
+    public void setFIELD_REQUEST_UUID(java.lang.String FIELD_REQUEST_UUID) {
+        this.FIELD_REQUEST_UUID = FIELD_REQUEST_UUID;
+    }
+    public java.lang.String getFIELD_REQUEST_UUID() {
+        return this.FIELD_REQUEST_UUID;
+    }
+
     public java.util.Set queryableLabels;
     public void setQueryableLabels(java.util.Set queryableLabels) {
         this.queryableLabels = queryableLabels;
