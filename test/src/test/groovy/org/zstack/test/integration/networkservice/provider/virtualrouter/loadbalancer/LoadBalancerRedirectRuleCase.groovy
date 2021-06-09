@@ -172,6 +172,7 @@ class LoadBalancerRedirectRuleCase extends SubCase {
         dbf = bean(DatabaseFacade.class)
         env.create {
             testRulePort()
+            testOnlyUrlOrDomain()
         }
     }
 
@@ -241,6 +242,111 @@ class LoadBalancerRedirectRuleCase extends SubCase {
         deleteAccessControlList {
             uuid = acl1.uuid
         }
+
+        deleteLoadBalancerListener {
+            uuid = lbl.uuid
+        }
     }
+
+    void testOnlyUrlOrDomain(){
+        def load = env.inventoryByName("lb") as LoadBalancerInventory
+        def vm = env.inventoryByName("vm") as VmInstanceInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+
+        VirtualRouterLoadBalancerBackend.RefreshLbCmd cmd = null
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class)
+            return rsp
+        }
+
+        LoadBalancerListenerInventory lbl = createLoadBalancerListener {
+            protocol = LoadBalancerConstants.LB_PROTOCOL_HTTP
+            loadBalancerUuid = load.uuid
+            loadBalancerPort = 8093
+            instancePort = 80
+            name = "test-listener"
+        }
+
+        LoadBalancerServerGroupInventory sg1 = createLoadBalancerServerGroup{
+            loadBalancerUuid =  load.uuid
+            name = "sg1"
+        }
+
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = lbl.uuid
+            serverGroupUuid = sg1.uuid
+        }
+
+
+        AccessControlListInventory acl1 = createAccessControlList {
+            name = "acl1"
+        }
+
+        AccessControlListEntryInventory redirectRule1 = addAccessControlListRedirectRule {
+            name = "redirect rule"
+            domain = ""
+            url = "/test"
+            aclUuid = acl1.uuid
+        }
+
+        addAccessControlListToLoadBalancer {
+            aclUuids = [acl1.uuid]
+            aclType = "redirect"
+            listenerUuid = lbl.uuid
+            serverGroupUuids = [sg1.uuid]
+        }
+
+        VmNicInventory nic1 = vm.vmNics.get(0)
+
+        addBackendServerToServerGroup {
+            vmNics = [['uuid':nic1.uuid,'weight':'10']]
+            serverGroupUuid = sg1.uuid
+        }
+
+        def lbTO = cmd.lbs.stream().filter{lb -> lb.listenerUuid.equals(lbl.uuid)}.collect(Collectors.toList())[0] as VirtualRouterLoadBalancerBackend.LbTO
+        def redirectRules= lbTO.redirectRules.stream().filter{ it -> it.getServerGroupUuid().equals(sg1.uuid)}.collect(Collectors.toList())
+        assert redirectRules.size == 1
+        assert redirectRules[0].redirectRule.contains("path")
+        assert !redirectRules[0].redirectRule.contains(":8093")
+
+        deleteAccessControlList {
+            uuid = acl1.uuid
+        }
+
+
+        AccessControlListInventory acl2 = createAccessControlList {
+            name = "acl2"
+        }
+
+        AccessControlListEntryInventory redirectRule2 = addAccessControlListRedirectRule {
+            name = "redirect rule"
+            domain = "zstack.io"
+            url = ""
+            aclUuid = acl2.uuid
+        }
+
+        addAccessControlListToLoadBalancer {
+            aclUuids = [acl2.uuid]
+            aclType = "redirect"
+            listenerUuid = lbl.uuid
+            serverGroupUuids = [sg1.uuid]
+        }
+
+        def lbTO2 = cmd.lbs.stream().filter{lb -> lb.listenerUuid.equals(lbl.uuid)}.collect(Collectors.toList())[0] as VirtualRouterLoadBalancerBackend.LbTO
+        redirectRules = lbTO2.redirectRules.stream().filter{ it -> it.getServerGroupUuid().equals(sg1.uuid)}.collect(Collectors.toList())
+        assert redirectRules.size == 1
+        assert redirectRules[0].redirectRule.contains("hdr")
+        assert !redirectRules[0].redirectRule.contains(":8093")
+
+        deleteAccessControlList {
+            uuid = acl2.uuid
+        }
+
+
+        deleteLoadBalancerListener {
+            uuid = lbl.uuid
+        }
+    }
+
 }
 
