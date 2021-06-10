@@ -33,6 +33,8 @@ public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
     private Boolean system;
     @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
+    @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64el"})
+    private String architecture;
 
     public String getPlatform() {
         return platform;
@@ -96,6 +98,14 @@ public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
 
     public void setSystem(Boolean system) {
         this.system = system;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 
     @Override

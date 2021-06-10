@@ -23,6 +23,7 @@ public class AddImageMsg extends NeedReplyMessage {
     private String platform;
     private List<String> backupStorageUuids;
     private String type;
+    private String architecture;
     private SessionInventory session;
     private String resourceUuid;
 
@@ -111,6 +112,14 @@ public class AddImageMsg extends NeedReplyMessage {
 
     public void setType(String imageType) {
         this.type = imageType;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 
     public SessionInventory getSession() {
