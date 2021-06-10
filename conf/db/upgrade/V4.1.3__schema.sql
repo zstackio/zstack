@@ -124,3 +124,4 @@ ALTER TABLE `zstack`.`LoadBalancerListenerACLRefVO` ADD CONSTRAINT fkLoadBalance
 ALTER TABLE `zstack`.`LoadBalancerListenerACLRefVO` DROP FOREIGN KEY fkLoadbalancerListenerACLRefVOAccessControlListVO;
 ALTER TABLE `zstack`.`LoadBalancerListenerACLRefVO` ADD CONSTRAINT fkLoadbalancerListenerACLRefVOAccessControlListVO FOREIGN KEY (aclUuid) REFERENCES `zstack`.`AccessControlListVO` (uuid) ON DELETE CASCADE;
 
+ALTER TABLE QuotaVO MODIFY COLUMN `value` bigint DEFAULT 0;
