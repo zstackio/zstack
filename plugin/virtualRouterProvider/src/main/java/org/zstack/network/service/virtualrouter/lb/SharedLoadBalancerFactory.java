@@ -91,4 +91,9 @@ public class SharedLoadBalancerFactory implements LoadBalancerFactory {
         LoadBalancerBackend backend = lbMgr.getBackend(providerType);
         return backend.getAttachableVmNicsForServerGroup(lbVO, groupVO);
     }
+
+    @Override
+    public String getApplianceVmType() {
+        return VyosConstants.VYOS_VM_TYPE;
+    }
 }

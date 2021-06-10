@@ -82,6 +82,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
     private Map<String, LoadBalancerBackend> backends = new HashMap<String, LoadBalancerBackend>();
     private Map<String, LoadBalancerFactory> lbFactories = new HashMap<String, LoadBalancerFactory>();
+    private Map<String, LoadBalancerFactory> lbFactoriesByApplianceVmType = new HashMap<String, LoadBalancerFactory>();
 
     @Override
     @MessageSafe
@@ -442,6 +443,15 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             lbFactories.put(f.getType(), f);
         }
 
+        for (LoadBalancerFactory f : pluginRgty.getExtensionList(LoadBalancerFactory.class)) {
+            LoadBalancerFactory old = lbFactoriesByApplianceVmType.get(f.getApplianceVmType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate LoadBalancerFactory[%s, %s]", old.getClass(), f.getType()));
+            }
+
+            lbFactoriesByApplianceVmType.put(f.getApplianceVmType(), f);
+        }
+
         installConfigValidateExtension();
         prepareSystemTags();
 
@@ -732,6 +742,12 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         if (f == null) {
             throw new CloudRuntimeException(String.format("cannot find LoadBalancerFactory[type:%s]", type));
         }
+        return f;
+    }
+
+    @Override
+    public LoadBalancerFactory getLoadBalancerFactoryByApplianceVmType(String applianceVmType) {
+        LoadBalancerFactory f = lbFactories.get(applianceVmType);
         return f;
     }
 

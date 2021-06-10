@@ -12,6 +12,8 @@ public interface LoadBalancerFactory {
 
     String getNetworkServiceType();
 
+    String getApplianceVmType();
+
     LoadBalancerBackend getLoadBalancerBackend(LoadBalancerVO vo);
 
     String getProviderTypeByVmNicUuid(String nicUuid);
