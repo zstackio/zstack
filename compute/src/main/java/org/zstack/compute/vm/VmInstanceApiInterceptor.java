@@ -31,6 +31,7 @@ import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.volume.VolumeState;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
@@ -102,6 +103,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIDetachIsoFromVmInstanceMsg) msg);
         } else if (msg instanceof APISetVmBootOrderMsg) {
             validate((APISetVmBootOrderMsg) msg);
+        } else if (msg instanceof APISetVmBootVolumeMsg) {
+            validate((APISetVmBootVolumeMsg) msg);
         } else if (msg instanceof APIDeleteVmStaticIpMsg) {
             validate((APIDeleteVmStaticIpMsg) msg);
         } else if (msg instanceof APISetVmStaticIpMsg) {
@@ -403,6 +406,19 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
         }
     }
+
+    private void validate(APISetVmBootVolumeMsg msg) {
+        VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
+        if (volume.isShareable()) {
+            throw new ApiMessageInterceptionException(argerr("boot volume cannot be shareable."));
+        }
+
+        if (!volume.getVmInstanceUuid().equals(msg.getVmInstanceUuid())) {
+            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] must be attached to vm[uuid:%s]",
+                    msg.getVolumeUuid(), msg.getVmInstanceUuid()));
+        }
+    }
+
 
     private void validate(APIAttachIsoToVmInstanceMsg msg) {
         List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());

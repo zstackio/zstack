@@ -122,6 +122,10 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new KvmBackend.AgentRsp()
             }
 
+            simulator(KvmBackend.LINK_VOLUME_NEW_DIR) {
+                return new KvmBackend.LinkVolumeNewDirRsp()
+            }
+
             simulator(KvmBackend.GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH) {
                 def rsp = new KvmBackend.GetDownloadBitsFromKVMHostProgressRsp()
                 rsp.totalSize = 1L
