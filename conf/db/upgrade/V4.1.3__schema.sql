@@ -103,3 +103,7 @@ CREATE TABLE `AuditsVO` (
   KEY `idxOperatorAccountUuid` (`operatorAccountUuid`),
   KEY `idxRequestUuid` (`requestUuid`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+alter table AliyunProxyVpcVO modify vRouterUuid varchar(32) null;
+alter table AliyunProxyVpcVO drop foreign key fkAliyunProxyVpcVOVmInstanceEO;
+alter table AliyunProxyVpcVO add constraint fkAliyunProxyVpcVOVmInstanceEO foreign key (vRouterUuid) references VmInstanceEO (uuid) on delete set null;
