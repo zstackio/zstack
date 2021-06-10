@@ -218,7 +218,8 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return new LocalStorageKvmBackend.AgentResponse()
             }
 
-            simulator(LocalStorageKvmBackend.LINK_VOLUME_NEW_DIR) {
+
+            simulator(LocalStorageKvmBackend.HARD_LINK_VOLUME) {
                 return new LocalStorageKvmBackend.LinkVolumeNewDirRsp()
             }
 

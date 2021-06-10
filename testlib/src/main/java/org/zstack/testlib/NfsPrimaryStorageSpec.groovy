@@ -198,7 +198,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new NfsPrimaryStorageKVMBackendCommands.DownloadBitsFromKVMHostRsp()
             }
 
-            simulator(NfsPrimaryStorageKVMBackend.LINK_VOLUME_NEW_DIR) {
+            simulator(NfsPrimaryStorageKVMBackend.HARD_LINK_VOLUME) {
                 return new NfsPrimaryStorageKVMBackendCommands.LinkVolumeNewDirRsp()
             }
 

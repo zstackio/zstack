@@ -122,7 +122,7 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new KvmBackend.AgentRsp()
             }
 
-            simulator(KvmBackend.LINK_VOLUME_NEW_DIR) {
+            simulator(KvmBackend.HARD_LINK_VOLUME) {
                 return new KvmBackend.LinkVolumeNewDirRsp()
             }
 

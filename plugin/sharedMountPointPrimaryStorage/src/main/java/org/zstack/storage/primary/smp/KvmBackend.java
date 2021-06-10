@@ -284,10 +284,10 @@ public class KvmBackend extends HypervisorBackend {
     public static final String CREATE_FOLDER_PATH = "/sharedmountpointprimarystorage/volume/createfolder";
     public static final String CHECK_BITS_PATH = "/sharedmountpointprimarystorage/bits/check";
     public static final String GET_VOLUME_SIZE_PATH = "/sharedmountpointprimarystorage/volume/getsize";
+    public static final String HARD_LINK_VOLUME = "/sharedmountpointprimarystorage/volume/hardlink";
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/sharedmountpointprimarystorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/sharedmountpointprimarystorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/sharedmountpointprimarystorage/kvmhost/download/progress";
-    public static final String LINK_VOLUME_NEW_DIR = "/sharedmountpointprimarystorage/volume/linknewdir";
 
     public KvmBackend(PrimaryStorageVO self) {
         super(self);
@@ -1986,7 +1986,8 @@ public class KvmBackend extends HypervisorBackend {
             return;
         }
 
-        new Do().go(LINK_VOLUME_NEW_DIR, cmd, LinkVolumeNewDirRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+
+        new Do().go(HARD_LINK_VOLUME, cmd, LinkVolumeNewDirRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
             @Override
             public void success(AgentRsp rsp) {
                 VolumeInventory vol = msg.getVolume();
