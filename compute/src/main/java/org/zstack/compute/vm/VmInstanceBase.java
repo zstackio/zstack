@@ -2987,6 +2987,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmInstanceDefaultCdRomMsg) msg);
         } else if (msg instanceof APIUpdateVmNicDriverMsg) {
             handle((APIUpdateVmNicDriverMsg) msg);
+        } else if (msg instanceof APISetVmDriverMsg) {
+            handle((APISetVmDriverMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -7280,6 +7282,20 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         event.setInventory(VmNicInventory.valueOf(nicVO));
+        bus.publish(event);
+    }
+
+    private void handle(final APISetVmDriverMsg msg) {
+        APISetVmDriverEvent event = new APISetVmDriverEvent(msg.getId());
+        if (msg.getVirtio()) {
+            SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(msg.getUuid());
+            creator.recreate = true;
+            creator.inherent = false;
+            creator.create();
+        } else {
+            VmSystemTags.VIRTIO.delete(msg.getUuid(), VmInstanceVO.class);
+        }
+
         bus.publish(event);
     }
 
