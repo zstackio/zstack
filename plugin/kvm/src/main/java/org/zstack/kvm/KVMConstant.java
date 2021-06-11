@@ -71,7 +71,19 @@ public interface KVMConstant {
     String KVM_CONFIG_SECONDARY_VM_PATH = "/secondary/vm/config";
     String KVM_START_COLO_SYNC_PATH = "/start/colo/sync";
     String KVM_REGISTER_PRIMARY_VM_HEARTBEAT = "/register/primary/vm/heartbeat";
-
+    String KVM_VM_CREATE_VSOC = "/vm/vsoccreate";
+    String KVM_VM_DELETE_VSOC = "/vm/vsocdelete";
+    String KVM_VSOC_MIGRATE = "/vm/vsocmigrate";
+    String KVM_BOOT_FROM_NEW_NODE = "/vm/vsocbootfromnewnode";
+    String KVM_VSOC_CREATE_SNAPSHOT_PATH = "/vm/vsoccreatesnapshot";
+    String KVM_VSOC_DELETE_SNAPSHOT_PATH = "/vm/vsocdeletesnapshot";
+    String KVM_VSOC_USE_SNAPSHOT = "/vm/vsocusesnapshot";
+    String KVM_CLONE_VSOC = "/vm/vsocclone";
+    String KVM_VSOC_CREATE_BACKUP_PATH = "/vm/vsoccreatebackup";
+    String KVM_VSOC_DELETE_BACKUP_PATH = "/vm/vsocdeletebackup";
+    String KVM_VSOC_CREATE_FROM_BACKUP_PATH = "/vm/vsoccreatefrombackup";
+    String KVM_VSOC_USE_BACKUP_PATH = "/vm/vsocusebackup";
+    String KVM_VSOC_CREATE_FROM_SNAPSHOT_PATH = "/vm/vsoccreatefromsnapshot";
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
     String ANSIBLE_MODULE_PATH = "ansible/kvm";

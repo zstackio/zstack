@@ -25,6 +25,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.identity.*;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
@@ -776,6 +777,37 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     }
                 });
 
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("vsoc-create-snapshot");
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VmVsocCreateSnapshotMsg vmsg = new VmVsocCreateSnapshotMsg();
+                        String hostUuid = Q.New(VmInstanceVO.class)
+                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue();
+                        if (hostUuid == null) {
+                            hostUuid = Q.New(VmInstanceVO.class)
+                                    .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.lastHostUuid).findValue();
+                        }
+                        vmsg.setHostUuid(hostUuid);
+                        vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
+                        vmsg.setSnapshotUuid(struct.getCurrent().getUuid());
+                        vmsg.setVmUuid(Q.New(VmInstanceVO.class)
+                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
+                        bus.makeTargetServiceIdByResourceUuid(vmsg, HostConstant.SERVICE_ID, vmsg.getHostUuid());
+                        bus.send(vmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "take-volume-snapshot";

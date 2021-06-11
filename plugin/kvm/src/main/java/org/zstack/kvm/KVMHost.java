@@ -85,9 +85,13 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.CoreGlobalProperty.ENABLE_KYSEC;
+import static org.zstack.core.CoreGlobalProperty.PLATFORM_ID;
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
+import static org.zstack.header.host.HostErrors.FAILD_TO_VSOC_MIGRATE;
+import static org.zstack.header.vm.VmInstanceConstant.COLD_MIGRATE;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -167,6 +171,19 @@ public class KVMHost extends HostBase implements Host {
     private String startColoSyncPath;
     private String registerPrimaryVmHeartbeatPath;
     private String getHostNumaPath;
+    private String vmCreateVsocPath;
+    private String vmDeleteVsocPath;
+    private String vsocMigratePath;
+    private String bootFromNewNodePath;
+    private String socCreateSnapshotPath;
+    private String socDeleteSnapshotPath;
+    private String socUseSnapshotPath;
+    private String cloneVsocPath;
+    private String vsocCreateBackup;
+    private String vsocDeleteBackup;
+    private String vsocCreateVmFromBackup;
+    private String vsocUseBackup;
+    private String vsocCreateFromSnapshot;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
@@ -353,6 +370,57 @@ public class KVMHost extends HostBase implements Host {
         ub.path(KVMConstant.KVM_HOST_NUMA_PATH);
         getHostNumaPath = ub.build().toString();
 
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_CREATE_VSOC);
+        vmCreateVsocPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_DELETE_VSOC);
+        vmDeleteVsocPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_MIGRATE);
+        vsocMigratePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_BOOT_FROM_NEW_NODE);
+        bootFromNewNodePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_CREATE_SNAPSHOT_PATH);
+        socCreateSnapshotPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_DELETE_SNAPSHOT_PATH);
+        socDeleteSnapshotPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_USE_SNAPSHOT);
+        socUseSnapshotPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_CLONE_VSOC);
+        cloneVsocPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_CREATE_BACKUP_PATH);
+        vsocCreateBackup = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_DELETE_BACKUP_PATH);
+        vsocDeleteBackup = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_CREATE_FROM_BACKUP_PATH);
+        vsocCreateVmFromBackup = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_USE_BACKUP_PATH);
+        vsocUseBackup = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_CREATE_FROM_SNAPSHOT_PATH);
+        vsocCreateFromSnapshot = ub.build().toString();
     }
 
     class Http<T> {
@@ -551,6 +619,32 @@ public class KVMHost extends HostBase implements Host {
             handle((CheckFileOnHostMsg) msg);
         } else if (msg instanceof GetHostNumaTopologyMsg) {
             handle((GetHostNumaTopologyMsg) msg);
+        } else if (msg instanceof CreateVmVsocFileMsg) {
+            handle((CreateVmVsocFileMsg) msg);
+        } else if (msg instanceof DeleteVmVsocFileMsg) {
+            handle((DeleteVmVsocFileMsg) msg);
+        } else if (msg instanceof VmVsocMigrateMsg) {
+            handle((VmVsocMigrateMsg) msg);
+        } else if (msg instanceof VmVsocBootFromNewNodeMsg) {
+            handle((VmVsocBootFromNewNodeMsg) msg);
+        } else if (msg instanceof VmVsocCreateSnapshotMsg) {
+            handle ((VmVsocCreateSnapshotMsg) msg);
+        } else if (msg instanceof VmVsocDeleteSnapshotMsg) {
+            handle((VmVsocDeleteSnapshotMsg) msg);
+        } else if (msg instanceof VmSocUseSnapshotMsg) {
+            handle((VmSocUseSnapshotMsg) msg);
+        } else if (msg instanceof VmCloneVsocFileMsg) {
+            handle((VmCloneVsocFileMsg) msg);
+        } else if (msg instanceof VmVsocCreateBackupMsg) {
+            handle((VmVsocCreateBackupMsg) msg);
+        } else if (msg instanceof VmVsocDeleteBackupMsg) {
+            handle((VmVsocDeleteBackupMsg) msg);
+        } else if (msg instanceof VmVsocCreateVmFromBackupMsg) {
+            handle((VmVsocCreateVmFromBackupMsg) msg);
+        } else if (msg instanceof VmVsocUseBackupMsg) {
+            handle((VmVsocUseBackupMsg) msg);
+        } else if (msg instanceof VmVsocCreateFromSnapshotMsg) {
+            handle((VmVsocCreateFromSnapshotMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -660,6 +754,165 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
+    private void handle(VmCloneVsocFileMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.destSocId = msg.getDestSocId();
+        cmd.destVmName = msg.getDestVmUuid();
+        cmd.srcVmName = msg.getSrcVmUuid();
+        cmd.cloneResource = msg.getResource();
+        cmd.platformId = msg.getPlatformId();
+        cmd.cloneType = msg.getType();
+        new Http<>(cloneVsocPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                VmCloneVsocReply reply = new VmCloneVsocReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("Fail:call create_snapshot, because:%s", ret.getError()));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                VmCloneVsocReply reply = new VmCloneVsocReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(VmVsocCreateSnapshotMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.platformId = msg.getPlatformId();
+        cmd.vmName = msg.getVmUuid();
+        cmd.ssId = msg.getSnapshotUuid();
+
+        new Http<>(socCreateSnapshotPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                VmSocCreateSnapshotReply reply = new VmSocCreateSnapshotReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("Fail:call create_snapshot, because:%s", ret.getError()));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                VmSocCreateSnapshotReply reply = new VmSocCreateSnapshotReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(VmVsocDeleteSnapshotMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.platformId = msg.getPlatformId();
+        cmd.vmName = msg.getVmUuid();
+        cmd.ssId = msg.getSnapshotUuid();
+        cmd.delSsFlag = 0;
+
+        new Http<>(socDeleteSnapshotPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                VmSocDeleteSnapshotReply reply = new VmSocDeleteSnapshotReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("Fail:call delete_snapshot, because:%s", ret.getError()));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                VmSocDeleteSnapshotReply reply = new VmSocDeleteSnapshotReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(VmSocUseSnapshotMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.platformId = msg.getPlatformId();
+        cmd.vmName = msg.getVmUuid();
+        cmd.ssId = msg.getSnapshotUuid();
+
+        new Http<>(socUseSnapshotPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                VmSocUseSnapshotReply reply = new VmSocUseSnapshotReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("Fail:call use_snapshot, because:%s", ret.getError()));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                VmSocUseSnapshotReply reply = new VmSocUseSnapshotReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(VmVsocBootFromNewNodeMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.platformId = msg.getPlatformId();
+        cmd.vmName = msg.getVmUuid();
+        cmd.prvSocId = msg.getPrvSocId();
+
+        new Http<>(bootFromNewNodePath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                VmBootFromNewNodeReply rsp = new VmBootFromNewNodeReply();
+                if (!ret.isSuccess()) {
+                    logger.warn(String.format("Fail:call boot_from_new_node, because: %s", ret.getError()));
+                    rsp.setSuccess(false);
+                    rsp.setError(operr("Fail:call boot_from_new_node, because: %s", ret.getError()));
+                    bus.reply(msg, rsp);
+                }
+
+                bus.reply(msg, rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                VmBootFromNewNodeReply rsp = new VmBootFromNewNodeReply();
+                rsp.setSuccess(false);
+                rsp.setError(errorCode);
+                bus.reply(msg, rsp);
+            }
+        });
+    }
+
+    private void handle(VmVsocMigrateMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmUuid();
+        cmd.socId = msg.getDestSocId();
+        cmd.migrateType = msg.getMigrateType();
+        cmd.platformId = PLATFORM_ID;
+
+        new Http<>(vsocMigratePath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                VmVsocMigrateReply rsp = new VmVsocMigrateReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("migrate vm vsoc fail,becauese:%s", ret.getError()));
+                }
+                bus.reply(msg, rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocMigrateReply rsp = new VmVsocMigrateReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
+            }
+        });
+    }
+
     private void handle(RegisterColoPrimaryCheckMsg msg) {
         inQueue().name(String.format("register-vm-heart-beat-on-%s", self.getUuid()))
                 .asyncBackup(msg)
@@ -669,6 +922,155 @@ public class KVMHost extends HostBase implements Host {
                         chain.next();
                     }
                 }));
+    }
+
+    private void handle(VmVsocCreateBackupMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmUuid();
+        cmd.backupUuid = msg.getBackUuid();
+        cmd.platformId = msg.getPlatformId();
+        new Http<>(vsocCreateBackup, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                VmVsocCreateBackupReply rsp = new VmVsocCreateBackupReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("Fail: create_backup,becauese:%s", ret.getError()));
+                }
+                bus.reply(msg, rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocCreateBackupReply rsp = new VmVsocCreateBackupReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
+            }
+        });
+    }
+
+    private void handle(VmVsocCreateVmFromBackupMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.srcVmName = msg.getVmUuid();
+        cmd.backupUuid = msg.getBackupUuid();
+        cmd.platformId = msg.getPlatformId();
+        cmd.destVmName = msg.getSrcVmUuid();
+        new Http<>(vsocCreateVmFromBackup, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                VmVsocCreateVmFromBackupReply rsp = new VmVsocCreateVmFromBackupReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("Fail: delete_backup,becauese:%s", ret.getError()));
+                }
+                bus.reply(msg, rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocCreateVmFromBackupReply rsp = new VmVsocCreateVmFromBackupReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
+            }
+        });
+    }
+
+    private void handle(VmVsocDeleteBackupMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmUuid();
+        cmd.backupUuid = msg.getBackUuid();
+        cmd.platformId = msg.getPlatformId();
+        new Http<>(vsocDeleteBackup, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                VmVsocDeleteBackupReply rsp = new VmVsocDeleteBackupReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("Fail: create_backup,becauese:%s", ret.getError()));
+                }
+                bus.reply(msg, rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocDeleteBackupReply rsp = new VmVsocDeleteBackupReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
+            }
+        });
+    }
+
+    private void handle(VmVsocUseBackupMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmUuid();
+        cmd.backupUuid = msg.getBackupUuid();
+        cmd.platformId = msg.getPlatformId();
+        new Http<>(vsocUseBackup, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                VmVsocUseBackupReply rsp = new VmVsocUseBackupReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("Fail: use_backup,becauese:%s", ret.getError()));
+                }
+                bus.reply(msg, rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocUseBackupReply rsp = new VmVsocUseBackupReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
+            }
+        });
+    }
+
+    private void handle(VmVsocCreateFromSnapshotMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmUuid();
+        cmd.srcVmName = msg.getSrcVmUuid();
+        cmd.ssId = msg.getSnapshotUuid();
+        cmd.platformId = msg.getPlatformId();
+        new Http<>(vsocCreateFromSnapshot, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                VmVsocCreateFromSnapshotReply rsp = new VmVsocCreateFromSnapshotReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("Fail: vsoc_create_from_snapshot, because:%s", ret.getError()));
+                }
+                bus.reply(msg, rsp);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocCreateFromSnapshotReply rsp = new VmVsocCreateFromSnapshotReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
+            }
+        });
+    }
+
+    private void handle(CreateVmVsocFileMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmInstanceUuid();
+        cmd.platformId = msg.getPlatformId();
+
+        new Http<>(vmCreateVsocPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+
+            @Override
+            public void success(VsocRsp ret) {
+                final CreateVmVsocFileReply reply = new CreateVmVsocFileReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("Error: %s", ret.getError()));
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                final CreateVmVsocFileReply reply = new CreateVmVsocFileReply();
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+        });
     }
 
     private void registerPrimaryVmHeartbeat(RegisterColoPrimaryCheckMsg msg, NoErrorCompletion completion) {
@@ -706,6 +1108,32 @@ public class KVMHost extends HostBase implements Host {
                 bus.reply(msg, reply);
                 completion.done();
             }
+        });
+    }
+
+    private void handle(DeleteVmVsocFileMsg msg) {
+        VsocCommand cmd = new VsocCommand();
+        cmd.vmName = msg.getVmInstanceUuid();
+        cmd.platformId = msg.getPlatformId();
+
+        new Http<>(vmDeleteVsocPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("Error: %s", ret.getError()));
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
         });
     }
 
@@ -1895,6 +2323,8 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setVdpaPaths((List<String>) data.get("vDPA_paths"));
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setTimeout(timeoutManager.getTimeout());
+                        cmd.setSscardId(HostSystemTags.HOST_SSCARDID.getTokenByResourceUuid(dstHostUuid, HostSystemTags.HOST_SSCARDID_TOKEN));
+                        cmd.setPlatformId(PLATFORM_ID);
 
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
                         ub.host(migrateFromDestination ? dstHostMnIp : srcHostMnIp);
@@ -2903,6 +3333,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setConsoleMode("vnc");
         cmd.setTimeout(TimeUnit.MINUTES.toSeconds(5));
         cmd.setConsoleLogToFile(!VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType()));
+        cmd.setPlatformId(PLATFORM_ID);
         if (spec.isCreatePaused()) {
             cmd.setCreatePaused(true);
         }
@@ -4028,7 +4459,7 @@ public class KVMHost extends HostBase implements Host {
                         }
                     });
 
-                    flow(new NoRollbackFlow() {
+                    Flow echoFlow = new NoRollbackFlow() {
                         String __name__ = "echo-host";
 
                         @Override
@@ -4079,7 +4510,58 @@ public class KVMHost extends HostBase implements Host {
                                 }
                             });
                         }
-                    });
+                    };
+
+                    flow(echoFlow);
+
+                    if (!ENABLE_KYSEC) {
+                        flow(new NoRollbackFlow() {
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                FlowChain prepareChain = FlowChainBuilder.newSimpleFlowChain();
+
+                                for (PrepareKVMHostExtensionPoint extp : factory.getPrepareExtensions()) {
+                                    KVMHostConnectedContext ctx = new KVMHostConnectedContext();
+                                    ctx.setInventory((KVMHostInventory) getSelfInventory());
+                                    ctx.setNewAddedHost(info.isNewAdded());
+                                    ctx.setBaseUrl(baseUrl);
+                                    ctx.setSkipPackages(info.getSkipPackages());
+
+                                    prepareChain.then(extp.createPrepareKvmHostFlow(ctx));
+                                }
+                                prepareChain.error(new FlowErrorHandler(trigger) {
+                                    @Override
+                                    public void handle(ErrorCode errCode, Map data) {
+                                        trigger.fail(errCode);
+                                    }
+                                }).done(new FlowDoneHandler(trigger) {
+                                    @Override
+                                    public void handle(Map data) {
+                                        trigger.next();
+                                    }
+                                }).start();
+                            }
+                        });
+                    }
+
+                    if (KVMSystemTags.RESTART_LIBVIRT_REQUESTED.hasTag(self.getUuid())) {
+                        flow(new NoRollbackFlow() {
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                new Ssh().shell(String.format("sudo systemctl restart libvirtd; sudo bash /etc/init.d/%s restart", AnsibleConstant.KVM_AGENT_NAME))
+                                        .setTimeout(20)
+                                        .setPrivateKey(asf.getPrivateKey())
+                                        .setUsername(getSelf().getUsername())
+                                        .setHostname(self.getManagementIp())
+                                        .setPort(getSelf().getPort())
+                                        .runErrorByExceptionAndClose();
+
+                                trigger.next();
+                            }
+                        });
+
+                        flow(echoFlow);
+                    }
 
                     flow(new NoRollbackFlow() {
                         String __name__ = "update-kvmagent-dependencies";
@@ -4160,6 +4642,8 @@ public class KVMHost extends HostBase implements Host {
                                     createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
+                                    //createTagWithoutNonValue(HostSystemTags.HOSTNAME, HostSystemTags.HOSTNAME_TOKEN, ret.getHostname(), true);
+                                    createTagWithoutNonValue(HostSystemTags.HOST_SSCARDID, HostSystemTags.HOST_SSCARDID_TOKEN, ret.getSscardId(), true);
 
                                     if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
                                         recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
@@ -4238,6 +4722,65 @@ public class KVMHost extends HostBase implements Host {
                             trigger.next();
                         }
                     });
+
+                    if (!ENABLE_KYSEC) {
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "PrepareKVMHostExtensionPoint";
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                FlowChain prepareChain = FlowChainBuilder.newSimpleFlowChain();
+
+                                for (PrepareKVMHostExtensionPoint extp : factory.getPrepareExtensions()) {
+                                    KVMHostConnectedContext ctx = new KVMHostConnectedContext();
+                                    ctx.setInventory((KVMHostInventory) getSelfInventory());
+                                    ctx.setNewAddedHost(info.isNewAdded());
+                                    ctx.setBaseUrl(baseUrl);
+                                    ctx.setSkipPackages(info.getSkipPackages());
+
+                                    prepareChain.then(extp.createPrepareKvmHostFlow(ctx));
+                                }
+                                prepareChain.error(new FlowErrorHandler(trigger) {
+                                    @Override
+                                    public void handle(ErrorCode errCode, Map data) {
+                                        trigger.fail(errCode);
+                                    }
+                                }).done(new FlowDoneHandler(trigger) {
+                                    @Override
+                                    public void handle(Map data) {
+                                    /*
+                                    SshResult ret = new Ssh().shell(String.format("sudo systemctl restart libvirtd; sudo bash /etc/init.d/%s restart", AnsibleConstant.KVM_AGENT_NAME))
+                                            .setTimeout(20)
+                                            .setPrivateKey(asf.getPrivateKey())
+                                            .setUsername(getSelf().getUsername())
+                                            .setHostname(self.getManagementIp())
+                                            .setPort(getSelf().getPort())
+                                            .runAndClose();
+
+                                    if (ret.getReturnCode() != 0) {
+                                        trigger.fail(operr("Failed to restart agent, because %s",ret.getStderr()));
+                                        return;
+                                    }
+                                     */
+
+                                        SshShell sshShell = new SshShell();
+                                        sshShell.setHostname(getSelf().getManagementIp());
+                                        sshShell.setUsername(getSelf().getUsername());
+                                        sshShell.setPassword(getSelf().getPassword());
+                                        sshShell.setPort(getSelf().getPort());
+                                        sshShell.setWithSudo(false);
+                                        final String cmd = "sed -i \"s/.*listen_tls = ./listen_tls = 1/\" /etc/libvirt/libvirtd.conf";
+                                        SshResult ret = sshShell.runCommand(cmd);
+                                        if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+                                            trigger.fail(operr("Failed to run command, because %s",ret.getStderr()));
+                                        }
+
+                                        trigger.next();
+                                    }
+                                }).start();
+                            }
+                        });
+                    }
 
                     error(new FlowErrorHandler(complete) {
                         @Override

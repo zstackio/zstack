@@ -407,6 +407,15 @@ public class KVMAgentCommands {
         private String systemProductName;
         private String systemSerialNumber;
         private List<String> ipAddresses;
+        private String sscardId;
+
+        public String getSscardId() {
+            return sscardId;
+        }
+
+        public void setSscardId(String sscardId) {
+            this.sscardId = sscardId;
+        }
 
         public String getOsDistribution() {
             return osDistribution;
@@ -1620,6 +1629,25 @@ public class KVMAgentCommands {
 
         // TODO: only for test
         private boolean useColoBinary;
+        private String platformId;
+
+        public boolean isDiskEncryption() {
+            return diskEncryption;
+        }
+
+        public void setDiskEncryption(boolean diskEncryption) {
+            this.diskEncryption = diskEncryption;
+        }
+
+        private boolean diskEncryption;
+
+        public String getPlatformId() {
+            return platformId;
+        }
+
+        public void setPlatformId(String platformId) {
+            this.platformId = platformId;
+        }
 
         public String getChassisAssetTag() {
             return chassisAssetTag;
@@ -2656,6 +2684,24 @@ public class KVMAgentCommands {
         private boolean xbzrle;
         private List<String> vdpaPaths;
         private Long timeout; // in seconds
+        private String sscardId;
+        private String platformId;
+
+        public String getPlatformId() {
+            return platformId;
+        }
+
+        public void setPlatformId(String platformId) {
+            this.platformId = platformId;
+        }
+
+        public String getSscardId() {
+            return sscardId;
+        }
+
+        public void setSscardId(String sscardId) {
+            this.sscardId = sscardId;
+        }
 
         public boolean isUseNuma() {
             return useNuma;
@@ -3239,4 +3285,134 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class CreateVmVsocCommand extends AgentCommand {
+        public String vmUuid;
+        public String platformId;
+    }
+
+    public static class CreateVmVsocRsp extends AgentResponse {
+    }
+
+    public static class DeleteVmVsocCommand extends AgentCommand {
+        public String vmUuid;
+        public String platformId;
+    }
+
+    public static class DeleteVmVsocRsp extends AgentResponse {
+    }
+
+    public static class VsocMigrateCommand extends AgentCommand {
+        public String vmUuid;
+        public String socId;
+        public int type;
+        public String platformId;
+    }
+
+    public static class VsocMigrateRsp extends AgentResponse {
+    }
+
+    public static class BootFromNewNodeCommand extends AgentCommand {
+        public String vmUuid;
+        public String prvSocId;
+        public String platformId;
+    }
+
+    public static class BootFromNewNodeRsp extends AgentResponse {
+    }
+
+    public static class SocCreateSnaphotCommand extends AgentCommand {
+        public String vmUuid;
+        public String platformId;
+        public String snapshotUuid;
+    }
+
+    public static class SocCreateSnapshotRsp extends AgentResponse {
+    }
+
+    public static class SocDeleteSnapshotCommand extends AgentCommand {
+        public String vmUuid;
+        public String platformId;
+        public String snapshotUuid;
+    }
+
+    public static class SocDeleteSnapshotRsp extends AgentResponse {
+    }
+
+    public static class SocUseSnapshotCommand extends AgentCommand {
+        public String vmUuid;
+        public String platformId;
+        public String snapshotUuid;
+    }
+
+    public static class SocUseSnapshotRsp extends AgentResponse {
+    }
+
+    public static class VsocCloneCommand extends AgentCommand {
+        public String platformId;
+        public String destVmUuid;
+        public String srcVmUuid;
+        public int resource;
+        public int type;
+        public String destSocId;
+    }
+
+    public static class VsocCloneRsp extends AgentResponse {
+    }
+
+    public static class VsocCreateBackupCommand extends AgentCommand {
+        public String platformId;
+        public String backupUuid;
+        public String vmUuid;
+    }
+
+    public static class VsocCreateBackupRsp extends AgentResponse {
+    }
+
+    public static class VsocDeleteBackupCommand extends AgentCommand {
+        public String platformId;
+        public String backupUuid;
+        public String vmUuid;
+    }
+
+    public static class VsocDeleteBackupRsp extends AgentResponse {
+    }
+
+    public static class VsocCreateVmFromBackupCommand extends AgentCommand {
+        public String platformId;
+        public String backupUuid;
+        public String vmUuid;
+        public String srcVmUuid;
+    }
+
+    public static class VsocCreateVmFromBackupRsp extends AgentResponse {
+    }
+
+    public static class VsocUseBackupCommand extends AgentCommand {
+        public String platformId;
+        public String backupUuid;
+        public String vmUuid;
+    }
+
+    public static class VsocUseBackupRsp extends AgentResponse {
+    }
+
+    public static class VsocCommand extends AgentCommand {
+        public String vmName = "";
+        public String prvSocId = "";
+        public String socId = "";
+        public int migrateType = 0;
+        public String ssId = "123456f96f3c4e4ea61add45084eb9da";
+        public int delSsFlag = 0;
+        public String srcVmName = "";
+        public String destVmName = "";
+        public String destSocId = "";
+        public int cloneResource = 0;
+        public int cloneType = 0;
+        public String backupUuid = "123457f96f3c4e4ea61add45084eb9da";
+        public String platformId;
+    }
+
+    public static class VsocRsp extends AgentResponse {
+
+    }
 }

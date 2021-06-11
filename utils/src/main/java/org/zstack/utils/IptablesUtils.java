@@ -14,12 +14,12 @@ public class IptablesUtils {
     }
 
     public static void insertRuleToFilterTable(String rule) {
-        ShellResult ret = ShellUtils.runAndReturn(String.format("/sbin/iptables-save | grep -- '%s' > /dev/null", rule));
+        ShellResult ret = ShellUtils.runAndReturn(String.format("/sbin/iptables-save | grep -- '%s' > /dev/null", rule), false);
         if (ret.getRetCode() == 0) {
             return;
         }
 
-        ret = ShellUtils.runAndReturn(String.format("/sbin/iptables %s", rule.replace("-A", "-I")));
+        ret = ShellUtils.runAndReturn(String.format("/sbin/iptables %s", rule.replace("-A", "-I")), false);
         ret.raiseExceptionIfFail();
     }
 }

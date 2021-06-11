@@ -26,6 +26,23 @@
                 <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateCdRomFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
+                <value>org.zstack.compute.vm.VmCreateVsocFileFlow</value>
+                <value>org.zstack.compute.vm.VmCreateOnHypervisorFlow</value>
+                <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
+            </list>
+        </property>
+        <property name="createVmFromCloneWorkFlowElements">
+            <list>
+                <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateHostAndPrimaryStorageFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateCdRomFlow</value>
+                <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
+                <!--
+                <value>org.zstack.compute.vm.VmCloneVsocFileFlow</value>
+                -->
+                <value>org.zstack.compute.vm.VmVsocCreateFromSnapshotFlow</value>
                 <value>org.zstack.compute.vm.VmCreateOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
             </list>
@@ -56,6 +73,7 @@
                 <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicForStartingVmFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
+                <value>org.zstack.compute.vm.VmCheckVmVsocFile</value>
                 <value>org.zstack.compute.vm.VmStartOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
             </list>
@@ -65,7 +83,9 @@
                 <value>org.zstack.compute.vm.VmMigrationCheckL2NetworkOnHostFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateHostForMigrateVmFlow</value>
                 <value>org.zstack.compute.vm.VmMigrateCallExtensionFlow</value>
+                <value>org.zstack.compute.vm.VmVsocMigrateFlow</value>
                 <value>org.zstack.compute.vm.VmMigrateOnHypervisorFlow</value>
+                <value>org.zstack.compute.vm.VmDeleteVsocFileFlow</value>
                 <value>org.zstack.compute.vm.VmReturnHostFlow</value>
             </list>
         </property>
@@ -101,6 +121,7 @@
         </property>
         <property name="expungeVmWorkFlowElements">
             <list>
+                <value>org.zstack.compute.vm.VmDeleteVsocFileFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeRootVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeMemoryVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeCacheVolumeFlow</value>
