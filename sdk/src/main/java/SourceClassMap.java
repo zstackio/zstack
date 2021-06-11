@@ -372,6 +372,7 @@ public class SourceClassMap {
 			put("org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory", "org.zstack.sdk.VmNicSecurityGroupRefInventory");
 			put("org.zstack.network.service.eip.EipInventory", "org.zstack.sdk.EipInventory");
 			put("org.zstack.network.service.flat.IpStatisticData", "org.zstack.sdk.IpStatisticData");
+			put("org.zstack.network.service.lb.APIChangeAccessControlListServerGroupEvent$LoadBalancerListerAcl", "org.zstack.sdk.LoadBalancerListerAcl");
 			put("org.zstack.network.service.lb.CertificateInventory", "org.zstack.sdk.CertificateInventory");
 			put("org.zstack.network.service.lb.LoadBalancerInventory", "org.zstack.sdk.LoadBalancerInventory");
 			put("org.zstack.network.service.lb.LoadBalancerListenerACLRefInventory", "org.zstack.sdk.LoadBalancerListenerACLRefInventory");
@@ -797,6 +798,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LoadBalancerListenerInventory", "org.zstack.network.service.lb.LoadBalancerListenerInventory");
 			put("org.zstack.sdk.LoadBalancerListenerServerGroupRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefInventory");
 			put("org.zstack.sdk.LoadBalancerListenerVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory");
+			put("org.zstack.sdk.LoadBalancerListerAcl", "org.zstack.network.service.lb.APIChangeAccessControlListServerGroupEvent$LoadBalancerListerAcl");
 			put("org.zstack.sdk.LoadBalancerServerGroupInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupInventory");
 			put("org.zstack.sdk.LoadBalancerServerGroupServerIpInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupServerIpInventory");
 			put("org.zstack.sdk.LoadBalancerServerGroupVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefInventory");

@@ -12,6 +12,7 @@ import java.sql.Timestamp;
 public class LoadBalancerListenerACLRefVO_ {
     public static volatile SingularAttribute<LoadBalancerListenerCertificateRefVO, Long> id;
     public static volatile SingularAttribute<LoadBalancerListenerCertificateRefVO, String> listenerUuid;
+    public static volatile SingularAttribute<LoadBalancerListenerCertificateRefVO, String> serverGroupUuid;
     public static volatile SingularAttribute<LoadBalancerListenerCertificateRefVO, String> aclUuid;
     public static volatile SingularAttribute<LoadBalancerListenerCertificateRefVO, LoadBalancerAclType> type;
     public static volatile SingularAttribute<LoadBalancerListenerCertificateRefVO, Timestamp> createDate;

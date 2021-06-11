@@ -39,7 +39,7 @@ doc {
 					type "String"
 					optional false
 					since "3.9"
-					values ("white","black")
+					values ("white","black","redirect")
 				}
 				column {
 					name "listenerUuid"
@@ -69,6 +69,16 @@ doc {
 					type "List"
 					optional true
 					since "3.9"
+					
+				}
+				column {
+					name "serverGroupUuids"
+					enclosedIn "params"
+					desc "负载均衡器服务器组uuid"
+					location "body"
+					type "List"
+					optional true
+					since "4.1.3"
 					
 				}
 			}

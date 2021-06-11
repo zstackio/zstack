@@ -50,6 +50,8 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     private ApiTimeoutManager apiTimeoutManager;
     @Autowired
     private VipConfigProxy proxy;
+    @Autowired
+    VirtualRouterManager vrMgr;
 
     public static String RELEASE_VIP_TASK = "releaseVip";
     public static String APPLY_VIP_TASK = "applyVip";
@@ -246,16 +248,18 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     }
 
     private List<VipTO> findVipsOnVirtualRouter(VmNicInventory nic) {
-        List<VipVO> vips = SQL.New("select vip from VipVO vip, VipPeerL3NetworkRefVO ref " +
+        List<String> vipUuids = SQL.New("select vip.uuid from VipVO vip, VipPeerL3NetworkRefVO ref " +
                 "where ref.vipUuid = vip.uuid and vip.system = false " +
                 "and ref.l3NetworkUuid = :l3Uuid")
                 .param("l3Uuid", nic.getL3NetworkUuid())
                 .list();
 
-        if (vips == null || vips.isEmpty()) {
+        vipUuids = vrMgr.getVirtualRouterVips(nic.getVmInstanceUuid(), vipUuids);
+        if (vipUuids == null || vipUuids.isEmpty()) {
             return null;
         }
 
+        List<VipVO> vips = Q.New(VipVO.class).in(VipVO_.uuid, vipUuids).list();
         VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf((VirtualRouterVmVO)
                 Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
 

@@ -31,6 +31,9 @@ public class APIRemoveAccessControlListFromLoadBalancerMsg extends APIMessage im
     @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
     private String listenerUuid;
 
+    @APIParam(required = false, resourceType = LoadBalancerServerGroupVO.class, checkAccount = true, operationTarget = true)
+    private List<String> serverGroupUuids;
+
     public List<String> getAclUuids() {
         return aclUuids;
     }
@@ -45,6 +48,14 @@ public class APIRemoveAccessControlListFromLoadBalancerMsg extends APIMessage im
 
     public void setListenerUuid(String listenerUuid) {
         this.listenerUuid = listenerUuid;
+    }
+
+    public List<String> getServerGroupUuids() {
+        return serverGroupUuids;
+    }
+
+    public void setServerGroupUuids(List<String> serverGroupUuids) {
+        this.serverGroupUuids = serverGroupUuids;
     }
 
     @Override

@@ -476,6 +476,33 @@ abstract class ApiHelper {
     }
 
 
+    def addAccessControlListRedirectRule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddAccessControlListRedirectRuleAction.class) Closure c) {
+        def a = new org.zstack.sdk.AddAccessControlListRedirectRuleAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def addAccessControlListToLoadBalancer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddAccessControlListToLoadBalancerAction.class) Closure c) {
         def a = new org.zstack.sdk.AddAccessControlListToLoadBalancerAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -3907,6 +3934,60 @@ abstract class ApiHelper {
 
     def cancelLongJob(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CancelLongJobAction.class) Closure c) {
         def a = new org.zstack.sdk.CancelLongJobAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def changeAccessControlListRedirectRule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeAccessControlListRedirectRuleAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeAccessControlListRedirectRuleAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def changeAccessControlListServerGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeAccessControlListServerGroupAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeAccessControlListServerGroupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -17354,6 +17435,33 @@ abstract class ApiHelper {
     def getLicenseRecords(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetLicenseRecordsAction.class) Closure c) {
         def a = new org.zstack.sdk.GetLicenseRecordsAction()
         
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getLoadBalancerListenerACLEntries(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetLoadBalancerListenerACLEntriesAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetLoadBalancerListenerACLEntriesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
