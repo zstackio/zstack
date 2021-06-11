@@ -2934,4 +2934,11 @@ public class KVMAgentCommands {
     public static class ConfirmVerificationFilesResponse extends AgentResponse {
         public List<String> paths;
     }
+
+    public static class CreateVmVsocCommand extends AgentCommand {
+        public String vmUuid;
+    }
+
+    public static class CreateVmVsocRsp extends AgentResponse {
+    }
 }
