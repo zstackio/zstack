@@ -13,4 +13,5 @@ public interface LoadBalancerManager {
     LoadBalancerServerGroupVO getDefaultServerGroup(LoadBalancerListenerVO vo);
     List<String> getLoadBalancerListenterByVmNics(List<String> vmNicUuids);
     void upgradeLoadBalancerServerGroup();
+    LoadBalancerFactory getLoadBalancerFactoryByApplianceVmType(String type);
 }

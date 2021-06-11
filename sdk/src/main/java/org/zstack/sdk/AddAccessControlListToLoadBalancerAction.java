@@ -28,11 +28,14 @@ public class AddAccessControlListToLoadBalancerAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List aclUuids;
 
-    @Param(required = true, validValues = {"white","black"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"white","black","redirect"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String aclType;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String listenerUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List serverGroupUuids;
 
     @Param(required = false)
     public java.util.List systemTags;

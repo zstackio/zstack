@@ -9,10 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.acl.APIAddAccessControlListEntryMsg;
-import org.zstack.header.acl.APICreateAccessControlListMsg;
-import org.zstack.header.acl.AccessControlListConstants;
-import org.zstack.header.acl.AccessControlListVO;
+import org.zstack.header.acl.*;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
@@ -29,6 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  * @author: zhanyong.miao
@@ -54,6 +52,8 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
             validate ((APICreateAccessControlListMsg) msg);
         } else if (msg instanceof APIAddAccessControlListEntryMsg) {
             validate ((APIAddAccessControlListEntryMsg) msg);
+        } else if (msg instanceof APIAddAccessControlListRedirectRuleMsg) {
+            validate ((APIAddAccessControlListRedirectRuleMsg) msg);
         }
         return msg;
     }
@@ -121,18 +121,75 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
     private void validate (APIAddAccessControlListEntryMsg msg) {
         AccessControlListVO acl = dbf.findByUuid(msg.getAclUuid(), AccessControlListVO.class);
 
+        boolean redirectRuleExisted = acl.getEntries().stream().anyMatch(entry -> entry.getType().equals(AclEntryType.RedirectRule.toString()));
+
+        if (redirectRuleExisted) {
+            throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own redirect rule, can not add IP Entry", acl.getUuid()));
+        }
+
         /*check if the entry is exist*/
         if (acl.getEntries()!= null && !acl.getEntries().isEmpty()) {
             if (acl.getEntries().size() >= AccessControlListConstants.MAX_ENTRY_COUNT_PER_GROUP) {
                 throw new ApiMessageInterceptionException(argerr("the access-control-list groups[%s] can't be added more than %d ip entries", acl.getUuid(), AccessControlListConstants.MAX_ENTRY_COUNT_PER_GROUP));
             }
 
+            boolean redirectRuleExsit = acl.getEntries().stream().anyMatch(entry -> entry.getType().equals(AclEntryType.RedirectRule.toString()));
+            if (redirectRuleExsit) {
+                throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own redirect rule, can not add ip entry", acl.getUuid()));
+            }
             List<String> ipentries = acl.getEntries().stream().map(entry -> entry.getIpEntries()).collect(Collectors.toList());
             ipentries.add(msg.getEntries());
             /*miaozhanyong to be done*/
             validateIp(StringUtils.join(ipentries.toArray(), ','), acl);
         } else {
             validateIp(msg.getEntries(), acl);
+        }
+    }
+
+    private void validate (APIAddAccessControlListRedirectRuleMsg msg) {
+        AccessControlListVO acl = dbf.findByUuid(msg.getAclUuid(), AccessControlListVO.class);
+        boolean ipEntryExisted = acl.getEntries().stream().anyMatch(entry -> entry.getType().equals(AclEntryType.IpEntry.toString()));
+        boolean redirectRuleExisted = acl.getEntries().stream().anyMatch(entry -> entry.getType().equals(AclEntryType.RedirectRule.toString()));
+        if (ipEntryExisted) {
+            throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own ip entry, can not add redirect rule", acl.getUuid()));
+        }
+
+        if (redirectRuleExisted) {
+            throw new ApiMessageInterceptionException(operr("the access-control-list groups[%s] already own one redirect rule, can not add redirect rule", acl.getUuid()));
+        }
+
+        if (StringUtils.isBlank(msg.getDomain()) && (StringUtils.isBlank(msg.getUrl()) || msg.getUrl().length() == 1)) {
+            throw new ApiMessageInterceptionException(operr("domain and url can not both empty"));
+        }
+
+        if (StringUtils.isNotBlank(msg.getDomain())) {
+            if (!AccessControlListUtils.isValidateDomain(msg.getDomain())) {
+                throw new ApiMessageInterceptionException(argerr("domain[%s] is not validate domain", msg.getDomain()));
+            }
+
+            if (msg.getDomain().contains("*")) {
+                msg.setCriterion("WildcardMatch");
+            } else {
+                msg.setCriterion("AccurateMatch");
+            }
+
+            if (StringUtils.isNotBlank(msg.getUrl()) && msg.getUrl().length() > 1) {
+                if (!AccessControlListUtils.isValidateUrl(msg.getUrl())) {
+                    throw new ApiMessageInterceptionException(argerr("url[%s] is not validate url", msg.getUrl()));
+                }
+                msg.setMatchMethod("DomainAndUrl");
+            } else {
+                if (msg.getUrl().length() == 1 && !msg.getUrl().equals("/")) {
+                    throw new ApiMessageInterceptionException(argerr("url[%s] is not validate url", msg.getUrl()));
+                }
+                msg.setUrl("/");
+                msg.setMatchMethod("Domain");
+            }
+        } else {
+            if (!AccessControlListUtils.isValidateUrl(msg.getUrl())) {
+                throw new ApiMessageInterceptionException(argerr("url[%s] is not validate url", msg.getDomain()));
+            }
+            msg.setMatchMethod("Url");
         }
     }
 }
