@@ -164,6 +164,7 @@ public class KVMHost extends HostBase implements Host {
     private String configSecondaryVmPath;
     private String startColoSyncPath;
     private String registerPrimaryVmHeartbeatPath;
+    private String vmCreateVsocPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -336,6 +337,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_REGISTER_PRIMARY_VM_HEARTBEAT);
         registerPrimaryVmHeartbeatPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_CREATE_VSOC);
+        vmCreateVsocPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -526,6 +531,8 @@ public class KVMHost extends HostBase implements Host {
             handle((StartColoSyncMsg) msg);
         } else if (msg instanceof RegisterColoPrimaryCheckMsg) {
             handle((RegisterColoPrimaryCheckMsg) msg);
+        } else if (msg instanceof CreateVmVsocFileMsg) {
+            handle((CreateVmVsocFileMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -589,6 +596,32 @@ public class KVMHost extends HostBase implements Host {
                         chain.next();
                     }
                 }));
+    }
+
+    private void handle(CreateVmVsocFileMsg msg) {
+        CreateVmVsocCommand cmd = new CreateVmVsocCommand();
+        cmd.vmUuid = msg.getVmInstanceUuid();
+
+        new Http<>(vmCreateVsocPath, cmd, CreateVmVsocRsp.class).call(new ReturnValueCompletion<CreateVmVsocRsp>(msg) {
+
+            @Override
+            public void success(CreateVmVsocRsp ret) {
+                final CreateVmVsocFileReply reply = new CreateVmVsocFileReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("Error: %s", ret.getError()));
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                final GetVmFirstBootDeviceOnHypervisorReply reply = new GetVmFirstBootDeviceOnHypervisorReply();
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+        });
     }
 
     private void registerPrimaryVmHeartbeat(RegisterColoPrimaryCheckMsg msg, NoErrorCompletion completion) {
