@@ -34,6 +34,12 @@ public class LoadBalancerConstants {
         HEAD
     }
 
+    public static enum MatchMethod {
+        Domain,
+        Url,
+        DomainAndUrl
+    }
+
     public static enum HealthCheckStatusCode {
         http_2xx,
         http_3xx,
@@ -51,6 +57,8 @@ public class LoadBalancerConstants {
     public static final String LB_PROTOCOL_TCP = "tcp";
     public static final String LB_PROTOCOL_HTTP = "http";
     public static final String LB_PROTOCOL_HTTPS = "https";
+    public static final int PROTOCOL_HTTP_DEFAULT_PORT = 80;
+    public static final int PROTOCOL_HTTPS_DEFAULT_PORT = 443;
 
     public static final int DNS_PORT = 53;
     public static final int SSH_PORT = 22;

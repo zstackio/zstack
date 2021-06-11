@@ -101,4 +101,12 @@
         <defaultValue>50</defaultValue>
         <type>java.lang.Long</type>
     </config>
+
+    <config>
+        <category>loadBalancer</category>
+        <name>redirectRuleMaxCount</name>
+        <description>The number of max redirect access-control-list groups for one listener.</description>
+        <defaultValue>40</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>

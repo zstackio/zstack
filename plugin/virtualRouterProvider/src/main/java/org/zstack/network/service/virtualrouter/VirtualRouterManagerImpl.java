@@ -2533,4 +2533,27 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             throw new OperationFailureException(argerr("invalid ApplianceVmType %s", ss[1]));
         }
     }
+
+    /* filter out the vips that belong to other applianceVm */
+    @Override
+    public List<String> getVirtualRouterVips(String vrUuid, List<String> vipUuids) {
+        List<String> ret = new ArrayList<>();
+        String peerUuid = haBackend.getVirutalRouterPeerUuid(vrUuid);
+
+        for (String uuid : vipUuids) {
+            List<String> vrUuids = vipProxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), uuid);
+            if (vrUuids == null || vrUuids.isEmpty()) {
+                ret.add(uuid);
+                continue;
+            }
+
+            if (vrUuids.contains(vrUuid) || vrUuids.contains(peerUuid)) {
+                ret.add(uuid);
+            }
+
+            /* this vip is belonged to this vr */
+        }
+
+        return ret;
+    }
 }

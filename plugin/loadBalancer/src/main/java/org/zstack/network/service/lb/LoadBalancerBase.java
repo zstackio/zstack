@@ -31,10 +31,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.tag.SystemTagInventory;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.identity.Account;
@@ -137,6 +134,8 @@ public class LoadBalancerBase {
             handle((AddVmNicToLoadBalancerMsg) msg);
         } else if (msg instanceof LoadBalancerGetPeerL3NetworksMsg) {
             handle((LoadBalancerGetPeerL3NetworksMsg) msg);
+        } else if (msg instanceof RemoveAccessControlListFromLoadBalancerMsg) {
+            handle((RemoveAccessControlListFromLoadBalancerMsg)msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -580,6 +579,8 @@ public class LoadBalancerBase {
             handle((APIRemoveCertificateFromLoadBalancerListenerMsg) msg);
         } else if (msg instanceof APIRemoveAccessControlListFromLoadBalancerMsg) {
             handle((APIRemoveAccessControlListFromLoadBalancerMsg) msg);
+        } else if (msg instanceof APIChangeAccessControlListServerGroupMsg) {
+            handle((APIChangeAccessControlListServerGroupMsg)msg);
         } else if (msg instanceof APIAddAccessControlListToLoadBalancerMsg) {
             handle((APIAddAccessControlListToLoadBalancerMsg) msg);
         } else if (msg instanceof APIChangeLoadBalancerListenerMsg) {
@@ -652,6 +653,72 @@ public class LoadBalancerBase {
         }
         reply.setInventories(ret);
         bus.reply(msg, reply);
+    }
+
+    private void handle(RemoveAccessControlListFromLoadBalancerMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                RemoveAccessControlListFromLoadBalancerReply reply = new RemoveAccessControlListFromLoadBalancerReply();
+                List<LoadBalancerListenerACLRefVO> refs;
+
+                if (msg.getServerGroupUuids() == null || msg.getServerGroupUuids().isEmpty()) {
+                    refs = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids())
+                            .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
+                } else {
+                    refs = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids())
+                            .in(LoadBalancerListenerACLRefVO_.serverGroupUuid, msg.getServerGroupUuids())
+                            .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
+                }
+
+                if (refs.isEmpty()) {
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                dbf.removeCollection(refs, LoadBalancerListenerACLRefVO.class);
+
+                final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+
+                boolean refresh = isListenerNeedRefresh(lblVo, msg.getServerGroupUuids());
+                if (refresh) {
+                    RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
+                    rmsg.setUuid(msg.getLoadBalancerUuid());
+                    bus.makeLocalServiceId(rmsg, LoadBalancerConstants.SERVICE_ID);
+                    bus.send(rmsg, new CloudBusCallBack(chain) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.warn(String.format("update listener [uuid:%s] failed", msg.getLoadBalancerUuid()));
+                                reply.setError(reply.getError());
+                                for (LoadBalancerListenerACLRefVO refVO : refs) {
+                                    refVO.setId(null);
+                                }
+                                dbf.persistCollection(refs);
+                            }
+                            bus.reply(msg, reply);
+                        }
+                    });
+
+                    chain.next();
+                    return;
+                }
+
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "remove-acl-lb-listener";
+            }
+        });
     }
 
     private void handle(APIGetCandidateVmNicsForLoadBalancerMsg msg) {
@@ -1080,7 +1147,10 @@ public class LoadBalancerBase {
             if (listenerUuids != null) {
                 if (listenerUuids.contains(l.getUuid())) {
                     /* detach server group from listener */
-                    s.getListenerServerGroupMap().get(l.getUuid()).removeIf(g -> serverGroupUuids.contains(g.getUuid()));
+                    boolean remove = s.getListenerServerGroupMap().get(l.getUuid()).removeIf(g -> serverGroupUuids.contains(g.getUuid()));
+                    if (remove) {
+                        l.getAclRefs().removeIf(ref -> serverGroupUuids.contains(ref.getServerGroupUuid()));
+                    }
                 }
             } else {
                 for (LoadBalancerServerGroupInventory groupInv : s.getListenerServerGroupMap().get(l.getUuid())) {
@@ -1530,6 +1600,106 @@ public class LoadBalancerBase {
         });
     }
 
+    private void handle(APIChangeAccessControlListServerGroupMsg msg) {
+        APIChangeAccessControlListServerGroupEvent evt = new APIChangeAccessControlListServerGroupEvent(msg.getId());
+
+        List<String> currentSgUuids= Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuid())
+                .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).notNull(LoadBalancerListenerACLRefVO_.serverGroupUuid).select(LoadBalancerListenerACLRefVO_.serverGroupUuid).listValues();
+
+        APIChangeAccessControlListServerGroupEvent.LoadBalancerListerAcl loadBalancerListerAcl = new APIChangeAccessControlListServerGroupEvent.LoadBalancerListerAcl();
+        loadBalancerListerAcl.setAclUuid(msg.getAclUuid());
+        loadBalancerListerAcl.setServerGroupUuids(msg.getServerGroupUuids());
+        loadBalancerListerAcl.setListenerUuid(msg.getListenerUuid());
+        evt.setInventory(loadBalancerListerAcl);
+
+        List<String> tmpDetachSgUuids = new ArrayList<>();
+        List<String> tmpAttachSgUuids = new ArrayList<>();
+        if (currentSgUuids.isEmpty()) {
+            tmpAttachSgUuids.addAll(msg.getServerGroupUuids());
+        } else {
+            tmpDetachSgUuids = currentSgUuids.stream().filter(sgUuid -> !msg.getServerGroupUuids().contains(sgUuid)).collect(Collectors.toList());
+            tmpAttachSgUuids = msg.getServerGroupUuids().stream().filter(sgUuid -> !currentSgUuids.contains(sgUuid)).collect(Collectors.toList());
+        }
+        if (tmpDetachSgUuids.isEmpty() && tmpAttachSgUuids.isEmpty()) {
+            bus.publish(evt);
+            return;
+        }
+
+        final List<String> detachSgUuids = tmpDetachSgUuids;
+        final List<String> attachSgUuids = tmpAttachSgUuids;
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+
+                boolean needRefresh = false;
+                if (!detachSgUuids.isEmpty()) {
+                    SQL.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuid()).in(LoadBalancerListenerACLRefVO_.serverGroupUuid, detachSgUuids).delete();
+                    needRefresh = needRefresh | isServerGroupsOwnActiveBackenServer(detachSgUuids);
+                }
+                if (!attachSgUuids.isEmpty()) {
+                    List<LoadBalancerListenerACLRefVO> refs = new ArrayList<>();
+                    for (String sgUuid : attachSgUuids) {
+                        LoadBalancerListenerACLRefVO ref = new LoadBalancerListenerACLRefVO();
+                        ref.setAclUuid(msg.getAclUuid());
+                        ref.setType(LoadBalancerAclType.redirect);
+                        ref.setListenerUuid(msg.getListenerUuid());
+                        ref.setServerGroupUuid(sgUuid);
+                        refs.add(ref);
+                    }
+                    dbf.persistCollection(refs);
+                    needRefresh = needRefresh | isServerGroupsOwnActiveBackenServer(attachSgUuids);
+                }
+                if (needRefresh) {
+                    RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
+                    rmsg.setUuid(msg.getLoadBalancerUuid());
+                    bus.makeLocalServiceId(rmsg, LoadBalancerConstants.SERVICE_ID);
+                    bus.send(rmsg, new CloudBusCallBack(chain) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                if (!detachSgUuids.isEmpty()) {
+                                    List<LoadBalancerListenerACLRefVO> refs = new ArrayList<>();
+                                    for (String sgUuid : detachSgUuids) {
+                                        LoadBalancerListenerACLRefVO ref = new LoadBalancerListenerACLRefVO();
+                                        ref.setAclUuid(msg.getAclUuid());
+                                        ref.setType(LoadBalancerAclType.redirect);
+                                        ref.setListenerUuid(msg.getListenerUuid());
+                                        ref.setServerGroupUuid(sgUuid);
+                                        refs.add(ref);
+                                    }
+                                    dbf.persistCollection(refs);
+                                }
+                                if (!attachSgUuids.isEmpty()) {
+                                    SQL.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuid()).in(LoadBalancerListenerACLRefVO_.serverGroupUuid, attachSgUuids).delete();
+                                }
+                                logger.warn(String.format("update listener [uuid:%s] failed", msg.getLoadBalancerUuid()));
+                                evt.setError(reply.getError());
+                            } else {
+                                evt.getInventory().setServerGroupUuids(msg.getServerGroupUuids());
+                            }
+                            bus.publish(evt);
+                        }
+                    });
+                    chain.next();
+                    return;
+                }
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "remove-acl-lb-listener";
+            }
+        });
+    }
+
     private void handle(APIAddAccessControlListToLoadBalancerMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -1541,17 +1711,35 @@ public class LoadBalancerBase {
             public void run(SyncTaskChain chain) {
                 DebugUtils.Assert(msg.getAclType() != null && msg.getAclUuids() != null, "parameters cannot be null");
                 APIAddAccessControlListToLoadBalancerEvent evt = new APIAddAccessControlListToLoadBalancerEvent(msg.getId());
-                List<LoadBalancerListenerACLRefVO> refs = msg.getAclUuids().stream().map(aclUuid -> {
-                    LoadBalancerListenerACLRefVO ref = new LoadBalancerListenerACLRefVO();
-                    ref.setAclUuid(aclUuid);
-                    ref.setType(LoadBalancerAclType.valueOf(msg.getAclType()));
-                    ref.setListenerUuid(msg.getListenerUuid());
-                    return ref;
-                }).collect(Collectors.toList());
+                List<LoadBalancerListenerACLRefVO> refs = new ArrayList<>();
+                final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+                if (msg.getServerGroupUuids() != null && !msg.getServerGroupUuids().isEmpty()) {
+                    for (String aclUuid : msg.getAclUuids()) {
+                        List<String> sgUuids = lblVo.getAclRefs().stream().filter(ref -> ref.getAclUuid().equals(aclUuid))
+                                .map(LoadBalancerListenerACLRefVO::getServerGroupUuid).collect(Collectors.toList());
+                        List<String> serverGroupUuids = msg.getServerGroupUuids().stream().filter(sgUuid -> !sgUuids.contains(sgUuid)).collect(Collectors.toList());
+                        for (String sgUuid : serverGroupUuids) {
+                            LoadBalancerListenerACLRefVO ref = new LoadBalancerListenerACLRefVO();
+                            ref.setAclUuid(aclUuid);
+                            ref.setType(LoadBalancerAclType.valueOf(msg.getAclType()));
+                            ref.setListenerUuid(msg.getListenerUuid());
+                            ref.setServerGroupUuid(sgUuid);
+                            refs.add(ref);
+                        }
+                    }
+                } else {
+                    refs = msg.getAclUuids().stream().map(aclUuid -> {
+                        LoadBalancerListenerACLRefVO ref = new LoadBalancerListenerACLRefVO();
+                        ref.setAclUuid(aclUuid);
+                        ref.setType(LoadBalancerAclType.valueOf(msg.getAclType()));
+                        ref.setListenerUuid(msg.getListenerUuid());
+                        return ref;
+                    }).collect(Collectors.toList());
+                }
                 dbf.persistCollection(refs);
 
-                final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
-                boolean refresh = isListenerNeedRefresh(lblVo);
+                final List<LoadBalancerListenerACLRefVO> refVOS = refs;
+                boolean refresh = isListenerNeedRefresh(lblVo, msg.getServerGroupUuids());
                 if (refresh) {
                     RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
                     rmsg.setUuid(msg.getLoadBalancerUuid());
@@ -1562,7 +1750,7 @@ public class LoadBalancerBase {
                             if (!reply.isSuccess()) {
                                 logger.warn(String.format("update listener [uuid:%s] failed", msg.getLoadBalancerUuid()));
                                 evt.setError(reply.getError());
-                                dbf.removeCollection(refs, LoadBalancerListenerACLRefVO.class);
+                                dbf.removeCollection(refVOS, LoadBalancerListenerACLRefVO.class);
                             } else {
                                 evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
                             }
@@ -1595,8 +1783,16 @@ public class LoadBalancerBase {
             @Override
             public void run(SyncTaskChain chain) {
                 APIRemoveAccessControlListFromLoadBalancerEvent evt = new APIRemoveAccessControlListFromLoadBalancerEvent(msg.getId());
-                List<LoadBalancerListenerACLRefVO> refs = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids())
-                                                           .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
+                List<LoadBalancerListenerACLRefVO> refs;
+
+                if (msg.getServerGroupUuids() == null || msg.getServerGroupUuids().isEmpty()) {
+                    refs = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids())
+                            .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
+                } else {
+                    refs = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids())
+                            .in(LoadBalancerListenerACLRefVO_.serverGroupUuid, msg.getServerGroupUuids())
+                            .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
+                }
 
                 if (refs.isEmpty()) {
                     final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
@@ -1605,11 +1801,12 @@ public class LoadBalancerBase {
                     chain.next();
                     return;
                 }
+
                 dbf.removeCollection(refs, LoadBalancerListenerACLRefVO.class);
 
                 final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
 
-                boolean refresh = isListenerNeedRefresh(lblVo);
+                boolean refresh = isListenerNeedRefresh(lblVo, msg.getServerGroupUuids());
                 if (refresh) {
                     RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
                     rmsg.setUuid(msg.getLoadBalancerUuid());
@@ -1620,6 +1817,9 @@ public class LoadBalancerBase {
                             if (!reply.isSuccess()) {
                                 logger.warn(String.format("update listener [uuid:%s] failed", msg.getLoadBalancerUuid()));
                                 evt.setError(reply.getError());
+                                for (LoadBalancerListenerACLRefVO refVO : refs) {
+                                    refVO.setId(null);
+                                }
                                 dbf.persistCollection(refs);
                             } else {
                                 evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
@@ -1656,14 +1856,38 @@ public class LoadBalancerBase {
         return ts;
     }
 
-    private boolean isListenerNeedRefresh(LoadBalancerListenerVO lblVo) {
-        for (LoadBalancerListenerServerGroupRefVO ref : lblVo.getServerGroupRefs()) {
-            LoadBalancerServerGroupVO groupVO = dbf.findByUuid(ref.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+    private boolean isListenerNeedRefresh(LoadBalancerListenerVO lblVo, List<String> serverGroupUuids) {
+        List<String> sgUuids = new ArrayList<>();
+        if (serverGroupUuids == null || serverGroupUuids.isEmpty()) {
+            sgUuids = lblVo.getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefVO::getServerGroupUuid).collect(Collectors.toList());
+        } else {
+            sgUuids = serverGroupUuids;
+        }
+
+        for (String serverGroupUuid : sgUuids) {
+            LoadBalancerServerGroupVO groupVO = dbf.findByUuid(serverGroupUuid, LoadBalancerServerGroupVO.class);
             if (groupVO.getLoadBalancerServerGroupVmNicRefs().stream().anyMatch(r -> r.getStatus() == LoadBalancerVmNicStatus.Active)) {
                 return true;
             }
 
             if (groupVO.getLoadBalancerServerGroupServerIps().stream().anyMatch(r -> r.getStatus() == LoadBalancerBackendServerStatus.Active)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isServerGroupsOwnActiveBackenServer(List<String> serverGroupUuids) {
+        if (serverGroupUuids == null || serverGroupUuids.isEmpty()) {
+            return false;
+        }
+        List<LoadBalancerServerGroupVO> groupVOs = Q.New(LoadBalancerServerGroupVO.class).in(LoadBalancerServerGroupVO_.uuid, serverGroupUuids).list();
+        for (LoadBalancerServerGroupVO sg : groupVOs) {
+            if (sg.getLoadBalancerServerGroupVmNicRefs().stream().anyMatch(r -> r.getStatus() == LoadBalancerVmNicStatus.Active)) {
+                return true;
+            }
+
+            if (sg.getLoadBalancerServerGroupServerIps().stream().anyMatch(r -> r.getStatus() == LoadBalancerBackendServerStatus.Active)) {
                 return true;
             }
         }
@@ -1798,7 +2022,7 @@ public class LoadBalancerBase {
                     dbf.updateAndRefresh(lblVo);
                 }
 
-                boolean refresh = isListenerNeedRefresh(lblVo);
+                boolean refresh = isListenerNeedRefresh(lblVo, null);
                 if (refresh) {
                     RefreshLoadBalancerMsg msg = new RefreshLoadBalancerMsg();
                     msg.setUuid(lblVo.getLoadBalancerUuid());
@@ -2330,9 +2554,22 @@ public class LoadBalancerBase {
                 removeNics(asList(msg.getServerGroupUuid()), asList(msg.getListenerUuid()), nicUuids, serverIps, new Completion(chain) {
                     @Override
                     public void success() {
-                        SQL.New(LoadBalancerListenerServerGroupRefVO.class)
-                                .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())
-                                .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid()).delete();
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                SQL.New(LoadBalancerListenerVO.class)
+                                        .eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid())
+                                        .eq(LoadBalancerListenerVO_.serverGroupUuid, msg.getServerGroupUuid())
+                                        .set(LoadBalancerListenerVO_.serverGroupUuid, null)
+                                        .update();
+                                SQL.New(LoadBalancerListenerACLRefVO.class)
+                                        .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())
+                                        .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid()).delete();
+                                SQL.New(LoadBalancerListenerServerGroupRefVO.class)
+                                        .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())
+                                        .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid()).delete();
+                            }
+                        }.execute();
                         event.setInventory(LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class)));
                         bus.publish(event);
                         chain.next();

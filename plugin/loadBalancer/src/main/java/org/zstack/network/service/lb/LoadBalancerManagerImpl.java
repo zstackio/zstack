@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -17,6 +18,8 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.acl.AccessControlListEntryVO;
+import org.zstack.header.acl.AccessControlListEntryVO_;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -59,7 +62,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created by frank on 8/8/2015.
@@ -79,6 +82,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
     private Map<String, LoadBalancerBackend> backends = new HashMap<String, LoadBalancerBackend>();
     private Map<String, LoadBalancerFactory> lbFactories = new HashMap<String, LoadBalancerFactory>();
+    private Map<String, LoadBalancerFactory> lbFactoriesByApplianceVmType = new HashMap<String, LoadBalancerFactory>();
 
     @Override
     @MessageSafe
@@ -125,9 +129,61 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             handle((APIDeleteCertificateMsg) msg);
         } else if (msg instanceof APIUpdateCertificateMsg) {
             handle((APIUpdateCertificateMsg) msg);
+        } else if (msg instanceof APIGetLoadBalancerListenerACLEntriesMsg) {
+            handle((APIGetLoadBalancerListenerACLEntriesMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetLoadBalancerListenerACLEntriesMsg msg) {
+        APIGetLoadBalancerListenerACLEntriesReply reply = new APIGetLoadBalancerListenerACLEntriesReply();
+        HashMap<String, List<APIGetLoadBalancerListenerACLEntriesReply.LoadBalancerACLEntry>> lbAclMap = new HashMap<>();
+        if (msg.getListenerUuids().isEmpty()) {
+            reply.setInventories(lbAclMap);
+            bus.reply(msg, reply);
+            return;
+        }
+
+        List<LoadBalancerListenerACLRefVO> loadBalancerListenerACLRefVOS = new ArrayList<>();
+        loadBalancerListenerACLRefVOS = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuids()).list();
+        if (loadBalancerListenerACLRefVOS.isEmpty()) {
+            reply.setInventories(lbAclMap);
+            bus.reply(msg, reply);
+            return;
+        }
+
+        List<String> aclUuids = loadBalancerListenerACLRefVOS.stream().map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList());
+        List<AccessControlListEntryVO> aclEntries = Q.New(AccessControlListEntryVO.class).in(AccessControlListEntryVO_.aclUuid, aclUuids).list();
+
+        for (String listenUuid : msg.getListenerUuids()) {
+            List<String> aclOfListenerUuids = new ArrayList<>();
+            if (StringUtils.isBlank(msg.getType())) {
+                aclOfListenerUuids = loadBalancerListenerACLRefVOS.stream().filter(ref -> ref.getListenerUuid().equals(listenUuid))
+                        .map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList());
+            } else {
+                aclOfListenerUuids = loadBalancerListenerACLRefVOS.stream().filter(ref -> ref.getListenerUuid().equals(listenUuid) && ref.getType().equals(msg.getType()))
+                        .map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList());
+            }
+            aclOfListenerUuids = aclOfListenerUuids.stream().distinct().collect(Collectors.toList());
+            ArrayList<APIGetLoadBalancerListenerACLEntriesReply.LoadBalancerACLEntry> entries = new ArrayList<>();
+            for (String aclUuid : aclOfListenerUuids) {
+                List<AccessControlListEntryVO> aclEntriesOfAcl = aclEntries.stream().filter(aclEntry -> StringUtils.equals(aclEntry.getAclUuid(), aclUuid)).collect(Collectors.toList());
+                for (AccessControlListEntryVO entryVO : aclEntriesOfAcl) {
+                    APIGetLoadBalancerListenerACLEntriesReply.LoadBalancerACLEntry loadBalancerACLEntry = new APIGetLoadBalancerListenerACLEntriesReply.LoadBalancerACLEntry();
+                    loadBalancerACLEntry.valueOf(entryVO);
+                    List<String> serverGroupUuids = loadBalancerListenerACLRefVOS.stream().filter(ref -> ref.getAclUuid().equals(aclUuid) && ref.getListenerUuid().equals(listenUuid) && ref.getServerGroupUuid()!=null).map(LoadBalancerListenerACLRefVO::getServerGroupUuid).collect(Collectors.toList());
+                    if (!serverGroupUuids.isEmpty()) {
+                        List<LoadBalancerServerGroupVO> serverGroupVOS = Q.New(LoadBalancerServerGroupVO.class).in(LoadBalancerServerGroupVO_.uuid, serverGroupUuids).list();
+                        loadBalancerACLEntry.setServerGroups(LoadBalancerServerGroupInventory.valueOf(serverGroupVOS));
+                    }
+                    entries.add(loadBalancerACLEntry);
+                }
+            }
+            lbAclMap.put(listenUuid, entries);
+        }
+        reply.setInventories(lbAclMap);
+        bus.reply(msg, reply);
     }
 
     private void handle(final APICreateLoadBalancerMsg msg) {
@@ -385,6 +441,15 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             }
 
             lbFactories.put(f.getType(), f);
+        }
+
+        for (LoadBalancerFactory f : pluginRgty.getExtensionList(LoadBalancerFactory.class)) {
+            LoadBalancerFactory old = lbFactoriesByApplianceVmType.get(f.getApplianceVmType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate LoadBalancerFactory[%s, %s]", old.getClass(), f.getType()));
+            }
+
+            lbFactoriesByApplianceVmType.put(f.getApplianceVmType(), f);
         }
 
         installConfigValidateExtension();
@@ -677,6 +742,12 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         if (f == null) {
             throw new CloudRuntimeException(String.format("cannot find LoadBalancerFactory[type:%s]", type));
         }
+        return f;
+    }
+
+    @Override
+    public LoadBalancerFactory getLoadBalancerFactoryByApplianceVmType(String applianceVmType) {
+        LoadBalancerFactory f = lbFactories.get(applianceVmType);
         return f;
     }
 

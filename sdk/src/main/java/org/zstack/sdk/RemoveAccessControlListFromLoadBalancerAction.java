@@ -31,6 +31,9 @@ public class RemoveAccessControlListFromLoadBalancerAction extends AbstractActio
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String listenerUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List serverGroupUuids;
+
     @Param(required = false)
     public java.util.List systemTags;
 
