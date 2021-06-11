@@ -14,6 +14,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 
@@ -28,6 +29,8 @@ public class VirtualRouterSyncVipFlow implements Flow {
     protected VirtualRouterVipBackend vipExt;
     @Autowired
     protected VipConfigProxy proxy;
+    @Autowired
+    protected VirtualRouterManager vrMgr;
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
@@ -59,11 +62,18 @@ public class VirtualRouterSyncVipFlow implements Flow {
             return;
         }
 
+        List<String> vipUuidss = new ArrayList<>(vipUuids);
+        vipUuidss = vrMgr.getVirtualRouterVips(vr.getUuid(), vipUuidss);
+        if (vipUuidss.isEmpty()) {
+            chain.next();
+            return;
+        }
+
         /*just only vrouter vip and skip the flat vip*/
         List<VipVO> vips = Q.New(VipVO.class)
                             .in(VipVO_.serviceProvider, Arrays.asList(VyosConstants.PROVIDER_TYPE.toString(),
                                 VirtualRouterConstant.PROVIDER_TYPE.toString()))
-                            .in(VipVO_.uuid, vipUuids).list();
+                            .in(VipVO_.uuid, vipUuidss).list();
         if (vips.isEmpty()) {
             chain.next();
             return;
