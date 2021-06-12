@@ -141,9 +141,19 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     public void releaseVipOnVirtualRouterVm(final VirtualRouterVmInventory vr, List<VipInventory> vips, final Completion completion) {
         final List<VipTO> tos = new ArrayList<VipTO>(vips.size());
         for (VipInventory vip : vips) {
-            String mac = getOwnerMac(vr, vip);
-            VipTO to = VipTO.valueOf(vip, mac);
-            tos.add(to);
+            try {
+                String mac = getOwnerMac(vr, vip);
+                VipTO to = VipTO.valueOf(vip, mac);
+                tos.add(to);
+            } catch (Exception e) {
+                logger.warn(String.format("virtual router [uuid:%s] nic of l3 network [uuid:%s] has been removed",
+                        vr.getUuid(), vip.getL3NetworkUuid()));
+            }
+        }
+
+        if (tos.isEmpty()) {
+            completion.success();
+            return;
         }
 
         RemoveVipCmd cmd = new RemoveVipCmd();
