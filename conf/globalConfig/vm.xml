@@ -214,8 +214,8 @@
 		<type>java.lang.String</type>
 	</config>
 
-        <config>
-		<name>crash.crashStrategy</name>
+	<config>
+		<name>crash.strategy</name>
 		<description>The crash strategy for vm</description>
 		<defaultValue>None</defaultValue>
 		<category>vm</category>

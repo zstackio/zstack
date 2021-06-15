@@ -84,6 +84,7 @@ public interface KVMConstant {
     String KVM_ANSIBLE_LOG_PATH_FROMAT = "/kvm/ansiblelog/{uuid}";
     String KVM_REPORT_VM_SHUTDOWN_EVENT = "/kvm/reportvmshutdown";
     String KVM_REPORT_VM_REBOOT_EVENT = "/kvm/reportvmreboot";
+    String KVM_REPORT_VM_CRASH_EVENT = "/kvm/reportvmcrash";
 
     String KVM_TRANSMIT_VM_OPERATION_TO_MN = "/host/transmitvmoperation";
 
