@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class CdpPolicyInventory  {
+public class CdpTaskInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -58,6 +58,14 @@ public class CdpPolicyInventory  {
     }
     public java.lang.Integer getRecoveryPointPerSecond() {
         return this.recoveryPointPerSecond;
+    }
+
+    public java.util.List volumeUuids;
+    public void setVolumeUuids(java.util.List volumeUuids) {
+        this.volumeUuids = volumeUuids;
+    }
+    public java.util.List getVolumeUuids() {
+        return this.volumeUuids;
     }
 
 }
