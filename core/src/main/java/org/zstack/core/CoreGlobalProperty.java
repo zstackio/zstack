@@ -76,4 +76,6 @@ public class CoreGlobalProperty {
     public static String PLATFORM_ID;
     @GlobalProperty(name = "disable.SBLK.ZSNET", defaultValue = "true")
     public static boolean DISABLE_SBLK_ZSNET;
+    @GlobalProperty(name = "enable.kysec", defaultValue = "true")
+    public static boolean ENABLE_KYSEC;
 }

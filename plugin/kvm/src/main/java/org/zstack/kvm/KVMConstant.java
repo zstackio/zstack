@@ -61,8 +61,6 @@ public interface KVMConstant {
     String KVM_CONFIG_SECONDARY_VM_PATH = "/secondary/vm/config";
     String KVM_START_COLO_SYNC_PATH = "/start/colo/sync";
     String KVM_REGISTER_PRIMARY_VM_HEARTBEAT = "/register/primary/vm/heartbeat";
-    String KVM_VM_CREATE_VSOC = "/vm/createvsoc";
-    String KVM_VM_DELETE_VSOC = "/vm/deletevsoc";
     String KVM_VM_CREATE_VSOC = "/vm/vsoccreate";
     String KVM_VM_DELETE_VSOC = "/vm/vsocdelete";
     String KVM_VSOC_MIGRATE = "/vm/vsocmigrate";

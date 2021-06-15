@@ -34,11 +34,11 @@ public class VmCheckVmVsocFile implements Flow {
     public void run(FlowTrigger chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        if (spec.getRequiredHostUuid() == null || spec.getRequiredHostUuid().equals(spec.getVmInventory().getLastHostUuid())) {
+        if (spec.getDestHost().getUuid().equals(spec.getVmInventory().getLastHostUuid())) {
             chain.next();
         } else {
             VmVsocBootFromNewNodeMsg msg = new VmVsocBootFromNewNodeMsg();
-            msg.setHostUuid(spec.getRequiredHostUuid());
+            msg.setHostUuid(spec.getDestHost().getUuid());
             msg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
             msg.setVmUuid(spec.getVmInventory().getUuid());
             msg.setPrvSocId(HostSystemTags.HOST_SSCARDID.getTokenByResourceUuid(spec.getVmInventory().getLastHostUuid(), HostSystemTags.HOST_SSCARDID_TOKEN));

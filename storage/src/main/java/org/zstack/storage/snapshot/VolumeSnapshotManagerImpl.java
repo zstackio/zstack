@@ -677,6 +677,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             public void setup() {
                 flow(new NoRollbackFlow() {
                     String __name__ = "create-new-tree-if-needed";
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         struct = getVolumeSnapshotStruct(msg);
@@ -723,6 +724,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                             }
                         });
                         trigger.next();
+                    }
+                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = String.format("soc-create-snapshot");
@@ -747,7 +750,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
-                                }else {
+                                } else {
                                     trigger.next();
                                 }
                             }

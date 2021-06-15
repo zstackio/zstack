@@ -354,6 +354,8 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VM_CREATE_VSOC);
         vmCreateVsocPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VM_DELETE_VSOC);
         vmDeleteVsocPath = ub.build().toString();
 
@@ -666,6 +668,9 @@ public class KVMHost extends HostBase implements Host {
                         bus.reply(msg, re);
                     }
                 });
+            }
+        });
+    }
 
     private void handle(VmCloneVsocFileMsg msg) {
         VsocCommand cmd = new VsocCommand();
@@ -826,9 +831,6 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void handle(RegisterColoPrimaryCheckMsg msg) {
-        inQueue().name(String.format("register-vm-heart-beat-on-%s", self.getUuid()))
-
     private void handle(VmVsocCreateBackupMsg msg) {
         VsocCommand cmd = new VsocCommand();
         cmd.vmName = msg.getVmUuid();
@@ -951,8 +953,8 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void handle(GetVmFirstBootDeviceOnHypervisorMsg msg) {
-        inQueue().name(String.format("get-first-boot-device-of-vm-%s-on-kvm-%s", msg.getVmInstanceUuid(), self.getUuid()))
+    private void handle(RegisterColoPrimaryCheckMsg msg) {
+        inQueue().name(String.format("register-vm-heart-beat-on-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> registerPrimaryVmHeartbeat(msg, new NoErrorCompletion(chain) {
                     @Override
@@ -961,6 +963,7 @@ public class KVMHost extends HostBase implements Host {
                     }
                 }));
     }
+
 
     private void handle(CreateVmVsocFileMsg msg) {
         VsocCommand cmd = new VsocCommand();
@@ -1031,12 +1034,27 @@ public class KVMHost extends HostBase implements Host {
         VsocCommand cmd = new VsocCommand();
         cmd.vmName = msg.getVmInstanceUuid();
         cmd.platformId = msg.getPlatformId();
-        public void success(DeleteVmVsocRsp ret) {
-            final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
-            new Http<>(vmDeleteVsocPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
-                @Override
-                public void success(VsocRsp ret) {
-                    final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
+
+        new Http<>(vmDeleteVsocPath, cmd, VsocRsp.class).call(new ReturnValueCompletion<VsocRsp>(msg) {
+            @Override
+            public void success(VsocRsp ret) {
+                final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("Error: %s", ret.getError()));
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+        });
+    }
 
     private void handle(StartColoSyncMsg msg) {
         inQueue().name(String.format("start-colo-sync-vm-%s-on-%s", msg.getVmInstanceUuid(), self.getUuid()))
@@ -4056,16 +4074,34 @@ public class KVMHost extends HostBase implements Host {
                             }
 
                             try {
+                                /*
                                 new Ssh().shell(builder.toString())
                                         .setUsername(getSelf().getUsername())
                                         .setPassword(getSelf().getPassword())
                                         .setHostname(getSelf().getManagementIp())
                                         .setPort(getSelf().getPort()).runErrorByExceptionAndClose();
+                                 */
+                                SshShell sshShell = new SshShell();
+                                sshShell.setHostname(getSelf().getManagementIp());
+                                sshShell.setUsername(getSelf().getUsername());
+                                sshShell.setPassword(getSelf().getPassword());
+                                sshShell.setPort(getSelf().getPort());
+                                sshShell.setWithSudo(true);
+                                SshResult ret = sshShell.runCommand(builder.toString());
+                                if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+                                    trigger.fail(operr("failed configure iptables, %s", ret.getStderr()));
+                                }
                             } catch (SshException ex) {
                                 throw new OperationFailureException(operr(ex.toString()));
                             }
 
                             trigger.next();
+                        }
+
+                        @Override
+                        public boolean skip(Map data) {
+                            //return CoreGlobalProperty.ENABLE_KYSEC;
+                            return false;
                         }
                     });
 
@@ -4189,6 +4225,7 @@ public class KVMHost extends HostBase implements Host {
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
                                     createTagWithoutNonValue(HostSystemTags.HOSTNAME, HostSystemTags.HOSTNAME_TOKEN, ret.getHostname(), true);
+                                    createTagWithoutNonValue(HostSystemTags.HOST_SSCARDID, HostSystemTags.HOST_SSCARDID_TOKEN, ret.getSscardId(), true);
 
                                     if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
                                         recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
@@ -4219,6 +4256,8 @@ public class KVMHost extends HostBase implements Host {
                     });
 
                     flow(new NoRollbackFlow() {
+                        String __Nname__ = "restart-libvirtd&kvmagent";
+
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             FlowChain prepareChain = FlowChainBuilder.newSimpleFlowChain();
@@ -4241,6 +4280,7 @@ public class KVMHost extends HostBase implements Host {
                                 @Override
                                 public void handle(Map data) {
                                     if (KVMSystemTags.RESTART_LIBVIRT_REQUESTED.hasTag(self.getUuid())) {
+                                        /*
                                         SshResult ret = new Ssh().shell(String.format("sudo systemctl restart libvirtd; sudo bash /etc/init.d/%s restart", AnsibleConstant.KVM_AGENT_NAME))
                                                 .setTimeout(20)
                                                 .setPrivateKey(asf.getPrivateKey())
@@ -4252,6 +4292,19 @@ public class KVMHost extends HostBase implements Host {
                                         if (ret.getReturnCode() != 0) {
                                             trigger.fail(operr("Failed to restart agent, because %s",ret.getStderr()));
                                             return;
+                                        }
+                                         */
+
+                                        SshShell sshShell = new SshShell();
+                                        sshShell.setHostname(getSelf().getManagementIp());
+                                        sshShell.setUsername(getSelf().getUsername());
+                                        sshShell.setPassword(getSelf().getPassword());
+                                        sshShell.setPort(getSelf().getPort());
+                                        sshShell.setWithSudo(false);
+                                        final String cmd = String.format("sudo systemctl restart libvirtd; sudo bash /etc/init.d/%s restart", AnsibleConstant.KVM_AGENT_NAME);
+                                        SshResult ret = sshShell.runCommand(cmd);
+                                        if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+                                            trigger.fail(operr("Failed to restart agent, because %s",ret.getStderr()));
                                         }
 
                                         KVMSystemTags.RESTART_LIBVIRT_REQUESTED.delete(self.getUuid());

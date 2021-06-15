@@ -144,6 +144,7 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setAvoidHostUuids(List<String> avoidHostUuids) {
         this.avoidHostUuids = avoidHostUuids;
+    }
 
     public boolean isFromClone() {
         return isFromClone;
