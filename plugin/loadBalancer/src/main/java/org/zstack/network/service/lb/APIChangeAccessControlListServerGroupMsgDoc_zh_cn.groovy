@@ -7,7 +7,7 @@ doc {
 
     category "loadBalancer"
 
-    desc """修改访问控制组绑定的后端服务器"""
+    desc """修改访问控制组绑定的后端服务器组"""
 
     rest {
         request {

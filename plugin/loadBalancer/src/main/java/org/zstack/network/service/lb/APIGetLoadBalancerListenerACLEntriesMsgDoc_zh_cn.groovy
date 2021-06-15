@@ -7,7 +7,7 @@ doc {
 
     category "loadBalancer"
 
-    desc """在这里填写API描述"""
+    desc """获取负载均衡监听器访问控制策略条目"""
 
     rest {
         request {
@@ -28,7 +28,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 				column {
@@ -38,7 +38,7 @@ doc {
 					location "query"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 				column {
@@ -48,7 +48,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 				column {
@@ -58,7 +58,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.1.3"
 					
 				}
 			}
