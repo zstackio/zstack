@@ -100,6 +100,14 @@ public class VmNicInventory  {
         return this.usedIps;
     }
 
+    public java.lang.String internalName;
+    public void setInternalName(java.lang.String internalName) {
+        this.internalName = internalName;
+    }
+    public java.lang.String getInternalName() {
+        return this.internalName;
+    }
+
     public java.lang.Integer deviceId;
     public void setDeviceId(java.lang.Integer deviceId) {
         this.deviceId = deviceId;

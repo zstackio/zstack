@@ -80,6 +80,8 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
 
     abstract void handle(CancelDownloadBitsFromKVMHostToPrimaryStorageMsg msg, ReturnValueCompletion<CancelDownloadBitsFromKVMHostToPrimaryStorageReply> completion);
 
+    abstract void handle(ChangeVolumeTypeOnPrimaryStorageMsg msg, ReturnValueCompletion<ChangeVolumeTypeOnPrimaryStorageReply> completion);
+
     abstract List<Flow> createMigrateBitsVolumeFlow(MigrateBitsStruct struct);
 
     abstract void deleteBits(String path, String hostUuid, Completion completion);

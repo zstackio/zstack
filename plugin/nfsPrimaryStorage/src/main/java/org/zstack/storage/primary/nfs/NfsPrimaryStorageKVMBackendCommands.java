@@ -98,6 +98,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
             this.mountPath = mountPath;
         }
     }
+
     
     public static class MountAgentResponse extends NfsPrimaryStorageAgentResponse {
     }
@@ -259,75 +260,18 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
-    public static class CreateRootVolumeFromTemplateCmd extends NfsPrimaryStorageAgentCommand {
-        private String templatePathInCache;
-        private long timeout;
+    public abstract static class CreateVolumeCmd extends NfsPrimaryStorageAgentCommand {
         private String installUrl;
-        private String accountUuid;
-        private String name;
-        private String volumeUuid;
-        
-        public long getTimeout() {
-            return timeout;
-        }
-        public void setTimeout(long timeout) {
-            this.timeout = timeout;
-        }
-        public String getTemplatePathInCache() {
-            return templatePathInCache;
-        }
-        public void setTemplatePathInCache(String templatePathInCache) {
-            this.templatePathInCache = templatePathInCache;
-        }
-        public String getInstallUrl() {
-            return installUrl;
-        }
-        public void setInstallUrl(String installUrl) {
-            this.installUrl = installUrl;
-        }
-        public String getAccountUuid() {
-            return accountUuid;
-        }
-        public void setAccountUuid(String accountUuid) {
-            this.accountUuid = accountUuid;
-        }
-        public String getName() {
-            return name;
-        }
-        public void setName(String name) {
-            this.name = name;
-        }
-        public String getVolumeUuid() {
-            return volumeUuid;
-        }
-        public void setVolumeUuid(String uuid) {
-            this.volumeUuid = uuid;
-        }
-    }
-    
-    public static class CreateRootVolumeFromTemplateResponse extends NfsPrimaryStorageAgentResponse {
-    }
-    
-    public static class CreateEmptyVolumeCmd extends NfsPrimaryStorageAgentCommand {
-        private String installUrl;
-        private long size;
         private String accountUuid;
         private String hypervisorType;
         private String name;
         private String volumeUuid;
-        private boolean withoutVolume;
-        
+
         public String getInstallUrl() {
             return installUrl;
         }
         public void setInstallUrl(String installUrl) {
             this.installUrl = installUrl;
-        }
-        public long getSize() {
-            return size;
-        }
-        public void setSize(long size) {
-            this.size = size;
         }
         public String getAccountUuid() {
             return accountUuid;
@@ -345,7 +289,6 @@ public class NfsPrimaryStorageKVMBackendCommands {
             return name;
         }
         public void setName(String name) {
-
             this.name = name;
         }
         public String getVolumeUuid() {
@@ -353,6 +296,69 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
         public void setVolumeUuid(String uuid) {
             this.volumeUuid = uuid;
+        }
+
+    }
+
+    public static class CreateRootVolumeFromTemplateCmd extends CreateVolumeCmd {
+        private String templatePathInCache;
+        private long timeout;
+        
+        public long getTimeout() {
+            return timeout;
+        }
+        public void setTimeout(long timeout) {
+            this.timeout = timeout;
+        }
+        public String getTemplatePathInCache() {
+            return templatePathInCache;
+        }
+        public void setTemplatePathInCache(String templatePathInCache) {
+            this.templatePathInCache = templatePathInCache;
+        }
+    }
+    
+    public static class CreateRootVolumeFromTemplateResponse extends NfsPrimaryStorageAgentResponse {
+    }
+
+    public static class CreateVolumeWithBackingCmd extends CreateVolumeCmd {
+        private String templatePathInCache;
+
+        public String getTemplatePathInCache() {
+            return templatePathInCache;
+        }
+        public void setTemplatePathInCache(String templatePathInCache) {
+            this.templatePathInCache = templatePathInCache;
+        }
+    }
+
+    public static class CreateVolumeWithBackingRsp extends NfsPrimaryStorageAgentResponse {
+        private long size;
+        private long actualSize;
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+    }
+
+    public static class CreateEmptyVolumeCmd extends CreateVolumeCmd {
+        private long size;
+        private boolean withoutVolume;
+
+        public long getSize() {
+            return size;
+        }
+        public void setSize(long size) {
+            this.size = size;
         }
 
         public boolean isWithoutVolume() {
@@ -767,5 +773,14 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class NfsRebaseVolumeBackingFileRsp extends NfsPrimaryStorageAgentResponse {
 
+    }
+
+    public static class LinkVolumeNewDirCmd extends NfsPrimaryStorageAgentCommand {
+        public String volumeUuid;
+        public String srcDir;
+        public String dstDir;
+    }
+
+    public static class LinkVolumeNewDirRsp extends NfsPrimaryStorageAgentResponse {
     }
 }

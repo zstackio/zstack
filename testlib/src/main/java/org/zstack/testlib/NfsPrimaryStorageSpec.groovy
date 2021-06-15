@@ -137,6 +137,10 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(NfsPrimaryStorageKVMBackend.CREATE_VOLUME_WITH_BACKING_PATH) {
+                return new NfsPrimaryStorageKVMBackendCommands.CreateVolumeWithBackingRsp()
+            }
+
             simulator(NfsPrimaryStorageKVMBackend.GET_VOLUME_SIZE_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.GetVolumeActualSizeCmd.class)
                 NfsPrimaryStorageKVMBackendCommands.GetVolumeActualSizeRsp rsp = new NfsPrimaryStorageKVMBackendCommands.GetVolumeActualSizeRsp()
@@ -192,6 +196,10 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
 
             simulator(NfsPrimaryStorageKVMBackend.DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
                 return new NfsPrimaryStorageKVMBackendCommands.DownloadBitsFromKVMHostRsp()
+            }
+
+            simulator(NfsPrimaryStorageKVMBackend.HARD_LINK_VOLUME) {
+                return new NfsPrimaryStorageKVMBackendCommands.LinkVolumeNewDirRsp()
             }
 
             simulator(NfsPrimaryStorageKVMBackend.GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH) {
