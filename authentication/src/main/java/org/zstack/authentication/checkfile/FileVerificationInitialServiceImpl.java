@@ -148,13 +148,12 @@ public class FileVerificationInitialServiceImpl implements FileVerificationIniti
         new Bash() {
             @Override
             protected void scripts() {
-                setE();
-                run(String.format("find %s -name %s", parentFile, filename));
-                String output = stdout();
-                if (output.contains("No such file or directory")) {
+                unsetE();
+                int lastReturnCode = run(String.format("find %s -name %s", parentFile, filename));
+                if (lastReturnCode != 0) {
                     return;
                 }
-                String[] outputs = output.split("\n");
+                String[] outputs = stdout().split("\n");
                 Collections.addAll(matchFiles, outputs);
             }
         }.execute();
