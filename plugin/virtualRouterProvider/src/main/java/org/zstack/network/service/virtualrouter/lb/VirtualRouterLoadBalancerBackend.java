@@ -1,6 +1,7 @@
 package org.zstack.network.service.virtualrouter.lb;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -590,17 +591,17 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 if (entries == null || entries.size() <= 1) {
                     return entries;
                 }
-                Collections.sort(entries, (Comparator) (entry1, entry2) -> {
-                    if (entry1 instanceof AccessControlListEntryVO && entry2 instanceof AccessControlListEntryVO) {
-                        int i = ((AccessControlListEntryVO) entry2).getDomain().length() - ((AccessControlListEntryVO) entry1).getDomain().length();
-                        if (i == 0) {
-                            int urlLength1 = ((AccessControlListEntryVO) entry1).getUrl() == null ? 0 : ((AccessControlListEntryVO) entry1).getUrl().length();
-                            int urlLength2 = ((AccessControlListEntryVO) entry2).getUrl() == null ? 0 : ((AccessControlListEntryVO) entry2).getUrl().length();
-                            return urlLength2 - urlLength1;
+                Collections.sort(entries, new Comparator<AccessControlListEntryVO>() {
+                    @Override
+                    public int compare(AccessControlListEntryVO entry1, AccessControlListEntryVO entry2) {
+                        int i = entry2.getDomain().length() - entry1.getDomain().length();
+                        if (i != 0) {
+                            return i;
                         }
-                        return i;
+                        int urlLength1 = entry1.getUrl() == null ? 0 : entry1.getUrl().length();
+                        int urlLength2 = entry2.getUrl() == null ? 0 : entry2.getUrl().length();
+                        return urlLength2 - urlLength1;
                     }
-                    throw new ClassCastException("cant translate to AccessControlListEntryVO");
                 });
                 return entries;
             }
@@ -675,7 +676,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                         boolean needAddServerGroup = true;
                         if (!lbTO.getServerGroups().isEmpty()) {
-                            needAddServerGroup = !lbTO.getServerGroups().stream().anyMatch(sg -> sg.getServerGroupUuid().equals(polymerizedUuid));
+                            needAddServerGroup = lbTO.getServerGroups().stream().noneMatch(sg -> sg.getServerGroupUuid().equals(polymerizedUuid));
                         }
 
                         if (needAddServerGroup) {

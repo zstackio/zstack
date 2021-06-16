@@ -1640,7 +1640,7 @@ public class LoadBalancerBase {
                 boolean needRefresh = false;
                 if (!detachSgUuids.isEmpty()) {
                     SQL.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuid()).in(LoadBalancerListenerACLRefVO_.serverGroupUuid, detachSgUuids).delete();
-                    needRefresh = needRefresh | isServerGroupsOwnActiveBackenServer(detachSgUuids);
+                    needRefresh = isServerGroupsOwnActiveBackenServer(detachSgUuids);
                 }
                 if (!attachSgUuids.isEmpty()) {
                     List<LoadBalancerListenerACLRefVO> refs = new ArrayList<>();
@@ -2563,8 +2563,8 @@ public class LoadBalancerBase {
                                         .set(LoadBalancerListenerVO_.serverGroupUuid, null)
                                         .update();
                                 SQL.New(LoadBalancerListenerACLRefVO.class)
-                                        .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())
-                                        .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid()).delete();
+                                        .eq(LoadBalancerListenerACLRefVO_.serverGroupUuid, msg.getServerGroupUuid())
+                                        .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).delete();
                                 SQL.New(LoadBalancerListenerServerGroupRefVO.class)
                                         .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())
                                         .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid()).delete();
