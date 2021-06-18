@@ -25,6 +25,5 @@ public interface HostAllocatorConstant {
     enum Param {
         HOST,
         SPEC,
-        CAP_SUCCESS,
     }
 }
