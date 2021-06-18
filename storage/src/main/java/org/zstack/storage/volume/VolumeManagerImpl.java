@@ -637,7 +637,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     vvo = dbf.updateAndRefresh(vvo);
 
                     new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vvo));
-
                     completion.success(VolumeInventory.valueOf(vvo));
                 } else {
                     dbf.removeByPrimaryKey(vo.getUuid(), VolumeVO.class);
