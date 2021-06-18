@@ -13,6 +13,7 @@
         <class>org.zstack.core.job.JobQueueVO</class>
         <class>org.zstack.core.job.JobQueueEntryVO</class>
         <class>org.zstack.core.config.GlobalConfigVO</class>
+        <class>org.zstack.core.eventlog.EventLogVO</class>
         <class>org.zstack.resourceconfig.ResourceConfigVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeContextVO</class>
