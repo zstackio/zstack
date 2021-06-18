@@ -244,6 +244,24 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CreateEmptyVolumeRsp extends AgentResponse {
+        private String encryptUuid;
+        private String hashValue;
+
+        public String getEncryptUuid() {
+            return encryptUuid;
+        }
+
+        public void setEncryptUuid(String encryptUuid) {
+            this.encryptUuid = encryptUuid;
+        }
+
+        public String getHashValue() {
+            return hashValue;
+        }
+
+        public void setHashValue(String hashValue) {
+            this.hashValue = hashValue;
+        }
     }
 
     public static class GetPhysicalCapacityCmd extends AgentCommand {
@@ -1130,6 +1148,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         httpCall(CREATE_EMPTY_VOLUME_PATH, hostUuid, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<CreateEmptyVolumeRsp>(completion) {
             @Override
             public void success(CreateEmptyVolumeRsp returnValue) {
+                // record encrypted image -- fast implementation
+                LuksEncryptedImageVO evo = new LuksEncryptedImageVO();
+                evo.setEncryptUuid(returnValue.getEncryptUuid());
+                evo.setHashValue(returnValue.getHashValue());
+                dbf.persist(evo);
+
                 completion.success(cmd.getInstallUrl());
             }
 
