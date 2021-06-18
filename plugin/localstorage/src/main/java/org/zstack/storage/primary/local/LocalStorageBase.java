@@ -654,16 +654,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
             public void setup() {
                 flow(new Flow() {
                     String __name__ = "reserve-capacity-on-dest-host";
+                    boolean success = false;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         reserveCapacityOnHost(msg.getDestHostUuid(), requiredSize, self.getUuid());
+                        success = true;
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        returnStorageCapacityToHost(msg.getDestHostUuid(), requiredSize);
+                        if (success) {
+                            returnStorageCapacityToHost(msg.getDestHostUuid(), requiredSize);
+                        }
                         trigger.rollback();
                     }
                 });
@@ -1285,17 +1289,19 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     String __name__ = "reserve-capacity-on-host";
 
                     Long size;
+                    boolean success = false;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         size = reply.getSize();
                         reserveCapacityOnHost(hostUuid, size, self.getUuid());
+                        success = true;
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (size != null) {
+                        if (success) {
                             returnStorageCapacityToHost(hostUuid, size);
                         }
 

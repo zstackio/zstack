@@ -1120,7 +1120,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 .listValues();
         if (!protectedSnapUuids.isEmpty()) {
             throw new OperationFailureException(operr("volume snapshot[uuids:%s] is protected, " +
-                    "do not allow to delete volume.", protectedSnapUuids.toString()));
+                    "do not allow to delete volume.", new HashSet<>(protectedSnapUuids).toString()));
         }
     }
 
