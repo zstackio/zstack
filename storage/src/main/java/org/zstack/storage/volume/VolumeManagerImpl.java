@@ -565,6 +565,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
                     evt.setInventory(VolumeInventory.valueOf(vvo));
                 } else {
+                    dbf.removeByPrimaryKey(vvo.getUuid(), VolumeVO.class);
                     evt.setError(reply.getError());
                 }
 
