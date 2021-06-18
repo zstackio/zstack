@@ -124,7 +124,10 @@ class LocalStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH) {
-                return new LocalStorageKvmBackend.CreateEmptyVolumeRsp()
+                LocalStorageKvmBackend.CreateEmptyVolumeRsp rsp = new LocalStorageKvmBackend.CreateEmptyVolumeRsp()
+                rsp.encryptUuid = Platform.getUuid()
+                rsp.hashValue = "qcow2_hash_value"
+                return rsp
             }
 
             simulator(LocalStorageKvmBackend.CREATE_FOLDER_PATH) {
