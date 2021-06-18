@@ -2978,18 +2978,22 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     String __name__ = "reserve-capacity-on-the-host-for-template";
 
                     long requiredSize = ratioMgr.calculateByRatio(self.getUuid(), msg.getVolumeInventory().getSize());
+                    boolean success = false;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         TaskProgressRange stage = markTaskStage(parentStage, PREPARATION_STAGE);
                         reserveCapacityOnHost(ref.getHostUuid(), requiredSize, ref.getPrimaryStorageUuid());
+                        success = true;
                         reportProgress(stage.getEnd().toString());
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        returnStorageCapacityToHost(ref.getHostUuid(), requiredSize);
+                        if (success) {
+                            returnStorageCapacityToHost(ref.getHostUuid(), requiredSize);
+                        }
                         trigger.rollback();
                     }
                 });

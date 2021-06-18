@@ -114,12 +114,14 @@ public class HostSortorChain implements HostSortorStrategy {
             public void setup() {
                 flow(new Flow() {
                     String __name__ = "hostAllocation-reserve-capacity";
+
+                    boolean success = false;
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         HostInventory host = (HostInventory) data.get(HostAllocatorConstant.Param.HOST);
                         try {
                             reserveCapacity(host);
-                            data.put(HostAllocatorConstant.Param.CAP_SUCCESS, true);
+                            success = true;
                             trigger.next();
                         } catch (UnableToReserveHostCapacityException e) {
                             logger.debug(String.format("[Host Allocation]: %s on host[uuid:%s]. try next one",
@@ -131,7 +133,6 @@ public class HostSortorChain implements HostSortorStrategy {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        boolean success = (boolean)data.get(HostAllocatorConstant.Param.CAP_SUCCESS);
                         if (success) {
                             HostInventory host = (HostInventory) data.get(HostAllocatorConstant.Param.HOST);
                             rollbackCapacity(host);

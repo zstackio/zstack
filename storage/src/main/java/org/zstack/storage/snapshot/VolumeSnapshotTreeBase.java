@@ -709,7 +709,7 @@ public class VolumeSnapshotTreeBase {
                             dmsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
                             dmsg.setInstallPath(installPath);
                             dmsg.setBitsType(VolumeVO.class.getSimpleName());
-                            dmsg.setBitsUuid(msg.getVolumeUuid());
+                            dmsg.setBitsUuid(msg.getVolume().getUuid());
                             bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, dmsg.getPrimaryStorageUuid());
                             bus.send(dmsg);
                         }

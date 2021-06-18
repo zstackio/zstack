@@ -543,14 +543,17 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    VolumeVO vvo = dbf.reload(vo);
-                    if (vvo == null) {
-                        reply.setError(operr("target volume is expunged during volume creation"));
-                        bus.reply(msg, reply);
-                        return;
-                    }
+                if (!reply.isSuccess()) {
+                    dbf.removeByPrimaryKey(vvo.getUuid(), VolumeVO.class);
+                    evt.setError(reply.getError());
+                }
 
+                VolumeVO vvo = dbf.reload(vo);
+                if (vvo == null) {
+                    evt.setError(operr("target volume is expunged during volume creation"));
+                }
+
+                if (evt.isSuccess()) {
                     CreateDataVolumeFromVolumeSnapshotReply cr = reply.castReply();
                     VolumeInventory inv = cr.getInventory();
                     vvo.setSize(inv.getSize());
@@ -564,8 +567,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vvo));
 
                     evt.setInventory(VolumeInventory.valueOf(vvo));
-                } else {
-                    evt.setError(reply.getError());
                 }
 
                 bus.publish(evt);
