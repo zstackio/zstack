@@ -1,5 +1,6 @@
 package org.zstack.storage.ceph.primary;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
@@ -132,6 +133,32 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String fsId;
         String uuid;
         public String monUuid;
+        String token;
+        String tpTimeout;
+
+        public String getTpTimeout() {
+            return tpTimeout;
+        }
+
+        public void setTpTimeout(String tpTimeout) {
+            this.tpTimeout = tpTimeout;
+        }
+
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
+        }
+
+        public String getMonUuid() {
+            return monUuid;
+        }
+
+        public void setMonUuid(String monUuid) {
+            this.monUuid = monUuid;
+        }
 
         public String getFsId() {
             return fsId;
@@ -349,6 +376,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class CreateEmptyVolumeRsp extends AgentResponse {
+        public String installPath;
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
     }
 
     public static class DeleteCmd extends AgentCommand {
@@ -389,6 +425,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class CloneRsp extends AgentResponse {
+        public String installPath;
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
     }
 
     public static class FlattenCmd extends AgentCommand {
@@ -1513,6 +1558,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         return mediator;
     }
 
+    private String makeRootVolumeInstallPath(String volUuid, String volumePath) {
+        return String.format("ceph://%s/%s", getRootVolumeTargetPoolName(volUuid), volumePath);
+    }
+
     private String makeRootVolumeInstallPath(String volUuid) {
         return String.format("ceph://%s/%s", getRootVolumeTargetPoolName(volUuid), volUuid);
     }
@@ -1522,11 +1571,21 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         return getPoolName(poolName, getDefaultRootVolumePoolName());
     }
 
+    private String makeResetImageRootVolumeInstallPath(String volUuid, String volumePath) {
+        return String.format("ceph://%s/%s",
+                getDefaultRootVolumePoolName(),
+                volumePath);
+    }
+
     private String makeResetImageRootVolumeInstallPath(String volUuid) {
         return String.format("ceph://%s/reset-image-%s-%s",
                 getDefaultRootVolumePoolName(),
                 volUuid,
                 System.currentTimeMillis());
+    }
+
+    private String makeDataVolumeInstallPath(String volUuid, String installPath) {
+        return String.format("ceph://%s/%s", getDataVolumeTargetPoolName(volUuid), installPath);
     }
 
     private String makeDataVolumeInstallPath(String volUuid) {
@@ -1621,12 +1680,24 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success(CreateEmptyVolumeRsp ret) {
                 VolumeInventory vol = msg.getVolume();
-                vol.setInstallPath(cmd.getInstallPath());
+                vol.setInstallPath(buildEmptyVolumeInstallPath(msg.getVolume(), cmd.installPath, ret.getInstallPath()));
                 vol.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                 reply.setVolume(vol);
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private String buildEmptyVolumeInstallPath(VolumeInventory vo,String canonicalPath, String installPath) {
+        if (StringUtils.isEmpty(installPath)) {
+            return canonicalPath;
+        }
+
+        if (VolumeType.Root.toString().equals(vo.getType())) {
+            return makeRootVolumeInstallPath(vo.getUuid(), installPath);
+        } else {
+            return makeDataVolumeInstallPath(vo.getUuid(), installPath);
+        }
     }
 
     private void cleanTrash(Long trashId, final ReturnValueCompletion<CleanTrashResult> completion) {
@@ -2319,6 +2390,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                             @Override
                             public void success(CloneRsp ret) {
+                                if (StringUtils.isNotEmpty(ret.getInstallPath()) &&
+                                        !ret.getInstallPath().equals(volumePath)) {
+                                    volumePath = makeRootVolumeInstallPath(msg.getVolume().getUuid(), ret.getInstallPath());
+                                }
+
                                 trigger.next();
                             }
                         });
@@ -2910,6 +2986,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         private void prepareCmd() {
             cmd.setUuid(self.getUuid());
             cmd.setFsId(getSelf().getFsid());
+            if (CephSystemTags.THIRDPARTY_PLATFORM.hasTag(self.getUuid())) {
+                cmd.setToken(CephSystemTags.THIRDPARTY_PLATFORM.getTokenByResourceUuid(self.getUuid(),
+                        CephSystemTags.THIRDPARTY_PLATFORM_TOKEN));
+            }
+
+            cmd.setTpTimeout(CephGlobalConfig.THIRD_PARTY_SDK_TIMEOUT.value(String.class));
         }
 
         private List<CephPrimaryStorageMonBase> prepareMons() {
@@ -3102,6 +3184,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                         fsids.put(monVO.getUuid(), rsp.fsid);
                                         monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
                                         dbf.update(monVO);
+                                    }
+
+                                    if (StringUtils.isNotEmpty(rsp.type) &&
+                                        !CephSystemTags.CEPH_MANUFACTURER.hasTag(self.getUuid())) {
+                                        SystemTagCreator creator = CephSystemTags.CEPH_MANUFACTURER.newSystemTagCreator(self.getUuid());
+
+                                        creator.setTagByTokens(map(e(CephSystemTags.CEPH_MANUFACTURER_TOKEN, rsp.type)));
+                                        creator.inherent = true;
+                                        creator.recreate = true;
+                                        creator.create();
                                     }
                                     compl.done();
                                 }
@@ -4362,6 +4454,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                             @Override
                             public void success(CloneRsp ret) {
+                                if (StringUtils.isNotEmpty(ret.getInstallPath()) &&
+                                        !ret.getInstallPath().equals(volumePath)) {
+                                    volumePath = makeResetImageRootVolumeInstallPath(msg.getVolume().getUuid(), ret.getInstallPath());
+                                }
+
                                 trigger.next();
                             }
                         });

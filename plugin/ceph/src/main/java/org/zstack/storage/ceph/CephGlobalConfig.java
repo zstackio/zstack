@@ -36,4 +36,8 @@ public class CephGlobalConfig {
     @GlobalConfigDef(type = Boolean.class, defaultValue = "true")
     @GlobalConfigValidation
     public static GlobalConfig PREVENT_VM_SPLIT_BRAIN = new GlobalConfig(CATEGORY, "checkImageWatcherBeforeStartVm");
+
+    @GlobalConfigDef(type = Integer.class, defaultValue = "30", description = "third party platform sdk timeout, in minutes")
+    @GlobalConfigValidation
+    public static GlobalConfig THIRD_PARTY_SDK_TIMEOUT = new GlobalConfig(CATEGORY, "thirdPartySdkTimeout");
 }
