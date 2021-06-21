@@ -543,14 +543,14 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    dbf.removeByPrimaryKey(vvo.getUuid(), VolumeVO.class);
-                    evt.setError(reply.getError());
-                }
-
                 VolumeVO vvo = dbf.reload(vo);
                 if (vvo == null) {
                     evt.setError(operr("target volume is expunged during volume creation"));
+                }
+
+                if (!reply.isSuccess()) {
+                    dbf.removeByPrimaryKey(vo.getUuid(), VolumeVO.class);
+                    evt.setError(reply.getError());
                 }
 
                 if (evt.isSuccess()) {

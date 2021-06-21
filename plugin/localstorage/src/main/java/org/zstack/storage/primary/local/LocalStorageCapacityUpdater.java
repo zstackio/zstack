@@ -38,16 +38,24 @@ public class LocalStorageCapacityUpdater {
         long originalPhysicalTotal = ref.getTotalPhysicalCapacity();
         long originalPhysicalAvailable = ref.getAvailablePhysicalCapacity();
 
-        ref.setTotalPhysicalCapacity(rsp.getTotalCapacity());
-        ref.setAvailablePhysicalCapacity(rsp.getAvailableCapacity());
-        dbf.getEntityManager().merge(ref);
+        // TODO: lock all host capacity operation.
+        SQL.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.primaryStorageUuid, ref.getPrimaryStorageUuid())
+                .eq(LocalStorageHostRefVO_.hostUuid, ref.getHostUuid())
+                .set(LocalStorageHostRefVO_.totalPhysicalCapacity, rsp.getTotalCapacity())
+                .set(LocalStorageHostRefVO_.availablePhysicalCapacity, rsp.getAvailableCapacity())
+                .update();
 
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("[Local Storage Capacity] changed the physical capacity of the host[uuid:%s] of " +
                             "the local primary storage[uuid:%s] as:\n" +
+                            "total: %s\n" +
+                            "available: %s\n" +
                             "physical total: %s --> %s\n" +
                             "physical available: %s --> %s\n",
-                    ref.getHostUuid(), ref.getPrimaryStorageUuid(), originalPhysicalTotal, ref.getTotalPhysicalCapacity(),
+                    ref.getHostUuid(), ref.getPrimaryStorageUuid(),
+                    ref.getTotalCapacity(), ref.getAvailableCapacity(),
+                    originalPhysicalTotal, ref.getTotalPhysicalCapacity(),
                     originalPhysicalAvailable, ref.getAvailablePhysicalCapacity()));
         }
     }

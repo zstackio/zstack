@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.storage.snapshot.VolumeSnapshotTagHelper.getBackingVolumeTag;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -1109,12 +1110,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         .eq(SystemTagVO_.tag, toDeleteTag).delete();
             }
         });
-    }
-
-    private static String getBackingVolumeTag(String volumeUuid) {
-        return VolumeSnapshotSystemTags.BACKING_TO_VOLUME.instantiateTag(Collections.singletonMap(
-                VolumeSnapshotSystemTags.BACKING_VOLUME_TOKEN, volumeUuid
-        ));
     }
 
     @Override
