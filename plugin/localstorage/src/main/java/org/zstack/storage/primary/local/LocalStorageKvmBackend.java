@@ -1282,15 +1282,20 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             flow(new Flow() {
                                 String __name__ = "allocate-capacity-on-host";
 
+                                boolean success = false;
+
                                 @Override
                                 public void run(FlowTrigger trigger, Map data) {
                                     reserveCapacityOnHost(hostUuid, image.getActualSize(), psUuid);
+                                    success = true;
                                     trigger.next();
                                 }
 
                                 @Override
                                 public void rollback(FlowRollback trigger, Map data) {
-                                    returnStorageCapacityToHost(hostUuid, image.getActualSize());
+                                    if (success) {
+                                        returnStorageCapacityToHost(hostUuid, image.getActualSize());
+                                    }
                                     trigger.rollback();
                                 }
                             });

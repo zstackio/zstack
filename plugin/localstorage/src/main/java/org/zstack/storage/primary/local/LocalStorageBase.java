@@ -1887,6 +1887,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             ext.beforeReturnLocalStorageCapacityOnHost(s);
         }
 
+        LocalStorageUtils.logCapacityChange(self.getUuid(), href.getHostUuid(), href.getAvailableCapacity(), href.getAvailableCapacity() + s.getSize());
         href.setAvailableCapacity(href.getAvailableCapacity() + s.getSize());
         dbf.getEntityManager().merge(href);
     }
