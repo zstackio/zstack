@@ -4104,53 +4104,6 @@ public class KVMHost extends HostBase implements Host {
                     flow(echoFlow);
 
                     flow(new NoRollbackFlow() {
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            FlowChain prepareChain = FlowChainBuilder.newSimpleFlowChain();
-
-                            for (PrepareKVMHostExtensionPoint extp : factory.getPrepareExtensions()) {
-                                KVMHostConnectedContext ctx = new KVMHostConnectedContext();
-                                ctx.setInventory((KVMHostInventory) getSelfInventory());
-                                ctx.setNewAddedHost(info.isNewAdded());
-                                ctx.setBaseUrl(baseUrl);
-                                ctx.setSkipPackages(info.getSkipPackages());
-
-                                prepareChain.then(extp.createPrepareKvmHostFlow(ctx));
-                            }
-                            prepareChain.error(new FlowErrorHandler(trigger) {
-                                @Override
-                                public void handle(ErrorCode errCode, Map data) {
-                                    trigger.fail(errCode);
-                                }
-                            }).done(new FlowDoneHandler(trigger) {
-                                @Override
-                                public void handle(Map data) {
-                                    trigger.next();
-                                }
-                            }).start();
-                        }
-                    });
-
-                    if (KVMSystemTags.RESTART_LIBVIRT_REQUESTED.hasTag(self.getUuid())) {
-                        flow(new NoRollbackFlow() {
-                            @Override
-                            public void run(FlowTrigger trigger, Map data) {
-                                new Ssh().shell(String.format("sudo systemctl restart libvirtd; sudo bash /etc/init.d/%s restart", AnsibleConstant.KVM_AGENT_NAME))
-                                        .setTimeout(20)
-                                        .setPrivateKey(asf.getPrivateKey())
-                                        .setUsername(getSelf().getUsername())
-                                        .setHostname(self.getManagementIp())
-                                        .setPort(getSelf().getPort())
-                                        .runErrorByExceptionAndClose();
-
-                                trigger.next();
-                            }
-                        });
-
-                        flow(echoFlow);
-                    }
-
-                    flow(new NoRollbackFlow() {
                         String __name__ = "update-kvmagent-dependencies";
 
                         @Override
@@ -4263,6 +4216,53 @@ public class KVMHost extends HostBase implements Host {
                             });
                         }
                     });
+
+                    flow(new NoRollbackFlow() {
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            FlowChain prepareChain = FlowChainBuilder.newSimpleFlowChain();
+
+                            for (PrepareKVMHostExtensionPoint extp : factory.getPrepareExtensions()) {
+                                KVMHostConnectedContext ctx = new KVMHostConnectedContext();
+                                ctx.setInventory((KVMHostInventory) getSelfInventory());
+                                ctx.setNewAddedHost(info.isNewAdded());
+                                ctx.setBaseUrl(baseUrl);
+                                ctx.setSkipPackages(info.getSkipPackages());
+
+                                prepareChain.then(extp.createPrepareKvmHostFlow(ctx));
+                            }
+                            prepareChain.error(new FlowErrorHandler(trigger) {
+                                @Override
+                                public void handle(ErrorCode errCode, Map data) {
+                                    trigger.fail(errCode);
+                                }
+                            }).done(new FlowDoneHandler(trigger) {
+                                @Override
+                                public void handle(Map data) {
+                                    if (KVMSystemTags.RESTART_LIBVIRT_REQUESTED.hasTag(self.getUuid())) {
+                                        SshResult ret = new Ssh().shell(String.format("sudo systemctl restart libvirtd; sudo bash /etc/init.d/%s restart", AnsibleConstant.KVM_AGENT_NAME))
+                                                .setTimeout(20)
+                                                .setPrivateKey(asf.getPrivateKey())
+                                                .setUsername(getSelf().getUsername())
+                                                .setHostname(self.getManagementIp())
+                                                .setPort(getSelf().getPort())
+                                                .runAndClose();
+
+                                        if (ret.getReturnCode() != 0) {
+                                            trigger.fail(operr("Failed to restart agent, because %s",ret.getStderr()));
+                                            return;
+                                        }
+
+                                        KVMSystemTags.RESTART_LIBVIRT_REQUESTED.delete(self.getUuid());
+                                    }
+
+                                    trigger.next();
+                                }
+                            }).start();
+                        }
+                    });
+
+                    flow(echoFlow);
 
                     if (info.isNewAdded()) {
                         flow(new NoRollbackFlow() {
