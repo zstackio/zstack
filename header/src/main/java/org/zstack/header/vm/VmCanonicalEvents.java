@@ -1,7 +1,7 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.message.NeedJsonSchema;
-
+import org.zstack.header.errorcode.ErrorCode;
 import java.util.Date;
 
 /**
@@ -13,6 +13,38 @@ public class VmCanonicalEvents {
     public static final String VM_INSTANCE_OFFERING_CHANGED_PATH = "/vm/instanceoffering/change";
     public static final String VM_CONFIG_CHANGED_PATH = "/vm/config/change";
     public static final String VM_LIBVIRT_REPORT_REBOOT = "/vm/libvirtReportReboot";
+    public static final String VM_LIBVIRT_REPORT_CRASH = "/vm/libvirtReportCrash";
+
+    @NeedJsonSchema
+    public static class VmCrashReportData {
+        private String vmUuid;
+        private Date date = new Date();
+        private ErrorCode reason;
+
+        public ErrorCode getReason() {
+            return reason;
+        }
+
+        public void setReason(ErrorCode reason) {
+            this.reason = reason;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public Date getDate() {
+            return date;
+        }
+
+        public void setDate(Date date) {
+            this.date = date;
+        }
+    }
 
     @NeedJsonSchema
     public static class VmConfigChangedData {

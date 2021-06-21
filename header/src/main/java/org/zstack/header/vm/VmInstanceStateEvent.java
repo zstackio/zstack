@@ -22,4 +22,5 @@ public enum VmInstanceStateEvent {
     running,
     stopped,
     paused,
+    crashed,
 }

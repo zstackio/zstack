@@ -193,6 +193,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     }
                     to.port = UserdataGlobalProperty.HOST_PORT;
                     to.l3NetworkUuid = l.l3Uuid;
+                    to.agentConfig = new HashMap<>();
+                    if (isPVPanicEnable()) {
+                        to.agentConfig.put("pvpanic", "enable");
+                    }
                     tos.add(to);
                 }
 
@@ -451,6 +455,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         public String bridgeName;
         public String namespaceName;
         public String l3NetworkUuid;
+        public Map<String, String> agentConfig;
         public int port;
     }
 
@@ -506,6 +511,11 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         return struct.getUserdataList() != null && !struct.getUserdataList().isEmpty();
     }
 
+    private boolean isPVPanicEnable() {
+        return true; // TODO find in ResourceConfigVO
+    }
+    
+    
     @Override
     public void applyUserdata(final UserdataStruct struct, final Completion completion) {
         if (!UserdataGlobalConfig.OPEN_USERDATA_SERVICE_BY_DEFAULT.value(Boolean.class)) {
@@ -581,6 +591,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         uto.namespaceName = FlatDhcpBackend.makeNamespaceName(uto.bridgeName, struct.getL3NetworkUuid());
                         uto.port = UserdataGlobalProperty.HOST_PORT;
                         uto.l3NetworkUuid = struct.getL3NetworkUuid();
+                        uto.agentConfig = new HashMap<>();
+                        if (isPVPanicEnable()) {
+                            uto.agentConfig.put("pvpanic", "enable");
+                        }
                         cmd.userdata = uto;
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();

@@ -75,6 +75,9 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
+
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -163,6 +166,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
     protected VmInstanceExtensionPointEmitter extEmitter;
     @Autowired
     protected L3NetworkManager l3nm;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private List<VmInstanceExtensionManager> vmExtensionManagers = new ArrayList<>();
 
@@ -1924,6 +1929,107 @@ public class VmInstanceManagerImpl extends AbstractService implements
     public void managementNodeReady() {
         //checkUnknownVm();
         startVmExpungeTask();
+        installVmCrashEventListener();
+    }
+
+    private void installVmCrashEventListener() {
+        evtf.on(VmCanonicalEvents.VM_LIBVIRT_REPORT_CRASH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data){
+                VmCanonicalEvents.VmCrashReportData d = (VmCanonicalEvents.VmCrashReportData) data;
+                VmInstanceInventory vmInv = VmInstanceInventory.valueOf(dbf.findByUuid(d.getVmUuid(), VmInstanceVO.class));
+                long crashTime =  TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+                String crashStrategy = rcf.getResourceConfigValue(VmGlobalConfig.VM_CRASH_STRATEGY, d.getVmUuid(), String.class);
+                logger.debug(String.format("There is already happen crash of vm[uuid:%s],[%s] ", d.getVmUuid(), crashStrategy));
+                //change vm crash  vmStateChanged
+
+                //check VM state
+
+                //SNS alarm event
+                //store crash info to DB
+
+                //strategy operation
+                
+                if (crashStrategy.equals(CrashStrategy.Shutdown.toString())) {
+                    destroyVmOnHypervisor(vmInv, vmInv.getHostUuid());
+                } else if (crashStrategy.equals(CrashStrategy.Reboot.toString())) {
+                    StopVmInstanceMsg xmsg = new StopVmInstanceMsg();
+                    xmsg.setVmInstanceUuid(vmInv.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(xmsg, VmInstanceConstant.SERVICE_ID, vmInv.getUuid());
+                    bus.send(xmsg, new CloudBusCallBack(xmsg) {
+
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                logger.warn(String.format("success destroy the vm[uuid:%s] on the host[uuid:%s]", vmInv.getUuid(), vmInv.getHostUuid()));
+                                StartVmInstanceMsg smsg = new StartVmInstanceMsg();
+                                smsg.setVmInstanceUuid(vmInv.getUuid());
+                                bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vmInv.getUuid());
+                                bus.send(smsg, new CloudBusCallBack(smsg) {
+
+                                    @Override
+                                    public void run(MessageReply reply) {
+                                        if (reply.isSuccess()) {
+                                            logger.warn(String.format("success start the vm[uuid:%s] on the host[uuid:%s]", vmInv.getUuid(), vmInv.getHostUuid()));
+                                            return;
+                                        }
+
+                                        logger.warn(String.format("unable to start the vm[uuid:%s] on the host[uuid:%s], %s", vmInv.getUuid(), vmInv.getHostUuid(), reply.getError()));
+                                    }
+                                });
+                                return;
+                            }
+                            logger.warn(String.format("unable to destroy the vm[uuid:%s] on the host[uuid:%s], %s", vmInv.getUuid(), vmInv.getHostUuid(), reply.getError()));
+                        }
+                    });
+                } else {
+                    CheckVmStateOnHypervisorMsg msg = new CheckVmStateOnHypervisorMsg();
+                    msg.setVmInstanceUuids(Collections.singletonList(vmInv.getUuid()));
+                    msg.setHostUuid(vmInv.getHostUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, vmInv.getHostUuid());
+                    bus.send(msg, new CloudBusCallBack(msg) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.warn(String.format("unable to check state of the vm[uuid:%s] on the host[uuid:%s], %s",
+                                        vmInv.getUuid(), vmInv.getHostUuid(), reply.getError()));
+                                return;
+                            }
+
+                            CheckVmStateOnHypervisorReply r = reply.castReply();
+                            String state = r.getStates().get(vmInv.getUuid());
+                            if (state == null) {
+                                logger.warn(String.format("null state of the vm[uuid:%s] on the host[uuid:%s]", vmInv.getUuid(), vmInv.getHostUuid()));
+                                return;
+                            }
+
+                            logger.warn(String.format("success preserve the vm[uuid:%s] on the host[uuid:%s], status is [%s]", vmInv.getUuid(), vmInv.getHostUuid(),state));
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void destroyVmOnHypervisor(VmInstanceInventory vm, String hostUuid) {
+        DestroyVmOnHypervisorMsg msg = new DestroyVmOnHypervisorMsg();
+        msg.setVmInventory(vm);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(msg) {
+
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    logger.warn(String.format("success destroy the vm[uuid:%s] on the host[uuid:%s]", vm.getUuid(), hostUuid));
+                    return;
+                }
+
+                if (!reply.getError().isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
+                    logger.warn(String.format("unable to destroy the vm[uuid:%s] on the host[uuid:%s], %s", vm.getUuid(), hostUuid, reply.getError()));
+                    /*continue to run the chain if the vm has been shutoff in hypervisor*/
+                }
+            }
+        });
     }
 
     private synchronized void startVmExpungeTask() {
