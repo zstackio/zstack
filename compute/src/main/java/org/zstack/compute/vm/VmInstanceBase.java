@@ -1201,6 +1201,16 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmRunningFromDestroyed;
         }
 
+        if (originalState == VmInstanceState.Running && currentState == VmInstanceState.Crashed &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmCrashedFromRunningStateHostNotChanged;
+        }
+
+        if (originalState == VmInstanceState.Crashed && currentState == VmInstanceState.Running &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmRunningFromCrashedStateHostNotChanged;
+        }
+
         throw new CloudRuntimeException(String.format("unknown VM[uuid:%s] abnormal state combination[original state: %s," +
                         " current state: %s, original host:%s, current host:%s]",
                 self.getUuid(), originalState, currentState, originalHostUuid, currentHostUuid));
@@ -1321,6 +1331,18 @@ public class VmInstanceBase extends AbstractVmInstance {
             bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
             bus.send(dmsg);
 
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        } else if (operation == VmAbnormalLifeCycleOperation.VmCrashedFromRunningStateHostNotChanged) {
+            changeVmStateInDb(VmInstanceStateEvent.crashed, () -> self.setHostUuid(msg.getHostUuid()));
+            fireEvent.run();
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        } else if (operation == VmAbnormalLifeCycleOperation.VmRunningFromCrashedStateHostNotChanged) {
+            changeVmStateInDb(VmInstanceStateEvent.running, () -> self.setHostUuid(msg.getHostUuid()));
+            fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;

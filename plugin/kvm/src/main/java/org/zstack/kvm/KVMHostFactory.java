@@ -4,6 +4,9 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostGlobalConfig;
+import org.zstack.compute.vm.CrashStrategy;
+import org.zstack.compute.vm.VmGlobalConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
@@ -118,6 +121,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private TimeHelper timeHelper;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private Future<Void> checkSocketChannelTimeoutThread;
 
@@ -361,6 +366,18 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
                 return null;
             }
+        });
+
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_CRASH_EVENT, KVMAgentCommands.ReportVmCrashEventCmd.class, cmd -> {
+            String crashStrategy = rcf.getResourceConfigValue(VmGlobalConfig.VM_CRASH_STRATEGY, cmd.vmUuid, String.class);
+            if (!crashStrategy.equals(CrashStrategy.None.toString())){
+                VmCanonicalEvents.VmCrashReportData cData = new VmCanonicalEvents.VmCrashReportData();
+                cData.setVmUuid(cmd.vmUuid);
+                cData.setReason(operr("VmInstance[uuid: %s] happen crashed due to kernel error", cmd.vmUuid));
+                evf.fire(VmCanonicalEvents.VM_LIBVIRT_REPORT_CRASH, cData);
+
+            }
+            return null;
         });
 
         KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.installValidator(((resourceUuid, resourceType, systemTag) -> {

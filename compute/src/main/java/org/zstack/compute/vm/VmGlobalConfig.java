@@ -61,6 +61,16 @@ public class VmGlobalConfig {
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig RESOURCE_BINDING_STRATEGY = new GlobalConfig(CATEGORY, "resourceBinding.strategy");
 
+    @GlobalConfigValidation(validValues = {"None", "Preserve","Reboot","Shutdown"})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig VM_CRASH_STRATEGY = new GlobalConfig(CATEGORY, "crash.strategy");
+
+    @GlobalConfigValidation(numberGreaterThan = 1)
+    public static GlobalConfig VM_REBOOT_THRESHOLD_DURATION = new GlobalConfig(CATEGORY, "crash.rebootThreshold.duration");
+
+    @GlobalConfigValidation(numberGreaterThan = 1)
+    public static GlobalConfig VM_REBOOT_THRESHOLD_TIMES = new GlobalConfig(CATEGORY, "crash.rebootThreshold.times");
+
     @GlobalConfigValidation(validValues = {"Auto", "All"})
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig RESOURCE_BINDING_SCENE = new GlobalConfig(CATEGORY, "resourceBinding.Scene");

@@ -214,6 +214,29 @@
 		<type>java.lang.String</type>
 	</config>
 
+        <config>
+		<name>crash.crashStrategy</name>
+		<description>The crash strategy for vm</description>
+		<defaultValue>None</defaultValue>
+		<category>vm</category>
+		<type>java.lang.String</type>
+	</config>
+
+	<config>
+		<name>crash.rebootThreshold.duration</name>
+		<description>Threshold of the number of virtual machine crashes in a short time. If the threshold is exceeded, the virtual machine will not restart after it crashes</description>
+		<defaultValue>1800</defaultValue>
+		<category>vm</category>
+		<type>java.lang.Integer</type>
+	</config>
+
+	<config>
+		<name>crash.rebootThreshold.times</name>
+		<defaultValue>5</defaultValue>
+		<category>vm</category>
+		<type>java.lang.Integer</type>
+	</config>
+
 	<config>
 		<name>nicMultiQueueNum</name>
 		<description>default num of queues on virtio nic</description>
