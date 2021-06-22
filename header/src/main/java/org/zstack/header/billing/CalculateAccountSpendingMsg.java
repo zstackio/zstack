@@ -2,7 +2,7 @@ package org.zstack.header.billing;
 
 import org.zstack.header.message.NeedReplyMessage;
 
-public class CalculateAccountSpendingMsgInHeader extends NeedReplyMessage {
+public class CalculateAccountSpendingMsg extends NeedReplyMessage {
     private String accountUuid;
     private boolean totalOnly;
     private Long dateStart;
