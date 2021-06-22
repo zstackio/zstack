@@ -25,7 +25,7 @@ public class CalculateResourceSpendingAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, validValues = {"VM","cpu","memory","rootVolume","dataVolume","snapShot","gpu","pubIpVipBandwidth","pubIpVipBandwidthIn","pubIpVipBandwidthOut","pubIpVmNicBandwidth","pubIpVmNicBandwidthIn","pubIpVmNicBandwidthOut","all"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"VM","cpu","memory","rootVolume","dataVolume","snapShot","gpu","pubIpVipBandwidth","pubIpVipBandwidthIn","pubIpVipBandwidthOut","pubIpVmNicBandwidth","pubIpVmNicBandwidthIn","pubIpVmNicBandwidthOut","bareMetal2Instance","all"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String resourceType;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

@@ -48,6 +48,7 @@ public class SourceClassMap {
 			put("org.zstack.billing.Spending", "org.zstack.sdk.Spending");
 			put("org.zstack.billing.SpendingDetails", "org.zstack.sdk.SpendingDetails");
 			put("org.zstack.billing.generator.BillingInventory", "org.zstack.sdk.BillingInventory");
+			put("org.zstack.billing.generator.baremetal2.BareMetalBillingInventory", "org.zstack.sdk.BareMetalBillingInventory");
 			put("org.zstack.billing.generator.pcidevice.PciDeviceBillingInventory", "org.zstack.sdk.PciDeviceBillingInventory");
 			put("org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthInBillingInventory", "org.zstack.sdk.PubIpVipBandwidthInBillingInventory");
 			put("org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthOutBillingInventory", "org.zstack.sdk.PubIpVipBandwidthOutBillingInventory");
@@ -57,6 +58,9 @@ public class SourceClassMap {
 			put("org.zstack.billing.generator.vm.memory.VmMemoryBillingInventory", "org.zstack.sdk.VmMemoryBillingInventory");
 			put("org.zstack.billing.generator.volume.data.DataVolumeBillingInventory", "org.zstack.sdk.DataVolumeBillingInventory");
 			put("org.zstack.billing.generator.volume.root.RootVolumeBillingInventory", "org.zstack.sdk.RootVolumeBillingInventory");
+			put("org.zstack.billing.spendingcalculator.baremetal2.BareMetal2VmSpending", "org.zstack.sdk.BareMetal2VmSpending");
+			put("org.zstack.billing.spendingcalculator.baremetal2.BareMetal2VmSpendingDetails", "org.zstack.sdk.BareMetal2VmSpendingDetails");
+			put("org.zstack.billing.spendingcalculator.baremetal2.PriceBareMetal2ChassisOfferingRefInventory", "org.zstack.sdk.PriceBareMetal2ChassisOfferingRefInventory");
 			put("org.zstack.billing.spendingcalculator.pcidevice.PciDeviceSpending", "org.zstack.sdk.PciDeviceSpending");
 			put("org.zstack.billing.spendingcalculator.pcidevice.PciDeviceSpendingInventory", "org.zstack.sdk.PciDeviceSpendingInventory");
 			put("org.zstack.billing.spendingcalculator.pcidevice.PricePciDeviceOfferingRefInventory", "org.zstack.sdk.PricePciDeviceOfferingRefInventory");
@@ -582,6 +586,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.metricpusher.MetricDataHttpReceiverInventory", "org.zstack.sdk.zwatch.metricpusher.MetricDataHttpReceiverInventory");
 			put("org.zstack.zwatch.metricpusher.MetricTemplateInventory", "org.zstack.sdk.zwatch.metricpusher.MetricTemplateInventory");
 			put("org.zstack.zwatch.metricpusher.ReceiverState", "org.zstack.sdk.zwatch.metricpusher.ReceiverState");
+			put("org.zstack.zwatch.migratedb.AlarmRecordsInventory", "org.zstack.sdk.zwatch.migratedb.AlarmRecordsInventory");
 			put("org.zstack.zwatch.migratedb.EventRecordsInventory", "org.zstack.sdk.zwatch.migratedb.EventRecordsInventory");
 			put("org.zstack.zwatch.monitorgroup.entity.EventRuleTemplateInventory", "org.zstack.sdk.zwatch.monitorgroup.entity.EventRuleTemplateInventory");
 			put("org.zstack.zwatch.monitorgroup.entity.MetricRuleTemplateInventory", "org.zstack.sdk.zwatch.monitorgroup.entity.MetricRuleTemplateInventory");
@@ -665,6 +670,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BareMetal2IpmiChassisInventory", "org.zstack.baremetal2.chassis.ipmi.BareMetal2IpmiChassisInventory");
 			put("org.zstack.sdk.BareMetal2ProvisionNetworkInventory", "org.zstack.baremetal2.provisionnetwork.BareMetal2ProvisionNetworkInventory");
 			put("org.zstack.sdk.BareMetal2ProvisionNetworkIpCapacity", "org.zstack.baremetal2.provisionnetwork.BareMetal2ProvisionNetworkIpCapacity");
+			put("org.zstack.sdk.BareMetal2VmSpending", "org.zstack.billing.spendingcalculator.baremetal2.BareMetal2VmSpending");
+			put("org.zstack.sdk.BareMetal2VmSpendingDetails", "org.zstack.billing.spendingcalculator.baremetal2.BareMetal2VmSpendingDetails");
+			put("org.zstack.sdk.BareMetalBillingInventory", "org.zstack.billing.generator.baremetal2.BareMetalBillingInventory");
 			put("org.zstack.sdk.BaremetalBondingInventory", "org.zstack.header.baremetal.network.BaremetalBondingInventory");
 			put("org.zstack.sdk.BaremetalChassisInventory", "org.zstack.header.baremetal.chassis.BaremetalChassisInventory");
 			put("org.zstack.sdk.BaremetalException", "org.zstack.header.baremetal.BaremetalException");
@@ -883,6 +891,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PreconfigurationTemplateInventory", "org.zstack.header.baremetal.preconfiguration.PreconfigurationTemplateInventory");
 			put("org.zstack.sdk.PreviewResourceStruct", "org.zstack.header.cloudformation.PreviewResourceStruct");
 			put("org.zstack.sdk.Price", "org.zstack.billing.table.APICreatePriceTableMsg$Price");
+			put("org.zstack.sdk.PriceBareMetal2ChassisOfferingRefInventory", "org.zstack.billing.spendingcalculator.baremetal2.PriceBareMetal2ChassisOfferingRefInventory");
 			put("org.zstack.sdk.PriceInventory", "org.zstack.billing.PriceInventory");
 			put("org.zstack.sdk.PricePciDeviceOfferingRefInventory", "org.zstack.billing.spendingcalculator.pcidevice.PricePciDeviceOfferingRefInventory");
 			put("org.zstack.sdk.PriceTableInventory", "org.zstack.billing.table.PriceTableInventory");
@@ -1178,6 +1187,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.metricpusher.MetricDataHttpReceiverInventory", "org.zstack.zwatch.metricpusher.MetricDataHttpReceiverInventory");
 			put("org.zstack.sdk.zwatch.metricpusher.MetricTemplateInventory", "org.zstack.zwatch.metricpusher.MetricTemplateInventory");
 			put("org.zstack.sdk.zwatch.metricpusher.ReceiverState", "org.zstack.zwatch.metricpusher.ReceiverState");
+			put("org.zstack.sdk.zwatch.migratedb.AlarmRecordsInventory", "org.zstack.zwatch.migratedb.AlarmRecordsInventory");
 			put("org.zstack.sdk.zwatch.migratedb.EventRecordsInventory", "org.zstack.zwatch.migratedb.EventRecordsInventory");
 			put("org.zstack.sdk.zwatch.monitorgroup.entity.EventRuleTemplateInventory", "org.zstack.zwatch.monitorgroup.entity.EventRuleTemplateInventory");
 			put("org.zstack.sdk.zwatch.monitorgroup.entity.MetricRuleTemplateInventory", "org.zstack.zwatch.monitorgroup.entity.MetricRuleTemplateInventory");
