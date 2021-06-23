@@ -40,6 +40,7 @@ public class APICreateRootVolumeTemplateFromRootVolumeEvent extends APIEvent {
         inv.setName("My Root Volume Template");
         inv.setBackupStorageRefs(Collections.singletonList(ref));
         inv.setFormat(ImageConstant.RAW_FORMAT_STRING);
+        inv.setArchitecture(ImageArchitecture.x86_64.toString());
         inv.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString());
         inv.setPlatform(ImagePlatform.Linux.toString());
 

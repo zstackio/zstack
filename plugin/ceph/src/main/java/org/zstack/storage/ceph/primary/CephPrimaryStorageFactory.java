@@ -45,6 +45,7 @@ import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.*;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
+import org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
@@ -107,6 +108,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     private EventFacade evtf;
 
     private Future imageCacheCleanupThread;
+
+    private List<CephPrimaryCapacityUpdater> capacityUpdaters;
 
     static {
         type.setSupportHeartbeatFile(true);
@@ -247,109 +250,16 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
     @Override
     public void update(CephCapacity cephCapacity) {
-        String fsid = cephCapacity.getFsid();
-        long total = cephCapacity.getTotalCapacity();
-        long avail = cephCapacity.getAvailableCapacity();
-        List<CephPoolCapacity> poolCapacities = cephCapacity.getPoolCapacities();
-        boolean xsky = cephCapacity.isXsky();
+        DebugUtils.Assert(cephCapacity.getCephManufacturer() != null,
+                "ceph manufacturer is null");
 
-        CephPrimaryStorageVO cephPs = SQL.New("select pri from CephPrimaryStorageVO pri where pri.fsid = :fsid",CephPrimaryStorageVO.class)
-                .param("fsid", fsid)
-                .find();
-        if (cephPs == null) {
-            return;
-        }
-
-        List<String> poolNames = new ArrayList<>();
-        List<Long> poolTotalCapacities = new ArrayList<>();
-        List<Long> poolAvailableCapacities = new ArrayList<>();
-
-        if (!xsky) {
-            PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(cephPs.getUuid());
-            updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-                @Override
-                public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                    if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {
-                        // init
-                        cap.setTotalCapacity(total);
-                        cap.setAvailableCapacity(avail);
-                    }
-
-                    cap.setTotalPhysicalCapacity(total);
-                    cap.setAvailablePhysicalCapacity(avail);
-
-                    return cap;
-                }
-            });
-        }
-
-        if (poolCapacities == null) {
-            return;
-        }
-
-        new SQLBatch() {
-            @Override
-            protected void scripts() {
-                List<CephPrimaryStoragePoolVO> pools = sql("select pool from CephPrimaryStoragePoolVO pool, CephPrimaryStorageVO ps" +
-                        " where pool.primaryStorageUuid = ps.uuid and ps.fsid = :fsid", CephPrimaryStoragePoolVO.class)
-                        .param("fsid", fsid)
-                        .list();
-                if (pools == null) {
-                    pools = new ArrayList<>();
-                }
-
-                for (CephPrimaryStoragePoolVO poolVO : pools) {
-                    if (!poolCapacities.stream().anyMatch((e) -> poolVO.getPoolName().equals(e.getName()))) {
-                        if (poolNames.contains(poolVO.getPoolName())) {
-                            continue;
-                        }
-                        poolNames.add(poolVO.getPoolName());
-                        poolAvailableCapacities.add(poolVO.getAvailableCapacity());
-                        poolTotalCapacities.add(poolVO.getTotalCapacity());
-                        continue;
-                    }
-
-                    CephPoolCapacity poolCapacity = poolCapacities.stream()
-                            .filter(e -> poolVO.getPoolName().equals(e.getName()))
-                            .findAny().get();
-
-                    if (!poolNames.contains(poolVO.getPoolName())) {
-                        poolNames.add(poolVO.getPoolName());
-                        poolAvailableCapacities.add(poolCapacity.getAvailableCapacity());
-                        poolTotalCapacities.add(poolCapacity.getTotalCapacity());
-                    }
-
-                    poolVO.setAvailableCapacity(poolCapacity.getAvailableCapacity());
-                    poolVO.setReplicatedSize(poolCapacity.getReplicatedSize());
-                    poolVO.setUsedCapacity(poolCapacity.getUsedCapacity());
-                    poolVO.setTotalCapacity(poolCapacity.getTotalCapacity());
-                    dbf.getEntityManager().merge(poolVO);
-                }
-
-                if (!xsky) {
-                    return;
-                }
-
-                long psTotalPhysicalCapacity = poolTotalCapacities.stream().mapToLong(Long::longValue).sum();
-                long psAvailablePhysicalCapacity = poolAvailableCapacities.stream().mapToLong(Long::longValue).sum();
-
-                PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(cephPs.getUuid());
-                updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-                    @Override
-                    public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                        if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {
-                            // init
-                            cap.setAvailableCapacity(psTotalPhysicalCapacity);
-                        }
-                        cap.setTotalCapacity(psTotalPhysicalCapacity);
-                        cap.setTotalPhysicalCapacity(psTotalPhysicalCapacity);
-                        cap.setAvailablePhysicalCapacity(psAvailablePhysicalCapacity);
-
-                        return cap;
-                    }
-                });
+        for (CephPrimaryCapacityUpdater capacityUpdater : capacityUpdaters) {
+            if (!cephCapacity.getCephManufacturer().equals(capacityUpdater.getCephManufacturer())) {
+                continue;
             }
-        }.execute();
+            capacityUpdater.update(cephCapacity);
+            break;
+        }
     }
 
     private IsoTO convertIsoToCephIfNeeded(final IsoTO to) {
@@ -607,6 +517,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 }
             }
         });
+
+        capacityUpdaters = pluginRgty.getExtensionList(CephPrimaryCapacityUpdater.class);
 
         return true;
     }
