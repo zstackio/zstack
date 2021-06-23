@@ -369,14 +369,12 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         });
 
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_CRASH_EVENT, KVMAgentCommands.ReportVmCrashEventCmd.class, cmd -> {
-            String crashStrategy = rcf.getResourceConfigValue(VmGlobalConfig.VM_CRASH_STRATEGY, cmd.vmUuid, String.class);
-            if (!crashStrategy.equals(CrashStrategy.None.toString())){
-                VmCanonicalEvents.VmCrashReportData cData = new VmCanonicalEvents.VmCrashReportData();
-                cData.setVmUuid(cmd.vmUuid);
-                cData.setReason(operr("VmInstance[uuid: %s] happen crashed due to kernel error", cmd.vmUuid));
-                evf.fire(VmCanonicalEvents.VM_LIBVIRT_REPORT_CRASH, cData);
+            //SNS alarm event
+            VmCanonicalEvents.VmCrashReportData cData = new VmCanonicalEvents.VmCrashReportData();
+            cData.setVmUuid(cmd.vmUuid);
+            cData.setReason(operr("vm[uuid:%s] crashes due to kernel error", cmd.vmUuid));
+            evf.fire(VmCanonicalEvents.VM_LIBVIRT_REPORT_CRASH, cData);
 
-            }
             return null;
         });
 

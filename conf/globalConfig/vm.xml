@@ -216,7 +216,7 @@
 
 	<config>
 		<name>crash.strategy</name>
-		<description>The crash strategy for vm</description>
+		<description>the execution strategy when a vm crashed</description>
 		<defaultValue>None</defaultValue>
 		<category>vm</category>
 		<type>java.lang.String</type>
@@ -224,7 +224,7 @@
 
 	<config>
 		<name>crash.rebootThreshold.duration</name>
-		<description>Threshold of the number of virtual machine crashes in a short time. If the threshold is exceeded, the virtual machine will not restart after it crashes</description>
+		<description>vm crash duration</description>
 		<defaultValue>1800</defaultValue>
 		<category>vm</category>
 		<type>java.lang.Integer</type>
@@ -232,6 +232,7 @@
 
 	<config>
 		<name>crash.rebootThreshold.times</name>
+        <description>vm crash threshold in the specified time duration</description>
 		<defaultValue>5</defaultValue>
 		<category>vm</category>
 		<type>java.lang.Integer</type>

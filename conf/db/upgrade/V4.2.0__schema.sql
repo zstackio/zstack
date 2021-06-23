@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `zstack`.`VmCrashedHistoryVO` (
+CREATE TABLE IF NOT EXISTS `zstack`.`VmCrashHistoryVO` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `uuid` varchar(32) NOT NULL,
   `dateInLong` bigint unsigned NOT NULL,

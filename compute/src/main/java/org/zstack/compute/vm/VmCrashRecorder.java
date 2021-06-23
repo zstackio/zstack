@@ -5,10 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.header.vm.VmCrashedHistoryVO;
-import org.zstack.header.vm.VmCrashedHistoryVO_;
+import org.zstack.header.vm.VmCrashHistoryVO;
+import org.zstack.header.vm.VmCrashHistoryVO_;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.utils.TimeUtils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -24,7 +23,7 @@ public class VmCrashRecorder {
     private ResourceConfigFacade rcf;
 
     public void record(LocalDateTime crashTime, String vmUuid) {
-        VmCrashedHistoryVO vo = new VmCrashedHistoryVO();
+        VmCrashHistoryVO vo = new VmCrashHistoryVO();
         vo.setUuid(vmUuid);
         vo.setDateInLong(crashTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
         dbf.persist(vo);
@@ -38,10 +37,10 @@ public class VmCrashRecorder {
         }
         long crashDateInLong = crashTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     
-        long count = Q.New(VmCrashedHistoryVO.class)
-                .eq(VmCrashedHistoryVO_.uuid, vmUuid)
-                .lt(VmCrashedHistoryVO_.dateInLong, crashDateInLong)
-                .gte(VmCrashedHistoryVO_.dateInLong, crashDateInLong - duration * 1000)
+        long count = Q.New(VmCrashHistoryVO.class)
+                .eq(VmCrashHistoryVO_.uuid, vmUuid)
+                .lt(VmCrashHistoryVO_.dateInLong, crashDateInLong)
+                .gte(VmCrashHistoryVO_.dateInLong, crashDateInLong - duration * 1000)
                 .count();
         return count >= times;
     }
