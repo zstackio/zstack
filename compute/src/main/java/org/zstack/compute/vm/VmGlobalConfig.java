@@ -25,7 +25,7 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig VM_CLEAN_TRAFFIC = new GlobalConfig(CATEGORY, "cleanTraffic");
     @GlobalConfigValidation(validValues = {"cirrus","vga", "qxl"})
-    @BindResourceConfig(value = {ClusterVO.class})
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_VIDEO_TYPE = new GlobalConfig(CATEGORY, "videoType");
     @GlobalConfigValidation(validValues = {"off","all", "filter"})
     public static GlobalConfig VM_SPICE_STREAMING_MODE= new GlobalConfig(CATEGORY, "spiceStreamingMode");
