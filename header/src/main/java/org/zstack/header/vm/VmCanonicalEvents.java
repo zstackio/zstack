@@ -3,6 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.message.NeedJsonSchema;
 import org.zstack.header.errorcode.ErrorCode;
 import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  * Created by frank on 3/4/2016.
@@ -18,7 +19,7 @@ public class VmCanonicalEvents {
     @NeedJsonSchema
     public static class VmCrashReportData {
         private String vmUuid;
-        private Date date = new Date();
+        private LocalDateTime time = LocalDateTime.now();
         private ErrorCode reason;
 
         public ErrorCode getReason() {
@@ -37,12 +38,12 @@ public class VmCanonicalEvents {
             this.vmUuid = vmUuid;
         }
 
-        public Date getDate() {
-            return date;
+        public LocalDateTime getTime() {
+            return time;
         }
 
-        public void setDate(Date date) {
-            this.date = date;
+        public void setTime(LocalDateTime time) {
+            this.time = time;
         }
     }
 

@@ -71,7 +71,7 @@
         <class>org.zstack.header.vm.VmInstanceVO</class>
         <class>org.zstack.header.vm.VmInstanceEO</class>
         <class>org.zstack.header.vm.VmInstanceSequenceNumberVO</class>
-        <class>org.zstack.header.vm.VmCrashedHistoryVO</class>
+        <class>org.zstack.header.vm.VmCrashHistoryVO</class>
         <class>org.zstack.appliancevm.ApplianceVmVO</class>
         <class>org.zstack.appliancevm.ApplianceVmFirewallRuleVO</class>
         <class>org.zstack.header.vm.VmNicVO</class>

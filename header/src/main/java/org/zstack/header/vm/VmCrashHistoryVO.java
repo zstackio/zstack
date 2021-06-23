@@ -10,7 +10,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
-public class VmCrashedHistoryVO implements ToInventory {
+public class VmCrashHistoryVO implements ToInventory {
     @Id
     @Column
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -71,7 +71,7 @@ public class VmCrashedHistoryVO implements ToInventory {
 
     @Override
     public String toString() {
-        return "VmCrashedHistoryVO{" +
+        return "VmCrashHistoryVO{" +
             "id=" + id +
             ", uuid='" + uuid + '\'' +
             ", dateInLong=" + dateInLong +
