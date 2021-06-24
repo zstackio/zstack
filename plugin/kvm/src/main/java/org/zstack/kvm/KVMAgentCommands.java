@@ -2998,6 +2998,8 @@ public class KVMAgentCommands {
     public static class UpdateDependencyCmd extends AgentCommand {
         public String hostUuid;
         public boolean enableExpRepo;
+        public String excludePackages;
+        public String updatePackages;
     }
 
     public static class UpdateDependencyRsp extends AgentResponse {
