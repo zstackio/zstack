@@ -1,8 +1,13 @@
 package org.zstack.header.host;
 
+import org.zstack.header.message.ConfigurableTimeoutMessage;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.message.NeedReplyMessage;
 
-public class ReconnectHostMsg extends NeedReplyMessage implements HostMessage {
+import java.util.concurrent.TimeUnit;
+
+@DefaultTimeout(timeunit = TimeUnit.MINUTES, value = 30)
+public class ReconnectHostMsg extends NeedReplyMessage implements HostMessage, ConfigurableTimeoutMessage {
     private String hostUuid;
     private boolean skipIfHostConnected;
 

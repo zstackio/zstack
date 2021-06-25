@@ -110,9 +110,22 @@ class KVMPingCase extends SubCase {
             return rsp
         }
 
+        updateGlobalConfig {
+            category = "configurableTimeout"
+            name = ReconnectHostMsg.class.name
+            value = "1234567"
+        }
+
+        long timeoutVal = 0
+
+        notifyWhenReceivedMessage(ReconnectHostMsg.class) { ReconnectHostMsg msg ->
+            timeoutVal = msg.getTimeout()
+        }
+
         waitHostDisconnected(kvm1.uuid)
         pingSuccess = true
         waitHostConnected(kvm1.uuid)
+        assert timeoutVal == 1234567
     }
 
     void testNoPingWhenHostMaintainedAndPingAfterEnabled() {
