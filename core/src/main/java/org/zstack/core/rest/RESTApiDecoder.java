@@ -1,6 +1,8 @@
 package org.zstack.core.rest;
 
 import com.google.gson.*;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.utils.Utils;
@@ -10,6 +12,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Type;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 public class RESTApiDecoder {
     private static CLogger logger = Utils.getLogger(RESTApiDecoder.class);
@@ -35,6 +39,9 @@ public class RESTApiDecoder {
                 clazz = Class.forName(className);
             } catch (ClassNotFoundException e) {
                 throw new JsonParseException("Unable to deserialize class " + className, e);
+            }
+            if (!clazz.isAssignableFrom(Message.class)) {
+                throw new CloudRuntimeException(String.format("Unable to deserialize class %s", className));
             }
             return (Message) this.gson.fromJson(entry.getValue(), clazz);
         }
@@ -74,6 +81,9 @@ public class RESTApiDecoder {
                 clazz = Class.forName(className);
             } catch (ClassNotFoundException e) {
                 throw new JsonParseException("Unable to deserialize class " + className, e);
+            }
+            if (!clazz.isAssignableFrom(Message.class)) {
+                throw new CloudRuntimeException(String.format("Unable to deserialize class %s", className));
             }
             Message msg = (Message) this.gson.fromJson(entry.getValue(), clazz);
             return msg;
