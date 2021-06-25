@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class StartVmInstanceCdpAction extends AbstractAction {
+public class DeleteCdpTaskAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class StartVmInstanceCdpAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.StartVmInstanceCdpResult value;
+        public org.zstack.sdk.DeleteCdpTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,19 +26,10 @@ public class StartVmInstanceCdpAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,8 +63,8 @@ public class StartVmInstanceCdpAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.StartVmInstanceCdpResult value = res.getResult(org.zstack.sdk.StartVmInstanceCdpResult.class);
-        ret.value = value == null ? new org.zstack.sdk.StartVmInstanceCdpResult() : value; 
+        org.zstack.sdk.DeleteCdpTaskResult value = res.getResult(org.zstack.sdk.DeleteCdpTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteCdpTaskResult() : value; 
 
         return ret;
     }
@@ -102,11 +93,11 @@ public class StartVmInstanceCdpAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/cdp-task/{vmInstanceUuid}";
+        info.httpMethod = "DELETE";
+        info.path = "/cdp-task/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
