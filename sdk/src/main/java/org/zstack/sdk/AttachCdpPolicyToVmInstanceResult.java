@@ -1,13 +1,13 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.CdpPolicyInventory;
+import org.zstack.sdk.CdpPolicyRefInventory;
 
 public class AttachCdpPolicyToVmInstanceResult {
-    public CdpPolicyInventory inventory;
-    public void setInventory(CdpPolicyInventory inventory) {
+    public CdpPolicyRefInventory inventory;
+    public void setInventory(CdpPolicyRefInventory inventory) {
         this.inventory = inventory;
     }
-    public CdpPolicyInventory getInventory() {
+    public CdpPolicyRefInventory getInventory() {
         return this.inventory;
     }
 
