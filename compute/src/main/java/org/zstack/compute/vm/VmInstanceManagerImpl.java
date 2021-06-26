@@ -1,6 +1,5 @@
 package org.zstack.compute.vm;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.apache.commons.lang.StringUtils;
@@ -75,6 +74,9 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
+
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -163,6 +165,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
     protected VmInstanceExtensionPointEmitter extEmitter;
     @Autowired
     protected L3NetworkManager l3nm;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private List<VmInstanceExtensionManager> vmExtensionManagers = new ArrayList<>();
 
@@ -1924,6 +1928,33 @@ public class VmInstanceManagerImpl extends AbstractService implements
     public void managementNodeReady() {
         //checkUnknownVm();
         startVmExpungeTask();
+        installVmCrashEventListener();
+    }
+
+    private void installVmCrashEventListener() {
+        evtf.on(VmCanonicalEvents.VM_LIBVIRT_REPORT_CRASH, new EventCallback<VmCanonicalEvents.VmCrashReportData>() {
+            @Override
+            protected void run(Map tokens, VmCanonicalEvents.VmCrashReportData data){
+                //store crash info to DB
+                new VmCrashRecorder().record(data.getTime(), data.getVmUuid());
+                ExecuteCrashStrategyMsg rmsg = new ExecuteCrashStrategyMsg();
+                rmsg.setVmInstanceUuid(data.getVmUuid());
+                if (new VmCrashRecorder().hasReachedThreshold(data.getTime(), data.getVmUuid())) {
+                    rmsg.setNeedToReboot(false);
+                }
+                bus.makeTargetServiceIdByResourceUuid(rmsg, VmInstanceConstant.SERVICE_ID, rmsg.getVmInstanceUuid());
+                bus.send(rmsg, new CloudBusCallBack(rmsg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(String.format("Unable to operate vm[%s] according to the strategy, %s,", data.getVmUuid(), reply.getError()));
+                            return;
+                        }
+                        logger.warn("Successfully operate vm according to the strategy");
+                    }
+                }); 
+            }
+        });
     }
 
     private synchronized void startVmExpungeTask() {
