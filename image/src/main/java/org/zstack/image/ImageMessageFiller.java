@@ -54,14 +54,16 @@ public class ImageMessageFiller {
         }
 
         if (msg.getGuestOsType() == null) {
-            msg.setGuestOsType(VmExtraInfoGetter.New(vmUuid).getGuestOsType());
+            String guestOsType = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).select(VmInstanceVO_.guestOsType).findValue();
+            msg.setGuestOsType(guestOsType);
         }
 
         if (msg.getArchitecture() == null) {
-            msg.setArchitecture(VmExtraInfoGetter.New(vmUuid).getArchitecture());
+            String architecture = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).select(VmInstanceVO_.architecture).findValue();
+            msg.setArchitecture(architecture);
         }
 
-        msg.setVirtio(VmExtraInfoGetter.New(vmUuid).getVirtio());
+        msg.setVirtio(VmExtraInfoGetter.New(vmUuid).isVirtio());
 
         setBootModeIfAarch64(msg);
     }
