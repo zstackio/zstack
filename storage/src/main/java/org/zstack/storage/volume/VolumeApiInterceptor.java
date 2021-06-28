@@ -23,6 +23,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotMsg;
+import org.zstack.header.storage.snapshot.ConsistentType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
@@ -142,6 +143,9 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         }
 
         msg.setVmInstance(VmInstanceInventory.valueOf(vmvo));
+        if (msg.isWithMemory()) {
+            msg.setConsistentType(ConsistentType.Application);
+        }
     }
 
     private void validate(APIRecoverDataVolumeMsg msg) {
