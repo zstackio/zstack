@@ -28,14 +28,6 @@ public class CdpPolicyInventory  {
         return this.description;
     }
 
-    public java.lang.String vmInstanceUuid;
-    public void setVmInstanceUuid(java.lang.String vmInstanceUuid) {
-        this.vmInstanceUuid = vmInstanceUuid;
-    }
-    public java.lang.String getVmInstanceUuid() {
-        return this.vmInstanceUuid;
-    }
-
     public java.lang.Integer retentionTimePerDay;
     public void setRetentionTimePerDay(java.lang.Integer retentionTimePerDay) {
         this.retentionTimePerDay = retentionTimePerDay;
