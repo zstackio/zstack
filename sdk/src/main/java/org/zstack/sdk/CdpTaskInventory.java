@@ -36,6 +36,14 @@ public class CdpTaskInventory  {
         return this.vmInstanceUuid;
     }
 
+    public java.lang.String backupStorageUuid;
+    public void setBackupStorageUuid(java.lang.String backupStorageUuid) {
+        this.backupStorageUuid = backupStorageUuid;
+    }
+    public java.lang.String getBackupStorageUuid() {
+        return this.backupStorageUuid;
+    }
+
     public java.lang.Integer retentionTimePerDay;
     public void setRetentionTimePerDay(java.lang.Integer retentionTimePerDay) {
         this.retentionTimePerDay = retentionTimePerDay;
@@ -58,14 +66,6 @@ public class CdpTaskInventory  {
     }
     public java.lang.Integer getRecoveryPointPerSecond() {
         return this.recoveryPointPerSecond;
-    }
-
-    public java.util.List volumeUuids;
-    public void setVolumeUuids(java.util.List volumeUuids) {
-        this.volumeUuids = volumeUuids;
-    }
-    public java.util.List getVolumeUuids() {
-        return this.volumeUuids;
     }
 
 }
