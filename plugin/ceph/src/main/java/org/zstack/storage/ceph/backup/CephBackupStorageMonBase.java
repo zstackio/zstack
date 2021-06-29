@@ -54,6 +54,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
 
     public static final String ECHO_PATH = "/ceph/backupstorage/echo";
     public static final String PING_PATH = "/ceph/backupstorage/ping";
+    public static final String EXPORT = "/ceph/export";
 
     public static class AgentCmd {
         public String monUuid;
