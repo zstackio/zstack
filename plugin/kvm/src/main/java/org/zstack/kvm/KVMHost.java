@@ -3936,7 +3936,14 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            if (info.isNewAdded() || !CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT) {
+                            if (!CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT) {
+                                trigger.next();
+                                return;
+                            }
+
+                            // new added need to update dependency if experimental repo enabled
+                            if (info.isNewAdded() && !rcf.getResourceConfigValue(
+                                    ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_REPO, self.getClusterUuid(), Boolean.class)) {
                                 trigger.next();
                                 return;
                             }
@@ -3945,8 +3952,11 @@ public class KVMHost extends HostBase implements Host {
                             cmd.hostUuid = self.getUuid();
 
                             if (info.isNewAdded()) {
-                                cmd.enableExpRepo = rcf.getResourceConfigValue(
-                                        ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_REPO, self.getClusterUuid(), Boolean.class);
+                                cmd.enableExpRepo = true;
+                                cmd.updatePackages = rcf.getResourceConfigValue(
+                                        ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_UPDATE_DEPENDENCY, self.getClusterUuid(), String.class);
+                                cmd.excludePackages = rcf.getResourceConfigValue(
+                                        ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_EXCLUDE_DEPENDENCY, self.getClusterUuid(), String.class);
                             }
                             new Http<>(updateDependencyPath, cmd, UpdateDependencyRsp.class)
                                     .call(new ReturnValueCompletion<UpdateDependencyRsp>(trigger) {

@@ -21,4 +21,12 @@ public class ClusterGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable zstack experimental repo")
     public static GlobalConfig ZSTACK_EXPERIMENTAL_REPO = new GlobalConfig(CATEGORY, "zstack.experimental.repo");
+
+    @BindResourceConfig(value = {ClusterVO.class})
+    @GlobalConfigDef(defaultValue = "", description = "dependencies need to be updated from experimental repo")
+    public static GlobalConfig ZSTACK_EXPERIMENTAL_UPDATE_DEPENDENCY= new GlobalConfig(CATEGORY, "zstack.experimental.update.dependency");
+
+    @BindResourceConfig(value = {ClusterVO.class})
+    @GlobalConfigDef(defaultValue = "", description = "dependencies should not be updated from experimental repo")
+    public static GlobalConfig ZSTACK_EXPERIMENTAL_EXCLUDE_DEPENDENCY= new GlobalConfig(CATEGORY, "zstack.experimental.exclude.dependency");
 }
