@@ -657,6 +657,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
     public static final String CHECK_POOL_PATH = "/ceph/backupstorage/checkpool";
     public static final String GET_LOCAL_FILE_SIZE = "/ceph/backupstorage/getlocalfilesize";
     public static final String CEPH_TO_CEPH_MIGRATE_IMAGE_PATH = "/ceph/backupstorage/image/migrate";
+    public static final String EXPORT = "/ceph/export";
 
     protected String makeImageInstallPath(String imageUuid) {
         return String.format("ceph://%s/%s", getSelf().getPoolName(), imageUuid);
@@ -1622,6 +1623,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
             handle((APIUpdateCephBackupStorageMonMsg) msg);
         } else if (msg instanceof APIRemoveMonFromCephBackupStorageMsg) {
             handle((APIRemoveMonFromCephBackupStorageMsg) msg);
+        } else if (msg instanceof APIExportImageFromBackupStorageMsg) {
+            handle((APIExportImageFromBackupStorageMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
@@ -1639,6 +1642,37 @@ public class CephBackupStorageBase extends BackupStorageBase {
         else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(APIExportImageFromBackupStorageMsg msg) {
+        APIExportImageFromBackupStorageEvent event = new APIExportImageFromBackupStorageEvent(msg.getId());
+
+        String imageInstallUrl = Q.New(ImageVO.class).select(ImageVO_.url)
+                .eq(ImageVO_.uuid, msg.getImageUuid())
+                .findValue();
+
+        String hostname = Q.New(CephBackupStorageMonVO.class).select(CephBackupStorageMonVO_.hostname)
+                .eq(CephBackupStorageMonVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                .eq(CephBackupStorageMonVO_.status, MonStatus.Connected)
+                .limit(1).findValue();
+
+        if (hostname == null) {
+            event.setError(operr("no Connected ceph mon"));
+            bus.publish(event);
+            return;
+        }
+
+        String[] splits = imageInstallUrl.split("/");
+        String poolName = splits[splits.length - 2];
+        String imageName = splits[splits.length - 1];
+        String url = CephAgentUrl.backupStorageUrl(hostname, CephBackupStorageBase.EXPORT) +
+                String.format("/%s/%s", poolName, imageName);
+        SQL.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                .set(ImageBackupStorageRefVO_.exportUrl, url)
+                .update();
+        event.setImageUrl(url);
+        bus.publish(event);
     }
 
     private void handle(APIRemoveMonFromCephBackupStorageMsg msg) {
