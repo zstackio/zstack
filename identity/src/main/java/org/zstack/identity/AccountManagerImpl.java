@@ -52,6 +52,7 @@ import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.header.identity.AccountConstant.ACCOUNT_REST_AUTHENTICATION_TYPE;
@@ -788,44 +789,45 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
 
     private void repairAccountQuota(Map<String, Long> defaultQuota) {
-        SimpleQuery<AccountVO> queryAccounts = dbf.createQuery(AccountVO.class);
-        queryAccounts.select(AccountVO_.uuid);
-        queryAccounts.add(AccountVO_.type, Op.EQ, AccountType.Normal);
-        List<String> normalAccounts = queryAccounts.listValue();
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                long count = q(AccountVO.class)
+                        .eq(AccountVO_.type, AccountType.Normal)
+                        .count();
+                sql("select uuid from AccountVO account where account.type = :type", String.class)
+                        .param("type", AccountType.Normal)
+                        .limit(1000)
+                        .paginate(count, (List<String> normalAccounts) -> {
+                            normalAccounts.parallelStream().forEach(nA -> {
+                                List<QuotaVO> needPersistQuotas = new ArrayList<>();
+                                List<String> existingQuota = q(QuotaVO.class).select(QuotaVO_.name).eq(QuotaVO_.identityUuid, nA).listValues();
+                                for (Map.Entry<String, Long> e : defaultQuota.entrySet()) {
+                                    String rtype = e.getKey();
+                                    Long value = e.getValue();
+                                    if (existingQuota.contains(rtype)) {
+                                        continue;
+                                    }
 
-        List<QuotaVO> quotas = new ArrayList<>();
-        for (String nA : normalAccounts) {
-            SimpleQuery<QuotaVO> queryAccountQuotas = dbf.createQuery(QuotaVO.class);
-            queryAccountQuotas.select(QuotaVO_.name);
-            queryAccountQuotas.add(QuotaVO_.identityUuid, Op.EQ, nA);
-            List<String> existingQuota = queryAccountQuotas.listValue();
+                                    QuotaVO q = new QuotaVO();
+                                    q.setUuid(Platform.getUuid());
+                                    q.setAccountUuid(nA);
+                                    q.setName(rtype);
+                                    q.setIdentityUuid(nA);
+                                    q.setIdentityType(AccountVO.class.getSimpleName());
+                                    q.setValue(value);
+                                    needPersistQuotas.add(q);
 
+                                    if (logger.isTraceEnabled()) {
+                                        logger.trace(String.format("create default quota[name: %s, value: %s] global config", rtype, value));
+                                    }
+                                }
 
-            for (Map.Entry<String, Long> e : defaultQuota.entrySet()) {
-                String rtype = e.getKey();
-                Long value = e.getValue();
-                if (existingQuota.contains(rtype)) {
-                    continue;
-                }
-
-                QuotaVO q = new QuotaVO();
-                q.setUuid(Platform.getUuid());
-                q.setAccountUuid(nA);
-                q.setName(rtype);
-                q.setIdentityUuid(nA);
-                q.setIdentityType(AccountVO.class.getSimpleName());
-                q.setValue(value);
-                quotas.add(q);
-
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("create default quota[name: %s, value: %s] global config", rtype, value));
-                }
+                                needPersistQuotas.forEach(this::persist);
+                            });
+                        });
             }
-        }
-
-        if (!quotas.isEmpty()) {
-            dbf.persistCollection(quotas);
-        }
+        }.execute();
     }
 
     private void doAdminAdoptResource(List<String> resourceUuids, String originAccountUuid) {
