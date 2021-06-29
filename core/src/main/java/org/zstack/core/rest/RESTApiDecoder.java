@@ -40,7 +40,7 @@ public class RESTApiDecoder {
             } catch (ClassNotFoundException e) {
                 throw new JsonParseException("Unable to deserialize class " + className, e);
             }
-            if (!clazz.isAssignableFrom(Message.class)) {
+            if (!Message.class.isAssignableFrom(clazz)) {
                 throw new CloudRuntimeException(String.format("Unable to deserialize class %s", className));
             }
             return (Message) this.gson.fromJson(entry.getValue(), clazz);
@@ -82,8 +82,8 @@ public class RESTApiDecoder {
             } catch (ClassNotFoundException e) {
                 throw new JsonParseException("Unable to deserialize class " + className, e);
             }
-            if (!clazz.isAssignableFrom(Message.class)) {
-                throw new CloudRuntimeException(String.format("Unable to deserialize class %s", className));
+            if (!Message.class.isAssignableFrom(clazz)) {
+                throw new CloudRuntimeException(String.format("test ts ts Unable to deserialize class %s", className));
             }
             Message msg = (Message) this.gson.fromJson(entry.getValue(), clazz);
             return msg;
