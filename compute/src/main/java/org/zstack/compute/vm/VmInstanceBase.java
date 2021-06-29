@@ -537,6 +537,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             completion.success();
             return;
         }
+        changeVmStateInDb(VmInstanceStateEvent.crashed);
         logger.info(String.format("check the vm[uuid:%s] on the host[uuid:%s], status is [%s]", vmInv.getUuid(), vmInv.getHostUuid(), state));
 
         //strategy operation
