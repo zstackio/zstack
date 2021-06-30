@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:8.0 http://www.infinispan.org/schemas/infinispan-config-8.0.xsd"
-        xmlns="urn:infinispan:config:8.0">
+        xsi:schemaLocation="urn:infinispan:config:8.2 http://www.infinispan.org/schemas/infinispan-config-8.2.xsd"
+        xmlns="urn:infinispan:config:8.2">
 
     <!-- *************************** -->
     <!-- System-wide global settings -->
@@ -27,9 +27,10 @@
         <!-- *************************************** -->
         <!--  Cache to store Lucene's file metadata  -->
         <!-- *************************************** -->
-        <replicated-cache name="LuceneIndexesMetadata" mode="SYNC" remote-timeout="25000">
+        <replicated-cache name="LuceneIndexesMetadata" mode="ASYNC">
+            <partition-handling enabled="true"/>
             <locking striping="false" acquire-timeout="10000" concurrency-level="500" write-skew="false"/>
-            <transaction mode="NONE"/>
+            <transaction mode="BATCH"/>
             <eviction size="-1" strategy="NONE"/>
             <expiration max-idle="-1"/>
             <indexing index="NONE"/>
@@ -39,9 +40,10 @@
         <!-- **************************** -->
         <!--  Cache to store Lucene data  -->
         <!-- **************************** -->
-        <distributed-cache name="LuceneIndexesData" mode="SYNC" remote-timeout="25000">
+        <distributed-cache name="LuceneIndexesData" mode="ASYNC">
+            <partition-handling enabled="true"/>
             <locking striping="false" acquire-timeout="10000" concurrency-level="500" write-skew="false"/>
-            <transaction mode="NONE"/>
+            <transaction mode="BATCH"/>
             <eviction size="-1" strategy="NONE"/>
             <expiration max-idle="-1"/>
             <indexing index="NONE"/>
