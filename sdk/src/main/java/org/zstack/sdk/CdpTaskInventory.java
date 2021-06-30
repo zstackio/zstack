@@ -68,12 +68,4 @@ public class CdpTaskInventory  {
         return this.recoveryPointPerSecond;
     }
 
-    public java.util.List volumeUuids;
-    public void setVolumeUuids(java.util.List volumeUuids) {
-        this.volumeUuids = volumeUuids;
-    }
-    public java.util.List getVolumeUuids() {
-        return this.volumeUuids;
-    }
-
 }

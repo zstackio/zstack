@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class StopVmInstanceCdpAction extends AbstractAction {
+public class GetVmInstanceRecoveryPointsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class StopVmInstanceCdpAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.StopVmInstanceCdpResult value;
+        public org.zstack.sdk.GetVmInstanceRecoveryPointsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,6 +24,15 @@ public class StopVmInstanceCdpAction extends AbstractAction {
             return this;
         }
     }
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false)
+    public java.lang.Integer limit = 1000;
+
+    @Param(required = false)
+    public java.lang.Integer start = 0;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -43,12 +52,6 @@ public class StopVmInstanceCdpAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -57,8 +60,8 @@ public class StopVmInstanceCdpAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.StopVmInstanceCdpResult value = res.getResult(org.zstack.sdk.StopVmInstanceCdpResult.class);
-        ret.value = value == null ? new org.zstack.sdk.StopVmInstanceCdpResult() : value; 
+        org.zstack.sdk.GetVmInstanceRecoveryPointsResult value = res.getResult(org.zstack.sdk.GetVmInstanceRecoveryPointsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmInstanceRecoveryPointsResult() : value; 
 
         return ret;
     }
@@ -87,11 +90,11 @@ public class StopVmInstanceCdpAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/cdp-backup-storage/stop";
+        info.httpMethod = "GET";
+        info.path = "/vm-instances/{uuid}/recovery-points";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
