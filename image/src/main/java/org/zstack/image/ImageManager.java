@@ -1,5 +1,10 @@
 package org.zstack.image;
 
-public interface ImageManager {
+import org.zstack.header.image.AddImageMessage;
+import org.zstack.header.image.ImageVO;
 
+import java.util.function.Consumer;
+
+public interface ImageManager {
+    ImageVO createImageInDb(AddImageMessage msg, Consumer<ImageVO> updater);
 }

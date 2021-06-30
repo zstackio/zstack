@@ -8,13 +8,16 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.zone.ZoneVO;
 
 import javax.persistence.*;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Entity
@@ -82,6 +85,7 @@ public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount, ToInve
         this.vmNics = vmNics;
     }
 
+    @Deprecated
     public Set<VolumeVO> getAllVolumes() {
         return allVolumes;
     }
@@ -90,8 +94,17 @@ public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount, ToInve
         this.allVolumes = allVolumes;
     }
 
+
+    public Set<VolumeVO> getAllVolumes(Predicate<VolumeVO> predicate) {
+        return allVolumes.stream().filter(predicate).collect(Collectors.toSet());
+    }
+
+    public VolumeVO getVolume(Predicate<VolumeVO> predicate) {
+        return allVolumes.stream().filter(predicate).findFirst().orElse(null);
+    }
+
     public Set<VolumeVO> getAllDiskVolumes() {
-        return allVolumes.stream().filter(VolumeVO::isDisk).collect(Collectors.toSet());
+        return getAllVolumes(VolumeVO::isDisk);
     }
 
     public VolumeVO getRootVolume() {

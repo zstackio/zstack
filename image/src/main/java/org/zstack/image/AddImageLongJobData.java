@@ -155,7 +155,7 @@ public class AddImageLongJobData extends LongJobMessageData {
         this.userTags = userTags;
     }
 
-    public boolean getVirtio() {
+    public boolean isVirtio() {
         return virtio;
     }
 

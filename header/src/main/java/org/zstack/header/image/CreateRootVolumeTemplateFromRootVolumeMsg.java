@@ -47,7 +47,7 @@ public class CreateRootVolumeTemplateFromRootVolumeMsg extends NeedReplyMessage 
     }
 
     @Override
-    public boolean getVirtio() {
+    public boolean isVirtio() {
         return virtio;
     }
 
