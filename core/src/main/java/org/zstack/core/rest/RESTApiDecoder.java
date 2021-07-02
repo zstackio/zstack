@@ -83,7 +83,7 @@ public class RESTApiDecoder {
                 throw new JsonParseException("Unable to deserialize class " + className, e);
             }
             if (!Message.class.isAssignableFrom(clazz)) {
-                throw new CloudRuntimeException(String.format("test ts ts Unable to deserialize class %s", className));
+                throw new CloudRuntimeException(String.format("Unable to deserialize class %s", className));
             }
             Message msg = (Message) this.gson.fromJson(entry.getValue(), clazz);
             return msg;
