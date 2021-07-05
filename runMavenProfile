@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium|openapi|errorcode]"
+    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium|openapi|errorcode|check]"
 }
 
 MVNTest="mvn test -Djacoco.skip=true"
@@ -75,6 +75,16 @@ openapi() {
 }
 
 docpremium() {
+    if [ -d premium/test-premium ]; then
+        cd premium/test-premium
+    else
+        cd test
+    fi
+    $MVNTest -Dtest=TestGenerateDocTemplate -Drepair=true
+    cd - > /dev/null
+}
+
+check() {
     if [ -d premium/test-premium ]; then
         cd premium/test-premium
     else
