@@ -717,7 +717,27 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errCode);
+                L2NetworkInventory l2Network = L2NetworkInventory.valueOf(self);
+                String clusterUuid = hosts.get(0).getClusterUuid();
+                for (HostInventory h : hosts) {
+                    if(!clusterUuid.equals(h.getClusterUuid())) {
+                        logger.warn(String.format("fail to clean vtep for l2 vxlan pool %s", l2Network.getUuid()));
+                    }
+                }
+                L2NetworkDetachFromClusterMsg dmsg = new L2NetworkDetachFromClusterMsg();
+                dmsg.setL2NetworkUuid(l2Network.getUuid());
+                dmsg.setClusterUuid(clusterUuid);
+                bus.makeTargetServiceIdByResourceUuid(dmsg, L2NetworkConstant.SERVICE_ID, dmsg.getL2NetworkUuid());
+                bus.send(dmsg, new CloudBusCallBack(dmsg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(reply.getError().toString());
+                        }
+                        completion.fail(errCode);
+                    }
+                });
+
             }
         }).start();
     }
