@@ -477,7 +477,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             accountq.add(AccountVO_.name, Op.EQ, msg.getAccountName());
             accountUuid = accountq.findValue();
             if (accountUuid == null) {
-                reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR, "account[%s] not found", msg.getAccountName()));
+                reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR, "wrong account or username or password"));
                 bus.reply(msg, reply);
                 return;
             }
