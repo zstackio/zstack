@@ -27,7 +27,7 @@ public class ImageStoreMetadataHelper {
         this.exportUrl = exportUrl;
     }
 
-    public static ImageInventory valueOf(String metadata) {
+    public static ImageInventory buildImageInventoryFromMetadata(String metadata) {
         ImageInventory imageInventory = JSONObjectUtil.toObject(metadata, ImageInventory.class);
         ImageStoreMetadataHelper imageStoreMetadataHelper = JSONObjectUtil.toObject(metadata, ImageStoreMetadataHelper.class);
         if (StringUtils.isNotEmpty(imageStoreMetadataHelper.getExportMd5Sum())) {
@@ -37,6 +37,9 @@ public class ImageStoreMetadataHelper {
             imageInventory.getBackupStorageRefs().forEach(ref -> ref.setExportUrl(imageStoreMetadataHelper.getExportUrl()));
         }
 
+        if (imageInventory.getArchitecture() == null) {
+            imageInventory.setArchitecture(ImageArchitecture.defaultArch());
+        }
         return imageInventory;
     }
 }
