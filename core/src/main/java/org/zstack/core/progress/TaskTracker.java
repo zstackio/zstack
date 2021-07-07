@@ -1,6 +1,9 @@
 package org.zstack.core.progress;
 
+import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,6 +16,7 @@ public abstract class TaskTracker {
     public static final String PARAM_ERROR = "error";
 
     private String resourceUuid;
+    private String accountUuid;
     private Map<String, Object> params = new HashMap<>();
 
     protected TaskTracker() {
@@ -22,12 +26,18 @@ public abstract class TaskTracker {
         public String taskName;
         public String resourceType;
         public String resourceUuid;
+        public String accountUuid;
         public String info;
         public Map<String, Object> parameters;
     }
 
     public TaskTracker(String resourceUuid) {
+        String accountId = Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, resourceUuid)
+                .select(AccountResourceRefVO_.accountUuid)
+                .findValue();
         this.resourceUuid = resourceUuid;
+        this.accountUuid = accountId;
     }
 
     protected String getResourceUuid() {
@@ -81,6 +91,7 @@ public abstract class TaskTracker {
         task.resourceType = getResourceType();
         task.taskName = getTaskName();
         task.resourceUuid = resourceUuid;
+        task.accountUuid = accountUuid;
         task.info = info;
         if (params != null) {
             this.params.putAll(params);
