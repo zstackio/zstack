@@ -3659,33 +3659,38 @@ public class KVMHost extends HostBase implements Host {
                             ).formatByMap(map(
                                     e("filepath", hostTakeOverFlagPath)
                             ));
-                            SshResult ret = sshShell.runScript(takeOverScript);
+                            try {
+                                SshResult ret = sshShell.runScript(takeOverScript);
+                                if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+                                    trigger.fail(operr("unable to Check whether the host is taken over,  because %s", ret.getExitErrorMessage()));
+                                    return;
+                                }
 
-                            if (ret.isSshFailure() || ret.getReturnCode() != 0) {
-                                trigger.fail(operr("unable to Check whether the host is taken over,  because %s", ret.getExitErrorMessage()));
-                                return;
-                            }
+                                String result = ret.getStdout().trim();
+                                logger.debug(String.format("result is [%s]", result));
+                                if (result == null || result.isEmpty()) {
+                                    trigger.next();
+                                    return;
+                                }
+                                String[] results = result.split(" ");
+                                logger.debug(String.format("results is [%s:%s]", results[0], results[1]));
+                                if (Integer.parseInt(results[0]) < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
+                                    trigger.fail(operr("the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%s] has not exceeded host ping interval[%d]",
+                                            self.getManagementIp(), results[1], results[0], HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)));
+                                    return;
+                                }
 
-                            String result = ret.getStdout().trim();
-                            logger.debug(String.format("result is [%s]", result));
-                            if (result == null || result.isEmpty()) {
+                                HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.uuid, results[1]).find();
+                                if (lastHostInv == null) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(operr("the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
+                                            self.getManagementIp(), lastHostInv.getUuid()));
+                                }
+                            } catch (Exception e) {
+                                logger.warn(e.getMessage(), e);
                                 trigger.next();
                                 return;
-                            }
-                            String[] results = result.split(" ");
-                            logger.debug(String.format("results is [%s:%s]", results[0], results[1]));
-                            if (Integer.parseInt(results[0]) < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
-                                trigger.fail(operr("the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%s] has not exceeded host ping interval[%d]",
-                                        self.getManagementIp(), results[1], results[0], HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)));
-                                return;
-                            }
-
-                            HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.uuid, results[1]).find();
-                            if (lastHostInv == null) {
-                                trigger.next();
-                            } else {
-                                trigger.fail(operr("the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
-                                        self.getManagementIp(), lastHostInv.getUuid()));
                             }
                         }
                     });
