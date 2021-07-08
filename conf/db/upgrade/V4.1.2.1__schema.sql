@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`CdpPolicyEO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`CdpPolicyRefVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `uuid` varchar(32) NOT NULL,
+    `policyUuid` varchar(32) NOT NULL,
     `vmInstanceUuid` varchar(32) NOT NULL,
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

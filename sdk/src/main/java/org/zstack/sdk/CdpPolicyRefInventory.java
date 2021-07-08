@@ -4,12 +4,12 @@ package org.zstack.sdk;
 
 public class CdpPolicyRefInventory  {
 
-    public java.lang.String uuid;
-    public void setUuid(java.lang.String uuid) {
-        this.uuid = uuid;
+    public java.lang.String policyUuid;
+    public void setPolicyUuid(java.lang.String policyUuid) {
+        this.policyUuid = policyUuid;
     }
-    public java.lang.String getUuid() {
-        return this.uuid;
+    public java.lang.String getPolicyUuid() {
+        return this.policyUuid;
     }
 
     public java.lang.String vmInstanceUuid;
