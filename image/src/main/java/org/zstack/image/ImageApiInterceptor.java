@@ -1,12 +1,19 @@
 package org.zstack.image;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.poi.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.AntPathMatcher;
 import org.zstack.compute.vm.VmExtraInfoGetter;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
+<<<<<<< HEAD
 import org.zstack.core.config.schema.GuestOsCategory;
+=======
+import org.zstack.core.config.GlobalConfig;
+>>>>>>> 048befdd68... ImageUrlPathBack..[.ssh]
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -28,8 +35,13 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
+import org.zstack.utils.CollectionUtils;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -167,11 +179,47 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             msg.setBackupStorageUuids(bsUuids);
         }
 
+
         // compatible with file:/// and /
         if (msg.getUrl().startsWith("/")) {
             msg.setUrl(String.format("file://%s", msg.getUrl()));
         } else if (!isValidProtocol(msg.getUrl())) {
             throw new ApiMessageInterceptionException(argerr("url must starts with 'file:///', 'http://', 'https://'， 'ftp://', 'sftp://' or '/'"));
+        }
+
+        if (msg.getUrl().startsWith("file://")) {
+            validateLocalPath(msg.getUrl());
+        }
+
+
+    }
+
+    private void validateLocalPath(String url) {
+        AntPathMatcher antPathMatcher = new AntPathMatcher();
+        String path = url.substring(7);
+        GlobalConfig priority = ImageGlobalConfig.IMAGE_DOWNLOAD_PATH_LIST_PRIORITY;
+        GlobalConfig backList = ImageGlobalConfig.IMAGE_DOWNLOAD_PATH_BACKLIST;
+        GlobalConfig whiteList = ImageGlobalConfig.IMAGE_DOWNLOAD_PATH_WHITELIST;
+
+        if (priority.value().equals(backList.getName())) {
+            String[] backLists = backList.value().split(";");
+            Arrays.stream(backLists).anyMatch(pattern -> {
+                if (antPathMatcher.match(pattern, path)) {
+                    throw new ApiMessageInterceptionException(argerr(url + " cannot be used"));
+                }
+                return false;
+            });
+        } else if (StringUtils.isBlank(whiteList.value())) {
+            throw new ApiMessageInterceptionException(argerr("all images on this server cannot be used"));
+        } else {
+            String[] wl = whiteList.value().split(";");
+            boolean isInWhiteList = Arrays.stream(wl).anyMatch(pattern -> {
+                return antPathMatcher.match(pattern, path) ;
+            });
+            if(!isInWhiteList) {
+                throw new ApiMessageInterceptionException(argerr("image path is not in white list:" + whiteList.value()));
+            }
+
         }
     }
 

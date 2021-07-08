@@ -46,4 +46,28 @@
 		<category>quota</category>
 		<type>java.lang.Long</type>
 	</config>
+
+	<config>
+		<name>imageDownloadPathBacklist</name>
+		<description>Image paths that cannot be used</description>
+		<category>image</category>
+		<defaultValue>/**/.*/**;/**/../**;/**/~/**;/etc/**;/usr/local/zstack/**;/var/log/**;/dev/**;/proc/**;/sys/**;</defaultValue>
+		<type>java.lang.String</type>
+	</config>
+
+	<config>
+		<name>imageDownloadPathWhitelist</name>
+		<description>Image paths that can be used</description>
+		<category>image</category>
+		<defaultValue>/root/**;/home/**;/mnt/**;/opt/**;</defaultValue>
+		<type>java.lang.String</type>
+	</config>
+
+	<config>
+		<name>imageDownloadPathListPriority</name>
+		<description>imageDownloadPathListPriority</description>
+		<category>image</category>
+		<defaultValue>imageDownloadPathWhitelist</defaultValue>
+		<type>java.lang.String</type>
+	</config>
 </globalConfig>
