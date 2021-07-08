@@ -1,15 +1,14 @@
 package org.zstack.image;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.vm.VmExtraInfoGetter;
-import org.zstack.core.CoreGlobalProperty;
+import org.springframework.util.AntPathMatcher;
+import org.springframework.util.CollectionUtils;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.schema.GuestOsCategory;
+import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -25,15 +24,16 @@ import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotState;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.volume.VolumeState;
+import org.zstack.header.volume.VolumeStatus;
+import org.zstack.header.volume.VolumeVO;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.config.schema.GuestOsCategory.getDefaultGuestOsTypeByPlatform;
 
 /**
  * Created with IntelliJ IDEA.
@@ -51,6 +51,8 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
     @Autowired
     private PluginRegistry pluginRgty;
 
+    private static Map<String,PathValidator> pathValidators = new HashMap<>();
+
     private static final String[] allowedProtocols = new String[]{
             "http://",
             "https://",
@@ -60,6 +62,10 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             "ftp://",
             "sftp://"
     };
+
+    static {
+        initPathValidatorsFromConfig();
+    }
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof ImageMessage) {
@@ -173,6 +179,58 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         } else if (!isValidProtocol(msg.getUrl())) {
             throw new ApiMessageInterceptionException(argerr("url must starts with 'file:///', 'http://', 'https://'， 'ftp://', 'sftp://' or '/'"));
         }
+
+        if (msg.getUrl().startsWith("file://")) {
+            validateLocalPath(msg.getUrl());
+        }
+    }
+
+    private void validateLocalPath(String url) {
+        String path = url.substring("file://".length());
+        if (!path.startsWith("/")) {
+            throw new ApiMessageInterceptionException(argerr("absolute path must be used", path));
+        }
+
+        for (String filterName : ImageGlobalConfig.DOWNLOAD_LOCALPATH_CUSTOMFILTER.value().split(";")) {
+            pathValidators.get(filterName).validate(path);
+        }
+    }
+
+    abstract static class PathValidator {
+        abstract void validate(String path);
+    }
+
+    private static void initPathValidatorsFromConfig() {
+        AntPathMatcher antPathMatcher = new AntPathMatcher();
+        String blacklistName = "blacklist";
+        String whitelistName = "whitelist";
+        PathValidator blackPathValidator = new PathValidator() {
+            @Override
+            void validate(String path) {
+                GlobalConfig blackList = ImageGlobalConfig.DOWNLOAD_LOCALPATH_BLACKLIST;
+                String[] bl = blackList.value().split(";");
+                boolean inBlackList = Arrays.stream(bl).anyMatch(pattern -> antPathMatcher.match(pattern, path));
+                if (inBlackList) {
+                    throw new ApiMessageInterceptionException(argerr("image path [%s] is in black list %s", path, blackList.value()));
+                }
+            }
+        };
+        PathValidator whitePathValidator = new PathValidator() {
+            @Override
+            void validate(String path) {
+                GlobalConfig whiteList = ImageGlobalConfig.DOWNLOAD_LOCALPATH_WHITELIST;
+                if (StringUtils.isBlank(whiteList.value())) {
+                    throw new ApiMessageInterceptionException(argerr("all images on this server cannot be used"));
+                }
+                String[] wl = whiteList.value().split(";");
+                boolean inWhiteList = Arrays.stream(wl).anyMatch(pattern -> antPathMatcher.match(pattern, path));
+                if (!inWhiteList) {
+                    throw new ApiMessageInterceptionException(argerr("image path is not in white list: %s", whiteList.value()));
+                }
+            }
+        };
+        pathValidators.put(blacklistName, blackPathValidator);
+        pathValidators.put(whitelistName, whitePathValidator);
     }
 
     private void isValidBS(List<String> bsUuids) {

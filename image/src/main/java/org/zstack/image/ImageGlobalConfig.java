@@ -23,4 +23,13 @@ public class ImageGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig DELETION_GARBAGE_COLLECTION_INTERVAL = new GlobalConfig(CATEGORY, "deletion.gcInterval");
 
+    @GlobalConfigValidation()
+    public static GlobalConfig DOWNLOAD_LOCALPATH_BLACKLIST = new GlobalConfig(CATEGORY, "download.localPath.blacklist");
+
+    @GlobalConfigValidation()
+    public static GlobalConfig DOWNLOAD_LOCALPATH_WHITELIST = new GlobalConfig(CATEGORY, "download.localPath.whitelist");
+
+    @GlobalConfigValidation()
+    public static GlobalConfig DOWNLOAD_LOCALPATH_CUSTOMFILTER = new GlobalConfig(CATEGORY, "download.localPath.customFilter");
+
 }

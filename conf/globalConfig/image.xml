@@ -46,4 +46,28 @@
 		<category>quota</category>
 		<type>java.lang.Long</type>
 	</config>
+
+	<config>
+		<name>download.localPath.blacklist</name>
+		<description>the black list to filter local download path</description>
+		<category>image</category>
+		<defaultValue>/**/.*/**;/**/~*/**;/etc/**;/usr/local/zstack/**;/var/log/**;/dev/**;/proc/**;/sys/**</defaultValue>
+		<type>java.lang.String</type>
+	</config>
+
+	<config>
+		<name>download.localPath.whitelist</name>
+		<description>the white list to specify local available download paths</description>
+		<category>image</category>
+		<defaultValue>/home/**;/mnt/**;/opt/**;/root/**;</defaultValue>
+		<type>java.lang.String</type>
+	</config>
+
+	<config>
+		<name>download.localPath.customFilter</name>
+		<description>default download path list for local image</description>
+		<category>image</category>
+		<defaultValue>blacklist</defaultValue>
+		<type>java.lang.String</type>
+	</config>
 </globalConfig>
