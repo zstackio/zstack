@@ -32,7 +32,6 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.image.GuestOsCategoryVO;
 import org.zstack.header.image.GuestOsCategoryVO_;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -61,7 +60,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
@@ -70,7 +68,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -123,6 +120,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private ThreadFacade thdf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private PVPanicManager pvpanic;
 
     private Future<Void> checkSocketChannelTimeoutThread;
 
@@ -370,11 +369,13 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_CRASH_EVENT, KVMAgentCommands.ReportVmCrashEventCmd.class, cmd -> {
             //SNS alarm event
+            if (!pvpanic.isPVPanicEnable(cmd.vmUuid)) {
+                return null;
+            }
             VmCanonicalEvents.VmCrashReportData cData = new VmCanonicalEvents.VmCrashReportData();
             cData.setVmUuid(cmd.vmUuid);
             cData.setReason(operr("vm[uuid:%s] crashes due to kernel error", cmd.vmUuid));
             evf.fire(VmCanonicalEvents.VM_LIBVIRT_REPORT_CRASH, cData);
-
             return null;
         });
 
