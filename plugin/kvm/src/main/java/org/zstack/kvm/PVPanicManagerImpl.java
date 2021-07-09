@@ -11,7 +11,8 @@ import org.zstack.resourceconfig.ResourceConfigFacade;
 /**
  * Created by Wenhao.Zhang on 21/06/21
  */
-public class PVPanicStartVmExtension implements KVMStartVmAddonExtensionPoint {
+public class PVPanicManagerImpl implements PVPanicManager,
+        KVMStartVmAddonExtensionPoint {
     @Autowired
     private ResourceConfigFacade rcf;
 
@@ -28,6 +29,7 @@ public class PVPanicStartVmExtension implements KVMStartVmAddonExtensionPoint {
         }
     }
 
+    @Override
     public boolean isPVPanicEnable(String vmUuid) {
         return !CrashStrategy.None.toString()
                 .equals(rcf.getResourceConfigValue(VmGlobalConfig.VM_CRASH_STRATEGY, vmUuid, String.class));

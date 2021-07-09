@@ -114,7 +114,7 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="PVPanicStartVmExtension" class="org.zstack.kvm.PVPanicStartVmExtension">
+    <bean id="PVPanicManagerImpl" class="org.zstack.kvm.PVPanicManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMStartVmAddonExtensionPoint" />
         </zstack:plugin>
