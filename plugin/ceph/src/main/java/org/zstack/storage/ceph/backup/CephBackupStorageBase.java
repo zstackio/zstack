@@ -1624,6 +1624,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
             handle((APIRemoveMonFromCephBackupStorageMsg) msg);
         } else if (msg instanceof APIExportImageFromBackupStorageMsg) {
             handle((APIExportImageFromBackupStorageMsg) msg);
+        } else if (msg instanceof APIDeleteExportedImageFromBackupStorageMsg) {
+            handle((APIDeleteExportedImageFromBackupStorageMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
@@ -1641,6 +1643,15 @@ public class CephBackupStorageBase extends BackupStorageBase {
         else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(APIDeleteExportedImageFromBackupStorageMsg msg) {
+        SQL.New(ImageBackupStorageRefVO.class).set(ImageBackupStorageRefVO_.exportUrl, null)
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                .eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
+                .update();
+
+        bus.publish(new APIDeleteExportedImageFromBackupStorageEvent(msg.getId()));
     }
 
     private void handle(APIExportImageFromBackupStorageMsg msg) {
