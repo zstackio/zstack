@@ -80,7 +80,7 @@ public class APICreateClusterMsg extends APICreateMessage implements CreateClust
     @APIParam(required = false, validValues = {"zstack", "baremetal", "baremetal2"})
     private String type;
 
-    @APIParam(required = false, validValues = {"x86_64", "aarch64", "mips64el"})
+    @APIParam(required = false, validValues = {"x86_64", "aarch64", "mips64"})
     private String architecture;
 
     public APICreateClusterMsg() {

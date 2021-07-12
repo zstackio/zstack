@@ -159,7 +159,7 @@ doc {
 					type "String"
 					optional true
 					since "4.0"
-					values ("x86_64","aarch64","mips64el")
+					values ("x86_64","aarch64","mips64")
 				}
 				column {
 					name "tagUuids"

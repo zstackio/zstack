@@ -40,7 +40,7 @@ public class CreateClusterAction extends AbstractAction {
     @Param(required = false, validValues = {"zstack","baremetal","baremetal2"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
-    @Param(required = false, validValues = {"x86_64","aarch64","mips64el"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"x86_64","aarch64","mips64"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String architecture;
 
     @Param(required = false)

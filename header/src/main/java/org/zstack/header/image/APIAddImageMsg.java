@@ -35,7 +35,7 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddI
     private String mediaType;
     @APIParam(maxLength = 255, required = false)
     private String guestOsType;
-    @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64el"})
+    @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64"})
     private String architecture;
     private boolean system;
     @APIParam(required = false)
