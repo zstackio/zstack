@@ -27,6 +27,7 @@ public interface KVMConstant {
     String KVM_DELETE_L2VLAN_NETWORK_PATH = "/network/l2vlan/deletebridge";
     String KVM_REALIZE_OVSDPDK_NETWORK_PATH = "/network/ovsdpdk/createbridge";
     String KVM_CHECK_OVSDPDK_NETWORK_PATH = "/network/ovsdpdk/checkbridge";
+    String KVM_DELETE_OVSDPDK_NETWORK_PATH = "/network/ovsdpdk/deletebridge";
     String KVM_GENERATE_VDPA_PATH = "/network/ovsdpdk/generatevdpa";
     String KVM_DELETE_VDPA_PATH = "/network/ovsdpdk/deletevdpa";
     String KVM_ATTACH_ISO_PATH = "/vm/iso/attach";

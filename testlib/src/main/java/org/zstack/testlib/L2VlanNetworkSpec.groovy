@@ -45,5 +45,8 @@ class L2VlanNetworkSpec extends L2NetworkSpec implements Simulator{
         env.simulator(KVMConstant.KVM_DELETE_L2VLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             return  new KVMAgentCommands.DeleteVlanBridgeResponse()
         }
+        env.simulator(KVMConstant.KVM_DELETE_OVSDPDK_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            return new KVMAgentCommands.DeleteBridgeResponse()
+        }
     }
 }
