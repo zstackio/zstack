@@ -48,8 +48,8 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
         q.select(VmInstanceVO_.state);
         q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
-        if (VmInstanceState.Running != state) {
-            throw new ApiMessageInterceptionException(operr("Console is only available when the VM[uuid:%s] is Running, but the current state is %s", msg.getVmInstanceUuid(), state));
+        if (VmInstanceState.Running != state && VmInstanceState.Crashed != state) {
+            throw new ApiMessageInterceptionException(operr("Console is only available when the VM[uuid:%s] is Running or Crashed, but the current state is %s", msg.getVmInstanceUuid(), state));
         }
         bus.makeTargetServiceIdByResourceUuid(msg, ConsoleConstants.SERVICE_ID, msg.getVmInstanceUuid());
     }

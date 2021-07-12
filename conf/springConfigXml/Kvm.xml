@@ -119,6 +119,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="PVPanicManagerImpl" class="org.zstack.kvm.PVPanicManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMStartVmAddonExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.PVPanicManager" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="DeviceBootOrderOperator" class="org.zstack.kvm.DeviceBootOrderOperator">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>

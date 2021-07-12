@@ -3050,6 +3050,10 @@ public class KVMAgentCommands {
         public String vmUuid;
     }
 
+    public static class ReportVmCrashEventCmd {
+        public String vmUuid;
+    }
+
     public static class ShutdownHostCmd extends AgentCommand {
     }
 

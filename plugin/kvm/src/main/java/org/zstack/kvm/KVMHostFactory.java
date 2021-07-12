@@ -4,6 +4,9 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostGlobalConfig;
+import org.zstack.compute.vm.CrashStrategy;
+import org.zstack.compute.vm.VmGlobalConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
@@ -29,7 +32,6 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.image.GuestOsCategoryVO;
 import org.zstack.header.image.GuestOsCategoryVO_;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -58,7 +60,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
@@ -67,7 +68,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -118,6 +118,10 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private TimeHelper timeHelper;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private ResourceConfigFacade rcf;
+    @Autowired
+    private PVPanicManager pvpanic;
 
     private Future<Void> checkSocketChannelTimeoutThread;
 
@@ -361,6 +365,18 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
                 return null;
             }
+        });
+
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_CRASH_EVENT, KVMAgentCommands.ReportVmCrashEventCmd.class, cmd -> {
+            //SNS alarm event
+            if (!pvpanic.isPVPanicEnable(cmd.vmUuid)) {
+                return null;
+            }
+            VmCanonicalEvents.VmCrashReportData cData = new VmCanonicalEvents.VmCrashReportData();
+            cData.setVmUuid(cmd.vmUuid);
+            cData.setReason(operr("vm[uuid:%s] crashes due to kernel error", cmd.vmUuid));
+            evf.fire(VmCanonicalEvents.VM_LIBVIRT_REPORT_CRASH, cData);
+            return null;
         });
 
         KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.installValidator(((resourceUuid, resourceType, systemTag) -> {

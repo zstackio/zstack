@@ -2,7 +2,9 @@ package org.zstack.network.service.flat;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.CrashStrategy;
 import org.zstack.compute.vm.UserdataBuilder;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -37,6 +39,7 @@ import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceFilter;
 import org.zstack.network.service.userdata.*;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -67,6 +70,8 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     private ApiTimeoutManager timeoutMgr;
     @Autowired
     private FlatDhcpBackend dhcpBackend;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     public static final String APPLY_USER_DATA = "/flatnetworkprovider/userdata/apply";
     public static final String BATCH_APPLY_USER_DATA = "/flatnetworkprovider/userdata/batchapply";
@@ -193,6 +198,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     }
                     to.port = UserdataGlobalProperty.HOST_PORT;
                     to.l3NetworkUuid = l.l3Uuid;
+                    to.agentConfig = new HashMap<>();
+                    if (isPVPanicEnable(vmuuid)) {
+                        to.agentConfig.put("pvpanic", "enable");
+                    }
                     tos.add(to);
                 }
 
@@ -451,6 +460,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         public String bridgeName;
         public String namespaceName;
         public String l3NetworkUuid;
+        public Map<String, String> agentConfig;
         public int port;
     }
 
@@ -504,6 +514,11 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     private boolean hasUserdata(UserdataStruct struct) {
         return struct.getUserdataList() != null && !struct.getUserdataList().isEmpty();
+    }
+
+    private boolean isPVPanicEnable(String vmUuid) {
+        return !CrashStrategy.None.toString()
+                .equals(rcf.getResourceConfigValue(VmGlobalConfig.VM_CRASH_STRATEGY, vmUuid, String.class));
     }
 
     @Override
@@ -581,6 +596,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         uto.namespaceName = FlatDhcpBackend.makeNamespaceName(uto.bridgeName, struct.getL3NetworkUuid());
                         uto.port = UserdataGlobalProperty.HOST_PORT;
                         uto.l3NetworkUuid = struct.getL3NetworkUuid();
+                        uto.agentConfig = new HashMap<>();
+                        if (isPVPanicEnable(struct.getVmUuid())) {
+                            uto.agentConfig.put("pvpanic", "enable");
+                        }
                         cmd.userdata = uto;
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
