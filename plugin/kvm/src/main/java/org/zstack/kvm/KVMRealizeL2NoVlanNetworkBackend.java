@@ -183,8 +183,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     }
 
 
-    @Override
-    public void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
+    public void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion, final String cmdPath) {
         DeleteBridgeCmd cmd = new DeleteBridgeCmd();
         cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
         cmd.setBridgeName(makeBridgeName(l2Network.getUuid()));
@@ -192,7 +191,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setPath(KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH);
+        msg.setPath(cmdPath);
         msg.setHostUuid(hostUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -222,4 +221,14 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
             }
         });
     }
+
+    @Override
+    public void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
+        if (l2Network.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+            delete(l2Network, hostUuid, completion, KVMConstant.KVM_DELETE_OVSDPDK_NETWORK_PATH);
+        } else {
+            delete(l2Network, hostUuid, completion, KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH);
+        }
+    }
+
 }
