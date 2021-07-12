@@ -96,6 +96,8 @@ public class Platform {
         return locale;
     }
 
+    public static boolean isSelinuxEnbaled;
+
     private static Map<String, String> linkGlobalPropertyMap(String prefix) {
         Map<String, String> ret = new HashMap<String, String>();
         Map<String, String> map = getGlobalPropertiesStartWith(prefix);
@@ -258,6 +260,11 @@ public class Platform {
         return ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
     }
 
+    private static void initSelinuxConfig() {
+        String output = ShellUtils.run("getenforce", true);
+        isSelinuxEnbaled = output.contains("Enforcing");
+    }
+
     private static void writePidFile() throws IOException {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             return;
@@ -373,6 +380,7 @@ public class Platform {
     }
 
     static {
+        initSelinuxConfig();
         FileInputStream in = null;
         try {
             Set<Class> baseResourceClasses = reflections.getTypesAnnotatedWith(BaseResource.class).stream()

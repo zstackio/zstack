@@ -4255,69 +4255,6 @@ public class KVMHost extends HostBase implements Host {
                         }
                     });
 
-                    flow(new NoRollbackFlow() {
-                        String __Nname__ = "restart-libvirtd&kvmagent";
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            FlowChain prepareChain = FlowChainBuilder.newSimpleFlowChain();
-
-                            for (PrepareKVMHostExtensionPoint extp : factory.getPrepareExtensions()) {
-                                KVMHostConnectedContext ctx = new KVMHostConnectedContext();
-                                ctx.setInventory((KVMHostInventory) getSelfInventory());
-                                ctx.setNewAddedHost(info.isNewAdded());
-                                ctx.setBaseUrl(baseUrl);
-                                ctx.setSkipPackages(info.getSkipPackages());
-
-                                prepareChain.then(extp.createPrepareKvmHostFlow(ctx));
-                            }
-                            prepareChain.error(new FlowErrorHandler(trigger) {
-                                @Override
-                                public void handle(ErrorCode errCode, Map data) {
-                                    trigger.fail(errCode);
-                                }
-                            }).done(new FlowDoneHandler(trigger) {
-                                @Override
-                                public void handle(Map data) {
-                                    if (KVMSystemTags.RESTART_LIBVIRT_REQUESTED.hasTag(self.getUuid())) {
-                                        /*
-                                        SshResult ret = new Ssh().shell(String.format("sudo systemctl restart libvirtd; sudo bash /etc/init.d/%s restart", AnsibleConstant.KVM_AGENT_NAME))
-                                                .setTimeout(20)
-                                                .setPrivateKey(asf.getPrivateKey())
-                                                .setUsername(getSelf().getUsername())
-                                                .setHostname(self.getManagementIp())
-                                                .setPort(getSelf().getPort())
-                                                .runAndClose();
-
-                                        if (ret.getReturnCode() != 0) {
-                                            trigger.fail(operr("Failed to restart agent, because %s",ret.getStderr()));
-                                            return;
-                                        }
-                                         */
-
-                                        SshShell sshShell = new SshShell();
-                                        sshShell.setHostname(getSelf().getManagementIp());
-                                        sshShell.setUsername(getSelf().getUsername());
-                                        sshShell.setPassword(getSelf().getPassword());
-                                        sshShell.setPort(getSelf().getPort());
-                                        sshShell.setWithSudo(false);
-                                        final String cmd = String.format("sudo systemctl restart libvirtd; sudo bash /etc/init.d/%s restart", AnsibleConstant.KVM_AGENT_NAME);
-                                        SshResult ret = sshShell.runCommand(cmd);
-                                        if (ret.isSshFailure() || ret.getReturnCode() != 0) {
-                                            trigger.fail(operr("Failed to restart agent, because %s",ret.getStderr()));
-                                        }
-
-                                        KVMSystemTags.RESTART_LIBVIRT_REQUESTED.delete(self.getUuid());
-                                    }
-
-                                    trigger.next();
-                                }
-                            }).start();
-                        }
-                    });
-
-                    flow(echoFlow);
-
                     if (info.isNewAdded()) {
                         flow(new NoRollbackFlow() {
                             String __name__ = "check-qemu-libvirt-version";
@@ -4363,6 +4300,67 @@ public class KVMHost extends HostBase implements Host {
                             String script = "which iptables > /dev/null && iptables -C FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 && iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited > /dev/null 2>&1 || true";
                             runShell(script);
                             trigger.next();
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "PrepareKVMHostExtensionPoint";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            FlowChain prepareChain = FlowChainBuilder.newSimpleFlowChain();
+
+                            for (PrepareKVMHostExtensionPoint extp : factory.getPrepareExtensions()) {
+                                KVMHostConnectedContext ctx = new KVMHostConnectedContext();
+                                ctx.setInventory((KVMHostInventory) getSelfInventory());
+                                ctx.setNewAddedHost(info.isNewAdded());
+                                ctx.setBaseUrl(baseUrl);
+                                ctx.setSkipPackages(info.getSkipPackages());
+
+                                prepareChain.then(extp.createPrepareKvmHostFlow(ctx));
+                            }
+                            prepareChain.error(new FlowErrorHandler(trigger) {
+                                @Override
+                                public void handle(ErrorCode errCode, Map data) {
+                                    trigger.fail(errCode);
+                                }
+                            }).done(new FlowDoneHandler(trigger) {
+                                @Override
+                                public void handle(Map data) {
+                                    /*
+                                    SshResult ret = new Ssh().shell(String.format("sudo systemctl restart libvirtd; sudo bash /etc/init.d/%s restart", AnsibleConstant.KVM_AGENT_NAME))
+                                            .setTimeout(20)
+                                            .setPrivateKey(asf.getPrivateKey())
+                                            .setUsername(getSelf().getUsername())
+                                            .setHostname(self.getManagementIp())
+                                            .setPort(getSelf().getPort())
+                                            .runAndClose();
+
+                                    if (ret.getReturnCode() != 0) {
+                                        trigger.fail(operr("Failed to restart agent, because %s",ret.getStderr()));
+                                        return;
+                                    }
+                                     */
+
+                                    /*
+                                    SshShell sshShell = new SshShell();
+                                    sshShell.setHostname(getSelf().getManagementIp());
+                                    sshShell.setUsername(getSelf().getUsername());
+                                    sshShell.setPassword(getSelf().getPassword());
+                                    sshShell.setPort(getSelf().getPort());
+                                    sshShell.setWithSudo(false);
+                                    final String cmd = String.format("sed -i 's/listen_tls = ./listen_tls = 1/' /etc/libvirt/libvirtd.conf");
+                                    SshResult ret = sshShell.runCommand(cmd);
+                                    if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+                                        trigger.fail(operr("Failed to run command, because %s",ret.getStderr()));
+                                    }
+
+                                    KVMSystemTags.RESTART_LIBVIRT_REQUESTED.delete(self.getUuid());
+                                    */
+
+                                    trigger.next();
+                                }
+                            }).start();
                         }
                     });
 
