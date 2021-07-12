@@ -225,10 +225,12 @@ class PrimaryStorageDeleteCascadeCase extends SubCase {
             testPrimaryStorageDeleteCascadeWhenUseSMP()
             testPrimaryStorageDeleteCascadeWhenUseNfs()
 
-            GetIpAddressCapacityResult result = getIpAddressCapacity {
-                l3NetworkUuids = [l3.uuid]
+            retryInSecs {
+                GetIpAddressCapacityResult result = getIpAddressCapacity {
+                    l3NetworkUuids = [l3.uuid]
+                }
+                assert capacityResult.availableCapacity + 4 == result.availableCapacity
             }
-            assert capacityResult.availableCapacity + 4 == result.availableCapacity
         }
     }
 
