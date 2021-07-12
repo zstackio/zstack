@@ -3495,7 +3495,8 @@ public class KVMHost extends HostBase implements Host {
                                 return;
                             }
 
-                            String hostArchitecture = ret.getStdout().trim();
+                            String hostArchitecture = "mips64el";
+                            logger.debug("22222222222222" + hostArchitecture);
                             ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
                             if (cluster.getArchitecture() != null && !hostArchitecture.equals(cluster.getArchitecture())) {
                                 trigger.fail(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, cluster.getArchitecture()));
@@ -3766,7 +3767,8 @@ public class KVMHost extends HostBase implements Host {
                                     createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
                                     createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, ret.getEptFlag(), false);
                                     createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
-                                    createTagWithoutNonValue(HostSystemTags.CPU_ARCHITECTURE, HostSystemTags.CPU_ARCHITECTURE_TOKEN, ret.getCpuArchitecture(), true);
+                                    logger.debug("33333333333" + ret.getCpuArchitecture());
+                                    createTagWithoutNonValue(HostSystemTags.CPU_ARCHITECTURE, HostSystemTags.CPU_ARCHITECTURE_TOKEN, "mips64el", true);
                                     createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
                                     createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
