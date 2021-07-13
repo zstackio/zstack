@@ -46,6 +46,10 @@ public class GetImageDownloadProgressReply extends MessageReply {
         this.actualSize = actualSize;
     }
 
+    public boolean isDownloadComplete() {
+        return actualSize > 0 && actualSize == downloadSize;
+    }
+
     public String getInstallPath() {
         return installPath;
     }
