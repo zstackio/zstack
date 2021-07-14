@@ -31,6 +31,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
@@ -62,7 +63,7 @@ import static org.zstack.utils.CollectionDSL.*;
 
 public class PortForwardingManagerImpl extends AbstractService implements PortForwardingManager,
         VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint,
-        VipGetServiceReferencePoint, VmNicChangeNetworkExtensionPoint {
+        VipGetServiceReferencePoint, VmNicChangeNetworkExtensionPoint, VmIpChangedExtensionPoint {
     private static CLogger logger = Utils.getLogger(PortForwardingManagerImpl.class);
 
     @Autowired
@@ -1394,4 +1395,15 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         return ret;
     }
 
+    @Override
+    public void vmIpChanged(VmInstanceInventory vm, VmNicInventory nic, Map<Integer, UsedIpInventory> oldIpMap, Map<Integer, UsedIpInventory> newIpMap) {
+        for (Map.Entry<Integer, UsedIpInventory> oldIp : oldIpMap.entrySet()) {
+            SQL.New(PortForwardingRuleVO.class)
+                .eq(PortForwardingRuleVO_.vmNicUuid, nic.getUuid())
+                .eq(PortForwardingRuleVO_.guestIp, oldIp.getValue().getIp())
+                .set(PortForwardingRuleVO_.guestIp, newIpMap.get(oldIp.getKey()).getIp()).update();
+            logger.debug(String.format("update the PortForwardingRule's guest IP from %s to %s for the nic[uuid:%s]",
+                    oldIp.getValue().getIp(), newIpMap.get(oldIp.getKey()), nic.getUuid()));
+        }
+    }
 }
