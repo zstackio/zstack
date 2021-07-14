@@ -32,6 +32,7 @@ class BeanConstructor {
             "jsonlabel.xml",
             "encrypt.xml",
             "rest.xml",
+            "eventlog.xml",
             "Progress.xml",
             "externalService.xml"
     ]
