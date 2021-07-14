@@ -3,7 +3,6 @@ package org.zstack.header.network.service;
 import org.zstack.header.core.Completion;
 
 import java.util.List;
-import java.util.Map;
 
 public interface VirtualRouterHaGroupExtensionPoint {
 
@@ -18,7 +17,7 @@ public interface VirtualRouterHaGroupExtensionPoint {
 
     String getPeerUuid(String vrUuid);
 
-    void submitTaskToHaRouter(Map<String, Object> data, Completion completion);
+    void submitTaskToHaRouter(VirtualRouterHaTask task, Completion completion);
 
     void attachNetworkServiceToHaRouter(String type, List<String> uuids, String vrUuid);
     void attachNetworkServiceToHaRouter(String type, List<String> uuids, String vrUuid, boolean override);

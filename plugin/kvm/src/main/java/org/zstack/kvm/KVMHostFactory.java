@@ -29,7 +29,6 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.image.GuestOsCategoryVO;
 import org.zstack.header.image.GuestOsCategoryVO_;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -58,7 +57,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
@@ -67,7 +65,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -86,7 +83,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public static final VolumeFormat QCOW2_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_QCOW2, hypervisorType);
     public static final VolumeFormat RAW_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_RAW, hypervisorType);
     private List<KVMHostConnectExtensionPoint> connectExtensions = new ArrayList<>();
-    private Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<>();
+    private final Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<>();
     private int maxDataVolumeNum;
     private static final String GUEST_OS_CATEGORY_FILE = "guestOs/guestOsCategory.xml";
     private static final String GUEST_OS_CHARACTER_FILE = "guestOs/guestOsCharacter.xml";
@@ -285,6 +282,15 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
         }
 
+        if (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
+            try {
+                startTcpServer();
+                startTcpChannelTimeoutChecker();
+            } catch (IOException e) {
+                throw new CloudRuntimeException("Failed to start tcp server on management node");
+            }
+        }
+
         maxDataVolumeNum = KVMGlobalConfig.MAX_DATA_VOLUME_NUM.value(int.class);
         KVMGlobalConfig.MAX_DATA_VOLUME_NUM.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
@@ -376,9 +382,9 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 return;
             }
 
-            if (hostModelMap.values().stream().distinct().collect(Collectors.toList()).size() != 1) {
+            if (hostModelMap.values().stream().distinct().count() != 1) {
                 StringBuilder str = new StringBuilder();
-                for (Map.Entry entry : hostModelMap.entrySet()) {
+                for (Map.Entry<String, String> entry : hostModelMap.entrySet()) {
                     str.append(String.format("host[uuid:%s]'s cpu model is %s ;\n", entry.getKey(), entry.getValue()));
                 }
 
@@ -388,7 +394,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
         KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.installValidator(((resourceUuid, resourceType, systemTag) -> {
             String check = KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.getTokenByTag(systemTag, KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN);
-            Integer num;
+            int num;
             try {
                 num = Integer.parseInt(check);
             } catch (Exception e) {

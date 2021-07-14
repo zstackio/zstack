@@ -45,4 +45,9 @@
         <name>org.zstack.network.service.virtualrouter.APIUpdateVirtualRouterMsg</name>
         <serviceId>vmInstance</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.network.service.virtualrouter.APIProvisionVirtualRouterConfigMsg</name>
+        <serviceId>vmInstance</serviceId>
+    </message>
 </service>

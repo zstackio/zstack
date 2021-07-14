@@ -13,6 +13,7 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.l3.NetworkGlobalProperty
 import org.zstack.sdk.ClusterInventory
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.test.integration.network.NetworkTest;
 import org.zstack.testlib.EnvSpec;
