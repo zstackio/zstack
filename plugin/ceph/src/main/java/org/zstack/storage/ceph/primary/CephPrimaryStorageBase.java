@@ -4138,25 +4138,73 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
+    private static class CheckHostStorageConnectionCmdBuilder {
+        private String uuid;
+        private List<String> poolNames;
+        private String hostUuid;
+        private String userKey;
+        private List<String> monUrls;
+        private String fsId;
+
+        public CheckHostStorageConnectionCmdBuilder uuid(String uuid) {
+            this.uuid = uuid;
+            return this;
+        }
+
+        public CheckHostStorageConnectionCmdBuilder poolNames(List<String> poolNames) {
+            this.poolNames = poolNames;
+            return this;
+        }
+
+        public CheckHostStorageConnectionCmdBuilder hostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+            return this;
+        }
+
+        public CheckHostStorageConnectionCmdBuilder userKey(String userKey) {
+            this.userKey = userKey;
+            return this;
+        }
+
+        public CheckHostStorageConnectionCmdBuilder monUrls(List<String> monUrls) {
+            this.monUrls = monUrls;
+            return this;
+        }
+
+        public CheckHostStorageConnectionCmdBuilder fsId(String fsId) {
+            this.fsId = fsId;
+            return this;
+        }
+
+        public CheckHostStorageConnectionCmd build() {
+            final CheckHostStorageConnectionCmd cmd = new CheckHostStorageConnectionCmd();
+            cmd.uuid = this.uuid;
+            cmd.fsId = this.fsId;
+            cmd.userKey = this.userKey;
+            cmd.poolNames = this.poolNames;
+            cmd.monUrls = this.monUrls;
+            cmd.hostUuid = this.hostUuid;
+            return cmd;
+        }
+    }
+
     private void checkHostStorageConnection(List<String> hostUuids, final Completion completion) {
-        final CheckHostStorageConnectionCmd cmd = new CheckHostStorageConnectionCmd();
-        cmd.uuid = self.getUuid();
-        cmd.fsId = getSelf().getFsid();
-        cmd.userKey = getSelf().getUserKey();
-        cmd.poolNames = Q.New(CephPrimaryStoragePoolVO.class)
-                .select(CephPrimaryStoragePoolVO_.poolName)
-                .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Root.toString())
-                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
-                .listValues();
-        cmd.monUrls = CollectionUtils.transformToList(getSelf().getMons(), (Function<String, CephPrimaryStorageMonVO>) arg -> String.format("%s:%s", arg.getMonAddr(), arg.getMonPort()));
-        cmd.setUserKey(getSelf().getUserKey());
-        String suuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(self.getUuid(), CephSystemTags.KVM_SECRET_UUID_TOKEN);
-        DebugUtils.Assert(suuid != null, String.format("cannot find system tag[%s] for ceph primary storage[uuid:%s]", CephSystemTags.KVM_SECRET_UUID.getTagFormat(), self.getUuid()));
-        cmd.setUuid(suuid);
+        CheckHostStorageConnectionCmdBuilder builder = new CheckHostStorageConnectionCmdBuilder();
+        builder.uuid(self.getUuid())
+                .fsId(getSelf().getFsid())
+                .userKey(getSelf().getUserKey())
+                .poolNames(Q.New(CephPrimaryStoragePoolVO.class)
+                        .select(CephPrimaryStoragePoolVO_.poolName)
+                        .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Root.toString())
+                        .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
+                        .listValues())
+                .monUrls(CollectionUtils.transformToList(getSelf().getMons(), (Function<String, CephPrimaryStorageMonVO>) arg
+                        -> String.format("%s:%s", arg.getMonAddr(), arg.getMonPort())));
 
         List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids, (Function<KVMHostAsyncHttpCallMsg, String>) huuid -> {
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-            msg.setCommand(cmd);
+            builder.hostUuid(huuid);
+            msg.setCommand(builder.build());
             msg.setPath(CHECK_HOST_STORAGE_CONNECTION_PATH);
             msg.setHostUuid(huuid);
             msg.setNoStatusCheck(true);
