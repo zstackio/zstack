@@ -33,6 +33,7 @@ import java.lang.reflect.Modifier
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.stream.Collectors
+
 /**
  * Created by xing5 on 2016/12/21.
  */
@@ -44,42 +45,42 @@ class RestDocumentationGenerator implements DocumentGenerator {
     Map<String, File> sourceFiles = [:]
 
     def MUTUAL_FIELDS = [
-            "lastOpDate": "最后一次修改时间",
-            "createDate": "创建时间",
-            "uuid": "资源的UUID，唯一标示该资源",
-            "name": "资源名称",
-            "description": "资源的详细描述",
-            "primaryStorageUuid": "主存储UUID",
-            "vmInstanceUuid": "云主机UUID",
-            "imageUuid": "镜像UUID",
-            "backupStorageUuid": "镜像存储UUID",
-            "volumeUuid": "云盘UUID",
-            "zoneUuid": "区域UUID",
-            "clusterUuid": "集群UUID",
-            "hostUuid": "物理机UUID",
-            "l2NetworkUuid": "二层网络UUID",
-            "l3NetworkUuid": "三层网络UUID",
-            "accountUuid": "账户UUID",
-            "policyUuid": "权限策略UUID",
-            "userUuid": "用户UUID",
-            "diskOfferingUuid": "云盘规格UUID",
-            "volumeSnapshotUuid": "云盘快照UUID",
-            "ipRangeUuid": "IP段UUID",
-            "instanceOfferingUuid": "计算规格UUID",
-            "vipUuid": "VIP UUID",
-            "vmNicUuid": "云主机网卡UUID",
+            "lastOpDate"                : "最后一次修改时间",
+            "createDate"                : "创建时间",
+            "uuid"                      : "资源的UUID，唯一标示该资源",
+            "name"                      : "资源名称",
+            "description"               : "资源的详细描述",
+            "primaryStorageUuid"        : "主存储UUID",
+            "vmInstanceUuid"            : "云主机UUID",
+            "imageUuid"                 : "镜像UUID",
+            "backupStorageUuid"         : "镜像存储UUID",
+            "volumeUuid"                : "云盘UUID",
+            "zoneUuid"                  : "区域UUID",
+            "clusterUuid"               : "集群UUID",
+            "hostUuid"                  : "物理机UUID",
+            "l2NetworkUuid"             : "二层网络UUID",
+            "l3NetworkUuid"             : "三层网络UUID",
+            "accountUuid"               : "账户UUID",
+            "policyUuid"                : "权限策略UUID",
+            "userUuid"                  : "用户UUID",
+            "diskOfferingUuid"          : "云盘规格UUID",
+            "volumeSnapshotUuid"        : "云盘快照UUID",
+            "ipRangeUuid"               : "IP段UUID",
+            "instanceOfferingUuid"      : "计算规格UUID",
+            "vipUuid"                   : "VIP UUID",
+            "vmNicUuid"                 : "云主机网卡UUID",
             "networkServiceProviderUuid": "网络服务提供模块UUID",
-            "virtualRouterUuid": "云路由UUID",
-            "securityGroupUuid": "安全组UUID",
-            "eipUuid": "弹性IP UUID",
-            "loadBalancerUuid": "负载均衡器UUID",
-            "rootVolumeUuid": "根云盘UUID",
-            "userTags": "用户标签",
-            "systemTags": "系统标签",
-            "tagUuids": "标签UUID列表",
-            "deleteMode": "删除模式(Permissive / Enforcing，Permissive)",
-            "resourceUuid": "资源UUID",
-            "buildSystemUuid": "build存储系统UUID"
+            "virtualRouterUuid"         : "云路由UUID",
+            "securityGroupUuid"         : "安全组UUID",
+            "eipUuid"                   : "弹性IP UUID",
+            "loadBalancerUuid"          : "负载均衡器UUID",
+            "rootVolumeUuid"            : "根云盘UUID",
+            "userTags"                  : "用户标签",
+            "systemTags"                : "系统标签",
+            "tagUuids"                  : "标签UUID列表",
+            "deleteMode"                : "删除模式(Permissive / Enforcing，Permissive)",
+            "resourceUuid"              : "资源UUID",
+            "buildSystemUuid"           : "build存储系统UUID"
     ]
 
     String CHINESE_CN = "zh_cn"
@@ -151,7 +152,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
 
         Set<Class> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class).findAll { it.isAnnotationPresent(RestRequest.class) }
         Set<String> noDocClasses = Platform.getReflections().getTypesAnnotatedWith(NoDoc.class)
-                .stream().map{ c -> c.getSimpleName() }.collect(Collectors.toSet())
+                .stream().map { c -> c.getSimpleName() }.collect(Collectors.toSet())
         logger.info("no doc classes: ${noDocClasses}".toString())
 
         String specifiedClasses = System.getProperty("classes")
@@ -239,7 +240,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
             }
         }
 
-        appends.each {k,v ->
+        appends.each { k, v ->
             def f = k as File
             def t = v as ElaborationMarkDown
             f.append(t.table.join("\n"))
@@ -257,7 +258,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
             if (msg == null || msg.isEmpty()) {
                 return ""
             }
-            def result = msg.trim().replaceAll("\\|","*")
+            def result = msg.trim().replaceAll("\\|", "*")
             return result
         }
 
@@ -322,7 +323,7 @@ ${category(err)}
             _optional = v
         }
 
-        def values(Object...args) {
+        def values(Object... args) {
             _values = args as List
         }
     }
@@ -373,7 +374,7 @@ ${category(err)}
         private Class _clz
         private String _desc
 
-        def clz(Class v)  {
+        def clz(Class v) {
             _clz = v
         }
 
@@ -458,7 +459,7 @@ ${category(err)}
             _body = JSONObjectUtil.toObject(j.toString(), LinkedHashMap.class)
         }
 
-        def clz(Class v){
+        def clz(Class v) {
             _clz = v
         }
     }
@@ -555,10 +556,10 @@ ${category(err)}
                     ocol._optional = ncol._optional
                 }
 
-                if(nreq._params._cloumns.size() > oreq._params._cloumns.size()){
+                if (nreq._params._cloumns.size() > oreq._params._cloumns.size()) {
                     nreq._params._cloumns.each { ncol ->
                         RequestParamColumn ocol = oreq._params._cloumns.find { it._name == ncol._name }
-                        if(ocol == null){
+                        if (ocol == null) {
                             oreq._params._cloumns.add(ncol)
                         }
                     }
@@ -680,7 +681,7 @@ ${category(err)}
 
             def cols = ["${actionName} action = new ${actionName}();"]
             List<String> conds = getQueryConditionExampleOfTheClass(clz)
-            conds = conds.collect { return "\"" + it + "\""}
+            conds = conds.collect { return "\"" + it + "\"" }
             cols.add("action.conditions = asList(${conds.join(",")});")
             cols.add("""action.sessionId = "b86c9016b4f24953a9edefb53ca0678c\";""")
             cols.add("${actionName}.Result res = action.call();")
@@ -700,7 +701,7 @@ ${cols.join("\n")}
 
             def cols = ["${actionName} action = ${actionName}()"]
             List<String> conds = getQueryConditionExampleOfTheClass(clz)
-            conds = conds.collect { return "\"" + it + "\""}
+            conds = conds.collect { return "\"" + it + "\"" }
             cols.add("action.conditions = [${conds.join(",")}]")
             cols.add("""action.sessionId = "b86c9016b4f24953a9edefb53ca0678c\"""")
             cols.add("${actionName}.Result res = action.call()")
@@ -764,7 +765,7 @@ ${examples.join("\n")}
 
         @Override
         String generate() {
-            return  """\
+            return """\
 ## ${doc._category} - ${doc._title}
 
 ${doc._desc}
@@ -1374,8 +1375,8 @@ ${txt}
     def PRIMITIVE_TYPES = [
             int.class,
             long.class,
-            float .class,
-            boolean .class,
+            float.class,
+            boolean.class,
             double.class,
             short.class,
             char.class,
@@ -1434,7 +1435,8 @@ ${txt}
             allAttributes = allAttributes.findAll {
                 if (it instanceof Field && !it.isAnnotationPresent(APINoSee.class) && !Modifier.isStatic(it.modifiers)) {
                     return true
-                } else return it instanceof Enum
+                } else
+                    return it instanceof Enum
             }
             allAttributes.each {
                 if (it instanceof Field) {
@@ -1455,6 +1457,8 @@ ${txt}
             } else if (at.fieldsTo().length == 1 && at.fieldsTo()[0] == "all") {
                 findFieldsForNormalClass()
             } else {
+                supplementFields('success',responseClass,at)
+                supplementFields('error',responseClass,at)
                 at.fieldsTo().each {
                     def kv = it.split("=")
 
@@ -1468,7 +1472,12 @@ ${txt}
                 }
             }
 
-            fieldStrings.add(createRef("error", "${responseClass.canonicalName}.error", "错误码，若不为null，则表示操作失败, 操作成功时该字段为null", ErrorCode.class.simpleName, ErrorCode.class, false))
+        }
+
+        void supplementFields(String fieldName,Class clz,RestResponse at){
+            if(!at.fieldsTo().contains(fieldName)){
+                fsToAdd.put(fieldName,FieldUtils.getField(fieldName, clz))
+            }
         }
 
         String createField(String n, String desc, String type) {
@@ -1484,10 +1493,11 @@ ${txt}
 \t}"""
         }
 
-        String createRef(String n, String path, String desc, String type, Class clz, Boolean overrideDesc=null) {
+        String createRef(String n, String path, String desc, String type, Class clz, Boolean overrideDesc = null) {
             DebugUtils.Assert(!PRIMITIVE_TYPES.contains(clz), "${clz.name} is a primitive class!!!")
-
-            laterResolveClasses.add(clz)
+            if (!clz instanceof ErrorCode) {
+                laterResolveClasses.add(clz)
+            }
             imports.add("import ${clz.canonicalName}")
 
             return """\tref {
@@ -1526,7 +1536,13 @@ ${txt}
                             fieldStrings.add(createField(k, "", v.type.simpleName))
                         }
                     } else {
-                        fieldStrings.add(createRef("${k}", "${responseClass.canonicalName}.${v.name}", null, v.type.simpleName, v.type))
+                        String desc = null
+                        Boolean overrideDesc = null
+                        if(v.name == 'error'){
+                            desc = "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
+                            overrideDesc = false
+                        }
+                        fieldStrings.add(createRef("${k}", "${responseClass.canonicalName}.${v.name}", desc, v.type.simpleName, v.type,overrideDesc))
                     }
                 }
 
@@ -1661,7 +1677,7 @@ ${fieldStr}
                 cols.add("""\t\t\t\tcolumn {
 \t\t\t\t\tname "${af.name}"
 \t\t\t\t\tenclosedIn "${enclosedIn}"
-\t\t\t\t\tdesc "${desc == null  ? "" : desc}"
+\t\t\t\t\tdesc "${desc == null ? "" : desc}"
 \t\t\t\t\tlocation "${location}"
 \t\t\t\t\ttype "${af.type.simpleName}"
 \t\t\t\t\toptional ${ap == null ? true : !ap.required()}
@@ -1957,7 +1973,7 @@ ${paramString}
     def scanJavaSourceFiles() {
         ShellResult res = ShellUtils.runAndReturn("find ${rootPath} -name '*.java' -not -path '${rootPath}/sdk/*'")
         List<String> paths = res.stdout.split("\n")
-        paths = paths.findAll { !(it - "\n" - "\r" - "\t").trim().isEmpty()}
+        paths = paths.findAll { !(it - "\n" - "\r" - "\t").trim().isEmpty() }
 
         paths.each {
             def f = new File(it)
