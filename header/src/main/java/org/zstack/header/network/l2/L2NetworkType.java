@@ -4,6 +4,7 @@ import java.util.*;
 
 public class L2NetworkType {
     private static Map<String, L2NetworkType> types = Collections.synchronizedMap(new HashMap<String, L2NetworkType>());
+    private static Map<String, L2NetworkType> dtypes = Collections.synchronizedMap(new HashMap<String, L2NetworkType>());
     private final String typeName;
     private boolean exposed = true;
 
@@ -14,11 +15,13 @@ public class L2NetworkType {
     public L2NetworkType(String typeName) {
         this.typeName = typeName;
         types.put(typeName, this);
+        dtypes.put(typeName, this);
     }
 
     public L2NetworkType(String typeName, boolean exposed) {
-        this(typeName);
+        this.typeName = typeName;
         this.exposed = exposed;
+        types.put(typeName, this);
     }
 
     public boolean isExposed() {
@@ -60,6 +63,16 @@ public class L2NetworkType {
     public static Set<String> getAllTypeNames() {
         HashSet<String> exposedTypes = new HashSet<String>();
         for (L2NetworkType type : types.values()) {
+            if (type.isExposed()) {
+                exposedTypes.add(type.toString());
+            }
+        }
+        return exposedTypes;
+    }
+
+    public static Set<String> getAllDTypeNames() {
+        HashSet<String> exposedTypes = new HashSet<String>();
+        for (L2NetworkType type : dtypes.values()) {
             if (type.isExposed()) {
                 exposedTypes.add(type.toString());
             }

@@ -69,7 +69,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
     }
 
     private VxlanNetworkVO getSelf() {
-        return (VxlanNetworkVO) self;
+        return dbf.findByUuid(self.getUuid(), VxlanNetworkVO.class);
     }
 
     @Override
