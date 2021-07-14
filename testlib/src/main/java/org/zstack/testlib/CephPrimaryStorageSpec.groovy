@@ -122,7 +122,9 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new KVMAgentCommands.AgentResponse()
             }
 
-            simulator(CephPrimaryStorageBase.CHECK_HOST_STORAGE_CONNECTION_PATH) {
+            simulator(CephPrimaryStorageBase.CHECK_HOST_STORAGE_CONNECTION_PATH) { HttpEntity<String> e ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CheckHostStorageConnectionCmd)
+                assert cmd.hostUuid != null
                 return new KVMAgentCommands.AgentResponse()
             }
 
