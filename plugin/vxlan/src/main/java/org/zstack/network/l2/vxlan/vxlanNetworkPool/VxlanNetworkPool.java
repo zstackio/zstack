@@ -89,7 +89,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     }
 
     private VxlanNetworkPoolVO getSelf() {
-        return (VxlanNetworkPoolVO) self;
+        return dbf.findByUuid(self.getUuid(), VxlanNetworkPoolVO.class);
     }
 
     protected L2NetworkInventory getSelfInventory() {
@@ -238,9 +238,22 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         deleteHook(new Completion(msg) {
             @Override
             public void success() {
-                dbf.removeByPrimaryKey(msg.getL2NetworkUuid(), L2NetworkVO.class);
-                extpEmitter.afterDelete(inv);
-                bus.reply(msg, reply);
+                deleteL2Network(msg.getL2NetworkUuid(), msg.isForceDelete(), new Completion(msg) {
+                    @Override
+                    public void success() {
+                        dbf.removeByPrimaryKey(msg.getL2NetworkUuid(), L2NetworkVO.class);
+                        extpEmitter.afterDelete(inv);
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        dbf.removeByPrimaryKey(msg.getL2NetworkUuid(), L2NetworkVO.class);
+                        extpEmitter.afterDelete(inv);
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
             }
 
             @Override
@@ -535,15 +548,15 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         });
     }
 
-    private void handle(APIDeleteL2NetworkMsg msg) {
+    void deleteL2Network(String poolUuid, Boolean forceDelete, Completion completion1){
         List<String> uuids = Q.New(VxlanNetworkVO.class)
-                .select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.poolUuid, msg.getL2NetworkUuid()).listValues();
+                .select(VxlanNetworkVO_.uuid).eq(VxlanNetworkVO_.poolUuid, poolUuid).listValues();
         ErrorCodeList errList = new ErrorCodeList();
 
         new While<>(uuids).each((String uuid, WhileCompletion completion) -> {
             DeleteL2NetworkMsg dmsg = new DeleteL2NetworkMsg();
             dmsg.setUuid(uuid);
-            dmsg.setForceDelete(msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Enforcing ? true : false);
+            dmsg.setForceDelete(forceDelete);
             bus.makeTargetServiceIdByResourceUuid(dmsg, L2NetworkConstant.SERVICE_ID, dmsg.getL2NetworkUuid());
             bus.send(dmsg, new CloudBusCallBack(completion) {
                 @Override
@@ -555,17 +568,30 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     completion.done();
                 }
             });
-        }).run(new WhileDoneCompletion(msg) {
+        }).run(new WhileDoneCompletion(completion1) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (!errList.getCauses().isEmpty()) {
-                    APIDeleteL2NetworkEvent evt = new APIDeleteL2NetworkEvent(msg.getId());
-                    bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, msg.getL2NetworkUuid());
-                    evt.setError(errList.getCauses().get(0));
-                    bus.publish(evt);
+                    completion1.fail(errList.getCauses().get(0));
                 } else {
-                    superHandle((L2NetworkMessage) msg);
+                    completion1.success();
                 }
+            }
+        });
+    }
+
+    private void handle(APIDeleteL2NetworkMsg msg) {
+        deleteL2Network(msg.getUuid(), msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Enforcing, new Completion(msg){
+            @Override
+            public void success() {
+                superHandle((L2NetworkMessage) msg);
+            }
+            @Override
+            public void fail(ErrorCode errorCode) {
+                APIDeleteL2NetworkEvent evt = new APIDeleteL2NetworkEvent(msg.getId());
+                bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, msg.getL2NetworkUuid());
+                evt.setError(errorCode);
+                bus.publish(evt);
             }
         });
     }

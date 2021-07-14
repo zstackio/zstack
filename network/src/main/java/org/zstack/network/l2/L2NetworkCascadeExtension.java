@@ -186,6 +186,9 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
             SimpleQuery<L2NetworkVO> q = dbf.createQuery(L2NetworkVO.class);
             q.add(L2NetworkVO_.zoneUuid, SimpleQuery.Op.IN, zuuids);
+            List<String> dtypes = new ArrayList<String>();
+            dtypes.addAll(L2NetworkType.getAllDTypeNames());
+            q.add(L2NetworkVO_.type, SimpleQuery.Op.IN, dtypes);
             List<L2NetworkVO> l2vos = q.list();
             if (!l2vos.isEmpty()) {
                 ret = L2NetworkInventory.valueOf(l2vos);
@@ -206,10 +209,22 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                 public List<L2NetworkVO> call() {
                     String sql = "select d from L2NetworkVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
                             " r.resourceType = :rtype and r.accountUuid in (:auuids)";
+//                    and d.type in (:dtype)";
                     TypedQuery<L2NetworkVO> q = dbf.getEntityManager().createQuery(sql, L2NetworkVO.class);
                     q.setParameter("auuids", auuids);
                     q.setParameter("rtype", L2NetworkVO.class.getSimpleName());
-                    return q.getResultList();
+                    List<String> dtypes = new ArrayList<String>();
+                    dtypes.addAll(L2NetworkType.getAllDTypeNames());
+//                    q.setParameter("dtype", dtypes);
+                    List<L2NetworkVO> vos = q.getResultList();
+                    List<L2NetworkVO> ret = new ArrayList<>();
+                    vos.forEach(i -> {
+                        if(dtypes.contains(i.getType())){
+                            ret.add(i);
+                        }
+                    });
+                    if(ret.size() == 0) return vos;
+                    else return ret;
                 }
             }.call();
 
