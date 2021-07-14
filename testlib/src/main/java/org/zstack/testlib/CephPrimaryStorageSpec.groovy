@@ -3,7 +3,6 @@ package org.zstack.testlib
 import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
-import org.zstack.core.db.SQL
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
@@ -14,10 +13,8 @@ import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO_
-import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by xing5 on 2017/2/20.
  */
