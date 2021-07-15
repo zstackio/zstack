@@ -63,7 +63,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
     // A map from apiId to VM instance uuid
     private ConcurrentHashMap<String, ConcurrentHashMap<String, String>> vmApis = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, ConcurrentHashMap<String, Boolean>> vmsToSkip = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Set<String>> vmsToSkip = new ConcurrentHashMap<>();
     private List<Class<? extends Message>> skipVmTracerMessages = new ArrayList<>();
     private List<Class> skipVmTracerReplies = new ArrayList<>();
     private Map<String, Integer> vmInShutdownMap = new ConcurrentHashMap<>();
@@ -115,8 +115,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                 VmTracerCanonicalEvents.VmSkipTraceData data1
                         = (VmTracerCanonicalEvents.VmSkipTraceData) data;
                 if (data1.getVmUuid() != null) {
-                    vmsToSkip.putIfAbsent(data1.getManagementNodeId(), new ConcurrentHashMap<>());
-                    vmsToSkip.get(data1.getManagementNodeId()).putIfAbsent(data1.getVmUuid(), true);
+                    vmsToSkip.putIfAbsent(data1.getManagementNodeId(), ConcurrentHashMap.newKeySet());
+                    vmsToSkip.get(data1.getManagementNodeId()).add(data1.getVmUuid());
                 }
 
                 if (data1.getApiId() == null) {
@@ -197,7 +197,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         // vm state would still be sync to mn
         Set<String> vmsToSkipSetHostSide = new HashSet<>();
         if (vmsToSkip.get(Platform.getManagementServerId()) != null) {
-            vmsToSkipSetHostSide.addAll(vmsToSkip.get(Platform.getManagementServerId()).keySet());
+            vmsToSkipSetHostSide.addAll(vmsToSkip.get(Platform.getManagementServerId()));
         }
 
         // if the vm is not running on host when sync command executing but started as soon as possible
@@ -229,7 +229,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
                     if (vmsToSkip.get(Platform.getManagementServerId()) != null) {
                         // Get vms to skip after sync result returned.
-                        vmsToSkipSetHostSide.addAll(vmsToSkip.get(Platform.getManagementServerId()).keySet());
+                        vmsToSkipSetHostSide.addAll(vmsToSkip.get(Platform.getManagementServerId()));
                     }
 
                     Collection<String> vmUuidsInDeleteVmGC = DeleteVmGC.queryVmInGC(host.getUuid(), ret.getStates().keySet());
@@ -437,7 +437,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
     @Override
     public void nodeJoin(ManagementNodeInventory inv) {
-
+        vmApis.putIfAbsent(inv.getUuid(), new ConcurrentHashMap<>());
+        vmsToSkip.putIfAbsent(inv.getUuid(), ConcurrentHashMap.newKeySet());
     }
 
     @Override
@@ -448,11 +449,11 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
     @Override
     public void iAmDead(ManagementNodeInventory inv) {
-
     }
 
     @Override
     public void iJoin(ManagementNodeInventory inv) {
-
+        vmApis.putIfAbsent(inv.getUuid(), new ConcurrentHashMap<>());
+        vmsToSkip.putIfAbsent(inv.getUuid(), ConcurrentHashMap.newKeySet());
     }
 }

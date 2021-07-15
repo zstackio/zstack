@@ -271,24 +271,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             private String vmUuid;
             private boolean volumeStatusChanged = false;
             private boolean vmStateChanged = false;
-
-            public String getVmOriginState() {
-                return vmOriginState;
-            }
-
-            public void setVmOriginState(String vmOriginState) {
-                this.vmOriginState = vmOriginState;
-            }
-
-            private String vmOriginState;
-
-            public boolean isRootVolume() {
-                return isRootVolume;
-            }
-
-            public void setRootVolume(boolean rootVolume) {
-                isRootVolume = rootVolume;
-            }
+            private String vmOriginStateDrivenEvt;
 
             public OverlayMessage getMessage() {
                 return message;
@@ -328,10 +311,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("local-storage-%s-migrate-volume-%s-to-host-%s", msg.getPrimaryStorageUuid(), msg.getVolumeUuid(), msg.getDestHostUuid()));
         chain.then(new Flow() {
+            String __name__ = "change-volume-status-to-migrating";
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                String __name__ = "change-volume-status-to-migrating";
-
                 ChangeVolumeStatusMsg changeVolumeStatusMsg = new ChangeVolumeStatusMsg();
                 changeVolumeStatusMsg.setStatus(VolumeStatus.Migrating);
                 changeVolumeStatusMsg.setVolumeUuid(msg.getVolumeUuid());
@@ -368,25 +351,21 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 }
             }
         }).then(new Flow() {
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                String __name__ = "change-vm-state-to-volume-migrating";
+            String __name__ = "change-vm-state-to-volume-migrating";
 
+            @Override
+            public boolean skip(Map data) {
                 Tuple t = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid, VmInstanceVO_.state)
                         .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid())
                         .findTuple();
-                String vmUuid = t == null ? null : t.get(0, String.class);
-                String originStateEvent = t == null ? null : t.get(1, VmInstanceState.class).getDrivenEvent().toString();
+                struct.vmUuid = t == null ? null : t.get(0, String.class);
+                struct.vmOriginStateDrivenEvt = t == null ? null : t.get(1, VmInstanceState.class).getDrivenEvent().toString();
+                struct.isRootVolume = struct.vmUuid != null;
+                return !struct.isRootVolume;
+            }
 
-                if (vmUuid == null) {
-                    trigger.next();
-                    return;
-                }
-
-                struct.setRootVolume(true);
-                struct.setVmUuid(vmUuid);
-                struct.setVmOriginState(originStateEvent);
-
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
                 ChangeVmStateMsg cmsg = new ChangeVmStateMsg();
                 cmsg.setStateEvent(VmInstanceStateEvent.volumeMigrating.toString());
                 cmsg.setVmInstanceUuid(struct.getVmUuid());
@@ -409,7 +388,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             public void rollback(FlowRollback trigger, Map data) {
                 if (struct.isVmStateChanged()) {
                     ChangeVmStateMsg rollbackMsg = new ChangeVmStateMsg();
-                    rollbackMsg.setStateEvent(struct.getVmOriginState());
+                    rollbackMsg.setStateEvent(struct.vmOriginStateDrivenEvt);
                     rollbackMsg.setVmInstanceUuid(struct.getVmUuid());
                     bus.makeTargetServiceIdByResourceUuid(rollbackMsg, VmInstanceConstant.SERVICE_ID, struct.getVmUuid());
                     bus.send(rollbackMsg, new CloudBusCallBack(trigger) {
@@ -423,10 +402,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 }
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = "migrate-volume-on-local-storage";
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                String __name__ = "migrate-volume-on-local-storage";
-
                 MigrateVolumeOnLocalStorageMsg mmsg = new MigrateVolumeOnLocalStorageMsg();
                 mmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                 mmsg.setDestHostUuid(msg.getDestHostUuid());
@@ -447,7 +426,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     bus.makeTargetServiceIdByResourceUuid(vmsg, VmInstanceConstant.SERVICE_ID, struct.getVmUuid());
 
                     struct.setMessage(vmsg);
-                    struct.setRootVolume(true);
                 }
 
                 bus.send(struct.getMessage(), new CloudBusCallBack(struct.getMessage()) {
@@ -465,14 +443,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 });
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = "change-vm-state-to-volume-migrated";
+
+            @Override
+            public boolean skip(Map data) {
+                return !struct.isRootVolume;
+            }
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                String __name__ = "change-vm-state-to-volume-migrated";
-
-                if (!struct.isRootVolume) {
-                    trigger.next();
-                    return;
-                }
                 ChangeVmStateMsg cmsg = new ChangeVmStateMsg();
                 cmsg.setStateEvent(VmInstanceStateEvent.volumeMigrated.toString());
                 cmsg.setVmInstanceUuid(struct.getVmUuid());
@@ -487,10 +466,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 });
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = "change-volume-status-to-origin";
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                String __name__ = "change-volume-status-to-origin";
-
                 ChangeVolumeStatusMsg changeVolumeStatusMsg = new ChangeVolumeStatusMsg();
                 changeVolumeStatusMsg.setStatus(originStatus);
                 changeVolumeStatusMsg.setVolumeUuid(msg.getVolumeUuid());

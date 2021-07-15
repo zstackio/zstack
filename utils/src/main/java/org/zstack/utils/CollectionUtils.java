@@ -108,9 +108,9 @@ public class CollectionUtils {
         return new ArrayList<K>(new LinkedHashSet<K>(lst));
     }
 
-    public static <T> Predicate<T> distinctByKey(java.util.function.Function<? super T,Object> keyExtractor) {
-        Map<Object,Boolean> seen = new ConcurrentHashMap<>();
-        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
+    public static <T> Predicate<T> distinctByKey(java.util.function.Function<? super T, ?> keyExtractor) {
+        Set<Object> seen = ConcurrentHashMap.newKeySet();
+        return t -> seen.add(keyExtractor.apply(t));
     }
 
     @SuppressWarnings("unchecked")
