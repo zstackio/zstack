@@ -1578,6 +1578,7 @@ public class KVMAgentCommands {
         private boolean vmPortOff;
         private String vmCpuModel;
         private boolean emulateHyperV;
+        private String vendorId;
         private boolean additionalQmp;
         private boolean isApplianceVm;
         private String systemSerialNumber;
@@ -2008,6 +2009,14 @@ public class KVMAgentCommands {
 
         public void setAcpi(boolean acpi) {
             this.acpi = acpi;
+        }
+
+        public String getVendorId() {
+            return vendorId;
+        }
+
+        public void setVendorId(String vendorId) {
+            this.vendorId = vendorId;
         }
 
         @Override
