@@ -48,7 +48,7 @@ public class SourceClassMap {
 			put("org.zstack.billing.Spending", "org.zstack.sdk.Spending");
 			put("org.zstack.billing.SpendingDetails", "org.zstack.sdk.SpendingDetails");
 			put("org.zstack.billing.generator.BillingInventory", "org.zstack.sdk.BillingInventory");
-			put("org.zstack.billing.generator.baremetal2.BareMetalBillingInventory", "org.zstack.sdk.BareMetalBillingInventory");
+			put("org.zstack.billing.generator.baremetal2.BareMetal2BillingInventory", "org.zstack.sdk.BareMetal2BillingInventory");
 			put("org.zstack.billing.generator.pcidevice.PciDeviceBillingInventory", "org.zstack.sdk.PciDeviceBillingInventory");
 			put("org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthInBillingInventory", "org.zstack.sdk.PubIpVipBandwidthInBillingInventory");
 			put("org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthOutBillingInventory", "org.zstack.sdk.PubIpVipBandwidthOutBillingInventory");
@@ -58,8 +58,8 @@ public class SourceClassMap {
 			put("org.zstack.billing.generator.vm.memory.VmMemoryBillingInventory", "org.zstack.sdk.VmMemoryBillingInventory");
 			put("org.zstack.billing.generator.volume.data.DataVolumeBillingInventory", "org.zstack.sdk.DataVolumeBillingInventory");
 			put("org.zstack.billing.generator.volume.root.RootVolumeBillingInventory", "org.zstack.sdk.RootVolumeBillingInventory");
-			put("org.zstack.billing.spendingcalculator.baremetal2.BareMetal2VmSpending", "org.zstack.sdk.BareMetal2VmSpending");
-			put("org.zstack.billing.spendingcalculator.baremetal2.BareMetal2VmSpendingDetails", "org.zstack.sdk.BareMetal2VmSpendingDetails");
+			put("org.zstack.billing.spendingcalculator.baremetal2.BareMetal2Spending", "org.zstack.sdk.BareMetal2Spending");
+			put("org.zstack.billing.spendingcalculator.baremetal2.BareMetal2SpendingDetails", "org.zstack.sdk.BareMetal2SpendingDetails");
 			put("org.zstack.billing.spendingcalculator.baremetal2.PriceBareMetal2ChassisOfferingRefInventory", "org.zstack.sdk.PriceBareMetal2ChassisOfferingRefInventory");
 			put("org.zstack.billing.spendingcalculator.pcidevice.PciDeviceSpending", "org.zstack.sdk.PciDeviceSpending");
 			put("org.zstack.billing.spendingcalculator.pcidevice.PciDeviceSpendingInventory", "org.zstack.sdk.PciDeviceSpendingInventory");
@@ -659,6 +659,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BackupMode", "org.zstack.header.storage.backup.BackupMode");
 			put("org.zstack.sdk.BackupStorageExternalBackupInfo", "org.zstack.externalbackup.BackupStorageExternalBackupInfo");
 			put("org.zstack.sdk.BackupStorageInventory", "org.zstack.header.storage.backup.BackupStorageInventory");
+			put("org.zstack.sdk.BareMetal2BillingInventory", "org.zstack.billing.generator.baremetal2.BareMetal2BillingInventory");
 			put("org.zstack.sdk.BareMetal2ChassisDiskInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisDiskInventory");
 			put("org.zstack.sdk.BareMetal2ChassisInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisInventory");
 			put("org.zstack.sdk.BareMetal2ChassisNicInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisNicInventory");
@@ -670,9 +671,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BareMetal2IpmiChassisInventory", "org.zstack.baremetal2.chassis.ipmi.BareMetal2IpmiChassisInventory");
 			put("org.zstack.sdk.BareMetal2ProvisionNetworkInventory", "org.zstack.baremetal2.provisionnetwork.BareMetal2ProvisionNetworkInventory");
 			put("org.zstack.sdk.BareMetal2ProvisionNetworkIpCapacity", "org.zstack.baremetal2.provisionnetwork.BareMetal2ProvisionNetworkIpCapacity");
-			put("org.zstack.sdk.BareMetal2VmSpending", "org.zstack.billing.spendingcalculator.baremetal2.BareMetal2VmSpending");
-			put("org.zstack.sdk.BareMetal2VmSpendingDetails", "org.zstack.billing.spendingcalculator.baremetal2.BareMetal2VmSpendingDetails");
-			put("org.zstack.sdk.BareMetalBillingInventory", "org.zstack.billing.generator.baremetal2.BareMetalBillingInventory");
+			put("org.zstack.sdk.BareMetal2Spending", "org.zstack.billing.spendingcalculator.baremetal2.BareMetal2Spending");
+			put("org.zstack.sdk.BareMetal2SpendingDetails", "org.zstack.billing.spendingcalculator.baremetal2.BareMetal2SpendingDetails");
 			put("org.zstack.sdk.BaremetalBondingInventory", "org.zstack.header.baremetal.network.BaremetalBondingInventory");
 			put("org.zstack.sdk.BaremetalChassisInventory", "org.zstack.header.baremetal.chassis.BaremetalChassisInventory");
 			put("org.zstack.sdk.BaremetalException", "org.zstack.header.baremetal.BaremetalException");

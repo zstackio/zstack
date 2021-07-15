@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2VmUsageVO`
+CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2UsageVO`
 (
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `bareMetal2ChassisOfferingUuid` varchar(32) NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS  `zstack`.`PriceBareMetal2ChassisOfferingRefVO`
     CONSTRAINT `fkPriceBareMetal2ChassisOfferingRefVOBareMetal2ChassisOfferingVO` FOREIGN KEY (`bareMetal2ChassisOfferingUuid`) REFERENCES `zstack`.`BareMetal2ChassisOfferingVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `zstack`.`BareMetalUsageHistoryVO`
+CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2UsageHistoryVO`
 (
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `bareMetal2ChassisOfferingUuid` varchar(32) NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetalUsageHistoryVO`
     KEY `idxBareMetal2VmUsageVOaccountUuid` (`accountUuid`,`dateInLong`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `BareMetalBillingVO`
+CREATE TABLE IF NOT EXISTS `BareMetal2BillingVO`
 (
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `bareMetal2ChassisOfferingUUid` varchar(32) NOT NULL,

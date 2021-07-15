@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class BareMetal2VmSpending extends org.zstack.sdk.SpendingDetails {
+public class BareMetal2Spending extends org.zstack.sdk.SpendingDetails {
 
     public java.util.List bareMetal2Inventory;
     public void setBareMetal2Inventory(java.util.List bareMetal2Inventory) {

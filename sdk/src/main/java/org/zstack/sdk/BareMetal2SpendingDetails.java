@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class BareMetal2VmSpendingDetails  {
+public class BareMetal2SpendingDetails  {
 
     public long startTime;
     public void setStartTime(long startTime) {
