@@ -1,6 +1,7 @@
 package org.zstack.compute.vm;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.cluster.ClusterVO;
@@ -71,4 +72,8 @@ public class VmGlobalConfig {
 
     @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig UNKNOWN_GC_INTERVAL = new GlobalConfig(CATEGORY, "set.unknown.gc.interval");
+
+    @GlobalConfigDef(defaultValue = "Microsoft Hv", type = String.class, description = "set vendor_id")
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    public static GlobalConfig VENDOR_ID = new GlobalConfig(CATEGORY, "vendorId");
 }
