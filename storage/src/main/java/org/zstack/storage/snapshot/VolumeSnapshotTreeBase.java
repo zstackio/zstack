@@ -54,6 +54,8 @@ import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtens
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTree.SnapshotLeaf;
 import org.zstack.header.storage.snapshot.group.*;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -61,6 +63,8 @@ import org.zstack.header.volume.*;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
+import org.zstack.storage.volume.VolumeSystemTags;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
@@ -86,6 +90,9 @@ public class VolumeSnapshotTreeBase {
 
     @Autowired
     private StorageTrash trash;
+
+    @Autowired
+    private TagManager tagMgr;
 
     static {
         allowedStatus.addState(VolumeSnapshotStatus.Ready,
@@ -687,6 +694,7 @@ public class VolumeSnapshotTreeBase {
                         cmsg.setSnapshot(currentLeaf.getInventory());
                         cmsg.setVolumeUuid(msg.getVolume().getUuid());
                         cmsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
+                        cmsg.setSystemTags(msg.getSystemTags());
                         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, cmsg.getPrimaryStorageUuid());
                         bus.send(cmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -712,11 +720,15 @@ public class VolumeSnapshotTreeBase {
                             dmsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
                             dmsg.setInstallPath(installPath);
                             dmsg.setBitsType(VolumeVO.class.getSimpleName());
-                            dmsg.setBitsUuid(msg.getVolumeUuid());
+                            dmsg.setBitsUuid(msg.getVolume().getUuid());
                             bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, dmsg.getPrimaryStorageUuid());
                             bus.send(dmsg);
                         }
 
+                        if (msg.hasSystemTag(VolumeSystemTags.FAST_CREATE::isMatch)) {
+                            String toDeleteTag = VolumeSnapshotTagHelper.getBackingVolumeTag(msg.getVolume().getUuid());
+                            tagMgr.deleteSystemTag(toDeleteTag, msg.getSnapshotUuid(), VolumeSnapshotVO.class.getSimpleName(), null);
+                        }
                         trigger.rollback();
                     }
                 });

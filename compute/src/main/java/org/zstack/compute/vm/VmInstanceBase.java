@@ -2927,6 +2927,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmBootOrderMsg) msg);
         } else if (msg instanceof APISetVmClockTrackMsg) {
             handle((APISetVmClockTrackMsg) msg);
+        } else if (msg instanceof APISetVmBootVolumeMsg) {
+            handle((APISetVmBootVolumeMsg) msg);
         } else if (msg instanceof APISetVmConsolePasswordMsg) {
             handle((APISetVmConsolePasswordMsg) msg);
         } else if (msg instanceof APISetVmSoundTypeMsg) {
@@ -3415,6 +3417,71 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
+    }
+
+    private void handle(APISetVmBootVolumeMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                APISetVmBootVolumeEvent event = new APISetVmBootVolumeEvent(msg.getId());
+                setBootVolume(msg, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        refreshVO();
+                        event.setInventory(getSelfInventory());
+                        bus.publish(event);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        event.setError(errorCode);
+                        bus.publish(event);
+                        chain.next();
+                    }
+                });
+
+            }
+
+            @Override
+            public String getName() {
+                return "set-vm-boot-volume";
+            }
+        });
+    }
+
+    private void setBootVolume(APISetVmBootVolumeMsg msg, Completion completion) {
+        refreshVO();
+        if (msg.getVolumeUuid().equals(self.getRootVolumeUuid())) {
+            completion.success();
+            return;
+        }
+
+        ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
+        if (allowed != null) {
+            completion.fail(allowed);
+            return;
+        }
+
+        SetVmBootVolumeMsg smsg = new SetVmBootVolumeMsg();
+        smsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        smsg.setVolumeUuid(msg.getVolumeUuid());
+        bus.makeTargetServiceIdByResourceUuid(smsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+        bus.send(smsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                } else {
+                    completion.success();
+                }
+            }
+        });
     }
 
     private void handle(APISetVmConsolePasswordMsg msg) {

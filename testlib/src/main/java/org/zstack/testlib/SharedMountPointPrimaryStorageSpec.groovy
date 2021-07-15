@@ -41,6 +41,10 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new KvmBackend.AgentRsp()
             }
 
+            simulator(KvmBackend.CREATE_VOLUME_WITH_BACKING_PATH) {
+                return new KvmBackend.AgentRsp()
+            }
+
             simulator(KvmBackend.DELETE_BITS_PATH) {
                 return new KvmBackend.AgentRsp()
             }
@@ -119,6 +123,10 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
 
             simulator(KvmBackend.CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
                 return new KvmBackend.AgentRsp()
+            }
+
+            simulator(KvmBackend.HARD_LINK_VOLUME) {
+                return new KvmBackend.LinkVolumeNewDirRsp()
             }
 
             simulator(KvmBackend.GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH) {

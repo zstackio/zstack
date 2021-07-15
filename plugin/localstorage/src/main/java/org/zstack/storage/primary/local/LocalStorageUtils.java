@@ -122,6 +122,7 @@ public class LocalStorageUtils {
 
         }
 
+        logCapacityChange(psUuid, hostUuid, ref.getAvailableCapacity(), avail);
         ref.setAvailableCapacity(avail);
         dbf.getEntityManager().merge(ref);
     }
@@ -153,6 +154,7 @@ public class LocalStorageUtils {
             ext.beforeReturnLocalStorageCapacityOnHost(s);
         }
 
+        logCapacityChange(self.getUuid(), hostUuid, ref.getAvailableCapacity(), ref.getAvailableCapacity() + s.getSize());
         ref.setAvailableCapacity(ref.getAvailableCapacity() + s.getSize());
         dbf.getEntityManager().merge(ref);
     }
@@ -180,5 +182,23 @@ public class LocalStorageUtils {
             }
         }.execute();
         return huuid;
+    }
+
+    public static void logCapacityChange(String psUuid, String hostUuid, long before, long after) {
+        if (logger.isTraceEnabled()) {
+            StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+            int index = 0;
+            String fileName = LocalStorageUtils.class.getSimpleName() + ".java";
+            for (int i = 0; i < stackTraceElements.length; i++) {
+                if (fileName.equals(stackTraceElements[i].getFileName())) {
+                    index = i;
+                }
+            }
+            StackTraceElement caller = stackTraceElements[index + 1];
+            logger.trace(String.format("[Local Storage Capacity] %s:%s:%s changed the capacity of the local storage[uuid:%s], host[uuid:%s] as:\n" +
+                            "available: %s --> %s\n",
+                    caller.getFileName(), caller.getMethodName(), caller.getLineNumber(), psUuid, hostUuid,
+                    before, after));
+        }
     }
 }

@@ -5,10 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.MarshalReplyMessageExtensionPoint;
-import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -32,6 +29,8 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
@@ -67,6 +66,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.storage.snapshot.VolumeSnapshotTagHelper.getBackingVolumeTag;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -97,6 +97,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private PluginRegistry pluginRgty;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private EventFacade evtf;
 
     private void passThrough(VolumeSnapshotMessage msg) {
         VolumeSnapshotVO vo = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
@@ -1052,6 +1054,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 }
             }
         }, VolumeCreateSnapshotMsg.class, CreateVolumeSnapshotMsg.class);
+
+        handleVolumeDeletionEvent();
         return true;
     }
 
@@ -1095,6 +1099,29 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         List<Object> invs = ZQL.fromString(zql).getSingleResultWithSession(session).inventories;
         return invs != null ? invs.stream().map(it -> ((VolumeSnapshotInventory) it).getUuid()).collect(Collectors.toSet())
                 : Collections.emptySet();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void volumePreExpunge(VolumeInventory volume) {
+        List<String> snapUuids = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid)
+                .eq(VolumeSnapshotVO_.volumeUuid, volume.getUuid())
+                .listValues();
+
+        if (snapUuids.isEmpty()) {
+            return;
+        }
+
+        String tagFmt = getBackingVolumeTag("%");
+        List<String> protectedSnapUuids = Q.New(SystemTagVO.class).select(SystemTagVO_.resourceUuid)
+                .eq(SystemTagVO_.resourceType, VolumeSnapshotVO.class.getSimpleName())
+                .in(SystemTagVO_.resourceUuid, snapUuids)
+                .like(SystemTagVO_.tag, tagFmt)
+                .listValues();
+        if (!protectedSnapUuids.isEmpty()) {
+            throw new OperationFailureException(operr("volume snapshot[uuids:%s] is protected, " +
+                    "do not allow to delete volume.", new HashSet<>(protectedSnapUuids).toString()));
+        }
     }
 
     @Override
@@ -1156,6 +1183,22 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 }
 
                 completion.success();
+            }
+        });
+    }
+
+    private void handleVolumeDeletionEvent() {
+        evtf.onLocal(VolumeCanonicalEvents.VOLUME_STATUS_CHANGED_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                VolumeCanonicalEvents.VolumeStatusChangedData d = (VolumeCanonicalEvents.VolumeStatusChangedData) data;
+                if (Q.New(VolumeVO.class).eq(VolumeVO_.uuid, d.getVolumeUuid()).isExists()) {
+                    return;
+                }
+
+                String toDeleteTag = getBackingVolumeTag(d.getVolumeUuid());
+                SQL.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, VolumeSnapshotVO.class.getSimpleName())
+                        .eq(SystemTagVO_.tag, toDeleteTag).delete();
             }
         });
     }

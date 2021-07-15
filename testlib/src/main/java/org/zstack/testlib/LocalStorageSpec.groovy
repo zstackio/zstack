@@ -123,6 +123,10 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(LocalStorageKvmBackend.CREATE_VOLUME_WITH_BACKING_PATH) {
+                return new LocalStorageKvmBackend.CreateVolumeWithBackingRsp()
+            }
+
             simulator(LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH) {
                 return new LocalStorageKvmBackend.CreateEmptyVolumeRsp()
             }
@@ -212,6 +216,11 @@ class LocalStorageSpec extends PrimaryStorageSpec {
 
             simulator(LocalStorageKvmBackend.CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
                 return new LocalStorageKvmBackend.AgentResponse()
+            }
+
+
+            simulator(LocalStorageKvmBackend.HARD_LINK_VOLUME) {
+                return new LocalStorageKvmBackend.LinkVolumeNewDirRsp()
             }
 
             simulator(LocalStorageKvmBackend.GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH) {

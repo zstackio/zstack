@@ -654,16 +654,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
             public void setup() {
                 flow(new Flow() {
                     String __name__ = "reserve-capacity-on-dest-host";
+                    boolean success = false;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         reserveCapacityOnHost(msg.getDestHostUuid(), requiredSize, self.getUuid());
+                        success = true;
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        returnStorageCapacityToHost(msg.getDestHostUuid(), requiredSize);
+                        if (success) {
+                            returnStorageCapacityToHost(msg.getDestHostUuid(), requiredSize);
+                        }
                         trigger.rollback();
                     }
                 });
@@ -1285,17 +1289,19 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     String __name__ = "reserve-capacity-on-host";
 
                     Long size;
+                    boolean success = false;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         size = reply.getSize();
                         reserveCapacityOnHost(hostUuid, size, self.getUuid());
+                        success = true;
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (size != null) {
+                        if (success) {
                             returnStorageCapacityToHost(hostUuid, size);
                         }
 
@@ -1887,6 +1893,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             ext.beforeReturnLocalStorageCapacityOnHost(s);
         }
 
+        LocalStorageUtils.logCapacityChange(self.getUuid(), href.getHostUuid(), href.getAvailableCapacity(), href.getAvailableCapacity() + s.getSize());
         href.setAvailableCapacity(href.getAvailableCapacity() + s.getSize());
         dbf.getEntityManager().merge(href);
     }
@@ -2981,6 +2988,24 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }
 
         bus.reply(msg, r);
+    }
+
+    @Override
+    protected void handle(ChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory factory = getHypervisorBackendFactoryByResourceUuid(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName());
+        factory.getHypervisorBackend(self).handle(msg, new ReturnValueCompletion<ChangeVolumeTypeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(ChangeVolumeTypeOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                ChangeVolumeTypeOnPrimaryStorageReply r = new ChangeVolumeTypeOnPrimaryStorageReply();
+                r.setError(errorCode);
+                bus.reply(msg, r);
+            }
+        });
     }
 
     public static class LocalStoragePhysicalCapacityUsage extends PrimaryStorageBase.PhysicalCapacityUsage {
