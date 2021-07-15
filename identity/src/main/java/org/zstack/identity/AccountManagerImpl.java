@@ -799,8 +799,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                         .param("type", AccountType.Normal)
                         .limit(1000)
                         .paginate(count, (List<String> normalAccounts) -> {
+                            List<QuotaVO> needPersistQuotas = new ArrayList<>();
                             normalAccounts.parallelStream().forEach(nA -> {
-                                List<QuotaVO> needPersistQuotas = new ArrayList<>();
                                 List<String> existingQuota = q(QuotaVO.class).select(QuotaVO_.name).eq(QuotaVO_.identityUuid, nA).listValues();
                                 for (Map.Entry<String, Long> e : defaultQuota.entrySet()) {
                                     String rtype = e.getKey();
@@ -822,9 +822,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                                         logger.trace(String.format("create default quota[name: %s, value: %s] global config", rtype, value));
                                     }
                                 }
-
-                                needPersistQuotas.forEach(this::persist);
                             });
+                            needPersistQuotas.forEach(this::persist);
                         });
             }
         }.execute();
