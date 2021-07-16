@@ -85,12 +85,11 @@ docpremium() {
 }
 
 check() {
-    if [ -d premium/test-premium ]; then
-        cd premium/test-premium
-    else
-        cd test
+    if [ ! -d premium/test-premium ]; then
+        echo "this command needs premium source code"
     fi
-    $MVNTest -Dtest=TestGenerateDocTemplate -Drepair=true
+    cd premium/test-premium
+    $MVNTest -Dtest=BasicCheckTestSuite -Drepair=true
     cd - > /dev/null
 }
 
@@ -236,6 +235,8 @@ run_profile() {
 	doc
     elif test x$1 = x'docpremium'; then
         docpremium
+    elif test x$1 = x'check'; then
+        check
     elif test x$1 = x'md'; then
         md
     elif test x$1 = x'mdpremium'; then
