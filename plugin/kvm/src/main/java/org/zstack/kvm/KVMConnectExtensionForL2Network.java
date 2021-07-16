@@ -94,7 +94,12 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
                 List<BatchCheckNetworkPhysicalInterfaceMsg> batchCheckNetworkPhysicalInterfaceMsgs = new ArrayList<>();
 
                 int step = 100;
-                int count = l2Networks.size() / 100 + 1;
+                int size = l2Networks.size();
+                int count = size / 100;
+                if (size - count * 100 > 0) {
+                    count++;
+                }
+
                 for (int i = 0; i < count; i++) {
                     int end = (i + 1) * step - 1;
                     List<String> interfaces = l2Networks.subList(i * step, Math.min(end, l2Networks.size() - 1))
