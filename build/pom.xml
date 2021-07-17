@@ -424,6 +424,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>ceph-ha-plugin</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>routeProtocol</artifactId>
                     <version>${project.version}</version>
                 </dependency>

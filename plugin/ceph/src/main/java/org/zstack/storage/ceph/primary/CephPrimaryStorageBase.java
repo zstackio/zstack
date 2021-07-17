@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph.primary;
 
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
@@ -275,6 +276,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class InitRsp extends AgentResponse {
         String fsid;
         String userKey;
+        String manufacturer;
 
         public String getUserKey() {
             return userKey;
@@ -290,6 +292,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setFsid(String fsid) {
             this.fsid = fsid;
+        }
+
+        public String getManufacturer() {
+            return manufacturer;
+        }
+
+        public void setManufacturer(String manufacturer) {
+            this.manufacturer = manufacturer;
         }
     }
 
@@ -813,6 +823,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         @NoLogging(type = NoLogging.Type.Uri)
         public List<String> monUrls;
         public String strategy;
+        public String manufacturer;
     }
 
     public static class KvmCancelSelfFencerCmd extends AgentCommand {
@@ -3242,6 +3253,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 getSelf().setUserKey(ret.userKey);
                                 self = dbf.updateAndRefresh(self);
 
+                                if (!Strings.isEmpty(ret.manufacturer)) {
+                                    SystemTagCreator creator = CephSystemTags.CEPH_MANUFACTURER.newSystemTagCreator(self.getUuid());
+                                    creator.setTagByTokens(map(e(CephSystemTags.CEPH_MANUFACTURER_TOKEN, ret.manufacturer)));
+                                    creator.inherent = true;
+                                    creator.ignoreIfExisting = true;
+                                    creator.recreate = true;
+                                    creator.create();
+                                }
+
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
                                 CephCapacity cephCapacity = new CephCapacity(ret.fsid, ret);
                                 updater.update(cephCapacity, true);
@@ -3575,11 +3595,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private void handle(APIUpdateCephPrimaryStorageMonMsg msg) {
         final APIUpdateCephPrimaryStorageMonEvent evt = new APIUpdateCephPrimaryStorageMonEvent(msg.getId());
         CephPrimaryStorageMonVO monvo = dbf.findByUuid(msg.getMonUuid(), CephPrimaryStorageMonVO.class);
+        boolean monParameterChanged = false;
         if (msg.getHostname() != null) {
             monvo.setHostname(msg.getHostname());
+            monParameterChanged = true;
         }
         if (msg.getMonPort() != null && msg.getMonPort() > 0 && msg.getMonPort() <= 65535) {
             monvo.setMonPort(msg.getMonPort());
+            monParameterChanged = true;
         }
         if (msg.getSshPort() != null && msg.getSshPort() > 0 && msg.getSshPort() <= 65535) {
             monvo.setSshPort(msg.getSshPort());
@@ -3593,6 +3616,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         dbf.update(monvo);
         evt.setInventory(CephPrimaryStorageInventory.valueOf((dbf.reload(getSelf()))));
         bus.publish(evt);
+        if (monParameterChanged) {
+            for(CephPrimaryStorageMonAfterModifiedExtensionPoint ext : pluginRgty.getExtensionList(CephPrimaryStorageMonAfterModifiedExtensionPoint.class)) {
+                ext.afterModified(getSelf());
+            }
+        }
     }
 
     private void handle(final APIAddMonToCephPrimaryStorageMsg msg) {
@@ -3740,6 +3768,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     public void handle(Map data) {
                         evt.setInventory(CephPrimaryStorageInventory.valueOf(dbf.reload(getSelf())));
                         bus.publish(evt);
+
+                        for(CephPrimaryStorageMonAfterModifiedExtensionPoint ext : pluginRgty.getExtensionList(CephPrimaryStorageMonAfterModifiedExtensionPoint.class)) {
+                            ext.afterModified(getSelf());
+                        }
                     }
                 });
 
@@ -3996,6 +4028,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
         cmd.strategy = param.getStrategy();
 
+        if (CephSystemTags.CEPH_MANUFACTURER.hasTag(self.getUuid())) {
+            cmd.manufacturer = CephSystemTags.CEPH_MANUFACTURER.getTokenByResourceUuid(self.getUuid(), CephSystemTags.CEPH_MANUFACTURER_TOKEN);
+        }
+
         final SetupSelfFencerOnKvmHostReply reply = new SetupSelfFencerOnKvmHostReply();
         new KvmCommandSender(param.getHostUuid()).send(cmd, KVM_HA_SETUP_SELF_FENCER, new KvmCommandFailureChecker() {
             @Override
@@ -4102,25 +4138,73 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
+    private static class CheckHostStorageConnectionCmdBuilder {
+        private String uuid;
+        private List<String> poolNames;
+        private String hostUuid;
+        private String userKey;
+        private List<String> monUrls;
+        private String fsId;
+
+        public CheckHostStorageConnectionCmdBuilder uuid(String uuid) {
+            this.uuid = uuid;
+            return this;
+        }
+
+        public CheckHostStorageConnectionCmdBuilder poolNames(List<String> poolNames) {
+            this.poolNames = poolNames;
+            return this;
+        }
+
+        public CheckHostStorageConnectionCmdBuilder hostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+            return this;
+        }
+
+        public CheckHostStorageConnectionCmdBuilder userKey(String userKey) {
+            this.userKey = userKey;
+            return this;
+        }
+
+        public CheckHostStorageConnectionCmdBuilder monUrls(List<String> monUrls) {
+            this.monUrls = monUrls;
+            return this;
+        }
+
+        public CheckHostStorageConnectionCmdBuilder fsId(String fsId) {
+            this.fsId = fsId;
+            return this;
+        }
+
+        public CheckHostStorageConnectionCmd build() {
+            final CheckHostStorageConnectionCmd cmd = new CheckHostStorageConnectionCmd();
+            cmd.uuid = this.uuid;
+            cmd.fsId = this.fsId;
+            cmd.userKey = this.userKey;
+            cmd.poolNames = this.poolNames;
+            cmd.monUrls = this.monUrls;
+            cmd.hostUuid = this.hostUuid;
+            return cmd;
+        }
+    }
+
     private void checkHostStorageConnection(List<String> hostUuids, final Completion completion) {
-        final CheckHostStorageConnectionCmd cmd = new CheckHostStorageConnectionCmd();
-        cmd.uuid = self.getUuid();
-        cmd.fsId = getSelf().getFsid();
-        cmd.userKey = getSelf().getUserKey();
-        cmd.poolNames = Q.New(CephPrimaryStoragePoolVO.class)
-                .select(CephPrimaryStoragePoolVO_.poolName)
-                .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Root.toString())
-                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
-                .listValues();
-        cmd.monUrls = CollectionUtils.transformToList(getSelf().getMons(), (Function<String, CephPrimaryStorageMonVO>) arg -> String.format("%s:%s", arg.getMonAddr(), arg.getMonPort()));
-        cmd.setUserKey(getSelf().getUserKey());
-        String suuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(self.getUuid(), CephSystemTags.KVM_SECRET_UUID_TOKEN);
-        DebugUtils.Assert(suuid != null, String.format("cannot find system tag[%s] for ceph primary storage[uuid:%s]", CephSystemTags.KVM_SECRET_UUID.getTagFormat(), self.getUuid()));
-        cmd.setUuid(suuid);
+        CheckHostStorageConnectionCmdBuilder builder = new CheckHostStorageConnectionCmdBuilder();
+        builder.uuid(self.getUuid())
+                .fsId(getSelf().getFsid())
+                .userKey(getSelf().getUserKey())
+                .poolNames(Q.New(CephPrimaryStoragePoolVO.class)
+                        .select(CephPrimaryStoragePoolVO_.poolName)
+                        .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Root.toString())
+                        .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
+                        .listValues())
+                .monUrls(CollectionUtils.transformToList(getSelf().getMons(), (Function<String, CephPrimaryStorageMonVO>) arg
+                        -> String.format("%s:%s", arg.getMonAddr(), arg.getMonPort())));
 
         List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids, (Function<KVMHostAsyncHttpCallMsg, String>) huuid -> {
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-            msg.setCommand(cmd);
+            builder.hostUuid(huuid);
+            msg.setCommand(builder.build());
             msg.setPath(CHECK_HOST_STORAGE_CONNECTION_PATH);
             msg.setHostUuid(huuid);
             msg.setNoStatusCheck(true);
