@@ -19,4 +19,12 @@ public class GetVmGuestToolsInfoResult {
         return this.status;
     }
 
+    public java.util.Map features;
+    public void setFeatures(java.util.Map features) {
+        this.features = features;
+    }
+    public java.util.Map getFeatures() {
+        return this.features;
+    }
+
 }

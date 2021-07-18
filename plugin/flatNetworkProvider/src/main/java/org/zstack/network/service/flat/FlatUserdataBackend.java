@@ -6,6 +6,7 @@ import org.zstack.compute.vm.UserdataBuilder;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.gc.GC;
@@ -27,7 +28,6 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceProviderVO;
@@ -67,6 +67,8 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     private ApiTimeoutManager timeoutMgr;
     @Autowired
     private FlatDhcpBackend dhcpBackend;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public static final String APPLY_USER_DATA = "/flatnetworkprovider/userdata/apply";
     public static final String BATCH_APPLY_USER_DATA = "/flatnetworkprovider/userdata/batchapply";
@@ -193,6 +195,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     }
                     to.port = UserdataGlobalProperty.HOST_PORT;
                     to.l3NetworkUuid = l.l3Uuid;
+                    to.agentConfig = new HashMap<>();
+                    for (BeforeUpdateUserdataExtensionPoint ext : pluginRgty.getExtensionList(BeforeUpdateUserdataExtensionPoint.class)) {
+                        ext.beforeApplyUserdata(vmuuid, to);
+                    }
                     tos.add(to);
                 }
 
@@ -451,6 +457,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         public String bridgeName;
         public String namespaceName;
         public String l3NetworkUuid;
+        public Map<String, String> agentConfig;
         public int port;
     }
 
@@ -581,6 +588,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         uto.namespaceName = FlatDhcpBackend.makeNamespaceName(uto.bridgeName, struct.getL3NetworkUuid());
                         uto.port = UserdataGlobalProperty.HOST_PORT;
                         uto.l3NetworkUuid = struct.getL3NetworkUuid();
+                        uto.agentConfig = new HashMap<>();
+                        for (BeforeUpdateUserdataExtensionPoint ext : pluginRgty.getExtensionList(BeforeUpdateUserdataExtensionPoint.class)) {
+                            ext.beforeApplyUserdata(struct.getVmUuid(), uto);
+                        }
                         cmd.userdata = uto;
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
