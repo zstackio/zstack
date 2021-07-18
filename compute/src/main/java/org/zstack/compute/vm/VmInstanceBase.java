@@ -59,6 +59,7 @@ import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
@@ -73,7 +74,6 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.enterprise.inject.New;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -118,6 +118,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     private VmNicManager nicManager;
     @Autowired
     protected L3NetworkManager l3nm;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
@@ -391,6 +393,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((StartVmInstanceMsg) msg);
         } else if (msg instanceof StopVmInstanceMsg) {
             handle((StopVmInstanceMsg) msg);
+        } else if (msg instanceof ExecuteCrashStrategyMsg) {
+            handle((ExecuteCrashStrategyMsg) msg);
         } else if (msg instanceof RebootVmInstanceMsg) {
             handle((RebootVmInstanceMsg) msg);
         } else if (msg instanceof ChangeVmStateMsg) {
@@ -464,6 +468,125 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.dealWithUnknownMessage(msg);
             }
         }
+    }
+
+    private void handle(ExecuteCrashStrategyMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getName() {
+                return String.format("execute-crash-strategy-vm-%s", self.getUuid());
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                executeCrashStrategy(msg, chain);
+            }
+        });
+
+    }
+
+    private void executeCrashStrategy(final ExecuteCrashStrategyMsg msg, final SyncTaskChain chain) {
+        executeCrashStrategy(msg, new Completion(chain) {
+            @Override
+            public void success() {
+                ExecuteCrashStrategyReply reply = new ExecuteCrashStrategyReply();
+                VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+                reply.setInventory(inv);
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                ExecuteCrashStrategyReply reply = new ExecuteCrashStrategyReply();
+                reply.setError(err(VmErrors.REBOOT_ERROR, errorCode, errorCode.getDetails()));
+                bus.reply(msg, reply);
+                chain.next();
+            }
+        });
+    }
+
+    protected void executeCrashStrategy(final Message fmsg, final Completion completion) {
+        ExecuteCrashStrategyMsg msg = (ExecuteCrashStrategyMsg) fmsg;
+        VmInstanceInventory vmInv = VmInstanceInventory.valueOf(dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class));
+        String crashStrategy = rcf.getResourceConfigValue(VmGlobalConfig.VM_CRASH_STRATEGY, msg.getVmInstanceUuid(), String.class);
+        logger.debug(String.format("vm[uuid:%s] crashed, execute crash strategy: %s", msg.getVmInstanceUuid(), crashStrategy));
+
+        //check VM state again
+        CheckVmStateOnHypervisorMsg cmsg = new CheckVmStateOnHypervisorMsg();
+        cmsg.setVmInstanceUuids(Collections.singletonList(vmInv.getUuid()));
+        cmsg.setHostUuid(vmInv.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, vmInv.getHostUuid());
+        bus.send(cmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(operr("failed to check state of the vm[uuid:%s] on the host[uuid:%s], %s", vmInv.getUuid(), vmInv.getHostUuid(), reply.getError()));
+                    return;
+                }
+
+                CheckVmStateOnHypervisorReply r = reply.castReply();
+                String state = r.getStates().get(vmInv.getUuid());
+                if (state == null) {
+                    completion.fail(operr("got an unrecognized state of the vm[uuid:%s] on the host[uuid:%s]", vmInv.getUuid(), vmInv.getHostUuid()));
+                    return;
+                }
+                if (!state.equals(VmInstanceState.Crashed.toString())) {
+                    completion.success();
+                    return;
+                }
+                changeVmStateInDb(VmInstanceStateEvent.crashed);
+                logger.info(String.format("check the vm[uuid:%s] on the host[uuid:%s], status is [%s]", vmInv.getUuid(), vmInv.getHostUuid(), state));
+
+                //strategy operation
+                if (crashStrategy.equals(CrashStrategy.Shutdown.toString())) {
+                    StopVmInstanceMsg smsg = new StopVmInstanceMsg();
+                    smsg.setVmInstanceUuid(vmInv.getUuid());
+                    smsg.setType(StopVmType.cold.toString());
+                    stopVm(smsg, new Completion(completion) {
+                        @Override
+                        public void success() {
+                            logger.info(String.format("shutdown the vm[uuid:%s] on the host[uuid:%s]", vmInv.getUuid(), vmInv.getHostUuid()));
+                            completion.success();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                        }
+                    });
+                } else if (crashStrategy.equals(CrashStrategy.Reboot.toString())) {
+                    if (!msg.isSkipReboot()) {
+                        logger.info("try to reboot vm exceeds threshold, prevent rebus.send(cmsg, new CloudBusCallBack(completion) {booting");
+                        completion.success();
+                        return;
+                    }
+                    RebootVmInstanceMsg smsg = new RebootVmInstanceMsg();
+                    smsg.setVmInstanceUuid(vmInv.getUuid());
+                    smsg.setType(StopVmType.cold.toString());
+                    rebootVm(smsg, new Completion(completion) {
+                        @Override
+                        public void success() {
+                            logger.info(String.format("reboot the vm[uuid:%s] on the host[uuid:%s]", vmInv.getUuid(), vmInv.getHostUuid()));
+                            completion.success();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                        }
+                    });
+                } else {
+                    logger.info(String.format("preserve the vm[uuid:%s] on the host[uuid:%s]", vmInv.getUuid(), vmInv.getHostUuid()));
+                    completion.success();
+                }
+            }
+        });
     }
 
     private void handle(RestoreVmInstanceMsg msg) {
@@ -1201,6 +1324,20 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmRunningFromDestroyed;
         }
 
+        if (originalState == VmInstanceState.Running && currentState == VmInstanceState.Crashed &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmCrashedFromRunningStateHostNotChanged;
+        }
+
+        if (originalState == VmInstanceState.Crashed && currentState == VmInstanceState.Running &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmRunningFromCrashedStateHostNotChanged;
+        }
+        if (originalState == VmInstanceState.Crashed && currentState == VmInstanceState.Stopped &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmStoppedFromCrashedStateHostNotChanged;
+        }
+
         throw new CloudRuntimeException(String.format("unknown VM[uuid:%s] abnormal state combination[original state: %s," +
                         " current state: %s, original host:%s, current host:%s]",
                 self.getUuid(), originalState, currentState, originalHostUuid, currentHostUuid));
@@ -1266,7 +1403,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         VmAbnormalLifeCycleOperation operation = getVmAbnormalLifeCycleOperation(originalHostUuid,
                 currentHostUuid, originalState, currentState);
-        if (operation == VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged) {
+        if (operation == VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged
+                || operation == VmAbnormalLifeCycleOperation.VmRunningFromCrashedStateHostNotChanged) {
             // the vm is detected on the host again. It's largely because the host disconnected before
             // and now reconnected
             changeVmStateInDb(VmInstanceStateEvent.running, () -> self.setHostUuid(msg.getHostUuid()));
@@ -1283,7 +1421,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             bus.reply(msg, reply);
             completion.done();
             return;
-        } else if (operation == VmAbnormalLifeCycleOperation.VmStoppedFromPausedStateHostNotChanged) {
+        } else if (operation == VmAbnormalLifeCycleOperation.VmStoppedFromPausedStateHostNotChanged
+                || operation == VmAbnormalLifeCycleOperation.VmStoppedFromCrashedStateHostNotChanged) {
             changeVmStateInDb(VmInstanceStateEvent.stopped, () -> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
@@ -1321,6 +1460,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
             bus.send(dmsg);
 
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        } else if (operation == VmAbnormalLifeCycleOperation.VmCrashedFromRunningStateHostNotChanged) {
+            changeVmStateInDb(VmInstanceStateEvent.crashed, () -> self.setHostUuid(msg.getHostUuid()));
+            fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;
