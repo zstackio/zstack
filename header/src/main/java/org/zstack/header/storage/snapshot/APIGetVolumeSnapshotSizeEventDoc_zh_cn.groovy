@@ -35,12 +35,4 @@ doc {
 		type "boolean"
 		since "3.5"
 	}
-	ref {
-		name "error"
-		path "org.zstack.header.storage.snapshot.APIGetVolumeSnapshotSizeEvent.error"
-		desc "null"
-		type "ErrorCode"
-		since "3.5"
-		clz ErrorCode.class
-	}
 }

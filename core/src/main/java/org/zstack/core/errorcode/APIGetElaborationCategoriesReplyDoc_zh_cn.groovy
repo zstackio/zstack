@@ -7,6 +7,12 @@ doc {
 
 	title "错误码目录查看结果"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.core.errorcode.APIGetElaborationCategoriesReply.error"

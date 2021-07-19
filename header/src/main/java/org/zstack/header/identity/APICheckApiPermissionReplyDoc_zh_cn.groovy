@@ -14,6 +14,12 @@ doc {
         since "0.6"
         clz ErrorCode.class
     }
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
     field {
         name "inventory"
         desc "API权限清单"

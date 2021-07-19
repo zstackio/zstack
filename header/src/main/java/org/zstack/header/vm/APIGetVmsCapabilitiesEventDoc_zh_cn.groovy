@@ -7,6 +7,12 @@ doc {
 
 	title "批量获取云主机能力返回"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.vm.APIGetVmsCapabilitiesEvent.error"
