@@ -3169,13 +3169,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(GetVmCapabilitiesMsg msg) {
         GetVmCapabilitiesReply reply = new GetVmCapabilitiesReply();
-        VmCapabilities capabilities = new VmCapabilities();
-        checkPrimaryStorageCapabilities(capabilities);
-        checkImageMediaTypeCapabilities(capabilities);
-
-        extEmitter.getVmCapabilities(getSelfInventory(), capabilities);
-
-        reply.setCapabilities(capabilities);
+        reply.setCapabilities(new VmCapabilitiesJudger().judge(msg.getVmInstanceUuid()));
         bus.reply(msg, reply);
     }
 
@@ -3197,55 +3191,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.reply(msg, reply);
             }
         });
-    }
-
-    private void checkPrimaryStorageCapabilities(VmCapabilities capabilities) {
-        VolumeInventory rootVolume = getSelfInventory().getRootVolume();
-
-        if (rootVolume == null) {
-            capabilities.setSupportLiveMigration(false);
-            capabilities.setSupportVolumeMigration(false);
-        } else {
-            SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
-            q.select(PrimaryStorageVO_.type);
-            q.add(PrimaryStorageVO_.uuid, Op.EQ, rootVolume.getPrimaryStorageUuid());
-            String type = q.findValue();
-
-            PrimaryStorageType psType = PrimaryStorageType.valueOf(type);
-
-            if (self.getState() != VmInstanceState.Running) {
-                capabilities.setSupportLiveMigration(false);
-            } else {
-                capabilities.setSupportLiveMigration(psType.isSupportVmLiveMigration());
-            }
-
-            if (self.getState() != VmInstanceState.Stopped) {
-                capabilities.setSupportVolumeMigration(false);
-            } else {
-                capabilities.setSupportVolumeMigration(psType.isSupportVolumeMigration());
-            }
-        }
-    }
-
-    private void checkImageMediaTypeCapabilities(VmCapabilities capabilities) {
-        ImageVO vo = null;
-        ImageMediaType imageMediaType;
-
-        if (self.getImageUuid() != null) {
-            vo = dbf.findByUuid(self.getImageUuid(), ImageVO.class);
-        }
-
-        if (vo == null) {
-            imageMediaType = null;
-        } else {
-            imageMediaType = vo.getMediaType();
-        }
-
-        if (imageMediaType == ImageMediaType.ISO || imageMediaType == null) {
-            capabilities.setSupportReimage(false);
-        } else {
-            capabilities.setSupportReimage(true);
-        }
     }
 
     private void handle(APIGetVmHostnameMsg msg) {

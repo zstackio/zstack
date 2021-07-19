@@ -241,34 +241,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
         APIGetVmsCapabilitiesEvent evt = new APIGetVmsCapabilitiesEvent(msg.getId());
         ErrorCodeList err = new ErrorCodeList();
         Map<String, VmCapabilities> vmsCaps = Maps.newConcurrentMap();
+        msg.getVmUuids()
+                .parallelStream()
+                .forEach(v -> {
+                    vmsCaps.put(v, new VmCapabilitiesJudger().judge(v));
+                });
 
-        new While<>(msg.getVmUuids()).step((vmUuid, compl) -> {
-            GetVmCapabilitiesMsg cmsg = new GetVmCapabilitiesMsg();
-            cmsg.setVmInstanceUuid(vmUuid);
-            bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
-            bus.send(cmsg, new CloudBusCallBack(compl) {
-                @Override
-                public void run(MessageReply r) {
-                    if (!r.isSuccess()) {
-                        err.getCauses().add(r.getError());
-                    } else {
-                        GetVmCapabilitiesReply greply = (GetVmCapabilitiesReply) r;
-                        vmsCaps.put(vmUuid, greply.getCapabilities());
-                    }
-                    compl.done();
-                }
-            });
-        }, 20).run(new WhileDoneCompletion(msg) {
-            @Override
-            public void done(ErrorCodeList errorCodeList) {
-                if (!err.getCauses().isEmpty()) {
-                    evt.setError(err.getCauses().get(0));
-                } else {
-                    evt.setVmsCaps(vmsCaps);
-                }
-                bus.publish(evt);
-            }
-        });
+        evt.setVmsCaps(vmsCaps);
+        bus.publish(evt);
     }
 
     private void handle(final APIUpdatePriorityConfigMsg msg) {
