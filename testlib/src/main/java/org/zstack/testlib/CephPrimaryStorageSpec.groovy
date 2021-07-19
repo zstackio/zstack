@@ -217,19 +217,6 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new CephPrimaryStorageBase.AgentResponse()
             }
 
-            def decodeUnicode = { String unicode ->
-                String str = unicode.split(" ")[0]
-                str = str.replace("\\", "")
-                String[] arr = str.split("u")
-                String text = ""
-                for(int i = 1; i < arr.length; i++){
-                    int hexVal = Integer.parseInt(arr[i], 16)
-                    text += (char) hexVal
-                }
-
-                return text
-            }
-
             simulator(CephPrimaryStorageBase.ADD_POOL_PATH) { HttpEntity<String> entity ->
                 def cmd = JSONObjectUtil.toObject(entity.body, CephPrimaryStorageBase.AddPoolCmd.class)
 
@@ -238,7 +225,7 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.setTotalCapacity(SizeUnit.GIGABYTE.toByte(100))
                 List<CephPoolCapacity> poolCapacities = [
                         new CephPoolCapacity(
-                                name: decodeUnicode(cmd.poolName),
+                                name: cmd.poolName,
                                 availableCapacity: SizeUnit.GIGABYTE.toByte(100),
                                 usedCapacity: 0,
                                 totalCapacity: SizeUnit.GIGABYTE.toByte(100),

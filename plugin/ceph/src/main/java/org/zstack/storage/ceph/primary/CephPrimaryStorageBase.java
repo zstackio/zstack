@@ -3560,7 +3560,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         AddPoolCmd cmd = new AddPoolCmd();
         cmd.isCreate = msg.isCreate();
-        cmd.poolName = EncodingConversion.encodingToUnicode(msg.getPoolName());
+        cmd.poolName = msg.getPoolName();
 
         APIAddCephPrimaryStoragePoolEvent evt = new APIAddCephPrimaryStoragePoolEvent(msg.getId());
         CephPrimaryStoragePoolVO finalVo = vo;
