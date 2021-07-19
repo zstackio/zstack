@@ -7,14 +7,18 @@ import java.util.List;
  */
 public interface CreateTemporaryDataVolumeTemplateMessage extends CreateDataVolumeTemplateMessage {
     @Override
+    default void setName(String name) {}
+
+    @Override
+    default void setDescription(String description) {}
+
+    @Override
     default String getDescription() {
         return null;
     }
 
     @Override
-    default List<String> getBackupStorageUuids() {
-        return null;
-    }
+    default void setResourceUuid(String resourceUuid) {}
 
     @Override
     default String getResourceUuid() {
@@ -23,4 +27,9 @@ public interface CreateTemporaryDataVolumeTemplateMessage extends CreateDataVolu
 
     @Override
     default void setBackupStorageUuids(List<String> backupStorageUuids) {}
+
+    @Override
+    default List<String> getBackupStorageUuids() {
+        return null;
+    }
 }
