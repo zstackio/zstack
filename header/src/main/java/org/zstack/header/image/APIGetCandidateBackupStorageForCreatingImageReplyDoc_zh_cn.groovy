@@ -7,6 +7,12 @@ doc {
 
 	title "创建镜像的备份存储候选"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageReply.error"

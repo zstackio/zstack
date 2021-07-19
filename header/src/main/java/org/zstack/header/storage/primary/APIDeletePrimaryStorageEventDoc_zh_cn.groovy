@@ -6,6 +6,12 @@ doc {
 
 	title "删除主存储结果"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.storage.primary.APIDeletePrimaryStorageEvent.error"

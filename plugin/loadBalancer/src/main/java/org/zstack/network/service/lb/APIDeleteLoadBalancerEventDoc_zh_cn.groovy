@@ -6,6 +6,12 @@ doc {
 
 	title "删除负载均衡器返回值"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.network.service.lb.APIDeleteLoadBalancerEvent.error"

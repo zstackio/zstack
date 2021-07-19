@@ -15,6 +15,12 @@ doc {
 		clz ErrorCode.class
 	}
 	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
+	field {
 		name "types"
 		desc ""
 		type "List"

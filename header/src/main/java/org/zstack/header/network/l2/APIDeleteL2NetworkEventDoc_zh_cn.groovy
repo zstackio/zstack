@@ -6,6 +6,12 @@ doc {
 
 	title "二层网络清单"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.network.l2.APIDeleteL2NetworkEvent.error"

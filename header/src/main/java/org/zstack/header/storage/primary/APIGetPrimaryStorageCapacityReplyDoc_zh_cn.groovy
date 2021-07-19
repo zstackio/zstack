@@ -44,12 +44,4 @@ doc {
 		type "boolean"
 		since "0.6"
 	}
-	ref {
-		name "error"
-		path "org.zstack.header.storage.primary.APIGetPrimaryStorageCapacityReply.error"
-		desc "null"
-		type "ErrorCode"
-		since "0.6"
-		clz ErrorCode.class
-	}
 }

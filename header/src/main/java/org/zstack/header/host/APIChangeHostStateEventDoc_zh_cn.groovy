@@ -7,6 +7,12 @@ doc {
 
 	title "物理机启动状态消息回复"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.host.APIChangeHostStateEvent.error"

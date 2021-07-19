@@ -6,6 +6,12 @@ doc {
 
 	title "云盘快照删除结果"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotEvent.error"

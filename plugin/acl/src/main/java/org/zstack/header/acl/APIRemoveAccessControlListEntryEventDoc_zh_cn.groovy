@@ -6,6 +6,12 @@ doc {
 
 	title "删除访问控制策略组的IP组返回值"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.acl.APIRemoveAccessControlListEntryEvent.error"

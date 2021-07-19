@@ -6,6 +6,12 @@ doc {
 
     title "账户资源引用清单"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
     ref {
         name "error"
         path "org.zstack.header.identity.APIChangeResourceOwnerEvent.error"

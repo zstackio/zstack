@@ -7,6 +7,12 @@ doc {
 
 	title "虚拟路由器规格清单"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingReply.error"
