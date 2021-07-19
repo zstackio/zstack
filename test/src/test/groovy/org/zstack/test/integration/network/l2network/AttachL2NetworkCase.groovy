@@ -11,9 +11,12 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.network.l3.NetworkGlobalProperty
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.L2NetworkInventory
+import org.zstack.sdk.L2VlanNetworkInventory
+import org.zstack.sdk.ZoneInventory
 import org.zstack.test.integration.network.NetworkTest;
 import org.zstack.testlib.EnvSpec;
 import org.zstack.testlib.SubCase
@@ -213,6 +216,25 @@ public class AttachL2NetworkCase extends SubCase{
 
     void testAddHost(){
         ClusterInventory cluster = env.inventoryByName("cluster1")
+        ZoneInventory zone = env.inventoryByName("zone")
+
+        /* add networks until there are 100 networks */
+        List<L2NetworkInventory> l2s = queryL2Network {conditions = [String.format("type!=%s", VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE),
+                                    String.format("cluster.uuid=%s", cluster.uuid)]}
+
+        for (int i = l2s.size(); i < 100; i++) {
+            L2VlanNetworkInventory vlan = createL2VlanNetwork {
+                zoneUuid = zone.uuid
+                name = String.format("eth0-vlan-%d", i)
+                physicalInterface = "eth0"
+                vlan = i
+            }
+
+            attachL2NetworkToCluster {
+                l2NetworkUuid = vlan.uuid
+                clusterUuid = cluster.uuid
+            }
+        }
 
         KVMAgentCommands.CreateBridgeCmd createCmd = null
         env.afterSimulator(KVMConstant.KVM_REALIZE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
