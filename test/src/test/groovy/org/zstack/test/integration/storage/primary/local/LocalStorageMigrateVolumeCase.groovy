@@ -1,10 +1,12 @@
 package org.zstack.test.integration.storage.primary.local
 
+import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.storage.primary.PrimaryStorageState
 import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.vm.VmInstanceConstant
+import org.zstack.kvm.KvmVmSyncPingTask
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetVmCapabilitiesResult
 import org.zstack.sdk.LocalStorageMigrateVolumeAction
@@ -108,6 +110,7 @@ class LocalStorageMigrateVolumeCase extends SubCase{
         VmSpec vmSpec = env.specByName("vm")
         HostSpec hostSpec1 = env.specByName("kvm1")
         DatabaseFacade dbf = bean(DatabaseFacade.class)
+        KvmVmSyncPingTask pingTask = bean(KvmVmSyncPingTask.class)
 
         changePrimaryStorageState {
             uuid = primaryStorageSpec.inventory.uuid
@@ -124,19 +127,21 @@ class LocalStorageMigrateVolumeCase extends SubCase{
 
         boolean calledCopyToRemote = false
         env.afterSimulator(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH) { rsp ->
+            assert pingTask.vmsToSkip[Platform.getManagementServerId()].contains(vmSpec.inventory.uuid)
+
             calledCopyToRemote = true
             return rsp
         }
 
+        assert !pingTask.vmsToSkip[Platform.getManagementServerId()].contains(vmSpec.inventory.uuid)
 
         localStorageMigrateVolume {
             volumeUuid = vmSpec.inventory.rootVolumeUuid
             destHostUuid = hostSpec1.inventory.uuid
         }
 
-        retryInSecs(6) {
-            assert calledCheckMD5 && calledCopyToRemote
-        }
+        assert !pingTask.vmsToSkip[Platform.getManagementServerId()].contains(vmSpec.inventory.uuid)
+        assert calledCheckMD5 && calledCopyToRemote
     }
     
     @Override
