@@ -7,6 +7,12 @@ doc {
 
 	title "获取主存储上的回收数据列表结果"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.storage.primary.APIGetTrashOnPrimaryStorageReply.error"

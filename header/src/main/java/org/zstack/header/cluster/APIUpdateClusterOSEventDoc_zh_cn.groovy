@@ -7,6 +7,12 @@ doc {
 
 	title "集群内物理机操作系统升级结果"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.cluster.APIUpdateClusterOSEvent.error"

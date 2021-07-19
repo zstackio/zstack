@@ -7,6 +7,12 @@ doc {
 
     title "被清理的LDAP账户绑定关系清单列表"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
     ref {
         name "error"
         path "org.zstack.ldap.APICleanInvalidLdapBindingEvent.error"

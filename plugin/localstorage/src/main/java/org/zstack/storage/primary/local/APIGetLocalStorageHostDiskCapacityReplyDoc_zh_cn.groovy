@@ -7,6 +7,12 @@ doc {
 
 	title "主机本地存储云盘容量清单"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.error"

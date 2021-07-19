@@ -7,6 +7,12 @@ doc {
 
 	title "从云盘创建虚拟机结果"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.vm.APICreateVmInstanceFromVolumeEvent.error"
