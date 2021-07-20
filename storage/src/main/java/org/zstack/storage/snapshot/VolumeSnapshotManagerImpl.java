@@ -16,7 +16,6 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.progress.*;
 import org.zstack.header.core.workflow.*;
@@ -39,11 +38,7 @@ import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
-import org.zstack.storage.primary.CheckPrimaryStorageCapacityMsg;
-import org.zstack.storage.primary.CheckPrimaryStorageCapacityReply;
-import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
-import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
-import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.storage.primary.*;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
@@ -738,29 +733,14 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        CheckPrimaryStorageCapacityMsg capacityMsg = new CheckPrimaryStorageCapacityMsg();
-                        capacityMsg.setPrimaryStorageUuid(volumeVO.getPrimaryStorageUuid());
-                        capacityMsg.setRequiredSize(volumeSize);
-                        bus.makeTargetServiceIdByResourceUuid(capacityMsg, PrimaryStorageConstant.SERVICE_ID, volumeVO.getPrimaryStorageUuid());
+                        boolean capacityChecked = PrimaryStorageCapacityChecker.New(volumeVO.getPrimaryStorageUuid()).checkRequiredSize(volumeSize);
+                        if (!capacityChecked) {
+                            trigger.fail(operr("after subtracting reserved capacity[%s], there is no primary storage having required size[%s bytes], may be the threshold of primary storage physical capacity setting is lower",
+                                    PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value(), volumeSize));
+                            return;
+                        }
 
-                        bus.send(capacityMsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
-
-                                CheckPrimaryStorageCapacityReply capacityReply = reply.castReply();
-
-                                if (!capacityReply.isCapacity()) {
-                                    trigger.fail(operr("after subtracting reserved capacity[%s], there is no primary storage having required size[%s bytes], may be the threshold of primary storage physical capacity setting is lower",
-                                            PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value(), volumeSize));
-                                    return;
-                                }
-                                trigger.next();
-                            }
-                        });
+                        trigger.next();
                     }
 
                     @Override
