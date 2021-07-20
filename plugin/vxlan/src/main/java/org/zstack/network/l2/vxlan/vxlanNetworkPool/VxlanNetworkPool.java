@@ -17,9 +17,8 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.WhileCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -47,10 +46,10 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
-import static org.zstack.core.Platform.err;
 
 /**
  * Created by weiwang on 01/03/2017.
@@ -658,8 +657,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 ErrorCodeList errList = new ErrorCodeList();
-
-                new While<>(hosts).all((h, completion1) -> {
+                int parallelism = hosts.size();
+                new While<>(hosts).step((h, completion1) -> {
                     VtepVO oldvtep = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, l2NetworkUuid).eq(VtepVO_.hostUuid, h.getUuid()).find();
                     CheckL2NetworkOnHostMsg cmsg = new CheckL2NetworkOnHostMsg();
                     cmsg.setHostUuid(h.getUuid());
@@ -678,7 +677,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                             completion1.done();
                         }
                     });
-                }).run(new WhileDoneCompletion(trigger) {
+                }, parallelism).run(new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (errList.getCauses().isEmpty()) {
