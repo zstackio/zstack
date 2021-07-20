@@ -16,7 +16,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
-            <zstack:extension interface="org.zstack.longjob.LongJobManager" />
+            <zstack:extension interface="org.zstack.longjob.LongJobManager" order="-1"/>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
             <zstack:extension interface="org.zstack.core.timeout.ApiTimeoutExtensionPoint"/>
