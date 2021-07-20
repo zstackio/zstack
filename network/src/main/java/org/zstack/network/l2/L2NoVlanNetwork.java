@@ -204,30 +204,36 @@ public class L2NoVlanNetwork implements L2Network {
     }
 
     private void handle(DetachL2NetworkFromClusterMsg msg) {
-        DetachL2NetworkFromClusterReply reply = new DetachL2NetworkFromClusterReply();
-        deleteL2Bridge(
-            new Completion(msg) {
-                @Override
-                public void success() {
-                    long count1 = Q.New(L2NetworkClusterRefVO.class).count();
-                    SimpleQuery<L2NetworkClusterRefVO> query = dbf.createQuery(L2NetworkClusterRefVO.class);
-                    query.add(L2NetworkClusterRefVO_.clusterUuid, Op.EQ, msg.getClusterUuid());
-                    query.add(L2NetworkClusterRefVO_.l2NetworkUuid, Op.EQ, msg.getL2NetworkUuid());
-                    L2NetworkClusterRefVO rvo = query.find();
-                    if (rvo != null) {
-                        dbf.remove(rvo);
+        if (!L2NetworkGlobalConfig.DeleteL2BridgePhysically.value(Boolean.class)) {
+            SQL.New(L2NetworkClusterRefVO.class)
+                    .eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
+                    .eq(L2NetworkClusterRefVO_.l2NetworkUuid, msg.getL2NetworkUuid())
+                    .delete();
+
+            DetachL2NetworkFromClusterReply reply = new DetachL2NetworkFromClusterReply();
+            bus.reply(msg, reply);
+        } else {
+            DetachL2NetworkFromClusterReply reply = new DetachL2NetworkFromClusterReply();
+            deleteL2Bridge(
+                    new Completion(msg) {
+                        @Override
+                        public void success() {
+                            SQL.New(L2NetworkClusterRefVO.class)
+                                    .eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
+                                    .eq(L2NetworkClusterRefVO_.l2NetworkUuid, msg.getL2NetworkUuid())
+                                    .delete();
+
+                            bus.reply(msg, reply);
+                        }
+
+                        public void fail(ErrorCode errorCode) {
+                            reply.setError(errorCode);
+                            bus.reply(msg, reply);
+                        }
                     }
-                    long count2 = Q.New(L2NetworkClusterRefVO.class).count();
-                    bus.reply(msg, reply);
-                }
-                public void fail(ErrorCode errorCode) {
-                    reply.setError(errorCode);
-                    bus.reply(msg, reply);
-                }
-            }
-        );
-        long count = Q.New(L2NetworkClusterRefVO.class).count();
-    }
+            );
+        }
+     }
 
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
         final PrepareL2NetworkOnHostReply reply = new PrepareL2NetworkOnHostReply();
@@ -655,7 +661,11 @@ public class L2NoVlanNetwork implements L2Network {
 
     @Override
     public void deleteHook(Completion completion) {
-        deleteL2Bridge(completion);
+        if (L2NetworkGlobalConfig.DeleteL2BridgePhysically.value(Boolean.class)) {
+            deleteL2Bridge(completion);
+        } else {
+            completion.success();
+        }
     }
 
     protected void deleteL2Bridge(Completion completion) {
