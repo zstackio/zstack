@@ -27,12 +27,4 @@ doc {
 		type "boolean"
 		since "2.2"
 	}
-	ref {
-		name "error"
-		path "org.zstack.header.network.l3.APIGetL3NetworkRouterInterfaceIpReply.error"
-		desc "null"
-		type "ErrorCode"
-		since "2.2"
-		clz ErrorCode.class
-	}
 }

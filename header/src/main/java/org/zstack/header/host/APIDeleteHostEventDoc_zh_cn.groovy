@@ -6,6 +6,12 @@ doc {
 
 	title "删除物理机消息回复"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.host.APIDeleteHostEvent.error"

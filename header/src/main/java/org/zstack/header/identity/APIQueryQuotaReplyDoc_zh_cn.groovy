@@ -6,6 +6,12 @@ doc {
 
     title "配额清单列表"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
     ref {
         name "error"
         path "org.zstack.header.identity.APIQueryQuotaReply.error"

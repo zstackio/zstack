@@ -6,6 +6,12 @@ doc {
 
 	title "重新加载系统错误码文件结果"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.core.errorcode.APIReloadElaborationEvent.error"

@@ -6,6 +6,12 @@ doc {
 
 	title "查看错误码内容结果"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.core.errorcode.APIGetElaborationsReply.error"

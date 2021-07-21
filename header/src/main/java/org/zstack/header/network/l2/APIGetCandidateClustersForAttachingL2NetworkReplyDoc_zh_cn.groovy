@@ -30,12 +30,4 @@ doc {
 		type "boolean"
 		since "4.0.0"
 	}
-	ref {
-		name "error"
-		path "org.zstack.header.network.l2.APIGetCandidateClusterForAttachingL2Reply.error"
-		desc "null"
-		type "ErrorCode"
-		since "4.0.0"
-		clz ErrorCode.class
-	}
 }

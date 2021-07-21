@@ -30,12 +30,4 @@ doc {
 		type "boolean"
 		since "3.3"
 	}
-	ref {
-		name "error"
-		path "org.zstack.header.storage.snapshot.APIBatchDeleteVolumeSnapshotEvent.error"
-		desc "null"
-		type "ErrorCode"
-		since "3.3"
-		clz ErrorCode.class
-	}
 }

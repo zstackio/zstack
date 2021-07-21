@@ -14,6 +14,12 @@ doc {
         since "0.6"
         clz ErrorCode.class
     }
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
     field {
         name "inventories"
         desc "若输入参数是`l3NetworkUuids`，为镜像清单;若输入参数是`imageUuid`，为三层网络清单"

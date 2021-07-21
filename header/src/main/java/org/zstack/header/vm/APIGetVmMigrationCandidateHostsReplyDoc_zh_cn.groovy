@@ -7,6 +7,12 @@ doc {
 
     title "可迁移物理机"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
     ref {
         name "error"
         path "org.zstack.header.vm.APIGetVmMigrationCandidateHostsReply.error"

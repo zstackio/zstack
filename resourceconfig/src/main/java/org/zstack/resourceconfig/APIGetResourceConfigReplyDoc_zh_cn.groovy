@@ -36,12 +36,4 @@ doc {
 		type "boolean"
 		since "3.4.0"
 	}
-	ref {
-		name "error"
-		path "org.zstack.resourceconfig.APIGetResourceConfigReply.error"
-		desc "null"
-		type "ErrorCode"
-		since "3.4.0"
-		clz ErrorCode.class
-	}
 }
