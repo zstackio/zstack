@@ -48,6 +48,7 @@ import org.zstack.utils.network.IPv6Constants;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -216,6 +217,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                                 VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
                                 msg.setIgnoreResourceReleaseFailure(true);
                                 msg.setVmInstanceUuid(arg.getUuid());
+                                msg.setTimeout(TimeUnit.SECONDS.toMillis(ApplianceVmGlobalConfig.DELETE_TIMEOUT.value(Long.class)));
                                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
                                 return msg;
                             }
@@ -493,6 +495,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                                 msg.setIgnoreResourceReleaseFailure(ignoreResourceReleaseFailure);
                                 msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
                                 msg.setVmInstanceUuid(arg.getUuid());
+                                msg.setTimeout(TimeUnit.SECONDS.toMillis(ApplianceVmGlobalConfig.DELETE_TIMEOUT.value(Long.class)));
                                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
                                 return msg;
                             }
