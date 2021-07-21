@@ -61,3 +61,5 @@ CREATE TABLE IF NOT EXISTS `BareMetal2BillingVO`
 
 INSERT INTO AccountResourceRefVO (`accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`, `concreteResourceType`) SELECT "36c27e8ff05c4780bf6d2fa65700f22e", "36c27e8ff05c4780bf6d2fa65700f22e", t.uuid, "BareMetal2ChassisOfferingVO", 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), "org.zstack.baremetal2.configuration.BareMetal2ChassisOfferingVO" FROM BareMetal2ChassisOfferingVO t where t.uuid NOT IN (SELECT resourceUuid FROM AccountResourceRefVO);
 
+ALTER TABLE RolePolicyStatementVO DROP INDEX roleUuid_2;
+
