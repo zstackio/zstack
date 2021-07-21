@@ -27,12 +27,4 @@ doc {
 		type "boolean"
 		since "3.10.0"
 	}
-	ref {
-		name "error"
-		path "org.zstack.header.vm.APIGetVmDeviceAddressReply.error"
-		desc "null"
-		type "ErrorCode"
-		since "3.10.0"
-		clz ErrorCode.class
-	}
 }

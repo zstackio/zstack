@@ -6,6 +6,12 @@ doc {
 
 	title "设置云主机虚拟声卡类型返回结果"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.vm.APISetVmSoundTypeEvent.error"

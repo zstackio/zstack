@@ -6,6 +6,12 @@ doc {
 
     title "删除云主机控制台密码结果"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
     ref {
         name "error"
         path "org.zstack.header.vm.APIDeleteVmConsolePasswordEvent.error"

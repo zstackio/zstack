@@ -15,6 +15,12 @@ doc {
 		clz ErrorCode.class
 	}
 	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
+	field {
 		name "capabilities"
 		desc "云盘支持的类型列表"
 		type "Map"

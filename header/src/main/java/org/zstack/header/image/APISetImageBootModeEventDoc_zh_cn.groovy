@@ -6,6 +6,12 @@ doc {
 
 	title "设置镜像启动模式的结果"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.image.APISetImageBootModeEvent.error"

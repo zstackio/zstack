@@ -15,6 +15,12 @@ doc {
 		clz ErrorCode.class
 	}
 	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
+	field {
 		name "certificateStr"
 		desc "spice CA证书"
 		type "String"

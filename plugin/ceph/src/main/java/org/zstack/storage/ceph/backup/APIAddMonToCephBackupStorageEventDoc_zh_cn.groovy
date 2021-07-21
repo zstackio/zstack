@@ -6,6 +6,12 @@ doc {
 
 	title "为Ceph镜像服务器添加 Mon节点"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.storage.ceph.backup.APIAddMonToCephBackupStorageEvent.error"

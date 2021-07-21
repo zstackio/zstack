@@ -32,12 +32,4 @@ doc {
 		type "boolean"
 		since "0.6"
 	}
-	ref {
-		name "error"
-		path "APIRefreshCaptchaReply.error"
-		desc "null"
-		type "ErrorCode"
-		since "0.6"
-		clz ErrorCode.class
-	}
 }

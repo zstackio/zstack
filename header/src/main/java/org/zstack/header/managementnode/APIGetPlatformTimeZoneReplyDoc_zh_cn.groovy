@@ -32,12 +32,4 @@ doc {
 		type "boolean"
 		since "4.1.0"
 	}
-	ref {
-		name "error"
-		path "org.zstack.header.managementnode.APIGetPlatformTimeZoneReply.error"
-		desc "null"
-		type "ErrorCode"
-		since "4.1.0"
-		clz ErrorCode.class
-	}
 }

@@ -7,6 +7,12 @@ doc {
 
 	title "更新虚拟路由器"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.network.service.virtualrouter.APIUpdateVirtualRouterEvent.error"

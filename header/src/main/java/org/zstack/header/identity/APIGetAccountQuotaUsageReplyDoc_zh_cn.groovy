@@ -7,6 +7,12 @@ doc {
 
     title "账户配额使用情况列表"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
     ref {
         name "error"
         path "org.zstack.header.identity.APIGetAccountQuotaUsageReply.error"
