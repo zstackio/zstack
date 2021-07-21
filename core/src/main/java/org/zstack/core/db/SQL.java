@@ -11,11 +11,13 @@ import org.zstack.utils.DebugUtils;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Created by xing5 on 2017/1/11.
@@ -124,6 +126,30 @@ public class SQL {
         int ret = query.executeUpdate();
         dbf.getEntityManager().flush();
         return ret;
+    }
+
+    public <T> List<T> paginateCollectionUntil(long total, Predicate<T> predicate, int maxCount) {
+        DebugUtils.Assert(max != null, "call limit() before paginate");
+        if (first == null) {
+            first = 0;
+        }
+
+        List<T> items = new ArrayList<>();
+        int times = (int) (total / max) + (total % max != 0 ? 1 : 0);
+        for (int i=0; i<times; i++) {
+            rebuildQueryInTransaction();
+            for (T item : (List<T>) query.getResultList()) {
+                if (predicate.test(item)) {
+                    items.add(item);
+                    if (items.size() >= maxCount) {
+                        return items;
+                    }
+                }
+            }
+            first += max;
+        }
+
+        return items;
     }
 
     public <T> void paginate(long total, Consumer<List<T>> consumer) {

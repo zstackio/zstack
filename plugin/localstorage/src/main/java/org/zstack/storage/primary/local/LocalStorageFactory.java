@@ -16,6 +16,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.trash.CreateRecycleExtensionPoint;
 import org.zstack.header.Component;
+import org.zstack.header.allocator.HostAllocatorError;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
@@ -42,9 +43,8 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
-import org.zstack.header.storage.snapshot.AfterTakeLiveSnapshotsOnVolumes;
 import org.zstack.kvm.KVMConstant;
-import org.zstack.header.storage.snapshot.TakeVolumesSnapshotOnKvmReply;
+import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
@@ -59,10 +59,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created by frank on 6/30/2015.
@@ -1233,47 +1232,43 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public void preCreateVolume(APICreateDataVolumeMsg msg) {
         String diskOffering = msg.getDiskOfferingUuid();
-        if (diskOffering == null) {
+        if (diskOffering == null || !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             return;
         }
 
-        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
-            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
-
-            if (config.getAllocate() == null) {
-                return;
-            }
-
-            if (config.getAllocate().getPrimaryStorage() == null) {
-                return;
-            }
-
-            if (msg.getSystemTags() == null) {
-                msg.setSystemTags(new ArrayList<>());
-            }
-
-            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
-            if (msg.getPrimaryStorageUuid() != null && !msg.getPrimaryStorageUuid().equals(psUuid)) {
-                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
-                        psUuid, msg.getPrimaryStorageUuid()));
-            }
-            msg.setPrimaryStorageUuid(psUuid);
-
-            PrimaryStorageVO psVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
-            if (psVO.getType().equals(type.toString())) {
-                List<String> refHostUuids = Q.New(LocalStorageHostRefVO.class)
-                        .select(LocalStorageHostRefVO_.hostUuid)
-                        .eq(LocalStorageHostRefVO_.primaryStorageUuid, psUuid)
-                        .listValues();
-
-                if (refHostUuids.isEmpty()) {
-                    return;
-                }
-
-                msg.getSystemTags().add(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.instantiateTag(
-                        map(e(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN, refHostUuids.get(0)))));
-            }
+        DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+        if (config.getAllocate() == null || config.getAllocate().getPrimaryStorage() == null) {
+            return;
         }
+
+        String psUuid = msg.getPrimaryStorageUuid();
+        String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
+                .eq(PrimaryStorageVO_.uuid,psUuid)
+                .findValue();
+        if (!psType.equals(type.toString())) {
+            return;
+        }
+
+        long total = Q.New(LocalStorageHostRefVO.class).eq(LocalStorageHostRefVO_.primaryStorageUuid, psUuid).count();
+        List<LocalStorageHostRefVO> filterRefs = SQL.New("select ref from LocalStorageHostRefVO ref" +
+                " where ref.primaryStorageUuid = :psUuid", LocalStorageHostRefVO.class)
+                .param("psUuid", psUuid)
+                .limit(100)
+                .paginateCollectionUntil(total, (LocalStorageHostRefVO ref) -> PrimaryStorageCapacityChecker.New(psUuid,
+                                ref.getAvailableCapacity(), ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())
+                                .checkRequiredSize(msg.getDiskSize()), 10);
+
+        if (filterRefs.isEmpty()) {
+            throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                    "the local primary storage[uuid:%s] has no hosts with enough disk capacity[%s bytes] required by the disk offering[uuid:%s]",
+                    psUuid, msg.getDiskSize(), diskOffering
+            ));
+        }
+
+        msg.addSystemTag(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.instantiateTag(
+                Collections.singletonMap(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN,
+                        filterRefs.get(new Random().nextInt(filterRefs.size())).getHostUuid())
+        ));
     }
 
     @Override

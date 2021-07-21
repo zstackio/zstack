@@ -905,11 +905,6 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 return;
             }
             msg.setPrimaryStorageUuid(config.getAllocate().getPrimaryStorage().getUuid());
-
-            if (msg.getSystemTags() == null) {
-                msg.setSystemTags(new ArrayList<>());
-            }
-
             if (!(config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig)) {
                 return;
             }
@@ -926,7 +921,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                         ,targetCephPoolName, cephPoolName));
             }
 
-            msg.getSystemTags().add(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag(
+            msg.addSystemTag(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag(
                     map(
                             e(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN, primaryStorageAllocateConfig.getPoolNames().get(0))
                     )
