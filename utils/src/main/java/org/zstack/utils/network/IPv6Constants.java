@@ -16,6 +16,7 @@ public class IPv6Constants {
 
     public static final int IPV6_PREFIX_LEN_MAX = 126;
     public static final int IPV6_PREFIX_LEN_MIN = 8;
+    public static final int IPV6_PREFIX_LEN_MIN_DNSMASQ = 64;
 
     public static BigInteger IntegerMax = BigInteger.valueOf(Integer.MAX_VALUE);
 }

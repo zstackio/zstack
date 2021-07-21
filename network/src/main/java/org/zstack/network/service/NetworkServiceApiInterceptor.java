@@ -38,7 +38,7 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
         if (msg instanceof APIAttachNetworkServiceToL3NetworkMsg) {
        	   convertNetworkProviderTypeToUuid((APIAttachNetworkServiceToL3NetworkMsg)msg);
            validate((APIAttachNetworkServiceToL3NetworkMsg)msg);
-	}
+        }
 
         return msg;
     }
