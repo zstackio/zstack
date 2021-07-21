@@ -36,6 +36,10 @@ public class AutoScalingGroupActivityInventory  {
         return this.activityAction;
     }
 
+    public java.lang.String instanceUuids;
+    public java.lang.String getInstanceUuids() { return instanceUuids; }
+    public void setInstanceUuids(java.lang.String instanceUuids) { this.instanceUuids = instanceUuids; }
+    
     public java.lang.String scalingGroupRuleUuid;
     public void setScalingGroupRuleUuid(java.lang.String scalingGroupRuleUuid) {
         this.scalingGroupRuleUuid = scalingGroupRuleUuid;
