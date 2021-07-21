@@ -25,7 +25,7 @@ public class APIExportImageFromBackupStorageMsg extends APIMessage implements Ba
     @APIParam(resourceType = BackupStorageVO.class, checkAccount = true, operationTarget = true)
     private String backupStorageUuid;
 
-    @APIParam(resourceType = ImageVO.class)
+    @APIParam(resourceType = ImageVO.class, checkAccount = true)
     private String imageUuid;
 
     @APIParam(validValues = {"raw", "qcow2"}, required = false)

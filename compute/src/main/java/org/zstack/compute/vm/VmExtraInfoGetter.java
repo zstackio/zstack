@@ -32,40 +32,7 @@ public class VmExtraInfoGetter {
         return new VmExtraInfoGetter(uuid);
     }
 
-    @Transactional(readOnly = true)
-    public String getArchitecture() {
-        List res = dbf.getEntityManager().createNativeQuery("select cluster.architecture, vm.hostUuid, vm.lastHostUuid" +
-                " from VmInstanceVO vm" +
-                " left join ClusterVO cluster on cluster.uuid = vm.clusterUuid" +
-                " where vm.uuid = :uuid", Tuple.class)
-                .setParameter("uuid", uuid)
-                .getResultList();
-
-        if (res.isEmpty()) {
-            return null;
-        }
-
-        Tuple t = (Tuple) res.get(0);
-        if (t.get(0) != null) {
-            return t.get(0, String.class);
-        }
-
-        String hostUuid = t.get(1) != null ? t.get(1, String.class) : t.get(2, String.class);
-        return SQL.New("select cluster.architecture from ClusterVO cluster, HostVO host" +
-                " where host.uuid = :huuid" +
-                " and cluster.uuid = host.clusterUuid", String.class)
-                .param("huuid", hostUuid)
-                .find();
-    }
-
-    public String getGuestOsType() {
-        return  SQL.New("select i.guestOsType from VolumeVO v, ImageVO i" +
-                " where v.vmInstanceUuid = :vmUuid" +
-                " and v.rootImageUuid = i.uuid").
-                param("vmUuid", uuid).find();
-    }
-
-    public boolean getVirtio() {
+    public boolean isVirtio() {
         return VmSystemTags.VIRTIO.hasTag(uuid);
     }
 }

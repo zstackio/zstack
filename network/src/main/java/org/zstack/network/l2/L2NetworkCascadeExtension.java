@@ -7,6 +7,7 @@ import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -43,6 +44,8 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
     private CloudBus bus;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private static final String NAME = L2NetworkVO.class.getSimpleName();
 
@@ -106,10 +109,16 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     private void handleDeletion(final CascadeAction action, final Completion completion) {
-        final List<L2NetworkInventory> l2invs = l2NetworkFromAction(action);
+        List<L2NetworkInventory> l2invs = l2NetworkFromAction(action);
         if (l2invs == null) {
             completion.success();
             return;
+        }
+
+        if (!l2invs.isEmpty()) {
+            for (L2NetworkCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkCascadeFilterExtensionPoint.class)) {
+                l2invs = ext.filterL2NetworkCascade(l2invs, action);
+            }
         }
 
         List<L2NetworkDeletionMsg> msgs = new ArrayList<L2NetworkDeletionMsg>();
@@ -121,6 +130,7 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
             msgs.add(msg);
         }
 
+        List<L2NetworkInventory> finalL2invs = l2invs;
         bus.send(msgs, new CloudBusListCallBack(completion) {
             @Override
             public void run(List<MessageReply> replies) {
@@ -135,7 +145,7 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
                 List<String> uuids = new ArrayList<String>();
                 for (MessageReply r : replies) {
-                    L2NetworkInventory inv = l2invs.get(replies.indexOf(r));
+                    L2NetworkInventory inv = finalL2invs.get(replies.indexOf(r));
                     uuids.add(inv.getUuid());
                     logger.debug(String.format("delete l2 network[uuid:%s, name:%s]", inv.getUuid(), inv.getName()));
                 }

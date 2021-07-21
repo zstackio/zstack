@@ -35,6 +35,8 @@ public class APILocalStorageMigrateVolumeMsg extends APIMessage implements Prima
     private String destHostUuid;
     @APINoSee
     private String primaryStorageUuid;
+    @APINoSee
+    private String vmInstanceUuid;
 
     public String getVolumeUuid() {
         return volumeUuid;
@@ -60,7 +62,15 @@ public class APILocalStorageMigrateVolumeMsg extends APIMessage implements Prima
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
     }
- 
+
+    public String getVmInstanceUuid() {
+        return vmInstanceUuid;
+    }
+
+    public void setVmInstanceUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
+    }
+
     public static APILocalStorageMigrateVolumeMsg __example__() {
         APILocalStorageMigrateVolumeMsg msg = new APILocalStorageMigrateVolumeMsg();
 

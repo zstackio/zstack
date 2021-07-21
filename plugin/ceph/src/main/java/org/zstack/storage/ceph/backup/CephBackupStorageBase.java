@@ -1622,6 +1622,10 @@ public class CephBackupStorageBase extends BackupStorageBase {
             handle((APIUpdateCephBackupStorageMonMsg) msg);
         } else if (msg instanceof APIRemoveMonFromCephBackupStorageMsg) {
             handle((APIRemoveMonFromCephBackupStorageMsg) msg);
+        } else if (msg instanceof APIExportImageFromBackupStorageMsg) {
+            handle((APIExportImageFromBackupStorageMsg) msg);
+        } else if (msg instanceof APIDeleteExportedImageFromBackupStorageMsg) {
+            handle((APIDeleteExportedImageFromBackupStorageMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
@@ -1641,6 +1645,56 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
+    private void handle(APIDeleteExportedImageFromBackupStorageMsg msg) {
+        SQL.New(ImageBackupStorageRefVO.class).set(ImageBackupStorageRefVO_.exportUrl, null)
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                .eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
+                .update();
+
+        bus.publish(new APIDeleteExportedImageFromBackupStorageEvent(msg.getId()));
+    }
+
+    private void handle(APIExportImageFromBackupStorageMsg msg) {
+        APIExportImageFromBackupStorageEvent event = exportImage(msg);
+        bus.publish(event);
+    }
+
+    @Transactional
+    protected APIExportImageFromBackupStorageEvent exportImage(APIExportImageFromBackupStorageMsg msg) {
+        APIExportImageFromBackupStorageEvent event = new APIExportImageFromBackupStorageEvent(msg.getId());
+
+        String imageInstallUrl = Q.New(ImageBackupStorageRefVO.class).select(ImageBackupStorageRefVO_.installPath)
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                .eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
+                .findValue();
+        if (imageInstallUrl == null) {
+            event.setError(operr("image[uuid: %s] is not on backup storage[uuid:%s, name:%s]",
+                    msg.getImageUuid(), self.getUuid(), self.getName()));
+            return event;
+        }
+
+        String hostname = Q.New(CephBackupStorageMonVO.class).select(CephBackupStorageMonVO_.hostname)
+                .eq(CephBackupStorageMonVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                .eq(CephBackupStorageMonVO_.status, MonStatus.Connected)
+                .limit(1).findValue();
+        if (hostname == null) {
+            event.setError(operr("no Connected ceph monitor"));
+            return event;
+        }
+
+        String[] splits = imageInstallUrl.split("/");
+        String poolName = splits[splits.length - 2];
+        String imageName = splits[splits.length - 1];
+        String url = CephAgentUrl.backupStorageUrl(hostname, CephBackupStorageMonBase.EXPORT) +
+                String.format("/%s/%s", poolName, imageName);
+        SQL.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                .set(ImageBackupStorageRefVO_.exportUrl, url)
+                .update();
+        event.setImageUrl(url);
+        return event;
+    }
+
     private void handle(APIRemoveMonFromCephBackupStorageMsg msg) {
         SimpleQuery<CephBackupStorageMonVO> q = dbf.createQuery(CephBackupStorageMonVO.class);
         q.add(CephBackupStorageMonVO_.hostname, Op.IN, msg.getMonHostnames());
@@ -1651,9 +1705,28 @@ public class CephBackupStorageBase extends BackupStorageBase {
             dbf.removeCollection(vos, CephBackupStorageMonVO.class);
         }
 
+        String dstHostName = Q.New(CephBackupStorageMonVO.class).select(CephBackupStorageMonVO_.hostname)
+                .eq(CephBackupStorageMonVO_.backupStorageUuid, self.getUuid())
+                .orderBy(CephBackupStorageMonVO_.status, SimpleQuery.Od.ASC)
+                .limit(1).findValue();
+
+        if (dstHostName != null) {
+            vos.forEach(vo -> replaceImageExportUrl(vo.getHostname(), dstHostName));
+        }
+
         APIRemoveMonFromCephBackupStorageEvent evt = new APIRemoveMonFromCephBackupStorageEvent(msg.getId());
         evt.setInventory(CephBackupStorageInventory.valueOf(dbf.reload(getSelf())));
         bus.publish(evt);
+    }
+
+    private void replaceImageExportUrl(String srcHostName, String dstHostName) {
+        List<ImageBackupStorageRefVO> refs = Q.New(ImageBackupStorageRefVO.class)
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, self.getUuid())
+                .like(ImageBackupStorageRefVO_.exportUrl, "http://" + srcHostName + "%")
+                .list();
+
+        refs.forEach(it -> it.setExportUrl(it.getExportUrl().replace(srcHostName, dstHostName)));
+        dbf.updateCollection(refs);
     }
 
     private void handle(final APIAddMonToCephBackupStorageMsg msg) {

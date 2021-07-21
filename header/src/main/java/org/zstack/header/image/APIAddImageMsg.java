@@ -139,8 +139,7 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddI
         this.type = imageType;
     }
 
-
-    public boolean getVirtio() {
+    public boolean isVirtio() {
         return virtio;
     }
 

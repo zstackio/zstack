@@ -7,6 +7,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.storage.snapshot.ConsistentType;
 import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -24,7 +25,7 @@ import java.util.concurrent.TimeUnit;
         parameterName = "params"
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
-public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements VolumeMessage {
+public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements VolumeMessage, CreateVolumeSnapshotGroupMessage {
     /**
      * @desc root volume uuid. See :ref:`VolumeInventory`
      */
@@ -43,6 +44,8 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
 
     @APIParam(required = false)
     private boolean withMemory = false;
+
+    private ConsistentType consistentType = ConsistentType.None;
 
     @APINoSee
     private VmInstanceInventory vmInstance;
@@ -71,19 +74,17 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
         this.description = description;
     }
 
-    public SnapshotBackendOperation getBackendOperation() {
-        return SnapshotBackendOperation.FILE_CREATION;
-    }
-
     @Override
     public String getVolumeUuid() {
         return rootVolumeUuid;
     }
 
+    @Override
     public VmInstanceInventory getVmInstance() {
         return vmInstance;
     }
 
+    @Override
     public void setVmInstance(VmInstanceInventory vmInstance) {
         this.vmInstance = vmInstance;
     }
@@ -101,5 +102,13 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
         result.name = "test";
         result.rootVolumeUuid = uuid();
         return result;
+    }
+
+    public ConsistentType getConsistentType() {
+        return consistentType;
+    }
+
+    public void setConsistentType(ConsistentType consistentType) {
+        this.consistentType = consistentType;
     }
 }
