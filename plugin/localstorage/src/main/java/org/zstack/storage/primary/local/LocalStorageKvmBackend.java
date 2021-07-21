@@ -1218,6 +1218,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 }
 
                 private void doDownload(final SyncTaskChain chain) {
+                    createSubTaskProgress(LocalStorageKvmBackend.class.getName());
                     if (volumeResourceInstallPath == null) {
                         DebugUtils.Assert(backupStorage != null, "backup storage cannot be null");
                         DebugUtils.Assert(backupStorageInstallPath != null, "backupStorageInstallPath cannot be null");
