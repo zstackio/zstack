@@ -3155,6 +3155,13 @@ public class KVMHost extends HostBase implements Host {
                                                     self.getUuid(), ret.getHostUuid(), dbf.getDbVersion(), ret.getVersion());
                                             logger.warn(info);
 
+                                            // when host is connecting, skip handling agent config changed issue
+                                            // and agent config change will be detected by next ping
+                                            if (self.getStatus() == HostStatus.Connecting) {
+                                                logger.debug("host status is %s, ignore version or host uuid changed issue");
+                                                return;
+                                            }
+
                                             changeConnectionState(HostStatusEvent.disconnected);
                                             new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
 
