@@ -705,16 +705,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         });
 
         VolumeVO vo = new VolumeVO();
-
-        final String diskOfferingUuid = msg.getDiskOfferingUuid();
-        if (diskOfferingUuid != null) {
-            Long diskSize = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, diskOfferingUuid).select(DiskOfferingVO_.diskSize).findValue();
-            vo.setDiskOfferingUuid(diskOfferingUuid);
-            vo.setSize(diskSize);
-        } else {
-            vo.setSize(msg.getDiskSize());
-        }
-
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
         } else {
@@ -722,6 +712,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }
         vo.setDescription(msg.getDescription());
         vo.setName(msg.getName());
+        vo.setDiskOfferingUuid( msg.getDiskOfferingUuid());
+        vo.setSize(msg.getDiskSize());
         vo.setActualSize(0L);
         vo.setType(VolumeType.Data);
         vo.setStatus(VolumeStatus.NotInstantiated);
