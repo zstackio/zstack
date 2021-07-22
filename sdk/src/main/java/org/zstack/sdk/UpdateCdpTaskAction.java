@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddCdpBackupStorageAction extends AbstractAction {
+public class UpdateCdpTaskAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddCdpBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddCdpBackupStorageResult value;
+        public org.zstack.sdk.CreateCdpTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,20 @@ public class AddCdpBackupStorageAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String hostname;
+    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String username;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
-    public int sshPort = 22;
-
-    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false)
-    public java.lang.String type;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public long backupBandwidth = 0L;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean importImages = false;
+    public long maxCapacity = 0L;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -90,8 +78,8 @@ public class AddCdpBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddCdpBackupStorageResult value = res.getResult(org.zstack.sdk.AddCdpBackupStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddCdpBackupStorageResult() : value; 
+        org.zstack.sdk.CreateCdpTaskResult value = res.getResult(org.zstack.sdk.CreateCdpTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateCdpTaskResult() : value; 
 
         return ret;
     }
@@ -120,11 +108,11 @@ public class AddCdpBackupStorageAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/cdp-backup-storage";
+        info.httpMethod = "PUT";
+        info.path = "/cdp-backup-storage/task/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateCdpTask";
         return info;
     }
 

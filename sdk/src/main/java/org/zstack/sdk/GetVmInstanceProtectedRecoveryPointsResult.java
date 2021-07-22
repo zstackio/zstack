@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class GetVmInstanceRecoveryPointsResult {
+public class GetVmInstanceProtectedRecoveryPointsResult {
     public java.util.Map recoveryPoints;
     public void setRecoveryPoints(java.util.Map recoveryPoints) {
         this.recoveryPoints = recoveryPoints;

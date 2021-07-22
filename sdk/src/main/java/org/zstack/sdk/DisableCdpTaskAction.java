@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UnmountRecoveryPointAction extends AbstractAction {
+public class DisableCdpTaskAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UnmountRecoveryPointAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UnmountRecoveryPointResult value;
+        public org.zstack.sdk.DisableCdpTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,8 @@ public class UnmountRecoveryPointAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public long recoveryPointId = 0L;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +60,8 @@ public class UnmountRecoveryPointAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UnmountRecoveryPointResult value = res.getResult(org.zstack.sdk.UnmountRecoveryPointResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UnmountRecoveryPointResult() : value; 
+        org.zstack.sdk.DisableCdpTaskResult value = res.getResult(org.zstack.sdk.DisableCdpTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DisableCdpTaskResult() : value; 
 
         return ret;
     }
@@ -94,7 +91,7 @@ public class UnmountRecoveryPointAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/cdp-backup-storage/unmount-recovery-point";
+        info.path = "/cdp-task/disable/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

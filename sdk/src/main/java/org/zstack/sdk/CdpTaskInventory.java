@@ -1,6 +1,8 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.CdpTaskStatus;
+import org.zstack.sdk.CdpTaskState;
+import org.zstack.sdk.CdpTaskType;
 
 public class CdpTaskInventory  {
 
@@ -28,12 +30,12 @@ public class CdpTaskInventory  {
         return this.description;
     }
 
-    public java.lang.String vmInstanceUuid;
-    public void setVmInstanceUuid(java.lang.String vmInstanceUuid) {
-        this.vmInstanceUuid = vmInstanceUuid;
+    public java.lang.String policyUuid;
+    public void setPolicyUuid(java.lang.String policyUuid) {
+        this.policyUuid = policyUuid;
     }
-    public java.lang.String getVmInstanceUuid() {
-        return this.vmInstanceUuid;
+    public java.lang.String getPolicyUuid() {
+        return this.policyUuid;
     }
 
     public java.lang.String backupStorageUuid;
@@ -44,28 +46,76 @@ public class CdpTaskInventory  {
         return this.backupStorageUuid;
     }
 
-    public java.lang.Integer retentionTimePerDay;
-    public void setRetentionTimePerDay(java.lang.Integer retentionTimePerDay) {
-        this.retentionTimePerDay = retentionTimePerDay;
+    public CdpTaskStatus status;
+    public void setStatus(CdpTaskStatus status) {
+        this.status = status;
     }
-    public java.lang.Integer getRetentionTimePerDay() {
-        return this.retentionTimePerDay;
-    }
-
-    public java.lang.Integer incrementalPointPerMinute;
-    public void setIncrementalPointPerMinute(java.lang.Integer incrementalPointPerMinute) {
-        this.incrementalPointPerMinute = incrementalPointPerMinute;
-    }
-    public java.lang.Integer getIncrementalPointPerMinute() {
-        return this.incrementalPointPerMinute;
+    public CdpTaskStatus getStatus() {
+        return this.status;
     }
 
-    public java.lang.Integer recoveryPointPerSecond;
-    public void setRecoveryPointPerSecond(java.lang.Integer recoveryPointPerSecond) {
-        this.recoveryPointPerSecond = recoveryPointPerSecond;
+    public CdpTaskState state;
+    public void setState(CdpTaskState state) {
+        this.state = state;
     }
-    public java.lang.Integer getRecoveryPointPerSecond() {
-        return this.recoveryPointPerSecond;
+    public CdpTaskState getState() {
+        return this.state;
+    }
+
+    public CdpTaskType taskType;
+    public void setTaskType(CdpTaskType taskType) {
+        this.taskType = taskType;
+    }
+    public CdpTaskType getTaskType() {
+        return this.taskType;
+    }
+
+    public long backupBandwidth;
+    public void setBackupBandwidth(long backupBandwidth) {
+        this.backupBandwidth = backupBandwidth;
+    }
+    public long getBackupBandwidth() {
+        return this.backupBandwidth;
+    }
+
+    public long maxCapacity;
+    public void setMaxCapacity(long maxCapacity) {
+        this.maxCapacity = maxCapacity;
+    }
+    public long getMaxCapacity() {
+        return this.maxCapacity;
+    }
+
+    public long usedCapacity;
+    public void setUsedCapacity(long usedCapacity) {
+        this.usedCapacity = usedCapacity;
+    }
+    public long getUsedCapacity() {
+        return this.usedCapacity;
+    }
+
+    public java.sql.Timestamp createDate;
+    public void setCreateDate(java.sql.Timestamp createDate) {
+        this.createDate = createDate;
+    }
+    public java.sql.Timestamp getCreateDate() {
+        return this.createDate;
+    }
+
+    public java.sql.Timestamp lastOpDate;
+    public void setLastOpDate(java.sql.Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
+    }
+    public java.sql.Timestamp getLastOpDate() {
+        return this.lastOpDate;
+    }
+
+    public java.util.List resourceRefs;
+    public void setResourceRefs(java.util.List resourceRefs) {
+        this.resourceRefs = resourceRefs;
+    }
+    public java.util.List getResourceRefs() {
+        return this.resourceRefs;
     }
 
 }

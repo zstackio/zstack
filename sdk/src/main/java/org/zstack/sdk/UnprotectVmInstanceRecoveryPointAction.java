@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class StartVmInstanceCdpAction extends AbstractAction {
+public class UnprotectVmInstanceRecoveryPointAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class StartVmInstanceCdpAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.StartVmInstanceCdpResult value;
+        public org.zstack.sdk.UnprotectVmInstanceRecoveryPointResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,14 +28,8 @@ public class StartVmInstanceCdpAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vmInstanceUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String cdpBackupStorageUuid;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String timestamp;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -69,8 +63,8 @@ public class StartVmInstanceCdpAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.StartVmInstanceCdpResult value = res.getResult(org.zstack.sdk.StartVmInstanceCdpResult.class);
-        ret.value = value == null ? new org.zstack.sdk.StartVmInstanceCdpResult() : value; 
+        org.zstack.sdk.UnprotectVmInstanceRecoveryPointResult value = res.getResult(org.zstack.sdk.UnprotectVmInstanceRecoveryPointResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UnprotectVmInstanceRecoveryPointResult() : value; 
 
         return ret;
     }
@@ -99,11 +93,11 @@ public class StartVmInstanceCdpAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/cdp-task/{vmInstanceUuid}";
+        info.httpMethod = "PUT";
+        info.path = "/vm-instances/{vmInstanceUuid}/unprotect-recovery-point";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "unprotectVmInstanceRecoveryPoint";
         return info;
     }
 

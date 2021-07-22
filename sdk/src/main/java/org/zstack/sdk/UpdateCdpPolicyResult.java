@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 import org.zstack.sdk.CdpPolicyInventory;
 
-public class StopVmInstanceCdpResult {
+public class UpdateCdpPolicyResult {
     public CdpPolicyInventory inventory;
     public void setInventory(CdpPolicyInventory inventory) {
         this.inventory = inventory;

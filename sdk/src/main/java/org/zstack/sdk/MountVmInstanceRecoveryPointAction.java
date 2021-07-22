@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AttachCdpPolicyToVmInstanceAction extends AbstractAction {
+public class MountVmInstanceRecoveryPointAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AttachCdpPolicyToVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachCdpPolicyToVmInstanceResult value;
+        public org.zstack.sdk.MountVmInstanceRecoveryPointResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,10 @@ public class AttachCdpPolicyToVmInstanceAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
+    public java.lang.String vmUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String cdpPolicyUuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String timestamp;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +63,8 @@ public class AttachCdpPolicyToVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachCdpPolicyToVmInstanceResult value = res.getResult(org.zstack.sdk.AttachCdpPolicyToVmInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachCdpPolicyToVmInstanceResult() : value; 
+        org.zstack.sdk.MountVmInstanceRecoveryPointResult value = res.getResult(org.zstack.sdk.MountVmInstanceRecoveryPointResult.class);
+        ret.value = value == null ? new org.zstack.sdk.MountVmInstanceRecoveryPointResult() : value; 
 
         return ret;
     }
@@ -94,7 +94,7 @@ public class AttachCdpPolicyToVmInstanceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/vm-instances/{vmInstanceUuid}/cdp-policy/{cdpPolicyUuid}";
+        info.path = "/cdp-backup-storage/mount-recovery-point";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

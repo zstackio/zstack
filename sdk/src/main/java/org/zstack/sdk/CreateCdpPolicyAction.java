@@ -34,9 +34,6 @@ public class CreateCdpPolicyAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,30L}, noTrim = false)
     public java.lang.Integer retentionTimePerDay;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,60L}, noTrim = false)
-    public java.lang.Integer incrementalPointPerMinute;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,5L}, noTrim = false)
     public java.lang.Integer recoveryPointPerSecond;
 

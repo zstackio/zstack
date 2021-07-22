@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class StopVmInstanceCdpAction extends AbstractAction {
+public class CreateCdpTaskAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class StopVmInstanceCdpAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.StopVmInstanceCdpResult value;
+        public org.zstack.sdk.CreateCdpTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,6 +24,36 @@ public class StopVmInstanceCdpAction extends AbstractAction {
             return this;
         }
     }
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String taskType;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String policyUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String backupStorageUuid;
+
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List resourceUuids;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public long backupBandwidth = 0L;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public long maxCapacity = 0L;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +87,8 @@ public class StopVmInstanceCdpAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.StopVmInstanceCdpResult value = res.getResult(org.zstack.sdk.StopVmInstanceCdpResult.class);
-        ret.value = value == null ? new org.zstack.sdk.StopVmInstanceCdpResult() : value; 
+        org.zstack.sdk.CreateCdpTaskResult value = res.getResult(org.zstack.sdk.CreateCdpTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateCdpTaskResult() : value; 
 
         return ret;
     }
@@ -88,7 +118,7 @@ public class StopVmInstanceCdpAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/cdp-backup-storage/stop";
+        info.path = "/cdp-backup-storage/task";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

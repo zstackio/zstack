@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetVmInstanceRecoveryPointsAction extends AbstractAction {
+public class QueryEventLogAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetVmInstanceRecoveryPointsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVmInstanceRecoveryPointsResult value;
+        public org.zstack.sdk.QueryEventLogResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class GetVmInstanceRecoveryPointsAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String startTime;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String endTime;
-
-    @Param(required = false)
-    public java.lang.Integer limit = 1000;
-
-    @Param(required = false)
-    public java.lang.Integer start = 0;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class GetVmInstanceRecoveryPointsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetVmInstanceRecoveryPointsResult value = res.getResult(org.zstack.sdk.GetVmInstanceRecoveryPointsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVmInstanceRecoveryPointsResult() : value; 
+        org.zstack.sdk.QueryEventLogResult value = res.getResult(org.zstack.sdk.QueryEventLogResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryEventLogResult() : value; 
 
         return ret;
     }
@@ -97,7 +65,7 @@ public class GetVmInstanceRecoveryPointsAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vm-instances/{uuid}/recovery-points";
+        info.path = "/eventlogs";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

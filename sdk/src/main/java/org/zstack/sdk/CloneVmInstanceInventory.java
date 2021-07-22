@@ -21,20 +21,4 @@ public class CloneVmInstanceInventory  {
         return this.inventory;
     }
 
-    public boolean started;
-    public void setStarted(boolean started) {
-        this.started = started;
-    }
-    public boolean getStarted() {
-        return this.started;
-    }
-
-    public java.lang.String volumeQos;
-    public void setVolumeQos(java.lang.String volumeQos) {
-        this.volumeQos = volumeQos;
-    }
-    public java.lang.String getVolumeQos() {
-        return this.volumeQos;
-    }
-
 }

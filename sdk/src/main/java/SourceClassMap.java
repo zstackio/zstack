@@ -88,6 +88,7 @@ public class SourceClassMap {
 			put("org.zstack.core.errorcode.ElaborationCategory", "org.zstack.sdk.ElaborationCategory");
 			put("org.zstack.core.errorcode.ElaborationCheckResult", "org.zstack.sdk.ElaborationCheckResult");
 			put("org.zstack.core.errorcode.ElaborationContent", "org.zstack.sdk.ElaborationContent");
+			put("org.zstack.core.eventlog.EventLogInventory", "org.zstack.sdk.EventLogInventory");
 			put("org.zstack.core.gc.GarbageCollectorInventory", "org.zstack.sdk.GarbageCollectorInventory");
 			put("org.zstack.core.jsonlabel.JsonLabelInventory", "org.zstack.sdk.JsonLabelInventory");
 			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
@@ -261,9 +262,12 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.backup.VolumeBackupInventory", "org.zstack.sdk.VolumeBackupInventory");
 			put("org.zstack.header.storage.backup.VolumeBackupStorageRefInventory", "org.zstack.sdk.VolumeBackupStorageRefInventory");
 			put("org.zstack.header.storage.cdp.CdpPolicyInventory", "org.zstack.sdk.CdpPolicyInventory");
-			put("org.zstack.header.storage.cdp.CdpPolicyRefInventory", "org.zstack.sdk.CdpPolicyRefInventory");
+			put("org.zstack.header.storage.cdp.CdpPolicyState", "org.zstack.sdk.CdpPolicyState");
 			put("org.zstack.header.storage.cdp.CdpTaskInventory", "org.zstack.sdk.CdpTaskInventory");
-			put("org.zstack.header.storage.cdp.RecoveryPointInfo", "org.zstack.sdk.RecoveryPointInfo");
+			put("org.zstack.header.storage.cdp.CdpTaskResourceRefInventory", "org.zstack.sdk.CdpTaskResourceRefInventory");
+			put("org.zstack.header.storage.cdp.CdpTaskState", "org.zstack.sdk.CdpTaskState");
+			put("org.zstack.header.storage.cdp.CdpTaskStatus", "org.zstack.sdk.CdpTaskStatus");
+			put("org.zstack.header.storage.cdp.CdpTaskType", "org.zstack.sdk.CdpTaskType");
 			put("org.zstack.header.storage.database.backup.DatabaseBackupInventory", "org.zstack.sdk.databasebackup.DatabaseBackupInventory");
 			put("org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory", "org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.header.storage.database.backup.DatabaseBackupStruct", "org.zstack.sdk.databasebackup.DatabaseBackupStruct");
@@ -461,7 +465,6 @@ public class SourceClassMap {
 			put("org.zstack.storage.backup.imagestore.ImageStoreGcResult", "org.zstack.sdk.ImageStoreGcResult");
 			put("org.zstack.storage.backup.imagestore.ImageStoreImageStruct", "org.zstack.sdk.ImageStoreImageStruct");
 			put("org.zstack.storage.backup.sftp.SftpBackupStorageInventory", "org.zstack.sdk.SftpBackupStorageInventory");
-			put("org.zstack.storage.cdp.CdpBackupStorageInventory", "org.zstack.sdk.CdpBackupStorageInventory");
 			put("org.zstack.storage.ceph.backup.CephBackupStorageInventory", "org.zstack.sdk.CephBackupStorageInventory");
 			put("org.zstack.storage.ceph.backup.CephBackupStorageMonInventory", "org.zstack.sdk.CephBackupStorageMonInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageInventory", "org.zstack.sdk.CephPrimaryStorageInventory");
@@ -690,10 +693,13 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BillingInventory", "org.zstack.billing.generator.BillingInventory");
 			put("org.zstack.sdk.BuildAppExportHistoryInventory", "org.zstack.header.buildapp.BuildAppExportHistoryInventory");
 			put("org.zstack.sdk.BuildApplicationInventory", "org.zstack.header.buildapp.BuildApplicationInventory");
-			put("org.zstack.sdk.CdpBackupStorageInventory", "org.zstack.storage.cdp.CdpBackupStorageInventory");
 			put("org.zstack.sdk.CdpPolicyInventory", "org.zstack.header.storage.cdp.CdpPolicyInventory");
-			put("org.zstack.sdk.CdpPolicyRefInventory", "org.zstack.header.storage.cdp.CdpPolicyRefInventory");
+			put("org.zstack.sdk.CdpPolicyState", "org.zstack.header.storage.cdp.CdpPolicyState");
 			put("org.zstack.sdk.CdpTaskInventory", "org.zstack.header.storage.cdp.CdpTaskInventory");
+			put("org.zstack.sdk.CdpTaskResourceRefInventory", "org.zstack.header.storage.cdp.CdpTaskResourceRefInventory");
+			put("org.zstack.sdk.CdpTaskState", "org.zstack.header.storage.cdp.CdpTaskState");
+			put("org.zstack.sdk.CdpTaskStatus", "org.zstack.header.storage.cdp.CdpTaskStatus");
+			put("org.zstack.sdk.CdpTaskType", "org.zstack.header.storage.cdp.CdpTaskType");
 			put("org.zstack.sdk.CephBackupStorageInventory", "org.zstack.storage.ceph.backup.CephBackupStorageInventory");
 			put("org.zstack.sdk.CephBackupStorageMonInventory", "org.zstack.storage.ceph.backup.CephBackupStorageMonInventory");
 			put("org.zstack.sdk.CephPrimaryStorageInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageInventory");
@@ -741,6 +747,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EmailTriggerActionInventory", "org.zstack.monitoring.actions.EmailTriggerActionInventory");
 			put("org.zstack.sdk.ErrorCode", "org.zstack.header.errorcode.ErrorCode");
 			put("org.zstack.sdk.ErrorCodeList", "org.zstack.header.errorcode.ErrorCodeList");
+			put("org.zstack.sdk.EventLogInventory", "org.zstack.core.eventlog.EventLogInventory");
 			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
 			put("org.zstack.sdk.ExternalBackupState", "org.zstack.externalbackup.ExternalBackupState");
 			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
@@ -920,7 +927,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
 			put("org.zstack.sdk.RaidControllerInventory", "org.zstack.storage.device.localRaid.RaidControllerInventory");
 			put("org.zstack.sdk.RaidPhysicalDriveInventory", "org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory");
-			put("org.zstack.sdk.RecoveryPointInfo", "org.zstack.header.storage.cdp.RecoveryPointInfo");
 			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
 			put("org.zstack.sdk.ReplicationDiskStatus", "org.zstack.storage.primary.ministorage.ReplicationDiskStatus");
 			put("org.zstack.sdk.ReplicationGroupState", "org.zstack.imagereplicator.ReplicationGroupState");

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DetachCdpPolicyToVmInstanceAction extends AbstractAction {
+public class RevertVmFromCdpBackupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DetachCdpPolicyToVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DetachCdpPolicyToVmInstanceResult value;
+        public org.zstack.sdk.RevertVmFromCdpBackupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -29,10 +29,10 @@ public class DetachCdpPolicyToVmInstanceAction extends AbstractAction {
     public java.lang.String vmInstanceUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String cdpPolicyUuid;
+    public java.lang.String backupStorageUuid;
 
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String timestamp;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +66,8 @@ public class DetachCdpPolicyToVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DetachCdpPolicyToVmInstanceResult value = res.getResult(org.zstack.sdk.DetachCdpPolicyToVmInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DetachCdpPolicyToVmInstanceResult() : value; 
+        org.zstack.sdk.RevertVmFromCdpBackupResult value = res.getResult(org.zstack.sdk.RevertVmFromCdpBackupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RevertVmFromCdpBackupResult() : value; 
 
         return ret;
     }
@@ -96,11 +96,11 @@ public class DetachCdpPolicyToVmInstanceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/vm-instances/{vmInstanceUuid}/cdp-policy/{cdpPolicyUuid}";
+        info.httpMethod = "PUT";
+        info.path = "/cdp-backups/{vmInstanceUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "revertVmFromCdpBackup";
         return info;
     }
 
