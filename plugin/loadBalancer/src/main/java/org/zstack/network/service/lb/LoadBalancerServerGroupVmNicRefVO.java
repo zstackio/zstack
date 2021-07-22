@@ -11,9 +11,8 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @EntityGraph(
-
-        parents = {
-                @EntityGraph.Neighbour(type = LoadBalancerServerGroupVO.class, myField = "listenerUuid", targetField = "uuid"),
+        friends = {
+                @EntityGraph.Neighbour(type = LoadBalancerServerGroupVO.class, myField = "serverGroupUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = VmNicVO.class, myField = "vmNicUuid", targetField = "uuid"),
         }
 )
@@ -24,7 +23,7 @@ public class LoadBalancerServerGroupVmNicRefVO {
     private long id;
 
     @Column
-    @org.zstack.header.vo.ForeignKey(parentEntityClass = LoadBalancerServerGroupVO.class, parentKey = "uuid", onDeleteAction = org.zstack.header.vo.ForeignKey.ReferenceOption.CASCADE)
+    @ForeignKey(parentEntityClass = LoadBalancerServerGroupVO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String serverGroupUuid;
 
     @Column
