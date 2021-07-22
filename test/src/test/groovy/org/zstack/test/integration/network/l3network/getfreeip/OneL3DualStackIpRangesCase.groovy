@@ -62,7 +62,7 @@ class OneL3DualStackIpRangesCase extends SubCase {
                 startIp = "2003:2001::0010"
                 endIp = "2003:2001::0020"
                 gateway = "2003:2001::2"
-                prefixLen = 60
+                prefixLen = 64
                 addressMode = IPv6Constants.Stateful_DHCP
             }
 
