@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -86,7 +87,7 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(final APIAttachPortForwardingRuleMsg msg) {
         SimpleQuery<PortForwardingRuleVO> q = dbf.createQuery(PortForwardingRuleVO.class);
-        q.select(PortForwardingRuleVO_.vmNicUuid, PortForwardingRuleVO_.state);
+        q.select(PortForwardingRuleVO_.vmNicUuid, PortForwardingRuleVO_.state, PortForwardingRuleVO_.allowedCidr);
         q.add(PortForwardingRuleVO_.uuid, Op.EQ, msg.getRuleUuid());
         Tuple t = q.findTuple();
 
@@ -121,6 +122,10 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         }
 
         checkIfAnotherVip(vip.getUuid(), msg.getVmNicUuid());
+
+        if(t.get(2, String.class) != null) {
+            checkNicRule(msg.getVmNicUuid());
+        }
 
         if (vip.getPeerL3NetworkUuids() != null && vip.getPeerL3NetworkUuids().contains(guestL3Uuid)) {
             return;
@@ -218,6 +223,11 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
 
             checkIfAnotherVip(msg.getVipUuid(), msg.getVmNicUuid());
         }
+
+        if(msg.getAllowedCidr() != null){
+            checkNicRule(msg.getVmNicUuid());
+        }
+
     }
 
     @Transactional(readOnly = true)
@@ -242,6 +252,20 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
 
             throw new ApiMessageInterceptionException(operr("the VM[name:%s uuid:%s] already has port forwarding rules that have different VIPs than the one[uuid:%s]",
                             vm.getName(), vm.getUuid(), vipUuid));
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private void checkNicRule(String vmNicUuid) {
+        List<String> uuids = SQL.New(
+                "select eip.uuid from EipVO eip" +
+                        " where eip.vmNicUuid =:vmNicUuid and eip.uuid is not NULL"
+                , String.class).param("vmNicUuid", vmNicUuid).list();
+
+        if (!uuids.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr(
+                    "vmNic uuid[%s] is not allowed add portForwarding with allowedCidr rule, because vmNic exist eip",
+                    vmNicUuid));
         }
     }
 
