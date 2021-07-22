@@ -173,6 +173,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
                     .collect(Collectors.toList());
         }
 
+        // TODO: need code refactor
         List<LocalStorageHostRefVO> candidateHosts = new ArrayList<>();
         for (LocalStorageHostRefVO ref : refs) {
             if (spec.isNoOverProvisioning()) {
@@ -194,7 +195,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             while (it.hasNext()) {
                 LocalStorageHostRefVO ref = it.next();
                 if (!physicalCapacityMgr.checkCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())
-                        || !physicalCapacityMgr.checkRequiredCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getTotalPhysicalCapacity(), spec.getTotalSize() == null ? spec.getSize() : spec.getTotalSize())) {
+                        || !physicalCapacityMgr.checkRequiredCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getTotalPhysicalCapacity(), spec.getTotalSize())) {
                     errs.add(operr("{the physical capacity usage of the host[uuid:%s] has exceeded the threshold[%s]}",
                             ref.getHostUuid(), physicalCapacityMgr.getRatio(ref.getPrimaryStorageUuid())));
                     it.remove();
