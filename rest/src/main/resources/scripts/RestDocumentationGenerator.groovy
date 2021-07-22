@@ -1452,6 +1452,8 @@ ${txt}
 
             if (at.allTo() != "") {
                 fsToAdd[at.allTo()] = responseClass.getDeclaredField(at.allTo())
+                supplementFields('success', responseClass, at)
+                supplementFields('error', responseClass, at)
             } else if (at.fieldsTo().length == 1 && at.fieldsTo()[0] == "all") {
                 findFieldsForNormalClass()
             } else {
