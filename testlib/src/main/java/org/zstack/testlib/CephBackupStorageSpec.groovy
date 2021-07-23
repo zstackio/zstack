@@ -101,6 +101,18 @@ class CephBackupStorageSpec extends BackupStorageSpec {
                 return new CephBackupStorageBase.DeleteRsp()
             }
 
+            simulator(CephBackupStorageBase.ADD_EXPORT_TOKEN_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.AddImageExportTokenCmd.class)
+                assert cmd.installPath.startsWith("ceph://")
+                return new CephBackupStorageBase.AddImageExportTokenCmd()
+            }
+
+            simulator(CephBackupStorageBase.REMOVE_EXPORT_TOKEN_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.RemoveImageExportTokenCmd.class)
+                assert cmd.installPath.startsWith("ceph://")
+                return new CephBackupStorageBase.RemoveImageExportTokenRsp()
+            }
+
             simulator(AgentConstant.CANCEL_JOB) {
                 return new CephBackupStorageBase.AgentResponse()
             }
