@@ -81,13 +81,12 @@ public class GetRouteTableVpcVRouterCandidateAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "GET";
         info.path = "/vpc/virtual-routers/get-vpc-candidate";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
 }
-
