@@ -31,6 +31,7 @@ import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
+import org.zstack.network.l2.L2NetworkGlobalConfig;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
 import org.zstack.utils.Utils;
@@ -74,7 +75,11 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
 
     @Override
     public void deleteHook(Completion completion) {
-        deleteL2Bridge(completion);
+        if (L2NetworkGlobalConfig.DeleteL2BridgePhysically.value(Boolean.class)) {
+            deleteL2Bridge(completion);
+        } else {
+            completion.success();
+        }
     }
 
     @Override
