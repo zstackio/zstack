@@ -141,7 +141,8 @@ public class EventLogManager implements EventLogger, Component, ManagementNodeRe
 
     @Override
     public boolean start() {
-        start_consumer();
+        // TODO
+        // start_consumer();
         return true;
     }
 
