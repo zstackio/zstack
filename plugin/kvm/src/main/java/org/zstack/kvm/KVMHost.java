@@ -3377,7 +3377,7 @@ public class KVMHost extends HostBase implements Host {
                     sshShell.setUsername(getSelf().getUsername());
                     sshShell.setPassword(getSelf().getPassword());
                     sshShell.setPort(getSelf().getPort());
-                    SshResult ret = sshShell.runCommand(String.format("sudo /bin/sh -c \"echo %s > %s\"", self.getUuid(), hostTakeOverFlagPath));
+                    SshResult ret = sshShell.runCommand(String.format("sudo /bin/sh -c \"echo uuid:%s > %s\"", self.getUuid(), hostTakeOverFlagPath));
 
                     if (ret.isSshFailure() || ret.getReturnCode() != 0) {
                         completion.fail(operr(ret.getExitErrorMessage()));
@@ -3649,46 +3649,40 @@ public class KVMHost extends HostBase implements Host {
                                 trigger.next();
                                 return;
                             }
-                            SshShell sshShell = new SshShell();
-                            sshShell.setHostname(getSelf().getManagementIp());
-                            sshShell.setUsername(getSelf().getUsername());
-                            sshShell.setPassword(getSelf().getPassword());
-                            sshShell.setPort(getSelf().getPort());
-                            String takeOverScript = ln(
-                                    "#!/bin/sh",
-                                    "file=''",
-                                    "time=''",
-                                    "if [ -f {filepath} ]; then",
-                                    "file=$(cat {filepath})",
-                                    "time=$(($(date +%s) - $(date +%s -r {filepath})))",
-                                    "fi",
-                                    "echo \"$time $file\"",
-                                    "exit 0"
-                            ).formatByMap(map(
-                                    e("filepath", hostTakeOverFlagPath)
-                            ));
                             try {
-                                SshResult ret = sshShell.runScript(takeOverScript);
-                                if (ret.isSshFailure() || ret.getReturnCode() != 0) {
-                                    trigger.fail(operr("unable to Check whether the host is taken over,  because %s", ret.getExitErrorMessage()));
+                                Ssh ssh = new Ssh().setUsername(getSelf().getUsername())
+                                        .setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
+                                        .setHostname(getSelf().getManagementIp());
+                                ssh.command(String.format("grep -i ^uuid %s | sed 's/uuid://g'", hostTakeOverFlagPath));
+                                SshResult hostRet = ssh.run();
+                                if (hostRet.isSshFailure() || hostRet.getReturnCode() != 0) {
+                                    trigger.fail(operr("unable to Check whether the host is taken over,  because %s", hostRet.getExitErrorMessage()));
                                     return;
                                 }
-
-                                String result = ret.getStdout().trim();
-                                logger.debug(String.format("result is [%s]", result));
-                                if (result == null || result.isEmpty()) {
+                                String hostOutput = hostRet.getStdout().replaceAll("\r|\n","");
+                                if (hostOutput.contains("No such file or directory")) {
                                     trigger.next();
                                     return;
                                 }
-                                String[] results = result.split(" ");
-                                logger.debug(String.format("results is [%s:%s]", results[0], results[1]));
-                                if (Integer.parseInt(results[0]) < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
-                                    trigger.fail(operr("the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%s] has not exceeded host ping interval[%d]",
-                                            self.getManagementIp(), results[1], results[0], HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)));
+
+                                ssh.command(String.format("date +%%s -r %s", hostTakeOverFlagPath));
+                                SshResult timeRet = ssh.run();
+                                if (timeRet.isSshFailure() || timeRet.getReturnCode() != 0) {
+                                    trigger.fail(operr("Unable to get the timestamp of the flag,  because %s", timeRet.getExitErrorMessage()));
+                                    return;
+                                }
+                                String timestampOutput = timeRet.getStdout().replaceAll("\r|\n","");
+
+                                long diff = (new Date().getTime() / 1000) - Long.parseLong(timestampOutput);
+                                logger.debug(String.format("hostOutput is %s ,The time difference is %d(s) ", hostOutput, diff));
+
+                                if (diff < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
+                                    trigger.fail(operr("the host[ip:%s] has been taken over, because the takeover flag[HostUuid:%s] already exists and utime[%d] has not exceeded host ping interval[%d]",
+                                            self.getManagementIp(), hostOutput, diff, HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)));
                                     return;
                                 }
 
-                                HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.uuid, results[1]).find();
+                                HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.uuid, hostOutput).find();
                                 if (lastHostInv == null) {
                                     trigger.next();
                                 } else {
