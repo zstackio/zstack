@@ -5,6 +5,7 @@ import org.zstack.core.Platform;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -166,7 +167,7 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
     }
 
     private Object result(Object res, List<String> outputs) throws ReflectiveOperationException {
-        Field f = res.getClass().getDeclaredField(outputs.get(0));
+        Field f = FieldUtils.getField(outputs.get(0), res.getClass());
         f.setAccessible(true);
         Object tmp = f.get(res);
         if (outputs.size() == 1) {
