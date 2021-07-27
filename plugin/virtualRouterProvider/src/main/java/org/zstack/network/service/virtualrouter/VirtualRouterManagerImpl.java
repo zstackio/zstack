@@ -1968,6 +1968,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private void applianceVmsCascadeDeleteAdditionPubclicNic(List<VmNicInventory> toDeleteNics) {
+        if(toDeleteNics.isEmpty()) {
+            logger.debug(String.format("no nic need for delete"));
+            return;
+        }
         ErrorCodeList errList = new ErrorCodeList();
         FutureCompletion completion = new FutureCompletion(null);
         new While<>(toDeleteNics).each((VmNicInventory nic, WhileCompletion completion1) -> {
@@ -2027,7 +2031,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private List<ApplianceVmVO> applianceVmsToBeDeleted(List<ApplianceVmVO> applianceVmVOS, List<String> deletedUuids) {
         List<ApplianceVmVO> vos = new ArrayList<>();
         for (ApplianceVmVO vo : applianceVmVOS) {
-            VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vo.getUuid(), VirtualRouterVmVO.class));
+            VirtualRouterVmVO vo_dbf = dbf.findByUuid(vo.getUuid(), VirtualRouterVmVO.class);
+            if(vo_dbf == null) {
+                continue;
+            }
+            VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vo_dbf);
 
             List<String> l3Uuids = new ArrayList<>(vrInv.getGuestL3Networks());
             l3Uuids.add(vrInv.getPublicNetworkUuid());
@@ -2047,7 +2055,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     List<VmNicInventory> applianceVmsAdditionalPublicNic(List<ApplianceVmVO> applianceVmVOS, List<String> parentIssuerUuids) {
         List<VmNicInventory> toDeleteNics = new ArrayList<>();
         for (ApplianceVmVO vo : applianceVmVOS) {
-            VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vo.getUuid(), VirtualRouterVmVO.class));
+            VirtualRouterVmVO vr_dbf = dbf.findByUuid(vo.getUuid(), VirtualRouterVmVO.class);
+            if(vr_dbf == null) {
+                continue;
+            }
+            VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vr_dbf);
             for (VmNicInventory nic : vrInv.getAdditionalPublicNics()) {
                 /* skip default router nic */
                 if (nic.getL3NetworkUuid().equals(vrInv.getDefaultRouteL3NetworkUuid())) {
