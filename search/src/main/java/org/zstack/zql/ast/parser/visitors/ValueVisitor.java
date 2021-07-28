@@ -1,5 +1,6 @@
 package org.zstack.zql.ast.parser.visitors;
 
+import com.google.common.base.Throwables;
 import org.apache.commons.lang.StringUtils;
 import org.zstack.core.Platform;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -14,6 +15,7 @@ import org.zstack.zql.antlr4.ZQLBaseVisitor;
 import org.zstack.zql.antlr4.ZQLParser;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -162,6 +164,13 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
                 return result(ob, o);
             }
         } catch (Exception e) {
+            logger.debug(String.format("failed to call sdk: %s, params: %s\n%s", apiName, JSONObjectUtil.toJsonString(params), Throwables.getStackTraceAsString(e)));
+            // InvocationTargetException contains actual exception in its target
+            // but no error message in itself
+            if (e instanceof InvocationTargetException) {
+                throw new OperationFailureException(operr(((InvocationTargetException) e).getTargetException().getMessage()));
+            }
+
             throw new OperationFailureException(operr(e.getMessage()));
         }
     }
