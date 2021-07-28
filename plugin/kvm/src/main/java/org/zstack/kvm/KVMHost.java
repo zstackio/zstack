@@ -977,55 +977,8 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    protected class RunInKVMHostQueue {
-        private String name;
-        private List<AsyncBackup> asyncBackups = new ArrayList<>();
-
-        public RunInKVMHostQueue name(String v) {
-            name = v;
-            return this;
-        }
-
-        public RunInKVMHostQueue asyncBackup(AsyncBackup v) {
-            asyncBackups.add(v);
-            return this;
-        }
-
-        public void run(Consumer<SyncTaskChain> consumer) {
-            DebugUtils.Assert(name != null, "name() must be called");
-            DebugUtils.Assert(!asyncBackups.isEmpty(), "asyncBackup must be called");
-
-            AsyncBackup one = asyncBackups.get(0);
-            AsyncBackup[] rest = asyncBackups.size() > 1 ?
-                    asyncBackups.subList(1, asyncBackups.size()).toArray(new AsyncBackup[asyncBackups.size()-1]) :
-                    new AsyncBackup[0];
-
-            thdf.chainSubmit(new ChainTask(one, rest) {
-                @Override
-                public String getSyncSignature() {
-                    return id;
-                }
-
-                @Override
-                public void run(SyncTaskChain chain) {
-                    consumer.accept(chain);
-                }
-
-                @Override
-                protected int getSyncLevel() {
-                    return getHostSyncLevel();
-                }
-
-                @Override
-                public String getName() {
-                    return name;
-                }
-            });
-        }
-    }
-
-    protected RunInKVMHostQueue inQueue() {
-        return new RunInKVMHostQueue();
+    protected RunInQueue inQueue() {
+        return new RunInQueue(id, thdf, getHostSyncLevel());
     }
 
     private void handle(final VmDirectlyDestroyOnHypervisorMsg msg) {

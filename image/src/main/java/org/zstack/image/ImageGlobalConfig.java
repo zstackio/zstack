@@ -23,4 +23,6 @@ public class ImageGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig DELETION_GARBAGE_COLLECTION_INTERVAL = new GlobalConfig(CATEGORY, "deletion.gcInterval");
 
+    @GlobalConfigValidation(numberGreaterThan = 16)
+    public static GlobalConfig IMAGE_STORE_SYNC_LEVEL = new GlobalConfig(CATEGORY, "imageStore.syncLevel");
 }

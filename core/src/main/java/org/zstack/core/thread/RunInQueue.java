@@ -7,47 +7,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class ImageStoreBSQueue {
+public class RunInQueue {
     private String name;
     private List<AsyncBackup> asyncBackups = new ArrayList<>();
-    private int syncLevel = 32;
+    private int syncLevel;
 
     private String id;
     protected ThreadFacade thdf;
 
-    public int getSyncLevel() {
-        return syncLevel;
-    }
-
-    public void setSyncLevel(int syncLevel) {
-        this.syncLevel = syncLevel;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public ImageStoreBSQueue name(String v) {
+    public RunInQueue name(String v) {
         name = v;
         return this;
     }
 
-    public ImageStoreBSQueue asyncBackup(AsyncBackup v) {
+    public RunInQueue asyncBackup(AsyncBackup v) {
         asyncBackups.add(v);
         return this;
     }
 
-    public void run(Consumer<SyncTaskChain> consumer) {
-        DebugUtils.Assert(name != null, "BSQueue-name() must be called");
-        DebugUtils.Assert(!asyncBackups.isEmpty(), "asyncBackup must be called");
+    public RunInQueue(String id, ThreadFacade thdf, int syncLevel) {
+        this.id = id;
+        this.thdf = thdf;
+        this.syncLevel = syncLevel;
+    }
 
+    public void run(Consumer<SyncTaskChain> consumer) {
+        DebugUtils.Assert(name != null, "name() must be called");
+        DebugUtils.Assert(!asyncBackups.isEmpty(), "asyncBackup must be called");
+        
         AsyncBackup one = asyncBackups.get(0);
         AsyncBackup[] rest = asyncBackups.size() > 1 ?
-                asyncBackups.subList(1, asyncBackups.size()).toArray(new AsyncBackup[asyncBackups.size() - 1]) :
+                asyncBackups.subList(1, asyncBackups.size()).toArray(new AsyncBackup[asyncBackups.size()-1]) :
                 new AsyncBackup[0];
 
         thdf.chainSubmit(new ChainTask(one, rest) {
@@ -71,10 +61,5 @@ public class ImageStoreBSQueue {
                 return name;
             }
         });
-    }
-
-    public ImageStoreBSQueue(String id, ThreadFacade thdf) {
-        this.id = id;
-        this.thdf = thdf;
     }
 }
