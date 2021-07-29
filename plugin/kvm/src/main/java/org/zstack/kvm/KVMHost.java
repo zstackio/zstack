@@ -3158,6 +3158,7 @@ public class KVMHost extends HostBase implements Host {
 
                                             // when host is connecting, skip handling agent config changed issue
                                             // and agent config change will be detected by next ping
+                                            self = dbf.reload(self);
                                             if (self.getStatus() == HostStatus.Connecting) {
                                                 logger.debug("host status is %s, ignore version or host uuid changed issue");
                                                 return;
