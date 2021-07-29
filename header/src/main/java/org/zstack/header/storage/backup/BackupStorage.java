@@ -7,6 +7,12 @@ import org.zstack.header.message.Message;
 import java.util.List;
 
 public interface BackupStorage {
+    String idPrefix = "BS-";
+
+    static String buildId(String uuid) {
+        return idPrefix + uuid;
+    }
+
     void handleMessage(Message msg);
 
     void deleteHook();
