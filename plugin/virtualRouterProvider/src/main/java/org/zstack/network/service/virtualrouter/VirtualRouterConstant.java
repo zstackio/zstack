@@ -61,6 +61,8 @@ public interface VirtualRouterConstant {
 	public static final String VR_CHANGE_DEFAULT_ROUTE_JOB = "changeDefaultNic";
 	public static final String VR_DEFAULT_ROUTE_NETWORK = "defaultNetwork";
 
+	public static final String TC_FOR_VIPQOS = "ConfigTcForVipQos";
+
 	public static enum Param {
         VR,
         VR_UUID,

@@ -37,4 +37,7 @@ public class VirtualRouterGlobalConfig {
     public static GlobalConfig LOG_LEVEL = new GlobalConfig(CATEGORY, "haproxy.logLevel");
     @GlobalConfigValidation
     public static GlobalConfig IPV4_LOCAL_PORT_RANGE = new GlobalConfig(CATEGORY, "ipv4LocalPortRange");
+    @GlobalConfigValidation
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig TC_FOR_VIPQOS = new GlobalConfig(CATEGORY, "tc.for.vipqos");
 }

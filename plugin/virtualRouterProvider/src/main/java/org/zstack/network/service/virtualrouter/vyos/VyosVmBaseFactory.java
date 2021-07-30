@@ -7,6 +7,7 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
@@ -283,5 +284,6 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
         if (rcf.getResourceConfigValue(VyosGlobalConfig.CONFIG_FIREWALL_WITH_IPTABLES, l3Uuids.get(0), Boolean.class)) {
             info.put(VyosConstants.REPLACE_FIREWALL_WITH_IPTBALES, true);
         }
+        info.put(VirtualRouterConstant.TC_FOR_VIPQOS, rcf.getResourceConfigValue(VirtualRouterGlobalConfig.TC_FOR_VIPQOS, spec.getVmInventory().getUuid(), Boolean.class));
     }
 }
