@@ -103,8 +103,8 @@ CREATE PROCEDURE fixMissingTag2RoleInProjects()
                    values (new_role_uuid, 'predefined: tag2', 'CreatedBySystem', 'Enabled', NULL, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
                    CALL getMaxAccountResourceRefVO(refId);
-                   INSERT INTO AccountResourceRefVO (`id`, `accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`)
-                   values (refId + 1, targetAccountUuid, targetAccountUuid, new_role_uuid, 'RoleVO', 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+                   INSERT INTO AccountResourceRefVO (`id`, `accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`, `concreteResourceType`)
+                   values (refId + 1, targetAccountUuid, targetAccountUuid, new_role_uuid, 'RoleVO', 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'org.zstack.header.identity.role.SystemRoleVO');
 
                    SET new_statement_uuid = REPLACE(UUID(), '-', '');
                    INSERT INTO RolePolicyStatementVO (`uuid`, `statement`, `roleUuid`, `lastOpDate`, `createDate`)
@@ -184,8 +184,8 @@ CREATE PROCEDURE checkProjectAdminOfVirtualId(IN virtualUuid VARCHAR(32))
 
                 CALL getProjectAccount(targetProjectUuid, targetAccountUuid);
                 CALL getMaxAccountResourceRefVO(refId);
-                INSERT INTO AccountResourceRefVO (`id`, `accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`)
-                values (refId + 1, targetAccountUuid, targetAccountUuid, new_role_uuid, 'RoleVO', 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+                INSERT INTO AccountResourceRefVO (`id`, `accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`, `concreteResourceType`)
+                values (refId + 1, targetAccountUuid, targetAccountUuid, new_role_uuid, 'RoleVO', 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'org.zstack.header.identity.role.SystemRoleVO');
 
                 SET new_statement_uuid = REPLACE(UUID(), '-', '');
                 INSERT INTO RolePolicyStatementVO (`uuid`, `statement`, `roleUuid`, `lastOpDate`, `createDate`)
