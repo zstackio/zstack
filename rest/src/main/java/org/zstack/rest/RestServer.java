@@ -139,7 +139,7 @@ public class RestServer implements Component, CloudBusEventListener {
             try {
                 requestUrl = UriUtils.decode(req.getRequestURI(), "UTF-8");
                 method = req.getMethod();
-            } catch (UnsupportedEncodingException e) {
+            } catch (Exception e) {
                 throw new CloudRuntimeException(e);
             }
         }
@@ -510,7 +510,7 @@ public class RestServer implements Component, CloudBusEventListener {
             } else {
                 return UriUtils.decode(StringUtils.removeStart(req.getRequestURI(), req.getContextPath()), "UTF-8");
             }
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
     }

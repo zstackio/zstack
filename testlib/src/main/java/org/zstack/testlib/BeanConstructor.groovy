@@ -76,6 +76,8 @@ class BeanConstructor {
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to create temporary spring xml config", e);
         }
+
+        System.setProperty("spring.xml", SPRING_XML_NAME)
     }
 
     ComponentLoader build() {

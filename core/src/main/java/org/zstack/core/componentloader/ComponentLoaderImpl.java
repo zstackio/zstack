@@ -2,10 +2,8 @@ package org.zstack.core.componentloader;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.access.BeanFactoryLocator;
-import org.springframework.beans.factory.access.BeanFactoryReference;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.access.ContextSingletonBeanFactoryLocator;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.logging.CLogger;
@@ -34,10 +32,16 @@ public class ComponentLoaderImpl implements ComponentLoader {
 
     public ComponentLoaderImpl () {
         checkInit();
-        BeanFactoryLocator factoryLocator = ContextSingletonBeanFactoryLocator
-                .getInstance(String.format("classpath:%s", CoreGlobalProperty.BEAN_REF_CONTEXT_CONF));
-        BeanFactoryReference ref = factoryLocator.useBeanFactory("parentContext");
-        ioc = ref.getFactory();
+
+        String configurationXml = System.getProperty("spring.xml");
+        String configLocation;
+        if (configurationXml != null) {
+            configLocation = String.format("classpath:%s", configurationXml);
+        } else {
+            configLocation = "classpath:zstack.xml";
+        }
+
+        ioc = new ClassPathXmlApplicationContext(configLocation);
     }
 
     @Override
