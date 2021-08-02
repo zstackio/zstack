@@ -348,4 +348,30 @@ public class PathUtil {
         
         return success;
     }
+
+    /**
+     * If 'parentPath' is parent path of 'childPath', return true.
+     * 'parentPath' and 'childPath' must be absolute path.
+     * @param parentPath  must be absolute path
+     * @param childPath  must be absolute path
+     */
+    public static boolean isParentPath(String childPath, String parentPath) {
+        Path child = Paths.get(childPath).normalize();
+        final Path parent = Paths.get(parentPath).normalize();
+
+        try {
+            while (true) {
+                if (Files.isSameFile(child, parent)) {
+                    return true;
+                }
+                Path nextFile = child.getParent();
+                if (nextFile == null || Files.isSameFile(nextFile, child)) {
+                    return false;
+                }
+                child = nextFile;
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
 }
