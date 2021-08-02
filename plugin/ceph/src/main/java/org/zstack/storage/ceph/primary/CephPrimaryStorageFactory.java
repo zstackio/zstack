@@ -59,10 +59,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -504,17 +501,32 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                     return;
                 }
 
-                final String[] ips = extraIps.split(",");
-                for (String ip: ips) {
-                    if (!Q.New(CephPrimaryStorageMonVO.class).eq(CephPrimaryStorageMonVO_.monAddr, ip).isExists()) {
-                        continue;
-                    }
+                final List<String> ips = Arrays.asList(extraIps.split(","));
 
-                    SQL.New(CephPrimaryStorageMonVO.class)
-                            .eq(CephPrimaryStorageMonVO_.monAddr, ip)
-                            .set(CephPrimaryStorageMonVO_.status, MonStatus.Disconnected)
-                            .update();
+                // if no storage network set for primary storage
+                if (d.getInventory().getManagementIp() != null) {
+                    ips.add(d.getInventory().getManagementIp());
                 }
+
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        for (String ip: ips) {
+                            if (!q(CephPrimaryStorageMonVO.class).eq(CephPrimaryStorageMonVO_.monAddr, ip).isExists()) {
+                                continue;
+                            }
+
+                            // treat connecting as disconnected
+                            // only update connected mon to disconnected status
+                            sql(CephPrimaryStorageMonVO.class)
+                                    .eq(CephPrimaryStorageMonVO_.monAddr, ip)
+                                    .eq(CephPrimaryStorageMonVO_.status, MonStatus.Connected)
+                                    .set(CephPrimaryStorageMonVO_.status, MonStatus.Disconnected)
+                                    .update();
+                            logger.debug(String.format("ceph mon[ip: %s] disconnected, because host[uuid: %s] disconnected", ip, d.getHostUuid()));
+                        }
+                    }
+                }.execute();
             }
         });
 
