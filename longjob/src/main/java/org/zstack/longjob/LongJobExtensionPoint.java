@@ -10,4 +10,5 @@ import org.zstack.header.message.APIEvent;
 public interface LongJobExtensionPoint {
     void afterJobFinished(LongJob job, LongJobVO vo, APIEvent evt);
     void afterJobFailed(LongJob job, LongJobVO vo, APIEvent evt);
+    void afterJobFinished(LongJob job, LongJobVO vo);
 }
