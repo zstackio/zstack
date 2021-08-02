@@ -64,7 +64,7 @@
 
     <listener>
         <listener-class>
-            org.springframework.web.context.ContextLoaderListener 
+            org.zstack.portal.managementnode.BootstrapContextLoaderListener
         </listener-class>
     </listener>
 

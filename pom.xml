@@ -10,14 +10,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.compiler.version>3.6.1</project.compiler.version>
         <project.java.version>1.8</project.java.version>
-        <spring.framework.version>4.3.30.RELEASE</spring.framework.version>
+        <spring.framework.version>5.1.5.RELEASE</spring.framework.version>
         <spring.security.version>4.2.18.RELEASE</spring.security.version>
-        <hibernate.version>5.2.17.Final</hibernate.version>
+        <hibernate.version>5.3.12.Final</hibernate.version>
         <aspectj.version>1.8.9</aspectj.version>
         <aspectj.plugin.version>1.10</aspectj.plugin.version>
         <groovy.eclipse.compiler>2.9.2-01</groovy.eclipse.compiler>
         <groovy.eclipse.batch>2.4.3-01</groovy.eclipse.batch>
-        <hibernate.search.version>5.8.2.Final</hibernate.search.version>
+        <hibernate.search.version>5.10.7.Final</hibernate.search.version>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>
@@ -167,12 +167,17 @@
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-directory-provider</artifactId>
-                <version>8.2.4.Final</version>
+                <version>9.4.23.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-core</artifactId>
                 <version>${hibernate.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate.common</groupId>
+                <artifactId>hibernate-commons-annotations</artifactId>
+                <version>5.0.5.Final</version>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>
@@ -463,6 +468,11 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>1.16.6</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.9.11</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

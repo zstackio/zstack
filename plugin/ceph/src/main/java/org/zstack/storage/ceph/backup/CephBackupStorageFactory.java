@@ -13,6 +13,7 @@ import org.zstack.storage.ceph.*;
 import org.zstack.tag.SystemTagCreator;
 
 import javax.persistence.LockModeType;
+import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
@@ -132,7 +133,7 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
             }
 
             dbf.getEntityManager().merge(vo);
-        } catch (EmptyResultDataAccessException e) {
+        } catch (NoResultException|EmptyResultDataAccessException e) {
             return;
         }
     }
