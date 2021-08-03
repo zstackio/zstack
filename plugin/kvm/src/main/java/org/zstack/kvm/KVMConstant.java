@@ -38,6 +38,7 @@ public interface KVMConstant {
     String KVM_REBOOT_VM_PATH = "/vm/reboot";
     String KVM_DESTROY_VM_PATH = "/vm/destroy";
     String KVM_MIGRATE_VM_PATH = "/vm/migrate";
+    String KVM_MIGRATE_VM_CHECK_CPU_PATH = "/vm/migrate/check/cpu";
     String KVM_GET_VNC_PORT_PATH = "/vm/getvncport";
     String KVM_VM_ONLINE_INCREASE_CPU = "/vm/increase/cpu";
     String KVM_VM_ONLINE_INCREASE_MEMORY = "/vm/increase/mem";

@@ -139,6 +139,7 @@ public class KVMHost extends HostBase implements Host {
     private String attachNicPath;
     private String detachNicPath;
     private String migrateVmPath;
+    private String migrateVmCheckCpuPath;
     private String snapshotPath;
     private String mergeSnapshotPath;
     private String hostFactPath;
@@ -237,6 +238,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_MIGRATE_VM_PATH);
         migrateVmPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_MIGRATE_VM_CHECK_CPU_PATH);
+        migrateVmCheckCpuPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH);
@@ -475,6 +480,8 @@ public class KVMHost extends HostBase implements Host {
             handle((VmUpdateNicOnHypervisorMsg) msg);
         } else if (msg instanceof MigrateVmOnHypervisorMsg) {
             handle((MigrateVmOnHypervisorMsg) msg);
+        } else if (msg instanceof MigrateVmCheckCpuOnHostMsg) {
+            handle((MigrateVmCheckCpuOnHostMsg) msg);
         } else if (msg instanceof TakeSnapshotOnHypervisorMsg) {
             handle((TakeSnapshotOnHypervisorMsg) msg);
         } else if (msg instanceof MergeVolumeSnapshotOnKvmMsg) {
@@ -530,6 +537,32 @@ public class KVMHost extends HostBase implements Host {
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(MigrateVmCheckCpuOnHostMsg msg) {
+        final MigrateVmCheckCpuOnHostReply reply = new MigrateVmCheckCpuOnHostReply();
+        String managementIp = Q.New(HostVO.class).select(HostVO_.managementIp).eq(HostVO_.uuid, msg.getHostUuid()).findValue();
+        MigrateVmCheckCpuCmd cmd = new MigrateVmCheckCpuCmd();
+        cmd.setCpuXml(msg.getCpuXml());
+        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmCheckCpuPath);
+        ub.host(managementIp);
+        String url = ub.build().toString();
+        new Http<>(url, cmd, MigrateVmCheckCpuResponse.class).call(msg.getHostUuid(), new ReturnValueCompletion<MigrateVmCheckCpuResponse>(msg) {
+            @Override
+            public void success(MigrateVmCheckCpuResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("unable to check cpu on host, because %s", ret.getError()));
+                } else {
+                    reply.setResult(ret.getResult());
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+            }
+        });
     }
 
     private void handle(CheckHostCapacityMsg msg) {

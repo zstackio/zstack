@@ -2711,6 +2711,30 @@ public class KVMAgentCommands {
     public static class MigrateVmResponse extends AgentResponse {
     }
 
+    public static class MigrateVmCheckCpuCmd extends AgentCommand{
+        private String cpuXml;
+
+        public String getCpuXml() {
+            return cpuXml;
+        }
+
+        public void setCpuXml(String cpuXml) {
+            this.cpuXml = cpuXml;
+        }
+    }
+
+    public static class MigrateVmCheckCpuResponse extends AgentResponse {
+        private String result;
+
+        public String getResult() {
+            return result;
+        }
+
+        public void setResult(String result) {
+            this.result = result;
+        }
+    }
+
     public static class MergeSnapshotRsp extends AgentResponse {
     }
 
