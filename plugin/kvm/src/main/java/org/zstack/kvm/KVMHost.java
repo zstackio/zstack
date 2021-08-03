@@ -3965,6 +3965,7 @@ public class KVMHost extends HostBase implements Host {
 
                             UpdateDependencyCmd cmd = new UpdateDependencyCmd();
                             cmd.hostUuid = self.getUuid();
+                            cmd.zstackRepo = AnsibleGlobalProperty.ZSTACK_REPO;
 
                             if (info.isNewAdded()) {
                                 cmd.enableExpRepo = true;
