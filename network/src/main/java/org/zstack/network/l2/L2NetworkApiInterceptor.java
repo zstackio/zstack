@@ -11,6 +11,8 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -28,6 +30,8 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof L2NetworkMessage) {
@@ -58,6 +62,18 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         q.add(L2NetworkClusterRefVO_.l2NetworkUuid, Op.EQ, msg.getL2NetworkUuid());
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(operr("l2Network[uuid:%s] has attached to cluster[uuid:%s], can't attach again", msg.getL2NetworkUuid(), msg.getClusterUuid()));
+        }
+
+        SimpleQuery<L2NetworkVO> q2 = dbf.createQuery(L2NetworkVO.class);
+        q2.add(L2NetworkVO_.uuid, Op.EQ, msg.getL2NetworkUuid());
+        q2.add(L2NetworkVO_.vSwitchType, Op.EQ, "OvsDpdk");
+        boolean isOvsDpdk = q2.isExists();
+
+        ResourceConfig ovsDpdkSup = rcf.getResourceConfig("premiumCluster.network.ovsdpdk");
+        boolean isOvsDpdkSup = ovsDpdkSup.getResourceConfigValue(msg.getClusterUuid(), Boolean.class);
+
+        if (isOvsDpdk && !isOvsDpdkSup) {
+            throw new ApiMessageInterceptionException(operr("cluster[uuid:%s] do not support ovsdpdk", msg.getClusterUuid()));
         }
     }
 
