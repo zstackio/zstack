@@ -1,5 +1,6 @@
 package org.zstack.network.l2;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
@@ -70,10 +71,15 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         boolean isOvsDpdk = q2.isExists();
 
         ResourceConfig ovsDpdkSup = rcf.getResourceConfig("premiumCluster.network.ovsdpdk");
-        boolean isOvsDpdkSup = ovsDpdkSup.getResourceConfigValue(msg.getClusterUuid(), Boolean.class);
-
-        if (isOvsDpdk && !isOvsDpdkSup) {
-            throw new ApiMessageInterceptionException(operr("cluster[uuid:%s] do not support ovsdpdk", msg.getClusterUuid()));
+        if (ovsDpdkSup != null) {
+            boolean isOvsDpdkSup = ovsDpdkSup.getResourceConfigValue(msg.getClusterUuid(), Boolean.class);
+            if (isOvsDpdk && !isOvsDpdkSup) {
+                throw new ApiMessageInterceptionException(operr("cluster[uuid:%s] do not support ovsdpdk", msg.getClusterUuid()));
+            }
+        } else {
+            if (isOvsDpdk) {
+                throw new ApiMessageInterceptionException(operr("cluster[uuid:%s] do not support ovsdpdk", msg.getClusterUuid()));
+            }
         }
     }
 
@@ -97,6 +103,14 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateL2NetworkMsg msg) {
         if (!L2NetworkType.hasType(msg.getType())) {
             throw new ApiMessageInterceptionException(argerr("unsupported l2Network type[%s]", msg.getType()));
+        }
+        // once we already created a linux bridge with a physical interface,
+        // we can not use it to create a OvsDpdk bridge
+        SimpleQuery<L2NetworkVO> q = dbf.createQuery(L2NetworkVO.class);
+        q.add(L2NetworkVO_.physicalInterface, Op.EQ, msg.getPhysicalInterface());
+        q.add(L2NetworkVO_.vSwitchType, Op.NOT_EQ, msg.getvSwitchType());
+        if (q.isExists()) {
+            throw new ApiMessageInterceptionException(argerr("can not create %s L2Network with physicalInterface:[%s] which was already been used by another vSwitchType.", msg.getvSwitchType(), msg.getPhysicalInterface()));
         }
     }
 }
