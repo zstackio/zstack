@@ -63,6 +63,8 @@ public interface VirtualRouterConstant {
 
 	public static final String VR_CONFIGURE_NTP = "/configurentp";
 
+	public static final String TC_FOR_VIPQOS = "ConfigTcForVipQos";
+
 	public static enum Param {
         VR,
         VR_UUID,

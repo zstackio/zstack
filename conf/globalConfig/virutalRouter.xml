@@ -84,4 +84,11 @@
         <type>java.lang.String</type>
     </config>
 
+    <config>
+        <name>tc.for.vipqos</name>
+        <description>use linux tc for qos policy</description>
+        <defaultValue>true</defaultValue>
+        <category>virtualRouter</category>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>
