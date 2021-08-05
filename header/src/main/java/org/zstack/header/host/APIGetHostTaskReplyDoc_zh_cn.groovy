@@ -30,12 +30,4 @@ doc {
 		type "boolean"
 		since "3.6.0"
 	}
-	ref {
-		name "error"
-		path "org.zstack.header.host.APIGetHostTaskReply.error"
-		desc "null"
-		type "ErrorCode"
-		since "3.6.0"
-		clz ErrorCode.class
-	}
 }

@@ -23,6 +23,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -544,11 +545,20 @@ public class VmInstanceInventory implements Serializable, Cloneable {
      * See :{@link VolumeInventory#isDisk}
      */
     public List<VolumeInventory> getAllDiskVolumes() {
-        return allVolumes.stream().filter(VolumeInventory::isDisk).collect(Collectors.toList());
+        return getAllVolumes(VolumeInventory::isDisk);
     }
 
+    @Deprecated
     public List<VolumeInventory> getAllVolumes() {
         return allVolumes;
+    }
+
+    public List<VolumeInventory> getAllVolumes(Predicate<VolumeInventory> predicate) {
+        return allVolumes.stream().filter(predicate).collect(Collectors.toList());
+    }
+
+    public VolumeInventory getVolume(Predicate<VolumeInventory> predicate) {
+        return allVolumes.stream().filter(predicate).findFirst().orElse(null);
     }
 
     public void setAllVolumes(List<VolumeInventory> allVolumes) {

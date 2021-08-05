@@ -6,6 +6,12 @@ doc {
 
 	title "重置全局配置返回信息"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.core.config.APIResetGlobalConfigEvent.error"

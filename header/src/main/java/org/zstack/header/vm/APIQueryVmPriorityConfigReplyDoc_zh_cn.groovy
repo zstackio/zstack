@@ -7,6 +7,12 @@ doc {
 
 	title "查询云主机优先级配置返回"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.vm.APIQueryVmPriorityConfigReply.error"

@@ -7,6 +7,12 @@ doc {
 
 	title "更新 Ceph 主存储 Pool 存储池 "
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.storage.ceph.primary.APIUpdateCephPrimaryStoragePoolEvent.error"

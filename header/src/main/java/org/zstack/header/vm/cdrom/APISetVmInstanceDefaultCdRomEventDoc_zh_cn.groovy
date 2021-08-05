@@ -7,6 +7,12 @@ doc {
 
 	title "设置云主机默认CDROM返回"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.vm.cdrom.APISetVmInstanceDefaultCdRomEvent.error"

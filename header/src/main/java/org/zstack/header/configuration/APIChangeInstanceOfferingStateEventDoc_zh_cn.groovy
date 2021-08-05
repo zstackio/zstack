@@ -6,6 +6,12 @@ doc {
 
     title "云主机规格清单"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
     ref {
         name "error"
         path "org.zstack.header.configuration.APIChangeInstanceOfferingStateEvent.error"

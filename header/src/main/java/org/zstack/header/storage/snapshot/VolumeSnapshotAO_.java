@@ -20,7 +20,7 @@ public class VolumeSnapshotAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VolumeSnapshotAO, String> volumeUuid;
     public static volatile SingularAttribute<VolumeSnapshotAO, String> primaryStorageUuid;
     public static volatile SingularAttribute<VolumeSnapshotAO, String> primaryStorageInstallPath;
-    public static volatile SingularAttribute<VolumeSnapshotAO, VolumeType> volumeType;
+    public static volatile SingularAttribute<VolumeSnapshotAO, String> volumeType;
     public static volatile SingularAttribute<VolumeSnapshotAO, Boolean> latest;
     public static volatile SingularAttribute<VolumeSnapshotAO, Boolean> fullSnapshot;
     public static volatile SingularAttribute<VolumeSnapshotAO, Integer> distance;

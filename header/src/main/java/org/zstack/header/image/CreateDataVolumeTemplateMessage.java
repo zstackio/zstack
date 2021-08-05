@@ -42,5 +42,5 @@ public interface CreateDataVolumeTemplateMessage extends AddImageMessage {
     default void setVirtio(boolean virtio) {}
 
     @Override
-    default boolean getVirtio() {return false;}
+    default boolean isVirtio() {return false;}
 }

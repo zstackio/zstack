@@ -122,7 +122,9 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new KVMAgentCommands.AgentResponse()
             }
 
-            simulator(CephPrimaryStorageBase.CHECK_HOST_STORAGE_CONNECTION_PATH) {
+            simulator(CephPrimaryStorageBase.CHECK_HOST_STORAGE_CONNECTION_PATH) { HttpEntity<String> e ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CheckHostStorageConnectionCmd)
+                assert cmd.hostUuid != null
                 return new KVMAgentCommands.AgentResponse()
             }
 
@@ -160,7 +162,10 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(CephPrimaryStorageBase.CLONE_PATH) {
-                return new CephPrimaryStorageBase.CloneRsp()
+                def rsp = new CephPrimaryStorageBase.CloneRsp()
+                rsp.size = 0
+                rsp.actualSize = 0
+                return rsp
             }
 
             simulator(CephPrimaryStorageBase.FLATTEN_PATH) {
@@ -212,19 +217,6 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new CephPrimaryStorageBase.AgentResponse()
             }
 
-            def decodeUnicode = { String unicode ->
-                String str = unicode.split(" ")[0]
-                str = str.replace("\\", "")
-                String[] arr = str.split("u")
-                String text = ""
-                for(int i = 1; i < arr.length; i++){
-                    int hexVal = Integer.parseInt(arr[i], 16)
-                    text += (char) hexVal
-                }
-
-                return text
-            }
-
             simulator(CephPrimaryStorageBase.ADD_POOL_PATH) { HttpEntity<String> entity ->
                 def cmd = JSONObjectUtil.toObject(entity.body, CephPrimaryStorageBase.AddPoolCmd.class)
 
@@ -233,7 +225,7 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.setTotalCapacity(SizeUnit.GIGABYTE.toByte(100))
                 List<CephPoolCapacity> poolCapacities = [
                         new CephPoolCapacity(
-                                name: decodeUnicode(cmd.poolName),
+                                name: cmd.poolName,
                                 availableCapacity: SizeUnit.GIGABYTE.toByte(100),
                                 usedCapacity: 0,
                                 totalCapacity: SizeUnit.GIGABYTE.toByte(100),

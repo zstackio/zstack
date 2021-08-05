@@ -6,6 +6,12 @@ doc {
 
 	title "从镜像服务器删除导出的镜像"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.storage.backup.APIDeleteExportedImageFromBackupStorageEvent.error"

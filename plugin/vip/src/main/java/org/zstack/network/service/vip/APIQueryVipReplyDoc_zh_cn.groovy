@@ -6,6 +6,12 @@ doc {
 
     title "虚拟IP清单"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
     ref {
         name "error"
         path "org.zstack.network.service.vip.APIQueryVipReply.error"

@@ -7,6 +7,12 @@ doc {
 
 	title "获取备份存储上的回收数据列表"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.storage.backup.APIGetTrashOnBackupStorageReply.error"

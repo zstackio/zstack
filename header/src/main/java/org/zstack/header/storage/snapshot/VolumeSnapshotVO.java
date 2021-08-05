@@ -74,4 +74,12 @@ public class VolumeSnapshotVO extends VolumeSnapshotAO implements OwnedByAccount
             groupRef.setVolumeSnapshotInstallPath(primaryStorageInstallPath);
         }
     }
+
+    @Override
+    public void setVolumeType(String volumeType) {
+        super.setVolumeType(volumeType);
+        if (groupRef != null && volumeType != null) {
+            groupRef.setVolumeType(volumeType);
+        }
+    }
 }

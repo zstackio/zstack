@@ -27,6 +27,7 @@ public interface KVMConstant {
     String KVM_DELETE_L2VLAN_NETWORK_PATH = "/network/l2vlan/deletebridge";
     String KVM_REALIZE_OVSDPDK_NETWORK_PATH = "/network/ovsdpdk/createbridge";
     String KVM_CHECK_OVSDPDK_NETWORK_PATH = "/network/ovsdpdk/checkbridge";
+    String KVM_DELETE_OVSDPDK_NETWORK_PATH = "/network/ovsdpdk/deletebridge";
     String KVM_GENERATE_VDPA_PATH = "/network/ovsdpdk/generatevdpa";
     String KVM_DELETE_VDPA_PATH = "/network/ovsdpdk/deletevdpa";
     String KVM_ATTACH_ISO_PATH = "/vm/iso/attach";
@@ -84,6 +85,7 @@ public interface KVMConstant {
     String KVM_ANSIBLE_LOG_PATH_FROMAT = "/kvm/ansiblelog/{uuid}";
     String KVM_REPORT_VM_SHUTDOWN_EVENT = "/kvm/reportvmshutdown";
     String KVM_REPORT_VM_REBOOT_EVENT = "/kvm/reportvmreboot";
+    String KVM_REPORT_VM_CRASH_EVENT = "/kvm/reportvmcrash";
 
     String KVM_TRANSMIT_VM_OPERATION_TO_MN = "/host/transmitvmoperation";
 
@@ -129,6 +131,8 @@ public interface KVMConstant {
                 return VmInstanceState.Stopped;
             } else if (this == Paused) {
                 return VmInstanceState.Paused;
+            } else if (this == Crashed) {
+                return VmInstanceState.Crashed;
             } else {
                 return VmInstanceState.Unknown;
             }

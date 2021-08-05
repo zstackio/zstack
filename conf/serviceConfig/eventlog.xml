@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <message>
+        <name>org.zstack.core.eventlog.APIQueryEventLogMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>

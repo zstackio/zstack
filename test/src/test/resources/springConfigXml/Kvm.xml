@@ -73,6 +73,7 @@
             <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.core.cloudbus.MarshalReplyMessageExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
         </zstack:plugin>
     </bean>
 

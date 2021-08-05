@@ -1,6 +1,7 @@
 package org.zstack.compute.vm;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.cluster.ClusterVO;
@@ -61,6 +62,16 @@ public class VmGlobalConfig {
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig RESOURCE_BINDING_STRATEGY = new GlobalConfig(CATEGORY, "resourceBinding.strategy");
 
+    @GlobalConfigValidation(validValues = {"None", "Preserve","Reboot","Shutdown"})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig VM_CRASH_STRATEGY = new GlobalConfig(CATEGORY, "crash.strategy");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig VM_REBOOT_THRESHOLD_DURATION = new GlobalConfig(CATEGORY, "crash.rebootThreshold.duration");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig VM_REBOOT_THRESHOLD_TIMES = new GlobalConfig(CATEGORY, "crash.rebootThreshold.times");
+
     @GlobalConfigValidation(validValues = {"Auto", "All"})
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig RESOURCE_BINDING_SCENE = new GlobalConfig(CATEGORY, "resourceBinding.Scene");
@@ -71,4 +82,8 @@ public class VmGlobalConfig {
 
     @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig UNKNOWN_GC_INTERVAL = new GlobalConfig(CATEGORY, "set.unknown.gc.interval");
+
+    @GlobalConfigDef(defaultValue = "Microsoft Hv", type = String.class, description = "set vendor_id")
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    public static GlobalConfig VENDOR_ID = new GlobalConfig(CATEGORY, "vendorId");
 }

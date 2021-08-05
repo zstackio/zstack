@@ -206,7 +206,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         assert inv.poolName == LOW_POOL_NAME
         assert acmd != null
         assert !acmd.isCreate
-        assert acmd.poolName == EncodingConversion.encodingToUnicode(LOW_POOL_NAME)
+        assert acmd.poolName == LOW_POOL_NAME
 
         CephPrimaryStorageBase.DeletePoolCmd dcmd = null
 

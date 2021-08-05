@@ -989,4 +989,22 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
         bus.reply(msg, reply);
     }
+
+    @Override
+    protected void handle(ChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        HypervisorBackend backend = getHypervisorBackendByVolumeUuid(msg.getVolume().getUuid());
+        backend.handle(msg, new ReturnValueCompletion<ChangeVolumeTypeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(ChangeVolumeTypeOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                ChangeVolumeTypeOnPrimaryStorageReply reply = new ChangeVolumeTypeOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
 }

@@ -95,8 +95,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     @Autowired
     protected StorageTrash trash;
     @Autowired
-    protected PrimaryStorageOverProvisioningManager psRatioMgr;
-    @Autowired
     protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
 
     public PrimaryStorageBase() {
@@ -386,27 +384,11 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handleBase((CheckVolumeSnapshotOperationOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ShrinkVolumeSnapshotOnPrimaryStorageMsg) {
             handle((ShrinkVolumeSnapshotOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof CheckPrimaryStorageCapacityMsg) {
-            handle((CheckPrimaryStorageCapacityMsg) msg);
+        } else if (msg instanceof ChangeVolumeTypeOnPrimaryStorageMsg) {
+            handle((ChangeVolumeTypeOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
-    }
-
-    private void handle(CheckPrimaryStorageCapacityMsg msg) {
-        CheckPrimaryStorageCapacityReply reply = new CheckPrimaryStorageCapacityReply();
-
-        long reservedCapacity = SizeUtils.sizeStringToBytes(PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value());
-        if (self.getCapacity().getAvailableCapacity() -
-                psRatioMgr.calculateByRatio(self.getUuid(), msg.getRequiredSize()) >= reservedCapacity
-                && physicalCapacityMgr.checkCapacityByRatio(self.getUuid(), self.getCapacity().getTotalPhysicalCapacity(),
-                self.getCapacity().getAvailablePhysicalCapacity())
-                && physicalCapacityMgr.checkRequiredCapacityByRatio(self.getUuid(), self.getCapacity().getTotalPhysicalCapacity(), msg.getRequiredSize())) {
-            reply.setCapacity(true);
-        }
-
-        bus.reply(msg, reply);
-
     }
 
     protected void handle(final CleanUpTrashOnPrimaryStroageMsg msg) {
@@ -1650,6 +1632,13 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         reply.setActualSize(snapshotVO.getSize());
         bus.reply(msg, reply);
     }
+
+    protected void handle(ChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        ChangeVolumeTypeOnPrimaryStorageReply reply = new ChangeVolumeTypeOnPrimaryStorageReply();
+        reply.setSnapshots(msg.getSnapshots());
+        reply.setVolume(msg.getVolume());
+        bus.reply(msg, reply);
+    };
 
     // don't attach any cluster
     public boolean isUnmounted() {

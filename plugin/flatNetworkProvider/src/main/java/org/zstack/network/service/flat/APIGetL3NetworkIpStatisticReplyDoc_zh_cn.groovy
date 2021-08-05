@@ -37,12 +37,4 @@ doc {
         type "boolean"
         since "3.7.0"
     }
-    ref {
-        name "error"
-        path "org.zstack.network.service.flat.APIGetL3NetworkIpStatisticReply.error"
-        desc "null"
-        type "ErrorCode"
-        since "3.7.0"
-        clz ErrorCode.class
-    }
 }

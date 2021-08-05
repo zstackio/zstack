@@ -58,7 +58,7 @@ class Ipv6GetFreeIpCase extends SubCase {
             startIp = "2003:2001::0010"
             endIp = "2003:2001::0020"
             gateway = "2003:2001::2"
-            prefixLen = 60
+            prefixLen = 64
             addressMode = IPv6Constants.Stateful_DHCP
         }
 
@@ -82,7 +82,7 @@ class Ipv6GetFreeIpCase extends SubCase {
             startIp = "2003:2001::0030"
             endIp = "2003:2001::0040"
             gateway = "2003:2001::2"
-            prefixLen = 60
+            prefixLen = 64
             addressMode = IPv6Constants.Stateful_DHCP
         }
 
