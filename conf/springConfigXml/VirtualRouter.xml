@@ -94,6 +94,18 @@
             </list>
         </property>
 
+        <property name="virtualRouterProvisionConfigFlows">
+            <list>
+                <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterSyncVipFlow</value>
+                <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterSyncPortForwardingRulesOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.eip.VirtualRouterSyncEipOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.lb.VirtualRouterSyncLbOnStartFlow</value>
+            </list>
+        </property>
+
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
@@ -119,6 +131,13 @@
             <zstack:extension interface="org.zstack.header.Component" order="-100"/>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VirtualRouterPingFailureTracker" class="org.zstack.network.service.virtualrouter.VirtualRouterPingFailureTracker">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+            <zstack:extension interface="org.zstack.network.service.virtualrouter.VirtualRouterTrackerExtensionPoint" />
         </zstack:plugin>
     </bean>
 

@@ -13,10 +13,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
-import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
-import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
-import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_;
+import org.zstack.network.service.virtualrouter.*;
 
 import java.util.List;
 import java.util.Map;
@@ -77,8 +74,8 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
     }
 
     @Override
-    public void submitVirutalRouterHaTask(Map<String, Object> data, Completion completion) {
-        String vrUuid = (String)data.get(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString());
+    public void submitVirtualRouterHaTask(VirtualRouterHaTask task, Completion completion) {
+        String vrUuid = task.getOriginRouterUuid();
         if (vrHasNoHA(vrUuid)) {
             completion.success();
             return;
@@ -96,8 +93,8 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
             return;
         }
 
-        data.put(VirtualRouterHaCallbackInterface.Params.PeerRouterUuid.toString(), peerUuid);
-        exps.get(0).submitTaskToHaRouter(data, completion);
+        task.setPeerRouterUuid(peerUuid);
+        exps.get(0).submitTaskToHaRouter(task, completion);
     }
 
     @Override
@@ -131,7 +128,7 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
     }
 
     @Override
-    public String getVirutalRouterHaName(String vrUuid) {
+    public String getVirtualRouterHaName(String vrUuid) {
         List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
         if (exps.isEmpty()) {
             return null;
@@ -141,7 +138,7 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
     }
 
     @Override
-    public String getVirutalRouterHaUuid(String vrUuid) {
+    public String getVirtualRouterHaUuid(String vrUuid) {
         List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
         if (exps.isEmpty()) {
             return null;
@@ -151,7 +148,7 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
     }
 
     @Override
-    public String getVirutalRouterPeerUuid(String vrUuid) {
+    public String getVirtualRouterPeerUuid(String vrUuid) {
         List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
         if (exps.isEmpty()) {
             return null;

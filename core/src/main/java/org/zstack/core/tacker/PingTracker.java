@@ -30,7 +30,7 @@ public abstract class PingTracker implements Component {
     private final static CLogger logger = Utils.getLogger(PingTracker.class);
 
     private final List<String> resourceUuids = Collections.synchronizedList(new ArrayList<String>());
-    private Set<String> resourceInTracking = Collections.synchronizedSet(new HashSet<String>());
+    private final Set<String> resourceInTracking = Collections.synchronizedSet(new HashSet<String>());
     private Future<Void> trackerThread = null;
 
     @Autowired
@@ -57,11 +57,10 @@ public abstract class PingTracker implements Component {
         @Override
         public void run() {
             try {
-                List<NeedReplyMessage> msgs = null;
+                final List<NeedReplyMessage> msgs = new ArrayList<NeedReplyMessage>();
                 synchronized (resourceUuids) {
                     final Map<NeedReplyMessage, String> tmp = new HashMap<NeedReplyMessage, String>();
 
-                    msgs = new ArrayList<NeedReplyMessage>();
                     for (String resUuid : resourceUuids) {
                         if (resourceInTracking.contains(resUuid)) {
                             continue;

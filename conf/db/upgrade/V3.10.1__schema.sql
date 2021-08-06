@@ -1,0 +1,5 @@
+UPDATE ResourceConfigVO r, PrimaryStorageVO p SET r.category='localStoragePrimaryStorage' WHERE r.name='qcow2.allocation' and r.resourceUuid=p.uuid and p.type='LocalStorage';
+UPDATE ResourceConfigVO r, PrimaryStorageVO p SET r.category='sharedblock', r.description='qcow2 allocation policy, can be none, metadata' WHERE r.name='qcow2.allocation' and r.resourceUuid=p.uuid and p.type='SharedBlock';
+UPDATE ResourceConfigVO r, PrimaryStorageVO p SET r.category='nfsPrimaryStorage' WHERE r.name='qcow2.allocation' and r.resourceUuid=p.uuid and p.type='NFS';
+UPDATE ResourceConfigVO r, PrimaryStorageVO p SET r.category='sharedMountPointPrimaryStorage' WHERE r.name='qcow2.allocation' and r.resourceUuid=p.uuid and p.type='SharedMountPoint';
+UPDATE ResourceConfigVO r, PrimaryStorageVO p SET r.category='ministorage' WHERE r.name='qcow2.allocation' and r.resourceUuid=p.uuid and p.type='MiniStorage';

@@ -1,6 +1,5 @@
 package org.zstack.network.service.virtualrouter.eip;
 
-import com.google.common.collect.ImmutableSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.appliancevm.ApplianceVmFacade;
 import org.zstack.appliancevm.ApplianceVmFirewallProtocol;
@@ -10,7 +9,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.*;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -22,7 +20,9 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.eip.*;
 import org.zstack.network.service.virtualrouter.*;
@@ -33,6 +33,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -40,7 +41,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.*;
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -57,8 +58,6 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
     @Autowired
     private ApplianceVmFacade asf;
     @Autowired
-    private ApiTimeoutManager apiTimeoutManager;
-    @Autowired
     private NetworkServiceManager nwServiceMgr;
     @Autowired
     private EipConfigProxy proxy;
@@ -67,12 +66,8 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
     @Autowired
     private EventFacade evtf;
 
-    private String APPLY_EIP_TASK = "applyEip";
-    private String REVOKE_EIP_TASK = "revokeEip";
-
-    public static final Set<VmInstanceState> SYNC_EIP_VM_STATES = ImmutableSet.<VmInstanceState> of(
-            VmInstanceState.Running
-    );
+    private final String APPLY_EIP_TASK = "applyEip";
+    private final String REVOKE_EIP_TASK = "revokeEip";
 
     private List<ApplianceVmFirewallRuleInventory> getFirewallRules(EipStruct struct) {
         ApplianceVmFirewallRuleInventory tcp = new ApplianceVmFirewallRuleInventory();
@@ -200,21 +195,19 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
     }
 
     protected void applyEipOnHaRouter(String vrUuid, EipStruct struct, Completion completion) {
-        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
-        Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), APPLY_EIP_TASK);
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
-        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
-        haBackend.submitVirutalRouterHaTask(data, completion);
+        VirtualRouterHaTask task = new VirtualRouterHaTask();
+        task.setTaskName(APPLY_EIP_TASK);
+        task.setOriginRouterUuid(vrUuid);
+        task.setJsonData(JSONObjectUtil.toJsonString(struct));
+        haBackend.submitVirtualRouterHaTask(task, completion);
     }
 
     protected void revokeEipOnHaRouter(String vrUuid, EipStruct struct, Completion completion) {
-        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
-        Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), REVOKE_EIP_TASK);
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
-        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
-        haBackend.submitVirutalRouterHaTask(data, completion);
+        VirtualRouterHaTask task = new VirtualRouterHaTask();
+        task.setTaskName(REVOKE_EIP_TASK);
+        task.setOriginRouterUuid(vrUuid);
+        task.setJsonData(JSONObjectUtil.toJsonString(struct));
+        haBackend.submitVirtualRouterHaTask(task, completion);
     }
 
     @Override
@@ -421,7 +414,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         syncEipsOnVirtualRouter(nic, true, completion);
     }
 
-    private void syncEipsOnVirtualRouter(VmNicInventory nic, Boolean attach, Completion completion) {
+    private void syncEipsOnVirtualRouter(VmNicInventory nic, boolean attach, Completion completion) {
         if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
             completion.success();
             return;
@@ -492,7 +485,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         });
     }
 
-    private List<EipTO> findEipsOnVirtualRouter(VmNicInventory nic, Boolean attach) throws OperationFailureException {
+    private List<EipTO> findEipsOnVirtualRouter(VmNicInventory nic, boolean attach) throws OperationFailureException {
         List<Tuple> eips = findEipOnVmNic(nic);
         if (attach && (eips == null || eips.isEmpty())) {
             return null;
@@ -601,12 +594,10 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
             @Override
             public void success() {
                 List<Tuple> eips = findEipTuplesOnVmNic(nic);
-                if (eips == null || eips.isEmpty()) {
-                    completion.success();
-                } else {
+                if (eips != null && !eips.isEmpty()) {
                     proxy.detachNetworkService(nic.getVmInstanceUuid(), EipVO.class.getSimpleName(), eips.stream().map(t -> t.get(5, String.class)).collect(Collectors.toList()));
-                    completion.success();
                 }
+                completion.success();
             }
 
             @Override
@@ -629,7 +620,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         applyEip.type = APPLY_EIP_TASK;
         applyEip.callback = new VirtualRouterHaCallbackInterface() {
             @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+            public void callBack(String vrUuid, VirtualRouterHaTask task, Completion completion) {
                 VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
                 if (vrVO == null) {
                     logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need apply Eip on backend", vrUuid));
@@ -638,7 +629,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 }
 
                 VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
-                EipStruct s = (EipStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                EipStruct s = JSONObjectUtil.toObject(task.getJsonData(), EipStruct.class);
                 applyEip(vr, s, completion);
             }
         };
@@ -648,7 +639,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         revokeEip.type = REVOKE_EIP_TASK;
         revokeEip.callback = new VirtualRouterHaCallbackInterface() {
             @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+            public void callBack(String vrUuid, VirtualRouterHaTask task, Completion completion) {
                 VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
                 if (vrVO == null) {
                     logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need revoke Eip on backend", vrUuid));
@@ -656,7 +647,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                     return;
                 }
 
-                EipStruct s = (EipStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                EipStruct s = JSONObjectUtil.toObject(task.getJsonData(), EipStruct.class);
                 revokeEip(vrUuid, s, completion);
             }
         };

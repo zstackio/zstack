@@ -688,7 +688,6 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return checked;
     }
 
-
     @Override
     public void validateSystemTag(String resourceUuid, String resourceType, String tag) {
         if (!isValidSystemTag(resourceUuid, resourceType, tag)) {

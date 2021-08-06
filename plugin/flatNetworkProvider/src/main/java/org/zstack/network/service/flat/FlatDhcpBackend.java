@@ -949,8 +949,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 continue;
             }
 
-            VmNicVO nicVO = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
-            dhcpNics.add(nicVO);
+            dhcpNics.add(nic);
         }
         List<DhcpStruct> structs = dhcpExtension.makeDhcpStruct(vm, hostNames, dhcpNics);
         dhcpInfoList.addAll(toDhcpInfo(structs));
