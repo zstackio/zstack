@@ -406,14 +406,16 @@ public class VolumeBase implements Volume {
             @Override
             public void setup() {
                 if (!msg.isPrimaryStorageAllocated()) {
+
+
                     flow(new Flow() {
-                        String __name__ = "allocate-primary-storage";
+                        String __name__ = "allocate-primary-storage-Space";
 
                         boolean success;
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                            AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                             amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                             amsg.setSize(self.getSize());
 
@@ -425,6 +427,8 @@ public class VolumeBase implements Volume {
                                         trigger.fail(reply.getError());
                                     } else {
                                         success = true;
+                                        AllocatePrimaryStorageSpaceReply re= reply.castReply();
+                                        msg.setInstallDir(re.getInstallDir());
                                         trigger.next();
                                     }
                                 }
