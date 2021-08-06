@@ -14,6 +14,7 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.network.l3.NetworkGlobalProperty
 import org.zstack.sdk.ClusterInventory
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L2VlanNetworkInventory
 import org.zstack.sdk.ZoneInventory

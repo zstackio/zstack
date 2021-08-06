@@ -510,7 +510,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     public UsedIpInventory getEipGuestIp(String eipUuid) {
         EipVO eip = dbf.findByUuid(eipUuid, EipVO.class);
 
-        if (eip.getVmNicUuid() == null || eip.getGuestIp() == null) {
+        if (eip == null || eip.getVmNicUuid() == null || eip.getGuestIp() == null) {
             return null;
         }
 
@@ -998,125 +998,24 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         String l3NetworkUuid = getEipL3Network(nicInventory, eip);
         struct.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
         NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(l3NetworkUuid, EipConstant.EIP_TYPE);
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("create-eip-vmNic-%s-vip-%s", msg.getVmNicUuid(), msg.getVipUuid()));
-        chain.then(new ShareFlow() {
+        attachEip(struct, providerType.toString(), new Completion(msg) {
             @Override
-            public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "pre-create-eip";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
-                            ext.preAttachEip(struct);
-                        }
-
-                        trigger.next();
-                    }
-                });
-
-                flow(new Flow() {
-                    String __name__ = "prepare-vip";
-
-                    boolean s = false;
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                        struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
-                        struct.setPeerL3NetworkUuid(guestIp.getL3NetworkUuid());
-                        struct.setServiceProvider(providerType.toString());
-                        struct.setServiceUuid(fevo.getUuid());
-                        Vip vip = new Vip(vipInventory.getUuid());
-                        vip.setStruct(struct);
-                        vip.acquire(new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                s = true;
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (!s) {
-                            trigger.rollback();
-                            return;
-                        }
-
-                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                        struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
-                        struct.setServiceUuid(fevo.getUuid());
-                        Vip vip = new Vip(vipInventory.getUuid());
-                        vip.setStruct(struct);
-                        vip.release(new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.rollback();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                logger.warn(errorCode.toString());
-                                trigger.rollback();
-                            }
-                        });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "create-eip-on-backend";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        EipBackend bkd = getEipBackend(providerType.toString());
-                        bkd.applyEip(struct, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
-
-                for (Flow f : getAdditionalApplyEipFlow(struct, providerType)) {
-                    flow(f);
-                }
-
-                done(new FlowDoneHandler(msg) {
-                    @Override
-                    public void handle(Map data) {
-                        evt.setInventory(retinv);
-                        logger.debug(String.format("successfully created eip[uuid:%s, name:%s] on vip[uuid:%s] for vm nic[uuid:%s]",
-                                retinv.getUuid(), retinv.getName(), vipInventory.getUuid(), nicInventory.getUuid()));
-                        bus.publish(evt);
-                    }
-                });
-
-                error(new FlowErrorHandler(msg) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(errCode);
-                        dbf.remove(fevo);
-                        logger.debug(String.format("failed to create eip[uuid:%s, name:%s] on vip[uuid:%s] for vm nic[uuid:%s], %s",
-                                retinv.getUuid(), retinv.getName(), vipInventory.getUuid(), nicInventory.getUuid(), errCode));
-                        bus.publish(evt);
-                    }
-                });
+            public void success() {
+                evt.setInventory(retinv);
+                logger.debug(String.format("successfully created eip[uuid:%s, name:%s] on vip[uuid:%s] for vm nic[uuid:%s]",
+                        retinv.getUuid(), retinv.getName(), vipInventory.getUuid(), nicInventory.getUuid()));
+                bus.publish(evt);
             }
-        }).start();
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                dbf.removeByPrimaryKey(fevo.getUuid(), EipVO.class);
+                logger.debug(String.format("failed to create eip[uuid:%s, name:%s] on vip[uuid:%s] for vm nic[uuid:%s], %s",
+                        retinv.getUuid(), retinv.getName(), vipInventory.getUuid(), nicInventory.getUuid(), errorCode));
+                bus.publish(evt);
+            }
+        });
     }
 
     @Override
