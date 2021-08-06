@@ -976,6 +976,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         vo = dbf.reload(vo);
         LoadBalancerStruct struct = new LoadBalancerStruct();
         struct.setLb(LoadBalancerInventory.valueOf(vo));
+        struct.setVip(VipInventory.valueOf(dbf.findByUuid(vo.getVipUuid(), VipVO.class)));
 
         List<String> activeNicUuids = new ArrayList<String>();
         for (LoadBalancerListenerVO l : vo.getListeners()) {

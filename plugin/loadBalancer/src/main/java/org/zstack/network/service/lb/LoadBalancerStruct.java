@@ -1,6 +1,7 @@
 package org.zstack.network.service.lb;
 
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.vip.VipInventory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
  */
 public class LoadBalancerStruct implements Serializable {
     private LoadBalancerInventory lb;
+    private VipInventory vip;
     private Map<String, VmNicInventory> vmNics;
     private List<LoadBalancerListenerInventory> listeners;
     private Map<String, List<LoadBalancerServerGroupInventory>> listenerServerGroupMap = new HashMap<>();
@@ -59,6 +61,14 @@ public class LoadBalancerStruct implements Serializable {
 
     public void setVmNics(Map<String, VmNicInventory> vmNics) {
         this.vmNics = vmNics;
+    }
+
+    public VipInventory getVip() {
+        return vip;
+    }
+
+    public void setVip(VipInventory vip) {
+        this.vip = vip;
     }
 
     public Map<String, List<LoadBalancerServerGroupInventory>> getListenerServerGroupMap() {
