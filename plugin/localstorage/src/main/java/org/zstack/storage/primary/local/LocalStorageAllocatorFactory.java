@@ -350,11 +350,11 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public void reserveCapacityHook(String installPath, long size, String psUuid, boolean ignoreError){
+    public void reserveCapacityHook(String installPath, long lsize, String spsUuid, boolean ignoreError){
 
         String hostUuid = installPath;
-        long size = size;
-        String psUuid = psUuid;
+        long size = lsize;
+        String psUuid = spsUuid;
 
         String sql = "select ref" +
                 " from LocalStorageHostRefVO ref" +
