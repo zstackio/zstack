@@ -120,7 +120,7 @@ class ChainTaskWaitListCase extends SubCase {
          * use add instead of the bellow code, cause some failed cases indicate there maybe some bugs
          */
         //def latches = [new LatchTask("task1"), new LatchTask("task2"), new LatchTask("task3"), new LatchTask("task4")]
-
+        boolean hangLatch = true
         latches.each {
             long start = System.currentTimeMillis();
             def lat = it
@@ -132,6 +132,10 @@ class ChainTaskWaitListCase extends SubCase {
 
                 @Override
                 void run(SyncTaskChain chain) {
+                    while (hangLatch) {
+                        sleep(50)
+                    }
+
                     lat.execute()
                     chain.next()
                 }
@@ -161,10 +165,19 @@ class ChainTaskWaitListCase extends SubCase {
             logger.info(String.format("thdf.chainSubmit cost %s", end - start))
         }
 
+        retryInSecs {
+            latches.each {
+                if (it.name == "task4") {
+                    assert !it.task
+                    assert it.abandon
+                }
+            }
+        }
+
+        hangLatch = false
         sleep 500
 
         latches.each {
-            logger.debug(it.name)
             if (it.name == "task4") {
                 assert !it.task
                 assert it.abandon
@@ -229,6 +242,7 @@ class ChainTaskWaitListCase extends SubCase {
 //        def latches1 = [new LatchTask("task1-1"), new LatchTask("task1-2"), new LatchTask("task1-3")]
 //        def latches2 = [new LatchTask("task2-1"), new LatchTask("task2-2"), new LatchTask("task2-3")]
 
+        def latchesTaskHang = true
         latches1.each {
             def lat = it
             thdf.chainSubmit(new ChainTask(null) {
@@ -239,6 +253,10 @@ class ChainTaskWaitListCase extends SubCase {
 
                 @Override
                 void run(SyncTaskChain chain) {
+                    while (latchesTaskHang) {
+                        sleep(50)
+                    }
+
                     lat.execute()
                     chain.next()
                 }
@@ -302,6 +320,17 @@ class ChainTaskWaitListCase extends SubCase {
             })
             sleep 4
         }
+
+        retryInSecs {
+            latches2.each {
+                if (it.name == "task2-3") {
+                    assert !it.task
+                    assert it.abandon
+                }
+            }
+        }
+
+        latchesTaskHang = false
 /**
  * now
  * running:   task1-1

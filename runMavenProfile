@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium|openapi|errorcode]"
+    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium|openapi|errorcode|check]"
 }
 
 MVNTest="mvn test -Djacoco.skip=true"
@@ -81,6 +81,15 @@ docpremium() {
         cd test
     fi
     $MVNTest -Dtest=TestGenerateDocTemplate -Drepair=true
+    cd - > /dev/null
+}
+
+check() {
+    if [ ! -d premium/test-premium ]; then
+        echo "this command needs premium source code"
+    fi
+    cd premium/test-premium
+    $MVNTest -Dtest=BasicCheckTestSuite -Drepair=true
     cd - > /dev/null
 }
 
@@ -226,6 +235,8 @@ run_profile() {
 	doc
     elif test x$1 = x'docpremium'; then
         docpremium
+    elif test x$1 = x'check'; then
+        check
     elif test x$1 = x'md'; then
         md
     elif test x$1 = x'mdpremium'; then

@@ -7,6 +7,12 @@ doc {
 
 	title "从负载均衡移除云主机网卡返回值"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.network.service.lb.APIRemoveVmNicFromLoadBalancerEvent.error"

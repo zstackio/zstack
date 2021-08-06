@@ -3,6 +3,7 @@ package org.zstack.network.l2.vxlan.vxlanNetwork;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -20,6 +21,8 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -27,27 +30,33 @@ import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.l2.L2NetworkCascadeFilterExtensionPoint;
 import org.zstack.network.l2.L2NetworkDefaultMtu;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniMsg;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniReply;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.query.QueryFacade;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
 /**
  * Created by weiwang on 02/03/2017.
  */
-public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInstanceMigrateExtensionPoint, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint {
+public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInstanceMigrateExtensionPoint, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint, L2NetworkCascadeFilterExtensionPoint {
     private static CLogger logger = Utils.getLogger(VxlanNetworkFactory.class);
     public static L2NetworkType type = new L2NetworkType(VxlanNetworkConstant.VXLAN_NETWORK_TYPE);
 
@@ -254,5 +263,34 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     @Override
     public String getL2NetworkVniType() {
         return type.toString();
+    }
+
+    @Override
+    public List<L2NetworkInventory> filterL2NetworkCascade(List<L2NetworkInventory> l2invs, CascadeAction action) {
+        if (ZoneVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            return l2invs.stream()
+                    .filter(l2inv -> !l2inv.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE))
+                    .collect(Collectors.toList());
+        } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            List<L2NetworkInventory> vxlans = l2invs.stream()
+                    .filter(l2inv -> l2inv.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE))
+                    .collect(Collectors.toList());
+            List<String> poolUuids = l2invs.stream()
+                    .filter(l2inv -> l2inv.getType().equals(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE))
+                    .map(l2inv -> l2inv.getUuid())
+                    .collect(Collectors.toList());
+            if (vxlans.isEmpty()) {
+                return l2invs;
+            }
+            vxlans.forEach(vxlan ->{
+                VxlanNetworkVO vxlanNetworkVO = dbf.findByUuid(vxlan.getUuid(), VxlanNetworkVO.class);
+                if(poolUuids.contains(vxlanNetworkVO.getPoolUuid())){
+                    l2invs.remove(vxlan);
+                }
+            });
+            return l2invs;
+        } else {
+            return l2invs;
+        }
     }
 }

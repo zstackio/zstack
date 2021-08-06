@@ -68,7 +68,7 @@ import static org.zstack.core.Platform.*;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint,
-        VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator {
+        VmInstanceCreateExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator {
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
 
     @Autowired
@@ -1015,41 +1015,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             }
             msg.setPrimaryStorageUuidForDataVolume(psUuid);
         }
-    }
-
-    @Override
-    public void preCreateVolume(APICreateDataVolumeMsg msg) {
-        String diskOffering = msg.getDiskOfferingUuid();
-        if (diskOffering == null) {
-            return;
-        }
-
-        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
-            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
-
-            if (config.getAllocate() == null) {
-                return;
-            }
-
-            if (config.getAllocate().getPrimaryStorage() == null) {
-                return;
-            }
-
-            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
-            if (msg.getPrimaryStorageUuid() != null && !msg.getPrimaryStorageUuid().equals(psUuid)) {
-                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
-                        psUuid, msg.getPrimaryStorageUuid()));
-            }
-            msg.setPrimaryStorageUuid(psUuid);
-        }
-    }
-
-    @Override
-    public void afterCreateVolume(VolumeVO vo) {
-    }
-
-    @Override
-    public void beforeCreateVolume(VolumeInventory volume) {
     }
 
     @Override

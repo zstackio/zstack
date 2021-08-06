@@ -18,4 +18,7 @@ public class ApplianceVmGlobalConfig {
     public static GlobalConfig DEPLOY_AGENT_ON_START = new GlobalConfig(CATEGORY, "agent.deployOnStart");
     @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig BOOTSTRAPINFO_TIMEOUT = new GlobalConfig(CATEGORY, "bootstrapinfo.timeout");
+
+    @GlobalConfigValidation(numberGreaterThan = 300)
+    public static GlobalConfig DELETE_TIMEOUT = new GlobalConfig(CATEGORY, "deletion.timeout");
 }

@@ -77,11 +77,9 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APILocalStorageMigrateVolumeMsg msg) {
-
         new SQLBatch() {
             @Override
             protected void scripts() {
-
                 //1.confirm that  volume is on local storage and  not on the dest Host.
                 LocalStorageResourceRefVO ref = Q.New(LocalStorageResourceRefVO.class)
                         .eq(LocalStorageResourceRefVO_.resourceType,VolumeVO.class.getSimpleName())
@@ -132,6 +130,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("the data volume[uuid:%s, name: %s] is still attached to the VM[uuid:%s]. Please detach" +
                             " it before migration", vol.getUuid(), vol.getName(), vol.getVmInstanceUuid()));
                 } else if (vol.getType() == VolumeType.Root) {
+                    msg.setVmInstanceUuid(vol.getVmInstanceUuid());
                     VmInstanceState vmstate = Q.New(VmInstanceVO.class)
                             .select(VmInstanceVO_.state)
                             .eq(VmInstanceVO_.uuid,vol.getVmInstanceUuid()).findValue();

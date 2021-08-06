@@ -39,7 +39,7 @@ public class CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg extends Need
     }
 
     @Override
-    public boolean getVirtio() {
+    public boolean isVirtio() {
         return virtio;
     }
 

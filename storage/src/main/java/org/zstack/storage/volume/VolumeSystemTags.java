@@ -34,4 +34,6 @@ public class VolumeSystemTags {
     public static PatternedSystemTag NOT_SUPPORT_ACTUAL_SIZE_FLAG = new PatternedSystemTag(String.format("notSupportActualSize::{%s}", NOT_SUPPORT_ACTUAL_SIZE_FLAG_TOKEN), VolumeVO.class);
 
     public static PatternedSystemTag PACKER_BUILD = new PatternedSystemTag("packer", VolumeVO.class);
+
+    public static EphemeralSystemTag FAST_CREATE = new EphemeralSystemTag("volume::fastCreate");
 }

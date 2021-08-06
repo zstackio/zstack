@@ -7,6 +7,12 @@ doc {
 
 	title "创建云盘快照组结果"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.volume.APICreateVolumeSnapshotGroupEvent.error"

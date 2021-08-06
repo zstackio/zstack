@@ -11,7 +11,7 @@ import java.sql.Timestamp;
 @EntityGraph(
         friends = {
                 @EntityGraph.Neighbour(type = LoadBalancerListenerVO.class, myField = "listenerUuid", targetField = "uuid"),
-                @EntityGraph.Neighbour(type = LoadBalancerServerGroupVO.class, myField = "loadBalanceServerGroupUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = LoadBalancerServerGroupVO.class, myField = "serverGroupUuid", targetField = "uuid"),
         }
 )
 public class LoadBalancerListenerServerGroupRefVO {

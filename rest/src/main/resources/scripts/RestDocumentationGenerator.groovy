@@ -1452,9 +1452,13 @@ ${txt}
 
             if (at.allTo() != "") {
                 fsToAdd[at.allTo()] = responseClass.getDeclaredField(at.allTo())
+                supplementFields('success', responseClass, at)
+                supplementFields('error', responseClass, at)
             } else if (at.fieldsTo().length == 1 && at.fieldsTo()[0] == "all") {
                 findFieldsForNormalClass()
             } else {
+                supplementFields('success', responseClass, at)
+                supplementFields('error', responseClass, at)
                 at.fieldsTo().each {
                     def kv = it.split("=")
 
@@ -1468,7 +1472,12 @@ ${txt}
                 }
             }
 
-            fieldStrings.add(createRef("error", "${responseClass.canonicalName}.error", "错误码，若不为null，则表示操作失败, 操作成功时该字段为null", ErrorCode.class.simpleName, ErrorCode.class, false))
+        }
+
+        void supplementFields(String fieldName, Class clz, RestResponse at){
+            if(!at.fieldsTo().contains(fieldName)){
+                fsToAdd.put(fieldName, FieldUtils.getField(fieldName, clz))
+            }
         }
 
         String createField(String n, String desc, String type) {
@@ -1486,8 +1495,9 @@ ${txt}
 
         String createRef(String n, String path, String desc, String type, Class clz, Boolean overrideDesc=null) {
             DebugUtils.Assert(!PRIMITIVE_TYPES.contains(clz), "${clz.name} is a primitive class!!!")
-
-            laterResolveClasses.add(clz)
+            if (!clz instanceof ErrorCode) {
+                laterResolveClasses.add(clz)
+            }
             imports.add("import ${clz.canonicalName}")
 
             return """\tref {
@@ -1526,7 +1536,13 @@ ${txt}
                             fieldStrings.add(createField(k, "", v.type.simpleName))
                         }
                     } else {
-                        fieldStrings.add(createRef("${k}", "${responseClass.canonicalName}.${v.name}", null, v.type.simpleName, v.type))
+                        String desc = null
+                        Boolean overrideDesc = null
+                        if(ErrorCode.isAssignableFrom(v.type)){
+                            desc = "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
+                            overrideDesc = false
+                        }
+                        fieldStrings.add(createRef("${k}", "${responseClass.canonicalName}.${v.name}", desc, v.type.simpleName, v.type, overrideDesc))
                     }
                 }
 

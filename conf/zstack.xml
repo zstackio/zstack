@@ -93,6 +93,7 @@
     <import resource="springConfigXml/ZoneManager.xml"/>
     <import resource="springConfigXml/vyos.xml"/>
     <import resource="springConfigXml/rest.xml"/>
+    <import resource="springConfigXml/eventlog.xml"/>
     <import resource="springConfigXml/vxlan.xml"/>
     <import resource="springConfigXml/webhook.xml"/>
     <import resource="springConfigXml/externalService.xml"/>

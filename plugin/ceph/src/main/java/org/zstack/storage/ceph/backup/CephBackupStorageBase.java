@@ -49,6 +49,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.Serializable;
 import java.net.URISyntaxException;
@@ -121,6 +122,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         Long availableCapacity;
         List<CephPoolCapacity> poolCapacities;
         String type;
+        CephBackupStorageMonInventory handleMon;
 
         public AgentResponse() {
             boolean unitTestOn = CoreGlobalProperty.UNIT_TEST_ON;
@@ -404,6 +406,22 @@ public class CephBackupStorageBase extends BackupStorageBase {
         public Long actualSize;
     }
 
+    public static class AddImageExportTokenCmd extends AgentCommand {
+        public String installPath;
+        public String token;
+        public long expireTime;
+    }
+
+    public static class AddImageExportTokenRsp extends AgentResponse {
+        public String md5sum;
+    }
+
+    public static class RemoveImageExportTokenCmd extends AgentCommand {
+        public String installPath;
+    }
+
+    public static class RemoveImageExportTokenRsp extends AgentResponse {}
+
     public static class GetFactsCmd extends AgentCommand {
         public String monUuid;
     }
@@ -648,6 +666,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
     public static final String GET_DOWNLOAD_PROGRESS_PATH = "/ceph/backupstorage/image/progress";
     public static final String DELETE_IMAGE_PATH = "/ceph/backupstorage/image/delete";
     public static final String GET_IMAGE_SIZE_PATH = "/ceph/backupstorage/image/getsize";
+    public static final String ADD_EXPORT_TOKEN_PATH = "/ceph/backupstorage/image/export/addtoken";
+    public static final String REMOVE_EXPORT_TOKEN_PATH = "/ceph/backupstorage/image/export/removetoken";
     public static final String PING_PATH = "/ceph/backupstorage/ping";
     public static final String GET_FACTS = "/ceph/backupstorage/facts";
     public static final String CHECK_IMAGE_METADATA_FILE_EXIST = "/ceph/backupstorage/checkimagemetadatafileexist";
@@ -764,6 +784,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     if (!(cmd instanceof InitCmd)) {
                         updateCapacityIfNeeded(ret);
                     }
+
+                    ret.handleMon = CephBackupStorageMonInventory.valueOf(base.getSelf());
                     callback.success(ret);
                 }
 
@@ -1622,6 +1644,10 @@ public class CephBackupStorageBase extends BackupStorageBase {
             handle((APIUpdateCephBackupStorageMonMsg) msg);
         } else if (msg instanceof APIRemoveMonFromCephBackupStorageMsg) {
             handle((APIRemoveMonFromCephBackupStorageMsg) msg);
+        } else if (msg instanceof APIExportImageFromBackupStorageMsg) {
+            handle((APIExportImageFromBackupStorageMsg) msg);
+        } else if (msg instanceof APIDeleteExportedImageFromBackupStorageMsg) {
+            handle((APIDeleteExportedImageFromBackupStorageMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
@@ -1641,6 +1667,105 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
+    private void handle(APIDeleteExportedImageFromBackupStorageMsg msg) {
+        APIDeleteExportedImageFromBackupStorageEvent evt = new APIDeleteExportedImageFromBackupStorageEvent(msg.getId());
+        Tuple t = Q.New(ImageBackupStorageRefVO.class).select(ImageBackupStorageRefVO_.installPath, ImageBackupStorageRefVO_.exportUrl)
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                .eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
+                .findTuple();
+        if (t == null || t.get(1) == null) {
+            bus.publish(evt);
+            return;
+        }
+
+        RemoveImageExportTokenCmd cmd = new RemoveImageExportTokenCmd();
+        cmd.installPath = t.get(0, String.class);
+        httpCall(REMOVE_EXPORT_TOKEN_PATH, cmd, RemoveImageExportTokenRsp.class, new ReturnValueCompletion<RemoveImageExportTokenRsp>(evt) {
+            @Override
+            public void success(RemoveImageExportTokenRsp rsp) {
+                SQL.New(ImageBackupStorageRefVO.class).set(ImageBackupStorageRefVO_.exportUrl, null)
+                        .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                        .eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
+                        .update();
+
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(APIExportImageFromBackupStorageMsg msg) {
+        exportImage(msg, new ReturnValueCompletion<APIExportImageFromBackupStorageEvent>(msg) {
+            @Override
+            public void success(APIExportImageFromBackupStorageEvent evt) {
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                APIExportImageFromBackupStorageEvent evt = new APIExportImageFromBackupStorageEvent(msg.getId());
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    protected void exportImage(APIExportImageFromBackupStorageMsg msg, ReturnValueCompletion<APIExportImageFromBackupStorageEvent> completion) {
+        APIExportImageFromBackupStorageEvent event = new APIExportImageFromBackupStorageEvent(msg.getId());
+        Tuple t = Q.New(ImageBackupStorageRefVO.class).select(ImageBackupStorageRefVO_.installPath, ImageBackupStorageRefVO_.exportUrl)
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                .eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
+                .findTuple();
+        if (t == null) {
+            completion.fail(operr("image[uuid: %s] is not on backup storage[uuid:%s, name:%s]",
+                    msg.getImageUuid(), self.getUuid(), self.getName()));
+            return;
+        }
+
+        if (t.get(1) != null) {
+            event.setImageUrl(t.get(1, String.class));
+            completion.success(event);
+            return;
+        }
+
+        String imageInstallUrl = t.get(0, String.class);
+        AddImageExportTokenCmd cmd = new AddImageExportTokenCmd();
+        cmd.installPath = imageInstallUrl;
+        cmd.token = Platform.getUuidFromBytes(msg.getImageUuid().getBytes());
+        httpCall(ADD_EXPORT_TOKEN_PATH, cmd, AddImageExportTokenRsp.class, new ReturnValueCompletion<AddImageExportTokenRsp>(completion) {
+            @Override
+            public void success(AddImageExportTokenRsp rsp) {
+                String url = buildUrl(rsp.handleMon.getHostname(), cmd.token);
+                SQL.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
+                        .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
+                        .set(ImageBackupStorageRefVO_.exportUrl, url)
+                        .update();
+
+                event.setImageUrl(url);
+                event.setExportMd5Sum(rsp.md5sum);
+                completion.success(event);
+            }
+
+            private String buildUrl(String hostname, String token) {
+                String[] splits = imageInstallUrl.split("/");
+                String poolName = splits[splits.length - 2];
+                String imageName = splits[splits.length - 1];
+                return CephAgentUrl.backupStorageUrl(hostname, CephBackupStorageMonBase.EXPORT) +
+                        String.format("/%s/%s?token=%s", poolName, imageName, token);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
     private void handle(APIRemoveMonFromCephBackupStorageMsg msg) {
         SimpleQuery<CephBackupStorageMonVO> q = dbf.createQuery(CephBackupStorageMonVO.class);
         q.add(CephBackupStorageMonVO_.hostname, Op.IN, msg.getMonHostnames());
@@ -1651,9 +1776,28 @@ public class CephBackupStorageBase extends BackupStorageBase {
             dbf.removeCollection(vos, CephBackupStorageMonVO.class);
         }
 
+        String dstHostName = Q.New(CephBackupStorageMonVO.class).select(CephBackupStorageMonVO_.hostname)
+                .eq(CephBackupStorageMonVO_.backupStorageUuid, self.getUuid())
+                .orderBy(CephBackupStorageMonVO_.status, SimpleQuery.Od.ASC)
+                .limit(1).findValue();
+
+        if (dstHostName != null) {
+            vos.forEach(vo -> replaceImageExportUrl(vo.getHostname(), dstHostName));
+        }
+
         APIRemoveMonFromCephBackupStorageEvent evt = new APIRemoveMonFromCephBackupStorageEvent(msg.getId());
         evt.setInventory(CephBackupStorageInventory.valueOf(dbf.reload(getSelf())));
         bus.publish(evt);
+    }
+
+    private void replaceImageExportUrl(String srcHostName, String dstHostName) {
+        List<ImageBackupStorageRefVO> refs = Q.New(ImageBackupStorageRefVO.class)
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, self.getUuid())
+                .like(ImageBackupStorageRefVO_.exportUrl, "http://" + srcHostName + "%")
+                .list();
+
+        refs.forEach(it -> it.setExportUrl(it.getExportUrl().replace(srcHostName, dstHostName)));
+        dbf.updateCollection(refs);
     }
 
     private void handle(final APIAddMonToCephBackupStorageMsg msg) {

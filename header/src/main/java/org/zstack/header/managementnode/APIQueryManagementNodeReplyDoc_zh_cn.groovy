@@ -6,6 +6,12 @@ doc {
 
     title "管理节点清单"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
     ref {
         name "error"
         path "org.zstack.header.managementnode.APIQueryManagementNodeReply.error"

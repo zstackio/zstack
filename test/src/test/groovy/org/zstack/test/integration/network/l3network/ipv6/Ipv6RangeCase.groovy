@@ -2,6 +2,7 @@ package org.zstack.test.integration.network.l3network.ipv6
 
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
+import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.IpRangeInventory
@@ -17,6 +18,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.network.IPv6Constants
 
 import static java.util.Arrays.asList
+import static org.zstack.utils.CollectionDSL.list
 
 
 /**
@@ -62,6 +64,41 @@ class Ipv6RangeCase extends SubCase {
             name = "public-ipv4"
         }
 
+        NetworkServiceProviderInventory networkServiceProvider = queryNetworkServiceProvider {
+            delegate.conditions = ["type=Flat"]
+        }[0]
+        Map<String, List<String>> netServices = new HashMap<>()
+        netServices.put(networkServiceProvider.getUuid(),
+                [NetworkServiceType.DHCP.toString(),
+                 NetworkServiceType.DNS.toString()])
+
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_pub_ipv4.uuid
+            networkServices = netServices
+        }
+
+        /* minimum prefix is 64 */
+        expect(AssertionError.class) {
+            addIpv6RangeByNetworkCidr {
+                name = "ipr-6"
+                l3NetworkUuid = l3_pub_ipv4.getUuid()
+                networkCidr = "2002:2001::/63"
+                addressMode = IPv6Constants.Stateful_DHCP
+            }
+        }
+
+        expect(AssertionError.class) {
+            addIpv6Range {
+                name = "ipr-6"
+                l3NetworkUuid = l3_pub_ipv4.getUuid()
+                startIp = "2003:2001::0010"
+                endIp = "2003:2001::0020"
+                gateway = "2003:2001::2"
+                prefixLen = 63
+                addressMode = IPv6Constants.Stateful_DHCP
+            }
+        }
+
         addIpv6RangeByNetworkCidr {
             name = "ipr-6"
             l3NetworkUuid = l3_pub_ipv4.getUuid()
@@ -89,7 +126,7 @@ class Ipv6RangeCase extends SubCase {
             addIpv6RangeByNetworkCidr {
                 name = "ipr-6"
                 l3NetworkUuid = l3_pub_ipv6.getUuid()
-                networkCidr = "2002:2001::/7"
+                networkCidr = "2002:2001::/64"
                 addressMode = IPv6Constants.Stateful_DHCP
             }
         }
@@ -162,7 +199,7 @@ class Ipv6RangeCase extends SubCase {
         addIpv6RangeByNetworkCidr {
             name = "ipr-6"
             l3NetworkUuid = l3_pub_ipv6.getUuid()
-            networkCidr = "2002:2001::/8"
+            networkCidr = "2002:2001::/64"
             addressMode = IPv6Constants.Stateful_DHCP
         }
 
@@ -329,10 +366,10 @@ class Ipv6RangeCase extends SubCase {
             startIp = "ABCD:FEFF::0001"
             endIp = "ABCD:FEFF::0002"
             gateway = "ABCD:FEFF::defc"
-            prefixLen = 32
+            prefixLen = 64
             addressMode = IPv6Constants.Stateful_DHCP
         }
-        assert ip6r.netmask == "ffff:ffff:0:0:0:0:0:0"
+        assert ip6r.netmask == "ffff:ffff:ffff:ffff:0:0:0:0"
         assert ip6r.startIp == "abcd:feff::1"
         assert ip6r.endIp == "abcd:feff::2"
         assert ip6r.gateway == "abcd:feff::defc"

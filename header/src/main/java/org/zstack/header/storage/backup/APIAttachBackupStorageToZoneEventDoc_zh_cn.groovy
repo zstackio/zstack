@@ -6,6 +6,12 @@ doc {
 
 	title "挂载镜像服务器至某个区域(Zone)"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.storage.backup.APIAttachBackupStorageToZoneEvent.error"

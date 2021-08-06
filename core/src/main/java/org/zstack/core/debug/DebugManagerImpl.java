@@ -29,6 +29,7 @@ public class DebugManagerImpl extends AbstractService implements DebugManager {
     @Autowired
     private ThreadFacade thdf;
     String ID = "id";
+    String HEADERS = "headers";
     private static final CLogger logger = Utils.getLogger(DebugManagerImpl.class);
 
     @Override
@@ -101,6 +102,10 @@ public class DebugManagerImpl extends AbstractService implements DebugManager {
     private void replyAllMsgFromTasks(List Tasks) {
         if (!Tasks.isEmpty()) {
             Tasks.forEach(task -> {
+                //If the headers do not exist, it means that the task does not have a corresponding message
+                if (!((TaskInfo) task).getContext().contains(HEADERS)){
+                    return;
+                }
                 bus.cancel(getCorrelationIdFromTask(((TaskInfo) task).getContext()), "cancel for clean queue");
             });
         }

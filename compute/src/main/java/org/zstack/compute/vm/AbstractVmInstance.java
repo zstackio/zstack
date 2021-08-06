@@ -91,7 +91,8 @@ public abstract class AbstractVmInstance implements VmInstance {
                 GetVmStartingCandidateClustersHostsMsg.class.getName(),
                 DeleteVmCdRomMsg.class.getName(),
                 CreateVmCdRomMsg.class.getName(),
-                RestoreVmInstanceMsg.class.getName()
+                RestoreVmInstanceMsg.class.getName(),
+                APISetVmBootVolumeMsg.class.getName()
         );
 
         allowedOperations.addState(VmInstanceState.Unknown,
@@ -102,6 +103,17 @@ public abstract class AbstractVmInstance implements VmInstance {
                 DestroyVmInstanceMsg.class.getName(),
                 APIStopVmInstanceMsg.class.getName(),
                 StopVmInstanceMsg.class.getName());
+
+        allowedOperations.addState(VmInstanceState.Crashed,
+                APIStopVmInstanceMsg.class.getName(),
+                StopVmInstanceMsg.class.getName(),
+                APIStartVmInstanceMsg.class.getName(),
+                StartVmInstanceMsg.class.getName(),
+                APIRebootVmInstanceMsg.class.getName(),
+                RebootVmInstanceMsg.class.getName(),
+                APIDestroyVmInstanceMsg.class.getName(),
+                DestroyVmInstanceMsg.class.getName(),
+                APIGetVmConsoleAddressMsg.class.getName());
 
         allowedOperations.addState(VmInstanceState.Starting,
                 APIDestroyVmInstanceMsg.class.getName(),

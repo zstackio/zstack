@@ -7,6 +7,12 @@ doc {
 
 	title "清理备份存储上的回收数据结"
 
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "0.6"
+	}
 	ref {
 		name "error"
 		path "org.zstack.header.storage.backup.APICleanUpTrashOnBackupStorageEvent.error"

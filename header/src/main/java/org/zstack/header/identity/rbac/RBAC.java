@@ -36,54 +36,45 @@ public class RBAC {
     public static void checkMissingRBACInfo() {
         PolicyMatcher matcher = new PolicyMatcher();
 
-        List<String> missing = new ArrayList<>();
+        List<String> missingInPermission = new ArrayList<>();
+        List<String> missingInRole = new ArrayList<>();
+
         APIMessage.apiMessageClasses.forEach(clz -> {
             if (clz.isAnnotationPresent(Deprecated.class) || clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
                 return;
             }
 
-            boolean has = permissions.stream()
-                    .anyMatch(p -> p.adminOnlyAPIs.stream().anyMatch(s -> matcher.match(s, clz.getName())) || p.normalAPIs.stream().anyMatch(s -> matcher.match(s, clz.getName())));
+            String clzName = clz.getName();
+            boolean has = permissions.parallelStream()
+                    .anyMatch(p -> p.normalAPIs.stream().anyMatch(s -> matcher.match(s, clzName)) || p.adminOnlyAPIs.stream().anyMatch(s -> matcher.match(s, clzName)));
 
             if (!has) {
-                missing.add(clz.getName());
+                missingInPermission.add(clzName);
+            }
+
+            has = roles.parallelStream().anyMatch(r -> r.allowedActions.parallelStream().anyMatch(ac -> matcher.match(ac, clzName)) || r.excludedActions.parallelStream().anyMatch(ac -> matcher.match(ac, clzName)));
+            // admin api won't belong to any role
+            if (!has && !isAdminOnlyAPI(clzName)) {
+                missingInRole.add(clzName);
             }
         });
 
-        Collections.sort(missing);
-        if (!missing.isEmpty()) {
-            throw new CloudRuntimeException(String.format("no RBACInfo.java describes below APIs:\n %s", StringUtils.join(missing, "\n")));
+        Collections.sort(missingInPermission);
+        Collections.sort(missingInRole);
+        if (missingInPermission.isEmpty() && missingInRole.isEmpty()) {
+            return;
         }
-    }
 
-    public static void checkMissingApiInRoles() {
-        PolicyMatcher matcher = new PolicyMatcher();
-
-        List<String> missing = new ArrayList<>();
-        APIMessage.apiMessageClasses.forEach(clz -> {
-            if (clz.isAnnotationPresent(Deprecated.class) || clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
-                return;
-            }
-
-            boolean adminApi = permissions.stream()
-                    .anyMatch(p -> p.adminOnlyAPIs.stream().anyMatch(s -> matcher.match(s, clz.getName())));
-
-            if (adminApi) {
-                return;
-            }
-
-            boolean inlclude = roles.stream()
-                    .anyMatch(p -> p.getAllowedActions().stream().anyMatch(s -> matcher.match(s, clz.getName())) || p.getExcludedActions().stream().anyMatch(s -> matcher.match(s, clz.getName())));
-
-            if (!inlclude) {
-                missing.add(clz.getName());
-            }
-        });
-
-        Collections.sort(missing);
-        if (!missing.isEmpty()) {
-            throw new CloudRuntimeException(String.format("no RBACInfo.java describes below APIs:\n %s", StringUtils.join(missing, "\n")));
+        StringBuilder sb = new StringBuilder();
+        if (!missingInPermission.isEmpty()) {
+            sb.append(String.format("Below APIs:\n %s not referred in any RBACInfo's permission\n", StringUtils.join(missingInPermission, "\n")));
         }
+
+        if (!missingInRole.isEmpty()) {
+            sb.append(String.format("Below APIs:\n %s not referred in any RBACInfo's role\n", StringUtils.join(missingInRole, "\n")));
+        }
+
+        throw new CloudRuntimeException(sb.toString());
     }
 
     public static class RoleBuilder {
@@ -492,7 +483,7 @@ public class RBAC {
     }
 
     @StaticInit
-    static void staticInit() {
+    public static void staticInit() {
         BeanUtils.reflections.getSubTypesOf(RBACDescription.class).forEach(dclz-> {
             RBACDescription rd;
             try {

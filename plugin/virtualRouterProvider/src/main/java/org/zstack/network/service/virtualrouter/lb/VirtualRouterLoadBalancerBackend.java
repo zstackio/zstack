@@ -551,9 +551,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     public static final String DELETE_CERTIFICATE_PATH = "/certificate/delete";
 
     private List<LbTO> makeLbTOs(final LoadBalancerStruct struct, VirtualRouterVmInventory vr) {
-        SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
-        q.add(VipVO_.uuid, Op.EQ, struct.getLb().getVipUuid());
-        final VipVO vip = q.find();
+        VipInventory vip = struct.getVip();
         Optional<VmNicInventory> publicNic = vr.getVmNics().stream()
                 .filter(n -> n.getL3NetworkUuid().equals(vip.getL3NetworkUuid()))
                 .findFirst();
@@ -2186,6 +2184,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             LoadBalancerStruct struct = new LoadBalancerStruct();
             LoadBalancerVO lb = dbf.findByUuid(e.getKey(), LoadBalancerVO.class);
             struct.setLb(LoadBalancerInventory.valueOf(lb));
+            struct.setVip(VipInventory.valueOf(dbf.findByUuid(lb.getVipUuid(), VipVO.class)));
 
             struct.setListenerServerGroupMap(new HashMap<>());
             List<String> serverGroupUuids = new ArrayList<>();

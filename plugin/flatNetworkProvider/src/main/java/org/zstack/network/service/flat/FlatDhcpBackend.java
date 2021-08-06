@@ -40,6 +40,7 @@ import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
 import org.zstack.network.service.DhcpExtension;
 import org.zstack.network.service.NetworkProviderFinder;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.NetworkServiceProviderLookup;
 import org.zstack.network.service.flat.IpStatisticConstants.VmType;
 import org.zstack.network.service.vip.VipVO;
@@ -89,6 +90,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private AccountManager acntMgr;
     @Autowired
     private DhcpExtension dhcpExtension;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
 
     public static final String APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/apply";
     public static final String BATCH_APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/batchApply";
@@ -1698,6 +1701,25 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         return InterceptorPosition.END;
     }
 
+    private void validateIpv6PrefixLength(IpRangeInventory inv) {
+        NetworkServiceProviderType providerType = null;
+        try {
+            providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                    inv.getL3NetworkUuid(), NetworkServiceType.DHCP);
+        } catch (Exception e) {
+            return;
+        }
+
+        if (providerType == null || !providerType.toString().equals(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)) {
+            return;
+        }
+
+        if (inv.getPrefixLen() < IPv6Constants.IPV6_PREFIX_LEN_MIN_DNSMASQ) {
+            throw new ApiMessageInterceptionException(argerr("minimum ip range prefix length of flat network is %d",
+                    IPv6Constants.IPV6_PREFIX_LEN_MIN_DNSMASQ));
+        }
+    }
+
     private void validateDhcpServerIp(IpRangeInventory inv, List<String> systemTags) {
         if (systemTags == null || systemTags.isEmpty()) {
             return;
@@ -1761,9 +1783,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         } else if (msg instanceof APIAddIpv6RangeMsg) {
             IpRangeInventory inv = IpRangeInventory.fromMessage((APIAddIpv6RangeMsg)msg);
             validateDhcpServerIp(inv, msg.getSystemTags());
+            validateIpv6PrefixLength(inv);
         } else if (msg instanceof APIAddIpv6RangeByNetworkCidrMsg) {
             IpRangeInventory inv = IpRangeInventory.fromMessage((APIAddIpv6RangeByNetworkCidrMsg)msg);
             validateDhcpServerIp(inv, msg.getSystemTags());
+            validateIpv6PrefixLength(inv);
         }
 
         return msg;

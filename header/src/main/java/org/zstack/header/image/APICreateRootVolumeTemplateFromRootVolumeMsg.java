@@ -93,7 +93,7 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
     }
 
     @Override
-    public boolean getVirtio() {
+    public boolean isVirtio() {
         return virtio;
     }
 

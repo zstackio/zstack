@@ -161,7 +161,10 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
             ResourceConfig numa = rcf.getResourceConfig("vm.numa");
             boolean isNumaEnable = numa.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
 
-            if (memAccessMode.equals("private") || !isNumaEnable){
+            ResourceConfig ovsDpdkSup = rcf.getResourceConfig("premiumCluster.network.ovsdpdk");
+            boolean isOvsDpdkSup = ovsDpdkSup.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
+
+            if (memAccessMode.equals("private") || !isNumaEnable || !isOvsDpdkSup){
                 return false;
             }
         }
@@ -257,7 +260,10 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         ResourceConfig numa = rcf.getResourceConfig("vm.numa");
         boolean isNumaEnable = numa.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
 
-        if (memAccessMode.equals("private") || !isNumaEnable) {
+        ResourceConfig ovsDpdkSup = rcf.getResourceConfig("premiumCluster.network.ovsdpdk");
+        boolean isOvsDpdkSup = ovsDpdkSup.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
+
+        if (memAccessMode.equals("private") || !isNumaEnable || !isOvsDpdkSup) {
             final List<L2NetworkVO> DpdkL2s =  SQL.New("select distinct l2 from L2NetworkVO l2 where" +
                     " l2.vSwitchType = :l2vSwitchType")
                     .param("l2vSwitchType", "OvsDpdk")
