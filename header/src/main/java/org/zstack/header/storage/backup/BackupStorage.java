@@ -18,4 +18,10 @@ public interface BackupStorage {
     void detachHook(Completion completion);
 
     List<ImageInventory> scanImages();
+
+    String idPrefix = "BS-";
+
+    static String buildId(String uuid) {
+        return idPrefix + uuid;
+    }
 }
