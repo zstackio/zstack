@@ -2497,7 +2497,7 @@ public class VolumeBase implements Volume {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 InstantiateMemoryVolumeMsg imsg = new InstantiateMemoryVolumeMsg();
-                imsg.setHostUuid(msg.getVmInstance().getHostUuid());
+                imsg.setInstallDir(msg.getVmInstance().getHostUuid());
                 imsg.setPrimaryStorageUuid(msg.getVmInstance().getRootVolume().getPrimaryStorageUuid());
                 imsg.setVolumeUuid(volume.getUuid());
                 bus.makeTargetServiceIdByResourceUuid(imsg, VolumeConstant.SERVICE_ID, imsg.getVolumeUuid());
