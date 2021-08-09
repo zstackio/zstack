@@ -110,14 +110,16 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
                         }
 
                         VolumeSpec volumeSpec = new VolumeSpec();
+
                         //AllocatePrimaryStorageReply ar = reply.castReply();
                         AllocatePrimaryStorageSpaceReply ar = reply.castReply();
                         volumeSpec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
                         volumeSpec.setSize(ar.getSize());
                         volumeSpec.setType(msg.getImageUuid() != null ? VolumeType.Root.toString() : VolumeType.Data.toString());
                         volumeSpec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
-                        //add installPath
-                        volumeSpec.setInstallPath(msg.getInstallDir());
+
+                        // add installDir
+                        volumeSpec.setInstallDir(ar.getInstallDir());
 
                         if (VolumeType.Root.toString().equals(volumeSpec.getType())) {
                             volumeSpec.setTags(spec.getRootVolumeSystemTags());
