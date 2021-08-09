@@ -407,7 +407,6 @@ public class VolumeBase implements Volume {
             public void setup() {
                 if (!msg.isPrimaryStorageAllocated()) {
 
-
                     flow(new Flow() {
                         String __name__ = "allocate-primary-storage-Space";
 
@@ -427,7 +426,7 @@ public class VolumeBase implements Volume {
                                         trigger.fail(reply.getError());
                                     } else {
                                         success = true;
-                                        AllocatePrimaryStorageSpaceReply re= reply.castReply();
+                                        AllocatePrimaryStorageSpaceReply re = reply.castReply();
                                         msg.setInstallDir(re.getInstallDir());
                                         trigger.next();
                                     }

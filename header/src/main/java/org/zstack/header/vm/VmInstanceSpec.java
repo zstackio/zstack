@@ -48,6 +48,17 @@ public class VmInstanceSpec implements Serializable {
         private boolean isVolumeCreated;
         private List<String> tags;
 
+        //add installPth
+        private String installPath;
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+
         public boolean isVolumeCreated() {
             return isVolumeCreated;
         }

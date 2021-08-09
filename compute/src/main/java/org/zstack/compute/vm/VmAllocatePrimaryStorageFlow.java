@@ -56,7 +56,8 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         final ImageInventory iminv = spec.getImageSpec().getInventory();
 
         // allocate ps for root volume
-        AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
+        //AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
+        AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
         rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         if (spec.getImageSpec() != null) {
@@ -82,7 +83,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
         // allocate ps for data volumes
         for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
-            AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+            AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
             amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
             amsg.setSize(dinv.getDiskSize());
             amsg.setRequiredHostUuid(destHost.getUuid());
@@ -92,14 +93,14 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             msgs.add(amsg);
         }
 
-        new AsyncLoop<AllocatePrimaryStorageMsg>(trigger) {
+        new AsyncLoop<AllocatePrimaryStorageSpaceMsg>(trigger) {
             @Override
-            protected Collection<AllocatePrimaryStorageMsg> collectionForLoop() {
+            protected Collection<AllocatePrimaryStorageSpaceMsg> collectionForLoop() {
                 return msgs;
             }
 
             @Override
-            protected void run(AllocatePrimaryStorageMsg msg, Completion completion) {
+            protected void run(AllocatePrimaryStorageSpaceMsg msg, Completion completion) {
                 bus.send(msg, new CloudBusCallBack(completion) {
                     @Override
                     public void run(MessageReply reply) {
@@ -109,11 +110,15 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
                         }
 
                         VolumeSpec volumeSpec = new VolumeSpec();
-                        AllocatePrimaryStorageReply ar = reply.castReply();
+                        //AllocatePrimaryStorageReply ar = reply.castReply();
+                        AllocatePrimaryStorageSpaceReply ar = reply.castReply();
                         volumeSpec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
                         volumeSpec.setSize(ar.getSize());
                         volumeSpec.setType(msg.getImageUuid() != null ? VolumeType.Root.toString() : VolumeType.Data.toString());
                         volumeSpec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
+                        //add installPath
+                        volumeSpec.setInstallPath(msg.getInstallDir());
+
                         if (VolumeType.Root.toString().equals(volumeSpec.getType())) {
                             volumeSpec.setTags(spec.getRootVolumeSystemTags());
                         } else {

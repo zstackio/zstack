@@ -389,7 +389,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             }
         }
     }
-
+    //---------------------------------------------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------------------------
     private void handle(AllocatePrimaryStorageSpaceMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -421,7 +423,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private void allocatePrimaryStoreSpace(AllocatePrimaryStorageSpaceMsg msg, NoErrorCompletion completion) {
         AllocatePrimaryStorageSpaceReply reply = new AllocatePrimaryStorageSpaceReply(null,null);
-        PrimaryStorageReserveCapacityExtensionPoint PrimaryStorageReserveCapacityExt;
 
         String allocatorStrategyType = null;
         for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
@@ -496,13 +497,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             if (reserve(psInv, requiredSize, msg)) {
                 target = psInv;
 
-                //根据类型执行分配
-                PrimaryStorageReserveCapacityExt = pluginRgty.getExtensionFromMap(psInv.getType(),
+                //根据类型执行分配存储本身-----------------------------------------
+                PrimaryStorageReserveCapacityExtensionPoint PrimaryStorageReserveCapacityExt = pluginRgty.getExtensionFromMap(psInv.getType(),
                         PrimaryStorageReserveCapacityExtensionPoint.class);
 
-                msg.setInstallDir(PrimaryStorageReserveCapacityExt.getInstallPath(psInv, msg));
-
                 if (PrimaryStorageReserveCapacityExt != null) {
+                    msg.setInstallDir(PrimaryStorageReserveCapacityExt.getInstallPath(psInv, msg));
                     PrimaryStorageReserveCapacityExt.reserveCapacityHook(msg.getInstallDir(), msg.getSize(), psInv.getUuid(), false);
                 }
 
