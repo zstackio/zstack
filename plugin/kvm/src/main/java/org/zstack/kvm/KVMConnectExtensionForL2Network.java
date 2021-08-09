@@ -7,6 +7,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
@@ -19,6 +20,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -38,13 +40,9 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
-    @Qualifier("KVMRealizeL2NoVlanNetworkBackend")
-    private KVMRealizeL2NoVlanNetworkBackend noVlanNetworkBackend;
-    @Autowired
-    @Qualifier("KVMRealizeL2VlanNetworkBackend")
-    private KVMRealizeL2VlanNetworkBackend vlanNetworkBackend;
-    @Autowired
     private CloudBus bus;
+    @Autowired
+    protected L2NetworkManager l2Mgr;
     protected static final CLogger logger = Utils.getLogger(KVMConnectExtensionForL2Network.class);
 
     @Transactional(readOnly = true)
@@ -87,6 +85,8 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
             completion.success();
             return;
         }
+
+        HostVO hostVO = dbf.findByUuid(hostUuid, HostVO.class);
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-for-kvm-%s-connect", hostUuid));
@@ -152,7 +152,8 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
             public void run(FlowTrigger trigger, Map data) {
                 List<L2NetworkInventory> novlanNetworks = l2Networks.stream().filter(l2 -> l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)).collect(Collectors.toList());
                 new While<>(novlanNetworks).step((l2, c) -> {
-                    noVlanNetworkBackend.realize(l2, hostUuid, true, new Completion(c) {
+                    L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(L2NetworkType.valueOf(l2.getType()), HypervisorType.valueOf(hostVO.getHypervisorType()));
+                    ext.realize(l2, hostUuid, true, new Completion(c) {
                         @Override
                         public void success() {
                             c.done();
@@ -185,7 +186,8 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
             public void run(FlowTrigger trigger, Map data) {
                 List<L2NetworkInventory> vlanNetworks = l2Networks.stream().filter(l2 -> l2.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)).collect(Collectors.toList());
                 new While<>(vlanNetworks).step((l2, c) -> {
-                    vlanNetworkBackend.realize(l2, hostUuid, true, new Completion(c) {
+                    L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(L2NetworkType.valueOf(l2.getType()), HypervisorType.valueOf(hostVO.getHypervisorType()));
+                    ext.realize(l2, hostUuid, true, new Completion(c) {
                         @Override
                         public void success() {
                             c.done();
