@@ -26,7 +26,7 @@ public class CallBackNetworkChecker implements AnsibleChecker {
     private int port = 22;
 
     private String callbackIp = Platform.getManagementServerIp();
-    private int callBackPort = 8080;
+    private int callBackPort = Platform.getManagementNodeServicePort();
 
     private static StringDSL.StringWrapper script = ln(
             "cat /dev/null | nc {2} {1} || echo {0} | sudo -S nmap -sS -P0 -n -p {1} {2} 2>/dev/null | grep \"1 host up\""
