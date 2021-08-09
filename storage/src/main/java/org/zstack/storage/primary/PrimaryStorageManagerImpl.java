@@ -257,7 +257,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         PrimaryStorageFactory factory = getPrimaryStorageFactory(PrimaryStorageType.valueOf(vo.getType()));
         PrimaryStorageVO finalVo = vo;
-        PrimaryStorage ps = Platform.New(()-> factory.getPrimaryStorage(finalVo));
+        PrimaryStorage ps = Platform.New(() -> factory.getPrimaryStorage(finalVo));
         ps.handleMessage(msg);
     }
 
@@ -330,7 +330,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void handleLocalMessage(Message msg) {
-        if (msg instanceof AllocatePrimaryStorageMsg) {
+        if (msg instanceof AllocatePrimaryStorageSpaceMsg) {
+            handle((AllocatePrimaryStorageSpaceMsg) msg);
+        } else if (msg instanceof AllocatePrimaryStorageMsg) {
             handle((AllocatePrimaryStorageMsg) msg);
         } else if (msg instanceof IncreasePrimaryStorageCapacityMsg) {
             handle((IncreasePrimaryStorageCapacityMsg) msg);
@@ -388,11 +390,143 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
     }
 
+    private void handle(AllocatePrimaryStorageSpaceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                allocatePrimaryStoreSpace(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "allocate-primary-store";
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return PrimaryStorageGlobalConfig.ALLOCATE_PRIMARYSTORAGE_CONCURRENCY.value(Integer.class);
+            }
+        });
+    }
+
+    private void allocatePrimaryStoreSpace(AllocatePrimaryStorageSpaceMsg msg, NoErrorCompletion completion) {
+        AllocatePrimaryStorageReply reply = new AllocatePrimaryStorageReply(null);
+
+        String allocatorStrategyType = null;
+        for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
+            allocatorStrategyType = ext.getPrimaryStorageAllocatorStrategyName(msg);
+            if (allocatorStrategyType != null) {
+                break;
+            }
+        }
+
+        if (allocatorStrategyType == null) {
+            allocatorStrategyType = msg.getAllocationStrategy() == null ?
+                    PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE
+                    : msg.getAllocationStrategy();
+        }
+
+        if (msg.getExcludeAllocatorStrategies() != null && msg.getExcludeAllocatorStrategies().contains(allocatorStrategyType)) {
+            throw new CloudRuntimeException(
+                    String.format("%s is set as excluded, there is no available primary storage allocator strategy",
+                            allocatorStrategyType));
+        }
+
+        PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAllocatorStrategyFactory(
+                PrimaryStorageAllocatorStrategyType.valueOf(allocatorStrategyType));
+        PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
+        //
+        PrimaryStorageAllocationSpec spec = new PrimaryStorageAllocationSpec();
+        spec.setPossiblePrimaryStorageTypes(msg.getPossiblePrimaryStorageTypes());
+        spec.setExcludePrimaryStorageTypes(msg.getExcludePrimaryStorageTypes());
+        spec.setImageUuid(msg.getImageUuid());
+        spec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
+        spec.setVmInstanceUuid(msg.getVmInstanceUuid());
+        spec.setPurpose(msg.getPurpose());
+        spec.setSize(msg.getSize());
+        spec.setTotalSize(msg.getTotalSize());
+        spec.setNoOverProvisioning(msg.isNoOverProvisioning());
+        spec.setRequiredClusterUuids(msg.getRequiredClusterUuids());
+        spec.setRequiredHostUuid(msg.getRequiredHostUuid());
+        spec.setRequiredZoneUuid(msg.getRequiredZoneUuid());
+        spec.setBackupStorageUuid(msg.getBackupStorageUuid());
+        spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
+        spec.setTags(msg.getTags());
+        spec.setAllocationMessage(msg);
+        spec.setAvoidPrimaryStorageUuids(msg.getExcludePrimaryStorageUuids());
+        List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
+
+        if (msg.isDryRun()) {
+            // check capacity has been done before
+            AllocatePrimaryStorageDryRunReply r = new AllocatePrimaryStorageDryRunReply();
+            r.setPrimaryStorageInventories(ret);
+            bus.reply(msg, r);
+            completion.done();
+            return;
+        }
+        Iterator<PrimaryStorageInventory> it = ret.iterator();
+        List<String> errs = new ArrayList<>();
+        PrimaryStorageInventory target = null;
+        while (it.hasNext()) {
+            PrimaryStorageInventory psInv = it.next();
+
+            if (!physicalCapacityMgr.checkCapacityByRatio(psInv.getUuid(), psInv.getTotalPhysicalCapacity(), psInv.getAvailablePhysicalCapacity())) {
+                errs.add(String.format("primary storage[uuid:%s]'s physical capacity usage has exceeded the threshold[%s]",
+                        psInv.getUuid(), physicalCapacityMgr.getRatio(psInv.getUuid())));
+                continue;
+            }
+
+            long requiredSize = spec.getSize();
+            if (!msg.isNoOverProvisioning()) {
+                requiredSize = ratioMgr.calculateByRatio(psInv.getUuid(), requiredSize);
+            }
+
+            if (reserve(psInv, requiredSize)) {
+                target = psInv;
+
+                PrimaryStorageReserveCapacityExtensionPoint PrimaryStorageReserveCapacityExt = pluginRgty.getExtensionFromMap(psInv.getType(),
+                        PrimaryStorageReserveCapacityExtensionPoint.class);
+
+                if (PrimaryStorageReserveCapacityExt != null) {
+                    msg.setInstallUrl(PrimaryStorageReserveCapacityExt.getInstallPath(psInv, msg));
+                    PrimaryStorageReserveCapacityExt.reserveCapacityHook(msg.getInstallUrl(), msg.getSize(), psInv.getUuid(), false);
+                }
+
+                break;
+            } else {
+                errs.add(String.format("unable to reserve capacity on the primary storage[uuid:%s], it has no space", psInv.getUuid()));
+                logger.debug(String.format("concurrent reservation on the primary storage[uuid:%s], try next one", psInv.getUuid()));
+            }
+        }
+
+        if (target == null) {
+            throw new OperationFailureException(operr("cannot find any qualified primary storage, errors are %s", errs));
+        }
+
+        reply.setPrimaryStorageInventory(target);
+        reply.setSize(msg.getSize());
+        reply.setInstallUrl(msg.getInstallUrl());
+        bus.reply(msg, reply);
+
+        completion.done();
+    }
+
+
     /**
      * Supported allocation strategy：
      * DefaultPrimaryStorageAllocationStrategy (only work for non-local primary storage)
      * LocalPrimaryStorageStrategy (only work for local primary storage)
-     *
+     * <p>
      * Note：
      * If the allocation strategy is not specified
      * If the cluster is mounted with local storage, the default is LocalPrimaryStorageStrategy。
@@ -600,11 +734,11 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.installValidator(primaryStorageCidrValidator);
     }
 
-    private void installResourceConfigValidator(){
+    private void installResourceConfigValidator() {
         ResourceConfig resourceConfig = rcf.getResourceConfig(PrimaryStorageGlobalConfig.PRIMARY_STORAGE_AUTO_DELETE_TRASH.getIdentity());
         resourceConfig.installUpdateExtension(new ResourceConfigUpdateExtensionPoint() {
             @Override
-            public void updateResourceConfig(ResourceConfig config, String resourceUuid, String resourceType, String oldValue, String newValue){
+            public void updateResourceConfig(ResourceConfig config, String resourceUuid, String resourceType, String oldValue, String newValue) {
                 startPrimaryStorageAutoDeleteTrashTask(resourceUuid, newValue);
             }
         });
@@ -630,28 +764,28 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         });
     }
 
-    private void initResourcePrimaryStorageAutoDeleteTrash(){
+    private void initResourcePrimaryStorageAutoDeleteTrash() {
         List<Tuple> tuples = Q.New(ResourceConfigVO.class)
                 .select(ResourceConfigVO_.resourceUuid, ResourceConfigVO_.value)
                 .eq(ResourceConfigVO_.name, PrimaryStorageGlobalConfig.PRIMARY_STORAGE_AUTO_DELETE_TRASH.getName())
                 .listTuple();
-        if( !tuples.isEmpty()){
-            for(Tuple tuple : tuples){
+        if (!tuples.isEmpty()) {
+            for (Tuple tuple : tuples) {
                 String resourceUuid = tuple.get(0, String.class);
                 String value = tuple.get(1, String.class);
                 startPrimaryStorageAutoDeleteTrashTask(resourceUuid, value);
             }
         }
 
-        String globalValue = String.valueOf( PrimaryStorageGlobalConfig.PRIMARY_STORAGE_AUTO_DELETE_TRASH.value(Long.class));
+        String globalValue = String.valueOf(PrimaryStorageGlobalConfig.PRIMARY_STORAGE_AUTO_DELETE_TRASH.value(Long.class));
         startPrimaryStorageAutoDeleteTrashTask(globalValue);
     }
 
-    private void startPrimaryStorageAutoDeleteTrashTask(String newValue){
+    private void startPrimaryStorageAutoDeleteTrashTask(String newValue) {
         startPrimaryStorageAutoDeleteTrashTask(null, newValue);
     }
 
-    private void startPrimaryStorageAutoDeleteTrashTask(String resourceUuid, String newValue){
+    private void startPrimaryStorageAutoDeleteTrashTask(String resourceUuid, String newValue) {
         primaryStorageAutoDeleteTrashTask(resourceUuid, newValue);
     }
 
@@ -708,10 +842,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             public void run() {
                 List<InstallPathRecycleVO> vos = findRecycle(psUuid);
 
-                if(vos.isEmpty()){
+                if (vos.isEmpty()) {
                     return;
                 }
-                for (InstallPathRecycleVO vo: vos) {
+                for (InstallPathRecycleVO vo : vos) {
                     CleanUpTrashOnPrimaryStroageMsg pmsg = new CleanUpTrashOnPrimaryStroageMsg();
                     pmsg.setPrimaryStorageUuid(vo.getStorageUuid());
                     pmsg.setTrashId(vo.getTrashId());
@@ -722,7 +856,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                             if (reply.isSuccess()) {
                                 logger.debug(String.format("Delete trash [%s] on primary storage [%s] successfully in periodic task",
                                         vo.getTrashId(), vo.getStorageUuid()));
-                            }else{
+                            } else {
                                 logger.warn(String.format("Delete trash [%s] on primary storage [%s] failed in periodic task, because: %s",
                                         vo.getTrashId(), vo.getStorageUuid(), reply.getError().getDetails()));
                             }
@@ -733,7 +867,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         };
     }
 
-    private void primaryStorageAutoDeleteTrashTask(String primaryStorageUuid, String newValue){
+    private void primaryStorageAutoDeleteTrashTask(String primaryStorageUuid, String newValue) {
         logger.debug(String.format("start submit auto delete trash task for primary storage[%s]", primaryStorageUuid != null ? primaryStorageUuid : "globalTrashTask"));
 
         long period;
@@ -744,7 +878,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             return;
         }
 
-        if (period <= 0){
+        if (period <= 0) {
             return;
         }
 
@@ -756,7 +890,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             logger.debug(String.format("submit new globalTrashTask, period: %d", period));
         } else {
             synchronized (autoDeleteTrashTask) {
-                if(autoDeleteTrashTask.containsKey(primaryStorageUuid)) {
+                if (autoDeleteTrashTask.containsKey(primaryStorageUuid)) {
                     if (autoDeleteTrashTask.get(primaryStorageUuid).getPeriod() != period) {
                         autoDeleteTrashTask.get(primaryStorageUuid).cancel();
                         logger.debug(String.format("cancel trash task for %s, period: %d", primaryStorageUuid, autoDeleteTrashTask.get(primaryStorageUuid).getPeriod()));
@@ -897,10 +1031,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     @Override
     public String preStartVm(VmInstanceInventory inv) {
-        try{
+        try {
             checkVmAllVolumePrimaryStorageState(inv.getUuid());
             return null;
-        }catch (Exception e){
+        } catch (Exception e) {
             return e.getMessage();
         }
     }
@@ -947,6 +1081,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             msg.setClusterUuid(clusterUuid);
         }
     }
+
     private void settingRootVolume(CreateVmInstanceMsg msg) {
         String instanceOffering = msg.getInstanceOfferingUuid();
 

@@ -301,6 +301,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
     public void run(FlowTrigger trigger, Map data) {
         Result ret = allocate(data);
         if (ret.result.isEmpty()) {
+            logger.debug(String.format("1111111111111111111111111111111111111111111111111111111111111111111111111"));
             throw new OperationFailureException(ret.err);
         }
 
