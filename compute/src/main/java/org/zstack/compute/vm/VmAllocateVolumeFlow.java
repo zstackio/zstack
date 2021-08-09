@@ -105,6 +105,9 @@ public class VmAllocateVolumeFlow implements Flow {
             msg.setVolumeType(vspec.getType());
             msg.setAccountUuid(accountUuid);
 
+            //add installPath
+            msg.setInstallPath(vspec.getInstallPath());
+
             bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
             msgs.add(msg);
         }
