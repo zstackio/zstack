@@ -16,17 +16,6 @@ public class CreateVolumeMsg extends NeedReplyMessage {
     private String format;
     private String resourceUuid;
 
-    //add installDir
-    private String installDir;
-
-    public String getInstallDir() {
-        return installDir;
-    }
-
-    public void setInstallDir(String installDir) {
-        this.installDir = installDir;
-    }
-
     public String getFormat() {
         return format;
     }

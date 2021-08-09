@@ -6,6 +6,17 @@ public class AllocatePrimaryStorageReply extends MessageReply {
     private PrimaryStorageInventory primaryStorageInventory;
     private long size;
 
+    // add installDir
+    private String installDir;
+
+    public String getInstallDir() {
+        return installDir;
+    }
+
+    public void setInstallDir(String installDir) {
+        this.installDir = installDir;
+    }
+
     public AllocatePrimaryStorageReply(PrimaryStorageInventory primaryStorageInventory) {
         super();
         this.primaryStorageInventory = primaryStorageInventory;

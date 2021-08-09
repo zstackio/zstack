@@ -956,9 +956,9 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         // local storage installDir=hostUuid
         String hostUuid = null;
 
-        if (msg.getInstallDir() != null) {
+        if (msg.getInstallUrl() != null) {
             //hostUuid = msg.getHostUuid();
-            hostUuid = msg.getInstallDir();
+            hostUuid = msg.getInstallUrl();
         } else {
             if (msg.getSystemTags() != null) {
                 for (String stag : msg.getSystemTags()) {

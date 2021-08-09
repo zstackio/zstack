@@ -422,7 +422,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void allocatePrimaryStoreSpace(AllocatePrimaryStorageSpaceMsg msg, NoErrorCompletion completion) {
-        AllocatePrimaryStorageSpaceReply reply = new AllocatePrimaryStorageSpaceReply(null,null);
+        AllocatePrimaryStorageReply reply = new AllocatePrimaryStorageReply(null);
 
         String allocatorStrategyType = null;
         for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
@@ -502,8 +502,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                         PrimaryStorageReserveCapacityExtensionPoint.class);
 
                 if (PrimaryStorageReserveCapacityExt != null) {
-                    msg.setInstallDir(PrimaryStorageReserveCapacityExt.getInstallPath(psInv, msg));
-                    PrimaryStorageReserveCapacityExt.reserveCapacityHook(msg.getInstallDir(), msg.getSize(), psInv.getUuid(), false);
+                    msg.setInstallUrl(PrimaryStorageReserveCapacityExt.getInstallPath(psInv, msg));
+                    PrimaryStorageReserveCapacityExt.reserveCapacityHook(msg.getInstallUrl(), msg.getSize(), psInv.getUuid(), false);
                 }
 
                 break;
@@ -519,7 +519,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         reply.setPrimaryStorageInventory(target);
         reply.setSize(msg.getSize());
-        reply.setInstallDir(msg.getInstallDir());
+        reply.setInstallDir(msg.getInstallUrl());
         bus.reply(msg, reply);
 
         completion.done();

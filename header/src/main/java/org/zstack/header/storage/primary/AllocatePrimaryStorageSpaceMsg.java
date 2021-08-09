@@ -1,13 +1,13 @@
 package org.zstack.header.storage.primary;
 
 public class AllocatePrimaryStorageSpaceMsg extends AllocatePrimaryStorageMsg {
-    private String InstallDir;
+    private String InstallUrl;
 
-    public String getInstallDir() {
-        return InstallDir;
+    public String getInstallUrl() {
+        return InstallUrl;
     }
 
-    public void setInstallDir(String installDir) {
-        InstallDir = installDir;
+    public void setInstallUrl(String installUrl) {
+        InstallUrl = installUrl;
     }
 }

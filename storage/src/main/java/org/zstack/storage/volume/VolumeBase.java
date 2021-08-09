@@ -426,8 +426,8 @@ public class VolumeBase implements Volume {
                                         trigger.fail(reply.getError());
                                     } else {
                                         success = true;
-                                        AllocatePrimaryStorageSpaceReply re = reply.castReply();
-                                        msg.setInstallDir(re.getInstallDir());
+                                        AllocatePrimaryStorageReply re = reply.castReply();
+                                        msg.setInstallUrl(re.getInstallDir());
                                         trigger.next();
                                     }
                                 }
@@ -530,8 +530,8 @@ public class VolumeBase implements Volume {
                         imsg.setVolume(getSelfInventory());
                         imsg.setSystemTags(msg.getSystemTags());
                         imsg.setSkipIfExisting(msg.isSkipIfExisting());
-                        if (msg.getHostUuid() != null) {
-                            imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
+                        if (msg.getInstallUrl() != null) {
+                            imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getInstallUrl(), HostVO.class)));
                         }
                         bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                     }
@@ -2497,7 +2497,7 @@ public class VolumeBase implements Volume {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 InstantiateMemoryVolumeMsg imsg = new InstantiateMemoryVolumeMsg();
-                imsg.setHostUuid(msg.getVmInstance().getHostUuid());
+                imsg.setInstallUrl(msg.getVmInstance().getHostUuid());
                 imsg.setPrimaryStorageUuid(msg.getVmInstance().getRootVolume().getPrimaryStorageUuid());
                 imsg.setVolumeUuid(volume.getUuid());
                 bus.makeTargetServiceIdByResourceUuid(imsg, VolumeConstant.SERVICE_ID, imsg.getVolumeUuid());
