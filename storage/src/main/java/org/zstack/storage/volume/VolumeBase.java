@@ -530,8 +530,8 @@ public class VolumeBase implements Volume {
                         imsg.setVolume(getSelfInventory());
                         imsg.setSystemTags(msg.getSystemTags());
                         imsg.setSkipIfExisting(msg.isSkipIfExisting());
-                        if (msg.getInstallDir() != null) {
-                            imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getInstallDir(), HostVO.class)));
+                        if (msg.getHostUuid() != null) {
+                            imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
                         }
                         bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                     }
@@ -2497,7 +2497,7 @@ public class VolumeBase implements Volume {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 InstantiateMemoryVolumeMsg imsg = new InstantiateMemoryVolumeMsg();
-                imsg.setInstallDir(msg.getVmInstance().getHostUuid());
+                imsg.setHostUuid(msg.getVmInstance().getHostUuid());
                 imsg.setPrimaryStorageUuid(msg.getVmInstance().getRootVolume().getPrimaryStorageUuid());
                 imsg.setVolumeUuid(volume.getUuid());
                 bus.makeTargetServiceIdByResourceUuid(imsg, VolumeConstant.SERVICE_ID, imsg.getVolumeUuid());
