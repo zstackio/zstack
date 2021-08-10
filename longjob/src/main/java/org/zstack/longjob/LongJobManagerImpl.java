@@ -574,6 +574,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 if (evt != null) {
                     exts.forEach(ext -> ext.afterJobFinished(job, vo, evt));
                     Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.accept(evt));
+                } else {
+                    exts.forEach(ext -> ext.afterJobFinished(job, vo));
                 }
 
                 logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
