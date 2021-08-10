@@ -29,7 +29,7 @@
         <!-- *************************************** -->
         <!--  Cache to store Lucene's file metadata  -->
         <!-- *************************************** -->
-        <replicated-cache name="LuceneIndexesMetadaData" mode="SYNC" remote-timeout="60000">
+        <replicated-cache name="LuceneIndexesMetaData" mode="SYNC" remote-timeout="60000">
             <locking striping="false" acquire-timeout="30000" concurrency-level="500"/>
             <transaction mode="BATCH"/>
             <eviction size="-1" strategy="NONE"/>
@@ -43,7 +43,7 @@
         <!-- **************************** -->
         <distributed-cache name="LuceneIndexesMetadata" mode="SYNC" remote-timeout="60000">
             <locking striping="false" acquire-timeout="30000" concurrency-level="500"/>
-            <transaction mode="BATCH"/>
+            <transaction mode="NON_XA" locking="PESSIMISTIC"/>
             <eviction size="-1" strategy="NONE"/>
             <expiration max-idle="-1"/>
             <indexing index="NONE"/>
@@ -64,7 +64,7 @@
         <!-- ***************************** -->
         <replicated-cache name="LuceneIndexesLocking" mode="SYNC" remote-timeout="60000">
             <locking striping="false" acquire-timeout="30000" concurrency-level="500"/>
-            <transaction mode="BATCH"/>
+            <transaction mode="NON_XA" locking="PESSIMISTIC"/>
             <eviction size="-1" strategy="NONE"/>
             <expiration max-idle="-1"/>
             <indexing index="NONE"/>
