@@ -31,6 +31,7 @@ import org.zstack.zql.ZQLContext
 import org.zstack.zql.ZQLQueryReturn
 
 import java.lang.reflect.Field
+import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.regex.Pattern
 
@@ -102,6 +103,18 @@ class BatchQuery {
             if (method == "sleep") {
                 throw new Exception("invalid operation[${method}]")
             }
+            if (getMethodName().contains(method)) {
+                throw new Exception("invalid operation[${method}]")
+            }
+        }
+
+        static List<String> getMethodName() {
+            List<String> list = new ArrayList<String>()
+            Method[] methods = Script.class.getDeclaredMethods ()
+            for (Method method : methods){
+                list.add (method.name);
+            }
+            return list
         }
 
         Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
