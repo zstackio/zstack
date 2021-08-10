@@ -5,6 +5,15 @@ import org.zstack.header.message.MessageReply;
 public class AllocatePrimaryStorageReply extends MessageReply {
     private PrimaryStorageInventory primaryStorageInventory;
     private long size;
+    private String installUrl;
+
+    public String getInstallUrl() {
+        return installUrl;
+    }
+
+    public void setInstallUrl(String installUrl) {
+        this.installUrl = installUrl;
+    }
 
     public AllocatePrimaryStorageReply(PrimaryStorageInventory primaryStorageInventory) {
         super();
