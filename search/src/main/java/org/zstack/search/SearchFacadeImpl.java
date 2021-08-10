@@ -1,5 +1,6 @@
 package org.zstack.search;
 
+import org.hibernate.search.batchindexing.MassIndexerProgressMonitor;
 import org.hibernate.search.jpa.FullTextEntityManager;
 import org.hibernate.search.jpa.Search;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,6 +103,32 @@ public class SearchFacadeImpl extends AbstractService implements SearchFacade {
                     //.typesToIndexInParallel(2), default 1
                     .batchSizeToLoadObjects(SearchGlobalProperty.massIndexerBatchSizeToLoadObjects)
                     .threadsToLoadObjects(SearchGlobalProperty.massIndexerThreadsToLoadObjects)
+                    .progressMonitor(new MassIndexerProgressMonitor() {
+                        @Override
+                        public void documentsBuilt(int number) {
+
+                        }
+
+                        @Override
+                        public void entitiesLoaded(int size) {
+
+                        }
+
+                        @Override
+                        public void addToTotalCount(long count) {
+                            logger.debug(String.format("indexing is going to fetch %d primary keys", count));
+                        }
+
+                        @Override
+                        public void indexingCompleted() {
+                            logger.debug("indexing completed");
+                        }
+
+                        @Override
+                        public void documentsAdded(long increment) {
+                            
+                        }
+                    })
                     .idFetchSize(150)
                     .startAndWait();
             watch.stop();
