@@ -140,9 +140,9 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
             DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
         }
 
-        List<AllocatePrimaryStorageMsg> msgs = new ArrayList<>();
+        List<AllocatePrimaryStorageSpaceMsg> msgs = new ArrayList<>();
 
-        AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
+        AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
         rmsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         if (spec.getImageSpec() != null) {
@@ -176,7 +176,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
                     spec.getDestHost().getUuid(), localStorageUuid);
 
             for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
-                AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                 amsg.setSize(dinv.getDiskSize());
                 amsg.setRequiredHostUuid(spec.getDestHost().getUuid());
                 if(spec.getRequiredPrimaryStorageUuidForDataVolume() != null && hasOtherNonLocalStoragePrimaryStorage){
@@ -217,14 +217,14 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
             }
         }
 
-        new AsyncLoop<AllocatePrimaryStorageMsg>(trigger) {
+        new AsyncLoop<AllocatePrimaryStorageSpaceMsg>(trigger) {
             @Override
-            protected Collection<AllocatePrimaryStorageMsg> collectionForLoop() {
+            protected Collection<AllocatePrimaryStorageSpaceMsg> collectionForLoop() {
                 return msgs;
             }
 
             @Override
-            protected void run(AllocatePrimaryStorageMsg msg, Completion completion) {
+            protected void run(AllocatePrimaryStorageSpaceMsg msg, Completion completion) {
                 bus.send(msg, new CloudBusCallBack(completion) {
                     @Override
                     public void run(MessageReply reply) {
@@ -286,15 +286,16 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
             return;
         }
 
-        List<IncreasePrimaryStorageCapacityMsg> msgs = CollectionUtils.transformToList(spec.getVolumeSpecs(), new Function<IncreasePrimaryStorageCapacityMsg, VolumeSpec>() {
+        List<ReleasePrimaryStorageCapacitySpaceMsg> msgs = CollectionUtils.transformToList(spec.getVolumeSpecs(), new Function<ReleasePrimaryStorageCapacitySpaceMsg, VolumeSpec>() {
             @Override
-            public IncreasePrimaryStorageCapacityMsg call(VolumeSpec arg) {
+            public ReleasePrimaryStorageCapacitySpaceMsg call(VolumeSpec arg) {
                 if (arg.isVolumeCreated()) {
                     // don't return capacity as it has been returned when the volume is deleted
                     return null;
                 }
 
-                IncreasePrimaryStorageCapacityMsg msg = new IncreasePrimaryStorageCapacityMsg();
+                //IncreasePrimaryStorageCapacityMsg msg = new IncreasePrimaryStorageCapacityMsg();
+                ReleasePrimaryStorageCapacitySpaceMsg msg = new ReleasePrimaryStorageCapacitySpaceMsg();
                 msg.setDiskSize(arg.getSize());
                 msg.setPrimaryStorageUuid(arg.getPrimaryStorageInventory().getUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, arg.getPrimaryStorageInventory().getUrl());

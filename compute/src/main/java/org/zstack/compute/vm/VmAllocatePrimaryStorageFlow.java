@@ -50,13 +50,14 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
-        final List<AllocatePrimaryStorageMsg> msgs = new ArrayList<>();
+        final List<AllocatePrimaryStorageSpaceMsg> msgs = new ArrayList<>();
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         HostInventory destHost = spec.getDestHost();
         final ImageInventory iminv = spec.getImageSpec().getInventory();
 
         // allocate ps for root volume
-        AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
+        //AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
+        AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
         rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         if (spec.getImageSpec() != null) {
@@ -82,7 +83,8 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
         // allocate ps for data volumes
         for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
-            AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+            //AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+            AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
             amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
             amsg.setSize(dinv.getDiskSize());
             amsg.setRequiredHostUuid(destHost.getUuid());
@@ -92,14 +94,14 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             msgs.add(amsg);
         }
 
-        new AsyncLoop<AllocatePrimaryStorageMsg>(trigger) {
+        new AsyncLoop<AllocatePrimaryStorageSpaceMsg>(trigger) {
             @Override
-            protected Collection<AllocatePrimaryStorageMsg> collectionForLoop() {
+            protected Collection<AllocatePrimaryStorageSpaceMsg> collectionForLoop() {
                 return msgs;
             }
 
             @Override
-            protected void run(AllocatePrimaryStorageMsg msg, Completion completion) {
+            protected void run(AllocatePrimaryStorageSpaceMsg msg, Completion completion) {
                 bus.send(msg, new CloudBusCallBack(completion) {
                     @Override
                     public void run(MessageReply reply) {
@@ -148,7 +150,8 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
                 continue;
             }
 
-            IncreasePrimaryStorageCapacityMsg msg = new IncreasePrimaryStorageCapacityMsg();
+            //IncreasePrimaryStorageCapacityMsg msg = new IncreasePrimaryStorageCapacityMsg();
+            ReleasePrimaryStorageCapacitySpaceMsg msg = new ReleasePrimaryStorageCapacitySpaceMsg();
             msg.setDiskSize(vspec.getSize());
             msg.setPrimaryStorageUuid(vspec.getPrimaryStorageInventory().getUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, vspec.getPrimaryStorageInventory().getUuid());

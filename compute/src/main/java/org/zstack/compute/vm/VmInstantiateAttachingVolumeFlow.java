@@ -42,7 +42,7 @@ public class VmInstantiateAttachingVolumeFlow extends NoRollbackFlow {
         msg.setPrimaryStorageAllocated(true);
         msg.setPrimaryStorageUuid(pinv.getUuid());
         msg.setVolumeUuid(volume.getUuid());
-        msg.setHostUuid(spec.getDestHost().getUuid());
+        msg.setInstallUrl(spec.getDestHost().getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, volume.getUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override
