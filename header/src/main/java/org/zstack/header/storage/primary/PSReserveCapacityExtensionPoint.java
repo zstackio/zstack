@@ -1,8 +1,7 @@
 package org.zstack.header.storage.primary;
 
 import org.springframework.transaction.annotation.Propagation;
-
-import javax.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface PSReserveCapacityExtensionPoint {
     String getInstallUrl(PrimaryStorageInventory psInv, AllocatePrimaryStorageSpaceMsg msg);
