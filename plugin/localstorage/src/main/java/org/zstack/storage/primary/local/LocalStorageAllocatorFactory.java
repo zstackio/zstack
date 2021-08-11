@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -47,7 +48,7 @@ import static org.zstack.core.Platform.operr;
  */
 public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStrategyFactory, Component,
         HostAllocatorFilterExtensionPoint, PrimaryStorageAllocatorStrategyExtensionPoint, PrimaryStorageAllocatorFlowNameSetter,
-        HostAllocatorStrategyExtensionPoint, SnapshotDeletionExtensionPoint, PrimaryStorageReserveCapacityExtensionPoint {
+        HostAllocatorStrategyExtensionPoint, SnapshotDeletionExtensionPoint, PSReserveCapacityExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageAllocatorFactory.class);
 
     @Autowired
@@ -60,8 +61,6 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
     @Autowired
     private PluginRegistry pluginRgty;
-
-    private PrimaryStorageVO self;
 
     public static PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
 
@@ -337,16 +336,38 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public String getInstallUrl(PrimaryStorageInventory psInv, AllocatePrimaryStorageMsg msg){
-        return msg.getRequiredHostUuid();
+    public String getInstallUrl(PrimaryStorageInventory psInv, AllocatePrimaryStorageSpaceMsg msg) {
+        if (msg.getInstallUrl() != null) {
+            return msg.getRequiredHostUuid();
+        }
+
+        String primaryStorageUuid = psInv.getUuid();
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(primaryStorageUuid, PrimaryStorageVO.class);
+        String sql = "select ref from LocalStorageHostRefVO ref where ref.primaryStorageUuid = :primaryStorageUuid";
+        TypedQuery<LocalStorageHostRefVO> q = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
+        q.setParameter("primaryStorageUuid", primaryStorageVO.getUuid());
+        q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        List<LocalStorageHostRefVO> refs = q.getResultList();
+
+        if (refs.isEmpty()) {
+            throw new CloudRuntimeException(String.format("cannot find local primary storage[uuid: %s]", primaryStorageVO.getUuid()));
+        }
+
+        LocalStorageHostRefVO ref = refs.get(0);
+
+        msg.setInstallUrl(ref.getHostUuid());
+
+        return msg.getInstallUrl();
     }
 
     @Override
-    public void reserveCapacityHook(String installUrl, long lsize, String spsUuid, boolean ignoreError){
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void reserveCapacity(String installUrl, long lsSize, String psPsUuid){
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psPsUuid, PrimaryStorageVO.class);
 
         String hostUuid = installUrl;
-        long size = lsize;
-        String psUuid = spsUuid;
+        long size = lsSize;
+        String psUuid = psPsUuid;
 
         String sql = "select ref" +
                 " from LocalStorageHostRefVO ref" +
@@ -360,26 +381,22 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
         if (refs.isEmpty()) {
             String errInfo = String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]",
-                    hostUuid, self.getUuid());
-            if (ignoreError) {
-                logger.error(errInfo);
-                return;
-            } else {
+                    hostUuid, primaryStorageVO.getUuid());
                 throw new CloudRuntimeException(errInfo);
-            }
         }
 
         LocalStorageHostRefVO ref = refs.get(0);
 
-        if (!ignoreError && !physicalCapacityMgr.checkCapacityByRatio(
-                self.getUuid(),
+        if (!physicalCapacityMgr.checkCapacityByRatio(
+                primaryStorageVO.getUuid(),
                 ref.getTotalPhysicalCapacity(),
                 ref.getAvailablePhysicalCapacity())) {
-            throw new OperationFailureException(operr("cannot reserve enough space for primary storage[uuid: %s] on host[uuid: %s], not enough physical capacity", self.getUuid(), hostUuid));
+            throw new OperationFailureException(operr("cannot reserve enough space for primary storage[uuid: %s]" +
+                    " on host[uuid: %s], not enough physical capacity", primaryStorageVO.getUuid(), hostUuid));
         }
 
         LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
-        s.setLocalStorage(PrimaryStorageInventory.valueOf(self));
+        s.setLocalStorage(PrimaryStorageInventory.valueOf(primaryStorageVO));
         s.setHostUuid(ref.getHostUuid());
         s.setSizeBeforeOverProvisioning(size);
         s.setSize(size);
@@ -391,13 +408,9 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
         long avail = ref.getAvailableCapacity() - s.getSize();
         if (avail < 0) {
-            if (ignoreError) {
-                avail = 0;
-            } else {
-                throw new OperationFailureException(operr("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity" +
-                        "[current: %s bytes, needed: %s]", hostUuid, self.getUuid(), ref.getAvailableCapacity(), size));
-            }
-
+            throw new OperationFailureException(operr("host[uuid: %s] of local primary storage[uuid: %s] " +
+                    "doesn't have enough capacity [current: %s bytes, needed: %s]",
+                    hostUuid, primaryStorageVO.getUuid(), ref.getAvailableCapacity(), size));
         }
 
         logCapacityChange(psUuid, hostUuid, ref.getAvailableCapacity(), avail);
@@ -420,5 +433,40 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                             "available: %s --> %s\n",
                     caller.getFileName(), caller.getMethodName(), caller.getLineNumber(), psUuid, hostUuid, before, after));
         }
+    }
+
+    @Override
+    public void releaseCapacity(String installUrl, long size, String psUuid){
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+        String hostUuid = installUrl;
+
+        String sql = "select ref from LocalStorageHostRefVO ref where ref.hostUuid = :huuid and ref.primaryStorageUuid = :primaryStorageUuid";
+        TypedQuery<LocalStorageHostRefVO> q = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
+        q.setParameter("huuid", hostUuid);
+        q.setParameter("primaryStorageUuid", primaryStorageVO.getUuid());
+        q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        List<LocalStorageHostRefVO> refs = q.getResultList();
+
+        if (refs.isEmpty()) {
+            throw new CloudRuntimeException(String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]",
+                    hostUuid, primaryStorageVO.getUuid()));
+        }
+
+        LocalStorageHostRefVO ref = refs.get(0);
+
+        LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
+        s.setSizeBeforeOverProvisioning(size);
+        s.setHostUuid(hostUuid);
+        s.setLocalStorage(PrimaryStorageInventory.valueOf(primaryStorageVO));
+        s.setSize(size);
+
+        for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(
+                LocalStorageReturnHostCapacityExtensionPoint.class)) {
+            ext.beforeReturnLocalStorageCapacityOnHost(s);
+        }
+
+        logCapacityChange(primaryStorageVO.getUuid(), hostUuid, ref.getAvailableCapacity(), ref.getAvailableCapacity() + s.getSize());
+        ref.setAvailableCapacity(ref.getAvailableCapacity() + s.getSize());
+        dbf.getEntityManager().merge(ref);
     }
 }

@@ -600,22 +600,22 @@ CREATE TABLE  `zstack`.`VmNicVO` (
     `deviceId` int unsigned NOT NULL COMMENT 'device id',
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP COMMENT 'last operation date',
     `createDate` timestamp,
-    PRIMARY KEY  (`uuid`)
+    PRIMARY KEY  (`uuid`)CREATE TABLE  `zstack`.`EipVO` (
+        `uuid` varchar(32) NOT NULL UNIQUE,
+        `name` varchar(255) NOT NULL,
+        `description` varchar(2048) DEFAULT NULL,
+        `vipUuid` varchar(32) NOT NULL,
+        `vipIp` varchar(128) NOT NULL,
+        `state` varchar(32) NOT NULL,
+        `vmNicUuid` varchar(32) DEFAULT NULL,
+        `guestIp` varchar(128) DEFAULT NULL,
+        `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+        `createDate` timestamp,
+        PRIMARY KEY  (`uuid`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `zstack`.`EipVO` (
-    `uuid` varchar(32) NOT NULL UNIQUE,
-    `name` varchar(255) NOT NULL,
-    `description` varchar(2048) DEFAULT NULL,
-    `vipUuid` varchar(32) NOT NULL,
-    `vipIp` varchar(128) NOT NULL,
-    `state` varchar(32) NOT NULL,
-    `vmNicUuid` varchar(32) DEFAULT NULL,
-    `guestIp` varchar(128) DEFAULT NULL,
-    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
-    `createDate` timestamp,
-    PRIMARY KEY  (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 CREATE TABLE  `zstack`.`ApplianceVmVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
