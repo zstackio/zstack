@@ -79,7 +79,6 @@ class BatchQuery {
                 Date.class,
                 Map.class,
                 Collection.class,
-                Script.class,
                 Enum[].class,
                 Enum.class
         ]
