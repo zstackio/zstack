@@ -334,8 +334,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             handle((AllocatePrimaryStorageSpaceMsg) msg);
         } else if(msg instanceof AllocatePrimaryStorageMsg) {
             handle((AllocatePrimaryStorageMsg) msg);
-        } else if (msg instanceof IncreasePrimaryStorageCapacitySpaceMsg) {
-            handle((IncreasePrimaryStorageCapacitySpaceMsg) msg);
+        } else if (msg instanceof ReleasePrimaryStorageCapacitySpaceMsg) {
+            handle((ReleasePrimaryStorageCapacitySpaceMsg) msg);
         } else if (msg instanceof IncreasePrimaryStorageCapacityMsg) {
             handle((IncreasePrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof DecreasePrimaryStorageCapacityMsg) {
@@ -381,7 +381,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
     }
 
-    private void handle(IncreasePrimaryStorageCapacitySpaceMsg msg) {
+    private void handle(ReleasePrimaryStorageCapacitySpaceMsg msg) {
         long diskSize = msg.isNoOverProvisioning() ? msg.getDiskSize() : ratioMgr.calculateByRatio(msg.getPrimaryStorageUuid(), msg.getDiskSize());
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(msg.getPrimaryStorageUuid());
         if (updater.increaseAvailableCapacity(diskSize)) {
@@ -396,7 +396,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 PSReserveCapacityExtensionPoint.class);
 
         if (PSReserveCapacityExt != null) {
-            PSReserveCapacityExt.reserveCapacity(PSReserveCapacityExt.getInstallUrl(msg),
+            PSReserveCapacityExt.releaseCapacity(PSReserveCapacityExt.getInstallUrl(msg.getAllocatePrimaryStorageSpaceMsg()),
                     msg.getDiskSize(), msg.getPrimaryStorageUuid());
         }
 
@@ -558,8 +558,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                         PSReserveCapacityExtensionPoint.class);
 
                 if (PSReserveCapacityExt != null) {
-                    PSReserveCapacityExt.reserveCapacity(PSReserveCapacityExt.getInstallUrl(msg),
-                            msg.getSize(), msg.getRequiredPrimaryStorageUuid());
+                    if (msg.getRequireInstallUrl() == null) {
+                        PSReserveCapacityExt.reserveCapacity(PSReserveCapacityExt.getInstallUrl(msg), msg.getSize(), msg.getRequiredPrimaryStorageUuid());
+                    }
                 }
 
                 return cap;

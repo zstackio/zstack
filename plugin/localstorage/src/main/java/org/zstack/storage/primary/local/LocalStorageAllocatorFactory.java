@@ -337,7 +337,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     @Override
     public String getInstallUrl(AllocatePrimaryStorageSpaceMsg msg) {
-        return msg.getRequiredHostUuid();
+        return "hostuuid://" + msg.getRequiredHostUuid();
     }
 
     @Override
