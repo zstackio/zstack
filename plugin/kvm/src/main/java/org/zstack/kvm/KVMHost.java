@@ -61,7 +61,6 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
@@ -92,7 +91,6 @@ import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
-import static org.zstack.utils.StringDSL.ln;
 
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
@@ -980,55 +978,8 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    protected class RunInKVMHostQueue {
-        private String name;
-        private List<AsyncBackup> asyncBackups = new ArrayList<>();
-
-        public RunInKVMHostQueue name(String v) {
-            name = v;
-            return this;
-        }
-
-        public RunInKVMHostQueue asyncBackup(AsyncBackup v) {
-            asyncBackups.add(v);
-            return this;
-        }
-
-        public void run(Consumer<SyncTaskChain> consumer) {
-            DebugUtils.Assert(name != null, "name() must be called");
-            DebugUtils.Assert(!asyncBackups.isEmpty(), "asyncBackup must be called");
-
-            AsyncBackup one = asyncBackups.get(0);
-            AsyncBackup[] rest = asyncBackups.size() > 1 ?
-                    asyncBackups.subList(1, asyncBackups.size()).toArray(new AsyncBackup[asyncBackups.size()-1]) :
-                    new AsyncBackup[0];
-
-            thdf.chainSubmit(new ChainTask(one, rest) {
-                @Override
-                public String getSyncSignature() {
-                    return id;
-                }
-
-                @Override
-                public void run(SyncTaskChain chain) {
-                    consumer.accept(chain);
-                }
-
-                @Override
-                protected int getSyncLevel() {
-                    return getHostSyncLevel();
-                }
-
-                @Override
-                public String getName() {
-                    return name;
-                }
-            });
-        }
-    }
-
-    protected RunInKVMHostQueue inQueue() {
-        return new RunInKVMHostQueue();
+    protected RunInQueue inQueue() {
+        return new RunInQueue(id, thdf, getHostSyncLevel());
     }
 
     private void handle(final VmDirectlyDestroyOnHypervisorMsg msg) {

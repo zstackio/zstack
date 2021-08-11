@@ -90,6 +90,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     @Autowired
     protected StorageTrash trash;
 
+    protected String id;
+
     protected static List<TrashType> trashLists = CollectionDSL.list(TrashType.MigrateImage);
 
     abstract protected void handle(DownloadImageMsg msg);
@@ -114,6 +116,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     public BackupStorageBase(BackupStorageVO self) {
         this.self = self;
+        this.id = BackupStorage.buildId(self.getUuid());
     }
 
     public BackupStorageBase() {
