@@ -336,28 +336,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public String getInstallUrl(PrimaryStorageInventory psInv, AllocatePrimaryStorageSpaceMsg msg) {
-        if (msg.getInstallUrl() != null) {
-            return msg.getRequiredHostUuid();
-        }
-
-        String primaryStorageUuid = psInv.getUuid();
-        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(primaryStorageUuid, PrimaryStorageVO.class);
-        String sql = "select ref from LocalStorageHostRefVO ref where ref.primaryStorageUuid = :primaryStorageUuid";
-        TypedQuery<LocalStorageHostRefVO> q = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
-        q.setParameter("primaryStorageUuid", primaryStorageVO.getUuid());
-        q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
-        List<LocalStorageHostRefVO> refs = q.getResultList();
-
-        if (refs.isEmpty()) {
-            throw new CloudRuntimeException(String.format("cannot find local primary storage[uuid: %s]", primaryStorageVO.getUuid()));
-        }
-
-        LocalStorageHostRefVO ref = refs.get(0);
-
-        msg.setInstallUrl(ref.getHostUuid());
-
-        return msg.getInstallUrl();
+    public String getInstallUrl(AllocatePrimaryStorageSpaceMsg msg) {
+        return msg.getRequiredHostUuid();
     }
 
     @Override
