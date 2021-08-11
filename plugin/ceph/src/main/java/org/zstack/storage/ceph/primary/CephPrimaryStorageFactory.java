@@ -1150,12 +1150,15 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                     .in(HostVO_.uuid, avoidHostUuids)
                     .select(HostVO_.managementIp)
                     .listValues();
-            List<String> monUuids = Q.New(CephPrimaryStorageMonVO.class)
-                    .select(CephPrimaryStorageMonVO_.uuid)
-                    .eq(CephPrimaryStorageMonVO_.primaryStorageUuid, rootVolume.getPrimaryStorageUuid())
-                    .in(CephPrimaryStorageMonVO_.hostname, hostIps)
-                    .listValues();
-            msg.setAvoidCephMonUuids(monUuids);
+
+            if (!hostIps.isEmpty()) {
+                List<String> monUuids = Q.New(CephPrimaryStorageMonVO.class)
+                        .select(CephPrimaryStorageMonVO_.uuid)
+                        .eq(CephPrimaryStorageMonVO_.primaryStorageUuid, rootVolume.getPrimaryStorageUuid())
+                        .in(CephPrimaryStorageMonVO_.hostname, hostIps)
+                        .listValues();
+                msg.setAvoidCephMonUuids(monUuids);
+            }
         }
 
         bus.send(msg, new CloudBusCallBack(completion) {
