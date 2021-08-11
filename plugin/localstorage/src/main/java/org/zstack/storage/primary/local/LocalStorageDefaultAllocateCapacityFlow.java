@@ -303,6 +303,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         });
 
         bus.send(msgs);
+        spec.getVolumeSpecs().clear();
         trigger.rollback();
     }
 }

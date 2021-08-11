@@ -161,6 +161,7 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
             bus.send(msg);
         }
 
+        spec.getVolumeSpecs().clear();
         chain.rollback();
     }
 }
