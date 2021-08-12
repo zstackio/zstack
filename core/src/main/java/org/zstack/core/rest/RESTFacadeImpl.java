@@ -106,7 +106,7 @@ public class RESTFacadeImpl implements RESTFacade {
             logger.debug(sb.toString());
         });
 
-        port =  Integer.parseInt(System.getProperty("RESTFacade.port", "8080"));
+        port = Platform.getManagementNodeServicePort();
 
         IptablesUtils.insertRuleToFilterTable(String.format("-A INPUT -p tcp -m state --state NEW -m tcp --dport %s -j ACCEPT", port));
 
