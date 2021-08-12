@@ -40,7 +40,6 @@
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageDetachExtensionPoint"/>
             <zstack:extension interface="org.zstack.core.trash.CreateRecycleExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.volume.AfterInstantiateVolumeExtensionPoint"/>
-            <zstack:extension interface="org.zstack.header.storage.primary.PSReserveCapacityExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
@@ -53,6 +52,7 @@
                     interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyExtensionPoint"/>
             <zstack:extension interface=" org.zstack.header.allocator.HostAllocatorStrategyExtensionPoint"/>
             <zstack:extension interface="org.zstack.storage.snapshot.SnapshotDeletionExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.PSReserveCapacityExtensionPoint"/>
         </zstack:plugin>
 
         <property name="allocatorFlowNames">
