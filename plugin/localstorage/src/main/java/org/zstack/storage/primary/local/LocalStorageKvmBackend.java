@@ -1279,7 +1279,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     trigger.rollback();
                                 }
                             });
-                            
+
                             flow(new NoRollbackFlow() {
                                 String __name__ = "download";
 
