@@ -56,7 +56,8 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         final ImageInventory iminv = spec.getImageSpec().getInventory();
 
         // allocate ps for root volume
-        AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
+        //AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
+        AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
         rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         if (spec.getImageSpec() != null) {
@@ -82,7 +83,8 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
         // allocate ps for data volumes
         for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
-            AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+            //AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+            AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
             amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
             amsg.setSize(dinv.getDiskSize());
             amsg.setRequiredHostUuid(destHost.getUuid());
