@@ -135,6 +135,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String monUuid;
         String token;
         String tpTimeout;
+        String monIp;
+
+        public String getMonIp() {
+            return monIp;
+        }
+
+        public void setMonIp(String monIp) {
+            this.monIp = monIp;
+        }
 
         public String getTpTimeout() {
             return tpTimeout;
@@ -623,6 +632,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class CreateSnapshotRsp extends AgentResponse {
         Long size;
         Long actualSize;
+        String installPath;
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
 
         public Long getActualSize() {
             return actualSize;
@@ -2160,8 +2178,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             cmd.snapshotPath = snapshotPath;
                             httpCall(CREATE_SNAPSHOT_PATH, cmd, CreateSnapshotRsp.class, new ReturnValueCompletion<CreateSnapshotRsp>(trigger) {
                                 @Override
-                                public void success(CreateSnapshotRsp returnValue) {
+                                public void success(CreateSnapshotRsp rsp) {
                                     needCleanup = true;
+                                    snapshotPath = rsp.getInstallPath();
                                     trigger.next();
                                 }
 
@@ -2989,9 +3008,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             if (CephSystemTags.THIRDPARTY_PLATFORM.hasTag(self.getUuid())) {
                 cmd.setToken(CephSystemTags.THIRDPARTY_PLATFORM.getTokenByResourceUuid(self.getUuid(),
                         CephSystemTags.THIRDPARTY_PLATFORM_TOKEN));
+                cmd.setTpTimeout(CephGlobalConfig.THIRD_PARTY_SDK_TIMEOUT.value(String.class));
             }
-
-            cmd.setTpTimeout(CephGlobalConfig.THIRD_PARTY_SDK_TIMEOUT.value(String.class));
         }
 
         private List<CephPrimaryStorageMonBase> prepareMons() {
@@ -3031,6 +3049,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             CephPrimaryStorageMonBase base = it.next();
             cmd.monUuid = base.getSelf().getUuid();
+            cmd.monIp = base.getSelf().getHostname();
 
             ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
                 @Override
@@ -4577,7 +4596,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 long asize = rsp.getActualSize() == null ? 0 : rsp.getActualSize();
                 sp.setSize(asize);
                 sp.setPrimaryStorageUuid(self.getUuid());
-                sp.setPrimaryStorageInstallPath(spPath);
+                sp.setPrimaryStorageInstallPath(rsp.getInstallPath());
                 sp.setType(VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString());
                 sp.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                 reply.setInventory(sp);
