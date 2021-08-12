@@ -397,10 +397,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         if (PSReserveCapacityExt != null) {
             PSReserveCapacityExt.releaseCapacity(
-                    PSReserveCapacityExt.getInstallUrl(msg.getHostUuid(), msg.getPrimaryStorageUuid()),
+                    PSReserveCapacityExt.getInstallUrl(msg.getPrimaryStorageUuid()),
                     msg.getDiskSize(), msg.getPrimaryStorageUuid());
         }
-
     }
 
     private void handle(DecreasePrimaryStorageCapacityMsg msg) {
@@ -561,8 +560,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 if (PSReserveCapacityExt != null) {
                     if (msg.getRequireInstallUrl() == null) {
                         PSReserveCapacityExt.reserveCapacity(PSReserveCapacityExt.getInstallUrl(
-                                msg.getRequiredHostUuid(),msg.getRequiredPrimaryStorageUuid()),
-                                msg.getSize(), msg.getRequiredPrimaryStorageUuid());
+                                msg.getRequiredPrimaryStorageUuid()), msg.getSize(), msg.getRequiredPrimaryStorageUuid());
                     }
                 }
 
