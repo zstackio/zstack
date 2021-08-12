@@ -242,6 +242,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
             }
         });
 
+        spec.getVolumeSpecs().clear();
         bus.send(msgs);
         trigger.rollback();
     }

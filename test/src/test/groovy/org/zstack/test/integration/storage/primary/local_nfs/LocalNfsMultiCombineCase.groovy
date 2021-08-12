@@ -1,8 +1,16 @@
 package org.zstack.test.integration.storage.primary.local_nfs
 
 import org.zstack.compute.vm.VmSystemTags
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.image.ImageConstant
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
 import org.zstack.header.storage.primary.PrimaryStorageStateEvent
+import org.zstack.header.storage.primary.PrimaryStorageVO_
+import org.zstack.header.volume.VolumeStatus
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.DiskOfferingInventory
@@ -283,6 +291,15 @@ class LocalNfsMultiCombineCase extends SubCase {
             clusterUuid = cluster.uuid
         }
 
+        long originCap = Q.New(PrimaryStorageCapacityVO.class).select(PrimaryStorageCapacityVO_.availableCapacity)
+                .eq(PrimaryStorageCapacityVO_.uuid, nfs2.uuid)
+                .findValue()
+
+        SQL.New(PrimaryStorageCapacityVO.class)
+                .eq(PrimaryStorageCapacityVO_.uuid, nfs2.uuid)
+                .set(PrimaryStorageCapacityVO_.availableCapacity, 0L)
+                .update()
+
         // not assign ps
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
@@ -291,6 +308,12 @@ class LocalNfsMultiCombineCase extends SubCase {
             l3NetworkUuids = [l3.uuid]
             dataDiskOfferingUuids = [diskOffering.uuid]
         }
+
+        assert !Q.New(VolumeVO.class).eq(VolumeVO_.status, VolumeStatus.NotInstantiated).isExists()
+        SQL.New(PrimaryStorageCapacityVO.class)
+                .eq(PrimaryStorageCapacityVO_.uuid, nfs2.uuid)
+                .set(PrimaryStorageCapacityVO_.availableCapacity, originCap)
+                .update()
 
         // assign root volume ls ps
         vm = createVmInstance {
