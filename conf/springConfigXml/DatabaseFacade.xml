@@ -102,4 +102,9 @@
 
     <bean id="DbEntityLister" class="org.zstack.core.db.DbEntityListerImpl"/>
 
+    <bean id="ZQLJMX" class = "org.zstack.zql.ZQLJMX">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+        </zstack:plugin>
+    </bean>
 </beans>
