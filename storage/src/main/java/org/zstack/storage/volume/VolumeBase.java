@@ -527,8 +527,8 @@ public class VolumeBase implements Volume {
                         imsg.setVolume(getSelfInventory());
                         imsg.setSystemTags(msg.getSystemTags());
                         imsg.setSkipIfExisting(msg.isSkipIfExisting());
-                        if (msg.getHostUuid() != null) {
-                            imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
+                        if (msg.getInstallUrl() != null) {
+                            imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getInstallUrl(), HostVO.class)));
                         }
                         bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                     }
