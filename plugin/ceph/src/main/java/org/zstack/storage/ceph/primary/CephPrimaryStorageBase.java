@@ -135,6 +135,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String monUuid;
         String token;
         String tpTimeout;
+        String monIp;
+
+        public String getMonIp() {
+            return monIp;
+        }
+
+        public void setMonIp(String monIp) {
+            this.monIp = monIp;
+        }
 
         public String getTpTimeout() {
             return tpTimeout;
@@ -623,6 +632,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class CreateSnapshotRsp extends AgentResponse {
         Long size;
         Long actualSize;
+        String installPath;
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
 
         public Long getActualSize() {
             return actualSize;
@@ -2162,6 +2180,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 @Override
                                 public void success(CreateSnapshotRsp returnValue) {
                                     needCleanup = true;
+                                    snapshotPath = returnValue.getInstallPath();
                                     trigger.next();
                                 }
 
@@ -2989,9 +3008,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             if (CephSystemTags.THIRDPARTY_PLATFORM.hasTag(self.getUuid())) {
                 cmd.setToken(CephSystemTags.THIRDPARTY_PLATFORM.getTokenByResourceUuid(self.getUuid(),
                         CephSystemTags.THIRDPARTY_PLATFORM_TOKEN));
+                cmd.setTpTimeout(CephGlobalConfig.THIRD_PARTY_SDK_TIMEOUT.value(String.class));
             }
-
-            cmd.setTpTimeout(CephGlobalConfig.THIRD_PARTY_SDK_TIMEOUT.value(String.class));
         }
 
         private List<CephPrimaryStorageMonBase> prepareMons() {
@@ -3031,6 +3049,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             CephPrimaryStorageMonBase base = it.next();
             cmd.monUuid = base.getSelf().getUuid();
+            cmd.monIp = base.getSelf().getHostname();
 
             ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
                 @Override
