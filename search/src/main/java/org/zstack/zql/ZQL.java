@@ -1,7 +1,5 @@
 package org.zstack.zql;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
@@ -12,13 +10,14 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.EntityMetadata;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.search.SearchGlobalProperty;
-import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -60,6 +59,7 @@ public class ZQL {
     private static final CLogger logger = Utils.getLogger(ZQL.class);
 
     private static Set<String> slowZql = new HashSet<>();
+    private static ConcurrentHashMap<String, ZQLStatistic> statistics = new ConcurrentHashMap<>(30000, 0.9f);
 
     private QueryResult astResult;
     private SearchResult searchResult;
@@ -415,6 +415,14 @@ public class ZQL {
         if (cost > TimeUnit.SECONDS.toMillis(QueryGlobalConfig.SLOW_ZQL_COST_TIME.value(Long.class))) {
             logSlowZql(text, cost);
         }
+
+        if (ZQLGlobalConfig.STATISTICS_ON.value(Boolean.class)) {
+            ZQLStatistic statistic = statistics.putIfAbsent(text, new ZQLStatistic(cost));
+            if (statistic != null) {
+                statistics.get(text).updateCostData(cost);
+            }
+        }
+
         return rs;
     }
 
@@ -424,6 +432,10 @@ public class ZQL {
             slowZql.add(zql);
             logger.warn(String.format("SLOW ZQL cost %d ms: %s", time, zql));
         }
+    }
+    
+    public static Map<String, ZQLStatistic> getZQLStatistic() {
+        return statistics;
     }
 
     @ExceptionSafe
