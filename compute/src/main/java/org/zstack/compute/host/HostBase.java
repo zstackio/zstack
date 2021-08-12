@@ -16,7 +16,7 @@ import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.singleflight.CompletionSingleFlight;
+import org.zstack.core.singleflight.TaskSingleFlight;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -88,7 +88,7 @@ public abstract class HostBase extends AbstractHost {
     protected HostMaintenancePolicyManager hostMaintenancePolicyMgr;
     @Autowired
     @Qualifier("HostSingleFlight")
-    protected CompletionSingleFlight<ConnectHostReply> singleFlight;
+    protected TaskSingleFlight<String, ConnectHostReply> singleFlight;
 
     public static class HostDisconnectedCanonicalEvent extends CanonicalEventEmitter {
         HostCanonicalEvents.HostDisconnectedData data;

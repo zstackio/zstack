@@ -25,7 +25,7 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="HostSingleFlight" class="org.zstack.core.singleflight.CompletionSingleFlight"/>
+    <bean id="HostSingleFlight" class="org.zstack.core.singleflight.TaskSingleFlight"/>
 
     <bean id="HostMaintenancePolicyManager" class="org.zstack.compute.host.HostMaintenancePolicyManagerImpl"/>
 
