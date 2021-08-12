@@ -150,7 +150,8 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
                 continue;
             }
 
-            IncreasePrimaryStorageCapacityMsg msg = new IncreasePrimaryStorageCapacityMsg();
+            //IncreasePrimaryStorageCapacityMsg msg = new IncreasePrimaryStorageCapacityMsg();
+            ReleasePrimaryStorageCapacitySpaceMsg msg = new ReleasePrimaryStorageCapacitySpaceMsg();
             msg.setDiskSize(vspec.getSize());
             msg.setPrimaryStorageUuid(vspec.getPrimaryStorageInventory().getUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, vspec.getPrimaryStorageInventory().getUuid());
