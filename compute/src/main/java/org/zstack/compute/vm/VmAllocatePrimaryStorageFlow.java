@@ -94,14 +94,14 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             msgs.add(amsg);
         }
 
-        new AsyncLoop<AllocatePrimaryStorageMsg>(trigger) {
+        new AsyncLoop<AllocatePrimaryStorageSpaceMsg>(trigger) {
             @Override
-            protected Collection<AllocatePrimaryStorageMsg> collectionForLoop() {
+            protected Collection<AllocatePrimaryStorageSpaceMsg> collectionForLoop() {
                 return msgs;
             }
 
             @Override
-            protected void run(AllocatePrimaryStorageMsg msg, Completion completion) {
+            protected void run(AllocatePrimaryStorageSpaceMsg msg, Completion completion) {
                 bus.send(msg, new CloudBusCallBack(completion) {
                     @Override
                     public void run(MessageReply reply) {
