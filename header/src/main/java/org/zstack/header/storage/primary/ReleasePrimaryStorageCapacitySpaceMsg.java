@@ -1,13 +1,13 @@
 package org.zstack.header.storage.primary;
 
 public class ReleasePrimaryStorageCapacitySpaceMsg extends IncreasePrimaryStorageCapacityMsg{
-    AllocatePrimaryStorageSpaceMsg allocatePrimaryStorageSpaceMsg;
+    private String hostUuid;
 
-    public AllocatePrimaryStorageSpaceMsg getAllocatePrimaryStorageSpaceMsg() {
-        return allocatePrimaryStorageSpaceMsg;
+    public String getHostUuid() {
+        return hostUuid;
     }
 
-    public void setAllocatePrimaryStorageSpaceMsg(AllocatePrimaryStorageSpaceMsg allocatePrimaryStorageSpaceMsg) {
-        this.allocatePrimaryStorageSpaceMsg = allocatePrimaryStorageSpaceMsg;
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 }
