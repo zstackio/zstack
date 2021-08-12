@@ -336,18 +336,30 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public String getInstallUrl(String hostUuid, String primaryStorageUuid) {
-        return hostUuid;
-    }
+    public String getInstallUrl(String psUuid) {
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+        String sql = "select ref" +
+                " from LocalStorageHostRefVO ref" +
+                " where ref.primaryStorageUuid = :psUuid";
+        TypedQuery<LocalStorageHostRefVO> q = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
+        q.setParameter("psUuid", psUuid);
+        q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        List<LocalStorageHostRefVO> refs = q.getResultList();
 
+        if (refs.isEmpty()) {
+            String errInfo = String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]", primaryStorageVO.getUuid());
+            throw new CloudRuntimeException(errInfo);
+        }
+
+        LocalStorageHostRefVO ref = refs.get(0);
+        return ref.getHostUuid();
+    }
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public void reserveCapacity(String installUrl, long lsSize, String psPsUuid){
-        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psPsUuid, PrimaryStorageVO.class);
+    public void reserveCapacity(String installUrl, long size, String psUuid){
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
 
         String hostUuid = installUrl;
-        long size = lsSize;
-        String psUuid = psPsUuid;
 
         String sql = "select ref" +
                 " from LocalStorageHostRefVO ref" +

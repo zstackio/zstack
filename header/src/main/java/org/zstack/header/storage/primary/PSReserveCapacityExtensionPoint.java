@@ -4,7 +4,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface PSReserveCapacityExtensionPoint {
-    String getInstallUrl(String hostUuid, String primaryStorageUuid);
+    String getInstallUrl(String primaryStorageUuid);
 
     @Transactional(propagation = Propagation.MANDATORY)
     void reserveCapacity(String installUrl, long size, String psUuid);

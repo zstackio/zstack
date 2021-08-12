@@ -397,7 +397,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         if (PSReserveCapacityExt != null) {
             PSReserveCapacityExt.releaseCapacity(
-                    PSReserveCapacityExt.getInstallUrl(msg.getHostUuid(), msg.getPrimaryStorageUuid()),
+                    PSReserveCapacityExt.getInstallUrl(msg.getPrimaryStorageUuid()),
                     msg.getDiskSize(), msg.getPrimaryStorageUuid());
         }
 
