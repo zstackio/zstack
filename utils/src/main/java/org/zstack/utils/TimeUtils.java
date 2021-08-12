@@ -109,7 +109,7 @@ public class TimeUtils {
     }
 
     private static final String DEFAULT_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
-
+    private static final DateFormat df = new SimpleDateFormat(DEFAULT_TIME_FORMAT);
     public static boolean isValidTimestampFormat(String timestamp) {
         try {
             new SimpleDateFormat(DEFAULT_TIME_FORMAT).parse(timestamp);
