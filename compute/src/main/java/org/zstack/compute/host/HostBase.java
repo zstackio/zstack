@@ -15,6 +15,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.singleflight.CompletionSingleFlight;
 import org.zstack.core.thread.ChainTask;
@@ -43,7 +44,12 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
+import org.zstack.tag.SystemTag;
+import org.zstack.tag.SystemTagCreator;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -90,6 +96,8 @@ public abstract class HostBase extends AbstractHost {
     @Autowired
     @Qualifier("HostSingleFlight")
     protected CompletionSingleFlight<ConnectHostReply> singleFlight;
+    @Autowired
+    private TagManager tagMgr;
 
     public static class HostDisconnectedCanonicalEvent extends CanonicalEventEmitter {
         HostCanonicalEvents.HostDisconnectedData data;
@@ -237,7 +245,7 @@ public abstract class HostBase extends AbstractHost {
 
                         int migrateQuantity = quantity;
                         HostInventory host = getSelfInventory();
-                        Map<String,ErrorCode> vmFailedToMigrate = Collections.synchronizedMap(new HashMap<>());
+                        Map<String, ErrorCode> vmFailedToMigrate = Collections.synchronizedMap(new HashMap<>());
                         for (OrderVmBeforeMigrationDuringHostMaintenanceExtensionPoint ext : pluginRgty.getExtensionList(OrderVmBeforeMigrationDuringHostMaintenanceExtensionPoint.class)) {
                             List<String> ordered = ext.orderVmBeforeMigrationDuringHostMaintenance(host, vmUuids);
                             if (ordered != null) {
@@ -419,7 +427,7 @@ public abstract class HostBase extends AbstractHost {
                 if (!reply.isSuccess()) {
                     evt.setError(err(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError(), reply.getError().getDetails()));
                     logger.debug(String.format("failed to reconnect host[uuid:%s] because %s", self.getUuid(), reply.getError()));
-                }else{
+                } else {
                     self = dbf.reload(self);
                     evt.setInventory((getSelfInventory()));
                 }
@@ -592,7 +600,7 @@ public abstract class HostBase extends AbstractHost {
                     return;
                 }
 
-                evt.setInventory(((ChangeHostStateReply)reply).getInventory());
+                evt.setInventory(((ChangeHostStateReply) reply).getInventory());
                 bus.publish(evt);
             }
         });
@@ -687,7 +695,7 @@ public abstract class HostBase extends AbstractHost {
 
         final Integer MAX_PING_CNT = HostGlobalConfig.MAXIMUM_PING_FAILURE.value(Integer.class);
         final List<Integer> stepCount = new ArrayList<>();
-        for(int i = 1; i <= MAX_PING_CNT; i ++){
+        for (int i = 1; i <= MAX_PING_CNT; i++) {
             stepCount.add(i);
         }
 
@@ -718,7 +726,7 @@ public abstract class HostBase extends AbstractHost {
         })).run(new WhileDoneCompletion(msg) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (errs.size() == stepCount.size()){
+                if (errs.size() == stepCount.size()) {
                     final ErrorCode errorCode = errs.get(0);
                     reply.setConnected(false);
                     reply.setCurrentHostStatus(self.getStatus().toString());
@@ -728,7 +736,7 @@ public abstract class HostBase extends AbstractHost {
                     Boolean noReconnect = (Boolean) errorCode.getFromOpaque(Opaque.NO_RECONNECT_AFTER_PING_FAILURE.toString());
                     reply.setNoReconnect(noReconnect != null && noReconnect);
 
-                    if(!Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).isExists()){
+                    if (!Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).isExists()) {
                         reply.setNoReconnect(true);
                         completion.success(reply);
                         return;
@@ -869,6 +877,31 @@ public abstract class HostBase extends AbstractHost {
         });
     }
 
+    private void updateHostConnectedTime(HostStatus hostStatus) {
+        String tag = Q.New(SystemTagVO.class).select(SystemTagVO_.tag)
+                .eq(SystemTagVO_.resourceUuid, self.getUuid())
+                .eq(SystemTagVO_.resourceType, HostVO.class.getSimpleName())
+                .like(SystemTagVO_.tag, "ConnectedTime::%")
+                .findValue();
+        if (hostStatus == HostStatus.Connected && tag == null) {
+            long connectedTime = System.currentTimeMillis();
+            String token = HostSystemTags.HOST_CONNECTED_TIME_TOKEN;
+            SystemTagCreator creator = HostSystemTags.HOST_CONNECTED_TIME.newSystemTagCreator(self.getUuid());
+            creator.setTagByTokens(Collections.singletonMap(token, connectedTime));
+            creator.inherent = false;
+            creator.recreate = false;
+            creator.create();
+            return;
+        }
+        if (hostStatus == HostStatus.Disconnected) {
+            SQL.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceUuid, self.getUuid())
+                .eq(SystemTagVO_.resourceType, HostVO.class.getSimpleName())
+                .like(SystemTagVO_.tag, "ConnectedTime::%")
+                .hardDelete();
+        }
+    }
+
     private void handle(final ReconnectHostMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -953,7 +986,7 @@ public abstract class HostBase extends AbstractHost {
     protected boolean changeConnectionState(final HostStatusEvent event, Runnable runnable) {
         String hostUuid = self.getUuid();
         self = dbf.reload(self);
-        if(self == null){
+        if (self == null) {
             throw new CloudRuntimeException(String.format("change host connection state fail, can not find the host[%s]", hostUuid));
         }
 
@@ -968,6 +1001,7 @@ public abstract class HostBase extends AbstractHost {
         self = dbf.updateAndRefresh(self);
         logger.debug(String.format("Host %s [uuid:%s] changed connection state from %s to %s",
                 self.getName(), self.getUuid(), before, next));
+        updateHostConnectedTime(next);
 
         HostStatusChangedData data = new HostStatusChangedData();
         data.setHostUuid(self.getUuid());
@@ -988,29 +1022,29 @@ public abstract class HostBase extends AbstractHost {
 
     private void handle(final ConnectHostMsg msg) {
         singleFlight.execute(
-            connectHostSignature(),
-            (comp) -> this.connect(msg, comp),
-            new ReturnValueCompletion<ConnectHostReply>(msg) {
-                @Override
-                public void success(ConnectHostReply returnValue) {
-                    ConnectHostReply coped = new ConnectHostReply();
-                    bus.reply(msg, coped);
+                connectHostSignature(),
+                (comp) -> this.connect(msg, comp),
+                new ReturnValueCompletion<ConnectHostReply>(msg) {
+                    @Override
+                    public void success(ConnectHostReply returnValue) {
+                        ConnectHostReply coped = new ConnectHostReply();
+                        bus.reply(msg, coped);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        ConnectHostReply coped = new ConnectHostReply();
+                        coped.setError(errorCode);
+                        bus.reply(msg, coped);
+                    }
                 }
-        
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    ConnectHostReply coped = new ConnectHostReply();
-                    coped.setError(errorCode);
-                    bus.reply(msg, coped);
-                }
-            }
         );
     }
-    
+
     private String connectHostSignature() {
         return String.format("connect-host-%s", self.getUuid());
     }
-    
+
     private void connect(final ConnectHostMsg msg, ReturnValueCompletion<ConnectHostReply> completion) {
         thdf.chainSubmit(new ChainTask(msg, completion) {
             @Override
@@ -1133,7 +1167,7 @@ public abstract class HostBase extends AbstractHost {
                                 tracker.trackHost(self.getUuid());
 
                                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class),
-                                    ext -> ext.afterHostConnected(getSelfInventory()));
+                                        ext -> ext.afterHostConnected(getSelfInventory()));
                                 completion.success(reply);
                             }
                         });
