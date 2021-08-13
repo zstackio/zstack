@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -130,10 +129,9 @@ public class TimeUtils {
     }
 
     private static final String DEFAULT_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
-    private static final DateFormat df = new SimpleDateFormat(DEFAULT_TIME_FORMAT);
     public static boolean isValidTimestampFormat(String timestamp) {
         try {
-            df.parse(timestamp);
+            new SimpleDateFormat(DEFAULT_TIME_FORMAT).parse(timestamp);
             return true;
         } catch (ParseException e) {
             return false;
@@ -161,19 +159,18 @@ public class TimeUtils {
 
     public static long parseFormatStringToTimeStamp(String timestamp) {
         try {
-            return df.parse(timestamp).getTime();
+            return new SimpleDateFormat(DEFAULT_TIME_FORMAT).parse(timestamp).getTime();
         } catch (ParseException e) {
             return 0;
         }
     }
 
     public static String getCurrentTimeStamp() {
-        return df.format(new Date(System.currentTimeMillis()));
+        return instantToString(Instant.now());
     }
 
     public static String getCurrentTimeStamp(String dformat) {
-        DateFormat dateFormat = new SimpleDateFormat(dformat);
-        return dateFormat.format(new Date(System.currentTimeMillis()));
+        return instantToString(Instant.now(), dformat);
     }
 
     public static Calendar roundOff(long timeInMills, int timeUnit) {
