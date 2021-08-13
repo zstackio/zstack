@@ -12,10 +12,10 @@ import java.util.concurrent.Callable;
  * block the caller.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class AsyncSingleFlight<V> extends AbstractSingleFlight<V> {
+public class AsyncSingleFlight<K, V> extends AbstractSingleFlight<K, V> {
 
-    public void execute(Object key, Callable<V> callable, ReturnValueCompletion<V> completion) {
-        if (!isFirst(key, completion)) {
+    public void execute(K key, Callable<V> callable, ReturnValueCompletion<V> completion) {
+        if (!join(key, completion)) {
             return;
         }
 
