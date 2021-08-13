@@ -699,6 +699,10 @@ public class Platform {
         return managementServerIp;
     }
 
+    public static int getManagementNodeServicePort() {
+        return Integer.parseInt(System.getProperty("RESTFacade.port", "8080"));
+    }
+
     public static String getCanonicalServerIp() {
         if (!ZSha2Helper.isMNHaEnvironment()) {
             return getManagementServerIp();
