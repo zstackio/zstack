@@ -395,11 +395,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PSReserveCapacityExtensionPoint PSReserveCapacityExt = pluginRgty.getExtensionFromMap(primaryStorageVO.getType(),
                 PSReserveCapacityExtensionPoint.class);
 
-        if (PSReserveCapacityExt != null) {
-            PSReserveCapacityExt.releaseCapacity(
-                    PSReserveCapacityExt.getInstallUrl(msg.getPrimaryStorageUuid()),
-                    msg.getDiskSize(), msg.getPrimaryStorageUuid());
-        }
+//        if (PSReserveCapacityExt != null) {
+//            PSReserveCapacityExt.releaseCapacity(
+//                    PSReserveCapacityExt.getRequireInstallUrl(msg),
+//                    msg.getDiskSize(),
+//                    msg.getPrimaryStorageUuid());
+//        }
     }
 
     private void handle(DecreasePrimaryStorageCapacityMsg msg) {
