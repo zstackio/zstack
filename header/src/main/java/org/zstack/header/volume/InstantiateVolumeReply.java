@@ -7,6 +7,15 @@ import org.zstack.header.message.MessageReply;
  */
 public class InstantiateVolumeReply extends MessageReply {
     private VolumeInventory volume;
+    private String allocatedInstallUrl;
+
+    public String getAllocatedInstallUrl() {
+        return allocatedInstallUrl;
+    }
+
+    public void setAllocatedInstallUrl(String allocatedInstallUrl) {
+        this.allocatedInstallUrl = allocatedInstallUrl;
+    }
 
     public VolumeInventory getVolume() {
         return volume;

@@ -381,7 +381,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
     }
 
-    private void handle(ReleasePrimaryStorageCapacitySpaceMsg msg) {
+    private void handle(ReleasePrimaryStorageSpaceMsg msg) {
         long diskSize = msg.isNoOverProvisioning() ? msg.getDiskSize() : ratioMgr.calculateByRatio(msg.getPrimaryStorageUuid(), msg.getDiskSize());
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(msg.getPrimaryStorageUuid());
         if (updater.increaseAvailableCapacity(diskSize)) {
@@ -395,12 +395,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PSCapacityExtensionPoint PSReserveCapacityExt = pluginRgty.getExtensionFromMap(primaryStorageVO.getType(),
                 PSCapacityExtensionPoint.class);
 
-//        if (PSReserveCapacityExt != null) {
-//            PSReserveCapacityExt.releaseCapacity(
-//                    PSReserveCapacityExt.getRequireInstallUrl(msg),
-//                    msg.getDiskSize(),
-//                    msg.getPrimaryStorageUuid());
-//        }
+        if (PSReserveCapacityExt != null) {
+            PSReserveCapacityExt.releaseCapacity(
+                    msg.getAllocatedInstallUrl(),
+                    msg.getDiskSize(),
+                    msg.getPrimaryStorageUuid());
+        }
     }
 
     private void handle(DecreasePrimaryStorageCapacityMsg msg) {

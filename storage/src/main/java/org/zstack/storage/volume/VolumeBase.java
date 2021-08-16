@@ -30,10 +30,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
-import org.zstack.header.image.ImageConstant;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImagePlatform;
-import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.*;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
@@ -409,6 +406,7 @@ public class VolumeBase implements Volume {
                     flow(new Flow() {
                         String __name__ = "allocate-primary-storage";
 
+                        String allocatedInstallUrl;
                         boolean success;
 
                         @Override
@@ -426,6 +424,8 @@ public class VolumeBase implements Volume {
                                     if (!reply.isSuccess()) {
                                         trigger.fail(reply.getError());
                                     } else {
+                                        InstantiateVolumeReply r = reply.castReply();
+                                        allocatedInstallUrl = r.getAllocatedInstallUrl();
                                         success = true;
                                         trigger.next();
                                     }
@@ -436,11 +436,11 @@ public class VolumeBase implements Volume {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             if (success) {
-                                IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
-                                //ReleasePrimaryStorageCapacitySpaceMsg imsg = new ReleasePrimaryStorageCapacitySpaceMsg();
+                                //IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
                                 imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                                 imsg.setDiskSize(self.getSize());
-
+                                imsg.setAllocatedInstallUrl(allocatedInstallUrl);
                                 bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                                 bus.send(imsg);
                             }
