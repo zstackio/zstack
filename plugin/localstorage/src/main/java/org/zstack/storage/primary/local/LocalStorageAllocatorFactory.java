@@ -40,8 +40,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 /**
  * Created by frank on 7/1/2015.
@@ -336,25 +335,30 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public String getInstallUrl(String psUuid) {
-        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+    public String getRequireInstallUrl(AllocatePrimaryStorageSpaceMsg msg) {
+        String requireInstallUrl = null;
+        String hostUuid = null;
 
-        String sql = "select ref" +
-                " from LocalStorageHostRefVO ref" +
-                " where ref.primaryStorageUuid = :psUuid";
-        TypedQuery<LocalStorageHostRefVO> q = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
-        q.setParameter("psUuid", psUuid);
-        q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
-        List<LocalStorageHostRefVO> refs = q.getResultList();
+        if (msg.getSystemTags() != null) {
+            for (String stag : msg.getSystemTags()) {
+                    if (LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.isMatch(stag)) {
+                    hostUuid = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTokenByTag(
+                            stag,
+                            LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN
+                    );
+                    requireInstallUrl = hostUuid;
+                    break;
+                }
+            }
 
-        if (refs.isEmpty()) {
-            String errInfo = String.format("cannot find local primary storage[uuid: %s]", primaryStorageVO.getUuid());
-            throw new CloudRuntimeException(errInfo);
+            if (hostUuid == null) {
+                throw new OperationFailureException(argerr("To create data volume on the local primary storage, you must specify the host that" +
+                                " the data volume is going to be created using the system tag [%s]",
+                        LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()));
+            }
         }
 
-        LocalStorageHostRefVO ref = refs.get(0);
-
-        return ref.getHostUuid();
+        return requireInstallUrl;
     }
 
     @Override
