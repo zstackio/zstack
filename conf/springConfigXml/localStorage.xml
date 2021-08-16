@@ -52,7 +52,7 @@
                     interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyExtensionPoint"/>
             <zstack:extension interface=" org.zstack.header.allocator.HostAllocatorStrategyExtensionPoint"/>
             <zstack:extension interface="org.zstack.storage.snapshot.SnapshotDeletionExtensionPoint"/>
-            <zstack:extension interface="org.zstack.header.storage.primary.PSReserveCapacityExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.PSCapacityExtensionPoint"/>
         </zstack:plugin>
 
         <property name="allocatorFlowNames">

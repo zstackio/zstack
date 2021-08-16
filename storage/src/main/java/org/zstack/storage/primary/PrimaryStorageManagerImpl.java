@@ -392,8 +392,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
 
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
-        PSReserveCapacityExtensionPoint PSReserveCapacityExt = pluginRgty.getExtensionFromMap(primaryStorageVO.getType(),
-                PSReserveCapacityExtensionPoint.class);
+        PSCapacityExtensionPoint PSReserveCapacityExt = pluginRgty.getExtensionFromMap(primaryStorageVO.getType(),
+                PSCapacityExtensionPoint.class);
 
 //        if (PSReserveCapacityExt != null) {
 //            PSReserveCapacityExt.releaseCapacity(
@@ -555,16 +555,11 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                             " available before:%s, available now:%s]", size, inv.getUuid(), origin, avail));
                 }
 
-                PSReserveCapacityExtensionPoint PSReserveCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(),
-                        PSReserveCapacityExtensionPoint.class);
+                PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(),
+                        PSCapacityExtensionPoint.class);
 
-                if (PSReserveCapacityExt != null) {
-                    if (msg.getRequireInstallUrl() == null) {
-                        PSReserveCapacityExt.reserveCapacity(
-                                PSReserveCapacityExt.getRequireInstallUrl(msg),
-                                msg.getSize(),
-                                msg.getRequiredPrimaryStorageUuid());
-                    }
+                if (PSCapacityExt != null) {
+                    PSCapacityExt.reserveCapacity(PSCapacityExt.getAllocatedInstallUrl(msg), msg.getSize(), msg.getRequiredPrimaryStorageUuid());
                 }
 
                 return cap;

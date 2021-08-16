@@ -47,7 +47,7 @@ import static org.zstack.core.Platform.*;
  */
 public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStrategyFactory, Component,
         HostAllocatorFilterExtensionPoint, PrimaryStorageAllocatorStrategyExtensionPoint, PrimaryStorageAllocatorFlowNameSetter,
-        HostAllocatorStrategyExtensionPoint, SnapshotDeletionExtensionPoint, PSReserveCapacityExtensionPoint {
+        HostAllocatorStrategyExtensionPoint, SnapshotDeletionExtensionPoint, PSCapacityExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageAllocatorFactory.class);
 
     @Autowired
@@ -335,7 +335,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public String getRequireInstallUrl(AllocatePrimaryStorageSpaceMsg msg) {
+    public String getAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg) {
         String requireInstallUrl = null;
         String hostUuid = null;
 
