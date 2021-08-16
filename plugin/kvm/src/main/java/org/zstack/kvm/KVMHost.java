@@ -4342,21 +4342,17 @@ public class KVMHost extends HostBase implements Host {
                                     }
                                      */
 
-                                    /*
                                     SshShell sshShell = new SshShell();
                                     sshShell.setHostname(getSelf().getManagementIp());
                                     sshShell.setUsername(getSelf().getUsername());
                                     sshShell.setPassword(getSelf().getPassword());
                                     sshShell.setPort(getSelf().getPort());
                                     sshShell.setWithSudo(false);
-                                    final String cmd = String.format("sed -i 's/listen_tls = ./listen_tls = 1/' /etc/libvirt/libvirtd.conf");
+                                    final String cmd = "sed -i \"s/.*listen_tls = ./listen_tls = 1/\" /etc/libvirt/libvirtd.conf";
                                     SshResult ret = sshShell.runCommand(cmd);
                                     if (ret.isSshFailure() || ret.getReturnCode() != 0) {
                                         trigger.fail(operr("Failed to run command, because %s",ret.getStderr()));
                                     }
-
-                                    KVMSystemTags.RESTART_LIBVIRT_REQUESTED.delete(self.getUuid());
-                                    */
 
                                     trigger.next();
                                 }

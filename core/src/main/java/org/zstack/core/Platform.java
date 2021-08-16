@@ -261,8 +261,13 @@ public class Platform {
     }
 
     private static void initSelinuxConfig() {
-        String output = ShellUtils.run("getenforce", true);
-        isSelinuxEnbaled = output.contains("Enforcing");
+        try {
+            String output = ShellUtils.run("getenforce", true);
+            isSelinuxEnbaled = output.contains("Enforcing");
+        } catch (Exception e) {
+            logger.debug("failed to run getenforce %s", e);
+        }
+
     }
 
     private static void writePidFile() throws IOException {
@@ -380,7 +385,6 @@ public class Platform {
     }
 
     static {
-        initSelinuxConfig();
         FileInputStream in = null;
         try {
             Set<Class> baseResourceClasses = reflections.getTypesAnnotatedWith(BaseResource.class).stream()
@@ -407,6 +411,7 @@ public class Platform {
             callStaticInitMethods();
             encryptedMethodsMap = getAllEncryptPassword();
             writePidFile();
+            initSelinuxConfig();
         } catch (Throwable e) {
             logger.warn(String.format("unhandled exception when in Platform's static block, %s", e.getMessage()), e);
             new BootErrorLog().write(e.getMessage());
