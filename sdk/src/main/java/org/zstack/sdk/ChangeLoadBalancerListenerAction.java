@@ -31,7 +31,7 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
     public java.lang.Integer connectionIdleTimeout;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,10000000L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,200000L}, noTrim = false)
     public java.lang.Integer maxConnection;
 
     @Param(required = false, validValues = {"weightroundrobin","roundrobin","leastconn","source"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

@@ -34,6 +34,9 @@ public class SetNicQosAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {8192L,9223372036854775807L}, noTrim = false)
     public java.lang.Long inboundBandwidth;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,63L}, noTrim = false)
+    public java.lang.Integer dscp;
+
     @Param(required = false)
     public java.util.List systemTags;
 

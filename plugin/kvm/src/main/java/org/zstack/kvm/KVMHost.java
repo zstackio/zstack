@@ -2442,6 +2442,7 @@ public class KVMHost extends HostBase implements Host {
         KVMCompleteNicInformationExtensionPoint extp = factory.getCompleteNicInfoExtension(L2NetworkType.valueOf(l2inv.getType()));
         NicTO to = extp.completeNicInformation(l2inv, l3Inv, nic);
 
+        to.setUsedIps(VmNicHelper.getIpAddresses(nic));
         if (to.getUseVirtio() == null) {
             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
             q.select(VmInstanceVO_.platform);
@@ -3009,6 +3010,15 @@ public class KVMHost extends HostBase implements Host {
         return !restf.getSendCommandUrl().equals(rsp.getSendCommandUrl());
     }
 
+    private List<VmInstanceState> getIdleStates() {
+        List<VmInstanceState> idleState = new ArrayList<>();
+        idleState.add(VmInstanceState.Stopped);
+        idleState.add(VmInstanceState.Destroyed);
+        idleState.add(VmInstanceState.Paused);
+        idleState.add(VmInstanceState.Unknown);
+        return idleState;
+    }
+
     @Override
     protected void pingHook(final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -3026,6 +3036,8 @@ public class KVMHost extends HostBase implements Host {
                     public void run(FlowTrigger trigger, Map data) {
                         PingCmd cmd = new PingCmd();
                         cmd.hostUuid = self.getUuid();
+                        cmd.checkIdleState = HostGlobalConfig.AUTO_SHUTDOWN_IDLE_HOST.value(Boolean.class);
+
                         restf.asyncJsonPost(pingPath, cmd, new JsonAsyncRESTCallback<PingResponse>(trigger) {
                             @Override
                             public void fail(ErrorCode err) {

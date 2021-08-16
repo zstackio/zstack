@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RefreshFiberChannelStorageAction extends AbstractAction {
+public class BackupInfluxDbAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RefreshFiberChannelStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RefreshFiberChannelStorageResult value;
+        public org.zstack.sdk.BackupInfluxDbResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,8 @@ public class RefreshFiberChannelStorageAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List scsiLunUuids;
+    @Param(required = false)
+    public java.lang.String backupPath;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +60,8 @@ public class RefreshFiberChannelStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RefreshFiberChannelStorageResult value = res.getResult(org.zstack.sdk.RefreshFiberChannelStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RefreshFiberChannelStorageResult() : value; 
+        org.zstack.sdk.BackupInfluxDbResult value = res.getResult(org.zstack.sdk.BackupInfluxDbResult.class);
+        ret.value = value == null ? new org.zstack.sdk.BackupInfluxDbResult() : value; 
 
         return ret;
     }
@@ -94,7 +91,7 @@ public class RefreshFiberChannelStorageAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/storage-devices/fiber-channel/controllers";
+        info.path = "/backup-influxdb";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
