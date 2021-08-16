@@ -334,8 +334,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             handle((AllocatePrimaryStorageSpaceMsg) msg);
         } else if(msg instanceof AllocatePrimaryStorageMsg) {
             handle((AllocatePrimaryStorageMsg) msg);
-        } else if (msg instanceof ReleasePrimaryStorageCapacitySpaceMsg) {
-            handle((ReleasePrimaryStorageCapacitySpaceMsg) msg);
+        } else if (msg instanceof ReleasePrimaryStorageSpaceMsg) {
+            handle((ReleasePrimaryStorageSpaceMsg) msg);
         } else if (msg instanceof IncreasePrimaryStorageCapacityMsg) {
             handle((IncreasePrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof DecreasePrimaryStorageCapacityMsg) {
