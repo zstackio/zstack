@@ -960,6 +960,18 @@ public abstract class HostBase extends AbstractHost {
                     @Override
                     public void setup() {
                         flow(new NoRollbackFlow() {
+                            String __name__ = "connect-host-pre-check";
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                if (HostGlobalConfig.AUTO_SHUTDOWN_IDLE_HOST.value(Boolean.class)) {
+                                    trigger.fail(operr("auto shutdown idle host is enabled, disable it and try again."));
+                                    return;
+                                }
+                                trigger.next();
+                            }
+                        });
+
+                        flow(new NoRollbackFlow() {
                             String __name__ = "connect-host";
 
                             @Override
