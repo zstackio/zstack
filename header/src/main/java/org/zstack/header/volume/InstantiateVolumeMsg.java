@@ -10,6 +10,7 @@ public class InstantiateVolumeMsg extends NeedReplyMessage implements VolumeMess
     private String primaryStorageUuid;
     private boolean primaryStorageAllocated;
     private boolean skipIfExisting;
+    private String allocatedInstallUrl;
 
     public boolean isPrimaryStorageAllocated() {
         return primaryStorageAllocated;
@@ -42,5 +43,13 @@ public class InstantiateVolumeMsg extends NeedReplyMessage implements VolumeMess
 
     public void setSkipIfExisting(boolean skipIfExisting) {
         this.skipIfExisting = skipIfExisting;
+    }
+
+    public String getAllocatedInstallUrl() {
+        return allocatedInstallUrl;
+    }
+
+    public void setAllocatedInstallUrl(String allocatedInstallUrl) {
+        this.allocatedInstallUrl = allocatedInstallUrl;
     }
 }

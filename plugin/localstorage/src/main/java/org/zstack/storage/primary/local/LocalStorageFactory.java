@@ -953,8 +953,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public void instantiateDataVolumeOnCreation(InstantiateVolumeMsg msg, VolumeInventory volume, ReturnValueCompletion<VolumeInventory> completion) {
         String hostUuid = null;
-        if (msg.getInstallUrl() != null) {
-            hostUuid = msg.getInstallUrl();
+        if (msg.getAllocatedInstallUrl() != null) {
+            hostUuid = msg.getAllocatedInstallUrl();
         } else {
             if (msg.getSystemTags() != null) {
                 for (String stag : msg.getSystemTags()) {
