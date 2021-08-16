@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateSchedulerJobAction extends AbstractAction {
 
@@ -33,7 +34,7 @@ public class CreateSchedulerJobAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String targetResourceUuid;
 
-    @Param(required = true, validValues = {"startVm","stopVm","rebootVm","volumeSnapshot","volumeBackup","rootVolumeBackup","vmBackup","databaseBackup","localRaidSelfTest","runAutoScalingGroup"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"startVm","stopVm","rebootVm","volumeSnapshot","volumeBackup","rootVolumeBackup","vmBackup","databaseBackup","localRaidSelfTest","runAutoScalingGroup","cancelIAM2ProjectLoginExpired","addIAM2ProjectLoginExpired"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
