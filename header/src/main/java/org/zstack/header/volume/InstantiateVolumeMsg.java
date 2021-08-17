@@ -8,7 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class InstantiateVolumeMsg extends NeedReplyMessage implements VolumeMessage {
     private String volumeUuid;
     private String primaryStorageUuid;
-    private String hostUuid;
+    private String allocatedInstallUrl;
     private boolean primaryStorageAllocated;
     private boolean skipIfExisting;
 
@@ -37,12 +37,12 @@ public class InstantiateVolumeMsg extends NeedReplyMessage implements VolumeMess
         this.primaryStorageUuid = primaryStorageUuid;
     }
 
-    public String getHostUuid() {
-        return hostUuid;
+    public String getAllocatedInstallUrl() {
+        return allocatedInstallUrl;
     }
 
-    public void setHostUuid(String hostUuid) {
-        this.hostUuid = hostUuid;
+    public void setAllocatedInstallUrl(String allocatedInstallUrl) {
+        this.allocatedInstallUrl = allocatedInstallUrl;
     }
 
     public boolean isSkipIfExisting() {
