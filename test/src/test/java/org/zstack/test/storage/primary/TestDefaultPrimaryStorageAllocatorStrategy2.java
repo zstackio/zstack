@@ -77,8 +77,10 @@ public class TestDefaultPrimaryStorageAllocatorStrategy2 {
         msg.setSize(requiredSize);
         msg.setServiceId(bus.makeLocalServiceId(PrimaryStorageConstant.SERVICE_ID));
         MessageReply reply = bus.call(msg);
-        Assert.assertEquals(AllocatePrimaryStorageReply.class, reply.getClass());
-        AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply) reply;
+        //Assert.assertEquals(AllocatePrimaryStorageReply.class, reply.getClass());
+        //AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply) reply;
+        Assert.assertEquals(AllocatePrimaryStorageSpaceReply.class, reply.getClass());
+        AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
         Assert.assertEquals(pinv.getUuid(), ar.getPrimaryStorageInventory().getUuid());
 
         PrimaryStorageVO pvo = dbf.findByUuid(pinv.getUuid(), PrimaryStorageVO.class);

@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.nfs;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmExpungeRootVolumeValidator;
 import org.zstack.core.cloudbus.CloudBus;
@@ -50,14 +51,17 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import static org.zstack.core.Platform.*;
 
+import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.utils.CollectionDSL.*;
 
-public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint,
-        PrimaryStorageDetachExtensionPoint, PrimaryStorageAttachExtensionPoint, HostDeleteExtensionPoint, PostMarkRootVolumeAsSnapshotExtension, ClusterUpdateOSExtensionPoint, AfterInstantiateVolumeExtensionPoint {
+public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component,
+        CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint,
+        PrimaryStorageDetachExtensionPoint, PrimaryStorageAttachExtensionPoint, HostDeleteExtensionPoint,
+        PostMarkRootVolumeAsSnapshotExtension, ClusterUpdateOSExtensionPoint, AfterInstantiateVolumeExtensionPoint, PSCapacityExtensionPoint {
     private static CLogger logger = Utils.getLogger(NfsPrimaryStorageFactory.class);
 
     @Autowired
@@ -784,5 +788,28 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         for (CreateQcow2VolumeProvisioningStrategyExtensionPoint exp : pluginRgty.getExtensionList(CreateQcow2VolumeProvisioningStrategyExtensionPoint.class)) {
             exp.saveQcow2VolumeProvisioningStrategy(volume, hasBackingFile);
         }
+    }
+
+    @Override
+    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, String PsUid) {
+        //PrimaryStorageVO primaryStorageVO = dbf.findByUuid(msg.getRequiredPrimaryStorageUuid(), PrimaryStorageVO.class);
+        //return primaryStorageVO.getUrl();
+        return "Url";
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public String reserveCapacity(String installUrl, long size, String psUuid){
+        return installUrl;
+    }
+
+    @Override
+    public String releaseCapacity(String installUrl, long size, String psUuid){
+        return installUrl;
+    }
+
+    @Override
+    public String psCapacityPrimaryStorageType() {
+        return NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE;
     }
 }

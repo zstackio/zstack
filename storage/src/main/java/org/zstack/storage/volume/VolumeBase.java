@@ -402,20 +402,21 @@ public class VolumeBase implements Volume {
         chain.then(new ShareFlow() {
             String installPath;
             String format;
+            String allocatedInstall;
 
             @Override
             public void setup() {
                 if (!msg.isPrimaryStorageAllocated()) {
                     flow(new Flow() {
                         String __name__ = "allocate-primary-storage";
-
                         boolean success;
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                            AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                             amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                             amsg.setSize(self.getSize());
+                            amsg.setSystemTags(msg.getSystemTags());
 
                             bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                             bus.send(amsg, new CloudBusCallBack(trigger) {
@@ -425,6 +426,9 @@ public class VolumeBase implements Volume {
                                         trigger.fail(reply.getError());
                                     } else {
                                         success = true;
+                                        AllocatePrimaryStorageSpaceReply r = reply.castReply();
+                                        allocatedInstall = r.getAllocatedInstallUrl();
+                                        //allocatedInstall = ((AllocatePrimaryStorageSpaceReply) reply).getAllocatedInstallUrl();
                                         trigger.next();
                                     }
                                 }
@@ -434,9 +438,10 @@ public class VolumeBase implements Volume {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             if (success) {
-                                IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
                                 imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                                 imsg.setDiskSize(self.getSize());
+                                imsg.setAllocatedInstallUrl(allocatedInstall);
                                 bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                                 bus.send(imsg);
                             }

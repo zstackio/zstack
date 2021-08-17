@@ -54,11 +54,13 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         HostInventory hinv = HostInventory.valueOf(hvo);
         spec.setDestHost(hinv);
 
-        AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
+        //AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
+        AllocatePrimaryStorageSpaceMsg msg = new AllocatePrimaryStorageSpaceMsg();
         msg.setSize(volume.getSize());
         msg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
         msg.setDiskOfferingUuid(volume.getDiskOfferingUuid());
         msg.setServiceId(bus.makeLocalServiceId(PrimaryStorageConstant.SERVICE_ID));
+        msg.setRequireAllocatedInstallUrl(hinv.getUuid());
 
         if (volume.isShareable()) {
             String clusterUuid = spec.getVmInventory().getClusterUuid();
@@ -89,9 +91,11 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply)reply;
+                    //AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply)reply;
+                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply)reply;
                     data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
                     data.put(VmAllocatePrimaryStorageForAttachingDiskFlow.class, ar.getSize());
+                    data.put("allocatedInstallUrl",ar.getAllocatedInstallUrl());
                     chain.next();
                 } else {
                     chain.fail(reply.getError());
@@ -105,9 +109,11 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         Long size = (Long) data.get(VmAllocatePrimaryStorageForAttachingDiskFlow.class);
         if (size != null) {
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
-            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+            //IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+            ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
             imsg.setPrimaryStorageUuid(pri.getUuid());
             imsg.setDiskSize(size);
+            imsg.setAllocatedInstallUrl(data.get("allocatedInstallUrl").toString());
             bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());
             bus.send(imsg);
         }

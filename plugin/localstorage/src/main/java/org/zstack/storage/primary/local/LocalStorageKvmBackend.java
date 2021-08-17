@@ -1241,9 +1241,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                 @Override
                                 public void run(final FlowTrigger trigger, Map data) {
-                                    AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                                    //AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                                    AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                                     amsg.setRequiredPrimaryStorageUuid(self.getUuid());
                                     amsg.setRequiredHostUuid(hostUuid);
+                                    amsg.setRequireAllocatedInstallUrl(hostUuid);
                                     amsg.setSize(image.getActualSize());
                                     amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
                                     amsg.setNoOverProvisioning(true);
@@ -1254,7 +1256,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                         public void run(MessageReply reply) {
                                             if (reply.isSuccess()) {
                                                 s = true;
-                                                AllocatePrimaryStorageReply r = reply.castReply();
+                                                //AllocatePrimaryStorageReply r = reply.castReply();
+                                                AllocatePrimaryStorageSpaceReply r = (AllocatePrimaryStorageSpaceReply) reply;
                                                 psUuid = r.getPrimaryStorageInventory().getUuid();
                                                 trigger.next();
                                             } else {
@@ -1267,35 +1270,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 @Override
                                 public void rollback(FlowRollback trigger, Map data) {
                                     if (s) {
-                                        IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                        ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
                                         imsg.setDiskSize(image.getActualSize());
                                         imsg.setNoOverProvisioning(true);
                                         imsg.setPrimaryStorageUuid(self.getUuid());
+                                        imsg.setAllocatedInstallUrl(hostUuid);
                                         bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);
                                         bus.send(imsg);
                                     }
 
-                                    trigger.rollback();
-                                }
-                            });
-
-                            flow(new Flow() {
-                                String __name__ = "allocate-capacity-on-host";
-
-                                boolean success = false;
-
-                                @Override
-                                public void run(FlowTrigger trigger, Map data) {
-                                    reserveCapacityOnHost(hostUuid, image.getActualSize(), psUuid);
-                                    success = true;
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void rollback(FlowRollback trigger, Map data) {
-                                    if (success) {
-                                        returnStorageCapacityToHost(hostUuid, image.getActualSize());
-                                    }
                                     trigger.rollback();
                                 }
                             });
