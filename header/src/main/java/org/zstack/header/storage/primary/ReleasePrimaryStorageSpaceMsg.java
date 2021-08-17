@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary;
 
-public class ReleasePrimaryStorageSpaceMsg extends IncreasePrimaryStorageCapacityMsg{
+public class ReleasePrimaryStorageSpaceMsg extends DecreasePrimaryStorageCapacityMsg{
     private String allocatedInstallUrl;
 
     public String getAllocatedInstallUrl() {
