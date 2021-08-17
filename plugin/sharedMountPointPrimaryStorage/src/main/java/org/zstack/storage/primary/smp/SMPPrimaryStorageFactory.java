@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.smp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmExpungeRootVolumeValidator;
 import org.zstack.core.cloudbus.CloudBus;
@@ -43,8 +44,8 @@ import static org.zstack.core.Platform.operr;
  * Created by xing5 on 2016/3/26.
  */
 public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint,
-        HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint,
-        PostMarkRootVolumeAsSnapshotExtension, PrimaryStorageAttachExtensionPoint, AfterInstantiateVolumeExtensionPoint {
+        HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint, PostMarkRootVolumeAsSnapshotExtension,
+        PrimaryStorageAttachExtensionPoint, AfterInstantiateVolumeExtensionPoint, PSCapacityExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SMPPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(SMPConstants.SMP_TYPE);
@@ -422,5 +423,27 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
         for (CreateQcow2VolumeProvisioningStrategyExtensionPoint exp : pluginRgty.getExtensionList(CreateQcow2VolumeProvisioningStrategyExtensionPoint.class)) {
             exp.saveQcow2VolumeProvisioningStrategy(volume, hasBackingFile);
         }
+    }
+
+    @Override
+    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg) {
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(msg.getRequiredPrimaryStorageUuid(), PrimaryStorageVO.class);
+        return primaryStorageVO.getUrl();
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public String reserveCapacity(String installUrl, long size, String psUuid){
+        return installUrl;
+    }
+
+    @Override
+    public String releaseCapacity(String installUrl, long size, String psUuid){
+        return installUrl;
+    }
+
+    @Override
+    public String psCapacityPrimaryStorageType() {
+        return SMPConstants.SMP_TYPE;
     }
 }

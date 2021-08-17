@@ -72,7 +72,7 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
         final String hostUuid = t.get(0, String.class);
         String priUuid = t.get(1, String.class);
 
-        AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
+        AllocatePrimaryStorageSpaceMsg msg = new AllocatePrimaryStorageSpaceMsg();
         if (isThereNetworkSharedStorageForTheHost(hostUuid, priUuid)) {
             // use network-shared primary storage
             msg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
@@ -89,6 +89,7 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
         }
 
         msg.setRequiredHostUuid(hostUuid);
+        msg.setRequireAllocatedInstallUrl(hostUuid);
         msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         msg.setSize(volume.getSize());
         msg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
@@ -101,11 +102,11 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
                     return;
                 }
 
+                AllocatePrimaryStorageSpaceReply ar = reply.castReply();
                 spec.setDestHost(HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class)));
-
-                AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply) reply;
                 data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
                 data.put(LocalStorageAllocateCapacityForAttachingVolumeFlow.class, ar.getSize());
+                data.put("allocatedInstallUrl", ar.getAllocatedInstallUrl());
                 trigger.next();
             }
         });
@@ -117,9 +118,11 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
         if (size != null) {
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(
                     VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
-            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+
+            ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
             imsg.setPrimaryStorageUuid(pri.getUuid());
             imsg.setDiskSize(size);
+            imsg.setAllocatedInstallUrl(data.get("allocatedInstallUrl").toString());
             bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());
             bus.send(imsg);
         }
