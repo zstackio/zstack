@@ -13,7 +13,6 @@ public interface PrimaryStorageAllocatorStrategyExtensionPoint {
      */
     String getPrimaryStorageAllocatorStrategyName(AllocatePrimaryStorageMsg msg);
 
-
     /**
      * return the allocator rules
      */
