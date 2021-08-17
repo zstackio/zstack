@@ -402,6 +402,7 @@ public class VolumeBase implements Volume {
         chain.then(new ShareFlow() {
             String installPath;
             String format;
+            //String allocatedInstallUrl;
 
             @Override
             public void setup() {
@@ -414,8 +415,10 @@ public class VolumeBase implements Volume {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                            //AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                             amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                             amsg.setSize(self.getSize());
+                            //amsg.setSystemTags(msg.getSystemTags());
 
                             bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                             bus.send(amsg, new CloudBusCallBack(trigger) {
@@ -424,6 +427,8 @@ public class VolumeBase implements Volume {
                                     if (!reply.isSuccess()) {
                                         trigger.fail(reply.getError());
                                     } else {
+                                        //AllocatePrimaryStorageSpaceReply r = reply.castReply();
+                                        //allocatedInstallUrl = r.getAllocatedInstallUrl();
                                         success = true;
                                         trigger.next();
                                     }
@@ -435,8 +440,10 @@ public class VolumeBase implements Volume {
                         public void rollback(FlowRollback trigger, Map data) {
                             if (success) {
                                 IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                //ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
                                 imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                                 imsg.setDiskSize(self.getSize());
+                                //imsg.setAllocatedInstallUrl(allocatedInstallUrl);
                                 bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                                 bus.send(imsg);
                             }

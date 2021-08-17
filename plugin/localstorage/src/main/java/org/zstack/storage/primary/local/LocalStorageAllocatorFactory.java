@@ -359,6 +359,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         } else {
             requireInstallUrl = msg.getAllocatedInstallUrl();
         }
+        logger.trace(String.format("-------------------------------------------------------getAllocatedInstallUrl----------------------------------------------------------"));
         return requireInstallUrl;
     }
 
@@ -416,6 +417,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         logCapacityChange(psUuid, hostUuid, ref.getAvailableCapacity(), avail);
         ref.setAvailableCapacity(avail);
         dbf.getEntityManager().merge(ref);
+        logger.trace(String.format("-------------------------------------------------------reserveCapacity----------------------------------------------------------"));
     }
 
     public static void logCapacityChange(String psUuid, String hostUuid, long before, long after) {
@@ -468,5 +470,6 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         logCapacityChange(primaryStorageVO.getUuid(), hostUuid, ref.getAvailableCapacity(), ref.getAvailableCapacity() + s.getSize());
         ref.setAvailableCapacity(ref.getAvailableCapacity() + s.getSize());
         dbf.getEntityManager().merge(ref);
+        logger.trace(String.format("-------------------------------------------------------releaseCapacity----------------------------------------------------------"));
     }
 }

@@ -433,7 +433,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
             @Override
             public String getName() {
-                return "allocate-primary-store";
+                return "allocate-primary-store-space";
             }
 
             @Override
@@ -444,7 +444,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void allocatePrimaryStoreSpace(AllocatePrimaryStorageSpaceMsg msg, NoErrorCompletion completion) {
-        AllocatePrimaryStorageReply reply = new AllocatePrimaryStorageReply(null);
+        AllocatePrimaryStorageSpaceReply reply = new AllocatePrimaryStorageSpaceReply(null);
 
         String allocatorStrategyType = null;
         for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
@@ -498,11 +498,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             completion.done();
             return;
         }
+
         Iterator<PrimaryStorageInventory> it = ret.iterator();
         List<String> errs = new ArrayList<>();
         PrimaryStorageInventory target = null;
         while (it.hasNext()) {
             PrimaryStorageInventory psInv = it.next();
+            PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(psInv.getType(),
+                    PSCapacityExtensionPoint.class);
 
             if (!physicalCapacityMgr.checkCapacityByRatio(psInv.getUuid(), psInv.getTotalPhysicalCapacity(), psInv.getAvailablePhysicalCapacity())) {
                 errs.add(String.format("primary storage[uuid:%s]'s physical capacity usage has exceeded the threshold[%s]",
@@ -515,8 +518,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 requiredSize = ratioMgr.calculateByRatio(psInv.getUuid(), requiredSize);
             }
 
-            if (reserveSpace(psInv, requiredSize, msg)) {
+            if (reserveSpace(psInv, requiredSize, msg, PSCapacityExt)) {
                 target = psInv;
+                reply.setAllocatedInstallUrl(PSCapacityExt.getAllocatedInstallUrl(msg));
                 break;
             } else {
                 errs.add(String.format("unable to reserve capacity on the primary storage[uuid:%s], it has no space", psInv.getUuid()));
@@ -535,7 +539,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         completion.done();
     }
 
-    private boolean reserveSpace(final PrimaryStorageInventory inv, final long size, AllocatePrimaryStorageSpaceMsg msg) {
+    private boolean reserveSpace(final PrimaryStorageInventory inv, final long size, AllocatePrimaryStorageSpaceMsg msg, PSCapacityExtensionPoint PSCapacityExt) {
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(inv.getUuid());
         return updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
@@ -554,9 +558,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                     logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s," +
                             " available before:%s, available now:%s]", size, inv.getUuid(), origin, avail));
                 }
-
-                PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(),
-                        PSCapacityExtensionPoint.class);
 
                 if (PSCapacityExt != null) {
                     PSCapacityExt.reserveCapacity(PSCapacityExt.getAllocatedInstallUrl(msg), msg.getSize(), msg.getRequiredPrimaryStorageUuid());
