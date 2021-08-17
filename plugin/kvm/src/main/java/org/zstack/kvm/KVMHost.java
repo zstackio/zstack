@@ -98,7 +98,7 @@ public class KVMHost extends HostBase implements Host {
 
     @Autowired
     @Qualifier("KVMHostFactory")
-    private KVMHostFactory factory;
+    protected KVMHostFactory factory;
     @Autowired
     private RESTFacade restf;
     @Autowired

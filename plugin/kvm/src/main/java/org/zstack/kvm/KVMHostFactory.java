@@ -242,7 +242,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         return vo == null ? null : KVMHostInventory.valueOf(vo);
     }
 
-    private void populateExtensions() {
+    protected void populateExtensions() {
         connectExtensions = pluginRgty.getExtensionList(KVMHostConnectExtensionPoint.class);
         for (KVMCompleteNicInformationExtensionPoint ext : pluginRgty.getExtensionList(KVMCompleteNicInformationExtensionPoint.class)) {
             KVMCompleteNicInformationExtensionPoint old = completeNicInfoExtensions.get(ext.getL2NetworkTypeVmNicOn());
