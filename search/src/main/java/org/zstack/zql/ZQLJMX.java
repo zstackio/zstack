@@ -3,6 +3,7 @@ package org.zstack.zql;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.jmx.JmxFacade;
 import org.zstack.header.Component;
+import org.zstack.query.QueryGlobalConfig;
 
 import javax.management.MXBean;
 
@@ -18,7 +19,7 @@ public class ZQLJMX implements ZQLMXBean, Component {
 
     @Override
     public boolean start() {
-        ZQLGlobalConfig.STATISTICS_ON.installUpdateExtension((oldConfig, newConfig) -> {
+        QueryGlobalConfig.ZQL_STATISTICS_ON.installUpdateExtension((oldConfig, newConfig) -> {
             // turn on zql statistics
             if (newConfig.value(Boolean.class)) {
                 return;

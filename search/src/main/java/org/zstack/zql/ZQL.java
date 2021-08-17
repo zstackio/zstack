@@ -412,7 +412,7 @@ public class ZQL {
 
 
         long cost = System.currentTimeMillis() - before;
-        boolean statisticsOn = ZQLGlobalConfig.STATISTICS_ON.value(Boolean.class);
+        boolean statisticsOn = QueryGlobalConfig.ZQL_STATISTICS_ON.value(Boolean.class);
         if (cost > TimeUnit.SECONDS.toMillis(QueryGlobalConfig.SLOW_ZQL_COST_TIME.value(Long.class))) {
             logSlowZql(text, cost);
 
@@ -421,7 +421,7 @@ public class ZQL {
             }
         }
 
-        if (ZQLGlobalConfig.STATISTICS_ON.value(Boolean.class)) {
+        if (statisticsOn) {
             statistic.count();
         }
 
