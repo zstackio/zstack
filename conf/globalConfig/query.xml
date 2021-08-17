@@ -23,4 +23,12 @@
         <defaultValue>10</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+
+    <config>
+        <category>query</category>
+        <name>zql.statistics.on</name>
+        <description>enable zql statistics</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>
