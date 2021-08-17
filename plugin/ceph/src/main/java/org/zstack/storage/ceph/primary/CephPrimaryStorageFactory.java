@@ -2,6 +2,7 @@ package org.zstack.storage.ceph.primary;
 
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.HostSystemTags;
@@ -497,7 +498,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
                 final String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
                         d.getHostUuid(), HostSystemTags.EXTRA_IPS_TOKEN);
-                if (extraIps == null) {
+                if (Strings.isEmpty(extraIps)) {
                     logger.debug(String.format("Host [uuid:%s] has no IPs in data network", d.getHostUuid()));
                     return;
                 }
