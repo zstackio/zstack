@@ -3,14 +3,14 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.AntPathMatcher;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.*;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
@@ -766,6 +766,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         populateExtensions();
         installSystemTagValidator();
         installGlobalConfigUpdater();
+        installGlobalConfigValidator();
         initDefaultImageArch();
         return true;
     }
@@ -845,6 +846,41 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 startExpungeTask();
             }
         });
+    }
+    
+    private void installGlobalConfigValidator() {
+        ImageGlobalConfig.DOWNLOAD_LOCALPATH_CUSTOMFILTER.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
+                String[] usedList = newValue.split(";");
+                boolean legal = Arrays.stream(usedList).allMatch(s ->
+                        "blacklist".equals(s) ||
+                                "whitelist".equals(s)
+                );
+                if (!legal) {
+                    throw new GlobalConfigException(String.format("%s is not in [blacklist, whitelist]", newValue));
+                }
+            }
+        });
+        ImageGlobalConfig.DOWNLOAD_LOCALPATH_WHITELIST.installValidateExtension(getValidateExtension());
+        ImageGlobalConfig.DOWNLOAD_LOCALPATH_BLACKLIST.installValidateExtension(getValidateExtension());
+    }
+
+    private GlobalConfigValidatorExtensionPoint getValidateExtension() {
+        AntPathMatcher matcher = new AntPathMatcher();
+        return new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
+                if (StringUtils.isBlank(newValue)) {
+                    return;
+                }
+                String[] pathList = newValue.split(";");
+                boolean legal = Arrays.stream(pathList).allMatch(s -> matcher.match("/**", s));
+                if (!legal) {
+                    throw new GlobalConfigException(String.format("invalid value: %s, path must separated by ';' and start with '/'", newValue));
+                }
+            }
+        };
     }
 
     private void startExpungeTask() {
