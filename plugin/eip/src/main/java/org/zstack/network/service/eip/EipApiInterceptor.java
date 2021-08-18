@@ -180,6 +180,8 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         checkIfVmAlreadyHasVipNetwork(nic.getVmInstanceUuid(), vip);
         checkVmState(msg.getVmNicUuid());
 
+        checkNicRule(msg.getVmNicUuid());
+
         if (msg.getUsedIpUuid() != null) {
             boolean found = false;
             for (UsedIpVO ip : nic.getUsedIps()) {
@@ -296,6 +298,8 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         if (msg.getUsedIpUuid() != null) {
             isVipInVmNicSubnet(msg.getVipUuid(), msg.getUsedIpUuid());
         }
+
+        checkNicRule(msg.getVmNicUuid());
     }
 
     @Transactional(readOnly = true)
@@ -310,6 +314,20 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr(
                     "vm state[%s] is not allowed to operate eip, maybe you should wait the vm process complete",
                     state.toString()));
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private void checkNicRule(String vmNicUuid){
+        List<String> cidrs = SQL.New(
+                "select pf.allowedCidr from PortForwardingRuleVO pf" +
+                        " where pf.vmNicUuid =:vmNicUuid and pf.allowedCidr is not NULL"
+                , String.class).param("vmNicUuid", vmNicUuid).list();
+
+        if (!cidrs.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr(
+                    "vmNic uuid[%s] is not allowed add eip, because vmNic exist portForwarding with allowedCidr rule",
+                    vmNicUuid));
         }
     }
 }
