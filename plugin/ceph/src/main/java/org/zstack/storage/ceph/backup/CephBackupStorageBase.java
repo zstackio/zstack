@@ -9,6 +9,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.agent.AgentConstant;
 import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
@@ -16,6 +17,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -26,6 +28,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -35,6 +38,7 @@ import org.zstack.header.image.*;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
@@ -58,6 +62,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.*;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -1033,6 +1039,10 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }, TimeUnit.MILLISECONDS, msg.getTimeout());
     }
 
+    private void handle(ExportImageFromBackupStorageMsg msg) {
+        exportImage(msg);
+    }
+
     @Override
     protected void handle(final DownloadImageMsg msg) {
         final DownloadCmd cmd = new DownloadCmd();
@@ -1661,6 +1671,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
             handle((GetImageDownloadProgressMsg) msg);
         } else if (msg instanceof CephToCephMigrateImageMsg) {
             handle((CephToCephMigrateImageMsg) msg);
+        } else if (msg instanceof ExportImageFromBackupStorageMsg) {
+            handle((ExportImageFromBackupStorageMsg) msg);
         }
         else {
             super.handleLocalMessage(msg);
@@ -1700,36 +1712,46 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     private void handle(APIExportImageFromBackupStorageMsg msg) {
-        exportImage(msg, new ReturnValueCompletion<APIExportImageFromBackupStorageEvent>(msg) {
-            @Override
-            public void success(APIExportImageFromBackupStorageEvent evt) {
-                bus.publish(evt);
-            }
+        APIExportImageFromBackupStorageEvent evt = new APIExportImageFromBackupStorageEvent(msg.getId());
+        ExportImageFromBackupStorageMsg emsg = new ExportImageFromBackupStorageMsg();
+        bus.makeLocalServiceId(emsg, BackupStorageConstant.SERVICE_ID);
+        emsg.setBackupStorageUuid(msg.getBackupStorageUuid());
+        emsg.setImageUuid(msg.getImageUuid());
+        emsg.setExportFormat(msg.getExportFormat());
 
+        bus.send(emsg, new CloudBusCallBack(msg) {
             @Override
-            public void fail(ErrorCode errorCode) {
-                APIExportImageFromBackupStorageEvent evt = new APIExportImageFromBackupStorageEvent(msg.getId());
-                evt.setError(errorCode);
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    ExportImageFromBackupStorageReply rpl = (ExportImageFromBackupStorageReply) reply;
+                    evt.setImageUrl(rpl.getImageUrl());
+                    evt.setExportMd5Sum(rpl.getMd5sum());
+                } else {
+                    evt.setError(reply.getError());
+                }
                 bus.publish(evt);
             }
         });
     }
 
-    protected void exportImage(APIExportImageFromBackupStorageMsg msg, ReturnValueCompletion<APIExportImageFromBackupStorageEvent> completion) {
-        APIExportImageFromBackupStorageEvent event = new APIExportImageFromBackupStorageEvent(msg.getId());
+    protected void exportImage(ExportImageFromBackupStorageMsg msg) {
+        TaskProgressRange parentStage = getTaskStage();
+
+        ExportImageFromBackupStorageReply reply = new ExportImageFromBackupStorageReply();
         Tuple t = Q.New(ImageBackupStorageRefVO.class).select(ImageBackupStorageRefVO_.installPath, ImageBackupStorageRefVO_.exportUrl)
                 .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
                 .eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
                 .findTuple();
         if (t == null) {
-            completion.fail(operr("image[uuid: %s] is not on backup storage[uuid:%s, name:%s]",
+            reply.setError(operr("image[uuid: %s] is not on backup storage[uuid:%s, name:%s]",
                     msg.getImageUuid(), self.getUuid(), self.getName()));
+            bus.reply(msg, reply);
             return;
         }
 
         if (t.get(1) != null) {
-            event.setImageUrl(t.get(1, String.class));
-            completion.success(event);
+            reply.setImageUrl(t.get(1, String.class));
+            bus.reply(msg, reply);
             return;
         }
 
@@ -1737,18 +1759,20 @@ public class CephBackupStorageBase extends BackupStorageBase {
         AddImageExportTokenCmd cmd = new AddImageExportTokenCmd();
         cmd.installPath = imageInstallUrl;
         cmd.token = Platform.getUuidFromBytes(msg.getImageUuid().getBytes());
-        httpCall(ADD_EXPORT_TOKEN_PATH, cmd, AddImageExportTokenRsp.class, new ReturnValueCompletion<AddImageExportTokenRsp>(completion) {
+        httpCall(ADD_EXPORT_TOKEN_PATH, cmd, AddImageExportTokenRsp.class, new ReturnValueCompletion<AddImageExportTokenRsp>(msg) {
             @Override
             public void success(AddImageExportTokenRsp rsp) {
                 String url = buildUrl(rsp.handleMon.getHostname(), cmd.token);
                 SQL.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
                         .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
                         .set(ImageBackupStorageRefVO_.exportUrl, url)
+                        .set(ImageBackupStorageRefVO_.exportMd5Sum, rsp.md5sum)
                         .update();
 
-                event.setImageUrl(url);
-                event.setExportMd5Sum(rsp.md5sum);
-                completion.success(event);
+                reply.setImageUrl(url);
+                reply.setMd5sum(rsp.md5sum);
+                reportProgress(parentStage.getEnd().toString());
+                bus.reply(msg, reply);
             }
 
             private String buildUrl(String hostname, String token) {
@@ -1761,7 +1785,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }
