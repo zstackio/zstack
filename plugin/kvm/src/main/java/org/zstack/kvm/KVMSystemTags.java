@@ -56,4 +56,13 @@ public class KVMSystemTags {
     public static final String VMNIC_PCI_ADDRESS_TOKEN = "pci";
     public static PatternedSystemTag VMNIC_PCI_ADDRESS = new PatternedSystemTag(
             String.format("vmnic::{%s}", VMNIC_PCI_ADDRESS_TOKEN), VmNicVO.class);
+
+    public static final String CPU_SHARES_TOKEN = "value";
+    public static PatternedSystemTag CPU_SHARES = new PatternedSystemTag(String.format("cpuShares::{%s}", CPU_SHARES_TOKEN), VmInstanceVO.class);
+
+    public static final String CPU_PERIOD_TOKEN = "value";
+    public static PatternedSystemTag CPU_PERIOD = new PatternedSystemTag(String.format("cpuPeriod::{%s}", CPU_PERIOD_TOKEN), VmInstanceVO.class);
+
+    public static final String CPU_QUOTA_TOKEN = "value";
+    public static PatternedSystemTag CPU_QUOTA = new PatternedSystemTag(String.format("cpuQuota::{%s}", CPU_QUOTA_TOKEN), VmInstanceVO.class);
 }
