@@ -31,6 +31,9 @@ public class ProtectVmInstanceRecoveryPointAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String timestamp;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
     @Param(required = false)
     public java.util.List systemTags;
 

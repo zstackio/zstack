@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateCdpTaskAction extends AbstractAction {
+public class DeleteCdpTaskDataAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateCdpTaskAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateCdpTaskResult value;
+        public org.zstack.sdk.DeleteCdpTaskDataResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,8 @@ public class UpdateCdpTaskAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long backupBandwidth = 0L;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long maxCapacity = 0L;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +60,8 @@ public class UpdateCdpTaskAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateCdpTaskResult value = res.getResult(org.zstack.sdk.UpdateCdpTaskResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateCdpTaskResult() : value; 
+        org.zstack.sdk.DeleteCdpTaskDataResult value = res.getResult(org.zstack.sdk.DeleteCdpTaskDataResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteCdpTaskDataResult() : value; 
 
         return ret;
     }
@@ -108,11 +90,11 @@ public class UpdateCdpTaskAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/cdp-backup-storage/task/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/cdp-task/{uuid}/data";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateCdpTask";
+        info.parameterName = "params";
         return info;
     }
 
