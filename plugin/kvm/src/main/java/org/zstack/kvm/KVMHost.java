@@ -2606,6 +2606,21 @@ public class KVMHost extends HostBase implements Host {
                 VmInstanceVO.class, VmSystemTags.MACHINE_TYPE_TOKEN);
         cmd.setMachineType(StringUtils.isNotEmpty(machineType) ? machineType : "pc");
 
+        String period = KVMSystemTags.CPU_PERIOD.getTokenByResourceUuid(cmd.getVmInstanceUuid(), VmInstanceVO.class, KVMSystemTags.CPU_PERIOD_TOKEN);
+        if (StringUtils.isNotEmpty(period)) {
+            cmd.setPeriod(Integer.valueOf(period));
+        }
+
+        String quota = KVMSystemTags.CPU_QUOTA.getTokenByResourceUuid(cmd.getVmInstanceUuid(), VmInstanceVO.class, KVMSystemTags.CPU_QUOTA_TOKEN);
+        if (StringUtils.isNotEmpty(quota)) {
+            cmd.setQuota(Integer.valueOf(quota));
+        }
+
+        String shares = KVMSystemTags.CPU_SHARES.getTokenByResourceUuid(cmd.getVmInstanceUuid(), VmInstanceVO.class, KVMSystemTags.CPU_SHARES_TOKEN);
+        if (StringUtils.isNotEmpty(shares)) {
+            cmd.setShares(Integer.valueOf(shares));
+        }
+
         if (KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.hasTag(spec.getVmInventory().getUuid())) {
             cmd.setPredefinedPciBridgeNum(Integer.valueOf(KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.getTokenByResourceUuid(spec.getVmInventory().getUuid(), KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN)));
         }
