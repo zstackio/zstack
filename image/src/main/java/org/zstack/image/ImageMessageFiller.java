@@ -17,13 +17,12 @@ import org.zstack.header.volume.VolumeVO_;
  */
 public class ImageMessageFiller {
     public static void fillDefault(AddImageMessage msg) {
-        //TODO(weiw): in some cases, platform is needed by default, ZSTAC-41141
-        if (msg.getPlatform() == null) {
-            msg.setPlatform(ImagePlatform.Linux.toString());
-        }
-
         if (ImageConstant.ImageMediaType.DataVolumeTemplate.toString().equals(msg.getMediaType())) {
             return;
+        }
+
+        if (msg.getPlatform() == null) {
+            msg.setPlatform(ImagePlatform.Linux.toString());
         }
 
         if (msg.getPlatform().equals(ImagePlatform.Paravirtualization.toString())) {
