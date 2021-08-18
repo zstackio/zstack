@@ -50,7 +50,14 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
 
     @Transactional(readOnly = true)
     private Result allocate(Map data) {
-        PrimaryStorageAllocationSpec spec = (PrimaryStorageAllocationSpec) data.get(AllocatorParams.SPEC);
+        PrimaryStorageAllocationSpec spec;
+
+        if (data.get(AllocatorParams.SPEC) instanceof PrimaryStorageAllocationSpaceSpec) {
+             spec = (PrimaryStorageAllocationSpaceSpec) data.get(AllocatorParams.SPEC);
+        } else {
+             spec = (PrimaryStorageAllocationSpec) data.get(AllocatorParams.SPEC);
+        }
+
         TypedQuery<LocalStorageHostRefVO> query;
         Result ret = new Result();
         long reservedCapacity = SizeUtils.sizeStringToBytes(PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value());
