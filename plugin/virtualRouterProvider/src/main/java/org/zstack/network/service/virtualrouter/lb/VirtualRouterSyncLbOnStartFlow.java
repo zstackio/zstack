@@ -25,6 +25,7 @@ import org.zstack.network.service.vip.VipVO_;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -186,6 +187,13 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        /* other virtual router doesn't need this operation */
+                        if (!vr.getApplianceVmType().equals(VyosConstants.VYOS_VM_TYPE)
+                                && !vr.getApplianceVmType().equals(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE)){
+                            trigger.next();
+                            return;
+                        }
+
                         SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
                         q.add(VipVO_.uuid, Op.IN, CollectionUtils.transformToList(finalLbs, new Function<String, LoadBalancerVO>() {
                             @Override
