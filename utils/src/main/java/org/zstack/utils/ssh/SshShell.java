@@ -42,12 +42,12 @@ public class SshShell {
 
         try {
             if (privateKeyFile != null) {
-                ssh = String.format("ssh -i %s -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no -p %s %s@%s '%s'",
+                ssh = String.format("ssh -q -i %s -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no -p %s %s@%s '%s'",
                         privateKeyFile, port, username, hostname, cmd);
             } else {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 FileUtils.writeStringToFile(tempPasswordFile, password);
-                ssh = String.format("sshpass -f%s ssh -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p %s %s@%s '%s'",
+                ssh = String.format("sshpass -f%s ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p %s %s@%s '%s'",
                         tempPasswordFile.getAbsolutePath(), port, username, hostname, cmd);
             }
 
@@ -83,7 +83,7 @@ public class SshShell {
         try {
             if (privateKeyFile != null) {
                 ssh = ln(
-                        "ssh -i {0} -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2}@{3} << 'EOF'",
+                        "ssh -q -i {0} -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2}@{3} << 'EOF'",
                         "s=`mktemp`",
                         "cat << 'EOT' > $s",
                         "{4}",
@@ -98,7 +98,7 @@ public class SshShell {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 FileUtils.writeStringToFile(tempPasswordFile, password);
                 ssh = ln(
-                        "sshpass -f{0} ssh -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2}@{3} << 'EOF'",
+                        "sshpass -f{0} ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2}@{3} << 'EOF'",
                         "s=`mktemp`",
                         "cat << 'EOT' > $s",
                         "{4}",
