@@ -24,6 +24,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.retry.Retry;
+import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -3632,6 +3634,11 @@ public class KVMHost extends HostBase implements Host {
                             SshResult ret = sshShell.runCommand(cmd);
                             if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
                                 // c.f. https://access.redhat.com/solutions/1120533
+                                try {
+                                    TimeUnit.SECONDS.sleep(3);
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e.getMessage());
+                                }
                                 ret = sshShell.runCommand(cmd);
                             }
 
