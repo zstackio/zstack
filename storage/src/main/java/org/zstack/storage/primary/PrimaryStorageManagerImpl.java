@@ -468,7 +468,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 PrimaryStorageAllocatorStrategyType.valueOf(allocatorStrategyType));
         PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
         //
-        PrimaryStorageAllocationSpec spec = new PrimaryStorageAllocationSpec();
+        PrimaryStorageAllocationSpaceSpec spec = new PrimaryStorageAllocationSpaceSpec();
         spec.setPossiblePrimaryStorageTypes(msg.getPossiblePrimaryStorageTypes());
         spec.setExcludePrimaryStorageTypes(msg.getExcludePrimaryStorageTypes());
         spec.setImageUuid(msg.getImageUuid());
@@ -484,7 +484,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         spec.setBackupStorageUuid(msg.getBackupStorageUuid());
         spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
         spec.setTags(msg.getTags());
-        spec.setAllocationMessage(msg);
+        spec.setAllocationSpaceMessage(msg);
         spec.setAvoidPrimaryStorageUuids(msg.getExcludePrimaryStorageUuids());
         List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
 
@@ -556,7 +556,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                             " available before:%s, available now:%s]", size, inv.getUuid(), origin, avail));
                 }
 
-                PSCapacityExt.reserveCapacity(PSCapacityExt.buildAllocatedInstallUrl(msg), msg.getSize(), msg.getRequiredPrimaryStorageUuid());
+                //PSCapacityExt.reserveCapacity(PSCapacityExt.buildAllocatedInstallUrl(msg), msg.getSize(), msg.getRequiredPrimaryStorageUuid());
 
                 return cap;
             }

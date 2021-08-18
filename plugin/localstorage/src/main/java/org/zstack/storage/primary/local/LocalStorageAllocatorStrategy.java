@@ -9,11 +9,8 @@ import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.storage.primary.PrimaryStorageAllocationSpec;
-import org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategy;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.storage.primary.DiskCapacityTracer;
 
 import java.util.Collections;
@@ -51,7 +48,12 @@ public class LocalStorageAllocatorStrategy implements PrimaryStorageAllocatorStr
 
         final Result ret = new Result();
         FlowChain allocatorChain = builder.build();
-        allocatorChain.setName(String.format("allocate-local-primary-storage-msg-%s", spec.getAllocationMessage().getId()));
+        if (spec instanceof PrimaryStorageAllocationSpaceSpec) {
+            allocatorChain.setName(String.format("allocate-local-primary-storage-msg-%s", ((PrimaryStorageAllocationSpaceSpec) spec).getAllocationSpaceMessage().getId()));
+        } else {
+            allocatorChain.setName(String.format("allocate-local-primary-storage-msg-%s", spec.getAllocationMessage().getId()));
+        }
+
         allocatorChain.setData(map(e(AllocatorParams.SPEC, spec)));
         allocatorChain.done(new FlowDoneHandler(null) {
             @Override

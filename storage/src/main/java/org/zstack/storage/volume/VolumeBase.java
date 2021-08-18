@@ -413,7 +413,8 @@ public class VolumeBase implements Volume {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                            //AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                            AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                             amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                             amsg.setSize(self.getSize());
 
