@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.zstack.core.encrypt.EncryptFacade;
+import org.zstack.core.encrypt.EncryptGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -30,11 +31,19 @@ public class PasswordConverter implements AttributeConverter<String, String> {
 
     @Override
     public String convertToDatabaseColumn(String attribute) {
+        if (!EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(Boolean.class)) {
+            return attribute;
+        }
+
         return encryptFacade.encrypt(attribute);
     }
 
     @Override
     public String convertToEntityAttribute(String dbData) {
+        if (!EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(Boolean.class)) {
+            return dbData;
+        }
+
         return encryptFacade.decrypt(dbData);
     }
 }

@@ -3,6 +3,7 @@ package org.zstack.core.encrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigBeforeUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
@@ -11,15 +12,14 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HypervisorFactory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Convert;
 import javax.persistence.Query;
 import java.lang.reflect.Field;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -30,39 +30,25 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
 
     public static EncryptRSA rsa = new EncryptRSA();
 
+    private EncryptDriver encryptDriver;
+
     @Autowired
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRegistry;
 
     public static Set<Field> encryptedFields = new HashSet<>();
 
     @Override
     public String encrypt(String decryptString) {
-        if (!EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(Boolean.class)) {
-            return decryptString;
-        }
-
-        try {
-            return rsa.encrypt1(decryptString);
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e.getMessage());
-        }
-
+        return encryptDriver.encrypt(decryptString);
     }
 
     @Override
     public String decrypt(String encryptString) {
-        if (!EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(Boolean.class)) {
-            return encryptString;
-        }
-
-        try {
-            return (String) rsa.decrypt1(encryptString);
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e.getMessage());
-        }
-
+        return encryptDriver.decrypt(encryptString);
     }
 
     private void encryptAllPassword() {
@@ -165,6 +151,19 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
 
     @Override
     public boolean start() {
+        String driverType = EncryptGlobalConfig.ENCRYPT_DRIVER.value();
+        for (EncryptDriver driver : pluginRegistry.getExtensionList(EncryptDriver.class)) {
+            if (!driverType.equals(driver.getDriverType().toString())) {
+                continue;
+            }
+
+            encryptDriver = driver;
+        }
+
+        if (encryptDriver == null) {
+            throw new CloudRuntimeException(String.format("no matched encrypt driver[type:%s] can be found", driverType));
+        }
+
         encryptedFields = getAllEncryptPassword();
 
         EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.installLocalBeforeUpdateExtension(new GlobalConfigBeforeUpdateExtensionPoint() {
