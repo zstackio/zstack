@@ -22,6 +22,7 @@ import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
@@ -153,6 +154,8 @@ public class KVMHost extends HostBase implements Host {
     private String detachNicPath;
     private String changeNicStatePath;
     private String migrateVmPath;
+    private String getCpuXmlPath;
+    private String compareCpuFunctionPath;
     private String snapshotPath;
     private String checkSnapshotPath;
     private String mergeSnapshotPath;
@@ -262,6 +265,14 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_MIGRATE_VM_PATH);
         migrateVmPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_GET_CPU_XML_PATH);
+        getCpuXmlPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_COMPARE_CPU_FUNCTION_PATH);
+        compareCpuFunctionPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH);
@@ -528,6 +539,10 @@ public class KVMHost extends HostBase implements Host {
             handle((VmUpdateNicOnHypervisorMsg) msg);
         } else if (msg instanceof MigrateVmOnHypervisorMsg) {
             handle((MigrateVmOnHypervisorMsg) msg);
+        } else if (msg instanceof GetCpuFunctionXmlOnHostMsg) {
+            handle((GetCpuFunctionXmlOnHostMsg) msg);
+        } else if (msg instanceof CompareCpuFunctionOnHostMsg) {
+            handle((CompareCpuFunctionOnHostMsg) msg);
         } else if (msg instanceof TakeSnapshotOnHypervisorMsg) {
             handle((TakeSnapshotOnHypervisorMsg) msg);
         } else if (msg instanceof CheckSnapshotOnHypervisorMsg) {
@@ -655,6 +670,107 @@ public class KVMHost extends HostBase implements Host {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void handle(CompareCpuFunctionOnHostMsg msg) {
+        CompareCpuFunctionOnHostReply reply = new CompareCpuFunctionOnHostReply();
+
+        thdf.singleFlightSubmit(new SingleFlightTask(msg)
+                .setSyncSignature(String.format("compare-host-%s-cpu-function-xml-on-host-%s", msg.getSrcHostUuid(), msg.getDstHostUuid()))
+                .run((com) -> compareCpuFunctionOnHost(msg, new ReturnValueCompletion<CompareCpuFunctionOnHostReply>(com) {
+                    @Override
+                    public void success(CompareCpuFunctionOnHostReply returnValue) {
+                        com.success(returnValue);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        com.fail(errorCode);
+                    }
+                }))
+                .done(((result) -> {
+                    if (!result.isSuccess()) {
+                        reply.setError(result.getErrorCode());
+                    }
+                    bus.reply(msg, reply);
+                })));
+    }
+
+    private void compareCpuFunctionOnHost(final CompareCpuFunctionOnHostMsg msg, ReturnValueCompletion<CompareCpuFunctionOnHostReply> completion) {
+        VmCompareCpuFunctionCmd cmd = new VmCompareCpuFunctionCmd();
+        cmd.setCpuXml(msg.getCpuXml());
+        restf.asyncJsonPost(compareCpuFunctionPath, cmd, new JsonAsyncRESTCallback<VmCompareCpuFunctionResponse>(completion) {
+            @Override
+            public void success(VmCompareCpuFunctionResponse ret) {
+                if (!ret.isSuccess()) {
+                    completion.fail(operr(ret.getError()));
+                    return;
+                }
+                completion.success(new CompareCpuFunctionOnHostReply());
+            }
+
+            @Override
+            public Class<VmCompareCpuFunctionResponse> getReturnClass() {
+                return VmCompareCpuFunctionResponse.class;
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    private void getCpuFunctionXml(final GetCpuFunctionXmlOnHostMsg msg, ReturnValueCompletion<GetCpuFunctionXmlOnHostReply> completion) {
+        GetCpuFunctionXmlOnHostReply reply = new GetCpuFunctionXmlOnHostReply();
+        restf.asyncJsonPost(getCpuXmlPath, new VmGetCpuXmlCmd(), new JsonAsyncRESTCallback<VmGetCpuXmlResponse>(completion) {
+            @Override
+            public void success(VmGetCpuXmlResponse ret) {
+                if (!ret.isSuccess()) {
+                    completion.fail(operr(ret.getError()));
+                    return;
+                }
+                reply.setCpuXml(ret.getCpuXml());
+                reply.setCpuModelName(ret.getCpuModelName());
+                completion.success(reply);
+            }
+
+            @Override
+            public Class<VmGetCpuXmlResponse> getReturnClass() {
+                return VmGetCpuXmlResponse.class;
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    private void handle(GetCpuFunctionXmlOnHostMsg msg) {
+        GetCpuFunctionXmlOnHostReply reply = new GetCpuFunctionXmlOnHostReply();
+        thdf.singleFlightSubmit(new SingleFlightTask(msg)
+                .setSyncSignature(String.format("get-cpu-function-xml-on-host-%s", self.getUuid()))
+                .run((com) -> getCpuFunctionXml(msg, new ReturnValueCompletion<GetCpuFunctionXmlOnHostReply>(msg) {
+                    @Override
+                    public void success(GetCpuFunctionXmlOnHostReply returnValue) {
+                        reply.setCpuModelName(returnValue.getCpuModelName());
+                        reply.setCpuXml(returnValue.getCpuXml());
+                        com.success(returnValue);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        com.fail(errorCode);
+                    }
+                }))
+                .done(((result) -> {
+                    if (!result.isSuccess()) {
+                        reply.setError(result.getErrorCode());
+                    }
+
+                    bus.reply(msg, reply);
+                })));
     }
 
     private void handle(AllocateHostPortMsg msg) {
@@ -1040,7 +1156,7 @@ public class KVMHost extends HostBase implements Host {
 
     /**
      * This command will send when host is connecting.
-     * 
+     *
      * DO NOT need to checkStatus()
      */
     private void getVirtualizerInfo(final GetVirtualizerInfoMsg msg, final NoErrorCompletion completion) {
@@ -4311,6 +4427,8 @@ public class KVMHost extends HostBase implements Host {
                                     return;
                                 }
 
+                                deleteCpuHistoryVOIfCpuModeNameChange(ret.getCpuModelName());
+
                                 if (ret.getHvmCpuFlag() == null) {
                                     trigger.fail(operr("cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"));
                                     return;
@@ -4440,6 +4558,14 @@ public class KVMHost extends HostBase implements Host {
                 });
             }
         }).start();
+    }
+
+    private void deleteCpuHistoryVOIfCpuModeNameChange(String cpuModelName){
+        // delete all records that do not match the cpuModelName of the source physical machine
+        SQL.New(CpuFeaturesHistoryVO.class)
+                .eq(CpuFeaturesHistoryVO_.srcHostUuid, self.getUuid())
+                .notEq(CpuFeaturesHistoryVO_.srcCpuModelName, cpuModelName)
+                .delete();
     }
 
     private void handle(final ShutdownHostMsg msg) {
