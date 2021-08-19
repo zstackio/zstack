@@ -444,6 +444,39 @@ public class KVMSimulatorController {
         reply(entity, rsp);
     }
 
+    @RequestMapping(value=KVMConstant.KVM_GET_CPU_XML_PATH, method=RequestMethod.POST)
+    private @ResponseBody String getCpuXml(HttpServletRequest req) throws InterruptedException {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        getCpuXml(entity);
+        return null;
+    }
+
+    @AsyncThread
+    private void getCpuXml(HttpEntity<String> entity) {
+        VmGetCpuXmlResponse rsp = new VmGetCpuXmlResponse();
+        rsp.setCpuXml("<cpu mode='custom' match='exact'>\n" +
+                "  <model fallback='forbid'>Broadwell-IBRS</model>\n" +
+                "  <vendor>Intel</vendor>\n" +
+                "  <feature policy='require' name='vme'/>\n" +
+                "  <feature policy='require' name='ss'/>\n" +
+                "  <feature policy='require' name='ht'/>\n" +
+                "</cpu>");
+        reply(entity, rsp);
+    }
+
+    @RequestMapping(value=KVMConstant.KVM_COMPARE_CPU_FUNCTION_PATH, method=RequestMethod.POST)
+    private @ResponseBody String compareCpuFunction(HttpServletRequest req) throws InterruptedException {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        compareCpuFunction(entity);
+        return null;
+    }
+
+    @AsyncThread
+    private void compareCpuFunction(HttpEntity<String> entity) {
+        VmCompareCpuFunctionResponse rsp = new VmCompareCpuFunctionResponse();
+        reply(entity, rsp);
+    }
+
     @RequestMapping(value=KVMConstant.KVM_CHECK_L2NOVLAN_NETWORK_PATH, method=RequestMethod.POST)
     private @ResponseBody String checkNoVlanBridge(HttpServletRequest req) throws InterruptedException {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
