@@ -19,8 +19,10 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.singleflight.TaskSingleFlight;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -118,6 +120,12 @@ public class KVMHost extends HostBase implements Host {
     private DeviceBootOrderOperator deviceBootOrderOperator;
     @Autowired
     private VmNicManager nicManager;
+    @Autowired
+    @Qualifier("CpuXmlSingleFlight")
+    protected TaskSingleFlight<String, GetCpuFunctionXmlOnHostReply> cpuXmlSingleFlight;
+    @Autowired
+    @Qualifier("CompareCpuFuncSingleFlight")
+    protected TaskSingleFlight<String, CompareCpuFunctionOnHostReply> compareCpuFuncSingleFlight;
 
     private KVMHostContext context;
 
@@ -139,6 +147,8 @@ public class KVMHost extends HostBase implements Host {
     private String attachNicPath;
     private String detachNicPath;
     private String migrateVmPath;
+    private String getCpuXmlPath;
+    private String compareCpuFunctionPath;
     private String snapshotPath;
     private String checkSnapshotPath;
     private String mergeSnapshotPath;
@@ -240,6 +250,14 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_MIGRATE_VM_PATH);
         migrateVmPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_GET_CPU_XML_PATH);
+        getCpuXmlPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_COMPARE_CPU_FUNCTION_PATH);
+        compareCpuFunctionPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH);
@@ -491,6 +509,10 @@ public class KVMHost extends HostBase implements Host {
             handle((VmUpdateNicOnHypervisorMsg) msg);
         } else if (msg instanceof MigrateVmOnHypervisorMsg) {
             handle((MigrateVmOnHypervisorMsg) msg);
+        } else if (msg instanceof GetCpuFunctionXmlOnHostMsg) {
+            handle((GetCpuFunctionXmlOnHostMsg) msg);
+        } else if (msg instanceof CompareCpuFunctionOnHostMsg) {
+            handle((CompareCpuFunctionOnHostMsg) msg);
         } else if (msg instanceof TakeSnapshotOnHypervisorMsg) {
             handle((TakeSnapshotOnHypervisorMsg) msg);
         } else if (msg instanceof CheckSnapshotOnHypervisorMsg) {
@@ -588,6 +610,108 @@ public class KVMHost extends HostBase implements Host {
                 });
             }
         }).start();
+    }
+
+    private void handle(CompareCpuFunctionOnHostMsg msg) {
+        final CpuFeaturesHistoryVO cfVO = new CpuFeaturesHistoryVO();
+        cfVO.setSrcHostUuid(msg.getSrcHostUuid());
+        cfVO.setDstHostUuid(msg.getDstHostUuid());
+        compareCpuFuncSingleFlight.execute(
+                String.format("compare-host-%s-Cpu-function-xml-on-host-%s", msg.getSrcHostUuid(), msg.getDstHostUuid()),
+                (comp) -> this.compareCpuFunctionOnHost(msg, comp),
+                new ReturnValueCompletion<CompareCpuFunctionOnHostReply>(msg) {
+                    @Override
+                    public void success(CompareCpuFunctionOnHostReply returnValue) {
+                        cfVO.setSupportLiveMigration(true);
+                        dbf.persist(cfVO);
+                        bus.reply(msg, returnValue);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        CompareCpuFunctionOnHostReply reply = new CompareCpuFunctionOnHostReply();
+                        reply.setError(errorCode);
+                        cfVO.setSupportLiveMigration(false);
+                        dbf.persist(cfVO);
+                        bus.reply(msg, reply);
+                    }
+                }
+        );
+    }
+
+    private void compareCpuFunctionOnHost(final CompareCpuFunctionOnHostMsg msg, ReturnValueCompletion<CompareCpuFunctionOnHostReply> completion) {
+        VmCompareCpuFunctionCmd cmd = new VmCompareCpuFunctionCmd();
+        cmd.setCpuXml(msg.getCpuXml());
+        restf.asyncJsonPost(buildUrl(compareCpuFunctionPath), cmd, new JsonAsyncRESTCallback<VmCompareCpuFunctionResponse>(completion) {
+            @Override
+            public void success(VmCompareCpuFunctionResponse ret) {
+                if (!ret.isSuccess()) {
+                    completion.fail(operr(ret.getError()));
+                    return;
+                }
+                completion.success(new CompareCpuFunctionOnHostReply());
+            }
+
+            @Override
+            public Class<VmCompareCpuFunctionResponse> getReturnClass() {
+                return VmCompareCpuFunctionResponse.class;
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    private String getCpuFunctionXmlOnHostSignature() {
+        return String.format("get-Cpu-function-xml-on-host-%s", self.getUuid());
+    }
+
+    private void getCpuFunctionXml(final GetCpuFunctionXmlOnHostMsg msg, ReturnValueCompletion<GetCpuFunctionXmlOnHostReply> completion) {
+        GetCpuFunctionXmlOnHostReply reply = new GetCpuFunctionXmlOnHostReply();
+        restf.asyncJsonPost(buildUrl(getCpuXmlPath), new VmGetCpuXmlCmd(), new JsonAsyncRESTCallback<VmGetCpuXmlResponse>(completion) {
+            @Override
+            public void success(VmGetCpuXmlResponse ret) {
+                if (!ret.isSuccess()) {
+                    completion.fail(operr(ret.getError()));
+                    return;
+                }
+                reply.setCpuXml(ret.getCpuXml());
+                reply.setCpuModelName(ret.getCpuModelName());
+                completion.success(reply);
+            }
+
+            @Override
+            public Class<VmGetCpuXmlResponse> getReturnClass() {
+                return VmGetCpuXmlResponse.class;
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    private void handle(GetCpuFunctionXmlOnHostMsg msg) {
+        cpuXmlSingleFlight.execute(
+                getCpuFunctionXmlOnHostSignature(),
+                (comp) -> this.getCpuFunctionXml(msg, comp),
+                new ReturnValueCompletion<GetCpuFunctionXmlOnHostReply>(msg) {
+                    @Override
+                    public void success(GetCpuFunctionXmlOnHostReply returnValue) {
+                        bus.reply(msg, returnValue);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        GetCpuFunctionXmlOnHostReply reply = new GetCpuFunctionXmlOnHostReply();
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                }
+        );
     }
 
     private void handle(AllocateHostPortMsg msg) {
@@ -3184,6 +3308,9 @@ public class KVMHost extends HostBase implements Host {
 
     @Override
     public void deleteHook() {
+        if (Q.New(CpuFeaturesHistoryVO.class).eq(CpuFeaturesHistoryVO_.srcHostUuid, self.getUuid()).isExists()) {
+            SQL.New(CpuFeaturesHistoryVO.class).eq(CpuFeaturesHistoryVO_.srcHostUuid, self.getUuid()).delete();
+        }
     }
 
     @Override
@@ -4144,6 +4271,13 @@ public class KVMHost extends HostBase implements Host {
                                     if (!ret.isSuccess()) {
                                         trigger.fail(operr("operation error, because:%s", ret.getError()));
                                         return;
+                                    }
+
+                                    if (Q.New(CpuFeaturesHistoryVO.class)
+                                            .eq(CpuFeaturesHistoryVO_.srcHostUuid, self.getUuid())
+                                            .eq(CpuFeaturesHistoryVO_.srcCpuModelName, ret.getCpuModelName())
+                                            .isExists()) {
+                                        SQL.New(CpuFeaturesHistoryVO.class).eq(CpuFeaturesHistoryVO_.srcHostUuid, self.getUuid()).delete();
                                     }
 
                                     if (ret.getHvmCpuFlag() == null) {

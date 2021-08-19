@@ -3,20 +3,19 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfigVO;
-import org.zstack.core.config.GlobalConfigVO_;
-import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.*;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -26,6 +25,8 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.operr;
+
 
 /**
  */
@@ -149,6 +150,39 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         }
     }
 
+    private void runAsyncFlow(ReturnValueCompletion<List<HostVO>> rvCompletion) {
+        new While<>(pluginRgty.getExtensionList(HostAllocatorFilterExtensionPoint.class)).each((ext, compl) -> {
+            ext.asyncFilterHostCandidates(result, allocationSpec, new ReturnValueCompletion<List<HostVO>>(compl) {
+                @Override
+                public void success(List<HostVO> returnValue) {
+                    if (returnValue.isEmpty()) {
+                        compl.addError(operr(ext.filterErrorReason()));
+                        compl.allDone();
+                        return;
+                    }
+                    result = returnValue;
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.allDone();
+                }
+            });
+        }).run(new WhileDoneCompletion(rvCompletion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    rvCompletion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+
+                rvCompletion.success(result);
+            }
+        });
+    }
+
     private void start() {
         for (HostAllocatorPreStartExtensionPoint processor : pluginRgty.getExtensionList(HostAllocatorPreStartExtensionPoint.class)) {
             processor.beforeHostAllocatorStart(allocationSpec, flows);
@@ -161,6 +195,18 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         it = flows.iterator();
         DebugUtils.Assert(it.hasNext(), "can not run an empty host allocation chain");
         runFlow(it.next());
+        runAsyncFlow(new ReturnValueCompletion<List<HostVO>>(isDryRun ? dryRunCompletion : completion) {
+            @Override
+            public void success(List<HostVO> returnValue) {
+                result = returnValue;
+                done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                HostAllocatorChain.this.fail(errorCode);
+            }
+        });
     }
 
     private void allocate(ReturnValueCompletion<List<HostInventory>> completion) {
@@ -196,8 +242,6 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
             runFlow(it.next());
             return;
         }
-
-        done();
     }
 
     @Override

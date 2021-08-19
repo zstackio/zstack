@@ -519,7 +519,6 @@ public abstract class HostBase extends AbstractHost {
         chain.done(new FlowDoneHandler(msg) {
             private void complete() {
                 bus.publish(evt);
-
                 HostDeletedData d = new HostDeletedData();
                 d.setInventory(HostInventory.valueOf(self));
                 d.setHostUuid(self.getUuid());

@@ -201,4 +201,12 @@
         <defaultValue>3</defaultValue>
         <type>java.lang.Long</type>
     </config>
+
+    <config>
+        <category>kvm</category>
+        <name>enable.vm.migration.host.cpu.function.check</name>
+        <description>Check whether the CPU function of the dstHost is compatible with the CPU function of the srcHost.</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>

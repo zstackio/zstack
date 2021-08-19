@@ -72,4 +72,6 @@ public class KVMGlobalConfig {
     public static GlobalConfig HOST_CONNECTION_CHECK_INTERVAL = new GlobalConfig(CATEGORY, "host.connection.check.interval");
     @GlobalConfigValidation
     public static GlobalConfig CONNECTION_SERVER_UPDATE_INTERVAL = new GlobalConfig(CATEGORY, "connection.server.update.interval");
+    @GlobalConfigValidation
+    public static GlobalConfig ENABLE_VM_MIGRATION_HOST_CPU_FUNCTION_CHECK = new GlobalConfig(CATEGORY, "enable.vm.migration.host.cpu.function.check");
 }
