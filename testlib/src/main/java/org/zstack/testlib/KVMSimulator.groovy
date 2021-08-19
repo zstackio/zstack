@@ -331,6 +331,14 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.MigrateVmResponse()
         }
 
+        spec.simulator(KVMConstant.KVM_GET_CPU_XML_PATH) {
+            return new KVMAgentCommands.VmGetCpuXmlResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_COMPARE_CPU_FUNCTION_PATH) {
+            return new KVMAgentCommands.VmCompareCpuFunctionResponse()
+        }
+
         spec.simulator(KVMConstant.KVM_CHECK_L2NOVLAN_NETWORK_PATH) {
             return new KVMAgentCommands.CheckBridgeResponse()
         }

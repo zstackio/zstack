@@ -2900,6 +2900,45 @@ public class KVMAgentCommands {
     public static class MigrateVmResponse extends AgentResponse {
     }
 
+    public static class VmGetCpuXmlCmd extends AgentCommand{
+    }
+
+    public static class VmGetCpuXmlResponse extends AgentResponse {
+        private String cpuXml;
+        private String cpuModelName;
+
+        public String getCpuModelName() {
+            return cpuModelName;
+        }
+
+        public void setCpuModelName(String cpuModelName) {
+            this.cpuModelName = cpuModelName;
+        }
+
+        public String getCpuXml() {
+            return cpuXml;
+        }
+
+        public void setCpuXml(String cpuXml) {
+            this.cpuXml = cpuXml;
+        }
+    }
+
+    public static class VmCompareCpuFunctionCmd extends AgentCommand{
+        private String cpuXml;
+
+        public String getCpuXml() {
+            return cpuXml;
+        }
+
+        public void setCpuXml(String cpuXml) {
+            this.cpuXml = cpuXml;
+        }
+    }
+
+    public static class VmCompareCpuFunctionResponse extends AgentResponse {
+    }
+
     public static class MergeSnapshotRsp extends AgentResponse {
     }
 
