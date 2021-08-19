@@ -521,6 +521,10 @@ public abstract class HostBase extends AbstractHost {
         chain.done(new FlowDoneHandler(msg) {
             private void complete() {
                 bus.publish(evt);
+                if (Q.New(CpuFeaturesHistoryVO.class)
+                        .eq(CpuFeaturesHistoryVO_.srcHostUuid, self.getUuid()).isExists()) {
+                    SQL.New(CpuFeaturesHistoryVO.class).eq(CpuFeaturesHistoryVO_.srcHostUuid, self.getUuid()).delete();
+                }
 
                 HostDeletedData d = new HostDeletedData();
                 d.setInventory(HostInventory.valueOf(self));

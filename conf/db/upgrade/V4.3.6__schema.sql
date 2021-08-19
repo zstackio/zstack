@@ -58,3 +58,13 @@ UPDATE `zstack`.`BareMetal2ChassisVO` SET status = "IPxeBootFailed" WHERE status
 UPDATE `zstack`.`BareMetal2ChassisVO` SET status = "IPxeBooting" WHERE status = "iPxeBooting";
 
 ALTER TABLE QuotaVO MODIFY COLUMN `value` bigint DEFAULT 0;
+CREATE TABLE IF NOT EXISTS `zstack`.`CpuFeaturesHistoryVO` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `srcHostUuid` varchar(32) NOT NULL,
+  `dstHostUuid` varchar(32) NOT NULL,
+  `srcCpuModelName` varchar(64),
+  `support` boolean NOT NULL DEFAULT FALSE,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
