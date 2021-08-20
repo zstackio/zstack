@@ -1191,6 +1191,17 @@ public class KVMAgentCommands {
 
     public static class DeleteVdpaCmd extends AgentCommand {
         public String vmUuid;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+    }
+
+    public static class DeleteVdpaRsp extends AgentResponse {
     }
 
     public static class HardenVmConsoleCmd extends AgentCommand {
