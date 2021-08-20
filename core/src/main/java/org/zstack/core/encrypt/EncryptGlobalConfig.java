@@ -20,4 +20,7 @@ public class EncryptGlobalConfig {
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable encrypt host " +
             "password to database")
     public static GlobalConfig ENABLE_PASSWORD_ENCRYPT = new GlobalConfig(CATEGORY, "enable.password.encrypt");
+
+    @GlobalConfigValidation(validValues = {"default"})
+    public static GlobalConfig ENCRYPT_DRIVER = new GlobalConfig(CATEGORY, "encrypt.driver");
 }
