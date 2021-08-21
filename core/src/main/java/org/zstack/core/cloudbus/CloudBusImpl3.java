@@ -8,8 +8,14 @@ import org.springframework.web.client.RestClientException;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
+import org.zstack.core.apicost.APIHistoryVO;
+import org.zstack.core.apicost.APIHistoryVO_;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.log.LogUtils;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
@@ -40,6 +46,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -65,6 +72,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private PluginRegistry pluginRgty;
     @Autowired
     private DeadMessageManager deadMessageManager;
+    @Autowired
+    private DatabaseFacade dbf;
 
     private final String NO_NEED_REPLY_MSG = "noReply";
     private final String CORRELATION_ID = "correlationId";
@@ -651,6 +660,16 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
 
         new MessageSender(evt).send();
+
+        if (evt instanceof APIEvent) {
+            String requestUuid = ((APIEvent) evt).getApiId();
+
+            SQL.New(APIHistoryVO.class)
+                    .eq(APIHistoryVO_.requestUuid, requestUuid)
+                    .set(APIHistoryVO_.responseDate, new Timestamp(System.currentTimeMillis()))
+                    .set(APIHistoryVO_.responseDump, LogSafeGson.toJson(evt))
+                    .update();
+        }
     }
 
     @Override
@@ -1223,6 +1242,22 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
 
         doSend(msg);
+
+        if (msg instanceof APIMessage) {
+            boolean exists = Q.New(APIHistoryVO.class)
+                    .eq(APIHistoryVO_.requestUuid, msg.getId())
+                    .isExists();
+            if (exists) {
+                return;
+            }
+            
+            APIHistoryVO apiHistoryVO = new APIHistoryVO();
+            apiHistoryVO.setRequestUuid(msg.getId());
+            apiHistoryVO.setRequestDump(LogSafeGson.toJson(msg));
+            apiHistoryVO.setApiName(msg.getClass().getName());
+            apiHistoryVO.setRequestDate(new Timestamp(System.currentTimeMillis()));
+            dbf.persist(apiHistoryVO);
+        }
     }
 
     private void doSend(Message msg) {

@@ -166,5 +166,6 @@
         <class>org.zstack.core.apicost.analyzer.entity.StepLogVO</class>
         <class>org.zstack.core.apicost.analyzer.entity.StepVO</class>
         <class>org.zstack.core.apicost.analyzer.entity.MsgLogVO</class>
+        <class>org.zstack.core.apicost.APIHistoryVO</class>
     </persistence-unit>
 </persistence>

@@ -155,3 +155,13 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MsgLogVO` (
 CREATE INDEX idxLicenseHistoryVOUploadDate ON LicenseHistoryVO (uploadDate);
 drop table ElaborationVO;
 drop table ResourceUsageVO;
+
+CREATE TABLE `zstack`.`APIHistoryVO` (
+    `requestUuid` varchar(32) not null,
+    `apiName`  varchar(255) not null,
+    `requestDump`  varchar(4096) default null,
+    `responseDump`  text default null,
+    `requestDate`  timestamp  DEFAULT '0000-00-00 00:00:00',
+    `responseDate`  timestamp  DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`requestUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
