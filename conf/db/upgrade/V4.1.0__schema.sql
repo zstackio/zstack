@@ -87,6 +87,71 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseHistoryVO`
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`ApiVO` (
+  `id`          bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `uuid`        varchar(32) NOT NULL,
+  `name`        varchar(255) DEFAULT NULL,
+  `apiId`       varchar(255) DEFAULT NULL,
+  `lastUpdate`  timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ApiLogVO` (
+  `id`          bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `uuid`        varchar(32) NOT NULL,
+  `name`        varchar(255) DEFAULT NULL,
+  `apiId`       varchar(255) DEFAULT NULL,
+  `originApiId` varchar(255) DEFAULT NULL,
+  `isAnalyzed`  int(1) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`RStepVO` (
+  `id`           bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `uuid`         varchar(32) NOT NULL,
+  `fromStepId`   varchar(255) DEFAULT NULL,
+  `toStepId`     varchar(255) DEFAULT NULL,
+  `apiId`        varchar(255) DEFAULT NULL,
+  `weight`       decimal(7,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`StepVO` (
+  `id`        bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `uuid`      varchar(32) NOT NULL,
+  `stepId`    varchar(255) DEFAULT NULL,
+  `name`      varchar(255) DEFAULT NULL,
+  `meanWait`  decimal(7,2) DEFAULT NULL,
+  `apiId`     varchar(255) DEFAULT NULL,
+  `logCount`  int(10) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`StepLogVO` (
+  `id`         bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `uuid`       varchar(32) NOT NULL,
+  `stepId`     varchar(255) NOT NULL,
+  `startTime`  bigint DEFAULT NULL,
+  `endTime`    bigint DEFAULT NULL,
+  `wait`       decimal(7,2) DEFAULT NULL,
+  `name`       varchar(255) DEFAULT NULL,
+  `apiLogId`   bigint unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`MsgLogVO` (
+    `id`          bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `uuid`        varchar(32) NOT NULL,
+    `msgId`       varchar(255) DEFAULT NULL,
+    `msgName`     varchar(255) DEFAULT NULL,
+    `taskName`    varchar(255) DEFAULT NULL,
+    `apiId`       varchar(255) NOT NULL,
+    `startTime`   bigint DEFAULT NULL,
+    `replyTime`   bigint DEFAULT NULL,
+    `wait`        decimal(7,2) DEFAULT NULL,
+    `status`      int(1) NOT NULL,
+    PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE INDEX idxLicenseHistoryVOUploadDate ON LicenseHistoryVO (uploadDate);
 drop table ElaborationVO;
 drop table ResourceUsageVO;

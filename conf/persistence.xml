@@ -160,5 +160,11 @@
         <class>org.zstack.header.core.trash.InstallPathRecycleVO</class>
         <class>org.zstack.header.vm.VmPriorityConfigVO</class>
         <class>org.zstack.header.host.HostPortVO</class>
+        <class>org.zstack.core.apicost.analyzer.entity.ApiVO</class>
+        <class>org.zstack.core.apicost.analyzer.entity.ApiLogVO</class>
+        <class>org.zstack.core.apicost.analyzer.entity.RStepVO</class>
+        <class>org.zstack.core.apicost.analyzer.entity.StepLogVO</class>
+        <class>org.zstack.core.apicost.analyzer.entity.StepVO</class>
+        <class>org.zstack.core.apicost.analyzer.entity.MsgLogVO</class>
     </persistence-unit>
 </persistence>

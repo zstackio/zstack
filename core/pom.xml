@@ -144,6 +144,11 @@
             <artifactId>blade-patchca</artifactId>
             <version>1.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.44</version>
+        </dependency>
     </dependencies>
 
     <build>

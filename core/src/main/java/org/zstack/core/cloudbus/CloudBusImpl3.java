@@ -86,10 +86,12 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     private final Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new ConcurrentHashMap<>();
     private final Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new ConcurrentHashMap<>();
+    private final Map<Class, List<BeforeSendMessageReplyInterceptor>> beforeSendMessageReplyInterceptors = new ConcurrentHashMap<>();
     private final Map<Class, List<BeforePublishEventInterceptor>> beforeEventPublishInterceptors = new ConcurrentHashMap<>();
 
     private final List<BeforeDeliveryMessageInterceptor> beforeDeliveryMessageInterceptorsForAll = new CopyOnWriteArrayList<>();
     private final List<BeforeSendMessageInterceptor> beforeSendMessageInterceptorsForAll = new CopyOnWriteArrayList<>();
+    private final List<BeforeSendMessageReplyInterceptor> beforeSendMessageReplyInterceptorsForAll = new CopyOnWriteArrayList<>();
     private final List<BeforePublishEventInterceptor> beforeEventPublishInterceptorsForAll = new CopyOnWriteArrayList<>();
     private final Map<String, Map<String, CloudBusEventListener>> eventListeners = new ConcurrentHashMap<>();
 
@@ -436,6 +438,17 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             } catch (Exception e) {
                 logger.error("failed to call pre-sending reply extension:", e);
                 reply.setError(operr(e.getMessage()));
+            }
+
+            List<BeforeSendMessageReplyInterceptor> interceptors = beforeSendMessageReplyInterceptors.get(request.getClass());
+            if (interceptors != null) {
+                for (BeforeSendMessageReplyInterceptor interceptor : interceptors) {
+                    interceptor.beforeSendMessageReply(request, reply);
+                }
+            }
+
+            for (BeforeSendMessageReplyInterceptor interceptor : beforeSendMessageReplyInterceptorsForAll) {
+                interceptor.beforeSendMessageReply(request, reply);
             }
         }
 
@@ -1054,6 +1067,41 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                     int order = 0;
                     for (BeforeSendMessageInterceptor i : is) {
                         if (i.orderOfBeforeSendMessageInterceptor() <= interceptor.orderOfBeforeSendMessageInterceptor()) {
+                            order = is.indexOf(i);
+                            break;
+                        }
+                    }
+                    is.add(order, interceptor);
+                }
+
+                clz = clz.getSuperclass();
+            }
+        }
+    }
+
+    @Override
+    public void installBeforeSendMessageReplyInterceptor(BeforeSendMessageReplyInterceptor interceptor, Class<? extends Message>... classes) {
+        if (classes.length == 0) {
+            int order = 0;
+            for (BeforeSendMessageReplyInterceptor i : beforeSendMessageReplyInterceptorsForAll) {
+                if (i.orderOfBeforeSendMessageReplyInterceptor() <= interceptor.orderOfBeforeSendMessageReplyInterceptor()) {
+                    order = beforeSendMessageReplyInterceptorsForAll.indexOf(i);
+                    break;
+                }
+            }
+
+            beforeSendMessageReplyInterceptorsForAll.add(order, interceptor);
+            return;
+        }
+
+        for (Class clz : classes) {
+            while (clz != Object.class) {
+                List<BeforeSendMessageReplyInterceptor> is = beforeSendMessageReplyInterceptors.computeIfAbsent(clz, k -> new ArrayList<>());
+
+                synchronized (beforeSendMessageReplyInterceptors) {
+                    int order = 0;
+                    for (BeforeSendMessageReplyInterceptor i : is) {
+                        if (i.orderOfBeforeSendMessageReplyInterceptor() <= interceptor.orderOfBeforeSendMessageReplyInterceptor()) {
                             order = is.indexOf(i);
                             break;
                         }

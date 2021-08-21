@@ -2427,6 +2427,11 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
     }
 
+    @Override
+    public void installBeforeSendMessageReplyInterceptor(BeforeSendMessageReplyInterceptor interceptor, Class<? extends Message>... classes) {
+        // do nothing
+    }
+
     private void populateExtension() {
         services = pluginRgty.getExtensionList(Service.class);
         for (MarshalReplyMessageExtensionPoint extp : pluginRgty.getExtensionList(MarshalReplyMessageExtensionPoint.class)) {

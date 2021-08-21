@@ -79,6 +79,8 @@ public interface CloudBus extends Component {
 
     void installBeforePublishEventInterceptor(BeforePublishEventInterceptor interceptor, Class<? extends Event>...classes);
 
+    void installBeforeSendMessageReplyInterceptor(BeforeSendMessageReplyInterceptor interceptor, Class<? extends Message>...classes);
+
     /**
      *  this method should be inherited by implementations using HTTP
      * @param e
