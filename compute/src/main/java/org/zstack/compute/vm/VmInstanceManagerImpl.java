@@ -873,7 +873,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
         } else {
-            vo.setUuid(Platform.getUuid());
+            vo.setUuid(Platform.getVmUuid());
         }
         vo.setName(msg.getName());
         vo.setClusterUuid(msg.getClusterUuid());

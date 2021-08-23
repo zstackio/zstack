@@ -26,6 +26,7 @@ import org.zstack.header.core.encrypt.ENCRYPT;
 import org.zstack.header.errorcode.*;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.vm.VmInstanceSequenceNumberVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
@@ -610,6 +611,11 @@ public class Platform {
 
     public static String getUuid() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    public static String getVmUuid() {
+        DatabaseFacade dbf = getComponentLoader().getComponent(DatabaseFacade.class);
+        return String.format("%s%s", CoreGlobalProperty.PLATFORM_ID, dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class));
     }
 
     public static String getUuidFromBytes(byte[] name) {
