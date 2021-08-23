@@ -15,4 +15,6 @@ public interface DocumentGenerator {
     void generateMarkDown(String scanPath, String resultDir);
 
     void generateErrorCodeDoc(String scanPath, String resultDir);
+
+    void generateGlobalConfigMarkDown(String sourcePath, DocMode mode);
 }
