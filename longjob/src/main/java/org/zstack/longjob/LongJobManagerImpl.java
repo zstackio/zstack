@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.db.DBSourceUtils.isDBConnected;
 import static org.zstack.core.db.DBSourceUtils.waitDBConnected;
@@ -126,6 +127,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             handle((APIRerunLongJobMsg) msg);
         } else if (msg instanceof APIResumeLongJobMsg) {
             handle((APIResumeLongJobMsg) msg);
+        } else if (msg instanceof APICleanLongJobMsg) {
+            handle((APICleanLongJobMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -200,7 +203,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public String getName() {
-		return String.format("update-longjob-%s", msg.getName());
+                return String.format("update-longjob-%s", msg.getName());
             }
         });
     }
@@ -226,7 +229,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public String getName() {
-                return getSyncSignature();
+                return String.format("delete-longjob-%s", msg.getUuid());
             }
         });
     }
@@ -259,7 +262,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public String getName() {
-                return getSyncSignature();
+                return String.format("cancel-longjob-%s", msg.getUuid());
             }
         });
     }
@@ -292,7 +295,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public String getName() {
-                return getSyncSignature();
+                return String.format("cancel-longjob-%s", msg.getUuid());
             }
         });
     }
@@ -341,6 +344,47 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         });
     }
 
+    private void handle(APICleanLongJobMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "longjob-" + msg.getUuid();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                final APICleanLongJobEvent evt = new APICleanLongJobEvent(msg.getId());
+                LongJobVO vo = Q.New(LongJobVO.class).eq(LongJobVO_.uuid, msg.getUuid()).find();
+
+                if (!longJobFactory.supportClean(vo.getJobName()) || vo.getState() != LongJobState.Canceling) {
+                    evt.setError(err(LongJobErrors.NOT_SUPPORTED, "not supported or state is not Canceling"));
+                    bus.publish(evt);
+                    chain.next();
+                    return;
+                }
+                doCleanJob(vo, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("clean-longjob-%s", msg.getUuid());
+            }
+        });
+    }
+
     private void handle(APIResumeLongJobMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -370,7 +414,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public String getName() {
-                return getSyncSignature();
+                return String.format("resume-longjob-%s", msg.getUuid());
             }
         });
     }
@@ -404,7 +448,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public String getName() {
-                return "resume-longjob-" + msg.getUuid();
+                return String.format("resume-longjob-%s", msg.getUuid());
             }
         });
     }
@@ -507,7 +551,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public String getName() {
-                return getSyncSignature();
+                return String.format("submit-longjob-%s", msg.getJobUuid());
             }
         });
     }

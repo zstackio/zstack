@@ -12,5 +12,6 @@ public class LongJobConstants {
         Resume,
         Rerun,
         Cancel,
+        Clean
     }
 }
