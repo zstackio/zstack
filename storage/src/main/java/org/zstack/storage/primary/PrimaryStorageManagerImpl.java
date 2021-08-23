@@ -673,7 +673,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 requiredSize = ratioMgr.calculateByRatio(psInv.getUuid(), requiredSize);
             }
 
-            if (reserve(psInv, requiredSize, msg, allocatorStrategyType) != null) {
+            if (reserve(psInv, requiredSize, msg, allocatorStrategyType)) {
                 target = psInv;
                 break;
             } else {

@@ -349,7 +349,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                             LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN
                     );
                     allocatedInstallUrl = hostUuid;
-                    msg.setRequireAllocatedInstallUrl(hostUuid);
+                    msg.setRequiredAllocatedInstallUrl(hostUuid);
                     break;
                 }
             }
@@ -359,7 +359,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                         LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()));
             }
         } else {
-            allocatedInstallUrl = msg.getRequireAllocatedInstallUrl();
+            allocatedInstallUrl = msg.getRequiredAllocatedInstallUrl();
         }
         return allocatedInstallUrl;
     }
