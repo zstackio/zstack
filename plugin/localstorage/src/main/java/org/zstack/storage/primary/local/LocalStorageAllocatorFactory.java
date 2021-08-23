@@ -335,7 +335,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, String PsUid) {
+    public String buildAllocatedInstallUrl(AllocatePrimaryStorageMsg msg, String PsUid) {
         String allocatedInstallUrl = null;
         String hostUuid = null;
         // 有两种情形：1、msg消息中url不为空，systemtags为空；2、msg消息中url为空，systemtags不为空；没有第三种情形；

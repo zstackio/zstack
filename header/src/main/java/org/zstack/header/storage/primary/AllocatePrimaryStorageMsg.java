@@ -28,6 +28,15 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private String volumeUuid;
     private boolean noOverProvisioning;
     private String purpose;
+    private String requiredAllocatedInstallUrl;
+
+    public String getRequiredAllocatedInstallUrl() {
+        return requiredAllocatedInstallUrl;
+    }
+
+    public void setRequiredAllocatedInstallUrl(String requiredAllocatedInstallUrl) {
+        this.requiredAllocatedInstallUrl = requiredAllocatedInstallUrl;
+    }
 
     public List<String> getExcludePrimaryStorageTypes() {
         return excludePrimaryStorageTypes;

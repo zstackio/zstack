@@ -1203,7 +1203,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
-    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, String PsUid) {
+    public String buildAllocatedInstallUrl(AllocatePrimaryStorageMsg msg, String PsUid) {
         return "installUrl";
     }
 

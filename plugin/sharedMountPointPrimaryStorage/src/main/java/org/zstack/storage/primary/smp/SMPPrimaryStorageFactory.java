@@ -426,7 +426,7 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
     }
 
     @Override
-    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, String PsUid) {
+    public String buildAllocatedInstallUrl(AllocatePrimaryStorageMsg msg, String PsUid) {
         return "installUrl";
     }
 
