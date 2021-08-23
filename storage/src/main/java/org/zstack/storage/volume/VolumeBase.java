@@ -402,7 +402,11 @@ public class VolumeBase implements Volume {
         chain.then(new ShareFlow() {
             String installPath;
             String format;
+<<<<<<< Updated upstream
             String allocatedInstall;
+=======
+            String allocatedInstallUrl;
+>>>>>>> Stashed changes
 
             @Override
             public void setup() {
@@ -413,7 +417,14 @@ public class VolumeBase implements Volume {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
+<<<<<<< Updated upstream
                             AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+=======
+                            //AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                            AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+                            amsg.setSystemTags(msg.getSystemTags());
+                            amsg.setRequireAllocatedInstallUrl(allocatedInstallUrl);
+>>>>>>> Stashed changes
                             amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                             amsg.setSize(self.getSize());
                             amsg.setSystemTags(msg.getSystemTags());
@@ -426,9 +437,18 @@ public class VolumeBase implements Volume {
                                         trigger.fail(reply.getError());
                                     } else {
                                         success = true;
+<<<<<<< Updated upstream
                                         AllocatePrimaryStorageSpaceReply r = reply.castReply();
                                         allocatedInstall = r.getAllocatedInstallUrl();
                                         //allocatedInstall = ((AllocatePrimaryStorageSpaceReply) reply).getAllocatedInstallUrl();
+=======
+                                        if (reply instanceof AllocatePrimaryStorageSpaceReply){
+                                            AllocatePrimaryStorageSpaceReply ar= (AllocatePrimaryStorageSpaceReply) reply;
+                                            allocatedInstallUrl = ar.getAllocatedInstallUrl();
+                                        }else {
+                                            logger.debug("reply is not AllocatePrimaryStorageSpaceReply");
+                                        }
+>>>>>>> Stashed changes
                                         trigger.next();
                                     }
                                 }
@@ -438,7 +458,13 @@ public class VolumeBase implements Volume {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             if (success) {
+<<<<<<< Updated upstream
                                 ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
+=======
+                                //IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
+                                imsg.setAllocatedInstallUrl(allocatedInstallUrl);
+>>>>>>> Stashed changes
                                 imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                                 imsg.setDiskSize(self.getSize());
                                 imsg.setAllocatedInstallUrl(allocatedInstall);

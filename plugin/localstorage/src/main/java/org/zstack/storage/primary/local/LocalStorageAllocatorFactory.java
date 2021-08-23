@@ -444,6 +444,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     @Override
     public String releaseCapacity(String installUrl, long size, String psUuid){
+        logger.debug("------------------------------my-releaseCapacity--------------------------------------------");
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         String hostUuid = installUrl;
 
@@ -471,7 +472,10 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 LocalStorageReturnHostCapacityExtensionPoint.class)) {
             ext.beforeReturnLocalStorageCapacityOnHost(s);
         }
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
         logCapacityChange(primaryStorageVO.getUuid(), hostUuid, ref.getAvailableCapacity(), ref.getAvailableCapacity() + s.getSize());
         ref.setAvailableCapacity(ref.getAvailableCapacity() + s.getSize());
         dbf.getEntityManager().merge(ref);
