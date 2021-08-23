@@ -1,17 +1,30 @@
 package org.zstack.core.log;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.apicost.analyzer.service.MsgLogFinder;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.config.*;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.Component;
+import org.zstack.header.Constants;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.message.AbstractBeforeSendMessageReplyInterceptor;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.math.BigDecimal;
+import java.util.Map;
 
 /**
  * Created by lining on 2019/7/13.
  */
 public class LogManagerImpl implements Component, ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LogManagerImpl.class);
+
+    @Autowired
+    private CloudBus bus;
 
     @Override
     public boolean start() {
@@ -172,6 +185,34 @@ public class LogManagerImpl implements Component, ManagementNodeReadyExtensionPo
     public void managementNodeReady() {
         syncLogGlobalConfig();
         checkAndSyncLog4jXML();
+
+        bus.installBeforeSendMessageReplyInterceptor(new AbstractBeforeSendMessageReplyInterceptor() {
+            @Override
+            public void beforeSendMessageReply(Message msg, MessageReply reply) {
+                String THREAD_CONTEXT = "thread-context";
+                if (!msg.getHeaders().containsKey(THREAD_CONTEXT))
+                    return;
+
+                Map<String, String> threadContext = (Map<String, String>) msg.getHeaders().get(THREAD_CONTEXT);
+                String id = threadContext.get(Constants.THREAD_CONTEXT_API);
+                String taskName = threadContext.get(Constants.THREAD_CONTEXT_TASK_NAME);
+                if (id == null) {
+                    return;
+                }
+
+                // HTTP调用消息是异步消息，不计算时间
+                if (msg.getMessageName().endsWith("HttpCallMsg"))
+                    return;
+
+                // 写入步骤开始的时间和应答时间：这里存储msgLog，记录apiId，msgId，msgName，startTime，replyTime, wait, status --huaxin
+                long startTime = msg.getCreatedTime();
+                long endTime = System.currentTimeMillis();
+                BigDecimal wait = BigDecimal.valueOf((endTime - startTime) / 1000.0);
+
+                new MsgLogFinder().save(msg.getId(), msg.getMessageName(), id, taskName,
+                        startTime, endTime, wait, MsgLogFinder.NOT_UPDATE);
+            }
+        });
     }
 
     @Override

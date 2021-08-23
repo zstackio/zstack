@@ -20,6 +20,7 @@ class SpringSpec {
             "NetworkService.xml",
             "volumeSnapshot.xml",
             "tag.xml",
+            "log.xml"
     ]
 
     Set<String> xmls = []
