@@ -1197,7 +1197,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             return fullPath;
         }
     }
-
     class ImageCache {
         ImageInventory image;
         BackupStorageInventory backupStorage;
@@ -1230,6 +1229,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             image.getUuid(), self.getUuid(), hostUuid));
                     fchain.then(new ShareFlow() {
                         String psUuid;
+                        String allocatedInstallUrl;
                         long actualSize = image.getActualSize();
 
                         @Override
@@ -1241,7 +1241,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                 @Override
                                 public void run(final FlowTrigger trigger, Map data) {
-                                    AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                                    //AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                                    //new
+                                    AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                                     amsg.setRequiredPrimaryStorageUuid(self.getUuid());
                                     amsg.setRequiredHostUuid(hostUuid);
                                     amsg.setSize(image.getActualSize());
@@ -1254,7 +1256,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                         public void run(MessageReply reply) {
                                             if (reply.isSuccess()) {
                                                 s = true;
-                                                AllocatePrimaryStorageReply r = reply.castReply();
+                                                //AllocatePrimaryStorageReply r = reply.castReply();
+                                                if (!(reply instanceof AllocatePrimaryStorageSpaceReply)) {
+                                                    throw new CloudRuntimeException("---------------------------- LocalStorageKvmBackend.java ===============================");
+                                                }
+                                                AllocatePrimaryStorageSpaceReply r = (AllocatePrimaryStorageSpaceReply) reply;
+                                                allocatedInstallUrl = r.getAllocatedInstallUrl();
                                                 psUuid = r.getPrimaryStorageInventory().getUuid();
                                                 trigger.next();
                                             } else {
@@ -1267,7 +1274,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 @Override
                                 public void rollback(FlowRollback trigger, Map data) {
                                     if (s) {
-                                        IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                        //IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                        ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
+                                        imsg.setAllocatedInstallUrl(allocatedInstallUrl);
                                         imsg.setDiskSize(image.getActualSize());
                                         imsg.setNoOverProvisioning(true);
                                         imsg.setPrimaryStorageUuid(self.getUuid());
@@ -1278,7 +1287,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     trigger.rollback();
                                 }
                             });
-
+                            /*1
                             flow(new Flow() {
                                 String __name__ = "allocate-capacity-on-host";
 
@@ -1299,7 +1308,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     trigger.rollback();
                                 }
                             });
-
+                            */
                             flow(new NoRollbackFlow() {
                                 String __name__ = "download";
 

@@ -15,6 +15,7 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
@@ -22,6 +23,8 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
 import java.util.List;
@@ -54,7 +57,10 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         HostInventory hinv = HostInventory.valueOf(hvo);
         spec.setDestHost(hinv);
 
-        AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
+        //AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
+        AllocatePrimaryStorageSpaceMsg msg = new AllocatePrimaryStorageSpaceMsg();
+        //new pss1
+        msg.setRequireAllocatedInstallUrl(String.format("volume://%s", volume.getUuid()));
         msg.setSize(volume.getSize());
         msg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
         msg.setDiskOfferingUuid(volume.getDiskOfferingUuid());
@@ -89,7 +95,12 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply)reply;
+                    //AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply)reply;
+                    if (!(reply instanceof AllocatePrimaryStorageSpaceReply)) {
+                        throw new CloudRuntimeException("---------------------------- VmAllocatePrimaryStorageForAttachingDiskFlow.java ===============================");
+                    }
+                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                    data.put("allocatedInstallUrl",ar.getAllocatedInstallUrl());
                     data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
                     data.put(VmAllocatePrimaryStorageForAttachingDiskFlow.class, ar.getSize());
                     chain.next();
@@ -105,7 +116,9 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         Long size = (Long) data.get(VmAllocatePrimaryStorageForAttachingDiskFlow.class);
         if (size != null) {
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
-            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+            //IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+            ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
+            imsg.setAllocatedInstallUrl(data.get("allocatedInstallUrl").toString());
             imsg.setPrimaryStorageUuid(pri.getUuid());
             imsg.setDiskSize(size);
             bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());

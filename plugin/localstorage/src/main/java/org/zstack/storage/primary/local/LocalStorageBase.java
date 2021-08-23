@@ -1893,6 +1893,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
+                /*1
                 flow(new Flow() {
                     String __name__ = "allocate-capacity-on-host";
 
@@ -1914,7 +1915,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         trigger.rollback();
                     }
                 });
-
+                */
                 flow(new NoRollbackFlow() {
                     String __name__ = "instantiate-volume-on-host";
 
