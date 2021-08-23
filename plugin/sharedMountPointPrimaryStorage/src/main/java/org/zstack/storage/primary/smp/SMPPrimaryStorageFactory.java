@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.smp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmExpungeRootVolumeValidator;
 import org.zstack.core.cloudbus.CloudBus;
@@ -43,7 +44,7 @@ import static org.zstack.core.Platform.operr;
  * Created by xing5 on 2016/3/26.
  */
 public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint,
-        HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint,
+        HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint, PSCapacityExtensionPoint,
         PostMarkRootVolumeAsSnapshotExtension, PrimaryStorageAttachExtensionPoint, AfterInstantiateVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SMPPrimaryStorageFactory.class);
 
@@ -422,5 +423,26 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
         for (CreateQcow2VolumeProvisioningStrategyExtensionPoint exp : pluginRgty.getExtensionList(CreateQcow2VolumeProvisioningStrategyExtensionPoint.class)) {
             exp.saveQcow2VolumeProvisioningStrategy(volume, hasBackingFile);
         }
+    }
+
+    @Override
+    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, String psUuid) {
+        return "allocatedInstallUrl";
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
+        return allocatedInstallUrl;
+    }
+
+    @Override
+    public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
+        return allocatedInstallUrl;
+    }
+
+    @Override
+    public String getExtPrimaryStorageType() {
+        return SMPConstants.SMP_TYPE;
     }
 }
