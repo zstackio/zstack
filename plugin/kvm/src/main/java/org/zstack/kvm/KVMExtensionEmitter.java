@@ -1,10 +1,14 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.host.CheckSnapshotOnHypervisorMsg;
 import org.zstack.header.host.CheckVmStateOnHypervisorMsg;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.TakeSnapshotOnHypervisorMsg;
@@ -38,6 +42,7 @@ public class KVMExtensionEmitter implements Component {
     private List<KVMAttachVolumeExtensionPoint> attachVolumeExts = new ArrayList<>();
     private List<KVMDetachVolumeExtensionPoint> detachVolumeExts = new ArrayList<>();
     private List<KVMTakeSnapshotExtensionPoint> takeSnapshotExts = new ArrayList<>();
+    private List<KVMCheckSnapshotExtensionPoint> checkSnapshotExts = new ArrayList<>();
     private List<KVMMergeSnapshotExtensionPoint> mergeSnapshotExts = new ArrayList<>();
     private List<KVMCheckVmStateExtensionPoint> checkVmStateExts = new ArrayList<>();
 
@@ -52,6 +57,7 @@ public class KVMExtensionEmitter implements Component {
         takeSnapshotExts = pluginRgty.getExtensionList(KVMTakeSnapshotExtensionPoint.class);
         mergeSnapshotExts = pluginRgty.getExtensionList(KVMMergeSnapshotExtensionPoint.class);
         checkVmStateExts = pluginRgty.getExtensionList(KVMCheckVmStateExtensionPoint.class);
+        checkSnapshotExts = pluginRgty.getExtensionList(KVMCheckSnapshotExtensionPoint.class);
     }
 
     public void beforeStartVmOnKvm(final KVMHostInventory host, final VmInstanceSpec spec, final StartVmCmd cmd) {
@@ -184,6 +190,34 @@ public class KVMExtensionEmitter implements Component {
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
+            }
+        });
+    }
+
+    public void beforeCheckSnapshot(KVMHostInventory host, CheckSnapshotOnHypervisorMsg msg, KVMAgentCommands.CheckSnapshotCmd cmd, Completion completion) {
+        ErrorCodeList errorCodeList = new ErrorCodeList();
+        new While<>(checkSnapshotExts).each((ext, whileCompletion) -> {
+            ext.beforeCheckSnapshot(host, msg, cmd, new Completion(whileCompletion) {
+                @Override
+                public void success() {
+                    whileCompletion.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    errorCodeList.getCauses().add(errorCode);
+                    whileCompletion.allDone();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+
+                completion.success();
             }
         });
     }

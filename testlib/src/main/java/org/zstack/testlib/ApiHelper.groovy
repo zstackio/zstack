@@ -19267,34 +19267,9 @@ abstract class ApiHelper {
         }
     }
 
+
     def getVmHostname(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmHostnameAction.class) Closure c) {
         def a = new org.zstack.sdk.GetVmHostnameAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-    def provisionVirtualRouterConfig(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ProvisionVirtualRouterConfigAction.class) Closure c) {
-        def a = new org.zstack.sdk.ProvisionVirtualRouterConfigAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -21023,6 +20998,33 @@ abstract class ApiHelper {
 
     def prometheusQueryVmMonitoringData(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.PrometheusQueryVmMonitoringDataAction.class) Closure c) {
         def a = new org.zstack.sdk.PrometheusQueryVmMonitoringDataAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def provisionVirtualRouterConfig(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ProvisionVirtualRouterConfigAction.class) Closure c) {
+        def a = new org.zstack.sdk.ProvisionVirtualRouterConfigAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -35387,6 +35389,33 @@ abstract class ApiHelper {
     }
 
 
+    def validateVolumeSnapshotChain(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ValidateVolumeSnapshotChainAction.class) Closure c) {
+        def a = new org.zstack.sdk.ValidateVolumeSnapshotChainAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def zQLQuery(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ZQLQueryAction.class) Closure c) {
         def a = new org.zstack.sdk.ZQLQueryAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -42136,5 +42165,5 @@ abstract class ApiHelper {
         }
     }
 
-    
+
 }
