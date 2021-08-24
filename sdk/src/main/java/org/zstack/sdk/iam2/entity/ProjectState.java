@@ -5,4 +5,5 @@ public enum ProjectState {
 	Disabled,
 	Retired,
 	Deleted,
+	LoginExpired,
 }
