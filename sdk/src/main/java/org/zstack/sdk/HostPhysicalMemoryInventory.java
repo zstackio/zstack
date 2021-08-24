@@ -44,6 +44,14 @@ public class HostPhysicalMemoryInventory  {
         return this.speed;
     }
 
+    public String clockSpeed;
+    public void setClockSpeed(String clockSpeed) {
+        this.clockSpeed = clockSpeed;
+    }
+    public String getClockSpeed() {
+        return clockSpeed;
+    }
+
     public String locator;
     public void setLocator(String locator) {
         this.locator = locator;
