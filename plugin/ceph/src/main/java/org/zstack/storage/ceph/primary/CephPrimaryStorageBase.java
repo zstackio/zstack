@@ -3613,6 +3613,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     protected void handleLocalMessage(Message msg) {
         if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
+        } else if (msg instanceof CheckSnapshotMsg) {
+            handle((CheckSnapshotMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
             handle((CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
@@ -4391,6 +4393,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     protected void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
         MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
+        bus.reply(msg, reply);
+    }
+
+    private void handle(CheckSnapshotMsg msg) {
+        CheckSnapshotReply reply = new CheckSnapshotReply();
         bus.reply(msg, reply);
     }
 

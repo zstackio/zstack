@@ -827,6 +827,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((RemoveHostFromLocalStorageMsg) msg);
         } else if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
+        } else if (msg instanceof CheckSnapshotMsg) {
+            handle((CheckSnapshotMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
             handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
@@ -1486,6 +1488,25 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 });
             }
         }).start();
+    }
+
+    private void handle(CheckSnapshotMsg msg) {
+        CheckSnapshotReply reply = new CheckSnapshotReply();
+        final String hostUuid = getHostUuidByResourceUuid(msg.getVolumeUuid());
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, hostUuid, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final TakeSnapshotMsg msg) {

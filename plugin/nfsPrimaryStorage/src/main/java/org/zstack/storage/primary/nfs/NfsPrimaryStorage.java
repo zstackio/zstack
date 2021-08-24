@@ -100,6 +100,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((PrimaryStorageRemoveCachedImageMsg) msg);
         } else if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
+        } else if (msg instanceof CheckSnapshotMsg) {
+            handle((CheckSnapshotMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
             handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
@@ -515,6 +517,70 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void handle(final CheckSnapshotMsg msg) {
+        final CheckSnapshotReply reply = new CheckSnapshotReply();
+
+        VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+
+        String huuid;
+        String connectedHostUuid = factory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
+        if (vol.getVmInstanceUuid() != null) {
+            Tuple t = Q.New(VmInstanceVO.class)
+                    .select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
+                    .eq(VmInstanceVO_.uuid, vol.getVmInstanceUuid())
+                    .findTuple();
+            VmInstanceState state = t.get(0, VmInstanceState.class);
+            String vmHostUuid = t.get(1, String.class);
+
+            if (state == VmInstanceState.Running || state == VmInstanceState.Paused) {
+                DebugUtils.Assert(vmHostUuid != null,
+                        String.format("vm[uuid:%s] is Running or Paused, but has no hostUuid", vol.getVmInstanceUuid()));
+                huuid = vmHostUuid;
+            } else if (state == VmInstanceState.Stopped) {
+                huuid = connectedHostUuid;
+            } else {
+                reply.setError(operr("vm[uuid:%s] is not Running, Paused or Stopped, current state is %s",
+                        vol.getVmInstanceUuid(), state));
+                bus.reply(msg, reply);
+                return;
+            }
+        } else {
+            huuid = connectedHostUuid;
+        }
+
+        CheckSnapshotOnHypervisorMsg hmsg = new CheckSnapshotOnHypervisorMsg();
+        hmsg.setHostUuid(huuid);
+        hmsg.setVmUuid(vol.getVmInstanceUuid());
+        hmsg.setVolumeUuid(vol.getUuid());
+        hmsg.setVolumeChainToCheck(msg.getVolumeChainToCheck());
+        hmsg.setCurrentInstallPath(vol.getInstallPath());
+        hmsg.setPrimaryStorageUuid(self.getUuid());
+        if (vol.getRootImageUuid() != null) {
+            String installUrl = getImageCacheInstallPath(vol.getRootImageUuid());
+            if (installUrl != null) {
+                hmsg.getExcludeInstallPaths().add(installUrl);
+            }
+        }
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, huuid);
+        bus.send(hmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(ret.getError());
+                }
+
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private String getImageCacheInstallPath(String imageUuid) {
+        return Q.New(ImageCacheVO.class)
+                .select(ImageCacheVO_.installUrl)
+                .eq(ImageCacheVO_.primaryStorageUuid, self.getUuid())
+                .eq(ImageCacheVO_.imageUuid, imageUuid).findValue();
     }
 
     private void handle(final TakeSnapshotMsg msg) {
