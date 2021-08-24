@@ -1976,67 +1976,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }.execute();
     }
 
-    private void applianceVmsCascadeDeleteAdditionPubclicNic(List<VmNicInventory> toDeleteNics) {
-        if(toDeleteNics.isEmpty()) {
-            logger.debug(String.format("no nic need for delete"));
-            return;
-        }
-        ErrorCodeList errList = new ErrorCodeList();
-        FutureCompletion completion = new FutureCompletion(null);
-        new While<>(toDeleteNics).each((VmNicInventory nic, WhileCompletion completion1) -> {
-            if (!dbf.isExist(nic.getUuid(), VmNicVO.class)) {
-                logger.debug(String.format("nic[uuid:%s] not exists, skip", nic.getUuid()));
-                completion1.done();
-                return;
-            }
-            DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
-            msg.setVmNicUuid(nic.getUuid());
-            msg.setVmInstanceUuid(nic.getVmInstanceUuid());
-            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
-            bus.send(msg, new CloudBusCallBack(null) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        if (!dbf.isExist(nic.getUuid(), VmNicVO.class)) {
-                            logger.info(String.format("nic[uuid:%s] not exists, mark it as success", nic.getUuid()));
-                            completion1.done();
-                        } else {
-                            errList.getCauses().add(reply.getError());
-                            logger.error(String.format("detach nic[uuid: %s] for " +
-                                    "delete l3[uuid: %s] failed", nic.getUuid(), nic.getL3NetworkUuid()));
-                            completion1.allDone();
-                        }
-                    } else {
-                        logger.debug(String.format("detach nic[uuid: %s] for " +
-                                "delete l3[uuid: %s] success", nic.getUuid(), nic.getL3NetworkUuid()));
-                        completion1.done();
-                    }
-                }
-            });
-        }).run(new WhileDoneCompletion(completion) {
-            @Override
-            public void done(ErrorCodeList errorCodeList) {
-                if (!errList.getCauses().isEmpty()) {
-                    completion.fail(errList.getCauses().get(0));
-                } else {
-                    logger.info(String.format("detach nics[%s] for delete l3[uuid:%s] success",
-                            toDeleteNics.stream()
-                                    .map(VmNicInventory::getUuid)
-                                    .collect(Collectors.toList()),
-                            toDeleteNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toSet())));
-                    completion.success();
-                }
-            }
-        });
-
-        completion.await(TimeUnit.MINUTES.toMillis(30));
-        if (!completion.isSuccess()) {
-            throw new OperationFailureException(operr("can not detach nic [uuid:%s]", toDeleteNics.stream()
-                    .map(VmNicInventory::getUuid)
-                    .collect(Collectors.toList())).causedBy(completion.getErrorCode()));
-        }
-    }
-
     private List<ApplianceVmVO> applianceVmsToBeDeleted(List<ApplianceVmVO> applianceVmVOS, List<String> deletedUuids) {
         List<ApplianceVmVO> vos = new ArrayList<>();
         for (ApplianceVmVO vo : applianceVmVOS) {
@@ -2195,21 +2134,19 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     @Override
-    public List<ApplianceVmVO> filterApplianceVmCascade(List<ApplianceVmVO> applianceVmVOS, CascadeAction action, String parentIssuer, List<String> parentIssuerUuids) {
+    public List<ApplianceVmVO> filterApplianceVmCascade(List<ApplianceVmVO> applianceVmVOS, CascadeAction action, String parentIssuer, List<String> parentIssuerUuids, List<VmNicInventory> toDeleteNics) {
         logger.debug(String.format("filter appliance vm type with parentIssuer [type: %s, uuids: %s]", parentIssuer, parentIssuerUuids));
         if (parentIssuer.equals(L3NetworkVO.class.getSimpleName())) {
             List<ApplianceVmVO> vos = applianceVmsToBeDeleted(applianceVmVOS, parentIssuerUuids);
 
             applianceVmVOS.removeAll(vos);
-            List<VmNicInventory> toDeleteNics = applianceVmsAdditionalPublicNic(applianceVmVOS, parentIssuerUuids);
-            applianceVmsCascadeDeleteAdditionPubclicNic(toDeleteNics);
+            toDeleteNics.addAll(applianceVmsAdditionalPublicNic(applianceVmVOS, parentIssuerUuids));
 
             return vos;
         } else if (parentIssuer.equals(IpRangeVO.class.getSimpleName())) {
             List<ApplianceVmVO> vos = applianceVmsToBeDeletedByIpRanges(applianceVmVOS, parentIssuerUuids);
             applianceVmVOS.removeAll(vos);
-            List<VmNicVO> toDeleteNics = applianceVmsToDeleteNicByIpRanges(applianceVmVOS, parentIssuerUuids);
-            applianceVmsCascadeDeleteAdditionPubclicNic(VmNicInventory.valueOf(toDeleteNics));
+            toDeleteNics.addAll(VmNicInventory.valueOf(applianceVmsToDeleteNicByIpRanges(applianceVmVOS, parentIssuerUuids)));
 
             return vos;
         } else {
