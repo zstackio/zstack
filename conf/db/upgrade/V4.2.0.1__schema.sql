@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostPhysicalMemoryVO` (
     `locator` varchar(255) DEFAULT NULL,
     `serialNumber` varchar(255) NOT NULL,
     `speed` varchar(32) DEFAULT NULL,
+    `clockSpeed` varchar(32) DEFAULT NULL,
     `rank` varchar(32) DEFAULT NULL,
     `voltage` varchar(32) DEFAULT NULL,
     `hostUuid` varchar(32) NOT NULL,
