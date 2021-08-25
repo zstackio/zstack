@@ -319,7 +319,7 @@ public class VirtualRouter extends ApplianceVmBase {
             @Override
             public void handle(ErrorCode errCode, Map data) {
                 if (oldStatus == ApplianceVmStatus.Connected) {
-                    fireDisconnectedCanonicalEvent(errCode);
+                    changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
                 }
 
                 completion.fail(errCode);
