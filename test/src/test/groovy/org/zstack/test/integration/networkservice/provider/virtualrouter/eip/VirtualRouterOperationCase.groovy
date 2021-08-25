@@ -130,11 +130,8 @@ class VirtualRouterOperationCase extends SubCase {
         VirtualRouterCommands.PingCmd cmd = null
         env.afterSimulator(VirtualRouterConstant.VR_PING) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, VirtualRouterCommands.PingCmd.class)
+            return rsp
         }
-        retryInSecs(10, 1) {
-            assert cmd != null
-        }
-
 
         env.simulator(VirtualRouterConstant.VR_PING) { HttpEntity<String> e, EnvSpec spec ->
             def rsp = new VirtualRouterCommands.PingRsp()
@@ -143,9 +140,14 @@ class VirtualRouterOperationCase extends SubCase {
         }
         VirtualRouterCommands.InitCommand icmd = null
         env.afterSimulator(VirtualRouterConstant.VR_INIT) { rsp, HttpEntity<String> e ->
-            cmd = JSONObjectUtil.toObject(e.body, VirtualRouterCommands.InitCommand.class)
+            icmd = JSONObjectUtil.toObject(e.body, VirtualRouterCommands.InitCommand.class)
             return rsp
         }
+
+        retryInSecs(10, 1) {
+            assert cmd != null
+        }
+
         retryInSecs(10, 1) {
             assert icmd != null
         }
