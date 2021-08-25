@@ -2106,6 +2106,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString(), setStaticIp.allowDupicatedAddress);
         flowChain.then(new VmAllocateNicFlow());
         flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
+        setAdditionalFlow(flowChain, spec);
         if (self.getState() == VmInstanceState.Running) {
             flowChain.then(new VmInstantiateResourceOnAttachingNicFlow());
             flowChain.then(new VmAttachNicOnHypervisorFlow());
@@ -4658,6 +4659,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(Params.ReleaseNicAfterDetachNic.toString(), releaseNic);
+        setAdditionalFlow(flowChain, spec);
         if (!dbOnly && self.getState() == VmInstanceState.Running && nic.getL3NetworkUuid() != null) {
             flowChain.then(new VmDetachNicOnHypervisorFlow());
         }
