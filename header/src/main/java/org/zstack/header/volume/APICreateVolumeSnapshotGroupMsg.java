@@ -45,6 +45,7 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
     @APIParam(required = false)
     private boolean withMemory = false;
 
+    @APINoSee
     private ConsistentType consistentType = ConsistentType.None;
 
     @APINoSee
