@@ -28,8 +28,8 @@ public class MountVmInstanceRecoveryPointAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vmUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String timestamp;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
+    public long groupId = 0L;
 
     @Param(required = false)
     public java.util.List systemTags;
