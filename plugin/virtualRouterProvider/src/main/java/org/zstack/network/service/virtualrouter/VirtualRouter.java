@@ -250,6 +250,7 @@ public class VirtualRouter extends ApplianceVmBase {
                             PingVirtualRouterVmReply reply1 = new PingVirtualRouterVmReply();
                             reply1.setDoReconnect(true);
                             reply1.setConnected(false);
+                            reply1.setError(errorCode);
                             replies.add(reply1);
                             /* wait 1 second and try again */
                             new Retry<Boolean>() {
@@ -318,7 +319,7 @@ public class VirtualRouter extends ApplianceVmBase {
             @Override
             public void handle(ErrorCode errCode, Map data) {
                 if (oldStatus == ApplianceVmStatus.Connected) {
-                    fireDisconnectedCanonicalEvent(errCode);
+                    changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
                 }
 
                 completion.fail(errCode);

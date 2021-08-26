@@ -134,13 +134,6 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="VirtualRouterPingFailureTracker" class="org.zstack.network.service.virtualrouter.VirtualRouterPingFailureTracker">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
-            <zstack:extension interface="org.zstack.network.service.virtualrouter.VirtualRouterTrackerExtensionPoint" />
-        </zstack:plugin>
-    </bean>
-
     <bean id="VirtualRouterProviderFactory" class="org.zstack.network.service.virtualrouter.VirtualRouterProviderFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceProviderFactory" />
