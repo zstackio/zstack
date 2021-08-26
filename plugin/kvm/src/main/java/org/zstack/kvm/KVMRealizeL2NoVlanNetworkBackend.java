@@ -3,15 +3,13 @@ package org.zstack.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
-import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.KVMAgentCommands.CheckBridgeResponse;
@@ -225,6 +223,15 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     @Override
     public void delete(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
         if (l2Network.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+            // vlan bridges and novlan bridge use the same bridge name
+            // in ovs, so before delete l2 network we should check if
+            // the PhysicalInterface is using by another l2 network.
+            boolean noNeedDelete = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.physicalInterface, l2Network.getPhysicalInterface())
+                    .notEq(L2NetworkVO_.uuid, l2Network.getUuid()).isExists();
+            if (noNeedDelete) {
+                completion.success();
+                return;
+            }
             delete(l2Network, hostUuid, completion, KVMConstant.KVM_DELETE_OVSDPDK_NETWORK_PATH);
         } else {
             delete(l2Network, hostUuid, completion, KVMConstant.KVM_DELETE_L2NOVLAN_NETWORK_PATH);
