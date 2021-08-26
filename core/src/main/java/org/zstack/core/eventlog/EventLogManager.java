@@ -7,7 +7,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.thread.PeriodicTask;
-import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.ExceptionSafe;
@@ -21,14 +20,15 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class EventLogManager implements EventLogger, Component, ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(EventLogManager.class);
 
-    private final BlockingQueue<EventLogBuilder> eventLogQueue = new LinkedBlockingQueue<>();
-    private boolean running = true;
+    private final BlockingQueue<EventLogBuilder> eventLogQueue = new LinkedBlockingQueue<>(4096);
+    private Future<Void> eventLogCollector;
 
     @Autowired
     private ThreadFacade thdf;
@@ -40,13 +40,15 @@ public class EventLogManager implements EventLogger, Component, ManagementNodeRe
     @Override
     public void accept(EventLogBuilder builder) {
         try {
-            eventLogQueue.offer(builder, 10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            logger.warn(String.format("unable to consume event log: %s", JSONObjectUtil.toJsonString(builder)), e);
+            if (eventLogQueue.offer(builder, 2, TimeUnit.SECONDS)) {
+                return;
+            }
+        } catch (InterruptedException ignored) {
         }
+
+        logger.warn(String.format("unable to consume event log: %s", JSONObjectUtil.toJsonString(builder)));
     }
 
-    @ExceptionSafe
     private void writeEventLogsToDB() {
         List<EventLogBuilder> builders = new ArrayList<>();
         eventLogQueue.drainTo(builders);
@@ -70,24 +72,34 @@ public class EventLogManager implements EventLogger, Component, ManagementNodeRe
     }
 
     private void start_consumer() {
-        thdf.submit(new Task<Void>() {
+        eventLogCollector = thdf.submitPeriodicTask(new PeriodicTask() {
             @Override
             public String getName() {
                 return "event-log consumer";
             }
 
             @Override
-            public Void call() {
-                while (running) {
-                    writeEventLogsToDB();
-                }
-                return null;
+            @ExceptionSafe
+            public void run() {
+                writeEventLogsToDB();
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return 1;
             }
         });
     }
 
     private void stop_consumer() {
-        running = false;
+        if (eventLogCollector != null) {
+            eventLogCollector.cancel(true);
+        }
     }
 
     private void start_log_cleaner() {
@@ -141,8 +153,7 @@ public class EventLogManager implements EventLogger, Component, ManagementNodeRe
 
     @Override
     public boolean start() {
-        // TODO
-        // start_consumer();
+        start_consumer();
         return true;
     }
 
