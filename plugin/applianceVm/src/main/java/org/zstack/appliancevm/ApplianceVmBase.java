@@ -690,6 +690,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             ApplianceVmSpec aspec = smsg.getApplianceVmSpec();
 
             final VmInstanceSpec spec = new VmInstanceSpec();
+            spec.setNewCreated(true);
             spec.setVmInventory(msg.getVmInstanceInventory());
             spec.setRequiredHostUuid(smsg.getApplianceVmSpec().getRequiredHostUuid());
             List<VmNicSpec> nicSpecs = new ArrayList<>();

@@ -3158,4 +3158,13 @@ public class KVMAgentCommands {
         public long availableSize;
         public long dirSize;
     }
+    
+    public static class CheckFileOnHostCmd extends AgentCommand {
+        public List<String> paths;
+        public boolean md5Return;
+    }
+    
+    public static class CheckFileOnHostResponse extends AgentResponse {
+        public Map<String, String> existPaths;
+    }
 }
