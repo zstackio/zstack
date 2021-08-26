@@ -77,8 +77,15 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
             throw new OperationFailureException(operr("find multiple vtep ips[%s] for one host[uuid:%s], need to delete host and add again",
                     vtepIps, hostUuid));
         }
-        String vtepIp = vtepIps.get(0);
 
+        if (vtepIps.size() == 0) {
+            ErrorCode err = operr("failed to find vtep on host[uuid: %s], please re-attach vxlanpool[uuid: %s] to cluster.",
+                    hostUuid, l2vxlan.getPoolUuid());
+            completion.fail(err);
+            return;
+        }
+
+        String vtepIp = vtepIps.get(0);
         List<String> peers = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).listValues();
         Set<String> p = new HashSet<String>(peers);
         p.remove(vtepIp);
