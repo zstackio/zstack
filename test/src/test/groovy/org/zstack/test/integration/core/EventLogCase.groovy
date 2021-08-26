@@ -25,8 +25,7 @@ class EventLogCase extends SubCase {
 
     @Override
     void test() {
-        // TODO
-        // testEventLog()
+        testEventLog()
     }
 
     void testEventLog() {
