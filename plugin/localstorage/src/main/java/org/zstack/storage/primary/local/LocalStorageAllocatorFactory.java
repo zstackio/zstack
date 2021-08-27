@@ -30,6 +30,7 @@ import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.snapshot.SnapshotDeletionExtensionPoint;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -357,27 +358,22 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 }
             }
         }
-        if (hostUuid == null){
-            throw new CloudRuntimeException("---------------------------- hostUuid is null ===============================");
-        }
+
         if (hostUuid == null) {
             throw new OperationFailureException(argerr("To create data volume on the local primary storage, you must specify the host that" +
                             " the data volume is going to be created using the system tag [%s]",
                     LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()));
         }
 
-        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
-        allocatedInstallUrl = String.format("volume://%s", primaryStorageVO.getUrl());
+        allocatedInstallUrl = String.format("%s;hostUuid://%s", msg.getRequireAllocatedInstallUrl(), hostUuid);
         return allocatedInstallUrl;
     }
 
     @Override
     //@Transactional(propagation = Propagation.MANDATORY)
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
-        if (allocatedInstallUrl==null){
-            throw new CloudRuntimeException("---------------------------- reserveCapacity is null ===============================");
-        }
-        String hostUuid = allocatedInstallUrl.replaceFirst("hostUuid://", "");
+        String[] pair = allocatedInstallUrl.split(";");
+        String hostUuid = pair[1].replaceFirst("hostUuid://", "")
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, primaryStorageVO,false);
         return allocatedInstallUrl;
@@ -386,10 +382,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     @Override
     //@Transactional(propagation = Propagation.MANDATORY)
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
-        if (allocatedInstallUrl==null){
-            throw new CloudRuntimeException("---------------------------- releaseCapacity is null ===============================");
-        }
-        String hostUuid = allocatedInstallUrl.replaceFirst("hostUuid://", "");
+        String[] pair = allocatedInstallUrl.split(";");
+        String hostUuid = pair[1].replaceFirst("hostUuid://", "");
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, primaryStorageVO);
         return allocatedInstallUrl;
