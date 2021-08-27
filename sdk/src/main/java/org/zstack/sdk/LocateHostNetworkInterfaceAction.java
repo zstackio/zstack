@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class LocateHostNetworkInterfaceAction extends AbstractAction {
 
@@ -17,7 +16,7 @@ public class LocateHostNetworkInterfaceAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                    String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
+                        String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
             
@@ -26,13 +25,13 @@ public class LocateHostNetworkInterfaceAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String hostUuid;
+    public java.lang.String hostUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String networkInterfaceUuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String networkInterfaceName;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,255L}, noTrim = false)
-    public Long interval = 15L;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L, 255L}, noTrim = false)
+    public java.lang.Long interval = 15L;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -65,9 +64,9 @@ public class LocateHostNetworkInterfaceAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-        
+
         org.zstack.sdk.LocateHostNetworkInterfaceResult value = res.getResult(org.zstack.sdk.LocateHostNetworkInterfaceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.LocateHostNetworkInterfaceResult() : value; 
+        ret.value = value == null ? new org.zstack.sdk.LocateHostNetworkInterfaceResult() : value;
 
         return ret;
     }
@@ -97,10 +96,10 @@ public class LocateHostNetworkInterfaceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/hosts/{hostUuid}/locate/network-interface/{networkInterfaceUuid}";
+        info.path = "/hosts/{hostUuid}/locate/network-interface";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "locateHostNetworkInterface";
         return info;
     }
 
