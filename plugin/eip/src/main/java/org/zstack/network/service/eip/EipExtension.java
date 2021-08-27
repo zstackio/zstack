@@ -2,13 +2,16 @@ package org.zstack.network.service.eip;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.StaticIpOperator;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
@@ -90,6 +93,18 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
         return eipVOtoEipStruct(eipVO);
     }
 
+    private boolean isEipShouldBeAttachedToBackend(String vmUuid, String l3Uuid, VmOperation operation) {
+        boolean ipChanged = new StaticIpOperator().isIpChange(vmUuid, l3Uuid);
+
+        L3NetworkVO l3Vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
+        boolean l3Need = l3Mgr.applyNetworkServiceWhenVmStateChange(l3Vo.getType());
+
+        /* when vm is destroyed, eip configure will be deleted */
+        boolean stateNeed = EipConstant.vmOperationForDetachEip.contains(operation);
+
+        return ipChanged || l3Need || stateNeed;
+    }
+
     private Map<String, List<EipStruct>> workOutEipStruct(VmInstanceSpec spec) {
         Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(EipConstant.EIP_TYPE,
                 VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()));
@@ -97,9 +112,7 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
         for (Map.Entry<NetworkServiceProviderType, List<L3NetworkInventory>> e : map.entrySet()) {
             List<EipStruct> structs = new ArrayList<EipStruct>();
             for (final L3NetworkInventory l3 : e.getValue()) {
-                /* when vm is destroyed, eip configure will be deleted */
-                if (!l3Mgr.applyNetworkServiceWhenVmStateChange(l3.getType()) &&
-                        !EipConstant.vmOperationForDetachEip.contains(spec.getCurrentVmOperation())) {
+                if (!isEipShouldBeAttachedToBackend(spec.getVmInventory().getUuid(), l3.getUuid(), spec.getCurrentVmOperation())) {
                     continue;
                 }
                 final VmNicInventory nic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {

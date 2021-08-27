@@ -3,6 +3,7 @@ package org.zstack.network.service.lb;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.acl.RefreshAccessControlListExtensionPoint;
+import org.zstack.compute.vm.StaticIpOperator;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -74,6 +75,14 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
         return q.getResultList();
     }
 
+    private boolean isLbShouldBeAttachedToBackend(String vmUuid, String l3Uuid) {
+        boolean ipChanged = new StaticIpOperator().isIpChange(vmUuid, l3Uuid);
+
+        L3NetworkVO l3Vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
+        boolean l3Need = l3Mgr.applyNetworkServiceWhenVmStateChange(l3Vo.getType());
+        return ipChanged || l3Need;
+    }
+
     @Override
     public void applyNetworkService(final VmInstanceSpec servedVm, Map<String, Object> data, final Completion completion) {
         List<Tuple> ts = getLbTuple(servedVm);
@@ -94,8 +103,8 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 l3Vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
                 l3Map.put(l3Uuid, l3Vo);
             }
-            /* if l3 netowrk doesn't want to apply lb for vm start, skip this nic */
-            if (!l3Mgr.applyNetworkServiceWhenVmStateChange(l3Vo.getType())) {
+            /* if l3 network doesn't want to apply lb for vm start, skip this nic */
+            if (!isLbShouldBeAttachedToBackend(servedVm.getVmInventory().getUuid(), l3Uuid)) {
                 continue;
             }
 
@@ -206,8 +215,8 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 l3Vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
                 l3Map.put(l3Uuid, l3Vo);
             }
-            /* if l3 netowrk doesn't want to apply lb for vm start, skip this nic */
-            if (!l3Mgr.applyNetworkServiceWhenVmStateChange(l3Vo.getType())
+            /* if l3 network doesn't want to apply lb for vm start, skip this nic */
+            if (!isLbShouldBeAttachedToBackend(servedVm.getVmInventory().getUuid(), l3Uuid)
                     && !LoadBalancerConstants.vmOperationForDetachListener.contains(servedVm.getCurrentVmOperation())) {
                 continue;
             }

@@ -35,4 +35,12 @@
             <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="DeleteVolumeGcExtension"
+          class="org.zstack.storage.volume.DeleteVolumeGcExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"  order="10"/>
+        </zstack:plugin>
+    </bean>
+
 </beans>
