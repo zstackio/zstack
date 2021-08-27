@@ -74,7 +74,7 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
             if (allocatorStrategyType == null) {
                 continue;
             }
-
+            //new pss0
             AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
             rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
             rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
@@ -85,7 +85,6 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
             }
             rmsg.setSize(iminv.getSize());
             rmsg.setRequiredHostUuid(destHost.getUuid());
-            rmsg.setRequireAllocatedInstallUrl(destHost.getUuid());
             rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
             rmsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
             rmsg.setAllocationStrategy(allocatorStrategyType);

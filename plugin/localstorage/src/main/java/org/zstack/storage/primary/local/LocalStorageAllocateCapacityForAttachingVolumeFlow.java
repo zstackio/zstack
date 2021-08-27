@@ -74,9 +74,9 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
         String priUuid = t.get(1, String.class);
 
         //AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
-        //new
+        //new pss1
         AllocatePrimaryStorageSpaceMsg msg = new AllocatePrimaryStorageSpaceMsg();
-        msg.setRequireAllocatedInstallUrl(hostUuid);
+        msg.setRequireAllocatedInstallUrl(String.format("volume://%s", volume.getUuid()));
         if (isThereNetworkSharedStorageForTheHost(hostUuid, priUuid)) {
             // use network-shared primary storage
             msg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);

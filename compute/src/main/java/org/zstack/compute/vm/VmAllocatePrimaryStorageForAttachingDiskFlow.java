@@ -59,7 +59,8 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
 
         //AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
         AllocatePrimaryStorageSpaceMsg msg = new AllocatePrimaryStorageSpaceMsg();
-        msg.setRequireAllocatedInstallUrl(hinv.getUuid());
+        //new pss1
+        msg.setRequireAllocatedInstallUrl(String.format("volume://%s", volume.getUuid()));
         msg.setSize(volume.getSize());
         msg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
         msg.setDiskOfferingUuid(volume.getDiskOfferingUuid());

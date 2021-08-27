@@ -1244,7 +1244,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     //AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                                     //new
                                     AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
-                                    amsg.setRequireAllocatedInstallUrl(hostUuid);
                                     amsg.setRequiredPrimaryStorageUuid(self.getUuid());
                                     amsg.setRequiredHostUuid(hostUuid);
                                     amsg.setSize(image.getActualSize());

@@ -414,11 +414,11 @@ public class VolumeBase implements Volume {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             //AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
-                            //new
+                            //new pss0
                             AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                             amsg.setSystemTags(msg.getSystemTags());
                             amsg.setRequiredHostUuid(msg.getHostUuid());
-                            amsg.setRequireAllocatedInstallUrl(msg.getAllocatedInstallUrl());
+                            amsg.setRequireAllocatedInstallUrl(String.format("volume://%s", msg.getVolumeUuid()));
 
                             amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                             amsg.setSize(self.getSize());

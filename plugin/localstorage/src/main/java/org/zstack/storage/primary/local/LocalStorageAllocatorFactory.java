@@ -24,6 +24,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
@@ -342,7 +343,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         if (msg.getRequiredHostUuid() != null) {
             hostUuid = msg.getRequiredHostUuid();
         } else if (msg.getRequireAllocatedInstallUrl() != null){
-            hostUuid = msg.getRequireAllocatedInstallUrl();
+            LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(msg.getRequireAllocatedInstallUrl(), LocalStorageResourceRefVO.class);
+            hostUuid = localStorageResourceRefVO.getHostUuid();
         } else if (msg.getSystemTags() != null) {
             for (String stag : msg.getSystemTags()) {
                 if (LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.isMatch(stag)) {
@@ -364,7 +366,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         }
 
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
-        allocatedInstallUrl = String.format("file://%s;hostUuid://%s", primaryStorageVO.getUrl(), hostUuid);
+        allocatedInstallUrl = String.format("volume://%s;hostUuid://%s", primaryStorageVO.getUrl(), hostUuid);
         return allocatedInstallUrl;
     }
 

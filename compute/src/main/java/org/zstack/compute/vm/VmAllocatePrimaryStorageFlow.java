@@ -57,9 +57,10 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         final ImageInventory iminv = spec.getImageSpec().getInventory();
 
         // allocate ps for root volume
-        //new
+        //new pss
         //AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
         AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
+        //rmsg.setRequireAllocatedInstallUrl(String.format("volume://%s", spec.getVolumeUuid());
         rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         if (spec.getImageSpec() != null) {
@@ -77,7 +78,6 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         }
 
         rmsg.setRequiredHostUuid(destHost.getUuid());
-        rmsg.setRequireAllocatedInstallUrl(destHost.getUuid());
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
         rmsg.setPossiblePrimaryStorageTypes(selectPsTypesFromSpec(spec));
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
@@ -86,11 +86,11 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
         // allocate ps for data volumes
         for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
+            //new pss0
             AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
             amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
             amsg.setSize(dinv.getDiskSize());
             amsg.setRequiredHostUuid(destHost.getUuid());
-            amsg.setRequireAllocatedInstallUrl(destHost.getUuid());
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
             amsg.setDiskOfferingUuid(dinv.getUuid());
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);

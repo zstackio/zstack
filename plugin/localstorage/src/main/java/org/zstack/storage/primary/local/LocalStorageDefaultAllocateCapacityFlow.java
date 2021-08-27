@@ -144,7 +144,6 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         List<AllocatePrimaryStorageSpaceMsg> msgs = new ArrayList<>();
 
         AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
-        rmsg.setRequireAllocatedInstallUrl(spec.getDestHost().getUuid());
         rmsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         if (spec.getImageSpec() != null) {
@@ -179,9 +178,8 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
 
             for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
                 //AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
-                //new
+                //new pss0
                 AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
-                amsg.setRequireAllocatedInstallUrl(spec.getDestHost().getUuid());
                 amsg.setSize(dinv.getDiskSize());
                 amsg.setRequiredHostUuid(spec.getDestHost().getUuid());
                 if(spec.getRequiredPrimaryStorageUuidForDataVolume() != null && hasOtherNonLocalStoragePrimaryStorage){
