@@ -11,6 +11,9 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
@@ -116,6 +119,15 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
             return;
         }
 
+        // vDPA do not support Userdata service yet;
+        boolean isOvsDpdk = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, defaultL3.getL2NetworkUuid())
+                .eq(L2NetworkVO_.vSwitchType, L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)
+                .isExists();
+        if (isOvsDpdk) {
+            completion.success();
+            return;
+        }
+
         if (!defaultL3.getIpVersions().contains(IPv6Constants.IPv4)) {
             // userdata depends on the ipv4 address
             completion.success();
@@ -132,6 +144,16 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
         struct.setL3NetworkUuid(servedVm.getVmInventory().getDefaultL3NetworkUuid());
         struct.setParametersFromVmSpec(servedVm);
         struct.setUserdataList(servedVm.getUserdataList());
+
+        // TODO: vDPA do not support Userdata service yet;
+        List<VmNicInventory> tmp = new ArrayList<>();
+        for (VmNicInventory vNic : struct.getVmNics()) {
+            if (vNic.getType().equals("vDPA")) {
+                continue;
+            }
+            tmp.add(vNic);
+        }
+        struct.setVmNics(tmp);
 
         UserdataBackend bkd = getUserdataBackend(provider.getType());
         bkd.applyUserdata(struct, completion);
