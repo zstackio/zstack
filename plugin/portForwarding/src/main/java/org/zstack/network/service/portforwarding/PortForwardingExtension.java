@@ -1,6 +1,7 @@
 package org.zstack.network.service.portforwarding;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.StaticIpOperator;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -19,7 +20,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -194,6 +194,16 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
         releaseNetworkService(structs.entrySet().iterator(), completion);
     }
 
+    private boolean isPortForwardingShouldBeAttachedToBackend(String vmUuid, String l3Uuid, VmOperation operation) {
+        boolean ipChanged = new StaticIpOperator().isIpChange(vmUuid, l3Uuid);
+        boolean stateNeed = PortForwardingConstant.vmOperationForDetachPortfordingRule.contains(operation);
+
+        L3NetworkVO l3Vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
+        boolean l3Need = l3Mgr.applyNetworkServiceWhenVmStateChange(l3Vo.getType());
+
+        return ipChanged || stateNeed || l3Need;
+    }
+
     private Map<String, List<PortForwardingStruct>> workoutPortForwarding(VmInstanceSpec spec) {
         Map<String, List<PortForwardingStruct>> map = new HashMap<String, List<PortForwardingStruct>>();
         Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.PortForwarding,
@@ -204,8 +214,7 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
             List<PortForwardingStruct> lst = new ArrayList<PortForwardingStruct>();
 
             for (L3NetworkInventory l3 : e.getValue()) {
-                if (!l3Mgr.applyNetworkServiceWhenVmStateChange(l3.getType()) &&
-                        !PortForwardingConstant.vmOperationForDetachPortfordingRule.contains(spec.getCurrentVmOperation())) {
+                if (!isPortForwardingShouldBeAttachedToBackend(spec.getVmInventory().getUuid(), l3.getUuid(), spec.getCurrentVmOperation())) {
                     continue;
                 }
 
