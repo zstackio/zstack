@@ -3215,6 +3215,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 } else {
                     new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), msg.getL3NetworkUuid(), IPv6NetworkUtils.ipv6AddessToTagValue(msg.getStaticIp()));
                 }
+                new StaticIpOperator().setIpChange(self.getUuid(), msg.getL3NetworkUuid());
                 bus.publish(evt);
                 chain.next();
             }
@@ -3279,6 +3280,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (msg.getIp6() != null) {
                     new StaticIpOperator().setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp6());
                 }
+                new StaticIpOperator().setIpChange(self.getUuid(), msg.getL3NetworkUuid());
                 bus.publish(evt);
                 completion.done();
             }
@@ -6477,6 +6479,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void success() {
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+
+                new StaticIpOperator().deleteIpChange(self.getUuid());
+
                 APIStartVmInstanceEvent evt = new APIStartVmInstanceEvent(msg.getId());
                 evt.setInventory(inv);
                 bus.publish(evt);
@@ -6776,6 +6781,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 self = changeVmStateInDb(VmInstanceStateEvent.running);
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 extEmitter.afterRebootVm(inv);
+                new StaticIpOperator().deleteIpChange(self.getUuid());
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {

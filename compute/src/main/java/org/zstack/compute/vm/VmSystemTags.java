@@ -161,4 +161,8 @@ public class VmSystemTags {
     public static PatternedSystemTag VM_VRING_BUFFER_SIZE = new PatternedSystemTag(String.format("vRingBufferSize::{%s}::{%s}", RX_SIZE_TOKEN, TX_SIZE_TOKEN), VmInstanceVO.class);
 
     public static SystemTag VIRTIO = new SystemTag("driver::virtio", VmInstanceVO.class);
+
+    public static String VM_IP_CHANGED_TOKEN = "ipChanged";
+    public static PatternedSystemTag VM_IP_CHANGED =
+            new PatternedSystemTag(String.format("ipChanged::{%s}", VM_IP_CHANGED_TOKEN), VmInstanceVO.class);
 }
