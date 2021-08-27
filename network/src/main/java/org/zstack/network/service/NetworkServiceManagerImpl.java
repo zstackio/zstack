@@ -253,14 +253,6 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             return;
         }
 
-        // TODO: we will support network services in future
-        for (VmNicInventory vnic : spec.getDestNics()) {
-            if (vnic.getType().equals("vDPA")) {
-                completion.success();
-                return;
-            }
-        }
-
         List<String> nsTypes = spec.getRequiredNetworkServiceTypes();
 
         FlowChain schain = FlowChainBuilder.newSimpleFlowChain().setName(String.format("apply-network-service-to-vm-%s", spec.getVmInventory().getUuid()));
@@ -273,7 +265,6 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             if (!nsTypes.contains(ns.getNetworkServiceType().toString())) {
                 continue;
             }
-
 
             Flow flow = new Flow() {
                 String __name__ = String.format("apply-network-service-%s", ns.getNetworkServiceType());
