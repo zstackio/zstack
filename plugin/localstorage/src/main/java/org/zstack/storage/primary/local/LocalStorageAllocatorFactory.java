@@ -343,7 +343,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         if (msg.getRequiredHostUuid() != null) {
             hostUuid = msg.getRequiredHostUuid();
         } else if (msg.getRequireAllocatedInstallUrl() != null){
-            LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(msg.getRequireAllocatedInstallUrl(), LocalStorageResourceRefVO.class);
+            String volumeId = msg.getRequireAllocatedInstallUrl().replaceFirst("volume://%s", "");
+            LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volumeId, LocalStorageResourceRefVO.class);
             hostUuid = localStorageResourceRefVO.getHostUuid();
         } else if (msg.getSystemTags() != null) {
             for (String stag : msg.getSystemTags()) {
@@ -366,7 +367,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         }
 
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
-        allocatedInstallUrl = String.format("volume://%s;hostUuid://%s", primaryStorageVO.getUrl(), hostUuid);
+        allocatedInstallUrl = String.format("volume://%s", primaryStorageVO.getUrl());
         return allocatedInstallUrl;
     }
 
@@ -376,8 +377,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         if (allocatedInstallUrl==null){
             throw new CloudRuntimeException("---------------------------- reserveCapacity is null ===============================");
         }
-        String[] pair = allocatedInstallUrl.split(";");
-        String hostUuid = pair[1].replaceFirst("hostUuid://", "");
+        String hostUuid = allocatedInstallUrl.replaceFirst("hostUuid://", "");
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, primaryStorageVO,false);
         return allocatedInstallUrl;
@@ -389,8 +389,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         if (allocatedInstallUrl==null){
             throw new CloudRuntimeException("---------------------------- releaseCapacity is null ===============================");
         }
-        String[] pair = allocatedInstallUrl.split(";");
-        String hostUuid = pair[1].replaceFirst("hostUuid://", "");
+        String hostUuid = allocatedInstallUrl.replaceFirst("hostUuid://", "");
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, primaryStorageVO);
         return allocatedInstallUrl;
