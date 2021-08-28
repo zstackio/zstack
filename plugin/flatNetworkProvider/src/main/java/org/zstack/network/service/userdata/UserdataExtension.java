@@ -119,7 +119,7 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
             return;
         }
 
-        // vDPA do not support Userdata service yet;
+        // TODO: vDPA do not support Userdata service yet;
         boolean isOvsDpdk = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, defaultL3.getL2NetworkUuid())
                 .eq(L2NetworkVO_.vSwitchType, L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)
                 .isExists();
