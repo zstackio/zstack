@@ -1495,6 +1495,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private void applyDhcpToHosts(List<DhcpInfo> dhcpInfo, final String hostUuid, final boolean rebuild, final Completion completion) {
         final Map<String, List<DhcpInfo>> l3DhcpMap = new HashMap<>();
         for (DhcpInfo d : dhcpInfo) {
+            // TODO: vDPA do not support flat dhcp service yet;
+            if (d.nicType.equals("vDPA")) {
+                continue;
+            }
             List<DhcpInfo> lst = l3DhcpMap.get(d.l3NetworkUuid);
             if (lst == null) {
                 lst = new ArrayList<>();
