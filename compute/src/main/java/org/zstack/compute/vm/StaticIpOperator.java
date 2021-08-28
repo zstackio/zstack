@@ -143,4 +143,30 @@ public class StaticIpOperator {
 
         return nicStaticIpMap;
     }
+
+    public void setIpChange(String vmUuid, String l3Uuid) {
+        SystemTagCreator creator = VmSystemTags.VM_IP_CHANGED.newSystemTagCreator(vmUuid);
+        creator.recreate = true;
+        creator.inherent = false;
+        creator.setTagByTokens(map(
+                e(VmSystemTags.VM_IP_CHANGED_TOKEN, l3Uuid)
+        ));
+        creator.create();
+    }
+
+    public void deleteIpChange(String vmUuid) {
+        VmSystemTags.VM_IP_CHANGED.delete(vmUuid, VmInstanceVO.class);
+    }
+
+    public boolean isIpChange(String vmUuid, String l3Uuid) {
+        List<Map<String, String>> tokenList = VmSystemTags.VM_IP_CHANGED.getTokensOfTagsByResourceUuid(vmUuid);
+        for (Map<String, String> tokens : tokenList) {
+            String uuid = tokens.get(VmSystemTags.VM_IP_CHANGED_TOKEN);
+            if (uuid.equals(l3Uuid)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
