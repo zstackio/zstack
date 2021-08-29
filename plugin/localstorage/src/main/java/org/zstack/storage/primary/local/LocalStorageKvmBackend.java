@@ -1210,28 +1210,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         return hostUuid;
     }
 
-    public static class CacheInstallPath {
-        public String fullPath;
-        public String hostUuid;
-        public String installPath;
-
-        public CacheInstallPath disassemble() {
-            DebugUtils.Assert(fullPath != null, "fullPath cannot be null");
-            String[] pair = fullPath.split(";");
-            DebugUtils.Assert(pair.length == 2, String.format("invalid cache path %s", fullPath));
-            installPath = pair[0].replaceFirst("file://", "");
-            hostUuid = pair[1].replaceFirst("hostUuid://", "");
-            return this;
-        }
-
-        public String makeFullPath() {
-            DebugUtils.Assert(installPath != null, "installPath cannot be null");
-            DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
-            fullPath = String.format("file://%s;hostUuid://%s", installPath, hostUuid);
-            return fullPath;
-        }
-    }
-
     class ImageCache {
         ImageInventory image;
         BackupStorageInventory backupStorage;
@@ -1265,6 +1243,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     fchain.then(new ShareFlow() {
                         String psUuid;
                         long actualSize = image.getActualSize();
+                        String allocatedInstallUrl;
 
                         @Override
                         public void setup() {
@@ -1275,7 +1254,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                 @Override
                                 public void run(final FlowTrigger trigger, Map data) {
-                                    AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                                    AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                                     amsg.setRequiredPrimaryStorageUuid(self.getUuid());
                                     amsg.setRequiredHostUuid(hostUuid);
                                     amsg.setSize(image.getActualSize());
@@ -1286,14 +1265,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     bus.send(amsg, new CloudBusCallBack(trigger) {
                                         @Override
                                         public void run(MessageReply reply) {
-                                            if (reply.isSuccess()) {
-                                                s = true;
-                                                AllocatePrimaryStorageReply r = reply.castReply();
-                                                psUuid = r.getPrimaryStorageInventory().getUuid();
-                                                trigger.next();
-                                            } else {
+                                            if (!reply.isSuccess()) {
                                                 trigger.fail(reply.getError());
+                                                return;
                                             }
+                                            s = true;
+                                            AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                                            allocatedInstallUrl = ar.getAllocatedInstallUrl();
+                                            psUuid = ar.getPrimaryStorageInventory().getUuid();
+                                            trigger.next();
                                         }
                                     });
                                 }
@@ -1301,39 +1281,18 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 @Override
                                 public void rollback(FlowRollback trigger, Map data) {
                                     if (s) {
-                                        IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
-                                        imsg.setDiskSize(image.getActualSize());
-                                        imsg.setNoOverProvisioning(true);
-                                        imsg.setPrimaryStorageUuid(self.getUuid());
-                                        bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);
-                                        bus.send(imsg);
+                                        ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+                                        rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
+                                        rmsg.setDiskSize(image.getActualSize());
+                                        rmsg.setNoOverProvisioning(true);
+                                        rmsg.setPrimaryStorageUuid(self.getUuid());
+                                        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+                                        bus.send(rmsg);
                                     }
 
                                     trigger.rollback();
                                 }
                             });
-
-                            flow(new Flow() {
-                                String __name__ = "allocate-capacity-on-host";
-
-                                boolean success = false;
-
-                                @Override
-                                public void run(FlowTrigger trigger, Map data) {
-                                    reserveCapacityOnHost(hostUuid, image.getActualSize(), psUuid);
-                                    success = true;
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void rollback(FlowRollback trigger, Map data) {
-                                    if (success) {
-                                        returnStorageCapacityToHost(hostUuid, image.getActualSize());
-                                    }
-                                    trigger.rollback();
-                                }
-                            });
-
                             flow(new NoRollbackFlow() {
                                 String __name__ = "download";
 
@@ -1396,7 +1355,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     vo.setSize(actualSize);
                                     vo.setMd5sum("not calculated");
 
-                                    CacheInstallPath path = new CacheInstallPath();
+                                    LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
                                     path.installPath = primaryStorageInstallPath;
                                     path.hostUuid = hostUuid;
                                     vo.setInstallUrl(path.makeFullPath());
@@ -1463,7 +1422,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         return;
                     }
 
-                    CacheInstallPath path = new CacheInstallPath();
+                    LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
                     path.fullPath = cache.getInstallUrl();
                     final String installPath = path.disassemble().installPath;
                     CheckBitsCmd cmd = new CheckBitsCmd();
@@ -1491,15 +1450,18 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", hostUuid));
                             ImageCacheVO cvo = q.find();
 
-                            IncreasePrimaryStorageCapacityMsg rmsg = new IncreasePrimaryStorageCapacityMsg();
+                            LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
+                            path.installPath = cvo.getInstallUrl();
+                            path.hostUuid = hostUuid;
+
+                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
                             rmsg.setDiskSize(cvo.getSize());
                             rmsg.setPrimaryStorageUuid(cvo.getPrimaryStorageUuid());
+                            rmsg.setAllocatedInstallUrl(path.makeFullPath());
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());
                             bus.send(rmsg);
 
-                            returnStorageCapacityToHost(hostUuid, cvo.getSize());
                             dbf.remove(cvo);
-
                             doDownload(chain);
                         }
 
@@ -1875,7 +1837,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             return null;
         }
 
-        CacheInstallPath path = new CacheInstallPath();
+        LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
         path.fullPath = cache.getInstallUrl();
         return path.disassemble().installPath;
     }
@@ -1912,7 +1874,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 ret.setInventory(sp);
 
-                reserveCapaciryOnHostIgnoreError(hostUuid, sp.getSize(), self.getUuid());
                 completion.success(ret);
             }
         });
@@ -1963,27 +1924,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         FlowChain chain = new SimpleFlowChain();
         chain.setName("re-init-root-volume-on-primary-storage");
-        chain.then(new Flow() {
-            String __name__ = "allocate-capacity-on-host";
-
-            boolean reserved = false;
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                reserveCapacityOnHost(hostUuid, msg.getOriginSize(), self.getUuid());
-                reserved = true;
-                trigger.next();
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                if (reserved) {
-                    returnStorageCapacityToHost(hostUuid, msg.getOriginSize());
-                }
-
-                trigger.rollback();
-            }
-        }).then(new NoRollbackFlow() {
+        chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 ReinitImageCmd cmd = new ReinitImageCmd();
@@ -2771,7 +2712,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             return;
                         }
 
-                        CacheInstallPath path = new CacheInstallPath();
+                        LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
                         path.installPath = context.baseImageCachePath;
                         path.hostUuid = struct.getDestHostUuid();
                         String fullPath = path.makeFullPath();

@@ -19,7 +19,7 @@ import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.image.ImageGlobalConfig;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
+import org.zstack.storage.primary.local.LocalStorageUtils.InstallPath;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -97,7 +97,7 @@ public class TestLocalStorage51 {
         q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%%s%%", host1.getUuid()));
         ImageCacheVO c = q.find();
 
-        CacheInstallPath path = new CacheInstallPath();
+        InstallPath path = new InstallPath();
         path.fullPath = c.getInstallUrl();
         path.disassemble();
 
