@@ -1035,7 +1035,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
 
         for (Class clz : classes) {
-            while (clz != Object.class) {
+            while (clz != Message.class && clz != MessageReply.class) {
                 List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.computeIfAbsent(clz, k -> new ArrayList<>());
 
                 synchronized (beforeDeliveryMessageInterceptors) {

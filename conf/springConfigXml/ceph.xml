@@ -48,6 +48,7 @@
             <zstack:extension interface="org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension" />
             <zstack:extension interface="org.zstack.compute.vm.VmCapabilitiesExtensionPoint" />
             <zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.storage.primary.PSCapacityExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
