@@ -47,6 +47,15 @@ public class VmInstanceSpec implements Serializable {
         private String diskOfferingUuid;
         private boolean isVolumeCreated;
         private List<String> tags;
+        private String allocatedInstallUrl;
+
+        public String getAllocatedInstallUrl() {
+            return allocatedInstallUrl;
+        }
+
+        public void setAllocatedInstallUrl(String allocatedInstallUrl) {
+            this.allocatedInstallUrl = allocatedInstallUrl;
+        }
 
         public boolean isVolumeCreated() {
             return isVolumeCreated;
