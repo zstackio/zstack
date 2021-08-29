@@ -54,7 +54,7 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         HostInventory hinv = HostInventory.valueOf(hvo);
         spec.setDestHost(hinv);
 
-        AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
+        AllocatePrimaryStorageSpaceMsg msg = new AllocatePrimaryStorageSpaceMsg();
         msg.setSize(volume.getSize());
         msg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
         msg.setDiskOfferingUuid(volume.getDiskOfferingUuid());
@@ -89,7 +89,8 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply)reply;
+                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                    data.put(AllocatePrimaryStorageSpaceMsg.class, ar.getAllocatedInstallUrl());
                     data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
                     data.put(VmAllocatePrimaryStorageForAttachingDiskFlow.class, ar.getSize());
                     chain.next();
@@ -105,7 +106,8 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         Long size = (Long) data.get(VmAllocatePrimaryStorageForAttachingDiskFlow.class);
         if (size != null) {
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
-            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+            ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
+            imsg.setAllocatedInstallUrl(data.get(AllocatePrimaryStorageSpaceMsg.class).toString());
             imsg.setPrimaryStorageUuid(pri.getUuid());
             imsg.setDiskSize(size);
             bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());
