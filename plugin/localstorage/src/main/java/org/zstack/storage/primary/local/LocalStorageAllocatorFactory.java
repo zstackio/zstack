@@ -343,10 +343,6 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         String hostUuid = null;
         if (msg.getRequiredHostUuid() != null) {
             hostUuid = msg.getRequiredHostUuid();
-        } else if (msg.getRequireAllocatedInstallUrl() != null){
-            String volumeId = msg.getRequireAllocatedInstallUrl().replaceFirst("volume://%s", "");
-            LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volumeId, LocalStorageResourceRefVO.class);
-            hostUuid = localStorageResourceRefVO.getHostUuid();
         } else if (msg.getSystemTags() != null) {
             for (String stag : msg.getSystemTags()) {
                 if (LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.isMatch(stag)) {
@@ -357,6 +353,10 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                     break;
                 }
             }
+        } else if (msg.getRequireAllocatedInstallUrl() != null){
+            String volumeId = msg.getRequireAllocatedInstallUrl().replaceFirst("volume://%s", "");
+            LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volumeId, LocalStorageResourceRefVO.class);
+            hostUuid = localStorageResourceRefVO.getHostUuid();
         }
 
         if (hostUuid == null) {
@@ -373,7 +373,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     //@Transactional(propagation = Propagation.MANDATORY)
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
         String[] pair = allocatedInstallUrl.split(";");
-        String hostUuid = pair[1].replaceFirst("hostUuid://", "")
+        String hostUuid = pair[1].replaceFirst("hostUuid://", "");
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, primaryStorageVO,false);
         return allocatedInstallUrl;
