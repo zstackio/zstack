@@ -172,6 +172,7 @@ public class VolumeBase implements Volume {
         chain.setName(String.format("reset-root-volume-%s-from-image-%s", self.getUuid(), self.getRootImageUuid()));
         chain.then(new ShareFlow() {
             VolumeVO vo = self;
+            String allocatedInstallUrl;
 
             @Override
             public void setup() {
@@ -182,7 +183,8 @@ public class VolumeBase implements Volume {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                        //AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                         amsg.setRequiredPrimaryStorageUuid(self.getPrimaryStorageUuid());
                         amsg.setSize(originSize);
                         amsg.setRequiredHostUuid(msg.getHostUuid());
@@ -194,6 +196,10 @@ public class VolumeBase implements Volume {
                                 if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
                                 } else {
+
+                                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                                    allocatedInstallUrl = ar.getAllocatedInstallUrl();
+
                                     success = true;
                                     trigger.next();
                                 }
@@ -204,11 +210,18 @@ public class VolumeBase implements Volume {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (success) {
-                            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
-                            imsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
-                            imsg.setDiskSize(self.getSize());
-                            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
-                            bus.send(imsg);
+//                            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+//                            imsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+//                            imsg.setDiskSize(self.getSize());
+//                            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+//                            bus.send(imsg);
+
+                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+                            rmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                            rmsg.setDiskSize(self.getSize());
+                            rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
+                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+                            bus.send(rmsg);
                         }
 
                         trigger.rollback();
@@ -404,6 +417,7 @@ public class VolumeBase implements Volume {
         chain.then(new ShareFlow() {
             String installPath;
             String format;
+            String allocateInstallUrl;
 
             @Override
             public void setup() {
@@ -415,7 +429,9 @@ public class VolumeBase implements Volume {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                            AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+                            amsg.setSystemTags(msg.getSystemTags());
+                            amsg.setRequiredHostUuid(msg.getHostUuid());
                             amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                             amsg.setSize(self.getSize());
 
@@ -427,6 +443,8 @@ public class VolumeBase implements Volume {
                                         trigger.fail(reply.getError());
                                     } else {
                                         success = true;
+                                        AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                                        allocateInstallUrl = ar.getAllocatedInstallUrl();
                                         trigger.next();
                                     }
                                 }
@@ -436,7 +454,8 @@ public class VolumeBase implements Volume {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             if (success) {
-                                IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
+                                imsg.setAllocatedInstallUrl(allocateInstallUrl);
                                 imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                                 imsg.setDiskSize(self.getSize());
                                 bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());

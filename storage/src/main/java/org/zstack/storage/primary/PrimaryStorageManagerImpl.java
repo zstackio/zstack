@@ -2,7 +2,9 @@ package org.zstack.storage.primary;
 
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.type.TrueFalseType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.InstanceOfferingSystemTags;
@@ -330,8 +332,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void handleLocalMessage(Message msg) {
-        if (msg instanceof AllocatePrimaryStorageMsg) {
+        if (msg instanceof AllocatePrimaryStorageSpaceMsg) {
+            handle((AllocatePrimaryStorageSpaceMsg) msg);
+        } else if (msg instanceof AllocatePrimaryStorageMsg) {
             handle((AllocatePrimaryStorageMsg) msg);
+        } else if (msg instanceof ReleasePrimaryStorageSpaceMsg) {
+            handle((ReleasePrimaryStorageSpaceMsg) msg);
         } else if (msg instanceof IncreasePrimaryStorageCapacityMsg) {
             handle((IncreasePrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof DecreasePrimaryStorageCapacityMsg) {
@@ -388,11 +394,270 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
     }
 
+    private void handle(ReleasePrimaryStorageSpaceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                releasePrimaryStorageSpaceMsg(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "release-primary-store-space";
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return PrimaryStorageGlobalConfig.ALLOCATE_PRIMARYSTORAGE_CONCURRENCY.value(Integer.class);
+            }
+        });
+    }
+
+    @Transactional
+    private void releasePrimaryStorageSpaceMsg(ReleasePrimaryStorageSpaceMsg msg, NoErrorCompletion completion) {
+        long diskSize = msg.isNoOverProvisioning() ? msg.getDiskSize() : ratioMgr.calculateByRatio(msg.getPrimaryStorageUuid(), msg.getDiskSize());
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(msg.getPrimaryStorageUuid());
+        if (updater.increaseAvailableCapacity(diskSize)) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("Successfully return %s bytes to primary storage[uuid:%s]",
+                        diskSize, msg.getPrimaryStorageUuid()));
+            }
+        }
+
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+        PSCapacityExtensionPoint PSReserveCapacityExt = pluginRgty.getExtensionFromMap(primaryStorageVO.getType(), PSCapacityExtensionPoint.class);
+        if (PSReserveCapacityExt != null) {
+            PSReserveCapacityExt.releaseCapacity(msg.getAllocatedInstallUrl(), msg.getDiskSize(), primaryStorageVO.getUuid());
+        }
+        completion.done();
+    }
+
+    private void handle(AllocatePrimaryStorageSpaceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                allocatePrimaryStoreSpace(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "allocate-primary-store-space";
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return PrimaryStorageGlobalConfig.ALLOCATE_PRIMARYSTORAGE_CONCURRENCY.value(Integer.class);
+            }
+        });
+    }
+
+    private void allocatePrimaryStoreSpace(AllocatePrimaryStorageSpaceMsg msg, NoErrorCompletion completion) {
+        AllocatePrimaryStorageSpaceReply reply = new AllocatePrimaryStorageSpaceReply(null);
+
+        if (msg.getRequiredInstallUri() != null && msg.isForce()) {
+            PrimaryStorageVO psVO = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, msg.getRequiredPrimaryStorageUuid()).find();
+            PrimaryStorageInventory psInv = PrimaryStorageInventory.valueOf(psVO);
+            String allocatedInstallUrl = reserveSpaceForceIsTrue(psInv, msg.getSize(), msg);
+            reply.setAllocatedInstallUrl(allocatedInstallUrl);
+            reply.setPrimaryStorageInventory(psInv);
+            reply.setSize(msg.getSize());
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
+
+        String allocatorStrategyType = getAllocateStrategyFrom(msg);
+
+        PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAllocatorStrategyFactory(
+                PrimaryStorageAllocatorStrategyType.valueOf(allocatorStrategyType));
+        PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
+
+        PrimaryStorageAllocationSpec spec = buildAllocateSpecFrom(msg);
+        List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
+
+        if (msg.isDryRun()) {
+            // check capacity has been done before
+            AllocatePrimaryStorageDryRunReply r = new AllocatePrimaryStorageDryRunReply();
+            r.setPrimaryStorageInventories(ret);
+            bus.reply(msg, r);
+            completion.done();
+            return;
+        }
+        Iterator<PrimaryStorageInventory> it = ret.iterator();
+        List<String> errs = new ArrayList<>();
+        PrimaryStorageInventory target = null;
+        while (it.hasNext()) {
+            PrimaryStorageInventory psInv = it.next();
+
+            if (!physicalCapacityMgr.checkCapacityByRatio(psInv.getUuid(), psInv.getTotalPhysicalCapacity(), psInv.getAvailablePhysicalCapacity())) {
+                errs.add(String.format("primary storage[uuid:%s]'s physical capacity usage has exceeded the threshold[%s]",
+                        psInv.getUuid(), physicalCapacityMgr.getRatio(psInv.getUuid())));
+                continue;
+            }
+
+            long requiredSize = spec.getSize();
+            if (!msg.isNoOverProvisioning()) {
+                requiredSize = ratioMgr.calculateByRatio(psInv.getUuid(), requiredSize);
+            }
+
+            String allocatedInstallUrl;
+            if ((allocatedInstallUrl = reserveSpace(psInv, requiredSize, msg)) != null) {
+                target = psInv;
+                reply.setAllocatedInstallUrl(allocatedInstallUrl);
+                break;
+            } else {
+                errs.add(String.format("unable to reserve capacity on the primary storage[uuid:%s], it has no space", psInv.getUuid()));
+                logger.debug(String.format("concurrent reservation on the primary storage[uuid:%s], try next one", psInv.getUuid()));
+            }
+        }
+
+        if (target == null) {
+            throw new OperationFailureException(operr("cannot find any qualified primary storage, errors are %s", errs));
+        }
+
+        reply.setPrimaryStorageInventory(target);
+        reply.setSize(msg.getSize());
+        bus.reply(msg, reply);
+        completion.done();
+    }
+
+    private String getAllocateStrategyFrom(AllocatePrimaryStorageMsg msg) {
+        String allocatorStrategyType = null;
+
+        for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
+            allocatorStrategyType = ext.getPrimaryStorageAllocatorStrategyName(msg);
+            if (allocatorStrategyType != null) {
+                break;
+            }
+        }
+
+        if (allocatorStrategyType == null) {
+            allocatorStrategyType = msg.getAllocationStrategy() == null ?
+                    PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE
+                    : msg.getAllocationStrategy();
+        }
+
+        if (msg.getExcludeAllocatorStrategies() != null && msg.getExcludeAllocatorStrategies().contains(allocatorStrategyType)) {
+            throw new CloudRuntimeException(
+                    String.format("%s is set as excluded, there is no available primary storage allocator strategy",
+                            allocatorStrategyType));
+        }
+        return allocatorStrategyType;
+    }
+
+    private PrimaryStorageAllocationSpec buildAllocateSpecFrom(AllocatePrimaryStorageMsg msg) {
+        PrimaryStorageAllocationSpec spec = new PrimaryStorageAllocationSpec();
+        spec.setPossiblePrimaryStorageTypes(msg.getPossiblePrimaryStorageTypes());
+        spec.setExcludePrimaryStorageTypes(msg.getExcludePrimaryStorageTypes());
+        spec.setImageUuid(msg.getImageUuid());
+        spec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
+        spec.setVmInstanceUuid(msg.getVmInstanceUuid());
+        spec.setPurpose(msg.getPurpose());
+        spec.setSize(msg.getSize());
+        spec.setTotalSize(msg.getTotalSize());
+        spec.setNoOverProvisioning(msg.isNoOverProvisioning());
+        spec.setRequiredClusterUuids(msg.getRequiredClusterUuids());
+        spec.setRequiredHostUuid(msg.getRequiredHostUuid());
+        spec.setRequiredZoneUuid(msg.getRequiredZoneUuid());
+        spec.setBackupStorageUuid(msg.getBackupStorageUuid());
+        spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
+        spec.setTags(msg.getTags());
+        spec.setAllocationMessage(msg);
+        spec.setAvoidPrimaryStorageUuids(msg.getExcludePrimaryStorageUuids());
+        return spec;
+    }
+
+    private String reserveSpace(final PrimaryStorageInventory inv, final long size, AllocatePrimaryStorageSpaceMsg msg) {
+        final String[] installUrl = new String[1];
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(inv.getUuid());
+        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                long avail = cap.getAvailableCapacity() - size;
+                if (avail < 0) {
+                    logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed," +
+                            " no available capacity on it", inv.getUuid()));
+                    return null;
+                }
+
+                long origin = cap.getAvailableCapacity();
+                cap.setAvailableCapacity(avail);
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s," +
+                            " available before:%s, available now:%s]", size, inv.getUuid(), origin, avail));
+                }
+
+                PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(), PSCapacityExtensionPoint.class);
+                installUrl[0] = inv.getUrl();
+                if (PSCapacityExt != null) {
+                    installUrl[0] = PSCapacityExt.reserveCapacity(PSCapacityExt.buildAllocatedInstallUrl(msg, inv), size, inv.getUuid(), msg.isForce());
+                }
+
+                return cap;
+            }
+        });
+
+        return installUrl[0];
+    }
+
+    private String reserveSpaceForceIsTrue(final PrimaryStorageInventory inv, final long size, AllocatePrimaryStorageSpaceMsg msg) {
+        final String[] installUrl = new String[1];
+        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(inv.getUuid());
+        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+            @Override
+            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                long avail = cap.getAvailableCapacity() - size;
+                if (avail < 0 && msg.isForce()) {
+                    avail = 0;
+                }
+
+                long origin = cap.getAvailableCapacity();
+                cap.setAvailableCapacity(avail);
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s," +
+                            " available before:%s, available now:%s]", size, inv.getUuid(), origin, avail));
+                }
+
+                PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(), PSCapacityExtensionPoint.class);
+                installUrl[0] = inv.getUrl();
+                if (PSCapacityExt != null) {
+                    installUrl[0] = PSCapacityExt.reserveCapacity(PSCapacityExt.buildAllocatedInstallUrl(msg, inv), size, inv.getUuid(), msg.isForce());
+                }
+
+                return cap;
+            }
+        });
+
+        return installUrl[0];
+    }
+
     /**
      * Supported allocation strategy：
      * DefaultPrimaryStorageAllocationStrategy (only work for non-local primary storage)
      * LocalPrimaryStorageStrategy (only work for local primary storage)
-     *
+     * <p>
      * Note：
      * If the allocation strategy is not specified
      * If the cluster is mounted with local storage, the default is LocalPrimaryStorageStrategy。
@@ -430,48 +695,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private void allocatePrimaryStore(AllocatePrimaryStorageMsg msg, NoErrorCompletion completion) {
         AllocatePrimaryStorageReply reply = new AllocatePrimaryStorageReply(null);
 
-        String allocatorStrategyType = null;
-        for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
-            allocatorStrategyType = ext.getPrimaryStorageAllocatorStrategyName(msg);
-            if (allocatorStrategyType != null) {
-                break;
-            }
-        }
-
-        if (allocatorStrategyType == null) {
-            allocatorStrategyType = msg.getAllocationStrategy() == null ?
-                    PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE
-                    : msg.getAllocationStrategy();
-        }
-
-        if (msg.getExcludeAllocatorStrategies() != null && msg.getExcludeAllocatorStrategies().contains(allocatorStrategyType)) {
-            throw new CloudRuntimeException(
-                    String.format("%s is set as excluded, there is no available primary storage allocator strategy",
-                            allocatorStrategyType));
-        }
+        String allocatorStrategyType = getAllocateStrategyFrom(msg);
 
         PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAllocatorStrategyFactory(
                 PrimaryStorageAllocatorStrategyType.valueOf(allocatorStrategyType));
         PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
-        //
-        PrimaryStorageAllocationSpec spec = new PrimaryStorageAllocationSpec();
-        spec.setPossiblePrimaryStorageTypes(msg.getPossiblePrimaryStorageTypes());
-        spec.setExcludePrimaryStorageTypes(msg.getExcludePrimaryStorageTypes());
-        spec.setImageUuid(msg.getImageUuid());
-        spec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
-        spec.setVmInstanceUuid(msg.getVmInstanceUuid());
-        spec.setPurpose(msg.getPurpose());
-        spec.setSize(msg.getSize());
-        spec.setTotalSize(msg.getTotalSize());
-        spec.setNoOverProvisioning(msg.isNoOverProvisioning());
-        spec.setRequiredClusterUuids(msg.getRequiredClusterUuids());
-        spec.setRequiredHostUuid(msg.getRequiredHostUuid());
-        spec.setRequiredZoneUuid(msg.getRequiredZoneUuid());
-        spec.setBackupStorageUuid(msg.getBackupStorageUuid());
-        spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
-        spec.setTags(msg.getTags());
-        spec.setAllocationMessage(msg);
-        spec.setAvoidPrimaryStorageUuids(msg.getExcludePrimaryStorageUuids());
+
+        PrimaryStorageAllocationSpec spec = buildAllocateSpecFrom(msg);
         List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
 
         if (msg.isDryRun()) {
@@ -549,9 +779,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         return bus.makeLocalServiceId(PrimaryStorageConstant.SERVICE_ID);
     }
 
-
     @Override
     public boolean start() {
+        pluginRgty.saveExtensionAsMap(PSCapacityExtensionPoint.class, new Function<Object, PSCapacityExtensionPoint>() {
+            @Override
+            public Object call(PSCapacityExtensionPoint arg) {
+                return arg.getPrimaryStorageType().toString();
+            }
+        });
         populateExtensions();
         installResourceConfigValidator();
         installGlobalConfigValidator();

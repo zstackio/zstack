@@ -633,6 +633,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
+
                 flow(new Flow() {
                     String __name__ = "reserve-capacity-on-dest-host";
                     boolean success = false;
@@ -1270,30 +1271,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 });
 
-                flow(new Flow() {
-                    String __name__ = "reserve-capacity-on-host";
-
-                    Long size;
-                    boolean success = false;
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        size = reply.getSize();
-                        reserveCapacityOnHost(hostUuid, size, self.getUuid());
-                        success = true;
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (success) {
-                            returnStorageCapacityToHost(hostUuid, size);
-                        }
-
-                        trigger.rollback();
-                    }
-                });
-
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -1339,6 +1316,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         String hostUuid = getHostUuidByResourceUuid(msg.getSnapshot().getUuid());
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+
         bkd.handle(msg, hostUuid, new ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply>(msg) {
             @Override
             public void success(RevertVolumeFromSnapshotOnPrimaryStorageReply returnValue) {
@@ -1906,20 +1884,24 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @ExceptionSafe
+    @Deprecated
     protected void reserveCapaciryOnHostIgnoreError(String hostUuid, long size, String psUuid) {
         new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, self, true);
     }
 
+    @Deprecated
     protected void reserveCapacityOnHost(String hostUuid, long size, String psUuid) {
         new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, self, false);
     }
 
     @Transactional
+    @Deprecated
     protected void returnStorageCapacityToHost(String hostUuid, long size) {
         new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, self);
     }
 
     @Transactional
+    @Deprecated
     protected void returnStorageCapacityToHostByResourceUuid(String resUuid) {
         String sql = "select href, rref" +
                 " from LocalStorageHostRefVO href, LocalStorageResourceRefVO rref" +
@@ -1978,28 +1960,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
-                flow(new Flow() {
-                    String __name__ = "allocate-capacity-on-host";
-
-                    long requiredSize = ratioMgr.calculateByRatio(self.getUuid(), msg.getVolume().getSize());
-                    long reservedSize;
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(finalHostUuid, requiredSize, self.getUuid());
-                        reservedSize = requiredSize;
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (reservedSize != 0) {
-                            returnStorageCapacityToHost(finalHostUuid, reservedSize);
-                        }
-                        trigger.rollback();
-                    }
-                });
-
                 flow(new NoRollbackFlow() {
                     String __name__ = "instantiate-volume-on-host";
 
@@ -2215,6 +2175,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
+
                 flow(new Flow() {
                     String __name__ = "allocate-capacity-on-host";
 
