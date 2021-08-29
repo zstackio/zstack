@@ -2,6 +2,7 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.Message;
 
+@Deprecated
 public class IncreasePrimaryStorageCapacityMsg extends Message {
     private String primaryStorageUuid;
     private long diskSize;

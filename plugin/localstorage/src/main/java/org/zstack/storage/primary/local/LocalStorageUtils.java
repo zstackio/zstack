@@ -16,6 +16,7 @@ import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -199,6 +200,28 @@ public class LocalStorageUtils {
                             "available: %s --> %s\n",
                     caller.getFileName(), caller.getMethodName(), caller.getLineNumber(), psUuid, hostUuid,
                     before, after));
+        }
+    }
+
+    public static class installPath {
+        public String fullPath;
+        public String hostUuid;
+        public String installPath;
+
+        public installPath disassemble() {
+            DebugUtils.Assert(fullPath != null, "fullPath cannot be null");
+            String[] pair = fullPath.split(";");
+            DebugUtils.Assert(pair.length == 2, String.format("invalid cache path %s", fullPath));
+            installPath = pair[0].replaceFirst("file://", "");
+            hostUuid = pair[1].replaceFirst("hostUuid://", "");
+            return this;
+        }
+
+        public String makeFullPath() {
+            DebugUtils.Assert(installPath != null, "installPath cannot be null");
+            DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
+            fullPath = String.format("file://%s;hostUuid://%s", installPath, hostUuid);
+            return fullPath;
         }
     }
 }

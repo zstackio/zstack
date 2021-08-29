@@ -51,7 +51,7 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
-        final List<AllocatePrimaryStorageMsg> msgs = new ArrayList<>();
+        final List<AllocatePrimaryStorageSpaceMsg> msgs = new ArrayList<>();
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         HostInventory destHost = spec.getDestHost();
         final ImageInventory iminv = spec.getImageSpec().getInventory();
@@ -72,7 +72,7 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
                 continue;
             }
 
-            AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
+            AllocatePrimaryStorageSpaceMsg rmsg = new AllocatePrimaryStorageSpaceMsg();
             rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
             rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
             if (spec.getImageSpec() != null) {
@@ -90,16 +90,16 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
             msgs.add(rmsg);
         }
 
-        new AsyncLoop<AllocatePrimaryStorageMsg>(trigger) {
+        new AsyncLoop<AllocatePrimaryStorageSpaceMsg>(trigger) {
             boolean isAllocateSuccess = false;
 
             @Override
-            protected Collection<AllocatePrimaryStorageMsg> collectionForLoop() {
+            protected Collection<AllocatePrimaryStorageSpaceMsg> collectionForLoop() {
                 return msgs;
             }
 
             @Override
-            protected void run(AllocatePrimaryStorageMsg msg, Completion completion) {
+            protected void run(AllocatePrimaryStorageSpaceMsg msg, Completion completion) {
                 if(isAllocateSuccess){
                     completion.success();
                     return;
@@ -122,9 +122,10 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
                         isAllocateSuccess = true;
 
                         VolumeSpec volumeSpec = new VolumeSpec();
-                        AllocatePrimaryStorageReply ar = reply.castReply();
+                        AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                        volumeSpec.setAllocatedInstallUrl(ar.getAllocatedInstallUrl());
                         volumeSpec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
-                        volumeSpec.setSize(ar.getSize());
+                        volumeSpec.setSize(iminv.getSize());
                         volumeSpec.setType(msg.getImageUuid() != null ? VolumeType.Root.toString() : VolumeType.Data.toString());
                         spec.getVolumeSpecs().add(volumeSpec);
 
@@ -154,7 +155,8 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
                 continue;
             }
 
-            IncreasePrimaryStorageCapacityMsg msg = new IncreasePrimaryStorageCapacityMsg();
+            ReleasePrimaryStorageSpaceMsg msg = new ReleasePrimaryStorageSpaceMsg();
+            msg.setAllocatedInstallUrl(vspec.getAllocatedInstallUrl());
             msg.setDiskSize(vspec.getSize());
             msg.setPrimaryStorageUuid(vspec.getPrimaryStorageInventory().getUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, vspec.getPrimaryStorageInventory().getUuid());
