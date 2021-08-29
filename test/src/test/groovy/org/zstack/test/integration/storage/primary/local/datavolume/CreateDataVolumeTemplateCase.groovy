@@ -9,6 +9,7 @@ import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImageVO
 import org.zstack.header.storage.backup.BackupStorageStateEvent
 import org.zstack.header.storage.primary.AllocatePrimaryStorageMsg
+import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceMsg
 import org.zstack.header.storage.primary.DownloadDataVolumeToPrimaryStorageMsg
 import org.zstack.header.storage.primary.GetInstallPathForDataVolumeDownloadMsg
 import org.zstack.header.volume.VolumeEO
@@ -286,7 +287,7 @@ class CreateDataVolumeTemplateCase extends SubCase {
             stateEvent = BackupStorageStateEvent.enable.toString()
         }
 
-        env.message(AllocatePrimaryStorageMsg.class) { AllocatePrimaryStorageMsg msg, CloudBus bus ->
+        env.message(AllocatePrimaryStorageSpaceMsg.class) { AllocatePrimaryStorageSpaceMsg msg, CloudBus bus ->
             bus.replyErrorByMessageType(msg, "on purpose")
         }
 

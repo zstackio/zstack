@@ -30,6 +30,8 @@ import org.zstack.header.host.*;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
@@ -310,6 +312,35 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 backupStorageMediatorMap.put(key, m);
             }
         }
+
+        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            public void beforeDeliveryMessage(Message msg) {
+                ResizeVolumeOnHypervisorReply rmsg = (ResizeVolumeOnHypervisorReply) msg;
+
+                if (rmsg.getError() != null || rmsg.getVolume() == null) {
+                    return;
+                }
+
+                VolumeInventory volume = rmsg.getVolume();
+
+                String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
+                        .eq(PrimaryStorageVO_.uuid, volume.getPrimaryStorageUuid())
+                        .findValue();
+                final boolean isLocalPS = LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(psType);
+
+                if (isLocalPS) {
+                    String hostUuid = Q.New(VmInstanceVO.class).select(VmInstanceVO_.hostUuid)
+                            .eq(VmInstanceVO_.uuid, volume.getVmInstanceUuid()).findValue();
+                    Long size = volume.getSize();
+
+                    SQL.New(LocalStorageResourceRefVO.class)
+                            .condAnd(LocalStorageResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, volume.getUuid())
+                            .condAnd(LocalStorageResourceRefVO_.hostUuid, SimpleQuery.Op.EQ, hostUuid)
+                            .set(LocalStorageResourceRefVO_.size, size).update();
+                }
+            }
+        }, ResizeVolumeOnHypervisorReply.class);
 
         return true;
     }
