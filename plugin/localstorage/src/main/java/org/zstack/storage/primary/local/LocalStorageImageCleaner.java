@@ -27,7 +27,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.ImageCacheCleaner;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
+import org.zstack.storage.primary.local.LocalStorageUtils.InstallPath;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -85,7 +85,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
 
         Map<String, List<ImageCacheVO>> refMap = new HashMap<String, List<ImageCacheVO>>();
         for (ImageCacheVO c : deleted) {
-            CacheInstallPath p = new CacheInstallPath();
+            InstallPath p = new InstallPath();
             p.fullPath = c.getInstallUrl();
             p.disassemble();
             String hostUuid = p.hostUuid;
@@ -183,7 +183,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
                 return;
             }
 
-            CacheInstallPath p = new CacheInstallPath();
+            InstallPath p = new InstallPath();
             p.fullPath = vo.getInstallUrl();
             p.disassemble();
 

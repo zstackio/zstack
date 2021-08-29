@@ -35,7 +35,10 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
@@ -46,7 +49,6 @@ import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
-import org.zstack.storage.snapshot.VolumeSnapshot;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupCreationValidator;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -62,7 +64,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created with IntelliJ IDEA.
@@ -179,10 +181,11 @@ public class VolumeBase implements Volume {
                     String __name__ = "allocate-primary-storage";
 
                     boolean success;
+                    String allocatedInstallUrl;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                         amsg.setRequiredPrimaryStorageUuid(self.getPrimaryStorageUuid());
                         amsg.setSize(originSize);
                         amsg.setRequiredHostUuid(msg.getHostUuid());
@@ -193,10 +196,12 @@ public class VolumeBase implements Volume {
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
-                                } else {
-                                    success = true;
-                                    trigger.next();
+                                    return;
                                 }
+                                AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                                allocatedInstallUrl = ar.getAllocatedInstallUrl();
+                                success = true;
+                                trigger.next();
                             }
                         });
                     }
@@ -204,13 +209,13 @@ public class VolumeBase implements Volume {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (success) {
-                            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
-                            imsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
-                            imsg.setDiskSize(self.getSize());
-                            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
-                            bus.send(imsg);
+                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+                            rmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                            rmsg.setDiskSize(originSize);
+                            rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
+                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+                            bus.send(rmsg);
                         }
-
                         trigger.rollback();
                     }
                 });
@@ -412,10 +417,13 @@ public class VolumeBase implements Volume {
                         String __name__ = "allocate-primary-storage";
 
                         boolean success;
+                        String allocateInstallUrl;
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                            AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+                            amsg.setSystemTags(msg.getSystemTags());
+                            amsg.setRequiredHostUuid(msg.getHostUuid());
                             amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                             amsg.setSize(self.getSize());
 
@@ -425,10 +433,12 @@ public class VolumeBase implements Volume {
                                 public void run(MessageReply reply) {
                                     if (!reply.isSuccess()) {
                                         trigger.fail(reply.getError());
-                                    } else {
-                                        success = true;
-                                        trigger.next();
+                                        return;
                                     }
+                                    success = true;
+                                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                                    allocateInstallUrl = ar.getAllocatedInstallUrl();
+                                    trigger.next();
                                 }
                             });
                         }
@@ -436,11 +446,12 @@ public class VolumeBase implements Volume {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             if (success) {
-                                IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
-                                imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-                                imsg.setDiskSize(self.getSize());
-                                bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
-                                bus.send(imsg);
+                                ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+                                rmsg.setAllocatedInstallUrl(allocateInstallUrl);
+                                rmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                                rmsg.setDiskSize(self.getSize());
+                                bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                                bus.send(rmsg);
                             }
 
                             trigger.rollback();
