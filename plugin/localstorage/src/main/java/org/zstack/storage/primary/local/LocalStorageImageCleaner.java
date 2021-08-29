@@ -26,7 +26,7 @@ import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoin
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.ImageCacheCleaner;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
+import org.zstack.storage.primary.local.LocalStorageUtils.CacheInstallPath;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;

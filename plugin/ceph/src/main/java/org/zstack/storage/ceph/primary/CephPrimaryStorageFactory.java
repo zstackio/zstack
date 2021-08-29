@@ -4,6 +4,7 @@ import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.header.vm.VmCapabilities;
@@ -79,7 +80,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component, PostMarkRootVolumeAsSnapshotExtension,
         BeforeTakeLiveSnapshotsOnVolumes, VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint,
         InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator, MarkRootVolumeAsSnapshotExtension,
-        VmCapabilitiesExtensionPoint, PreVmInstantiateResourceExtensionPoint {
+        VmCapabilitiesExtensionPoint, PreVmInstantiateResourceExtensionPoint, PSCapacityExtensionPoint {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -1203,5 +1204,22 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Override
     public void preReleaseVmResource(VmInstanceSpec spec, Completion completion) {
         completion.success();
+    }
+
+    @Override
+    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
+        return psInv.getUrl();
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid) {
+        return allocatedInstallUrl;
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
+        return allocatedInstallUrl;
     }
 }

@@ -25,7 +25,7 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.*;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
+import org.zstack.storage.primary.local.LocalStorageUtils.CacheInstallPath;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;

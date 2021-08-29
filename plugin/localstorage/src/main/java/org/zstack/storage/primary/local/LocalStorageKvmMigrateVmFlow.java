@@ -45,6 +45,7 @@ import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostVO;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.*;
+import org.zstack.storage.primary.local.LocalStorageUtils.CacheInstallPath;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;

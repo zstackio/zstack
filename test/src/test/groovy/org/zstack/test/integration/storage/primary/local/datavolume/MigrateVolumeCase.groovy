@@ -26,6 +26,7 @@ import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow
 import org.zstack.storage.primary.local.LocalStoragePrimaryStorageGlobalConfig
+import org.zstack.storage.primary.local.LocalStorageUtils.CacheInstallPath;
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.*
@@ -139,7 +140,7 @@ class MigrateVolumeCase extends SubCase {
 
         env.simulator(LocalStorageKvmBackend.GET_BASE_IMAGE_PATH) {
             def rsp = new LocalStorageKvmBackend.GetVolumeBaseImagePathRsp()
-            LocalStorageKvmBackend.CacheInstallPath path = new LocalStorageKvmBackend.CacheInstallPath();
+            CacheInstallPath path = new CacheInstallPath();
             path.fullPath = originCache.installUrl
             path.disassemble()
             rsp.path = path.installPath
@@ -389,7 +390,7 @@ class MigrateVolumeCase extends SubCase {
     private void mockImageCacheOnHost(String hostUuid) {
         ImageCacheVO mock = ObjectUtils.newAndCopy(originCache, ImageCacheVO.class)
 
-        LocalStorageKvmBackend.CacheInstallPath path = new LocalStorageKvmBackend.CacheInstallPath();
+        CacheInstallPath path = new CacheInstallPath();
         path.fullPath = mock.installUrl
         path.disassemble()
         path.hostUuid = hostUuid
@@ -403,7 +404,7 @@ class MigrateVolumeCase extends SubCase {
         ImageCacheShadowVO mock = new ImageCacheShadowVO()
         BeanUtils.copyProperties(originCache, mock)
 
-        LocalStorageKvmBackend.CacheInstallPath path = new LocalStorageKvmBackend.CacheInstallPath();
+        CacheInstallPath path = new CacheInstallPath();
         path.fullPath = mock.installUrl
         path.disassemble()
         path.hostUuid = hostUuid

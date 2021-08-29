@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.nfs;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmExpungeRootVolumeValidator;
 import org.zstack.core.cloudbus.CloudBus;
