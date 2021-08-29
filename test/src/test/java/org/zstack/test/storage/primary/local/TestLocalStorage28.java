@@ -25,7 +25,7 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.MigrateVmCmd;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.storage.primary.local.*;
-import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
+import org.zstack.storage.primary.local.LocalStorageUtils.installPath;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CreateEmptyVolumeCmd;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.DeleteBitsCmd;
 import org.zstack.storage.primary.local.LocalStorageSimulatorConfig.Capacity;
@@ -120,7 +120,7 @@ public class TestLocalStorage28 {
         }
 
 
-        CacheInstallPath cp = new CacheInstallPath();
+        installPath cp = new installPath();
         cp.fullPath = cacheVO.getInstallUrl();
         cp.disassemble();
 
