@@ -482,7 +482,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                 return;
                             }
 
-                            CacheInstallPath path = new CacheInstallPath();
+                            LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
                             path.installPath = backingImage.path;
                             path.hostUuid = dstHostUuid;
                             String fullPath = path.makeFullPath();
