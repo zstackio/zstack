@@ -1978,28 +1978,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
-                flow(new Flow() {
-                    String __name__ = "allocate-capacity-on-host";
-
-                    long requiredSize = ratioMgr.calculateByRatio(self.getUuid(), msg.getVolume().getSize());
-                    long reservedSize;
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(finalHostUuid, requiredSize, self.getUuid());
-                        reservedSize = requiredSize;
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (reservedSize != 0) {
-                            returnStorageCapacityToHost(finalHostUuid, reservedSize);
-                        }
-                        trigger.rollback();
-                    }
-                });
-
                 flow(new NoRollbackFlow() {
                     String __name__ = "instantiate-volume-on-host";
 
