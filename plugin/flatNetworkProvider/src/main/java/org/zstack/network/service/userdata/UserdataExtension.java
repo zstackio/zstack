@@ -145,16 +145,6 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
         struct.setParametersFromVmSpec(servedVm);
         struct.setUserdataList(servedVm.getUserdataList());
 
-        // TODO: vDPA do not support Userdata service yet;
-        List<VmNicInventory> tmp = new ArrayList<>();
-        for (VmNicInventory vNic : struct.getVmNics()) {
-            if (vNic.getType().equals("vDPA")) {
-                continue;
-            }
-            tmp.add(vNic);
-        }
-        struct.setVmNics(tmp);
-
         UserdataBackend bkd = getUserdataBackend(provider.getType());
         bkd.applyUserdata(struct, completion);
     }
