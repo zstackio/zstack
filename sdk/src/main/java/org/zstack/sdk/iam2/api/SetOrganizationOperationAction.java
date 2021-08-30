@@ -31,9 +31,6 @@ public class SetOrganizationOperationAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String virtualIDUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String roleUuid;
-
     @Param(required = false)
     public java.util.List systemTags;
 
