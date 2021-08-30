@@ -25,7 +25,7 @@ public class UnmountVmInstanceRecoveryPointAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false)
     public java.lang.String vmUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
