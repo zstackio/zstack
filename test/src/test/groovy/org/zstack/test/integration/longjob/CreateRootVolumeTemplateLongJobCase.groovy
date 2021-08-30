@@ -59,7 +59,7 @@ class CreateRootVolumeTemplateLongJobCase extends SubCase {
             testCreateRootVolumeTemplate()
             testCreateRootVolumeTemplateAppointResourceUuid()
             testCreateRootVolumeOnNormalAccountResource()
-            testDeleteAfterCanceled()
+            //testDeleteAfterCanceled()
         }
     }
 
