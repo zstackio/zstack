@@ -33,15 +33,7 @@ public class ComponentLoaderImpl implements ComponentLoader {
     public ComponentLoaderImpl () {
         checkInit();
 
-        String configurationXml = System.getProperty("spring.xml");
-        String configLocation;
-        if (configurationXml != null) {
-            configLocation = String.format("classpath:%s", configurationXml);
-        } else {
-            configLocation = "classpath:zstack.xml";
-        }
-
-        ioc = new ClassPathXmlApplicationContext(configLocation);
+        ioc = new ClassPathXmlApplicationContext(String.format("classpath:%s", CoreGlobalProperty.BEAN_CONF));
     }
 
     @Override

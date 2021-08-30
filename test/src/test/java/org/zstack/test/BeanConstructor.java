@@ -1,5 +1,6 @@
 package org.zstack.test;
 
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -111,7 +112,7 @@ public class BeanConstructor {
     public ComponentLoader build() {
         excludeXmls();
         generateSpringConfig();
-        System.setProperty("spring.xml", SPRING_XML_NAME);
+        CoreGlobalProperty.BEAN_CONF = SPRING_XML_NAME;
         loader = Platform.getComponentLoader();
         return loader;
     }

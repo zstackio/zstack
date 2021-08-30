@@ -14,6 +14,8 @@ public class CoreGlobalProperty {
     public static boolean UNIT_TEST_ON;
     @GlobalProperty(name = "beanRefContextConf", defaultValue = "beanRefContext.xml")
     public static String BEAN_REF_CONTEXT_CONF;
+    @GlobalProperty(name = "beanConf", defaultValue = "zstack.xml")
+    public static String BEAN_CONF;
     @GlobalProperty(name = "vmTracerOn", defaultValue = "true")
     public static boolean VM_TRACER_ON;
     @GlobalProperty(name = "profiler.workflow", defaultValue = "false")
