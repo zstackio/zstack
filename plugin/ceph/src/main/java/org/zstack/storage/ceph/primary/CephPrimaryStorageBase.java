@@ -110,8 +110,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public CephPrimaryStorageBase() {
     }
 
-    private String queueId = "Ceph-" + self.getUuid();
-
     class ReconnectMonLock {
         AtomicBoolean hold = new AtomicBoolean(false);
 
@@ -126,9 +124,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     ReconnectMonLock reconnectMonLock = new ReconnectMonLock();
 
+    private String queueId = "Ceph-" + self.getUuid();
+
     protected RunInQueue inQueue() {
         return new RunInQueue(queueId, thdf, getCephSyncLevel());
     }
+
     protected int getCephSyncLevel() {
         return CephGlobalConfig.CEPH_SYNC_LEVEL.value(Integer.class);
     }
@@ -2377,6 +2378,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final DeleteVolumeOnPrimaryStorageMsg msg) {
+        inQueue().name(String.format("Delete-Volume-On-PrimaryStorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> deleteVolumeOnPrimaryStorageMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    protected void deleteVolumeOnPrimaryStorageMsg(final DeleteVolumeOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         DeleteCmd cmd = new DeleteCmd();
         cmd.installPath = msg.getVolume().getInstallPath();
 
@@ -2392,11 +2404,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 gc.submit(CephGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
 
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void success(DeleteRsp ret) {
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -2422,7 +2436,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
+    protected void handle(DeleteBitsOnPrimaryStorageMsg msg) {
+        inQueue().name(String.format("Delete-Bits-On-PrimaryStorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> DeleteBitsOnPrimaryStorageMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    protected void DeleteBitsOnPrimaryStorageMsg(final DeleteBitsOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         DeleteCmd cmd = new DeleteCmd();
         cmd.installPath = msg.getInstallPath();
 
@@ -2433,11 +2458,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             public void fail(ErrorCode err) {
                 reply.setError(err);
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void success(DeleteRsp ret) {
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -2698,6 +2725,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(CancelJobOnPrimaryStorageMsg msg) {
+        inQueue().name(String.format("Cancel-Job-On-PrimaryStorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> cancelJobOnPrimaryStorageMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    protected void cancelJobOnPrimaryStorageMsg(CancelJobOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final CancelJobOnPrimaryStorageReply reply = new CancelJobOnPrimaryStorageReply();
         CancelCmd cmd = new CancelCmd();
         cmd.setCancellationApiId(msg.getCancellationApiId());
@@ -2705,18 +2743,31 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success(AgentResponse rsp) {
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         }).specifyOrder(msg.getCancellationApiId()).tryNext().call();
     }
 
     @Override
-    protected void handle(final DownloadDataVolumeToPrimaryStorageMsg msg) {
+    protected void handle(DownloadDataVolumeToPrimaryStorageMsg msg) {
+        inQueue().name(String.format("Download-Data-Volume-To-PrimaryStorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> downloadDataVolumeToPrimaryStorageMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    protected void downloadDataVolumeToPrimaryStorageMsg(final DownloadDataVolumeToPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final DownloadDataVolumeToPrimaryStorageReply reply = new DownloadDataVolumeToPrimaryStorageReply();
 
         BackupStorageMediator mediator = getBackupStorageMediator(msg.getBackupStorageRef().getBackupStorageUuid());
@@ -2735,12 +2786,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 reply.setInstallPath(returnValue);
                 reply.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -2753,7 +2806,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final DeleteVolumeBitsOnPrimaryStorageMsg msg) {
+    protected void handle(DeleteVolumeBitsOnPrimaryStorageMsg msg) {
+        inQueue().name(String.format("Delete-Volume-Bits-On-PrimaryStorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> deleteVolumeBitsOnPrimaryStorageMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    protected void deleteVolumeBitsOnPrimaryStorageMsg(final DeleteVolumeBitsOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         DeleteCmd cmd = new DeleteCmd();
         cmd.installPath = msg.getInstallPath();
 
@@ -2764,11 +2828,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             public void fail(ErrorCode err) {
                 reply.setError(err);
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void success(DeleteRsp ret) {
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -2819,7 +2885,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final SyncVolumeSizeOnPrimaryStorageMsg msg) {
+    protected void handle(UploadBitsToBackupStorageMsg msg) {
+        inQueue().name(String.format("Sync-Volume-Size-On-PrimaryStorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> syncVolumeSizeOnPrimaryStorageMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    protected void syncVolumeSizeOnPrimaryStorageMsg(final SyncVolumeSizeOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
         final VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
 
@@ -2840,12 +2917,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 reply.setActualSize(asize);
                 reply.setSize(rsp.size);
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -3551,6 +3630,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(APIAddCephPrimaryStoragePoolMsg msg) {
+        inQueue().name(String.format("API-Add-Ceph-PrimaryStorage-Pool-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> APIAddCephPrimaryStoragePoolMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void APIAddCephPrimaryStoragePoolMsg(APIAddCephPrimaryStoragePoolMsg msg, final NoErrorCompletion completion) {
         CephPrimaryStoragePoolVO vo = new CephPrimaryStoragePoolVO();
         vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
         vo.setDescription(msg.getDescription());
@@ -3576,6 +3666,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             public void success(AddPoolRsp rsp) {
                 evt.setInventory(CephPrimaryStoragePoolInventory.valueOf(finalVo));
                 bus.publish(evt);
+                completion.done();
             }
 
             @Override
@@ -3583,6 +3674,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 dbf.remove(finalVo);
                 evt.setError(errorCode);
                 bus.publish(evt);
+                completion.done();
             }
         });
     }
@@ -3854,6 +3946,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(DownloadBitsFromKVMHostToPrimaryStorageMsg msg) {
+        inQueue().name(String.format("Download-Bits-From-KVM-Host-To-PrimaryStorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> downloadBitsFromKVMHostToPrimaryStorageMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void downloadBitsFromKVMHostToPrimaryStorageMsg(DownloadBitsFromKVMHostToPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         DownloadBitsFromKVMHostToPrimaryStorageReply reply = new DownloadBitsFromKVMHostToPrimaryStorageReply();
 
         GetKVMHostDownloadCredentialMsg gmsg = new GetKVMHostDownloadCredentialMsg();
@@ -3892,10 +3995,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             logger.info(String.format("successfully downloaded bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
                             reply.setFormat(returnValue.format);
                             bus.reply(msg, reply);
+                            completion.done();
                         } else {
                             logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
                             reply.setError(Platform.operr("operation error, because:%s", returnValue.getError()));
                             bus.reply(msg, reply);
+                            completion.done();
                         }
                     }
 
@@ -3904,6 +4009,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
                         reply.setError(errorCode);
                         bus.reply(msg, reply);
+                        completion.done();
                     }
                 }).specifyOrder(randomFactor).call();
             }
@@ -3911,6 +4017,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(CancelDownloadBitsFromKVMHostToPrimaryStorageMsg msg) {
+        inQueue().name(String.format("Cancel-Download-Bits-From-KVM-Host-To-PrimaryStorage", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> cancelDownloadBitsFromKVMHostToPrimaryStorageMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void cancelDownloadBitsFromKVMHostToPrimaryStorageMsg(CancelDownloadBitsFromKVMHostToPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         CancelDownloadBitsFromKVMHostToPrimaryStorageReply reply = new CancelDownloadBitsFromKVMHostToPrimaryStorageReply();
         CancelDownloadBitsFromKVMHostCmd cmd = new CancelDownloadBitsFromKVMHostCmd();
         cmd.setPrimaryStorageInstallPath(msg.getPrimaryStorageInstallPath());
@@ -3925,6 +4042,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     reply.setError(Platform.operr("operation error, because:%s", returnValue.getError()));
                 }
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
@@ -3932,11 +4050,23 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 logger.error(String.format("failed to cancel download bits to primary storage %s", msg.getPrimaryStorageUuid()));
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         }).specifyOrder(randomFactor).tryNext().call();
     }
 
     private void handle(GetDownloadBitsFromKVMHostProgressMsg msg) {
+        inQueue().name(String.format("Get-Download-Bits-From-KVM-Host-Progress-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> getDownloadBitsFromKVMHostProgressMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void getDownloadBitsFromKVMHostProgressMsg(GetDownloadBitsFromKVMHostProgressMsg msg, final NoErrorCompletion completion) {
         GetDownloadBitsFromKVMHostProgressReply reply = new GetDownloadBitsFromKVMHostProgressReply();
         GetDownloadBitsFromKVMHostProgressCmd cmd = new GetDownloadBitsFromKVMHostProgressCmd();
         cmd.volumePaths = msg.getVolumePaths();
@@ -3952,6 +4082,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     reply.setError(Platform.operr("operation error, because:%s", rsp.getError()));
                 }
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
@@ -3959,11 +4090,23 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 logger.error(String.format("failed to get download progress from primary storage %s", msg.getPrimaryStorageUuid()));
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         }).specifyOrder(apiId).tryNext().call();
     }
 
     private void handle(DeleteImageCacheOnPrimaryStorageMsg msg) {
+        inQueue().name(String.format("Delete-Image-Cache-On-PrimaryStorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> deleteImageCacheOnPrimaryStorageMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void deleteImageCacheOnPrimaryStorageMsg(DeleteImageCacheOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         DeleteImageCacheOnPrimaryStorageReply reply = new DeleteImageCacheOnPrimaryStorageReply();
 
         DeleteImageCacheCmd cmd = new DeleteImageCacheCmd();
@@ -3979,17 +4122,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 }
 
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
 
     private void handle(CancelSelfFencerOnKvmHostMsg msg) {
+        inQueue().name(String.format("Cancel-Self-Fencer-On-KvmHost-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> cancelSelfFencerOnKvmHostMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void cancelSelfFencerOnKvmHostMsg(CancelSelfFencerOnKvmHostMsg msg, final NoErrorCompletion completion) {
         KvmCancelSelfFencerParam param = msg.getParam();
         KvmCancelSelfFencerCmd cmd = new KvmCancelSelfFencerCmd();
         cmd.uuid = self.getUuid();
@@ -4004,17 +4160,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success(KvmResponseWrapper w) {
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
 
-    private void handle(final SetupSelfFencerOnKvmHostMsg msg) {
+    private void handle(SetupSelfFencerOnKvmHostMsg msg) {
+        inQueue().name(String.format("Setup-Self-Fencer-On-Kvm-Host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> setupSelfFencerOnKvmHostMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void setupSelfFencerOnKvmHostMsg(final SetupSelfFencerOnKvmHostMsg msg, final NoErrorCompletion completion) {
         KvmSetupSelfFencerParam param = msg.getParam();
         KvmSetupSelfFencerCmd cmd = new KvmSetupSelfFencerCmd();
         cmd.uuid = self.getUuid();
@@ -4052,18 +4221,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success(KvmResponseWrapper wrapper) {
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
 
+    private void handle(UploadBitsToBackupStorageMsg msg) {
+        inQueue().name(String.format("Upload-Bits-To-BackupStorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> uploadBitsToBackupStorageMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
 
-    private void handle(final UploadBitsToBackupStorageMsg msg) {
+    private void uploadBitsToBackupStorageMsg(final UploadBitsToBackupStorageMsg msg, final NoErrorCompletion completion) {
         checkCephFsId(msg.getPrimaryStorageUuid(), msg.getBackupStorageUuid());
         SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
         q.select(BackupStorageVO_.type);
@@ -4121,12 +4302,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     reply.setInstallPath(rsp.installPath);
                 }
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         }).specifyOrder(apiId).call();
     }
@@ -4274,13 +4457,27 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
         if (msg.hasSystemTag(VolumeSystemTags.FAST_CREATE::isMatch)) {
-            fastCreateVolumeFromSnapshot(msg);
+            inQueue().name(String.format("Create-Volume-From-Volume-Snapshot-On-PrimaryStorage-%s", self.getUuid()))
+                    .asyncBackup(msg)
+                    .run(chain -> fastCreateVolumeFromSnapshot(msg, new NoErrorCompletion(chain) {
+                        @Override
+                        public void done() {
+                            chain.next();
+                        }
+                    }));
         } else {
-            createVolumeFromSnapshot(msg);
+            inQueue().name(String.format("Create-Volume-From-Volume-Snapshot-On-PrimaryStorage-%s", self.getUuid()))
+                    .asyncBackup(msg)
+                    .run(chain -> createVolumeFromSnapshot(msg, new NoErrorCompletion(chain) {
+                        @Override
+                        public void done() {
+                            chain.next();
+                        }
+                    }));
         }
     }
 
-    private void fastCreateVolumeFromSnapshot(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+    private void fastCreateVolumeFromSnapshot(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
 
         final String volPath = makeDataVolumeInstallPath(msg.getVolumeUuid());
@@ -4299,11 +4496,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void success(ProtectSnapshotRsp returnValue) {
                         trigger.next();
+                        completion.done();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
                         trigger.fail(errorCode);
+                        completion.done();
                     }
                 });
             }
@@ -4347,7 +4546,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }).start();
     }
 
-    private void createVolumeFromSnapshot(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
+    private void createVolumeFromSnapshot(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
 
         final String volPath = makeDataVolumeInstallPath(msg.getVolumeUuid());
@@ -4366,12 +4565,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 long asize = rsp.actualSize == null ? 1 : rsp.actualSize;
                 reply.setActualSize(asize);
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -4589,7 +4790,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
+    protected void handle(DeleteSnapshotOnPrimaryStorageMsg msg) {
+        inQueue().name(String.format("Delete-Snapshot-On-PrimaryStorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> createEmptyVolumeMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    protected void createEmptyVolumeMsg(final DeleteSnapshotOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
         DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
         cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
@@ -4597,17 +4809,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success(DeleteSnapshotRsp returnValue) {
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         }, TimeUnit.MILLISECONDS, msg.getTimeout());
     }
 
-    protected void handle(final PurgeSnapshotOnPrimaryStorageMsg msg) {
+    private void handle(PurgeSnapshotOnPrimaryStorageMsg msg) {
+        inQueue().name(String.format("Purge-Snapshot-On-PrimaryStorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> createEmptyVolumeMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    protected void createEmptyVolumeMsg(final PurgeSnapshotOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final PurgeSnapshotOnPrimaryStorageReply reply = new PurgeSnapshotOnPrimaryStorageReply();
         PurgeSnapshotCmd cmd = new PurgeSnapshotCmd();
         cmd.volumePath = msg.getVolumePath();
@@ -4615,12 +4840,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success(PurgeSnapshotRsp returnValue) {
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -4636,7 +4863,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
-    private void handle(final TakeSnapshotMsg msg) {
+    private void handle(TakeSnapshotMsg msg) {
+        inQueue().name(String.format("Take-Snapshot-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> takeSnapshotMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void takeSnapshotMsg(final TakeSnapshotMsg msg, final NoErrorCompletion completion) {
         final TakeSnapshotReply reply = new TakeSnapshotReply();
 
         final VolumeSnapshotInventory sp = msg.getStruct().getCurrent();
@@ -4661,12 +4899,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 sp.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                 reply.setInventory(sp);
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -4776,6 +5016,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(CreateEmptyVolumeMsg msg) {
+        inQueue().name(String.format("create-Empty-Volume-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> createEmptyVolumeMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void createEmptyVolumeMsg(CreateEmptyVolumeMsg msg, final NoErrorCompletion completion) {
         final CreateEmptyVolumeReply reply = new CreateEmptyVolumeReply();
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         cmd.installPath = msg.getInstallPath();
@@ -4788,16 +5039,29 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             public void fail(ErrorCode err) {
                 reply.setError(err);
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void success(CreateEmptyVolumeRsp ret) {
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
 
     private void handle(CephToCephMigrateVolumeSegmentMsg msg) {
+        inQueue().name(String.format("Ceph-To-Ceph-Migrate-Volume-Segment-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> cephToCephMigrateVolumeSegmentMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void cephToCephMigrateVolumeSegmentMsg(CephToCephMigrateVolumeSegmentMsg msg, final NoErrorCompletion completion) {
         final CephToCephMigrateVolumeSegmentCmd cmd = new CephToCephMigrateVolumeSegmentCmd();
         cmd.setParentUuid(msg.getParentUuid());
         cmd.setResourceUuid(msg.getResourceUuid());
@@ -4814,17 +5078,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success(StorageMigrationRsp returnValue) {
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         }, TimeUnit.MILLISECONDS, msg.getTimeout()).specifyOrder(apiId).call();
     }
 
     private void handle(GetVolumeSnapshotInfoMsg msg) {
+        inQueue().name(String.format("Get-Volume-Snapshot-Info-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> getVolumeSnapshotInfoMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void getVolumeSnapshotInfoMsg(GetVolumeSnapshotInfoMsg msg, final NoErrorCompletion completion) {
         final GetVolumeSnapInfosCmd cmd = new GetVolumeSnapInfosCmd();
         cmd.setVolumePath(msg.getVolumePath());
 
@@ -4834,12 +5111,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             public void success(GetVolumeSnapInfosRsp returnValue) {
                 reply.setSnapInfos(returnValue.getSnapInfos());
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -4857,6 +5136,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(GetVolumeSnapshotSizeOnPrimaryStorageMsg msg) {
+        inQueue().name(String.format("Get-Volume-Snapshot-Size-On-PrimaryStorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> getVolumeSnapshotSizeOnPrimaryStorageMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    protected void getVolumeSnapshotSizeOnPrimaryStorageMsg(GetVolumeSnapshotSizeOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         GetVolumeSnapshotSizeOnPrimaryStorageReply reply = new GetVolumeSnapshotSizeOnPrimaryStorageReply();
         VolumeSnapshotVO snapshotVO = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
 
@@ -4873,12 +5163,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 reply.setActualSize(rsp.actualSize);
                 reply.setSize(rsp.size);
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -4888,7 +5180,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         bus.reply(msg, new CheckVolumeSnapshotOperationOnPrimaryStorageReply());
     }
 
-    protected void handle(GetVolumeWatchersMsg msg) {
+    private void handle(GetVolumeWatchersMsg msg) {
+        inQueue().name(String.format("Get-Volume-Watchers-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> getVolumeWatchersMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    protected void getVolumeWatchersMsg(GetVolumeWatchersMsg msg, final NoErrorCompletion completion) {
         GetVolumeWatchersReply reply = new GetVolumeWatchersReply();
 
         String installPath = Q.New(VolumeVO.class)
@@ -4904,12 +5207,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             public void success(GetVolumeWatchersRsp returnValue) {
                 reply.setWatchers(returnValue.watchers);
                 bus.reply(msg, reply);
+                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+                completion.done();
             }
         }).setAvoidMonUuids(msg.getAvoidCephMonUuids()).tryNext().call();
     }
