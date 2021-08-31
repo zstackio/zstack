@@ -36,4 +36,6 @@ public class CephGlobalConfig {
     @GlobalConfigDef(type = Boolean.class, defaultValue = "true")
     @GlobalConfigValidation
     public static GlobalConfig PREVENT_VM_SPLIT_BRAIN = new GlobalConfig(CATEGORY, "checkImageWatcherBeforeStartVm");
+    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 128)
+    public static GlobalConfig CEPH_SYNC_LEVEL = new GlobalConfig(CATEGORY, "ceph.syncLevel");
 }
