@@ -507,7 +507,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         RecalculatePrimaryStorageCapacityReply reply = new RecalculatePrimaryStorageCapacityReply();
         PrimaryStorageCapacityRecalculator recalculator = new PrimaryStorageCapacityRecalculator();
         recalculator.psUuids = Collections.singletonList(msg.getPrimaryStorageUuid());
-        new MergeQueue().addTask(String.format("recalculate primarystorage capacity: %s", msg.getPrimaryStorageUuid()), new Supplier<Void>() {
+        new MergeQueue().addTask(String.format("recalculate primary storage capacity: %s", msg.getPrimaryStorageUuid()), new Supplier<Void>() {
             @Override
             public Void get() {
                 recalculator.recalculate();

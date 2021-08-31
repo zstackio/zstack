@@ -17,10 +17,8 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.kvm.*;
-import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.TypedQuery;
 import java.util.Iterator;
@@ -119,8 +117,9 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
         }
 
         for (String priUUid : priUuids) {
-            RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
+            LocalStorageRecalculateCapacityMsg msg = new LocalStorageRecalculateCapacityMsg();
             msg.setPrimaryStorageUuid(priUUid);
+            msg.setNeedRecalculateRef(false);
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, priUUid);
             bus.send(msg, new CloudBusCallBack(null) {
                 @Override

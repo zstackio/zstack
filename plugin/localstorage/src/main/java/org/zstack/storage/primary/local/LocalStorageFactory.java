@@ -56,7 +56,6 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
@@ -68,12 +67,11 @@ import static org.zstack.utils.CollectionDSL.*;
  */
 public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         MarshalVmOperationFlowExtensionPoint, HostDeleteExtensionPoint, VmAttachVolumeExtensionPoint,
-        GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
-        AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
-        RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
-        InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint, PostMarkRootVolumeAsSnapshotExtension,
-        AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint, CreateRecycleExtensionPoint,
-        AfterInstantiateVolumeExtensionPoint, CreateDataVolumeExtensionPoint {
+        GetAttachableVolumeExtensionPoint, HostMaintenancePolicyExtensionPoint, AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint,
+        RecoverDataVolumeExtensionPoint, RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
+        HostAfterConnectedExtensionPoint, InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint,
+        PostMarkRootVolumeAsSnapshotExtension, AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint,
+        CreateRecycleExtensionPoint, AfterInstantiateVolumeExtensionPoint, CreateDataVolumeExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
         @Override
@@ -232,21 +230,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public String createTemplateFromVolumeSnapshotPrimaryStorageType() {
         return type.toString();
-    }
-
-    @Override
-    public String getPrimaryStorageTypeForRecalculateCapacityExtensionPoint() {
-        return type.toString();
-    }
-
-    @Override
-    public void afterRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
-        new LocalStorageCapacityRecalculator().calculateByPrimaryStorageUuid(struct.getPrimaryStorageUuid());
-    }
-
-    @Override
-    public void beforeRecalculatePrimaryStorageCapacity(RecalculatePrimaryStorageCapacityStruct struct) {
-        new LocalStorageCapacityRecalculator().calculateTotalCapacity(struct.getPrimaryStorageUuid());
     }
 
     @Override
@@ -928,21 +911,30 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void afterHostConnected(HostInventory host) {
-        recalculatePrimaryStorageCapacity(host.getClusterUuid());
+        if (!Q.New(LocalStorageHostRefVO.class).eq(LocalStorageHostRefVO_.hostUuid, host.getUuid()).isExists()) {
+            return;
+        }
+
+        recalculatePrimaryStorageCapacity(host.getClusterUuid(), false);
     }
 
-    private void recalculatePrimaryStorageCapacity(String clusterUuid) {
+    private void recalculatePrimaryStorageCapacity(String clusterUuid, boolean needRecalculateRef) {
         SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
         q.add(PrimaryStorageClusterRefVO_.clusterUuid, Op.EQ, clusterUuid);
         List<PrimaryStorageClusterRefVO> refs = q.list();
         if (refs != null && !refs.isEmpty()) {
             for (PrimaryStorageClusterRefVO ref : refs) {
-                RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
+                LocalStorageRecalculateCapacityMsg msg = new LocalStorageRecalculateCapacityMsg();
+                msg.setNeedRecalculateRef(needRecalculateRef);
                 msg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
                 bus.send(msg);
             }
         }
+    }
+
+    private void recalculatePrimaryStorageCapacity(String clusterUuid) {
+        recalculatePrimaryStorageCapacity(clusterUuid, true);
     }
 
     @Override

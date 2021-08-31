@@ -151,4 +151,9 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="NoReplyMessageNotifierExtensionPoint" class="org.zstack.testlib.ReplyDroppedMessageNotifierExtensionPoint">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cloudbus.MarshalReplyMessageExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>
