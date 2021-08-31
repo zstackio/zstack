@@ -3,6 +3,7 @@ package org.zstack.storage.ceph.primary;
 import org.apache.logging.log4j.ThreadContext;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.stringtemplate.v4.ST;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.agent.AgentConstant;
@@ -15,10 +16,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.thread.AsyncThread;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -112,6 +110,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public CephPrimaryStorageBase() {
     }
 
+    private String queueId = "Ceph-" + self.getUuid();
+
     class ReconnectMonLock {
         AtomicBoolean hold = new AtomicBoolean(false);
 
@@ -125,6 +125,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     ReconnectMonLock reconnectMonLock = new ReconnectMonLock();
+
+    protected RunInQueue inQueue() {
+        return new RunInQueue(queueId, thdf, getCephSyncLevel());
+    }
+    protected int getCephSyncLevel() {
+        return CephGlobalConfig.CEPH_SYNC_LEVEL.value(Integer.class);
+    }
 
     public static class AgentCommand {
         String fsId;
