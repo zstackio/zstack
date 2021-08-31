@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.gc.GC;
 import org.zstack.core.gc.GCCompletion;
 import org.zstack.core.gc.TimeBasedGarbageCollector;
@@ -26,6 +27,9 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
@@ -182,6 +186,19 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     }
 
                     if (bridgeNames.get(l.l3Uuid) == null) {
+                        continue;
+                    }
+
+                    // TODO: vDPA do not support Userdata service yet;
+                    boolean isOvsDpdk = (Long) SQL.New("select count(l2.uuid)" +
+                                    " from L2NetworkVO l2, L3NetworkVO l3" +
+                                    " where l3.uuid = :l3Uuid" +
+                                    " and l2.uuid = l3.l2NetworkUuid" +
+                                    " and l2.vSwitchType = :vswitchType", Long.class)
+                            .param("l3Uuid", l.l3Uuid)
+                            .param("vswitchType", L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)
+                            .find() > 0;
+                    if (isOvsDpdk) {
                         continue;
                     }
 
@@ -353,6 +370,16 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
         @Override
         protected void triggerNow(GCCompletion completion) {
+            // TODO: vDPA do not support Userdata service yet;
+            List<VmNicInventory> tmp = new ArrayList<>();
+            for (VmNicInventory vNic : struct.getVmNics()) {
+                if (vNic.getType().equals("vDPA")) {
+                    continue;
+                }
+                tmp.add(vNic);
+            }
+            struct.setVmNics(tmp);
+
             HostStatus status = Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, struct.getHostUuid()).findValue();
             if (status == null) {
                 // host deleted
@@ -522,6 +549,16 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             }
         }
 
+        // TODO: vDPA do not support Userdata service yet;
+        List<VmNicInventory> tmp = new ArrayList<>();
+        for (VmNicInventory vNic : struct.getVmNics()) {
+            if (vNic.getType().equals("vDPA")) {
+                continue;
+            }
+            tmp.add(vNic);
+        }
+        struct.setVmNics(tmp);
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("flat-network-userdata-set-for-vm-%s", struct.getVmUuid()));
         chain.then(new ShareFlow() {
@@ -640,6 +677,16 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     @Override
     public void releaseUserdata(final UserdataStruct struct, final Completion completion) {
+        // TODO: vDPA do not support Userdata service yet;
+        List<VmNicInventory> tmp = new ArrayList<>();
+        for (VmNicInventory vNic : struct.getVmNics()) {
+            if (vNic.getType().equals("vDPA")) {
+                continue;
+            }
+            tmp.add(vNic);
+        }
+        struct.setVmNics(tmp);
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("flat-network-userdata-release-for-vm-%s", struct.getVmUuid()));
         chain.then(new ShareFlow() {
