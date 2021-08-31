@@ -125,6 +125,22 @@ public class Session implements Component {
         return session;
     }
 
+    public static void logoutAccount(String accountUuid) {
+        long count = SQL.New("select count(1) from SessionVO session " +
+                "where session.accountUuid =:accountUuid", Long.class)
+                .param("accountUuid", accountUuid).find();
+        if (count != 0) {
+            SQL.New("select session.uuid from SessionVO session " +
+                    "where session.accountUuid =:accountUuid", String.class)
+                    .param("accountUuid", accountUuid).limit(1000).skipIncreaseOffset(true).paginate(count,  (List<String> sessionUuids) -> {
+                for (String sessionUuid : sessionUuids) {
+                    Session.logout(sessionUuid);
+                }
+            });
+        }
+
+    }
+
     public static void logout(String uuid) {
         new SQLBatch() {
             @Override

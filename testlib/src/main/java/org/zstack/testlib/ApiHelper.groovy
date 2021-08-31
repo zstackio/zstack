@@ -37359,6 +37359,33 @@ abstract class ApiHelper {
     }
 
 
+    def removeIAM2ProjectLoginExpired(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.RemoveIAM2ProjectLoginExpiredAction.class) Closure c) {
+        def a = new org.zstack.sdk.iam2.api.RemoveIAM2ProjectLoginExpiredAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def removeIAM2VirtualIDGroupFromProjects(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDGroupFromProjectsAction.class) Closure c) {
         def a = new org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDGroupFromProjectsAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -37523,6 +37550,33 @@ abstract class ApiHelper {
 
     def removeRolesFromIAM2VirtualIDGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.RemoveRolesFromIAM2VirtualIDGroupAction.class) Closure c) {
         def a = new org.zstack.sdk.iam2.api.RemoveRolesFromIAM2VirtualIDGroupAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def setIAM2ProjectLoginExpired(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.SetIAM2ProjectLoginExpiredAction.class) Closure c) {
+        def a = new org.zstack.sdk.iam2.api.SetIAM2ProjectLoginExpiredAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
