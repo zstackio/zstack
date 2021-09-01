@@ -1539,7 +1539,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 }
 
                                 SyncVolumeSizeReply sr = reply.castReply();
-                                imageActualSize = sr.getActualSize();
+                                imageActualSize = Math.min(sr.getActualSize(), sr.getSize());
                                 trigger.next();
                             }
                         });
