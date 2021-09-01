@@ -1,6 +1,8 @@
 package org.zstack.test.integration.storage.ceph
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.config.GlobalConfigVO
+import org.zstack.core.config.GlobalConfigVO_
 import org.zstack.core.db.Q
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
@@ -9,6 +11,7 @@ import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_
 import org.zstack.sdk.*
+import org.zstack.storage.ceph.CephGlobalConfig
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -130,6 +133,7 @@ class CephOperationCase extends SubCase {
             testCephSnapshotTree()
 
             testConcurrentChangeStateAndReconnect()
+            testSdsAdminPassword()
         }
     }
 
@@ -237,6 +241,27 @@ class CephOperationCase extends SubCase {
         }
         assert Q.New(VolumeSnapshotTreeVO.class).count() == 2
         assert Q.New(VolumeSnapshotTreeVO.class).eq(VolumeSnapshotTreeVO_.current, true).count() == 1
+    }
+
+    void testSdsAdminPassword() {
+        assert Q.New(GlobalConfigVO.class)
+                .select(GlobalConfigVO_.value)
+                .eq(GlobalConfigVO_.name, "sds.admin.password")
+                .eq(GlobalConfigVO_.category, "ceph")
+                .findValue() == "password"
+
+        updateGlobalConfig {
+            category = CephGlobalConfig.CATEGORY
+            name = CephGlobalConfig.SDS_ADMIN_PASSWORD.name
+            value = "PWD"
+            sessionId = adminSession()
+        }
+
+        assert Q.New(GlobalConfigVO.class)
+                .select(GlobalConfigVO_.value)
+                .eq(GlobalConfigVO_.name, "sds.admin.password")
+                .eq(GlobalConfigVO_.category, "ceph")
+                .findValue() == "PWD"
     }
 
     @Override
