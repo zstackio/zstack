@@ -14,7 +14,6 @@ import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -81,6 +80,7 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
 
         int timeoutInSeconds = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
         long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeoutInSeconds);
+        int sshPort = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
 
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             @Override
@@ -93,7 +93,7 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
                         return true;
                     }
 
-                    if (NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, 2000)) {
+                    if (NetworkUtils.isRemotePortOpen(mgmtNicIp, sshPort, 2000)) {
                         configAgentSsh();
                         return true;
                     } else {
@@ -120,13 +120,13 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
 
                 try {
                     new Ssh().shell(script
-                    ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                    ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(sshPort).runErrorByExceptionAndClose();
                 } catch (SshException e ) {
                      /*
                     ZSTAC-18352, try again with password when key fail
                      */
                     new Ssh().shell(script
-                    ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                    ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(sshPort).runErrorByExceptionAndClose();
                 }
 
                 try {
@@ -136,7 +136,7 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
                         @Override
                         @RetryCondition(times = 6, interval = 20)
                         protected Boolean call() {
-                            if (NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, 2000)) {
+                            if (NetworkUtils.isRemotePortOpen(mgmtNicIp, sshPort, 2000)) {
                                 return true;
                             } else {
                                 throw new RuntimeException(String.format("unable to ssh in to the vyos[%s]", mgmtNicIp));

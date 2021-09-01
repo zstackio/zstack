@@ -108,9 +108,9 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
                     if (NetworkUtils.isRemotePortOpen(mgmtNicIp, sshPort, 2000)) {
                         if(isZvrMd5Changed(mgmtNicIp,sshPort)){
-                            deployAgent();
+                            deployAgent(sshPort);
                         }
-                        rebootAgent();
+                        rebootAgent(sshPort);
                         trigger.next();
                         return true;
                     } else {
@@ -124,7 +124,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                 }
             }
 
-            private void deployAgent() {
+            private void deployAgent(int port) {
                 try {
                     new Ssh().setTimeout(300).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
@@ -135,7 +135,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     ).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
                             "/home/vyos/zvr/version"
-                    ).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                    ).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
 
                 } catch (SshException  e ) {
                     /*
@@ -151,25 +151,25 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     ).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
                             "/home/vyos/zvr/version"
-                    ).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                    ).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
                 }
             }
 
-            private void rebootAgent() {
+            private void rebootAgent(int port) {
                 String script = "sudo bash /home/vyos/zvrboot.bin\n" +
                         "sudo bash /home/vyos/zvr.bin\n" +
                         "sudo bash /home/vyos/zvr/ssh/zvr-reboot.sh\n";
 
                 try {
                     new Ssh().shell(script
-                    ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                    ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
                 } catch (SshException  e ) {
                     /*
                     ZSTAC-18352, try again with password when key fail
                      */
                     String password = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
                     new Ssh().shell(script
-                    ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                    ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
                 }
             }
 
