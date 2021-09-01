@@ -79,4 +79,13 @@
         <category>ceph</category>
         <type>java.lang.String</type>
     </config>
+
+    <config>
+        <name>sds.admin.password</name>
+        <description>the password of ceph admin user</description>
+        <defaultValue>password</defaultValue>
+        <category>ceph</category>
+        <type>java.lang.String</type>
+    </config>
+
 </globalConfig>

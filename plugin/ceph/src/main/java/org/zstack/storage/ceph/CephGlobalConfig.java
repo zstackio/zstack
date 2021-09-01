@@ -36,4 +36,7 @@ public class CephGlobalConfig {
     @GlobalConfigDef(type = Boolean.class, defaultValue = "true")
     @GlobalConfigValidation
     public static GlobalConfig PREVENT_VM_SPLIT_BRAIN = new GlobalConfig(CATEGORY, "checkImageWatcherBeforeStartVm");
+    // for ui use only
+    @GlobalConfigValidation
+    public static GlobalConfig SDS_ADMIN_PASSWORD = new GlobalConfig(CATEGORY, "sds.admin.password");
 }
