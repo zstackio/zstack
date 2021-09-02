@@ -35,10 +35,10 @@ public class UpdateCdpTaskAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long backupBandwidth = 0L;
+    public long backupBandwidth = -1L;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long maxCapacity = 0L;
+    public long maxCapacity = -1L;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
