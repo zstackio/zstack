@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
 import org.zstack.core.componentloader.ComponentLoader
 import org.zstack.header.exception.CloudRuntimeException
@@ -77,12 +78,12 @@ class BeanConstructor {
             throw new CloudRuntimeException("Unable to create temporary spring xml config", e);
         }
 
-        System.setProperty("spring.xml", SPRING_XML_NAME)
+        CoreGlobalProperty.BEAN_CONF = SPRING_XML_NAME
     }
 
     ComponentLoader build() {
         generateSpringConfig()
-        System.setProperty("spring.xml", SPRING_XML_NAME);
+        CoreGlobalProperty.BEAN_CONF = SPRING_XML_NAME
         return Platform.getComponentLoader()
     }
 }
