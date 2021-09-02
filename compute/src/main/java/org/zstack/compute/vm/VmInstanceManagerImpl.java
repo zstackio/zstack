@@ -10,7 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigBeforeUpdateExtensionPoint;
@@ -30,14 +33,20 @@ import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.*;
-import org.zstack.header.core.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NopeWhileDoneCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.AfterChangeHostStatusExtensionPoint;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
@@ -63,19 +72,17 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.TagUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
-import org.zstack.resourceconfig.ResourceConfigFacade;
 
+import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
@@ -86,9 +93,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
-import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.*;
 
 public class VmInstanceManagerImpl extends AbstractService implements
         VmInstanceManager,
@@ -760,8 +765,18 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         }.execute();
                         break;
                     } catch (JpaSystemException e) {
-                        if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
-                                e.getRootCause().getMessage().contains("Duplicate entry")) {
+                        if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException
+                                && e.getMessage().contains("Duplicate entry")) {
+                            logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
+                                    "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
+                                    "we will try finding another mac", nicVO.getMac()));
+                            logger.trace("", e);
+                            nicVO.setMac(NetworkUtils.generateMacWithDeviceId((short) nicVO.getDeviceId()));
+                        } else {
+                            throw e;
+                        }
+                    } catch (PersistenceException e) {
+                        if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class, "Duplicate entry")) {
                             logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
                                     "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
                                     "we will try finding another mac", nicVO.getMac()));

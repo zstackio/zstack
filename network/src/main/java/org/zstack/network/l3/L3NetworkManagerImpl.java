@@ -1,6 +1,7 @@
 package org.zstack.network.l3;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +41,7 @@ import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceSystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -47,6 +49,7 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
+import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.math.BigInteger;
@@ -564,6 +567,17 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 throw e;
             }
             return null;
+        } catch (PersistenceException e) {
+            if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class)) {
+                logger.debug(String.format("Concurrent ip allocation. " +
+                        "Ip[%s] in ip range[uuid:%s] has been allocated, try allocating another one. " +
+                        "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
+                        "we will try finding another ip", ip, ipRange.getUuid()));
+                logger.trace("", e);
+            } else {
+                throw e;
+            }
+            return null;
         }
     }
 
@@ -587,6 +601,17 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             return UsedIpInventory.valueOf(vo);
         } catch (JpaSystemException e) {
             if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException) {
+                logger.debug(String.format("Concurrent ip allocation. " +
+                        "Ip[%s] in ip range[uuid:%s] has been allocated, try allocating another one. " +
+                        "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
+                        "we will try finding another ip", ip, ipRange.getUuid()));
+                logger.trace("", e);
+            } else {
+                throw e;
+            }
+            return null;
+        } catch (PersistenceException e) {
+            if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class)) {
                 logger.debug(String.format("Concurrent ip allocation. " +
                         "Ip[%s] in ip range[uuid:%s] has been allocated, try allocating another one. " +
                         "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
