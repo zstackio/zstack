@@ -116,7 +116,7 @@ class AddImageLongJobCase extends SubCase {
         assert jobInv.getJobName() == msg.getClass().getSimpleName()
         assert jobInv.state == org.zstack.sdk.LongJobState.Running
 
-        retryInSecs() {
+        retryInSecs(8,3) {
             LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
             assert job.state == LongJobState.Succeeded
         }
