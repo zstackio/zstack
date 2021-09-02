@@ -1539,7 +1539,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 }
 
                                 SyncVolumeSizeReply sr = reply.castReply();
-                                imageActualSize = sr.getActualSize();
+                                imageActualSize = Math.min(sr.getActualSize(), sr.getSize());
                                 trigger.next();
                             }
                         });
@@ -1872,7 +1872,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 }
 
                                 SyncVolumeSizeReply sr = reply.castReply();
-                                actualSize = sr.getActualSize();
+                                actualSize = Math.min(sr.getActualSize(), sr.getSize());
                                 volumePsUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volumeUuid)
                                         .select(VolumeVO_.primaryStorageUuid)
                                         .findValue();
