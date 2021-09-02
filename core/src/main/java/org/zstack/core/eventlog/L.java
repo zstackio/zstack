@@ -3,6 +3,7 @@ package org.zstack.core.eventlog;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -29,6 +30,7 @@ public class L {
                .resource(resourceUuid, resourceType);
     }
 
+    @ExceptionSafe
     private void save() {
         mgr.accept(builder);
     }
