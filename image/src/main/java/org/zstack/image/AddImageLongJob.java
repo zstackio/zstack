@@ -14,6 +14,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.image.*;
 import org.zstack.header.longjob.*;
 import org.zstack.header.message.APIEvent;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.longjob.LongJobUtils.*;
 import static org.zstack.longjob.LongJobUtils.setJobResult;
@@ -211,6 +213,8 @@ public class AddImageLongJob implements LongJob {
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     completion.success(false);
+                } else if (reply.getError().isError(SysErrors.RESOURCE_NOT_FOUND)) {
+                    completion.success(true);
                 } else {
                     completion.fail(reply.getError());
                 }
