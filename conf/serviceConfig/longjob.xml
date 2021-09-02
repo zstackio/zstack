@@ -25,4 +25,7 @@
     <message>
         <name>org.zstack.header.longjob.APIResumeLongJobMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.longjob.APICleanLongJobMsg</name>
+    </message>
 </service>
