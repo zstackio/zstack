@@ -2,11 +2,13 @@ package org.zstack.tag;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.hibernate.TransactionException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.TransactionSystemException;
+import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
@@ -16,9 +18,12 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.tag.*;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
+import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -252,6 +257,12 @@ public class SystemTag {
                     }
 
                     throw e;
+                } catch (UnexpectedRollbackException e) {
+                    if (exceptionCanBeIgnored) {
+                        return null;
+                    }
+
+                    throw e;
                 }
             }
 
@@ -346,6 +357,18 @@ public class SystemTag {
                     if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
                             e.getRootCause().getMessage().contains("Duplicate entry")) {
 
+                        // tag exists
+                        if (!ignoreIfExisting) {
+                            throw new CloudRuntimeException(String.format("duplicate system tag[resourceUuid: %s," +
+                                    "resourceType: %s, tag: %s", resourceUuid, resourceClass.getSimpleName(), tag), e);
+                        } else {
+                            logger.debug(String.format("please ignore this error log: Duplicate entry '%s' for key 'PRIMARY'", uuid));
+                            exceptionCanBeIgnored = true;
+                            return null;
+                        }
+                    }
+                } catch (PersistenceException e) {
+                    if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class, "Duplicate entry")) {
                         // tag exists
                         if (!ignoreIfExisting) {
                             throw new CloudRuntimeException(String.format("duplicate system tag[resourceUuid: %s," +

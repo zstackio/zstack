@@ -2,6 +2,9 @@ package org.zstack.utils;
 
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  */
 public class ExceptionDSL {
@@ -169,6 +172,10 @@ public class ExceptionDSL {
     }
 
     public static boolean isCausedBy(Throwable t, Class<? extends Throwable> causeClass) {
+        return isCausedBy(t, causeClass, Collections.emptyList());
+    }
+
+    public static boolean isCausedBy(Throwable t, Class<? extends Throwable> causeClass, List<String> contents) {
         if (causeClass.isAssignableFrom(t.getClass())) {
             return true;
         }
@@ -176,11 +183,25 @@ public class ExceptionDSL {
         while (t.getCause() != null) {
             t = t.getCause();
             if (causeClass.isAssignableFrom(t.getClass())) {
+                if (contents == null || contents.isEmpty() || t.getMessage() == null) {
+                    return true;
+                }
+
+                for (String content : contents) {
+                    if (!t.getMessage().contains(content)) {
+                        return false;
+                    }
+                }
+
                 return true;
             }
         }
 
         return false;
+    }
+
+    public static boolean isCausedBy(Throwable t, Class<? extends Throwable> causeClass, String content) {
+        return isCausedBy(t, causeClass, Collections.singletonList(content));
     }
 
     public static Throwable getRootThrowable(Throwable t) {
