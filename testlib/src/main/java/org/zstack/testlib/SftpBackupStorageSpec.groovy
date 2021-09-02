@@ -2,6 +2,9 @@ package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.agent.AgentConstant
+import org.zstack.core.db.DatabaseFacade
+import org.zstack.header.image.ImageAO
+import org.zstack.header.image.ImageVO
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.utils.gson.JSONObjectUtil
@@ -16,6 +19,8 @@ class SftpBackupStorageSpec extends BackupStorageSpec {
     String username = "root"
     @SpecParam
     String password = "password"
+
+    DatabaseFacade dbf
 
     SftpBackupStorageSpec(EnvSpec envSpec) {
         super(envSpec)
@@ -47,19 +52,21 @@ class SftpBackupStorageSpec extends BackupStorageSpec {
             simulator(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.getBody(), SftpBackupStorageCommands.DownloadCmd.class)
                 BackupStorageSpec bsSpec = spec.specByUuid(cmd.uuid)
-
+                ImageSpec imageSpec = spec.specByUuid(cmd.imageUuid)
                 def rsp = new SftpBackupStorageCommands.DownloadResponse()
-                rsp.size = 0
-                rsp.actualSize = 0
+                rsp.actualSize = imageSpec.actualSize
+                rsp.size = imageSpec.size
                 rsp.availableCapacity = bsSpec.availableCapacity
                 rsp.totalCapacity = bsSpec.totalCapacity
                 return rsp
             }
 
-            simulator(SftpBackupStorageConstant.GET_IMAGE_SIZE) {
+            simulator(SftpBackupStorageConstant.GET_IMAGE_SIZE) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.getBody(), SftpBackupStorageCommands.GetImageSizeCmd.class)
+                ImageSpec imageSpec = spec.specByUuid(cmd.imageUuid)
                 def rsp = new SftpBackupStorageCommands.GetImageSizeRsp()
-                rsp.actualSize = 0
-                rsp.size = 0
+                rsp.actualSize = imageSpec.actualSize
+                rsp.size = imageSpec.size
                 return rsp
             }
 
