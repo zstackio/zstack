@@ -44,6 +44,7 @@ public class EventLogManager implements EventLogger, Component, ManagementNodeRe
                 return;
             }
         } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
         }
 
         logger.warn(String.format("unable to consume event log: %s", JSONObjectUtil.toJsonString(builder)));
