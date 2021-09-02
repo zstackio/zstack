@@ -10,6 +10,7 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -17,10 +18,7 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ShellResult;
-import org.zstack.utils.ShellUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
@@ -249,5 +247,63 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
         }
 
         return false;
+    }
+
+    @Override
+    public void rollback(FlowRollback trigger, Map data) {
+        boolean isReconnect = Boolean.parseBoolean((String) data.get(Params.isReconnect.toString()));
+
+        String mgmtNicIp;
+        if (!isReconnect) {
+            VmNicInventory mgmtNic;
+            final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+            if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
+                final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
+                mgmtNic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
+                    @Override
+                    public VmNicInventory call(VmNicInventory arg) {
+                        return arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()) ? arg : null;
+                    }
+                });
+            } else {
+                ApplianceVmVO avo = dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);
+                ApplianceVmInventory ainv = ApplianceVmInventory.valueOf(avo);
+                mgmtNic = ainv.getManagementNic();
+            }
+            mgmtNicIp = mgmtNic.getIp();
+        } else {
+            mgmtNicIp = (String) data.get(Params.managementNicIp.toString());
+        }
+
+        debug(mgmtNicIp, 30);
+        trigger.rollback();
+    }
+
+    private void debug (String vrMgtIp, int timeout) {
+        int sshPort = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
+        if (!NetworkUtils.isRemotePortOpen(vrMgtIp, sshPort, timeout)) {
+            logger.debug(String.format("vyos agent port %s is not opened on managment nic %s",
+                    sshPort, vrMgtIp));
+            return;
+        }
+        Ssh ssh1 = new Ssh();
+        ssh1.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
+                .setHostname(vrMgtIp).setTimeout(timeout);
+        SshResult ret1 = ssh1.command("sudo tail -n 300 /home/vyos/zvr/zvrReboot.log").runAndClose();
+        if (ret1.getReturnCode() == 0) {
+            logger.debug(String.format("vyos reboot log %s", ret1.getStdout()));
+        } else {
+            logger.debug(String.format("get vyos reboot log failed: %s", ret1.getStderr()));
+        }
+
+        Ssh ssh2 = new Ssh();
+        ssh2.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
+                .setHostname(vrMgtIp).setTimeout(timeout);
+        SshResult ret2 = ssh2.command("sudo tail -n 300 /tmp/agentRestart.log").runAndClose();
+        if (ret2.getReturnCode() == 0) {
+            logger.debug(String.format("zvr start log %s", ret2.getStdout()));
+        } else {
+            logger.debug(String.format("get zvr start log failed: %s", ret2.getStderr()));
+        }
     }
 }
