@@ -30,6 +30,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.serializable.SerializableHelper;
 
+import javax.persistence.NoResultException;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.IOException;
@@ -200,7 +201,7 @@ public class JobQueueFacadeImpl2 implements JobQueueFacade, CloudBusEventListene
                 JobQueueVO qvo = null;
                 try {
                     qvo = q.getSingleResult();
-                } catch (EmptyResultDataAccessException ne) {
+                } catch (NoResultException|EmptyResultDataAccessException e) {
                     // no queue yet
                 }
 

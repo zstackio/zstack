@@ -2,6 +2,7 @@ package org.zstack.ldap;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.HardcodedFilter;
@@ -25,6 +26,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -35,9 +37,11 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionDSL;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 import java.sql.Timestamp;
 import java.util.*;
@@ -392,6 +396,13 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             logger.info(String.format("create ldap binding[ldapUid=%s, ldapUseAsLoginName=%s] success", fullDn, ldapUseAsLoginName));
         } catch (JpaSystemException e) {
             if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException) {
+                evt.setError(err(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
+                        "The ldap uid has been bound to an account. "));
+            } else {
+                throw e;
+            }
+        } catch (PersistenceException e) {
+            if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class)) {
                 evt.setError(err(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
                         "The ldap uid has been bound to an account. "));
             } else {

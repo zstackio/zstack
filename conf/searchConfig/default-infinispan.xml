@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:8.2 http://www.infinispan.org/schemas/infinispan-config-8.2.xsd"
-        xmlns="urn:infinispan:config:8.2">
+        xsi:schemaLocation="urn:infinispan:config:9.4 http://www.infinispan.org/schemas/infinispan-config-9.4.xsd"
+        xmlns="urn:infinispan:config:9.4">
 
     <!-- *************************** -->
     <!-- System-wide global settings -->
@@ -15,7 +15,7 @@
         <stack-file name="default-jgroups-tcp" path="searchConfig/jgroup-infinispan-tcp.xml"/>
     </jgroups>
 
-    <cache-container name="HibernateSearch" default-cache="default" statistics="false" shutdown-hook="DONT_REGISTER">
+    <cache-container name="HibernateSearch" default-cache="replicatedCache" statistics="false" shutdown-hook="DONT_REGISTER">
 
         <transport stack="default-jgroups-tcp"/>
 
@@ -24,11 +24,13 @@
             the CacheManager across applications -->
         <jmx duplicate-domains="true"/>
 
+        <replicated-cache name="replicatedCache"/>
+
         <!-- *************************************** -->
         <!--  Cache to store Lucene's file metadata  -->
         <!-- *************************************** -->
-        <replicated-cache name="LuceneIndexesMetadata" mode="SYNC" remote-timeout="60000">
-            <locking striping="false" acquire-timeout="30000" concurrency-level="500" write-skew="false"/>
+        <replicated-cache name="LuceneIndexesMetaData" mode="SYNC" remote-timeout="60000">
+            <locking striping="false" acquire-timeout="30000" concurrency-level="500"/>
             <transaction mode="BATCH"/>
             <eviction size="-1" strategy="NONE"/>
             <expiration max-idle="-1"/>
@@ -39,8 +41,17 @@
         <!-- **************************** -->
         <!--  Cache to store Lucene data  -->
         <!-- **************************** -->
+        <distributed-cache name="LuceneIndexesMetadata" mode="SYNC" remote-timeout="60000">
+            <locking striping="false" acquire-timeout="30000" concurrency-level="500"/>
+            <transaction mode="NON_XA" locking="PESSIMISTIC"/>
+            <eviction size="-1" strategy="NONE"/>
+            <expiration max-idle="-1"/>
+            <indexing index="NONE"/>
+            <state-transfer enabled="true" timeout="480000" await-initial-transfer="true"/>
+        </distributed-cache>
+
         <distributed-cache name="LuceneIndexesData" mode="SYNC" remote-timeout="60000">
-            <locking striping="false" acquire-timeout="30000" concurrency-level="500" write-skew="false"/>
+            <locking striping="false" acquire-timeout="30000" concurrency-level="500"/>
             <transaction mode="BATCH"/>
             <eviction size="-1" strategy="NONE"/>
             <expiration max-idle="-1"/>
@@ -52,8 +63,8 @@
         <!--  Cache to store Lucene locks  -->
         <!-- ***************************** -->
         <replicated-cache name="LuceneIndexesLocking" mode="SYNC" remote-timeout="60000">
-            <locking striping="false" acquire-timeout="30000" concurrency-level="500" write-skew="false"/>
-            <transaction mode="BATCH"/>
+            <locking striping="false" acquire-timeout="30000" concurrency-level="500"/>
+            <transaction mode="NON_XA" locking="PESSIMISTIC"/>
             <eviction size="-1" strategy="NONE"/>
             <expiration max-idle="-1"/>
             <indexing index="NONE"/>

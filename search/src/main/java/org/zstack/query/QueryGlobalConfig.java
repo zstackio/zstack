@@ -16,4 +16,7 @@ public class QueryGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig SLOW_ZQL_COST_TIME = new GlobalConfig(CATEGORY, "slow.zql.cost.time");
+
+    @GlobalConfigValidation
+    public static GlobalConfig ZQL_STATISTICS_ON = new GlobalConfig(CATEGORY, "zql.statistics.on");
 }
