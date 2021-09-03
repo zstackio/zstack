@@ -5,6 +5,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.longjob.LongJob;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.utils.BeanUtils;
+import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -36,7 +37,7 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
         if (null == job) {
             throw new OperationFailureException(operr("%s has no corresponding longjob", jobName));
         }
-        return job;
+        return ObjectUtils.newAndCopy(job, job.getClass());
     }
 
     @Override

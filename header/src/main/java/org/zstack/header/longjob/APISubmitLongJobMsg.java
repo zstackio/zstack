@@ -103,10 +103,10 @@ public class APISubmitLongJobMsg extends APICreateMessage implements APILongJobA
     }
 
     @Override
-    public APIAuditor.Result longJobAudit(LongJob job, APIEvent rsp) {
+    public APIAuditor.Result longJobAudit(LongJob job, LongJobVO vo, APIEvent rsp) {
         Class resourceType = job.getAuditType();
         DebugUtils.Assert(resourceType != null, String.format("resourceType mustn't be null from longjob: %s", job.getClass().getSimpleName()));
 
-        return new APIAuditor.Result(getResourceUuid(job), resourceType);
+        return new APIAuditor.Result(getResourceUuid(job) != null ? getResourceUuid(job) : vo.getTargetResourceUuid(), resourceType);
     }
 }
