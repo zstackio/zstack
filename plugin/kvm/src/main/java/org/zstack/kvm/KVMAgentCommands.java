@@ -1191,6 +1191,26 @@ public class KVMAgentCommands {
 
     public static class DeleteVdpaCmd extends AgentCommand {
         public String vmUuid;
+        public String nicInternalName;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getNicInternalName() {
+            return nicInternalName;
+        }
+
+        public void setNicInternalName(String nicInternalName) {
+            this.nicInternalName = nicInternalName;
+        }
+    }
+
+    public static class DeleteVdpaRsp extends AgentResponse {
     }
 
     public static class HardenVmConsoleCmd extends AgentCommand {
