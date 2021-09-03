@@ -11,4 +11,12 @@ public class MountVmInstanceRecoveryPointResult {
         return this.resourcePath;
     }
 
+    public java.util.Map failedVolumes;
+    public void setFailedVolumes(java.util.Map failedVolumes) {
+        this.failedVolumes = failedVolumes;
+    }
+    public java.util.Map getFailedVolumes() {
+        return this.failedVolumes;
+    }
+
 }
