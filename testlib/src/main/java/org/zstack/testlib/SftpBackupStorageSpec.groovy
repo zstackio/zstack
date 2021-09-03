@@ -54,10 +54,10 @@ class SftpBackupStorageSpec extends BackupStorageSpec {
                 BackupStorageSpec bsSpec = spec.specByUuid(cmd.uuid)
                 ImageSpec imageSpec = spec.specByUuid(cmd.imageUuid)
                 def rsp = new SftpBackupStorageCommands.DownloadResponse()
-                rsp.size = 0
-                rsp.actualSize = 0
-//                rsp.actualSize = imageSpec.actualSize
-//                rsp.size = imageSpec.size
+//                rsp.size = 0
+//                rsp.actualSize = 0
+                rsp.actualSize = imageSpec.actualSize
+                rsp.size = imageSpec.size
                 rsp.availableCapacity = bsSpec.availableCapacity
                 rsp.totalCapacity = bsSpec.totalCapacity
                 return rsp
