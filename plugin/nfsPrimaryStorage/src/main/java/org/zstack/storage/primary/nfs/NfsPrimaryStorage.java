@@ -510,7 +510,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 gc.snapshot = sinv;
                 gc.primaryStorageUuid = self.getUuid();
                 gc.hypervisorType = bkd.getHypervisorType().toString();
-                gc.submit(NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+                gc.deduplicateSubmit(NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
 
                 logger.warn(String.format("NFS primary storage[uuid:%s] failed to delete a volume snapshot[uuid:%s], %s. A GC" +
                                 " job[uuid:%s] is scheduled to cleanup it in the interval of %s seconds",
@@ -931,7 +931,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 gc.primaryStorageUuid = self.getUuid();
                 gc.hypervisorType = backend.getHypervisorType().toString();
                 gc.volume = vol;
-                gc.submit(NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+                gc.deduplicateSubmit(NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
 
                 bus.reply(msg, reply);
             }

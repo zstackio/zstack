@@ -1,8 +1,7 @@
 package org.zstack.network.service.flat;
 
-import org.zstack.core.gc.EventBasedGarbageCollector;
-import org.zstack.core.gc.GC;
-import org.zstack.core.gc.GCCompletion;
+import org.zstack.core.db.Q;
+import org.zstack.core.gc.*;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostCanonicalEvents;
@@ -16,6 +15,7 @@ import org.zstack.kvm.KvmResponseWrapper;
 import static org.zstack.core.Platform.operr;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by xing5 on 2017/3/6.
@@ -70,5 +70,21 @@ public class FlatEipGC extends EventBasedGarbageCollector {
             HostCanonicalEvents.HostDeletedData d = (HostCanonicalEvents.HostDeletedData) data;
             return hostUuid.equals(d.getHostUuid());
         }));
+    }
+
+    void deduplicateSubmit() {
+        boolean existGc = false;
+
+        GarbageCollectorVO gcVo = Q.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.name, NAME).notEq(GarbageCollectorVO_.status, GCStatus.Done).find();
+
+        if (gcVo != null) {
+            existGc = true;
+        }
+
+        if (existGc) {
+            return;
+        }
+
+        submit();
     }
 }

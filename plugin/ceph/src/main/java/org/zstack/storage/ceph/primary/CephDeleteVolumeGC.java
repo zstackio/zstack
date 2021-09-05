@@ -1,15 +1,20 @@
 package org.zstack.storage.ceph.primary;
 
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.gc.GC;
-import org.zstack.core.gc.GCCompletion;
-import org.zstack.core.gc.TimeBasedGarbageCollector;
+import org.zstack.core.db.Q;
+import org.zstack.core.gc.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.DeleteVolumeOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.storage.ceph.CephGlobalConfig;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by kayo on 2018/7/24.
@@ -19,6 +24,8 @@ public class CephDeleteVolumeGC extends TimeBasedGarbageCollector {
     public String primaryStorageUuid;
     @GC
     public VolumeInventory volume;
+
+    private final static String name_format = "gc-ceph-%s-volume-%s";
 
     @Override
     protected void triggerNow(GCCompletion completion) {
@@ -42,5 +49,21 @@ public class CephDeleteVolumeGC extends TimeBasedGarbageCollector {
                 completion.success();
             }
         });
+    }
+
+    void deduplicateSubmit(Long next, TimeUnit unit) {
+        boolean existGc = false;
+
+        GarbageCollectorVO gcVo = Q.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.name, NAME).notEq(GarbageCollectorVO_.status, GCStatus.Done).find();
+
+        if (gcVo != null) {
+            existGc = true;
+        }
+
+        if (existGc) {
+            return;
+        }
+
+        submit(next, unit);
     }
 }

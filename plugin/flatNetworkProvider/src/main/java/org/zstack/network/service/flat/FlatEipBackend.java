@@ -480,7 +480,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                         gc.eips = eips;
                         gc.hostUuid = hostUuid;
                         gc.NAME = String.format("gc-flat-eips-on-hosts-%s", hostUuid);
-                        gc.submit();
+                        gc.deduplicateSubmit();
 
                         completion.success();
                     } else {
@@ -711,7 +711,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                         gc.eips = list(cmd.eip);
                         gc.hostUuid = msg.getHostUuid();
                         gc.NAME = String.format("gc-eips-on-host-%s", msg.getHostUuid());
-                        gc.submit();
+                        gc.deduplicateSubmit();
 
                         completion.success();
                     } else {

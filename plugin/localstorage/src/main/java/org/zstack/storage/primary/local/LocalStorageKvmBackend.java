@@ -1602,7 +1602,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 gc.hostUuid = hostUuid;
                 gc.installPath = path;
                 gc.NAME = String.format("gc-local-storage-%s-delete-bits-on-host-%s", self.getUuid(), hostUuid);
-                gc.submit();
+                gc.deduplicateSubmit();
 
                 completion.success();
             }

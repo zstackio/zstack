@@ -170,11 +170,11 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             public void fail(ErrorCode errorCode) {
                 logger.debug( String.format("can't delete volume[uuid:%s] right now, add a GC job", msg.getVolume().getUuid()));
                 SMPDeleteVolumeGC gc = new SMPDeleteVolumeGC();
-                gc.NAME = String.format("gc-smp-%s-volume-%s", self.getUuid(), msg.getVolume());
+                gc.NAME = String.format("gc-smp-%s-volume-%s", self.getUuid(), msg.getVolume().getUuid());
                 gc.primaryStorageUuid = self.getUuid();
                 gc.hypervisorType = type.toString();
                 gc.volume = msg.getVolume();
-                gc.submit(SMPPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+                gc.deduplicateSubmit(SMPPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
 
                 DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
                 bus.reply(msg, reply);

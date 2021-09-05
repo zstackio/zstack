@@ -142,7 +142,7 @@ public class FlatDhcpUpgradeExtension implements Component {
                             gc.hostUuid = getHostUuid();
                             gc.command = cmd;
                             gc.NAME = String.format("gc-namespace-on-host-%s", getHostUuid());
-                            gc.submit();
+                            gc.deduplicateSubmit();
                         }
                     });
 

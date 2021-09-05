@@ -378,8 +378,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                             gc.primaryStorageInstallPath = prePSInstallPath;
                             gc.primaryStorageUuid = targetPrimaryStorage.getUuid();
                             gc.volume = vol;
-                            gc.submit(PrimaryStorageGlobalConfig.PRIMARY_STORAGE_DELETEBITS_GARBAGE_COLLECTOR_INTERVAL.value(Long.class),
-                                    TimeUnit.SECONDS);
+                            gc.deduplicateSubmit(PrimaryStorageGlobalConfig.PRIMARY_STORAGE_DELETEBITS_GARBAGE_COLLECTOR_INTERVAL.value(Long.class), TimeUnit.SECONDS);
                         }
                         trigger.rollback();
                     }

@@ -1,14 +1,15 @@
 package org.zstack.storage.primary.nfs;
 
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.gc.GC;
-import org.zstack.core.gc.GCCompletion;
-import org.zstack.core.gc.TimeBasedGarbageCollector;
+import org.zstack.core.db.Q;
+import org.zstack.core.gc.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by xing5 on 2017/3/5.
@@ -43,5 +44,21 @@ public class NfsDeleteVolumeSnapshotGC extends TimeBasedGarbageCollector {
                 }
             }
         });
+    }
+
+    void deduplicateSubmit(Long next, TimeUnit unit) {
+        boolean existGc = false;
+
+        GarbageCollectorVO gcVo = Q.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.name, NAME).notEq(GarbageCollectorVO_.status, GCStatus.Done).find();
+
+        if (gcVo != null) {
+            existGc = true;
+        }
+
+        if (existGc) {
+            return;
+        }
+
+        submit(next, unit);
     }
 }

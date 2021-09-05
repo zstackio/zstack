@@ -2,11 +2,12 @@ package org.zstack.image;
 
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
-import org.zstack.core.gc.GC;
-import org.zstack.core.gc.GCCompletion;
-import org.zstack.core.gc.TimeBasedGarbageCollector;
+import org.zstack.core.gc.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
+
+import java.util.concurrent.TimeUnit;
+
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -51,5 +52,21 @@ public class BackupStorageDeleteBitGC extends TimeBasedGarbageCollector {
                 }
             }
         });
+    }
+
+    void deduplicateSubmit(Long next, TimeUnit unit) {
+        boolean existGc = false;
+
+        GarbageCollectorVO gcVo = Q.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.name, NAME).notEq(GarbageCollectorVO_.status, GCStatus.Done).find();
+
+        if (gcVo != null) {
+            existGc = true;
+        }
+
+        if (existGc) {
+            return;
+        }
+
+        submit(next, unit);
     }
 }

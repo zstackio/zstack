@@ -10,6 +10,7 @@ import org.zstack.header.vm.*;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -88,5 +89,21 @@ public class DeleteVmGC extends EventBasedGarbageCollector {
                     gcNames.contains(String.format("gc-vm-%s-on-host-%s", uuid, hostUuid))).collect(Collectors.toSet());
         }
         return vmUuidsInGC;
+    }
+
+    public void deduplicateSubmit() {
+        boolean existGc = false;
+
+        GarbageCollectorVO gcVo = Q.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.name, NAME).notEq(GarbageCollectorVO_.status, GCStatus.Done).find();
+
+        if (gcVo != null) {
+            existGc = true;
+        }
+
+        if (existGc) {
+            return;
+        }
+
+        submit();
     }
 }

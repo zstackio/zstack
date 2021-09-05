@@ -1,14 +1,15 @@
 package org.zstack.compute.vm;
 
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.gc.GC;
-import org.zstack.core.gc.GCCompletion;
-import org.zstack.core.gc.TimeBasedGarbageCollector;
+import org.zstack.core.db.Q;
+import org.zstack.core.gc.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.volume.DeleteVolumeMsg;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeDeletionPolicyManager;
 import org.zstack.header.volume.VolumeVO;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by yaoning.li on 2020/07/30.
@@ -46,5 +47,21 @@ public class DeleteVolumeGC extends TimeBasedGarbageCollector {
                 }
             }
         });
+    }
+
+    void deduplicateSubmit(Long next, TimeUnit unit) {
+        boolean existGc = false;
+
+        GarbageCollectorVO gcVo = Q.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.name, NAME).notEq(GarbageCollectorVO_.status, GCStatus.Done).find();
+
+        if (gcVo != null) {
+            existGc = true;
+        }
+
+        if (existGc) {
+            return;
+        }
+
+        submit(next, unit);
     }
 }

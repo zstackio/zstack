@@ -2,9 +2,7 @@ package org.zstack.compute.vm;
 
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
-import org.zstack.core.gc.EventBasedGarbageCollector;
-import org.zstack.core.gc.GC;
-import org.zstack.core.gc.GCCompletion;
+import org.zstack.core.gc.*;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -18,6 +16,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by xing5 on 2017/3/4.
@@ -108,5 +107,21 @@ public class StopVmGC extends EventBasedGarbageCollector {
             VmCanonicalEvents.VmStateChangedData d = (VmCanonicalEvents.VmStateChangedData) data;
             return d.getVmUuid().equals(inventory.getUuid()) && d.getNewState().equals(VmInstanceState.Destroyed.toString());
         }));
+    }
+
+    void deduplicateSubmit() {
+        boolean existGc = false;
+
+        GarbageCollectorVO gcVo = Q.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.name, NAME).notEq(GarbageCollectorVO_.status, GCStatus.Done).find();
+
+        if (gcVo != null) {
+            existGc = true;
+        }
+
+        if (existGc) {
+            return;
+        }
+
+        submit();
     }
 }

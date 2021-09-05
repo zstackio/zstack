@@ -238,8 +238,7 @@ public class ImageBase implements Image {
                     gc.backupStorageUuid = ref.getBackupStorageUuid();
                     gc.imageUuid = msg.getImageUuid();
                     gc.installPath = ref.getInstallPath();
-                    gc.submit(ImageGlobalConfig.DELETION_GARBAGE_COLLECTION_INTERVAL.value(Long.class),
-                            TimeUnit.SECONDS);
+                    gc.deduplicateSubmit(ImageGlobalConfig.DELETION_GARBAGE_COLLECTION_INTERVAL.value(Long.class), TimeUnit.SECONDS);
                 }
 
                 returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getActualSize());

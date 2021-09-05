@@ -58,7 +58,7 @@ public class VmStopOnHypervisorFlow extends NoRollbackFlow {
                         gc.hostUuid = spec.getVmInventory().getHostUuid();
                         gc.NAME = String.format("gc-stop-vm-%s-%s-on-host-%s", gc.inventory.getUuid(),
                                 gc.inventory.getName(), gc.hostUuid);
-                        gc.submit();
+                        gc.deduplicateSubmit();
 
                         chain.next();
                     } else {

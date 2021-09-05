@@ -193,7 +193,7 @@ public class VmAllocateVolumeFlow implements Flow {
                     gc.NAME = String.format("gc-volume-%s", msg.getVolumeUuid());
                     gc.deletionPolicy = VolumeDeletionPolicy.Direct.toString();
                     gc.volumeUuid = msg.getVolumeUuid();
-                    gc.submit(TimeUnit.HOURS.toSeconds(8), TimeUnit.SECONDS);
+                    gc.deduplicateSubmit(TimeUnit.HOURS.toSeconds(8), TimeUnit.SECONDS);
 
                     compl.done();
                 }
