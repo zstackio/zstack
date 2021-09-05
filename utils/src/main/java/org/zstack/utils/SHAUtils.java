@@ -8,10 +8,10 @@ import java.security.NoSuchAlgorithmException;
 /**
  * Created by lining on 2019/9/4.
  */
-public class SHA512Utils {
-    public static String encrypt(String input) {
+public class SHAUtils {
+    public static String encrypt(String input, String algorithm) {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-512");
+            MessageDigest md = MessageDigest.getInstance(algorithm);
             md.reset();
             md.update(input.getBytes("utf8"));
             BigInteger bigInteger = new BigInteger(1, md.digest());
