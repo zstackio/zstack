@@ -9003,7 +9003,7 @@
   {
     "raw": "failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s],because %s",
     "en_US": "failed to attach nic[uuid:{0}, vm:{1}] on kvm host[uuid:{2}, ip:{3}],because {4}",
-    "zh_CN": "在物理机[uuid:{3},IP:{3}]上加载网卡[uuid:{0},云主机:{1}]失败，因为:{4}",
+    "zh_CN": "在物理机[uuid:{2},IP:{3}]上加载网卡[uuid:{0},云主机:{1}]失败，因为:{4}",
     "arguments": [
       "msg.getNicInventory().getUuid()",
       "msg.getNicInventory().getVmInstanceUuid()",
