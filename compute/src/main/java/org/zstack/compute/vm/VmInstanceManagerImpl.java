@@ -764,17 +764,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             }
                         }.execute();
                         break;
-                    } catch (JpaSystemException e) {
-                        if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException
-                                && e.getMessage().contains("Duplicate entry")) {
-                            logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
-                                    "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
-                                    "we will try finding another mac", nicVO.getMac()));
-                            logger.trace("", e);
-                            nicVO.setMac(NetworkUtils.generateMacWithDeviceId((short) nicVO.getDeviceId()));
-                        } else {
-                            throw e;
-                        }
                     } catch (PersistenceException e) {
                         if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class, "Duplicate entry")) {
                             logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
