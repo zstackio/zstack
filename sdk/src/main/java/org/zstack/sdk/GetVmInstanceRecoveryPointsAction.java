@@ -34,6 +34,9 @@ public class GetVmInstanceRecoveryPointsAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String endTime;
 
+    @Param(required = false, validValues = {"minute","hour","day"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String scale;
+
     @Param(required = false)
     public java.lang.Integer limit = 1000;
 
