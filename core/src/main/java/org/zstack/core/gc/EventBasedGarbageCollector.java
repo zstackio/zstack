@@ -91,4 +91,11 @@ public abstract class EventBasedGarbageCollector extends GarbageCollector {
 
         gcMgr.registerGC(this);
     }
+
+    protected void deduplicateSubmit() {
+        if (existedAndNotCompleted()) {
+            return;
+        }
+        submit();
+    }
 }

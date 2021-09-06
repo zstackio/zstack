@@ -73,7 +73,7 @@ public class VmAllocateVolumeFlow implements Flow {
             DebugUtils.Assert(vspec.getType() != null, "VolumeType can not be null!");
 
             if (VolumeType.Root.toString().equals(vspec.getType())) {
-            	msg.setResourceUuid((String) ctx.get("uuid"));
+                msg.setResourceUuid((String) ctx.get("uuid"));
                 msg.setName("ROOT-for-" + spec.getVmInventory().getName());
                 msg.setDescription(String.format("Root volume for VM[uuid:%s]", spec.getVmInventory().getUuid()));
                 msg.setRootImageUuid(spec.getImageSpec().getInventory().getUuid());
