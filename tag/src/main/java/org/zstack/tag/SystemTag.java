@@ -353,20 +353,6 @@ public class SystemTag {
                     dbf.getEntityManager().persist(vo);
                     dbf.getEntityManager().flush();
                     dbf.getEntityManager().refresh(vo);
-                } catch (JpaSystemException e) {
-                    if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
-                            e.getRootCause().getMessage().contains("Duplicate entry")) {
-
-                        // tag exists
-                        if (!ignoreIfExisting) {
-                            throw new CloudRuntimeException(String.format("duplicate system tag[resourceUuid: %s," +
-                                    "resourceType: %s, tag: %s", resourceUuid, resourceClass.getSimpleName(), tag), e);
-                        } else {
-                            logger.debug(String.format("please ignore this error log: Duplicate entry '%s' for key 'PRIMARY'", uuid));
-                            exceptionCanBeIgnored = true;
-                            return null;
-                        }
-                    }
                 } catch (PersistenceException e) {
                     if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class, "Duplicate entry")) {
                         // tag exists

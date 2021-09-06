@@ -394,13 +394,6 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         try {
             evt.setInventory(bindLdapAccount(msg.getAccountUuid(), fullDn));
             logger.info(String.format("create ldap binding[ldapUid=%s, ldapUseAsLoginName=%s] success", fullDn, ldapUseAsLoginName));
-        } catch (JpaSystemException e) {
-            if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException) {
-                evt.setError(err(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
-                        "The ldap uid has been bound to an account. "));
-            } else {
-                throw e;
-            }
         } catch (PersistenceException e) {
             if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class)) {
                 evt.setError(err(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
