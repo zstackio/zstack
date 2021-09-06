@@ -24,6 +24,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.retry.Retry;
+import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -42,6 +44,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
+import org.zstack.header.image.ImageArchitecture;
 import org.zstack.header.image.ImageBootMode;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
@@ -2669,7 +2672,7 @@ public class KVMHost extends HostBase implements Host {
             cmd.setClockTrack(VmSystemTags.CLOCK_TRACK.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class, VmSystemTags.CLOCK_TRACK_TOKEN));
         }
 
-        cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
+        cmd.setVideoType(rcf.getResourceConfigValue(VmGlobalConfig.VM_VIDEO_TYPE, spec.getVmInventory().getUuid(), String.class));
         if (VmSystemTags.QXL_MEMORY.hasTag(spec.getVmInventory().getUuid())) {
             Map<String,String> qxlMemory = VmSystemTags.QXL_MEMORY.getTokensByResourceUuid(spec.getVmInventory().getUuid());
             cmd.setQxlMemory(qxlMemory);
@@ -2680,8 +2683,12 @@ public class KVMHost extends HostBase implements Host {
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
         cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
-        cmd.setEmulateHyperV(!ImagePlatform.isType(platform, ImagePlatform.Linux) && rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class));
-        cmd.setVendorId(rcf.getResourceConfigValue(VmGlobalConfig.VENDOR_ID, spec.getVmInventory().getUuid(), String.class));
+        boolean emulatehyperV = false;
+        if (ImageArchitecture.x86_64.toString().equals(architecture)) {
+            emulatehyperV = rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class);
+        }
+        cmd.setEmulateHyperV(emulatehyperV);
+		cmd.setVendorId(rcf.getResourceConfigValue(VmGlobalConfig.VENDOR_ID, spec.getVmInventory().getUuid(), String.class));
         cmd.setAdditionalQmp(VmGlobalConfig.ADDITIONAL_QMP.value(Boolean.class));
         cmd.setApplianceVm(spec.getVmInventory().getType().equals("ApplianceVm"));
         cmd.setSystemSerialNumber(makeAndSaveVmSystemSerialNumber(spec.getVmInventory().getUuid()));
@@ -3627,6 +3634,11 @@ public class KVMHost extends HostBase implements Host {
                             SshResult ret = sshShell.runCommand(cmd);
                             if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
                                 // c.f. https://access.redhat.com/solutions/1120533
+                                try {
+                                    TimeUnit.SECONDS.sleep(3);
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e.getMessage());
+                                }
                                 ret = sshShell.runCommand(cmd);
                             }
 
@@ -3960,6 +3972,7 @@ public class KVMHost extends HostBase implements Host {
 
                             UpdateDependencyCmd cmd = new UpdateDependencyCmd();
                             cmd.hostUuid = self.getUuid();
+                            cmd.zstackRepo = AnsibleGlobalProperty.ZSTACK_REPO;
 
                             if (info.isNewAdded()) {
                                 cmd.enableExpRepo = true;
