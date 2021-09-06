@@ -436,6 +436,18 @@ public class AccountBase extends AbstractAccount {
 
     @Transactional
     private void handle(APIRevokeResourceSharingMsg msg) {
+
+        Map<String, String> addUuidType = getUuidTypeMapByResourceUuids(msg.getResourceUuids());
+        List<String> additionUuids = new ArrayList<>();
+        for (BeforeResourceSharingExtensionPoint extp : pluginRgty.getExtensionList(
+                BeforeResourceSharingExtensionPoint.class)) {
+            additionUuids.addAll(extp.beforeResourceSharingExtensionPoint(addUuidType));
+        }
+        if (!additionUuids.isEmpty()) {
+            additionUuids.addAll(msg.getResourceUuids());
+            msg.setResourceUuids(additionUuids);
+        }
+
         Query q = null;
         if (msg.isAll()) {
             String sql = "delete from SharedResourceVO vo where vo.ownerAccountUuid = :auuid and vo.resourceUuid in (:resUuids)";
@@ -498,6 +510,17 @@ public class AccountBase extends AbstractAccount {
     }
 
     private void handle(APIShareResourceMsg msg) {
+        Map<String, String> addUuidType = getUuidTypeMapByResourceUuids(msg.getResourceUuids());
+        List<String> additionUuids = new ArrayList<>();
+        for (BeforeResourceSharingExtensionPoint extp : pluginRgty.getExtensionList(
+                BeforeResourceSharingExtensionPoint.class)) {
+            additionUuids.addAll(extp.beforeResourceSharingExtensionPoint(addUuidType));
+        }
+        if (!additionUuids.isEmpty()) {
+            additionUuids.addAll(msg.getResourceUuids());
+            msg.setResourceUuids(additionUuids);
+        }
+
         Map<String, String> uuidType = getUuidTypeMapByResourceUuids(msg.getResourceUuids());
 
         for (String ruuid : msg.getResourceUuids()) {

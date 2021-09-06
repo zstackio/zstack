@@ -23,6 +23,8 @@ import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.identity.SharedResourceVO;
+import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
@@ -109,6 +111,27 @@ public class L3BasicNetwork implements L3Network {
     public void deleteHook() {
     }
 
+    private void setIpRangeSharedResource(String L3NetworkUuid, String IpRangeUuid) {
+        SharedResourceVO l3NetworkSharedResource = Q.New(SharedResourceVO.class)
+                .eq(SharedResourceVO_.resourceUuid, L3NetworkUuid)
+                .eq(SharedResourceVO_.resourceType, L3NetworkVO.class.getSimpleName())
+                .limit(1)
+                .find();
+        if (l3NetworkSharedResource == null) {
+            return;
+        }
+        SharedResourceVO svo = new SharedResourceVO();
+        svo.setOwnerAccountUuid(l3NetworkSharedResource.getOwnerAccountUuid());
+        svo.setResourceType(IpRangeVO.class.getSimpleName());
+        svo.setResourceUuid(IpRangeUuid);
+        if (l3NetworkSharedResource.isToPublic()) {
+            svo.setToPublic(l3NetworkSharedResource.isToPublic());
+        } else {
+            svo.setReceiverAccountUuid(l3NetworkSharedResource.getReceiverAccountUuid());
+        }
+        dbf.persistAndRefresh(svo);
+    }
+
     private void handle(APIAddIpRangeMsg msg) {
         IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
 
@@ -116,6 +139,8 @@ public class L3BasicNetwork implements L3Network {
         IpRangeInventory inv = factory.createIpRange(ipr, msg);
 
         tagMgr.createTagsFromAPICreateMessage(msg, inv.getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());
+
+        setIpRangeSharedResource(msg.getL3NetworkUuid(), inv.getUuid());
 
         APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
         evt.setInventory(inv);
@@ -567,6 +592,8 @@ public class L3BasicNetwork implements L3Network {
 
         tagMgr.createTagsFromAPICreateMessage(msg, inv.getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());
 
+        setIpRangeSharedResource(msg.getL3NetworkUuid(), inv.getUuid());
+
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
         evt.setInventory(inv);
         bus.publish(evt);
@@ -579,6 +606,8 @@ public class L3BasicNetwork implements L3Network {
 
         tagMgr.createTagsFromAPICreateMessage(msg, inv.getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());;
 
+        setIpRangeSharedResource(msg.getL3NetworkUuid(), inv.getUuid());
+
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
         evt.setInventory(inv);
         bus.publish(evt);
@@ -590,6 +619,8 @@ public class L3BasicNetwork implements L3Network {
         IpRangeInventory inv = factory.createIpRange(ipr, msg);
 
         tagMgr.createTagsFromAPICreateMessage(msg, inv.getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());
+
+        setIpRangeSharedResource(msg.getL3NetworkUuid(), inv.getUuid());
 
         APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
         evt.setInventory(inv);
