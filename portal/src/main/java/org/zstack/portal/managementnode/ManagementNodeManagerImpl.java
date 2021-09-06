@@ -770,6 +770,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     nodesInDb.add(vo);
 
                     Timestamp curr = getCurrentSqlTime();
+                    if (curr == null) {
+                        throw new CloudRuntimeException("failed to get management node current heartbeat timestamp from database." +
+                                " Returned timestamp is null");
+                    }
 
                     if (vo.getUuid().equals(node().getUuid())) {
                         if (lastHearbeatTime != null && lastHearbeatTime.getTime() > curr.getTime()) {
