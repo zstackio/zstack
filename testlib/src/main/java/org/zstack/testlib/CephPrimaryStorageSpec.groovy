@@ -142,7 +142,6 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 assert !cmd.snapshotPath.contains("null")
                 def rsp = new CephPrimaryStorageBase.CreateSnapshotRsp()
                 rsp.size = 0
-                rsp.installPath = cmd.snapshotPath
                 return rsp
             }
 

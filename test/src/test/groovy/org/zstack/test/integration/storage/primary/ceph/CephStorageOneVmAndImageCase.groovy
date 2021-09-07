@@ -111,11 +111,9 @@ class CephStorageOneVmAndImageCase extends SubCase{
             return rsp
         }
 
-        env.simulator(CephPrimaryStorageBase.CREATE_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CreateSnapshotCmd.class)
+        env.simulator(CephPrimaryStorageBase.CREATE_SNAPSHOT_PATH) {
             def rsp = new CephPrimaryStorageBase.CreateSnapshotRsp()
             rsp.size = 0
-            rsp.installPath = cmd.snapshotPath
             return rsp
         }
 
