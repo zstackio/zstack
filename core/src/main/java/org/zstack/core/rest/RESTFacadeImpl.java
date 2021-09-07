@@ -419,10 +419,10 @@ public class RESTFacadeImpl implements RESTFacade {
                 logger.trace(String.format("json %s [%s], %s", method.toString(), url, req));
             }
 
-            ListenableFuture<ResponseEntity<String>> f = asyncRestTemplate.exchange(url, HttpMethod.POST, req, String.class);
+            ListenableFuture<ResponseEntity<String>> f = asyncRestTemplate.exchange(url, method, req, String.class);
             f.addCallback(rsp -> {}, e -> wrapper.fail(err(SysErrors.HTTP_ERROR, e.getLocalizedMessage())));
         } catch (RestClientException e) {
-            logger.warn(String.format("Unable to post to %s: %s", url, e.getMessage()));
+            logger.warn(String.format("Unable to %s to %s: %s", method.toString(), url, e.getMessage()));
             wrapper.fail(ExceptionDSL.isCausedBy(e, ResourceAccessException.class) ? err(SysErrors.IO_ERROR, e.getMessage()) : inerr(e.getMessage()));
         }
     }
