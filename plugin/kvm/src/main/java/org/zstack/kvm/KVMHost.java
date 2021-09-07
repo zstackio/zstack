@@ -2977,7 +2977,7 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void handle(final CheckNetworkPhysicalInterfaceMsg msg) {
+    protected void handle(final CheckNetworkPhysicalInterfaceMsg msg) {
         inQueue().name(String.format("check-network-physical-interface-on-host-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> checkPhysicalInterface(msg, new NoErrorCompletion(chain) {
@@ -2988,7 +2988,7 @@ public class KVMHost extends HostBase implements Host {
                 }));
     }
 
-    private void handle(final BatchCheckNetworkPhysicalInterfaceMsg msg) {
+    protected void handle(final BatchCheckNetworkPhysicalInterfaceMsg msg) {
         inQueue().name(String.format("check-network-physical-interface-on-host-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> batchCheckPhysicalInterface(msg, new NoErrorCompletion(chain) {
