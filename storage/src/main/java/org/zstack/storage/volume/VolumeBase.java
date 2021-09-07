@@ -132,7 +132,9 @@ public class VolumeBase implements Volume {
             handle((ExpungeVolumeMsg) msg);
         } else if (msg instanceof RecoverVolumeMsg) {
             handle((RecoverVolumeMsg) msg);
-        } else if (msg instanceof SyncVolumeSizeMsg) {
+        } else if (msg instanceof EstimateVolumeTemplateSizeMsg) {
+            handle((EstimateVolumeTemplateSizeMsg) msg);
+        }  else if (msg instanceof SyncVolumeSizeMsg) {
             handle((SyncVolumeSizeMsg) msg);
         } else if (msg instanceof InstantiateVolumeMsg) {
             handle((InstantiateVolumeMsg) msg);
@@ -648,6 +650,24 @@ public class VolumeBase implements Volume {
             @Override
             public void success(VolumeSize ret) {
                 reply.setActualSize(ret.actualSize);
+                reply.setSize(ret.size);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final EstimateVolumeTemplateSizeMsg msg) {
+        final EstimateVolumeTemplateSizeReply reply = new EstimateVolumeTemplateSizeReply();
+        syncVolumeVolumeSize(new ReturnValueCompletion<VolumeSize>(msg) {
+            @Override
+            public void success(VolumeSize ret) {
+                reply.setActualSize(Math.min(ret.actualSize, ret.size));
                 reply.setSize(ret.size);
                 bus.reply(msg, reply);
             }

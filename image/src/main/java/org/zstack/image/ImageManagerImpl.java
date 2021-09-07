@@ -294,7 +294,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         chain.preCheck(data -> buildErrIfCanceled());
         chain.then(new ShareFlow() {
             ImageVO image;
-            long actualSize;
+            long imageEstimateSize;
             String volumePsUuid;
 
             @Override
@@ -304,7 +304,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        SyncVolumeSizeMsg smsg = new SyncVolumeSizeMsg();
+                        EstimateVolumeTemplateSizeMsg smsg = new EstimateVolumeTemplateSizeMsg();
                         smsg.setVolumeUuid(msg.getVolumeUuid());
                         bus.makeTargetServiceIdByResourceUuid(smsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
                         bus.send(smsg, new CloudBusCallBack(trigger) {
@@ -315,8 +315,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     return;
                                 }
 
-                                SyncVolumeSizeReply sr = reply.castReply();
-                                actualSize = sr.getActualSize();
+                                EstimateVolumeTemplateSizeReply sr = reply.castReply();
+                                imageEstimateSize = sr.getActualSize();
                                 volumePsUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid())
                                         .select(VolumeVO_.primaryStorageUuid)
                                         .findValue();
@@ -341,7 +341,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                         image = createTemporaryImageInDb(msg, vo -> {
                             vo.setSize(size);
-                            vo.setActualSize(actualSize);
+                            vo.setActualSize(imageEstimateSize);
                             vo.setFormat(format);
                             vo.setUrl(String.format("volume://%s", msg.getVolumeUuid()));
                         });
@@ -1505,7 +1505,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         chain.then(new ShareFlow() {
             ImageVO imageVO;
             VolumeInventory rootVolume;
-            Long imageActualSize;
+            Long imageEstimateSize;
             List<BackupStorageInventory> targetBackupStorages = new ArrayList<>();
             String zoneUuid;
 
@@ -1527,7 +1527,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        SyncVolumeSizeMsg msg = new SyncVolumeSizeMsg();
+                        EstimateVolumeTemplateSizeMsg msg = new EstimateVolumeTemplateSizeMsg();
                         msg.setVolumeUuid(rootVolume.getUuid());
                         bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, rootVolume.getPrimaryStorageUuid());
                         bus.send(msg, new CloudBusCallBack(trigger) {
@@ -1538,8 +1538,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     return;
                                 }
 
-                                SyncVolumeSizeReply sr = reply.castReply();
-                                imageActualSize = sr.getActualSize();
+                                EstimateVolumeTemplateSizeReply sr = reply.castReply();
+                                imageEstimateSize = sr.getActualSize();
                                 trigger.next();
                             }
                         });
@@ -1559,7 +1559,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             imgvo.setFormat(volvo.getFormat());
                             imgvo.setUrl(String.format("volume://%s", rootVolumeUuid));
                             imgvo.setSize(volvo.getSize());
-                            imgvo.setActualSize(imageActualSize);
+                            imgvo.setActualSize(imageEstimateSize);
                             imgvo.setArchitecture(dbf.findByUuid(rootVolume.getVmInstanceUuid(), VmInstanceVO.class).getArchitecture());
                         });
 
@@ -1587,7 +1587,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         if (msgData.getBackupStorageUuids() == null) {
                             AllocateBackupStorageMsg abmsg = new AllocateBackupStorageMsg();
                             abmsg.setRequiredZoneUuid(zoneUuid);
-                            abmsg.setSize(imageActualSize);
+                            abmsg.setSize(imageEstimateSize);
                             bus.makeLocalServiceId(abmsg, BackupStorageConstant.SERVICE_ID);
 
                             bus.send(abmsg, new CloudBusCallBack(trigger) {
@@ -1607,7 +1607,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 @Override
                                 public AllocateBackupStorageMsg call(String arg) {
                                     AllocateBackupStorageMsg abmsg = new AllocateBackupStorageMsg();
-                                    abmsg.setSize(imageActualSize);
+                                    abmsg.setSize(imageEstimateSize);
                                     abmsg.setBackupStorageUuid(arg);
                                     bus.makeLocalServiceId(abmsg, BackupStorageConstant.SERVICE_ID);
                                     return abmsg;
@@ -1650,7 +1650,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             public ReturnBackupStorageMsg call(BackupStorageInventory arg) {
                                 ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
                                 rmsg.setBackupStorageUuid(arg.getUuid());
-                                rmsg.setSize(imageActualSize);
+                                rmsg.setSize(imageEstimateSize);
                                 bus.makeLocalServiceId(rmsg, BackupStorageConstant.SERVICE_ID);
                                 return rmsg;
                             }
@@ -1663,7 +1663,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     if (!r.isSuccess()) {
                                         BackupStorageInventory bs = targetBackupStorages.get(replies.indexOf(r));
                                         logger.warn(String.format("failed to return capacity[%s] to backup storage[uuid:%s], because %s",
-                                                imageActualSize, bs.getUuid(), r.getError()));
+                                                imageEstimateSize, bs.getUuid(), r.getError()));
                                     }
                                 }
 
@@ -1850,7 +1850,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         chain.then(new ShareFlow() {
             List<BackupStorageInventory> backupStorages = new ArrayList<>();
             ImageVO image;
-            long actualSize;
+            long imageEstimateSize;
             String volumePsUuid;
 
             @Override
@@ -1860,7 +1860,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        SyncVolumeSizeMsg smsg = new SyncVolumeSizeMsg();
+                        EstimateVolumeTemplateSizeMsg smsg = new EstimateVolumeTemplateSizeMsg();
                         smsg.setVolumeUuid(volumeUuid);
                         bus.makeTargetServiceIdByResourceUuid(smsg, VolumeConstant.SERVICE_ID, volumeUuid);
                         bus.send(smsg, new CloudBusCallBack(trigger) {
@@ -1871,8 +1871,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     return;
                                 }
 
-                                SyncVolumeSizeReply sr = reply.castReply();
-                                actualSize = sr.getActualSize();
+                                EstimateVolumeTemplateSizeReply sr = reply.castReply();
+                                imageEstimateSize = sr.getActualSize();
                                 volumePsUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volumeUuid)
                                         .select(VolumeVO_.primaryStorageUuid)
                                         .findValue();
@@ -1899,7 +1899,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             imgvo.setFormat(format);
                             imgvo.setUrl(String.format("volume://%s", volumeUuid));
                             imgvo.setSize(size);
-                            imgvo.setActualSize(actualSize);
+                            imgvo.setActualSize(imageEstimateSize);
                         });
 
                         createSysTag(msgData, image);
@@ -1940,7 +1940,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
                             amsg.setRequiredZoneUuid(zoneUuid);
                             amsg.setRequiredPrimaryStorageUuid(volumePsUuid);
-                            amsg.setSize(actualSize);
+                            amsg.setSize(imageEstimateSize);
                             bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
                             bus.send(amsg, new CloudBusCallBack(trigger) {
                                 @Override
@@ -1960,7 +1960,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 public AllocateBackupStorageMsg call(String arg) {
                                     AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
                                     amsg.setRequiredZoneUuid(zoneUuid);
-                                    amsg.setSize(actualSize);
+                                    amsg.setSize(imageEstimateSize);
                                     amsg.setBackupStorageUuid(arg);
                                     bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
                                     return amsg;
@@ -1999,7 +1999,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 public ReturnBackupStorageMsg call(BackupStorageInventory arg) {
                                     ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
                                     rmsg.setBackupStorageUuid(arg.getUuid());
-                                    rmsg.setSize(actualSize);
+                                    rmsg.setSize(imageEstimateSize);
                                     bus.makeLocalServiceId(rmsg, BackupStorageConstant.SERVICE_ID);
                                     return rmsg;
                                 }
