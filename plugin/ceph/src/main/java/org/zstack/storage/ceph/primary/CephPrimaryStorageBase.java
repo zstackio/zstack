@@ -1049,7 +1049,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String format;
     }
 
-    public static class DownloadBitsFromNbdCmd extends AgentCommand {
+    public static class DownloadBitsFromNbdCmd extends AgentCommand implements Serializable {
+        @NoLogging
         private String nbdExportUrl;
         private String primaryStorageInstallPath;
         private long bandwidth;

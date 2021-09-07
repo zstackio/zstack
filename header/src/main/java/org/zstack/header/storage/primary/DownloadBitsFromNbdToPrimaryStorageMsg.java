@@ -1,5 +1,6 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.message.NeedReplyMessage;
 
@@ -9,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 public class DownloadBitsFromNbdToPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private String primaryStorageInstallPath;
+    @NoLogging
     private String nbdExportUrl;
     private long bandWidth;
 
