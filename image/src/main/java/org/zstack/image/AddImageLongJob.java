@@ -169,7 +169,6 @@ public class AddImageLongJob implements LongJob {
     public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
         AddImageMsg msg = JSONObjectUtil.toObject(job.getJobData(), AddImageMsg.class);
         ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getResourceUuid()).find();
-
         if (msg.needTrack() && image != null && !image.getBackupStorageRefs().isEmpty()) {
             APIAddImageEvent evt = new APIAddImageEvent(job.getApiId());
             new AddImageCompletion(evt, job, completion).startTrack();
