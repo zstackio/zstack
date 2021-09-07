@@ -38,8 +38,4 @@ public class CephGlobalConfig {
     public static GlobalConfig PREVENT_VM_SPLIT_BRAIN = new GlobalConfig(CATEGORY, "checkImageWatcherBeforeStartVm");
     @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 128)
     public static GlobalConfig CEPH_SYNC_LEVEL = new GlobalConfig(CATEGORY, "ceph.syncLevel");
-
-    @GlobalConfigDef(type = Integer.class, defaultValue = "30", description = "third party platform sdk timeout, in minutes")
-    @GlobalConfigValidation
-    public static GlobalConfig THIRD_PARTY_SDK_TIMEOUT = new GlobalConfig(CATEGORY, "thirdPartySdkTimeout");
 }
