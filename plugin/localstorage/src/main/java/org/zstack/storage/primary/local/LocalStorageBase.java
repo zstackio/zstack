@@ -11,6 +11,7 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.MergeQueue;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -59,6 +60,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -835,6 +837,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else if ((msg instanceof GetDownloadBitsFromKVMHostProgressMsg)) {
             handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
+        } else if ((msg instanceof LocalStorageRecalculateCapacityMsg)) {
+            handle((LocalStorageRecalculateCapacityMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -1738,6 +1742,65 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }.execute();
     }
 
+    private void handle(LocalStorageRecalculateCapacityMsg msg) {
+        recalculateLocalStorageCapacity(msg.isNeedRecalculateRef(), new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                LocalStorageRecalculateCapacityReply reply = new LocalStorageRecalculateCapacityReply();
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void recalculateLocalStorageCapacity(boolean needRecalculateRef, NoErrorCompletion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("recalculate-local-storage-capacity-%s", self.getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                LocalStorageCapacityRecalculator c = new LocalStorageCapacityRecalculator();
+                if (needRecalculateRef) {
+                    c.calculateByPrimaryStorageUuid(self.getUuid());
+                }
+                c.calculateTotalCapacity(self.getUuid());
+                completion.done();
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+
+            protected int getMaxPendingTasks() {
+                return 0;
+            }
+
+            protected void exceedMaxPendingCallback() {
+                completion.done();
+            }
+
+            // separate calculate all refs and calculate total to different sub queue
+            protected String getDeduplicateString() {
+                return needRecalculateRef ? "calculate-all-refs" : "calculate-total";
+            }
+        });
+    }
+
+    @Override
+    protected void handle(RecalculatePrimaryStorageCapacityMsg msg) {
+        recalculateLocalStorageCapacity(true, new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                RecalculatePrimaryStorageCapacityReply reply = new RecalculatePrimaryStorageCapacityReply();
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     protected void handle(final InitPrimaryStorageOnHostConnectedMsg msg) {
         final InitPrimaryStorageOnHostConnectedReply reply = new InitPrimaryStorageOnHostConnectedReply();
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
@@ -1794,8 +1857,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                             // the host's local storage capacity changed
                             // need to recalculate the capacity in the database
-                            RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+                            LocalStorageRecalculateCapacityMsg rmsg = new LocalStorageRecalculateCapacityMsg();
                             rmsg.setPrimaryStorageUuid(self.getUuid());
+                            rmsg.setNeedRecalculateRef(false);
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                             bus.send(rmsg);
                         }
@@ -2688,7 +2752,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+                LocalStorageRecalculateCapacityMsg rmsg = new LocalStorageRecalculateCapacityMsg();
                 rmsg.setPrimaryStorageUuid(self.getUuid());
                 bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
                 bus.send(rmsg);
