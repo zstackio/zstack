@@ -1049,6 +1049,36 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String format;
     }
 
+    public static class DownloadBitsFromNbdCmd extends AgentCommand {
+        private String nbdExportUrl;
+        private String primaryStorageInstallPath;
+        private long bandwidth;
+
+        public String getNbdExportUrl() {
+            return nbdExportUrl;
+        }
+
+        public void setNbdExportUrl(String nbdExportUrl) {
+            this.nbdExportUrl = nbdExportUrl;
+        }
+
+        public String getPrimaryStorageInstallPath() {
+            return primaryStorageInstallPath;
+        }
+
+        public void setPrimaryStorageInstallPath(String primaryStorageInstallPath) {
+            this.primaryStorageInstallPath = primaryStorageInstallPath;
+        }
+
+        public long getBandwidth() {
+            return bandwidth;
+        }
+
+        public void setBandwidth(long bandwidth) {
+            this.bandwidth = bandwidth;
+        }
+    }
+
     public static class DownloadBitsFromKVMHostCmd extends AgentCommand implements ReloadableCommand {
         private String hostname;
         private String username;
@@ -1207,6 +1237,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String CEPH_TO_CEPH_MIGRATE_VOLUME_SEGMENT_PATH = "/ceph/primarystorage/volume/migratesegment";
     public static final String GET_VOLUME_SNAPINFOS_PATH = "/ceph/primarystorage/volume/getsnapinfos";
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download";
+    public static final String DOWNLOAD_BITS_FROM_NBD_EXPT_PATH = "/ceph/primarystorage/nbd/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download/cancel";
     public static final String CHECK_SNAPSHOT_COMPLETED = "/ceph/primarystorage/check/snapshot";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/ceph/primarystorage/kvmhost/download/progress";
@@ -4016,6 +4047,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((GetVolumeSnapshotInfoMsg) msg);
         } else if (msg instanceof DownloadBitsFromKVMHostToPrimaryStorageMsg) {
             handle((DownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
+        } else if (msg instanceof DownloadBitsFromNbdToPrimaryStorageMsg) {
+            handle((DownloadBitsFromNbdToPrimaryStorageMsg) msg);
         } else if (msg instanceof CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) {
             handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else if ((msg instanceof CleanUpTrashOnPrimaryStroageMsg)) {
@@ -4179,6 +4212,31 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         }).specifyOrder(apiId).tryNext().call();
+    }
+
+    private void handle(DownloadBitsFromNbdToPrimaryStorageMsg msg) {
+        DownloadBitsFromNbdToPrimaryStorageReply reply = new DownloadBitsFromNbdToPrimaryStorageReply();
+
+        DownloadBitsFromNbdCmd cmd = new DownloadBitsFromNbdCmd();
+        cmd.setBandwidth(msg.getBandWidth());
+        cmd.setPrimaryStorageInstallPath(msg.getPrimaryStorageInstallPath());
+        cmd.setNbdExportUrl(msg.getNbdExportUrl());
+
+        httpCall(DOWNLOAD_BITS_FROM_NBD_EXPT_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
+            @Override
+            public void success(AgentResponse rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("%s", rsp.getError()));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(DeleteImageCacheOnPrimaryStorageMsg msg) {
