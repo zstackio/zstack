@@ -2523,10 +2523,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode err) {
                 CephDeleteVolumeGC gc = new CephDeleteVolumeGC();
-                gc.NAME = String.format("gc-ceph-%s-volume-%s", self.getUuid(), msg.getVolume());
+                gc.NAME = String.format("gc-ceph-%s-volume-%s", self.getUuid(), msg.getVolume().getUuid());
                 gc.primaryStorageUuid = self.getUuid();
                 gc.volume = msg.getVolume();
-                gc.submit(CephGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+                gc.deduplicateSubmit(CephGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
 
                 bus.reply(msg, reply);
                 completion.done();

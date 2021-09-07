@@ -65,4 +65,11 @@ public abstract class TimeBasedGarbageCollector extends GarbageCollector {
 
         gcMgr.registerGC(this);
     }
+
+    public void deduplicateSubmit(Long next, TimeUnit unit) {
+        if (existedAndNotCompleted()) {
+            return;
+        }
+        submit(next, unit);
+    }
 }
