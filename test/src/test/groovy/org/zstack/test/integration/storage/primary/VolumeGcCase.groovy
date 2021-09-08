@@ -95,7 +95,7 @@ class VolumeGcCase extends SubCase {
             uuid = vol.uuid
         }
 
-        GarbageCollectorVO cephVo = dbf.findById(1,GarbageCollectorVO_.class)
+        GarbageCollectorVO cephVo = dbf.findById(1,GarbageCollectorVO.class)
 
         for (int i = 0; i < 100; i++) {
             dbf.persist(cephVo);
