@@ -106,9 +106,9 @@ class VolumeGcCase extends SubCase {
         JsonObject jo = jp.parse(context).getAsJsonObject();
         String uuid = jo.get("volume").get("uuid").getAsString()
 
-        for (int i = 0; i < 100; i++) {
-            dbf.persist(cephVo)
-        }
+        dbf.persist(cephVo)
+        dbf.persist(cephVo)
+        dbf.persist(cephVo)
 
         assert deleteVolumeGcExtension() != 0
 
