@@ -1,5 +1,6 @@
 package org.zstack.test.integration.storage.primary
 
+import groovy.sql.Sql
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
@@ -17,7 +18,6 @@ import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.test.integration.storage.CephEnv
 import org.zstack.test.integration.storage.StorageTest
-import org.zstack.testlib.ClusterSpec
 import org.zstack.testlib.DiskOfferingSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
@@ -30,6 +30,7 @@ class VolumeGcCase extends SubCase {
     EnvSpec env
     DatabaseFacade dbf
     Q q
+    SQL sql
     PrimaryStorageInventory ceph
     DiskOfferingInventory diskOffering
     boolean deleteFail = false
@@ -56,7 +57,8 @@ class VolumeGcCase extends SubCase {
     void test() {
         env.create {
             dbf = bean(DatabaseFacade.class)
-
+            q  = bean(Q.class)
+            sql = bean(SQL.class)
             ceph = (env.specByName("ceph-pri") as PrimaryStorageSpec).inventory
             diskOffering = (env.specByName("diskOffering") as DiskOfferingSpec).inventory
 
@@ -96,13 +98,12 @@ class VolumeGcCase extends SubCase {
             uuid = vol.uuid
         }
 
-        GarbageCollectorVO cephVo = Q.New(GarbageCollectorVO_.class)
-                .eq(CephDeleteVolumeGC.class).find()
+        GarbageCollectorVO cephVo = Q.New(GarbageCollectorVO_.class).eq(CephDeleteVolumeGC.class).find()
 
         for (int i = 0; i < 100; i++) {
             dbf.persist(cephVo);
         }
-        
+
         assert deleteVolumeGcExtension() != 0
 
         GarbageCollectorInventory inv = null
