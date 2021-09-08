@@ -63,7 +63,7 @@ class VolumeGcCase extends SubCase {
         GarbageCollectorVO cephVo = Q.new(GarbageCollectorVO_.class)
                 .eq(CephDeleteVolumeGC.class).find()
 
-        for (int i=0; i<0; i<100; i++){
+        for (int i = 0; i < 100; i++) {
             dbf.persist(cephVo);
         }
 
