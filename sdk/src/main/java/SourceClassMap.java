@@ -85,6 +85,7 @@ public class SourceClassMap {
 			put("org.zstack.cloudformation.template.struct.ResourceStruct", "org.zstack.sdk.ResourceStruct");
 			put("org.zstack.cloudformation.template.struct.ResourceType", "org.zstack.sdk.ResourceType");
 			put("org.zstack.core.config.GlobalConfigInventory", "org.zstack.sdk.GlobalConfigInventory");
+			put("org.zstack.core.config.GlobalConfigOptions", "org.zstack.sdk.GlobalConfigOptions");
 			put("org.zstack.core.errorcode.ElaborationCategory", "org.zstack.sdk.ElaborationCategory");
 			put("org.zstack.core.errorcode.ElaborationCheckResult", "org.zstack.sdk.ElaborationCheckResult");
 			put("org.zstack.core.errorcode.ElaborationContent", "org.zstack.sdk.ElaborationContent");
@@ -761,6 +762,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FreeIpInventory", "org.zstack.header.network.l3.FreeIpInventory");
 			put("org.zstack.sdk.GarbageCollectorInventory", "org.zstack.core.gc.GarbageCollectorInventory");
 			put("org.zstack.sdk.GlobalConfigInventory", "org.zstack.core.config.GlobalConfigInventory");
+			put("org.zstack.sdk.GlobalConfigOptions", "org.zstack.core.config.GlobalConfigOptions");
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
 			put("org.zstack.sdk.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
 			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
