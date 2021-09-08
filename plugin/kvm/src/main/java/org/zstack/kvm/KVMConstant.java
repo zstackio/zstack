@@ -96,7 +96,9 @@ public interface KVMConstant {
 
     String KVM_HOST_ADDONS = "kvmHostAddons";
 
-    String HOST_PASSTHROUGH = "host-passthrough";
+    String CPU_MODE_NONE = "none";
+    String CPU_MODE_HOST_MODEL = "host-model";
+    String CPU_MODE_HOST_PASSTHROUGH = "host-passthrough";
 
     String IPTABLES_COMMENTS = "kvmagent.allow.port";
 
