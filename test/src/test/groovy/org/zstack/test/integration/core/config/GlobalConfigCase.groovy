@@ -19,6 +19,7 @@ import org.zstack.image.ImageGlobalConfig
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.GlobalConfigInventory
 import org.zstack.sdk.UpdateGlobalConfigAction
+import org.zstack.sdk.QueryGlobalConfigValidValuesResult
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -65,7 +66,18 @@ class GlobalConfigCase extends SubCase {
             testNormalized()
             testUpdateApiTimeoutDefaultValue()
             testUpdateValueSkipValidation()
+            testQueryValidValues()
         }
+    }
+
+    void testQueryValidValues() {
+        def cpuModeValidValues = queryGlobalConfigValidValues {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.NESTED_VIRTUALIZATION.name
+        } as QueryGlobalConfigValidValuesResult
+
+        // there are 17 valid values for category "vm.cpuMode" from KVMGlobalConfig.java
+        assert cpuModeValidValues.validValues.size() == 17
     }
 
     void testFloatPointNumberTolerance() {
