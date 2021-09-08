@@ -5,6 +5,6 @@ import org.zstack.core.GlobalPropertyDefinition;
 
 @GlobalPropertyDefinition
 public class DeleteVolumeGcGlobalProperty {
-    @GlobalProperty(name="deleteVolumeGc", defaultValue = "false")
+    @GlobalProperty(name="deleteVolumeGc", defaultValue = "ture")
     public static boolean DELETE_VOLUME_GC;
 }
