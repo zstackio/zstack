@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit
 class VolumeGcCase extends SubCase {
     EnvSpec env
     DatabaseFacade dbf
-    Q q
     SQL sql
     PrimaryStorageInventory ceph
     DiskOfferingInventory diskOffering
@@ -57,7 +56,6 @@ class VolumeGcCase extends SubCase {
     void test() {
         env.create {
             dbf = bean(DatabaseFacade.class)
-            q  = bean(Q.class)
             sql = bean(SQL.class)
             ceph = (env.specByName("ceph-pri") as PrimaryStorageSpec).inventory
             diskOffering = (env.specByName("diskOffering") as DiskOfferingSpec).inventory
@@ -98,7 +96,7 @@ class VolumeGcCase extends SubCase {
             uuid = vol.uuid
         }
 
-        GarbageCollectorVO cephVo = Q.New(GarbageCollectorVO_.class).eq(CephDeleteVolumeGC.class).find()
+        GarbageCollectorVO cephVo = dbf.findById(1,GarbageCollectorVO_.class)
 
         for (int i = 0; i < 100; i++) {
             dbf.persist(cephVo);
