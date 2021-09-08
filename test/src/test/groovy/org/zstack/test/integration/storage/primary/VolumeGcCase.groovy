@@ -103,6 +103,8 @@ class VolumeGcCase extends SubCase {
             dbf.persist(cephVo);
         }
 
+        assert deleteVolumeGcExtension() == true
+
         GarbageCollectorInventory inv = null
 
         retryInSecs {
@@ -135,7 +137,7 @@ class VolumeGcCase extends SubCase {
         }
     }
 
-    void deleteVolumeGcExtension() {
+    boolean deleteVolumeGcExtension() {
 
         long count = SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
                 "where vo.runnerClass = :runnerClass and vo.status := status", Long.class)
@@ -143,7 +145,7 @@ class VolumeGcCase extends SubCase {
                 .param("status", GCStatus.Idle)
                 .find();
         logger.debug(String.format("%s", count));
-        assert count != 0
+        return assert count != 0
         //        SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
 //                "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
 //                .param("runnerClass", DeleteVolumeGC.class)
