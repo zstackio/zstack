@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.primary
 
 import groovy.sql.Sql
+import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
@@ -90,11 +91,11 @@ class VolumeGcCase extends SubCase {
 
         deleteFail = true
 
-
         deleteDataVolume {
             uuid = vol.uuid
         }
-        GarbageCollectorVO cephVo = dbf.findById("1", GarbageCollectorVO.class)
+
+        SQL.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC)
 
         for (int i = 0; i < 100; i++) {
             dbf.persist(cephVo);
