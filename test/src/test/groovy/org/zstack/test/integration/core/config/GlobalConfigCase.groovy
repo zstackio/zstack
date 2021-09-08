@@ -19,6 +19,8 @@ import org.zstack.image.ImageGlobalConfig
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.GlobalConfigInventory
 import org.zstack.sdk.UpdateGlobalConfigAction
+import org.zstack.sdk.GetGlobalConfigOptionsResult
+import org.zstack.sdk.Pair
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -65,7 +67,45 @@ class GlobalConfigCase extends SubCase {
             testNormalized()
             testUpdateApiTimeoutDefaultValue()
             testUpdateValueSkipValidation()
+            testGetConfigOptions()
         }
+    }
+
+    void testGetConfigOptions() {
+        testGetValidValue()
+        testGetNumberRange()
+        testGetNumberBoundary()
+    }
+
+    void testGetValidValue() {
+        def configOptions = getGlobalConfigOptions {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.NESTED_VIRTUALIZATION.name
+        } as GetGlobalConfigOptionsResult
+
+        // there are 17 valid values for category "vm.cpuMode" from KVMGlobalConfig.java
+        assert configOptions.options.validValue.size() == 17
+    }
+
+    void testGetNumberRange() {
+        def configOptions = getGlobalConfigOptions {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.VM_CREATE_CONCURRENCY.name
+        } as GetGlobalConfigOptionsResult
+
+        // number range for this category is {1, 10}
+        assert configOptions.options.numberRange.getT() == 1
+        assert configOptions.options.numberRange.getU() == 10
+    }
+
+    void testGetNumberBoundary() {
+        def configOptions = getGlobalConfigOptions {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.HOST_SYNC_LEVEL.name
+        } as GetGlobalConfigOptionsResult
+
+        // number boundary for this category is > 2
+        assert configOptions.options.numberGreaterThan == 2
     }
 
     void testFloatPointNumberTolerance() {

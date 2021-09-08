@@ -50,7 +50,8 @@ public class GlobalConfig {
     private transient List<GlobalConfigUpdateExtensionPoint> updateExtensions = new ArrayList<>();
     private transient List<GlobalConfigBeforeUpdateExtensionPoint> beforeUpdateExtensions = new ArrayList<>();
     private transient List<GlobalConfigBeforeResetExtensionPoint> beforeResetExtensions = new ArrayList<>();
-    private transient List<GlobalConfigValidatorExtensionPoint> validators = new ArrayList<>();
+    private transient List<GlobalConfigValidatorExtensionPoint> validatorExtensions = new ArrayList<>();
+    private transient List<GlobalConfigQueryExtensionPoint> queryExtensions = new ArrayList<>();
     private transient List<GlobalConfigUpdateExtensionPoint> localUpdateExtensions = new ArrayList<>();
     private transient List<GlobalConfigBeforeUpdateExtensionPoint> localBeforeUpdateExtensions = new ArrayList<>();
     private GlobalConfigDef configDef;
@@ -125,7 +126,8 @@ public class GlobalConfig {
         setValue(g.value());
         setLinked(g.isLinked());
 
-        validators = new ArrayList<>();
+        validatorExtensions = new ArrayList<>();
+        queryExtensions = new ArrayList<>();
         updateExtensions = new ArrayList<>();
         localUpdateExtensions = new ArrayList<>();
         beforeUpdateExtensions = new ArrayList<>();
@@ -134,7 +136,8 @@ public class GlobalConfig {
         beforeUpdateExtensions.addAll(g.getBeforeUpdateExtensions());
         localUpdateExtensions.addAll(g.getLocalUpdateExtensions());
         beforeResetExtensions.addAll(g.getBeforeResetExtensions());
-        validators.addAll(g.getValidators());
+        validatorExtensions.addAll(g.getValidatorExtensions());
+        queryExtensions.addAll(g.getQueryExtensions());
         configDef = g.getConfigDef();
         return this;
     }
@@ -175,7 +178,11 @@ public class GlobalConfig {
     }
 
     public void installValidateExtension(GlobalConfigValidatorExtensionPoint ext) {
-        validators.add(ext);
+        validatorExtensions.add(ext);
+    }
+
+    public void installQueryExtension(GlobalConfigQueryExtensionPoint ext) {
+        queryExtensions.add(ext);
     }
 
     public String getName() {
@@ -297,7 +304,7 @@ public class GlobalConfig {
     }
 
     public void validate(String newValue) {
-        for  (GlobalConfigValidatorExtensionPoint ext : validators) {
+        for  (GlobalConfigValidatorExtensionPoint ext : validatorExtensions) {
             ext.validateGlobalConfig(category, name, value, newValue);
         }
     }
@@ -409,6 +416,13 @@ public class GlobalConfig {
         update(newValue, true);
     }
 
+    public GlobalConfigOptions getOptions() {
+        for  (GlobalConfigQueryExtensionPoint ext : queryExtensions) {
+            return ext.getConfigOptions();
+        }
+        return null;
+    }
+
     public void updateValueSkipValidation(Object val) {
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
             throw new OperationFailureException(operr("do not allow skip verification"));
@@ -448,8 +462,8 @@ public class GlobalConfig {
         return String.format("Global config[category: %s, name: %s]", category, name);
     }
 
-    void setValidators(List<GlobalConfigValidatorExtensionPoint> validators) {
-        this.validators = validators;
+    void setValidatorExtensions(List<GlobalConfigValidatorExtensionPoint> validatorExtensions) {
+        this.validatorExtensions = validatorExtensions;
     }
 
     void setUpdateExtensions(List<GlobalConfigUpdateExtensionPoint> updateExtensions) {
@@ -460,8 +474,12 @@ public class GlobalConfig {
         this.localUpdateExtensions = localUpdateExtensions;
     }
 
-    public List<GlobalConfigValidatorExtensionPoint> getValidators() {
-        return validators;
+    public List<GlobalConfigValidatorExtensionPoint> getValidatorExtensions() {
+        return validatorExtensions;
+    }
+
+    public List<GlobalConfigQueryExtensionPoint> getQueryExtensions() {
+        return queryExtensions;
     }
 
     public List<GlobalConfigUpdateExtensionPoint> getUpdateExtensions() {
