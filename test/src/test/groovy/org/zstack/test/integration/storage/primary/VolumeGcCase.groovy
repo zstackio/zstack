@@ -1,5 +1,6 @@
 package org.zstack.test.integration.storage.primary
 
+import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.gc.GCStatus
 import org.zstack.core.gc.GarbageCollectorVO
 import org.zstack.core.gc.GarbageCollectorVO_
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeUnit
 
 class VolumeGcCase extends SubCase {
     EnvSpec env
-
+    DatabaseFacade dbf
     PrimaryStorageInventory ceph
     DiskOfferingInventory diskOffering
     boolean deleteFail = false
@@ -114,6 +115,8 @@ class VolumeGcCase extends SubCase {
     @Override
     void test() {
         env.create {
+            dbf = bean(DatabaseFacade.class)
+
             ceph = (env.specByName("ceph-pri") as PrimaryStorageSpec).inventory
             diskOffering = (env.specByName("diskOffering") as DiskOfferingSpec).inventory
 
@@ -123,7 +126,6 @@ class VolumeGcCase extends SubCase {
 
             prepareEnv()
             testVolumeGCSuccess()
-            testVolumeGCCancelledAfterPrimaryStorageDeleted()
         }
     }
 }
