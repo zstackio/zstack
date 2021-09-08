@@ -104,7 +104,7 @@ class VolumeGcCase extends SubCase {
         String context = cephVo.getContext()
         JsonParser jp = new JsonParser();
         JsonObject jo = jp.parse(context).getAsJsonObject();
-        String uuid = jo.get("volume").getAsString()
+        String uuid = jo.get("volume").get("uuid").getAsString()
 
         for (int i = 0; i < 100; i++) {
             dbf.persist(cephVo)
