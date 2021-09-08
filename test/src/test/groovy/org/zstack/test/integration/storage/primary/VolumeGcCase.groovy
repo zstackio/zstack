@@ -96,7 +96,8 @@ class VolumeGcCase extends SubCase {
         }
 
         GarbageCollectorVO cephVo = Q.New(GarbageCollectorVO.class).find()
-        List<String> context= JSONObjectUtil.toCollection(cephVo.getContext(), ArrayList.class, String.class)
+        String context = cephVo.getContext()
+        //List<String> context= JSONObjectUtil.toCollection(, ArrayList.class, String.class)
         for (int i = 0; i < 100; i++) {
             dbf.persistAndRefresh(cephVo)
         }
