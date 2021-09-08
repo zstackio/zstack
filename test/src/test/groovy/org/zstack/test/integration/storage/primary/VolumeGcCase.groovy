@@ -52,7 +52,6 @@ class VolumeGcCase extends SubCase {
     }
 
 
-
     @Override
     void test() {
         env.create {
@@ -96,18 +95,14 @@ class VolumeGcCase extends SubCase {
             uuid = vol.uuid
         }
 
-//        String cephVo = SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status := status")
-//                .param("runnerClass", CephDeleteVolumeGC.class)
-//                .param("status", GCStatus.Idle)
-//                .find()
+        def cephVo = Q.New(GarbageCollectorVO.class).find()
 
-        def cephVo = SQL.New(GarbageCollectorVO.class).find()
-        def cephVo_ = Q.New(GarbageCollectorVO.class).find()
-
-        //JSONObjectUtil.toObject(cephVo,)
+        Map<String, String> map = new HashMap<String, String>()
+        JSONObjectUtil.toCollection(cephVo,map)
+        JSONObjectUtil.toObject(cephVo,map)
 
         for (int i = 0; i < 100; i++) {
-            SQL.New(GarbageCollectorVO.class).delete()
+            dbf.persist(cephVo)
         }
 
         assert deleteVolumeGcExtension() != 0
