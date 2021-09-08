@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit
 class VolumeGcCase extends SubCase {
     EnvSpec env
     DatabaseFacade dbf
-    SQL sql
     PrimaryStorageInventory ceph
     DiskOfferingInventory diskOffering
     boolean deleteFail = false
@@ -56,7 +55,7 @@ class VolumeGcCase extends SubCase {
     void test() {
         env.create {
             dbf = bean(DatabaseFacade.class)
-            sql = bean(SQL.class)
+
             ceph = (env.specByName("ceph-pri") as PrimaryStorageSpec).inventory
             diskOffering = (env.specByName("diskOffering") as DiskOfferingSpec).inventory
 
