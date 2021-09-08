@@ -1,6 +1,10 @@
 package org.zstack.test.integration.storage.primary
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import groovy.sql.Sql
+import org.apache.logging.log4j.core.layout.JacksonFactory
+import org.json.JSONObject
 import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
@@ -96,10 +100,14 @@ class VolumeGcCase extends SubCase {
         }
 
         GarbageCollectorVO cephVo = Q.New(GarbageCollectorVO.class).find()
+
         String context = cephVo.getContext()
-        //List<String> context= JSONObjectUtil.toCollection(, ArrayList.class, String.class)
+        JsonParser jp = new JsonParser();
+        JsonObject jo = jp.parse(context).getAsJsonObject();
+        String uuid = jo.get("volume").getAsString()
+
         for (int i = 0; i < 100; i++) {
-            dbf.persistAndRefresh(cephVo)
+            dbf.persist(cephVo)
         }
 
         assert deleteVolumeGcExtension() != 0
@@ -139,7 +147,9 @@ class VolumeGcCase extends SubCase {
     long deleteVolumeGcExtension() {
         long count = Q.New(GarbageCollectorVO)
                 .eq(GarbageCollectorVO_.runnerClass,CephDeleteVolumeGC.class)
-                .eq(GarbageCollectorVO_.status,GCStatus.Idle).cout
+                .eq(GarbageCollectorVO_.status,GCStatus.Idle)
+                .eq(GarbageCollectorVO_.context.)
+                .count()
 
                 SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
                 "where vo.runnerClass = :runnerClass and vo.status := status", Long.class)
