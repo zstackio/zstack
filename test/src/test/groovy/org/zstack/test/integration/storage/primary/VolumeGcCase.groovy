@@ -96,7 +96,7 @@ class VolumeGcCase extends SubCase {
             uuid = vol.uuid
         }
 
-        GarbageCollectorVO cephVo = q.new(GarbageCollectorVO_.class)
+        GarbageCollectorVO cephVo = Q.New(GarbageCollectorVO_.class)
                 .eq(CephDeleteVolumeGC.class).find()
 
         for (int i = 0; i < 100; i++) {
