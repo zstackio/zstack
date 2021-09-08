@@ -24,6 +24,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.TimeUnit
 
@@ -95,11 +96,14 @@ class VolumeGcCase extends SubCase {
             uuid = vol.uuid
         }
 
-        def cephVo = SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
-                "where vo.runnerClass = :runnerClass and vo.status := status")
-                .param("runnerClass", CephDeleteVolumeGC.class)
-                .param("status", GCStatus.Idle)
-                .find()
+//        String cephVo = SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status := status")
+//                .param("runnerClass", CephDeleteVolumeGC.class)
+//                .param("status", GCStatus.Idle)
+//                .find()
+
+        def cephVo = SQL.New(GarbageCollectorVO.class).find()
+
+        //JSONObjectUtil.toObject(cephVo,)
 
         for (int i = 0; i < 100; i++) {
             dbf.persist(cephVo);
