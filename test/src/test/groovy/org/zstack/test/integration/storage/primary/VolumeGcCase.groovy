@@ -95,7 +95,7 @@ class VolumeGcCase extends SubCase {
             uuid = vol.uuid
         }
 
-        GarbageCollectorVO cephVo = SQL.New("select * from GarbageCollectorVO vo " +
+        GarbageCollectorVO cephVo = SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
                 "where vo.runnerClass = :runnerClass and vo.status := status", GarbageCollectorVO.class)
                 .param("runnerClass", CephDeleteVolumeGC.class)
                 .param("status", GCStatus.Idle)
