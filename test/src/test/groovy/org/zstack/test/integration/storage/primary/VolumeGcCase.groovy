@@ -96,7 +96,7 @@ class VolumeGcCase extends SubCase {
         }
 
         def cephVo = SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
-                "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
+                "where vo.runnerClass = :runnerClass and vo.status := status")
                 .param("runnerClass", CephDeleteVolumeGC.class)
                 .param("status", GCStatus.Idle)
                 .find()
