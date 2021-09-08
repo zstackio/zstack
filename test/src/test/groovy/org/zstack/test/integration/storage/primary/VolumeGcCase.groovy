@@ -102,8 +102,8 @@ class VolumeGcCase extends SubCase {
         for (int i = 0; i < 100; i++) {
             dbf.persist(cephVo);
         }
-
-        assert deleteVolumeGcExtension() == true
+        
+        assert deleteVolumeGcExtension() != 0
 
         GarbageCollectorInventory inv = null
 
@@ -137,15 +137,14 @@ class VolumeGcCase extends SubCase {
         }
     }
 
-    boolean deleteVolumeGcExtension() {
-
+    long deleteVolumeGcExtension() {
         long count = SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
                 "where vo.runnerClass = :runnerClass and vo.status := status", Long.class)
                 .param("runnerClass", CephDeleteVolumeGC.class)
                 .param("status", GCStatus.Idle)
                 .find();
         logger.debug(String.format("%s", count));
-        return assert count != 0
+        return count
         //        SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
 //                "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
 //                .param("runnerClass", DeleteVolumeGC.class)
