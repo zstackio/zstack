@@ -95,14 +95,11 @@ class VolumeGcCase extends SubCase {
             uuid = vol.uuid
         }
 
-        def cephVo = Q.New(GarbageCollectorVO.class).find()
-
+        GarbageCollectorVO cephVo = Q.New(GarbageCollectorVO.class).find()
         Map<String, String> map = new HashMap<String, String>()
-        JSONObjectUtil.toCollection(cephVo,map)
-        JSONObjectUtil.toObject(cephVo,map)
-
+        JSONObjectUtil.toCollection(cephVo.getContext(),map)
         for (int i = 0; i < 100; i++) {
-            dbf.persist(cephVo)
+            dbf.persistAndRefresh(cephVo)
         }
 
         assert deleteVolumeGcExtension() != 0
