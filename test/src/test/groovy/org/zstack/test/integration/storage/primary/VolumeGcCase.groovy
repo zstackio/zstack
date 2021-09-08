@@ -95,7 +95,7 @@ class VolumeGcCase extends SubCase {
             uuid = vol.uuid
         }
 
-        SQL.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC)
+        GarbageCollectorVO cephVo = SQL.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC).find()
 
         for (int i = 0; i < 100; i++) {
             dbf.persist(cephVo);
