@@ -102,7 +102,7 @@ class VolumeGcCase extends SubCase {
 //                .find()
 
         def cephVo = SQL.New(GarbageCollectorVO.class).find()
-        def cephVo_ = Q.New(GarbageCollectorVO_.class).find()
+        def cephVo_ = Q.New(GarbageCollectorVO.class).find()
 
         //JSONObjectUtil.toObject(cephVo,)
 
