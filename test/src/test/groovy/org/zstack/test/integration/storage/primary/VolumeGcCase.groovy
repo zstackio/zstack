@@ -143,11 +143,11 @@ class VolumeGcCase extends SubCase {
                 .find();
         logger.debug(String.format("%s", count));
         return count
-                SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
-                "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
-                .param("runnerClass", DeleteVolumeGC.class)
-                .param("status", GCStatus.Idle.toString())
-                .limit(500).paginate(count, (List<String> vids) -> vids.forEach(vid -> {
+//                SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
+//                "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
+//                .param("runnerClass", DeleteVolumeGC.class)
+//                .param("status", GCStatus.Idle.toString())
+//                .limit(500).paginate(count, (List<String> vids) -> vids.forEach(vid -> {
 //
 //            if (!Q.New(GarbageCollectorVO.class)
 //                    .eq(GarbageCollectorVO_.runnerClass, vid)
