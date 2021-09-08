@@ -53,8 +53,10 @@ class VolumeGcCase extends SubCase {
 
         deleteFail = true
 
-        deleteDataVolume {
-            uuid = vol.uuid
+        for (int i = 0; i < 10; i++) {
+            deleteDataVolume {
+                uuid = vol.uuid
+            }
         }
 
         GarbageCollectorInventory inv = null
