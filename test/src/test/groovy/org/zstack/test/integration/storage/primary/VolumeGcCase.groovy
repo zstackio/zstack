@@ -96,8 +96,7 @@ class VolumeGcCase extends SubCase {
         }
 
         GarbageCollectorVO cephVo = Q.New(GarbageCollectorVO.class).find()
-        Map<String, String> map = new HashMap<String, String>()
-        JSONObjectUtil.toCollection(cephVo.getContext(),map)
+        List<String> context= JSONObjectUtil.toCollection(cephVo.getContext(), ArrayList.class, String.class))
         for (int i = 0; i < 100; i++) {
             dbf.persistAndRefresh(cephVo)
         }
@@ -137,7 +136,11 @@ class VolumeGcCase extends SubCase {
     }
 
     long deleteVolumeGcExtension() {
-        long count = SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
+        long count = Q.New(GarbageCollectorVO)
+                .eq(GarbageCollectorVO_.runnerClass,CephDeleteVolumeGC.class)
+                .eq(GarbageCollectorVO_.status,GCStatus.Idle).cout
+
+                SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
                 "where vo.runnerClass = :runnerClass and vo.status := status", Long.class)
                 .param("runnerClass", CephDeleteVolumeGC.class)
                 .param("status", GCStatus.Idle)
