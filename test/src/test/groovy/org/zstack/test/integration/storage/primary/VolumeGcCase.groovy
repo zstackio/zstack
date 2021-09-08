@@ -94,8 +94,7 @@ class VolumeGcCase extends SubCase {
         deleteDataVolume {
             uuid = vol.uuid
         }
-        Long id = 1
-        GarbageCollectorVO cephVo = dbf.findById(id, GarbageCollectorVO.class)
+        GarbageCollectorVO cephVo = dbf.findById("1", GarbageCollectorVO.class)
 
         for (int i = 0; i < 100; i++) {
             dbf.persist(cephVo);
