@@ -57,7 +57,9 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     public void handleMessage(Message msg) {
         if (msg instanceof APIUpdateGlobalConfigMsg) {
             handle((APIUpdateGlobalConfigMsg) msg);
-        }else if (msg instanceof APIResetGlobalConfigMsg) {
+        } else if (msg instanceof APIQueryGlobalConfigValidValuesMsg) {
+            handle((APIQueryGlobalConfigValidValuesMsg) msg);
+        } else if (msg instanceof APIResetGlobalConfigMsg) {
             handle((APIResetGlobalConfigMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
@@ -104,6 +106,26 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         }
         
         bus.publish(evt);
+    }
+
+    private void handle(APIQueryGlobalConfigValidValuesMsg msg) {
+        APIQueryGlobalConfigValidValuesReply reply = new APIQueryGlobalConfigValidValuesReply();
+        GlobalConfig globalConfig = allConfig.get(msg.getIdentity());
+        if (globalConfig == null) {
+            ErrorCode err = argerr("Unable to find GlobalConfig[category: %s, name: %s]", msg.getCategory(), msg.getName());
+            reply.setError(err);
+            bus.reply(msg, reply);
+            return;
+        }
+
+        try {
+            reply.setValidValues(globalConfig.queryValidValues());
+        } catch (GlobalConfigException e) {
+            reply.setError(argerr(e.getMessage()));
+            logger.warn(e.getMessage(), e);
+        }
+
+        bus.reply(msg, reply);
     }
 
     @Override
@@ -631,6 +653,13 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                                 if (!validValues.contains(newValue)) {
                                     throw new GlobalConfigException(String.format("%s is not a valid value. Valid values are %s", newValue, validValues));
                                 }
+                            }
+                        });
+
+                        config.installQueryExtension(new GlobalConfigQueryExtensionPoint() {
+                            @Override
+                            public List<String> queryConfigValidValues() {
+                                return validValues;
                             }
                         });
                     }
