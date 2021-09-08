@@ -1,6 +1,8 @@
 package org.zstack.test.integration.storage.primary
 
 import org.zstack.core.gc.GCStatus
+import org.zstack.core.gc.GarbageCollectorVO
+import org.zstack.core.gc.GarbageCollectorVO_
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GarbageCollectorInventory
@@ -53,10 +55,16 @@ class VolumeGcCase extends SubCase {
 
         deleteFail = true
 
-        for (int i = 0; i < 10; i++) {
-            deleteDataVolume {
-                uuid = vol.uuid
-            }
+
+        deleteDataVolume {
+            uuid = vol.uuid
+        }
+
+        GarbageCollectorVO cephVo = Q.new(GarbageCollectorVO_.class)
+                .eq(CephDeleteVolumeGC.class).find()
+
+        for (int i=0; i<0; i<100; i++){
+            dbf.persist(cephVo);
         }
 
         GarbageCollectorInventory inv = null
