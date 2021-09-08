@@ -2,6 +2,7 @@ package org.zstack.test.integration.storage.primary
 
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.core.gc.GCStatus
 import org.zstack.core.gc.GarbageCollectorVO
 import org.zstack.core.gc.GarbageCollectorVO_
@@ -47,6 +48,38 @@ class VolumeGcCase extends SubCase {
     @Override
     void environment() {
         env = CephEnv.CephStorageOneVmEnv()
+    }
+
+
+
+    @Override
+    void test() {
+        env.create {
+            dbf = bean(DatabaseFacade.class)
+
+            ceph = (env.specByName("ceph-pri") as PrimaryStorageSpec).inventory
+            diskOffering = (env.specByName("diskOffering") as DiskOfferingSpec).inventory
+
+            // set a very long time so the GC won't run, we use API to trigger it
+            CephGlobalConfig.GC_INTERVAL.updateValue(TimeUnit.DAYS.toSeconds(1))
+            VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())
+
+            prepareEnv()
+            testVolumeGCSuccess()
+            deleteVolumeGcExtension()
+        }
+    }
+
+    void prepareEnv() {
+        env.afterSimulator(CephPrimaryStorageBase.DELETE_PATH) { rsp ->
+            called = true
+
+            if (deleteFail) {
+                throw new HttpError(403, "on purpose")
+            }
+
+            return rsp
+        }
     }
 
     void testVolumeGCSuccess() {
@@ -102,33 +135,31 @@ class VolumeGcCase extends SubCase {
         }
     }
 
-    void prepareEnv() {
-        env.afterSimulator(CephPrimaryStorageBase.DELETE_PATH) { rsp ->
-            called = true
+    void deleteVolumeGcExtension() {
 
-            if (deleteFail) {
-                throw new HttpError(403, "on purpose")
-            }
-
-            return rsp
-        }
-    }
-
-    @Override
-    void test() {
-        env.create {
-            dbf = bean(DatabaseFacade.class)
-            q = bean(Q.class)
-
-            ceph = (env.specByName("ceph-pri") as PrimaryStorageSpec).inventory
-            diskOffering = (env.specByName("diskOffering") as DiskOfferingSpec).inventory
-
-            // set a very long time so the GC won't run, we use API to trigger it
-            CephGlobalConfig.GC_INTERVAL.updateValue(TimeUnit.DAYS.toSeconds(1))
-            VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())
-
-            prepareEnv()
-            testVolumeGCSuccess()
-        }
+        long count = SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
+                "where vo.runnerClass = :runnerClass and vo.status := status", Long.class)
+                .param("runnerClass", CephDeleteVolumeGC.class)
+                .param("status", GCStatus.Idle)
+                .find();
+        logger.debug(String.format("%s", count));
+        assert count != 0
+        //        SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
+//                "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
+//                .param("runnerClass", DeleteVolumeGC.class)
+//                .param("status", GCStatus.Idle.toString())
+//                .limit(500).paginate(count, (List<String> vids) -> vids.forEach(vid -> {
+//
+//            if (!Q.New(GarbageCollectorVO.class)
+//                    .eq(GarbageCollectorVO_.runnerClass, vid)
+//                    .isExists()) {
+//                IAM2VirtualIDOrganizationRefVO refVO = new IAM2VirtualIDOrganizationRefVO();
+//                refVO.setVirtualIDUuid(vid);
+//                refVO.setOrganizationUuid(IAM2Constant.INITIAL_ORGANIZATION_DEFAULT_UUID);
+//                dbf.persist(refVO);
+//            }
+//
+//            SQL.New(GarbageCollectorVO.class).delete();
+//        }));
     }
 }
