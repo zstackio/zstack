@@ -102,11 +102,12 @@ class VolumeGcCase extends SubCase {
 //                .find()
 
         def cephVo = SQL.New(GarbageCollectorVO.class).find()
+        def cephVo_ = Q.New(GarbageCollectorVO_.class).find()
 
         //JSONObjectUtil.toObject(cephVo,)
 
         for (int i = 0; i < 100; i++) {
-            dbf.persist(cephVo);
+            SQL.New(GarbageCollectorVO.class).delete()
         }
 
         assert deleteVolumeGcExtension() != 0
