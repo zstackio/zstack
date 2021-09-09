@@ -5,7 +5,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.CheckSnapshotOnHypervisorMsg;
@@ -209,9 +209,9 @@ public class KVMExtensionEmitter implements Component {
                     whileCompletion.allDone();
                 }
             });
-        }).run(new WhileDoneCompletion(completion) {
+        }).run(new NoErrorCompletion() {
             @Override
-            public void done(ErrorCodeList errorCodeList) {
+            public void done() {
                 if (!errorCodeList.getCauses().isEmpty()) {
                     completion.fail(errorCodeList.getCauses().get(0));
                     return;
