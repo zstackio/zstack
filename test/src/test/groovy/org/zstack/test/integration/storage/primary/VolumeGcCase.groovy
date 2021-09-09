@@ -152,9 +152,9 @@ class VolumeGcCase extends SubCase {
                 .count()
 
         Map<String, GarbageCollectorVO> mapvo = new HashMap<>();
-        SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
-                "where vo.runnerClass = :runnerClass", String.class)
-                .param("runnerClass", GarbageCollectorVO.getName())
+        SQL.New("select vo from GarbageCollectorVO vo " +
+                "where vo.runnerClass = :runnerClass")
+                .param("runnerClass", CephDeleteVolumeGC.getName())
                 .limit(500).paginate(count, { List<String> vids ->
             vids.forEach({ vid ->
                 Long tuples1 = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find()
