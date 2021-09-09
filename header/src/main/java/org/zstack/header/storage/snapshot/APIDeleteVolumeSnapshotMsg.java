@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
         method = HttpMethod.DELETE,
         responseClass = APIDeleteVolumeSnapshotEvent.class
 )
-@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 6)
 public class APIDeleteVolumeSnapshotMsg extends APIDeleteMessage implements DeleteVolumeSnapshotMessage {
     /**
      * @desc volume snapshot uuid

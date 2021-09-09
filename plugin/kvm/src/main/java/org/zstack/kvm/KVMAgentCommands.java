@@ -2749,6 +2749,8 @@ public class KVMAgentCommands {
         private String srcPath;
         private String destPath;
         private boolean fullRebase;
+        // timeout seconds
+        private long timeout;
 
         public boolean isFullRebase() {
             return fullRebase;
@@ -2788,6 +2790,14 @@ public class KVMAgentCommands {
 
         public void setVolume(VolumeTO volume) {
             this.volume = volume;
+        }
+
+        public long getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(long timeout) {
+            this.timeout = timeout;
         }
     }
 
