@@ -73,7 +73,7 @@ public class DeleteVolumeGcExtension implements Component {
 //        if (count == 0) {
 //            return false;
 //        }
-//        SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
+//        SQL.New("select GarbageCollectorVO.context, id from GarbageCollectorVO vo " +
 //                        "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
 //                .param("runnerClass", DeleteVolumeGC.class)
 //                .param("status", GCStatus.Idle.toString())
