@@ -150,86 +150,33 @@ class VolumeGcCase extends SubCase {
                 .eq(GarbageCollectorVO_.runnerClass,CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status,GCStatus.Idle)
                 .count()
-    }
-    /*
-            SQL.New("select substring(cast(vo.context as string), '19', '34'), id from GarbageCollectorVO vo where vo.runnerClass = :runnerClass").param("runnerClass", CephDeleteVolumeGC.getName()).find()
 
+        List<GarbageCollectorVO>  vo = new ArrayList<>();
         SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
-                "where vo.runnerClass = :runnerClass")
-                .param("runnerClass", CephDeleteVolumeGC.getName())
+                "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
+                .param("runnerClass", GarbageCollectorVO.getName())
+                .param("status", GCStatus.Idle)
                 .limit(500).paginate(count, (List<String> vids) -> vids.forEach(vid -> {
-
-            if (!Q.New(GarbageCollectorVO.class)
-                    .eq(GarbageCollectorVO_.runnerClass, vid)
-                    .isExists()) {
-
-                String sql1 = "select substring(cast(vo.context as string), '19', '34'), id from GarbageCollectorVO vo where vo.runnerClass = :runnerClass"
-
-                String sql2 = "delete from GarbageCollectorVO vo where vo.id in group by "
-
-                SQL.New("delete from GarbageCollectorVO vo where vo.id not in (" +
-                        "(" +
-                        "select min(vo.id) from GarbageCollectorVO group by (" +
-                        "        SQL.New(\"select substring(cast(vo.context as string), '19', '34'), id from GarbageCollectorVO vo where vo.runnerClass = :runnerClass\").param(\"runnerClass\", CephDeleteVolumeGC.getName()).find();)" +
-                        "where vo.runnerClass = :runnerClass")
-                        .param("runnerClass", CephDeleteVolumeGC.getName()).execute()
-
-
-                SQL.New("select substring(cast(vo.context as string), '19', '34')").find()
-
-                SQL.New("select substring(cast(vo.context as string), '19', '34')")
-
-                SQL.New("select dt.min from (select min(vo.id) as min from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34'))").find()
-
-SQL.New("delete from GarbageCollectorVO vo where vo.runnerClass = :=runnerClass and vo.uuid not in ( select dt.minno from ( select min(vo.uuid) as minno from GarbageCollectorVO group by substring(cast(vo.context as string), '19', '34')) dt")
-        .param("runnerClass", CephDeleteVolumeGC.getName())
-        .execute()
-
-
-SQL.New("delete from GarbageCollectorVO vo where vo.uuid not in ( select dt.minno from ( select min(vo.uuid) as minno from GarbageCollectorVO group by substring(cast(vo.context as string), '19', '34')) dt").execute()
-SQL.New("select min(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find()
-SQL.New("select vo.uuid from (select min(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')))").find()
-
+            Long count = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find()
+            if (count != 1) {
+                vo.add(vid)
+                SQL.New(vid.class).delete()
+            }
+        }));
+        for (int i = 0; i<vo.size(); i++){
+            dbf.persist(vo[i])
+        }
 
         return count
-
-
-
-        SQL.New("select GarbageCollectorVO.context, id from GarbageCollectorVO vo " +
-                "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
-                .param("runnerClass", DeleteVolumeGC.class)
-                .param("status", GCStatus.Idle.toString())
-                .limit(500).paginate(count, (List<String> vids) -> vids.forEach(vid -> {
-
-            if (!Q.New(GarbageCollectorVO.class)
-                    .eq(GarbageCollectorVO_.runnerClass, vid)
-                    .isExists()) {
-            }
-
-            SQL.New(GarbageCollectorVO.class).delete();
-        }));
-
-
-        SQL.New("select distinct vo.context, id from GarbageCollectorVO vo where vo.runnerClass = :runnerClass")
-                .param("runnerClass", CephDeleteVolumeGC.getName())
-                .find();
-
-//                SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
-//                "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
-//                .param("runnerClass", DeleteVolumeGC.class)
-//                .param("status", GCStatus.Idle.toString())
-//                .limit(500).paginate(count, (List<String> vids) -> vids.forEach(vid -> {
+    }
+//            SQL.New("select substring(cast(vo.context as string), '19', '34')").find()
+//            SQL.New("select substring(cast(vo.context as string), '19', '34')")
+//            SQL.New("select dt.min from (select min(vo.id) as min from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34'))").find()
 //
-//            if (!Q.New(GarbageCollectorVO.class)
-//                    .eq(GarbageCollectorVO_.runnerClass, vid)
-//                    .isExists()) {
-//                IAM2VirtualIDOrganizationRefVO refVO = new IAM2VirtualIDOrganizationRefVO();
-//                refVO.setVirtualIDUuid(vid);
-//                refVO.setOrganizationUuid(IAM2Constant.INITIAL_ORGANIZATION_DEFAULT_UUID);
-//                dbf.persist(refVO);
-//            }
-//
-//            SQL.New(GarbageCollectorVO.class).delete();
-//        }));
-     */
+//            SQL.New("delete from GarbageCollectorVO vo where vo.runnerClass = :=runnerClass and vo.uuid not in ( select dt.minno from ( select min(vo.uuid) as minno from GarbageCollectorVO group by substring(cast(vo.context as string), '19', '34')) dt")
+//                    .param("runnerClass", CephDeleteVolumeGC.getName())
+//                    .execute()
+//            SQL.New("delete from GarbageCollectorVO vo where vo.uuid not in ( select dt.minno from ( select min(vo.uuid) as minno from GarbageCollectorVO group by substring(cast(vo.context as string), '19', '34')) dt").execute()
+//            SQL.New("select min(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find()
+//            SQL.New("select vo.uuid from (select min(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')))").find()
 }
