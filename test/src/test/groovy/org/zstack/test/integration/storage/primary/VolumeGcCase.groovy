@@ -149,8 +149,7 @@ class VolumeGcCase extends SubCase {
     long deleteVolumeGcExtension() {
         long count = Q.New(GarbageCollectorVO)
                 .eq(GarbageCollectorVO_.runnerClass,CephDeleteVolumeGC.class.toString())
-                //.eq(GarbageCollectorVO_.status,GCStatus.Idle)
-                .eq(GarbageCollectorVO_.status,"Idle")
+                .eq(GarbageCollectorVO_.status,GCStatus.Idle)
                 .count()
 
 //        SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status := status")
