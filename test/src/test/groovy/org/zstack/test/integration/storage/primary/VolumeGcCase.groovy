@@ -156,12 +156,13 @@ class VolumeGcCase extends SubCase {
                 "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
                 .param("runnerClass", GarbageCollectorVO.getName())
                 .param("status", GCStatus.Idle)
-                .limit(500).paginate(count, (List<String> vids) -> vids.forEach(vid -> {
-            if (SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find() != 1) {
-                vo.add(vid)
-                SQL.New(vid.class).delete()
-            }
-        }));
+                .limit(500).paginate(count, { List<String> vids -> vids.forEach({ vid ->
+                if (SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find() != 1) {
+                    vo.add(vid)
+                    SQL.New(vid.class).delete()
+                }
+            })
+        });
         for (int i = 0; i<vo.size(); i++){
             dbf.persist(vo[i])
         }
