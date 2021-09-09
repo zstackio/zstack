@@ -157,8 +157,7 @@ class VolumeGcCase extends SubCase {
                 .param("runnerClass", GarbageCollectorVO.getName())
                 .param("status", GCStatus.Idle)
                 .limit(500).paginate(count, (List<String> vids) -> vids.forEach(vid -> {
-            Long count = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find()
-            if (count != 1) {
+            if (SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find() != 1) {
                 vo.add(vid)
                 SQL.New(vid.class).delete()
             }
