@@ -101,48 +101,12 @@ class VolumeGcCase extends SubCase {
 
         GarbageCollectorVO cephVo = Q.New(GarbageCollectorVO.class).find()
 
-        String context = cephVo.getContext()
-        JsonParser jp = new JsonParser();
-        JsonObject jo = jp.parse(context).getAsJsonObject();
-        String uuid = jo.get("volume").get("uuid").getAsString()
-
         for (int i = 1000; i < 1999; i++) {
             cephVo.uuid = String.format("11386f1f5d854f4eae27b26b9f" + i)
             dbf.persist(cephVo)
         }
 
         assert deleteVolumeGcExtension() != 0
-
-        GarbageCollectorInventory inv = null
-
-        retryInSecs {
-            inv = queryGCJob {
-                conditions = ["context~=%${vol.getUuid()}%".toString()]
-            }[0]
-
-            assert inv.status == GCStatus.Idle.toString()
-            assert called == true
-        }
-
-        assert queryGCJob {
-            conditions = ["context~=%${vol.getUuid()}%".toString()]
-        }.size == 1
-
-        called = false
-        deleteFail = false
-
-        triggerGCJob {
-            uuid = inv.uuid
-        }
-
-        retryInSecs {
-            inv = queryGCJob {
-                conditions = ["context~=%${vol.getUuid()}%".toString()]
-            }[0]
-
-            assert called
-            assert inv.status == GCStatus.Done.toString()
-        }
     }
 
     long deleteVolumeGcExtension() {
@@ -151,26 +115,38 @@ class VolumeGcCase extends SubCase {
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count()
 
-        Map<String, GarbageCollectorVO> mapvo = new HashMap<>();
+        Map<String, GarbageCollectorVO> mapVo = new HashMap<>();
         SQL.New("select vo from GarbageCollectorVO vo " +
                 "where vo.runnerClass = :runnerClass")
                 .param("runnerClass", CephDeleteVolumeGC.getName())
-                .limit(500).paginate(count, { List<String> vids ->
+                .limit(1000).paginate(count, { List<GarbageCollectorVO> vids ->
             vids.forEach({ vid ->
-                Long tuples1 = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find()
-                String tuples2 = SQL.New("select substring(cast(vo.context as string), '19', '34') from GarbageCollectorVO vo").find()
-                if (tuples1 != 1) {
-                    mapvo.put(tuples2, vid)
+                mapVo.put(getContextVolumeUuid(vid), vid)
                     SQL.New(vid.class).delete()
-                }
             })
         });
-        List<String> result2 = new ArrayList(mapvo.values());
+        List<String> result2 = new ArrayList(mapVo.values());
         for (int i = 0; i < result2.size(); i++) {
             dbf.persist(result2[i])
         }
         return count
     }
+
+    String getContextVolumeUuid(GarbageCollectorVO vo){
+        String context = vo.getContext()
+        JsonParser jp = new JsonParser();
+        JsonObject jo = jp.parse(context).getAsJsonObject();
+        String VolumeUuid = jo.get("volume").get("uuid").getAsString()
+        return VolumeUuid
+    }
+}
+//            Long tuples1 = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find()
+//            String tuples2 = SQL.New("select substring(cast(vo.context as string), '19', '34') from GarbageCollectorVO vo").find()
+//
+//            if ( tuples1 != 1 ) {
+//                mapvo.put(tuples2, vid)
+//                SQL.New(vid.class).delete()
+//            }
 //            SQL.New("select substring(cast(vo.context as string), '19', '34')").find()
 //            SQL.New("select substring(cast(vo.context as string), '19', '34')")
 //            SQL.New("select dt.min from (select min(vo.id) as min from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34'))").find()
@@ -181,4 +157,3 @@ class VolumeGcCase extends SubCase {
 //            SQL.New("delete from GarbageCollectorVO vo where vo.uuid not in ( select dt.minno from ( select min(vo.uuid) as minno from GarbageCollectorVO group by substring(cast(vo.context as string), '19', '34')) dt").execute()
 //            SQL.New("select min(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find()
 //            SQL.New("select vo.uuid from (select min(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')))").find()
-}
