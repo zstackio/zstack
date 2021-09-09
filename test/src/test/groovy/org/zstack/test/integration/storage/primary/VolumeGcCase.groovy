@@ -166,8 +166,6 @@ class VolumeGcCase extends SubCase {
         for (int i = 0; i<vo.size(); i++){
             dbf.persist(vo[i])
         }
-
-        return count
     }
 //            SQL.New("select substring(cast(vo.context as string), '19', '34')").find()
 //            SQL.New("select substring(cast(vo.context as string), '19', '34')")
