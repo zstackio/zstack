@@ -106,8 +106,8 @@ class VolumeGcCase extends SubCase {
         JsonObject jo = jp.parse(context).getAsJsonObject();
         String uuid = jo.get("volume").get("uuid").getAsString()
 
-        for (int i=1000; i<1999; i++){
-            cephVo.uuid = String.format("11386f1f5d854f4eae27b26b9f"+i)
+        for (int i = 1000; i < 1999; i++) {
+            cephVo.uuid = String.format("11386f1f5d854f4eae27b26b9f" + i)
             dbf.persist(cephVo)
         }
 
@@ -147,25 +147,26 @@ class VolumeGcCase extends SubCase {
 
     long deleteVolumeGcExtension() {
         long count = Q.New(GarbageCollectorVO.class)
-                .eq(GarbageCollectorVO_.runnerClass,CephDeleteVolumeGC.getName())
-                .eq(GarbageCollectorVO_.status,GCStatus.Idle)
+                .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
+                .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count()
 
-        Map<String,GarbageCollectorVO>  mapvo = new HashMap<>();
+        Map<String, GarbageCollectorVO> mapvo = new HashMap<>();
         SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
                 "where vo.runnerClass = :runnerClass", String.class)
                 .param("runnerClass", GarbageCollectorVO.getName())
-                .limit(500).paginate(count, { List<String> vids -> vids.forEach({ vid ->
-            Long tuples1 = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')", Tuple.class).find()
-            String tuples2 = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')", Tuple.class).find()
-                if ( tuples1!= 1) {
-                    mapvo.put(tuples2,vid)
+                .limit(500).paginate(count, { List<String> vids ->
+            vids.forEach({ vid ->
+                Long tuples1 = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find()
+                String tuples2 = SQL.New("select substring(cast(vo.context as string), '19', '34') from GarbageCollectorVO vo").find()
+                if (tuples1 != 1) {
+                    mapvo.put(tuples2, vid)
                     SQL.New(vid.class).delete()
                 }
             })
         });
         List<String> result2 = new ArrayList(mapvo.values());
-        for (int i = 0; i<result2.size(); i++){
+        for (int i = 0; i < result2.size(); i++) {
             dbf.persist(result2[i])
         }
         return count
