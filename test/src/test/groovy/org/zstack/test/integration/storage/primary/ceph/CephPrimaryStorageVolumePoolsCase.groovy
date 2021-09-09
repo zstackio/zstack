@@ -166,6 +166,27 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         assert cmd.installPath.contains(dataVolumePoolName)
     }
 
+    void testCreateDataVolumeSpecifyWrongPool() {
+        CephPrimaryStorageBase.CreateEmptyVolumeCmd cmd = null
+
+        env.afterSimulator(CephPrimaryStorageBase.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+            cmd = json(e.body, CephPrimaryStorageBase.CreateEmptyVolumeCmd.class)
+            assert !cmd.skipIfExisting
+            return rsp
+        }
+
+        VolumeInventory vol = createDataVolume {
+            name = "data"
+            primaryStorageUuid = primaryStorage.uuid
+            diskOfferingUuid = diskOffering.uuid
+            systemTags = [CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag([(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN) : "wrongPool"])]
+        }
+
+        assert cmd != null
+        assert cmd.installPath == vol.installPath
+        assert !cmd.installPath.contains("wrongPool")
+    }
+
     void testVmRootAndDataVolumeUseDesignatedPool() {
         String rootVolumePoolName = CephSystemTags.USE_CEPH_ROOT_POOL.getTokenByResourceUuid(root_pool_vm.rootVolumeUuid,CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN)
         VolumeInventory rootVolume = root_pool_vm.allVolumes.find { it.uuid == root_pool_vm.rootVolumeUuid }
@@ -324,6 +345,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             testVmRootAndDataVolumeUseDesignatedPool()
             testCreateDataVolumeInPool()
             testCreateDataVolumeInDefaultPool()
+            testCreateDataVolumeSpecifyWrongPool()
             testAddAndDeletePool()
             testAddPoolWithCheckExistenceFailure()
             testQueryPool()

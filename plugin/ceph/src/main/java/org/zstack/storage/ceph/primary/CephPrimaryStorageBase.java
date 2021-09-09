@@ -1550,7 +1550,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private String getPoolName(String customPoolName, String defaultPoolName){
-        return  customPoolName != null ? customPoolName : defaultPoolName;
+        boolean customPoolExists = customPoolName != null &&
+                getSelf().getPools().stream().anyMatch(it -> it.getPoolName().equals(customPoolName));
+        return customPoolExists ? customPoolName : defaultPoolName;
     }
 
     private String makeCacheInstallPath(String uuid) {
