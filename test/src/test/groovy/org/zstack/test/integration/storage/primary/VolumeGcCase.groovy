@@ -151,20 +151,23 @@ class VolumeGcCase extends SubCase {
                 .eq(GarbageCollectorVO_.status,GCStatus.Idle)
                 .count()
 
-        List<GarbageCollectorVO>  vo = new ArrayList<>();
+        Map<String,GarbageCollectorVO>  mapvo = new HashMap<>();
         SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
                 "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
                 .param("runnerClass", GarbageCollectorVO.getName())
                 .param("status", GCStatus.Idle)
                 .limit(500).paginate(count, { List<String> vids -> vids.forEach({ vid ->
-                if (SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find() != 1) {
-                    vo.add(vid)
+            Long tuples1 = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')", Tuple.class).find()
+            String tuples2 = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')", Tuple.class).find()
+                if ( tuples1!= 1) {
+                    mapvo.put(tuples2,vid)
                     SQL.New(vid.class).delete()
                 }
             })
         });
-        for (int i = 0; i<vo.size(); i++){
-            dbf.persist(vo[i])
+        List<String> result2 = new ArrayList(mapvo.values());
+        for (int i = 0; i<result2.size(); i++){
+            dbf.persist(result2[i])
         }
     }
 //            SQL.New("select substring(cast(vo.context as string), '19', '34')").find()
