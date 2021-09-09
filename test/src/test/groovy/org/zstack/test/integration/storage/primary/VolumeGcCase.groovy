@@ -153,9 +153,8 @@ class VolumeGcCase extends SubCase {
 
         Map<String,GarbageCollectorVO>  mapvo = new HashMap<>();
         SQL.New("select GarbageCollectorVO.context from GarbageCollectorVO vo " +
-                "where vo.runnerClass = :runnerClass and vo.status := status", String.class)
+                "where vo.runnerClass = :runnerClass", String.class)
                 .param("runnerClass", GarbageCollectorVO.getName())
-                .param("status", GCStatus.Idle)
                 .limit(500).paginate(count, { List<String> vids -> vids.forEach({ vid ->
             Long tuples1 = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')", Tuple.class).find()
             String tuples2 = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')", Tuple.class).find()
@@ -169,6 +168,7 @@ class VolumeGcCase extends SubCase {
         for (int i = 0; i<result2.size(); i++){
             dbf.persist(result2[i])
         }
+        return count
     }
 //            SQL.New("select substring(cast(vo.context as string), '19', '34')").find()
 //            SQL.New("select substring(cast(vo.context as string), '19', '34')")
