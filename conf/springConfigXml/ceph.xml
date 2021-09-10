@@ -110,7 +110,7 @@
     <bean id="DeleteCephVolumeGcExtension"
           class="org.zstack.storage.ceph.DeleteCephVolumeGcExtension">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component"  order="99"/>
+            <zstack:extension interface="org.zstack.header.Component"  order="10"/>
         </zstack:plugin>
     </bean>
 </beans>
