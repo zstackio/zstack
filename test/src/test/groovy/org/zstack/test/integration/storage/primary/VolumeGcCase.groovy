@@ -239,20 +239,3 @@ class VolumeGcCase extends SubCase {
         return VolumeUuid
     }
 }
-//            Long tuples1 = SQL.New("select count(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find()
-//            String tuples2 = SQL.New("select substring(cast(vo.context as string), '19', '34') from GarbageCollectorVO vo").find()
-//
-//            if ( tuples1 != 1 ) {
-//                mapvo.put(tuples2, vid)
-//                SQL.New(vid.class).delete()
-//            }
-//            SQL.New("select substring(cast(vo.context as string), '19', '34')").find()
-//            SQL.New("select substring(cast(vo.context as string), '19', '34')")
-//            SQL.New("select dt.min from (select min(vo.id) as min from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34'))").find()
-//
-//            SQL.New("delete from GarbageCollectorVO vo where vo.runnerClass = :=runnerClass and vo.uuid not in ( select dt.minno from ( select min(vo.uuid) as minno from GarbageCollectorVO group by substring(cast(vo.context as string), '19', '34')) dt")
-//                    .param("runnerClass", CephDeleteVolumeGC.getName())
-//                    .execute()
-//            SQL.New("delete from GarbageCollectorVO vo where vo.uuid not in ( select dt.minno from ( select min(vo.uuid) as minno from GarbageCollectorVO group by substring(cast(vo.context as string), '19', '34')) dt").execute()
-//            SQL.New("select min(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')").find()
-//            SQL.New("select vo.uuid from (select min(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')))").find()

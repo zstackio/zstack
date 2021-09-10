@@ -90,11 +90,4 @@
             <zstack:extension interface="org.zstack.header.volume.VolumeAttachedJudger"/>
         </zstack:plugin>
     </bean>
-
-    <bean id="DeleteVolumeGcExtension" class="org.zstack.storage.volume.DeleteVolumeGcExtension">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component"  order="99"/>
-        </zstack:plugin>
-    </bean>
-
 </beans>
