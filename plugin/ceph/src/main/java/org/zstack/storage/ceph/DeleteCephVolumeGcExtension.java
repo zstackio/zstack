@@ -48,7 +48,7 @@ public class DeleteCephVolumeGcExtension implements Component {
 //        if (DELETE_CEPH_VOLUME_GC) {
 //            thdf.submitTimerTask(this::upgrade, TimeUnit.MINUTES, 5);
 //        }
-        if (!upgrade()){
+        if (!cephDeleteVolumeGC()){
             return false;
         }
 
@@ -58,10 +58,6 @@ public class DeleteCephVolumeGcExtension implements Component {
     @Override
     public boolean stop() {
         return true;
-    }
-
-    private boolean upgrade() {
-        return cephDeleteVolumeGC();
     }
 
     private String getContextVolumeUuid(GarbageCollectorVO vo) {
