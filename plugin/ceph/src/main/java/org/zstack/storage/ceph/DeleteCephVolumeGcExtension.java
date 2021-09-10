@@ -48,9 +48,7 @@ public class DeleteCephVolumeGcExtension implements Component {
 //        if (DELETE_CEPH_VOLUME_GC) {
 //            thdf.submitTimerTask(this::upgrade, TimeUnit.MINUTES, 5);
 //        }
-        if (!cephDeleteVolumeGC()){
-            return false;
-        }
+        cephDeleteVolumeGC();
 
         return true;
     }
@@ -67,7 +65,7 @@ public class DeleteCephVolumeGcExtension implements Component {
         return jo.get("volume").getAsJsonObject().get("uuid").getAsString();
     }
 
-    boolean cephDeleteVolumeGC() {
+    void cephDeleteVolumeGC() {
         session = Session.login(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.class.getName())
@@ -86,6 +84,5 @@ public class DeleteCephVolumeGcExtension implements Component {
         for (int i = 0; i < res.size(); i++) {
             dbf.persist(res.get(i));
         }
-        return true;
     }
 }
