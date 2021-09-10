@@ -35,7 +35,6 @@ public class DeleteCephVolumeGcExtension implements Component {
     @Autowired
     private ThreadFacade thdf;
 
-
     @Override
     public boolean start() {
         if (DELETE_CEPH_VOLUME_GC) {
