@@ -63,7 +63,7 @@ class CephVolumeGcCase extends SubCase {
                 name = "diskOffering"
                 diskSize = SizeUnit.GIGABYTE.toByte(20)
             }
-            zone{
+            zone {
                 name = "zone"
                 cluster {
                     name = "test-cluster"
@@ -106,13 +106,13 @@ class CephVolumeGcCase extends SubCase {
                 }
 
                 cephPrimaryStorage {
-                    name="ceph-pri"
-                    description="Test"
+                    name = "ceph-pri"
+                    description = "Test"
                     totalCapacity = SizeUnit.GIGABYTE.toByte(100)
-                    availableCapacity= SizeUnit.GIGABYTE.toByte(100)
-                    url="ceph://pri"
-                    fsid="7ff218d9-f525-435f-8a40-3618d1772a64"
-                    monUrls=["root:password@localhost/?monPort=7777"]
+                    availableCapacity = SizeUnit.GIGABYTE.toByte(100)
+                    url = "ceph://pri"
+                    fsid = "7ff218d9-f525-435f-8a40-3618d1772a64"
+                    monUrls = ["root:password@localhost/?monPort=7777"]
                 }
 
 
@@ -120,22 +120,22 @@ class CephVolumeGcCase extends SubCase {
             }
 
             cephBackupStorage {
-                name="ceph-bk"
-                description="Test"
+                name = "ceph-bk"
+                description = "Test"
                 totalCapacity = SizeUnit.GIGABYTE.toByte(100)
-                availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                availableCapacity = SizeUnit.GIGABYTE.toByte(100)
                 url = "/bk"
-                fsid ="7ff218d9-f525-435f-8a40-3618d1772a64"
+                fsid = "7ff218d9-f525-435f-8a40-3618d1772a64"
                 monUrls = ["root:password@localhost/?monPort=7777"]
 
                 image {
                     name = "test-iso"
                     mediaType = ImageConstant.ImageMediaType.ISO.toString()
-                    url  = "http://zstack.org/download/test.iso"
+                    url = "http://zstack.org/download/test.iso"
                 }
                 image {
                     name = "image"
-                    url  = "http://zstack.org/download/image.qcow2"
+                    url = "http://zstack.org/download/image.qcow2"
                 }
             }
 
@@ -166,8 +166,7 @@ class CephVolumeGcCase extends SubCase {
             VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())
 
             prepareEnv()
-            testVolumeGCSuccess()
-            deleteVolumeGcExtension()
+            testdeleteVolumeGcExtension()
         }
     }
 
@@ -183,7 +182,7 @@ class CephVolumeGcCase extends SubCase {
         }
     }
 
-    void testVolumeGCSuccess() {
+    void testdeleteVolumeGcExtension() {
         VolumeInventory vol = createDataVolume {
             name = "data"
             diskOfferingUuid = diskOffering.uuid
@@ -203,10 +202,6 @@ class CephVolumeGcCase extends SubCase {
             dbf.persist(cephVo)
         }
 
-        assert deleteVolumeGcExtension() != 0
-    }
-
-    long deleteVolumeGcExtension() {
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
@@ -215,19 +210,27 @@ class CephVolumeGcCase extends SubCase {
         Map<String, GarbageCollectorVO> mapVo = new HashMap<>();
         SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
                 .param("runnerClass", CephDeleteVolumeGC.getName())
-                .param("status",GCStatus.Idle)
-                .limit(1000).paginate(count, { List<GarbageCollectorVO> vos -> vos.forEach({ vo ->
-            mapVo.put(getContextVolumeUuid(vo), vo)
-            SQL.New("delete from GarbageCollectorVO vo where vo.uuid = :uuid").param("uuid",vo.getUuid()).execute();
-        })});
+                .param("status", GCStatus.Idle)
+                .limit(1000).paginate(count, { List<GarbageCollectorVO> vos ->
+            vos.forEach({ vo ->
+                mapVo.put(getContextVolumeUuid(vo), vo)
+                SQL.New("delete from GarbageCollectorVO vo where vo.uuid = :uuid").param("uuid", vo.getUuid()).execute();
+            })
+        });
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
         for (int i = 0; i < res.size(); i++) {
             dbf.persist(res[i])
         }
-        return count
+
+        long count2 = Q.New(GarbageCollectorVO.class)
+                .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
+                .eq(GarbageCollectorVO_.status, GCStatus.Idle)
+                .count()
+
+        assert count2 == 2
     }
 
-    String getContextVolumeUuid(GarbageCollectorVO vo){
+    String getContextVolumeUuid(GarbageCollectorVO vo) {
         String context = vo.getContext()
         JsonParser jp = new JsonParser();
         JsonObject jo = jp.parse(context).getAsJsonObject();
