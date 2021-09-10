@@ -53,12 +53,13 @@ public class DeleteCephVolumeGcExtension implements Component {
         cephVo.setUuid("edface9b8f924c95b498a3d23ed87e4c");
         cephVo.setName("gc-ceph-2405d68d685445688e2248a0beaad404-volume-org.zstack.header.volume.VolumeInventory@71b7ad85");
         cephVo.setType("TimeBased");
+        dbf.persist(cephVo);
 
         for (int i = 1000; i < 1999; i++) {
             GarbageCollectorVO cephVo1 = cephVo;
             cephVo1.setUuid(String.format("11386f1f5d854f4eae27b26b9f" + i));
             cephVo1.setName(String.format("gc-ceph-2405d68d685445688e2248a0beaad404-volume-org.zstack.header.volume.VolumeInventory@71b7" + i));
-            dbf.persist(cephVo);
+            dbf.persist(cephVo1);
         }
 
 //        if (DELETE_CEPH_VOLUME_GC) {
