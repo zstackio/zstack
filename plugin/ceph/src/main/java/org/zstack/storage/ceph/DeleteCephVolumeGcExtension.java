@@ -79,8 +79,7 @@ public class DeleteCephVolumeGcExtension implements Component {
         String context = vo.getContext();
         JsonParser jp = new JsonParser();
         JsonObject jo = jp.parse(context).getAsJsonObject();
-        String VolumeUuid = jo.get("volume").getAsJsonObject().get("uuid").getAsString();
-        return VolumeUuid;
+        return jo.get("volume").getAsJsonObject().get("uuid").getAsString();
     }
 
     boolean cephDeleteVolumeGC() {
