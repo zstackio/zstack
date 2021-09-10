@@ -66,7 +66,7 @@ public class DeleteCephVolumeGcExtension implements Component {
     }
 
     void cephDeleteVolumeGC() {
-        session = Session.login(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+        //session = Session.login(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.class.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
