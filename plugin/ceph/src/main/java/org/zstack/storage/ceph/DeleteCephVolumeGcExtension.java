@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -46,11 +47,11 @@ public class DeleteCephVolumeGcExtension implements Component {
     public boolean start() {
 
         GarbageCollectorVO cephVo = new GarbageCollectorVO();
-        cephVo.setStatus(GCStatus.Idle);
-        cephVo.setContext("{\"volume\":{\"uuid\":\"4955018b9768463aa1802fb43340133a\",\"name\":\"data\",\"primaryStorageUuid\":\"2405d68d685445688e2248a0beaad404\",\"diskOfferingUuid\":\"adaf3875d3ce4e1e8b8d602c41887ebf\",\"installPath\":\"ceph://pri-v-d-96743bc999e44ebe86c966cd6c834f69/4955018b9768463aa1802fb43340133a\",\"type\":\"Data\",\"format\":\"raw\",\"size\":21474836480,\"actualSize\":0,\"state\":\"Enabled\",\"status\":\"Ready\",\"createDate\":\"Sep 9, 2021 9:59:38 PM\",\"lastOpDate\":\"Sep 9, 2021 9:59:38 PM\",\"isShareable\":false},\"NEXT_TIME\":86400,\"NEXT_TIME_UNIT\":\"SECONDS\",\"primaryStorageUuid\":\"2405d68d685445688e2248a0beaad404\"}");
         cephVo.setRunnerClass(GarbageCollectorVO.class.getName());
+        cephVo.setContext("{\"volume\":{\"uuid\":\"4955018b9768463aa1802fb43340133a\",\"name\":\"data\",\"primaryStorageUuid\":\"2405d68d685445688e2248a0beaad404\",\"diskOfferingUuid\":\"adaf3875d3ce4e1e8b8d602c41887ebf\",\"installPath\":\"ceph://pri-v-d-96743bc999e44ebe86c966cd6c834f69/4955018b9768463aa1802fb43340133a\",\"type\":\"Data\",\"format\":\"raw\",\"size\":21474836480,\"actualSize\":0,\"state\":\"Enabled\",\"status\":\"Ready\",\"createDate\":\"Sep 9, 2021 9:59:38 PM\",\"lastOpDate\":\"Sep 9, 2021 9:59:38 PM\",\"isShareable\":false},\"NEXT_TIME\":86400,\"NEXT_TIME_UNIT\":\"SECONDS\",\"primaryStorageUuid\":\"2405d68d685445688e2248a0beaad404\"}");
+        cephVo.setStatus(GCStatus.Idle);
         cephVo.setUuid("edface9b8f924c95b498a3d23ed87e4c");
-
+        
         for (int i = 1000; i < 1999; i++) {
             cephVo.setUuid(String.format("11386f1f5d854f4eae27b26b9f" + i));
             dbf.persist(cephVo);
