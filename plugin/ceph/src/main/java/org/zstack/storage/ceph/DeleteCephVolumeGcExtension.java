@@ -78,9 +78,7 @@ public class DeleteCephVolumeGcExtension implements Component {
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.class.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count();
-
         Map<String, GarbageCollectorVO> mapVo = new HashMap<>();
-
         SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
                 .param("runnerClass", CephDeleteVolumeGC.class.getName())
                 .param("status", GCStatus.Idle)
