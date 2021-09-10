@@ -195,10 +195,10 @@ class CephVolumeGcCase extends SubCase {
             uuid = vol.uuid
         }
 
-        GarbageCollectorVO cephVo = Q.New(GarbageCollectorVO.class).find()
+        list<GarbageCollectorVO> cephVo = Q.New(GarbageCollectorVO.class).list()
 
         for (int i = 1000; i < 1999; i++) {
-            cephVo.uuid = String.format("11386f1f5d854f4eae27b26b9f" + i)
+            cephVo[cephVo.size()-1].uuid = String.format("11386f1f5d854f4eae27b26b9f" + i)
             dbf.persist(cephVo)
         }
 
