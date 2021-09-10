@@ -208,22 +208,22 @@ class CephVolumeGcCase extends SubCase {
 
     long deleteVolumeGcExtension() {
         long count = Q.New(GarbageCollectorVO.class)
-                .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.class.getName())
+                .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
-                .count();
+                .count()
+
         Map<String, GarbageCollectorVO> mapVo = new HashMap<>();
         SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
-                .param("runnerClass", CephDeleteVolumeGC.class.getName())
-                .param("status", GCStatus.Idle)
-                .limit(1000).paginate(count, (List<GarbageCollectorVO> vos) -> vos.forEach(vo -> {
-            mapVo.put(getContextVolumeUuid(vo), vo);
+                .param("runnerClass", CephDeleteVolumeGC.getName())
+                .param("status",GCStatus.Idle)
+                .limit(1000).paginate(count, { List<GarbageCollectorVO> vos -> vos.forEach({ vo ->
+            mapVo.put(getContextVolumeUuid(vo), vo)
             SQL.New("delete from GarbageCollectorVO vo where vo.uuid = :uuid").param("uuid",vo.getUuid()).execute();
-        }));
+        })});
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
         for (int i = 0; i < res.size(); i++) {
-            dbf.persist(res.get(i));
+            dbf.persist(res[i])
         }
-
         return count
     }
 
@@ -231,7 +231,6 @@ class CephVolumeGcCase extends SubCase {
         String context = vo.getContext()
         JsonParser jp = new JsonParser();
         JsonObject jo = jp.parse(context).getAsJsonObject();
-        String VolumeUuid = jo.get("volume").getAsJsonObject().get("uuid").getAsString()
-        return VolumeUuid
+        return jo.get("volume").getAsJsonObject().get("uuid").getAsString()
     }
 }
