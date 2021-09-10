@@ -124,12 +124,10 @@ class CephVolumeGcCase extends SubCase {
             dbf.persist(res[i])
         }
 
-        long count2 = Q.New(GarbageCollectorVO.class)
+        assert Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
-                .count()
-
-        assert count2 == 2
+                .count() == 1
     }
 
     String getContextVolumeUuid(GarbageCollectorVO vo) {
