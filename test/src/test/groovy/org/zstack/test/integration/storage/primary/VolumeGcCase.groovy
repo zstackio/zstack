@@ -12,6 +12,7 @@ import org.zstack.core.db.SQL
 import org.zstack.core.gc.GCStatus
 import org.zstack.core.gc.GarbageCollectorVO
 import org.zstack.core.gc.GarbageCollectorVO_
+import org.zstack.header.image.ImageConstant
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GarbageCollectorInventory
@@ -28,6 +29,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.TimeUnit
@@ -52,7 +54,104 @@ class VolumeGcCase extends SubCase {
 
     @Override
     void environment() {
-        env = CephEnv.CephStorageOneVmEnv()
+        //env = CephEnv.CephStorageOneVmEnv()
+        env = makeEnv {
+            instanceOffering {
+                name = "instanceOffering"
+                memory = SizeUnit.GIGABYTE.toByte(8)
+                cpu = 4
+            }
+            diskOffering {
+                name = "diskOffering"
+                diskSize = SizeUnit.GIGABYTE.toByte(20)
+            }
+            zone{
+                name = "zone"
+                cluster {
+                    name = "test-cluster"
+                    hypervisorType = "KVM"
+
+                    kvm {
+                        name = "ceph-mon"
+                        managementIp = "localhost"
+                        username = "root"
+                        password = "password"
+                        usedMem = 1000
+                        totalCpu = 10
+                    }
+                    kvm {
+                        name = "host"
+                        username = "root"
+                        password = "password"
+                        usedMem = 1000
+                        totalCpu = 10
+                    }
+
+                    attachPrimaryStorage("ceph-pri")
+                    attachL2Network("l2")
+                }
+
+                l2NoVlanNetwork {
+                    name = "l2"
+                    physicalInterface = "eth0"
+
+                    l3Network {
+                        name = "l3"
+
+                        ip {
+                            startIp = "192.168.100.10"
+                            endIp = "192.168.100.100"
+                            netmask = "255.255.255.0"
+                            gateway = "192.168.100.1"
+                        }
+                    }
+                }
+
+                cephPrimaryStorage {
+                    name="ceph-pri"
+                    description="Test"
+                    totalCapacity = SizeUnit.GIGABYTE.toByte(100)
+                    availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                    url="ceph://pri"
+                    fsid="7ff218d9-f525-435f-8a40-3618d1772a64"
+                    monUrls=["root:password@localhost/?monPort=7777"]
+                }
+
+
+                attachBackupStorage("ceph-bk")
+            }
+
+            cephBackupStorage {
+                name="ceph-bk"
+                description="Test"
+                totalCapacity = SizeUnit.GIGABYTE.toByte(100)
+                availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                url = "/bk"
+                fsid ="7ff218d9-f525-435f-8a40-3618d1772a64"
+                monUrls = ["root:password@localhost/?monPort=7777"]
+
+                image {
+                    name = "test-iso"
+                    mediaType = ImageConstant.ImageMediaType.ISO.toString()
+                    url  = "http://zstack.org/download/test.iso"
+                }
+                image {
+                    name = "image"
+                    url  = "http://zstack.org/download/image.qcow2"
+                }
+            }
+
+            vm {
+                name = "test-vm"
+                useCluster("test-cluster")
+                useHost("host")
+                useL3Networks("l3")
+                useInstanceOffering("instanceOffering")
+                useRootDiskOffering("diskOffering")
+                useImage("image")
+
+            }
+        }
     }
 
 
@@ -116,9 +215,9 @@ class VolumeGcCase extends SubCase {
                 .count()
 
         Map<String, GarbageCollectorVO> mapVo = new HashMap<>();
-        SQL.New("select vo from GarbageCollectorVO vo " +
-                "where vo.runnerClass = :runnerClass")
+        SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
                 .param("runnerClass", CephDeleteVolumeGC.getName())
+                .param("status",GCStatus.Idle)
                 .limit(1000).paginate(count, { List<GarbageCollectorVO> vids ->
             vids.forEach({ vid ->
                 mapVo.put(getContextVolumeUuid(vid), vid)
