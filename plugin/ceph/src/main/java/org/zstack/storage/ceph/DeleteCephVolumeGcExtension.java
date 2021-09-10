@@ -18,7 +18,6 @@ import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.identity.Session;
 import org.zstack.storage.ceph.primary.CephDeleteVolumeGC;
-import org.zstack.storage.volume.DeleteVolumeGcExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
