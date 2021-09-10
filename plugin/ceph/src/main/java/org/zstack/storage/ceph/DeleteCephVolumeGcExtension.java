@@ -29,7 +29,7 @@ import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class DeleteCephVolumeGcExtension implements Component {
-    protected static final CLogger logger = Utils.getLogger(DeleteVolumeGcExtension.class);
+    protected static final CLogger logger = Utils.getLogger(DeleteCephVolumeGcExtension.class);
 
     @Autowired
     private CloudBus bus;
