@@ -2766,7 +2766,10 @@ public class KVMHost extends HostBase implements Host {
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
         cmd.setHostManagementIp(self.getManagementIp());
         cmd.setConsolePassword(spec.getConsolePassword());
-        cmd.setUsbRedirect(spec.getUsbRedirect());
+        if (VmSystemTags.USB_REDIRECT.hasTag(spec.getVmInventory().getUuid())) {
+            //cmd.setUsbRedirect(spec.getUsbRedirect());
+            cmd.setUsbRedirect(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(spec.getVmInventory().getUuid(),VmInstanceVO.class,VmSystemTags.USB_REDIRECT_TOKEN));
+        }
         cmd.setVDIMonitorNumber(Integer.valueOf(spec.getVDIMonitorNumber()));
         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setVmPortOff(VmGlobalConfig.VM_PORT_OFF.value(Boolean.class));
