@@ -84,9 +84,9 @@ public class DeleteCephVolumeGcExtension implements Component {
         SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
                 .param("runnerClass", CephDeleteVolumeGC.class.getName())
                 .param("status", GCStatus.Idle)
-                .limit(1000).paginate(count, (List<GarbageCollectorVO> vids) -> vids.forEach(vid -> {
-                    mapVo.put(getContextVolumeUuid(vid), vid);
-                    SQL.New(GarbageCollectorVO.class).delete();
+                .limit(1000).paginate(count, (List<GarbageCollectorVO> vos) -> vos.forEach(vo -> {
+                    mapVo.put(getContextVolumeUuid(vo), vo);
+                    SQL.New("delete from GarbageCollectorVO vo where vo.uuid = :uuid").param("uuid",vo.getUuid()).execute();
                 }));
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
         for (int i = 0; i < res.size(); i++) {
