@@ -222,9 +222,9 @@ class CephVolumeGcCase extends SubCase {
                 SQL.New(vid.class).delete()
             })
         });
-        List<String> result2 = new ArrayList(mapVo.values());
-        for (int i = 0; i < result2.size(); i++) {
-            dbf.persist(result2[i])
+        List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
+        for (int i = 0; i < res.size(); i++) {
+            dbf.persist(res[i])
         }
         return count
     }
