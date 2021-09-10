@@ -31,39 +31,33 @@ import java.util.Map;
 public class DeleteCephVolumeGcExtension implements Component {
     protected static final CLogger logger = Utils.getLogger(DeleteCephVolumeGcExtension.class);
 
-//    @Autowired
-//    private CloudBus bus;
-
     @Autowired
     private DatabaseFacade dbf;
+
     @Autowired
     private ThreadFacade thdf;
 
-//    private SessionInventory session;
-
-//    private long nowTime = System.currentTimeMillis();
 
     @Override
     public boolean start() {
 //        if (DELETE_CEPH_VOLUME_GC) {
 //            thdf.submitTimerTask(this::upgrade, TimeUnit.MINUTES, 5);
 //        }
-        //cephDeleteVolumeGC();
-        long count = Q.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.class.getName()).eq(GarbageCollectorVO_.status, GCStatus.Idle).count();
-
-        Map<String, GarbageCollectorVO> mapVo = new HashMap<>();
-        List<String> res = new ArrayList(mapVo.values());
-        SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
-                .param("runnerClass", CephDeleteVolumeGC.class.getName())
-                .param("status", GCStatus.Idle)
-                .limit(1000)
-                .paginate(count, (List<GarbageCollectorVO> vids) -> vids.forEach(vid -> {
-                    mapVo.put(getContextVolumeUuid(vid), vid);
-                    SQL.New(GarbageCollectorVO.class).delete();
-                }));
-        for (int i = 0; i < res.size(); i++) {
-            dbf.persist(res.get(i));
+        GarbageCollectorVO cephVo = new GarbageCollectorVO();
+        cephVo.setRunnerClass(CephDeleteVolumeGC.class.getName());
+        cephVo.setContext("{\"volume\":{\"uuid\":\"4955018b9768463aa1802fb43340133a\",\"name\":\"data\",\"primaryStorageUuid\":\"2405d68d685445688e2248a0beaad404\",\"diskOfferingUuid\":\"adaf3875d3ce4e1e8b8d602c41887ebf\",\"installPath\":\"ceph://pri-v-d-96743bc999e44ebe86c966cd6c834f69/4955018b9768463aa1802fb43340133a\",\"type\":\"Data\",\"format\":\"raw\",\"size\":21474836480,\"actualSize\":0,\"state\":\"Enabled\",\"status\":\"Ready\",\"createDate\":\"Sep 9, 2021 9:59:38 PM\",\"lastOpDate\":\"Sep 9, 2021 9:59:38 PM\",\"isShareable\":false},\"NEXT_TIME\":86400,\"NEXT_TIME_UNIT\":\"SECONDS\",\"primaryStorageUuid\":\"2405d68d685445688e2248a0beaad404\"}");
+        cephVo.setStatus(GCStatus.Idle);
+        cephVo.setName("gc-ceph-2405d68d685445688e2248a0beaad404-volume-org.zstack.header.volume.VolumeInventory@71b7ad85");
+        cephVo.setType("TimeBased");
+        cephVo.setUuid("edface9b8f924c95b498a3d23ed87e4c");
+        dbf.persist(cephVo);
+        for (int i = 1000; i < 1999; i++) {
+            GarbageCollectorVO cephVo1 = cephVo;
+            cephVo1.setUuid(String.format("11386f1f5d854f4eae27b26b9f" + i));
+            dbf.persist(cephVo1);
         }
+
+        cephDeleteVolumeGC();
         return true;
     }
 
@@ -80,7 +74,6 @@ public class DeleteCephVolumeGcExtension implements Component {
     }
 
     void cephDeleteVolumeGC() {
-        //session = Session.login(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.class.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
