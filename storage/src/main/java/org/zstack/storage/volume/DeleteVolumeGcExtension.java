@@ -13,6 +13,7 @@ import org.zstack.core.gc.GarbageCollectorVO;
 import org.zstack.core.gc.GarbageCollectorVO_;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.storage.ceph.primary.CephDeleteVolumeGC;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -69,12 +70,12 @@ public class DeleteVolumeGcExtension implements Component {
 
     boolean DeleteVolumeGC(DeleteVolumeOnPrimaryStorageGC deleteVolumeOnPrimaryStorageGC) {
         long count = Q.New(GarbageCollectorVO.class)
-                .eq(GarbageCollectorVO_.runnerClass, deleteVolumeOnPrimaryStorageGC)
+                .eq(GarbageCollectorVO_.runnerClass, deleteVolumeOnPrimaryStorageGC.getClass().getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count();
         Map<String, GarbageCollectorVO> mapVo = new HashMap<>();
         SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
-                .param("runnerClass", deleteVolumeOnPrimaryStorageGC)
+                .param("runnerClass", deleteVolumeOnPrimaryStorageGC.getClass().getName())
                 .param("status", GCStatus.Idle)
                 .limit(1000).paginate(count, (List<GarbageCollectorVO> vos) -> vos.forEach(vo -> {
                     mapVo.put(getContextVolumeUuid(vo), vo);
