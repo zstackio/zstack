@@ -10,17 +10,22 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
+import org.zstack.storage.volume.DeleteVolumeOnPrimaryStorageGC;
 
 /**
  * Created by xing5 on 2017/3/5.
  */
-public class NfsDeleteVolumeGC extends TimeBasedGarbageCollector {
+public class NfsDeleteVolumeGC extends TimeBasedGarbageCollector implements DeleteVolumeOnPrimaryStorageGC {
     @GC
     public String primaryStorageUuid;
     @GC
     public String hypervisorType;
     @GC
     public VolumeInventory volume;
+
+    public NfsDeleteVolumeGC NfsDeleteVolumeGC() {
+        return new NfsDeleteVolumeGC();
+    }
 
     @Override
     protected void triggerNow(GCCompletion completion) {

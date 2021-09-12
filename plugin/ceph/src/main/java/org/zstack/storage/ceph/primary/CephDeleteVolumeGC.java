@@ -6,19 +6,23 @@ import org.zstack.core.gc.GCCompletion;
 import org.zstack.core.gc.TimeBasedGarbageCollector;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
-import org.zstack.header.storage.primary.DeleteVolumeOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.storage.volume.DeleteVolumeOnPrimaryStorageGC;
 
 /**
  * Created by kayo on 2018/7/24.
  */
-public class CephDeleteVolumeGC extends TimeBasedGarbageCollector {
+public class CephDeleteVolumeGC extends TimeBasedGarbageCollector implements DeleteVolumeOnPrimaryStorageGC {
     @GC
     public String primaryStorageUuid;
     @GC
     public VolumeInventory volume;
+
+    public CephDeleteVolumeGC CephDeleteVolumeGC() {
+       return new CephDeleteVolumeGC();
+    }
 
     @Override
     protected void triggerNow(GCCompletion completion) {
