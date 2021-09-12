@@ -3,6 +3,8 @@ package org.zstack.test.integration.storage.volume
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.core.gc.GCStatus
 import org.zstack.core.gc.GarbageCollectorVO
 import org.zstack.core.gc.GarbageCollectorVO_
@@ -76,7 +78,7 @@ class VolumeGcCase extends SubCase {
         }
     }
 
-    void testdeleteVolumeGcExtension() {
+    void testDeleteVolumeGcExtension() {
         VolumeInventory vol = createDataVolume {
             name = "data"
             diskOfferingUuid = diskOffering.uuid
