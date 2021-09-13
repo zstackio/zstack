@@ -112,34 +112,42 @@ class VolumeGcCase extends SubCase {
         }
 
         List<GarbageCollectorVO> cephVo = Q.New(GarbageCollectorVO.class).list()
-
-        cephVo.stream().forEach({ item ->
-            for (int i = 110000; i < 199999; i++) {
-                item.uuid = String.format(getContextVolumeUuid(item).substring(0,26) + i)
-                dbf.persist(item)
+        List<GarbageCollectorVO> vos = new ArrayList()
+        cephVo.each { it ->
+            for (int i = 100000; i < 100999; i++) {
+                GarbageCollectorVO vo = new GarbageCollectorVO()
+                vo.uuid = String.format(getContextVolumeUuid(it).substring(0, 26) + i)
+                vo.status = it.status
+                vo.context =it.context
+                vo.name =it.name
+                vo.managementNodeUuid =it.managementNodeUuid
+                vo.runnerClass =it.runnerClass
+                vo.lastOpDate = it.lastOpDate
+                vo.createDate = it.createDate
+                vo.type = it.type
+                vo.resourceName = it.resourceName
+                vo.resourceType = it.resourceType
+                vo.concreteResourceType = it.concreteResourceType
+                vos.add(vo)
             }
-        });
+        }
+        dbf.persistCollection(vos)
 
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count()
-
+        Map<String, GarbageCollectorVO> mapVo = [:]
         SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
                 .param("runnerClass", CephDeleteVolumeGC.getName())
                 .param("status", GCStatus.Idle)
-                .limit(1000).paginate(count, { List<GarbageCollectorVO> vos ->
-            vos.forEach({ vo ->
-                SQL.New("delete from GarbageCollectorVO vo " +
-                        "where vo.runnerClass = :runnerClass " +
-                        "and vo.status = :status " +
-                        "and vo.uuid in (select vo.uuid from GarbageCollectorVO vo where vo.uuid not in " +
-                        "(select min(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')))")
-                        .param("runnerClass", CephDeleteVolumeGC.getName())
-                        .param("status", GCStatus.Idle)
-                        .execute()
-            })
-        });
+                .limit(1000).paginate(count, { List<GarbageCollectorVO> gcvos -> gcvos.forEach({ vo ->
+            mapVo.put(getContextVolumeUuid(vo), vo)
+        })})
+
+        SQL.New("delete from GarbageCollectorVO gc").execute();
+        List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
+        dbf.persistCollection(res)
 
         assert Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
