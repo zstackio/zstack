@@ -23,6 +23,10 @@ public class SMPDeleteVolumeGC extends TimeBasedGarbageCollector implements Dele
     @GC
     public VolumeInventory volume;
 
+    public SMPDeleteVolumeGC SMPDeleteVolumeGC() {
+        return new SMPDeleteVolumeGC();
+    }
+
     @Override
     protected void triggerNow(GCCompletion completion) {
         if (!dbf.isExist(primaryStorageUuid, PrimaryStorageVO.class)) {
