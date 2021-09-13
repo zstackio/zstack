@@ -19,6 +19,7 @@ import org.zstack.network.service.eip.APICreateEipMsg;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.lb.APICreateLoadBalancerListenerMsg;
+import org.zstack.network.service.lb.LoadBalancerConstants;
 import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.lb.LoadBalancerVO_;
 import org.zstack.network.service.portforwarding.APIAttachPortForwardingRuleMsg;
@@ -195,6 +196,7 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
     private void validate(APICreateLoadBalancerListenerMsg msg){
         String vipUuid = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).select(LoadBalancerVO_.vipUuid).findValue();
         RangeSet.Range cur = new RangeSet.Range(msg.getLoadBalancerPort(), msg.getLoadBalancerPort());
+        checkVipPortConflictionWithSystem(vipUuid, msg.getProtocol(), cur);
         checkVipPortConfliction(vipUuid, msg.getProtocol(), cur);
     }
 
@@ -212,6 +214,18 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
         portRange.setRanges(portRangeList);
         portRange.sort();
         return portRange;
+    }
+    private void checkVipPortConflictionWithSystem(String vipUuid, String protocol, RangeSet.Range range) {
+        List<RangeSet.Range> systemPortRanges = new ArrayList<RangeSet.Range>();
+        systemPortRanges.add(new RangeSet.Range(LoadBalancerConstants.SSH_PORT,LoadBalancerConstants.SSH_PORT));
+        systemPortRanges.add(new RangeSet.Range(LoadBalancerConstants.DNS_PORT,LoadBalancerConstants.DNS_PORT));
+        systemPortRanges.add(new RangeSet.Range(LoadBalancerConstants.ZVR_PORT,LoadBalancerConstants.ZVR_PORT));
+        systemPortRanges.forEach(systemPortRange ->{
+            if (systemPortRange.isOverlap(range) || range.isOverlap(systemPortRange)) {
+                throw new ApiMessageInterceptionException(operr("Current port range[%s, %s] is conflicted with system service port range [%s, %s] with vip[uuid: %s] protocol: %s ",
+                        Long.toString(range.getStart()), Long.toString(range.getEnd()), Long.toString(systemPortRange.getStart()), Long.toString(systemPortRange.getEnd()), vipUuid, protocol));
+            }
+        });
     }
 
     private void checkVipPortConfliction(String vipUuid, String protocol, RangeSet.Range range){
