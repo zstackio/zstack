@@ -114,7 +114,7 @@ class VolumeGcCase extends SubCase {
         List<GarbageCollectorVO> cephVo = Q.New(GarbageCollectorVO.class).list()
 
         cephVo.stream().forEach({ item ->
-            for (int i = 100000; i < 100020; i++) {
+            for (int i = 110000; i < 199999; i++) {
                 item.uuid = String.format(getContextVolumeUuid(item).substring(0,26) + i)
                 dbf.persist(item)
             }
