@@ -141,6 +141,24 @@ class VolumeGcCase extends SubCase {
             })
         });
 
+        SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
+                .param("runnerClass", CephDeleteVolumeGC.getName())
+                .param("status", GCStatus.Idle)
+                .limit(10).paginate(count, { List<GarbageCollectorVO> vos ->
+            vos.forEach({ vo ->
+                String contextVolumeUuid = getContextVolumeUuid(vo)
+                SQL.New("delete from GarbageCollectorVO vo " +
+                        "where vo.runnerClass = :runnerClass " +
+                        "and vo.status = :status " +
+                        "and vo.uuid in (select vo.uuid from GarbageCollectorVO vo where vo.uuid not in " +
+                        "(select min(vo.uuid) from GarbageCollectorVO vo group by :contextVolumeUuid))")
+                        .param("runnerClass", CephDeleteVolumeGC.getName())
+                        .param("status", GCStatus.Idle)
+                        .param("contextVolumeUuid", contextVolumeUuid)
+                        .execute()
+            })
+        });
+
         assert Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
