@@ -10,11 +10,12 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
+import org.zstack.storage.volume.DeleteVolumeOnPrimaryStorageGC;
 
 /**
  * Created by AlanJager on 2017/3/14.
  */
-public class SMPDeleteVolumeGC extends TimeBasedGarbageCollector {
+public class SMPDeleteVolumeGC extends TimeBasedGarbageCollector implements DeleteVolumeOnPrimaryStorageGC {
     @GC
     public String primaryStorageUuid;
     @GC
