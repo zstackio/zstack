@@ -23,9 +23,6 @@ public class NfsDeleteVolumeGC extends TimeBasedGarbageCollector implements Dele
     @GC
     public VolumeInventory volume;
 
-    public NfsDeleteVolumeGC NfsDeleteVolumeGC() {
-    }
-
     @Override
     protected void triggerNow(GCCompletion completion) {
         if (!dbf.isExist(primaryStorageUuid, PrimaryStorageVO.class)) {

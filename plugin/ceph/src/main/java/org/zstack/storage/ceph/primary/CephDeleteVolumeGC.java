@@ -20,9 +20,6 @@ public class CephDeleteVolumeGC extends TimeBasedGarbageCollector implements Del
     @GC
     public VolumeInventory volume;
 
-    public CephDeleteVolumeGC CephDeleteVolumeGC() {
-    }
-
     @Override
     protected void triggerNow(GCCompletion completion) {
         if (!dbf.isExist(primaryStorageUuid, PrimaryStorageVO.class)) {
