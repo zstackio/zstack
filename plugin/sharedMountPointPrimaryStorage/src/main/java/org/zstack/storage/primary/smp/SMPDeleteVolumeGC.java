@@ -24,7 +24,6 @@ public class SMPDeleteVolumeGC extends TimeBasedGarbageCollector implements Dele
     public VolumeInventory volume;
 
     public SMPDeleteVolumeGC SMPDeleteVolumeGC() {
-        return new SMPDeleteVolumeGC();
     }
 
     @Override

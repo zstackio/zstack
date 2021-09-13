@@ -21,7 +21,6 @@ public class CephDeleteVolumeGC extends TimeBasedGarbageCollector implements Del
     public VolumeInventory volume;
 
     public CephDeleteVolumeGC CephDeleteVolumeGC() {
-        return new CephDeleteVolumeGC();
     }
 
     @Override

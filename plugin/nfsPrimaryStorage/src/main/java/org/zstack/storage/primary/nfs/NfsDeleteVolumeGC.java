@@ -24,7 +24,6 @@ public class NfsDeleteVolumeGC extends TimeBasedGarbageCollector implements Dele
     public VolumeInventory volume;
 
     public NfsDeleteVolumeGC NfsDeleteVolumeGC() {
-        return new NfsDeleteVolumeGC();
     }
 
     @Override
