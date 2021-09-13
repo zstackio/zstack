@@ -82,6 +82,13 @@
                                         <include>*.jar</include>
                                     </includes>
                                 </resource>
+                                <resource>
+                                    <directory>../premium/plugin-premium/thirdAuth-plugin/ext-libs</directory>
+                                    <targetPath>WEB-INF/lib</targetPath>
+                                    <includes>
+                                        <include>*.jar</include>
+                                    </includes>
+                                </resource>
                             </webResources>
                         </configuration>
                     </plugin>
@@ -485,6 +492,11 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>acl</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>thirdAuth-plugin</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
