@@ -114,8 +114,8 @@ class VolumeGcCase extends SubCase {
         List<GarbageCollectorVO> cephVo = Q.New(GarbageCollectorVO.class).list()
 
         cephVo.stream().forEach({ item ->
-            for (int i = 100; i < 200; i++) {
-                item.uuid = String.format(getContextVolumeUuid(item).substring(0,29) + i)
+            for (int i = 100000; i < 300000; i++) {
+                item.uuid = String.format(getContextVolumeUuid(item).substring(0,26) + i)
                 dbf.persist(item)
             }
         });
@@ -128,7 +128,7 @@ class VolumeGcCase extends SubCase {
         SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
                 .param("runnerClass", CephDeleteVolumeGC.getName())
                 .param("status", GCStatus.Idle)
-                .limit(10).paginate(count, { List<GarbageCollectorVO> vos ->
+                .limit(1000).paginate(count, { List<GarbageCollectorVO> vos ->
             vos.forEach({ vo ->
                 SQL.New("delete from GarbageCollectorVO vo " +
                         "where vo.runnerClass = :runnerClass " +
@@ -137,24 +137,6 @@ class VolumeGcCase extends SubCase {
                         "(select min(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')))")
                         .param("runnerClass", CephDeleteVolumeGC.getName())
                         .param("status", GCStatus.Idle)
-                        .execute()
-            })
-        });
-
-        SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
-                .param("runnerClass", CephDeleteVolumeGC.getName())
-                .param("status", GCStatus.Idle)
-                .limit(10).paginate(count, { List<GarbageCollectorVO> vos ->
-            vos.forEach({ vo ->
-                String contextVolumeUuid = getContextVolumeUuid(vo)
-                SQL.New("delete from GarbageCollectorVO vo " +
-                        "where vo.runnerClass = :runnerClass " +
-                        "and vo.status = :status " +
-                        "and vo.uuid in (select vo.uuid from GarbageCollectorVO vo where vo.uuid not in " +
-                        "(select min(vo.uuid) from GarbageCollectorVO vo group by :contextVolumeUuid))")
-                        .param("runnerClass", CephDeleteVolumeGC.getName())
-                        .param("status", GCStatus.Idle)
-                        .param("contextVolumeUuid", contextVolumeUuid)
                         .execute()
             })
         });
