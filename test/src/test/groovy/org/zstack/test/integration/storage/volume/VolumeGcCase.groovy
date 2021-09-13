@@ -114,7 +114,7 @@ class VolumeGcCase extends SubCase {
         List<GarbageCollectorVO> cephVo = Q.New(GarbageCollectorVO.class).list()
         List<GarbageCollectorVO> vos = new ArrayList()
         cephVo.each { it ->
-            for (int i = 100000; i < 109999; i++) {
+            for (int i = 100000; i < 199999; i++) {
                 GarbageCollectorVO vo = new GarbageCollectorVO()
                 vo.uuid = String.format(getContextVolumeUuid(it).substring(0, 26) + i)
                 vo.status = it.status
@@ -144,7 +144,6 @@ class VolumeGcCase extends SubCase {
                 .limit(1000).paginate(count, { List<GarbageCollectorVO> gcvos -> gcvos.forEach({ vo ->
             mapVo.put(getContextVolumeUuid(vo), vo)
         })})
-
         SQL.New("delete from GarbageCollectorVO gc").execute();
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
         dbf.persistCollection(res)

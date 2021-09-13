@@ -72,20 +72,16 @@ public class DeleteVolumeGcExtension implements Component {
                 .eq(GarbageCollectorVO_.runnerClass, deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count();
-
+        Map<String, GarbageCollectorVO> mapVo = new HashMap<>();
         SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
                 .param("runnerClass", deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
                 .param("status", GCStatus.Idle)
                 .limit(1000).paginate(count, (List<GarbageCollectorVO> vos) -> vos.forEach(vo -> {
-                    SQL.New("delete from GarbageCollectorVO vo " +
-                                    "where vo.runnerClass = :runnerClass " +
-                                    "and vo.status = :status " +
-                                    "and vo.uuid in (select vo.uuid from GarbageCollectorVO vo where vo.uuid not in " +
-                                    "(select min(vo.uuid) from GarbageCollectorVO vo group by substring(cast(vo.context as string), '19', '34')))")
-                            .param("runnerClass", deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
-                            .param("status", GCStatus.Idle)
-                            .execute();
+                    mapVo.put(getContextVolumeUuid(vo), vo);
                 }));
+        SQL.New("delete from GarbageCollectorVO gc").execute();
+        List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
+        dbf.persistCollection(res);
 
         return true;
     }
