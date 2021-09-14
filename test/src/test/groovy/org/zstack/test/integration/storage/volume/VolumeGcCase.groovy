@@ -115,7 +115,7 @@ class VolumeGcCase extends SubCase {
         List<GarbageCollectorVO> cephVo = Q.New(GarbageCollectorVO.class).list()
         List<GarbageCollectorVO> vos = new ArrayList()
         cephVo.each { it ->
-            for (int i = 100000; i < 120000; i++) {
+            for (int i = 100000; i < 190000; i++) {
                 GarbageCollectorVO vo = new GarbageCollectorVO()
                 vo.uuid = String.format(getContextVolumeUuid(it).substring(0, 26) + i)
                 vo.status = it.status
@@ -135,22 +135,22 @@ class VolumeGcCase extends SubCase {
         dbf.persistCollection(vos)
 
         def now1 = new Date()
-        long count = Q.New(GarbageCollectorVO.class)
-                .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
-                .eq(GarbageCollectorVO_.status, GCStatus.Idle)
-                .count()
+        long count = SQL.New("select count(*) from GarbageCollectorVO vo where vo.status = :status and vo.runnerClass = :runnerClass")
+                .param("status", GCStatus.Idle)
+                .param("runnerClass", CephDeleteVolumeGC.getName())
+                .find()
+        def now2 = new Date()
         Map<String, GarbageCollectorVO> mapVo = [:]
+        List<GarbageCollectorVO> gcVos = []
         SQL.New("select vo from GarbageCollectorVO vo where vo.status = :status and vo.runnerClass = :runnerClass")
                 .param("runnerClass", CephDeleteVolumeGC.getName())
                 .param("status", GCStatus.Idle)
                 .limit(1000).paginate(count, { List<GarbageCollectorVO> gcvos -> gcvos.forEach({ vo ->
             mapVo.put(getContextVolumeUuid(vo), vo)
+            gcVos.add(vo)
         })})
-        def now2 = new Date()
-        SQL.New("delete from GarbageCollectorVO vo where vo.status = :status")
-                .param("status", GCStatus.Idle)
-                .execute()
         def now3 = new Date()
+        dbf.removeCollection(gcVos, GarbageCollectorVO.class)
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
         dbf.persistCollection(res)
         def now4 = new Date()
