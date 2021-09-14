@@ -147,18 +147,7 @@ class VolumeGcCase extends SubCase {
             mapVo.put(getContextVolumeUuid(vo), vo)
         })})
         def now2 = new Date()
-
-//        new SQLBatch() {
-//            @Override
-//            protected void scripts() {
-//                int times = (int) (count / 1000) + (count % 1000 != 0 ? 1 : 0);
-//                for (int i = 0; i < times; i++) {
-//                    sql("delete from GarbageCollectorVO").limit(1000).execute()
-//                }
-//            }
-//        }.execute()
-//        SQL.New("delete where name like \"gc-ceph%\" and uuid not in (xxx)").execute()
-
+        SQL.New("delete from GarbageCollectorVO vo where vo.name like 'gc-ceph%'").execute()
         def now3 = new Date()
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
         dbf.persistCollection(res)
