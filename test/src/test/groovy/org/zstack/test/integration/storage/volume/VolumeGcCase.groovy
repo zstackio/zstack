@@ -115,7 +115,7 @@ class VolumeGcCase extends SubCase {
         List<GarbageCollectorVO> cephVo = Q.New(GarbageCollectorVO.class).list()
         List<GarbageCollectorVO> vos = new ArrayList()
         cephVo.each { it ->
-            for (int i = 100000; i < 199999; i++) {
+            for (int i = 100000; i < 100999; i++) {
                 GarbageCollectorVO vo = new GarbageCollectorVO()
                 vo.uuid = String.format(getContextVolumeUuid(it).substring(0, 26) + i)
                 vo.status = it.status
@@ -153,11 +153,19 @@ class VolumeGcCase extends SubCase {
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
         dbf.persistCollection(res)
         def now3 = new Date()
-        
+
         assert Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count() == 3
+
+//        select count(*) from GarbageCollectorVO where runnerClass="org.zstack.storage.ceph.primary.CephDeleteVolumeGC" and status="Idle";
+//
+//        select * from GarbageCollectorVO where runnerClass="org.zstack.storage.ceph.primary.CephDeleteVolumeGC";
+//
+//        select * from GarbageCollectorVO where runnerClass="org.zstack.storage.ceph.primary.CephDeleteVolumeGC" group by (substring_index(context, ':', '-1'));
+//
+//        delete from GarbageCollectorVO;
 
 //        Map<String, GarbageCollectorVO> mapVo = [:]
 //        SQL.New("select vo, min(vo.uuid) from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status " +
