@@ -119,10 +119,10 @@ class VolumeGcCase extends SubCase {
                 GarbageCollectorVO vo = new GarbageCollectorVO()
                 vo.uuid = String.format(getContextVolumeUuid(it).substring(0, 26) + i)
                 vo.status = it.status
-                vo.context =it.context
-                vo.name =it.name
-                vo.managementNodeUuid =it.managementNodeUuid
-                vo.runnerClass =it.runnerClass
+                vo.context = it.context
+                vo.name = it.name
+                vo.managementNodeUuid = it.managementNodeUuid
+                vo.runnerClass = it.runnerClass
                 vo.lastOpDate = it.lastOpDate
                 vo.createDate = it.createDate
                 vo.type = it.type
@@ -134,26 +134,25 @@ class VolumeGcCase extends SubCase {
         }
         dbf.persistCollection(vos)
 
-        def now1 = new Date()
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count()
-        def now2 = new Date()
+
         Map<String, GarbageCollectorVO> mapVo = [:]
         List<GarbageCollectorVO> gcVos = []
         SQL.New("select vo from GarbageCollectorVO vo where vo.status = :status and vo.runnerClass = :runnerClass")
                 .param("runnerClass", CephDeleteVolumeGC.getName())
                 .param("status", GCStatus.Idle)
-                .limit(1000).paginate(count, { List<GarbageCollectorVO> gcvos -> gcvos.forEach({ vo ->
-            mapVo.put(getContextVolumeUuid(vo), vo)
-            gcVos.add(vo)
-        })})
-        def now3 = new Date()
+                .limit(1000).paginate(count, { List<GarbageCollectorVO> gcvos ->
+            gcvos.forEach({ vo ->
+                mapVo.put(getContextVolumeUuid(vo), vo)
+                gcVos.add(vo)
+            })
+        })
         dbf.removeCollection(gcVos, GarbageCollectorVO.class)
-        List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
+        List<GarbageCollectorVO> res = new ArrayList(mapVo.values())
         dbf.persistCollection(res)
-        def now4 = new Date()
 
         assert Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
