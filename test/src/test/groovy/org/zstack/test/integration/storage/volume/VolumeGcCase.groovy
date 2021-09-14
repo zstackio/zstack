@@ -115,7 +115,7 @@ class VolumeGcCase extends SubCase {
         List<GarbageCollectorVO> cephVo = Q.New(GarbageCollectorVO.class).list()
         List<GarbageCollectorVO> vos = new ArrayList()
         cephVo.each { it ->
-            for (int i = 100000; i < 100999; i++) {
+            for (int i = 100000; i < 199999; i++) {
                 GarbageCollectorVO vo = new GarbageCollectorVO()
                 vo.uuid = String.format(getContextVolumeUuid(it).substring(0, 26) + i)
                 vo.status = it.status
@@ -149,7 +149,15 @@ class VolumeGcCase extends SubCase {
         })})
         def now2 = new Date()
 
-        SQL.New("delete from GarbageCollectorVO gc").execute();
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                int times = (int) (count / 1000) + (count % 1000 != 0 ? 1 : 0);
+                for (int i = 0; i < times; i++) {
+                    sql("delete from GarbageCollectorVO").limit(1000).execute()
+                }
+            }
+        }.execute()
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
         dbf.persistCollection(res)
         def now3 = new Date()
@@ -159,13 +167,28 @@ class VolumeGcCase extends SubCase {
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count() == 3
 
-//        select count(*) from GarbageCollectorVO where runnerClass="org.zstack.storage.ceph.primary.CephDeleteVolumeGC" and status="Idle";
+//        SQL.New("delete from GarbageCollectorVO gc").execute();
 //
-//        select * from GarbageCollectorVO where runnerClass="org.zstack.storage.ceph.primary.CephDeleteVolumeGC";
+//        Map<String, GarbageCollectorVO> mapVo = [:]
+//        SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
+//                .param("runnerClass", CephDeleteVolumeGC.getName())
+//                .param("status", GCStatus.Idle)
+//                .limit(1000).paginate(count, { List<GarbageCollectorVO> gcvos -> gcvos.forEach({ vo ->
+//            mapVo.put(getContextVolumeUuid(vo), vo)
+//        })})
 //
-//        select * from GarbageCollectorVO where runnerClass="org.zstack.storage.ceph.primary.CephDeleteVolumeGC" group by (substring_index(context, ':', '-1'));
+//        EXPLAIN select GarbageCollectorVO from GarbageCollectorVO where runnerClass="org.zstack.storage.ceph.primary.CephDeleteVolumeGC" and status="Idle";
+//
+//        EXPLAIN select * from GarbageCollectorVO where runnerClass="org.zstack.storage.ceph.primary.CephDeleteVolumeGC";
+//
+//        EXPLAIN select * from GarbageCollectorVO where runnerClass="org.zstack.storage.ceph.primary.CephDeleteVolumeGC" group by (substring_index(context, ':', '-1'));
 //
 //        delete from GarbageCollectorVO;
+
+//        long count = SQL.New("select count(*) from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status",Long.class)
+//                .param("runnerClass", CephDeleteVolumeGC.getName())
+//                .param("status", GCStatus.Idle)
+//                .find()
 
 //        Map<String, GarbageCollectorVO> mapVo = [:]
 //        SQL.New("select vo, min(vo.uuid) from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status " +
@@ -181,12 +204,12 @@ class VolumeGcCase extends SubCase {
 //        new SQLBatch() {
 //            @Override
 //            protected void scripts() {
-//                int times = (int) (300000 / 1000) + (300000 % 1000 != 0 ? 1 : 0);
-//                for (int i=0;i<times;i++){
-//                    sql("delete from GarbageCollectorVO limit 1000").execute();
+//                int times = (int) (3000 / 100) + (3000 % 100 != 0 ? 1 : 0);
+//                for (int i = 0; i < times; i++) {
+//                    sql("delete from GarbageCollectorVO").limit(1000).execute()
 //                }
 //            }
-//        }
+//        }.execute()
     }
 
     String getContextVolumeUuid(GarbageCollectorVO vo) {
