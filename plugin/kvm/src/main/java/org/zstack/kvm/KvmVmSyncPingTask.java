@@ -196,9 +196,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         // The problem is if one vm-sync skipped operation is started and finished during vm sync command's handling
         // vm state would still be sync to mn
         Set<String> vmsToSkipSetHostSide = new HashSet<>();
-        if (vmsToSkip.get(Platform.getManagementServerId()) != null) {
-            vmsToSkipSetHostSide.addAll(vmsToSkip.get(Platform.getManagementServerId()));
-        }
+        vmsToSkip.values().forEach(vmsToSkipSetHostSide::addAll);
 
         // if the vm is not running on host when sync command executing but started as soon as possible
         // before response handling of vm sync, mgmtSideStates will including the running vm but not result in
@@ -227,10 +225,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                 if (ret.isSuccess()) {
                     Map<String, VmInstanceState> states = new HashMap<>(ret.getStates().size());
 
-                    if (vmsToSkip.get(Platform.getManagementServerId()) != null) {
-                        // Get vms to skip after sync result returned.
-                        vmsToSkipSetHostSide.addAll(vmsToSkip.get(Platform.getManagementServerId()));
-                    }
+                    // Get vms to skip after sync result returned.
+                    vmsToSkip.values().forEach(vmsToSkipSetHostSide::addAll);
 
                     Collection<String> vmUuidsInDeleteVmGC = DeleteVmGC.queryVmInGC(host.getUuid(), ret.getStates().keySet());
 
