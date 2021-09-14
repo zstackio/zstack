@@ -133,7 +133,7 @@ class VolumeGcCase extends SubCase {
             }
         }
         dbf.persistCollection(vos)
-
+        def t1 = new Date()
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
@@ -153,8 +153,8 @@ class VolumeGcCase extends SubCase {
         dbf.removeCollection(gcVos, GarbageCollectorVO.class)
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values())
         dbf.persistCollection(res)
-
-        assert Q.New(GarbageCollectorVO.class)
+        def t2 = new Date()
+         assert Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count() == 3
