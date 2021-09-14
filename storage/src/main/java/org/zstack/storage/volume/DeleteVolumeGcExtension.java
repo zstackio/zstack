@@ -13,6 +13,7 @@ import org.zstack.core.gc.GarbageCollectorVO;
 import org.zstack.core.gc.GarbageCollectorVO_;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.storage.ceph.primary.CephDeleteVolumeGC;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;

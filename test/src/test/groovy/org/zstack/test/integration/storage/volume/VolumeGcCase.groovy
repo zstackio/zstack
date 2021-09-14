@@ -147,9 +147,8 @@ class VolumeGcCase extends SubCase {
             mapVo.put(getContextVolumeUuid(vo), vo)
         })})
         def now2 = new Date()
-        SQL.New("delete from GarbageCollectorVO vo where vo.name like 'gc-ceph%' and vo.status = :status and vo.runnerClass = :runnerClass")
+        SQL.New("delete from GarbageCollectorVO vo where vo.status = :status")
                 .param("status", GCStatus.Idle)
-                .param("runnerClass", CephDeleteVolumeGC.getName())
                 .execute()
         def now3 = new Date()
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
