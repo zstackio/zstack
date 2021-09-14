@@ -52,9 +52,6 @@ public class DeleteVolumeGcExtension implements Component {
             } catch (NoSuchMethodException e) {
                 e.printStackTrace();
             }
-//            if (DELETE_VOLUME_GC) {
-//                thdf.submitTimerTask(this::DeleteVolumeGC, TimeUnit.MINUTES, 5);
-//            }
         });
         return true;
     }
