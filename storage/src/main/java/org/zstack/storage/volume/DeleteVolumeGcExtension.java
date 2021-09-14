@@ -6,20 +6,15 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
-import org.zstack.core.gc.GCStatus;
 import org.zstack.core.gc.GarbageCollectorVO;
-import org.zstack.core.gc.GarbageCollectorVO_;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
-import org.zstack.storage.ceph.primary.CephDeleteVolumeGC;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class DeleteVolumeGcExtension implements Component {
