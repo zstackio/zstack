@@ -153,27 +153,27 @@ class VolumeGcCase extends SubCase {
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count() == 3
-
-        Map<String, GarbageCollectorVO> mapVo = [:]
-        SQL.New("select vo, min(vo.uuid) from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status " +
-                "group by substring(cast(vo.context as string), '19', '34')")
-                .param("runnerClass", CephDeleteVolumeGC.getName())
-                .param("status", GCStatus.Idle)
-                .limit(1000).paginate(count, { List<GarbageCollectorVO> gcvos -> gcvos.forEach({ vo ->
-            mapVo.put(getContextVolumeUuid(vo), vo)
-        })})
-        mapVo
-        SQL.New("delete from GarbageCollectorVO gc").execute();
-
-        new SQLBatch() {
-            @Override
-            protected void scripts() {
-                int times = (int) (300000 / 1000) + (300000 % 1000 != 0 ? 1 : 0);
-                for (int i=0;i<times;i++){
-                    sql("delete from GarbageCollectorVO limit 1000").execute();
-                }
-            }
-        }
+    
+//        Map<String, GarbageCollectorVO> mapVo = [:]
+//        SQL.New("select vo, min(vo.uuid) from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status " +
+//                "group by substring(cast(vo.context as string), '19', '34')")
+//                .param("runnerClass", CephDeleteVolumeGC.getName())
+//                .param("status", GCStatus.Idle)
+//                .limit(1000).paginate(count, { List<GarbageCollectorVO> gcvos -> gcvos.forEach({ vo ->
+//            mapVo.put(getContextVolumeUuid(vo), vo)
+//        })})
+//        mapVo
+//        SQL.New("delete from GarbageCollectorVO gc").execute();
+//
+//        new SQLBatch() {
+//            @Override
+//            protected void scripts() {
+//                int times = (int) (300000 / 1000) + (300000 % 1000 != 0 ? 1 : 0);
+//                for (int i=0;i<times;i++){
+//                    sql("delete from GarbageCollectorVO limit 1000").execute();
+//                }
+//            }
+//        }
     }
 
     String getContextVolumeUuid(GarbageCollectorVO vo) {
