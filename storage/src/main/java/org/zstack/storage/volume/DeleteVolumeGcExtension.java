@@ -68,20 +68,20 @@ public class DeleteVolumeGcExtension implements Component {
     }
 
     boolean DeleteVolumeGC(DeleteVolumeOnPrimaryStorageGC deleteVolumeOnPrimaryStorageGC) {
-        long count = Q.New(GarbageCollectorVO.class)
-                .eq(GarbageCollectorVO_.runnerClass, deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
-                .eq(GarbageCollectorVO_.status, GCStatus.Idle)
-                .count();
-        Map<String, GarbageCollectorVO> mapVo = new HashMap<>();
-        SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
-                .param("runnerClass", deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
-                .param("status", GCStatus.Idle)
-                .limit(1000).paginate(count, (List<GarbageCollectorVO> vos) -> vos.forEach(vo -> {
-                    mapVo.put(getContextVolumeUuid(vo), vo);
-                }));
-        SQL.New("delete from GarbageCollectorVO gc").execute();
-        List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
-        dbf.persistCollection(res);
+//        long count = Q.New(GarbageCollectorVO.class)
+//                .eq(GarbageCollectorVO_.runnerClass, deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
+//                .eq(GarbageCollectorVO_.status, GCStatus.Idle)
+//                .count();
+//        Map<String, GarbageCollectorVO> mapVo = new HashMap<>();
+//        SQL.New("select vo from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status")
+//                .param("runnerClass", deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
+//                .param("status", GCStatus.Idle)
+//                .limit(1000).paginate(count, (List<GarbageCollectorVO> vos) -> vos.forEach(vo -> {
+//                    mapVo.put(getContextVolumeUuid(vo), vo);
+//                }));
+//        SQL.New("delete from GarbageCollectorVO gc").execute();
+//        List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
+//        dbf.persistCollection(res);
 
         return true;
     }
