@@ -135,10 +135,10 @@ class VolumeGcCase extends SubCase {
         dbf.persistCollection(vos)
 
         def now1 = new Date()
-        long count = SQL.New("select count(*) from GarbageCollectorVO vo where vo.status = :status and vo.runnerClass = :runnerClass")
-                .param("status", GCStatus.Idle)
-                .param("runnerClass", CephDeleteVolumeGC.getName())
-                .find()
+        long count = Q.New(GarbageCollectorVO.class)
+                .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
+                .eq(GarbageCollectorVO_.status, GCStatus.Idle)
+                .count()
         def now2 = new Date()
         Map<String, GarbageCollectorVO> mapVo = [:]
         List<GarbageCollectorVO> gcVos = []
