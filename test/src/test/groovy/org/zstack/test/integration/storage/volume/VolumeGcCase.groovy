@@ -157,7 +157,7 @@ class VolumeGcCase extends SubCase {
 //                }
 //            }
 //        }.execute()
-        SQL.New("delete where name like \"gc-ceph%\" and uuid not in (xxx)").execute()
+//        SQL.New("delete where name like \"gc-ceph%\" and uuid not in (xxx)").execute()
 
         def now3 = new Date()
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
