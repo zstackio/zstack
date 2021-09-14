@@ -25,7 +25,7 @@ public class GetVmInstanceProtectedRecoveryPointsAction extends AbstractAction {
         }
     }
 
-    @Param(required = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String uuid;
 
     @Param(required = false)
