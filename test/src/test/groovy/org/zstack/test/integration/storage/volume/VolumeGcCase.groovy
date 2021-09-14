@@ -134,6 +134,9 @@ class VolumeGcCase extends SubCase {
         }
         dbf.persistCollection(vos)
 
+        SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
+        Date date1 = new Date(System.currentTimeMillis());
+
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
@@ -145,15 +148,17 @@ class VolumeGcCase extends SubCase {
                 .limit(1000).paginate(count, { List<GarbageCollectorVO> gcvos -> gcvos.forEach({ vo ->
             mapVo.put(getContextVolumeUuid(vo), vo)
         })})
+        Date date2 = new Date(System.currentTimeMillis());
+        
         SQL.New("delete from GarbageCollectorVO gc").execute();
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
         dbf.persistCollection(res)
-
+        Date date3 = new Date(System.currentTimeMillis());
         assert Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count() == 3
-    
+
 //        Map<String, GarbageCollectorVO> mapVo = [:]
 //        SQL.New("select vo, min(vo.uuid) from GarbageCollectorVO vo where vo.runnerClass = :runnerClass and vo.status = :status " +
 //                "group by substring(cast(vo.context as string), '19', '34')")
