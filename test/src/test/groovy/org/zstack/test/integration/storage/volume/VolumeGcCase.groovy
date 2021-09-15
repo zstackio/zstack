@@ -82,6 +82,7 @@ class VolumeGcCase extends SubCase {
         }
     }
 
+    @Transactional
     void testDeleteVolumeGcExtension() {
         VolumeInventory vol1 = createDataVolume {
             name = "data1"
