@@ -82,24 +82,4 @@ public class DeleteVolumeGcExtension implements Component {
                 }));
         return true;
     }
-
-    @Transactional
-    public boolean deleteVolumeGC2() {
-        long count = Q.New(GarbageCollectorVO.class)
-                .eq(GarbageCollectorVO_.status, GCStatus.Idle)
-                .count();
-
-        HashSet<String> volumeUuids = new HashSet<>();
-        SQL.New("select vo from GarbageCollectorVO vo where vo.status = :status and vo.runnerClass = :runnerClass")
-                .param("status", GCStatus.Idle)
-                .limit(1000).paginate(count, (List<GarbageCollectorVO> vos) -> vos.forEach(vo -> {
-                    String volUuid = getContextVolumeUuid(vo);
-                    if (volumeUuids.contains(volUuid)) {
-                        dbf.getEntityManager().remove(vo);
-                    } else {
-                        volumeUuids.add(volUuid);
-                    }
-                }));
-        return true;
-    }
 }

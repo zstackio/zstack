@@ -8,6 +8,7 @@ import org.zstack.core.db.SQL
 import org.zstack.core.gc.GCStatus
 import org.zstack.core.gc.GarbageCollectorVO
 import org.zstack.core.gc.GarbageCollectorVO_
+import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.PrimaryStorageInventory
@@ -15,6 +16,7 @@ import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.ceph.CephGlobalConfig
 import org.zstack.storage.ceph.primary.CephDeleteVolumeGC
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
+import org.zstack.storage.volume.DeleteVolumeOnPrimaryStorageGC
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.test.integration.storage.CephEnv
 import org.zstack.test.integration.storage.StorageTest
@@ -24,6 +26,8 @@ import org.zstack.testlib.HttpError
 import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.SubCase
 import org.zstack.storage.volume.DeleteVolumeGcExtension
+import org.zstack.utils.BeanUtils
+
 import java.util.concurrent.TimeUnit
 
 class VolumeGcCase extends SubCase {
@@ -134,7 +138,15 @@ class VolumeGcCase extends SubCase {
         dbf.persistCollection(vos)
 
         def t1 = new Date()
-        def b = new DeleteVolumeGcExtension().deleteVolumeGC2()
+        BeanUtils.reflections.getSubTypesOf(DeleteVolumeOnPrimaryStorageGC.class).forEach({ clz ->
+            DeleteVolumeOnPrimaryStorageGC gc
+            try {
+                gc = clz.getConstructor().newInstance();
+                new DeleteVolumeGcExtension().deleteVolumeGC(gc)
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
+            }
+        })
         def t2 = new Date()
 
         assert Q.New(GarbageCollectorVO.class)
