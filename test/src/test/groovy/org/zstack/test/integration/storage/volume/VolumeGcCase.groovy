@@ -82,7 +82,6 @@ class VolumeGcCase extends SubCase {
         }
     }
 
-    @Transactional
     void testDeleteVolumeGcExtension() {
         VolumeInventory vol1 = createDataVolume {
             name = "data1"
@@ -147,7 +146,7 @@ class VolumeGcCase extends SubCase {
                 .count() == 3
     }
 
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional
     void dedup() {
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
