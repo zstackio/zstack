@@ -55,7 +55,9 @@ public class DeleteVolumeGcExtension implements Component {
                 .count();
 
         HashSet<String> volumeUuids = new HashSet<>();
-        SQL.New("select vo from GarbageCollectorVO vo where vo.status = :status and vo.name like 'gc-ceph%' or 'gc-shared-block%' or 'gc-nfs%' or 'gc-smp%' or 'gc-delete-volume%' or 'gc-mini-storage%' or 'gc-aliyun-ebs%' or 'gc-aliyun-nas%'")
+        SQL.New("select vo from GarbageCollectorVO vo where vo.status = :status and vo.name like ('gc-ceph%' " +
+                        "or 'gc-shared-block%' or 'gc-nfs%' or 'gc-smp%' or 'gc-delete-volume%' or 'gc-mini-storage%' " +
+                        "or 'gc-aliyun-ebs%' or 'gc-aliyun-nas%')")
                 .param("status", GCStatus.Idle)
                 .limit(1000).paginate(count, (List<GarbageCollectorVO> vos) -> vos.forEach(vo -> {
                     String volUuid = getContextVolumeUuid(vo);
