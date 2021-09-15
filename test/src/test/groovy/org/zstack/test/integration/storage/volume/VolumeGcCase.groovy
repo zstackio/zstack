@@ -118,7 +118,7 @@ class VolumeGcCase extends SubCase {
         List<GarbageCollectorVO> cephVo = Q.New(GarbageCollectorVO.class).list()
         List<GarbageCollectorVO> vos = new ArrayList()
         cephVo.each { it ->
-            for (int i = 100000; i < 190000; i++) {
+            for (int i = 100000; i < 101000; i++) {
                 GarbageCollectorVO vo = new GarbageCollectorVO()
                 vo.uuid = String.format(getContextVolumeUuid(it).substring(0, 26) + i)
                 vo.status = it.status
@@ -139,7 +139,6 @@ class VolumeGcCase extends SubCase {
         def t1 = new Date()
         dedup()
         def t2 = new Date()
-
 
         assert Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
