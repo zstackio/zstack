@@ -14,12 +14,9 @@ import org.zstack.core.gc.GarbageCollectorVO;
 import org.zstack.core.gc.GarbageCollectorVO_;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
-import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 
@@ -32,8 +29,6 @@ public class DeleteVolumeGcExtension implements Component {
 
     @Autowired
     private ThreadFacade thdf;
-
-    private DeleteVolumeOnPrimaryStorageGC deleteVolumeOnPrimaryStorageGC;
 
     @Override
     public boolean start() {
@@ -57,7 +52,6 @@ public class DeleteVolumeGcExtension implements Component {
     public boolean deleteVolumeGC() {
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
-                .eq(GarbageCollectorVO_.runnerClass, deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
                 .count();
 
         HashSet<String> volumeUuids = new HashSet<>();
