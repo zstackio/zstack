@@ -1341,7 +1341,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         RangeSet portRangeList = new RangeSet();
         List<RangeSet.Range> portRanges = new ArrayList<RangeSet.Range>();
 
-        if (protocol.toUpperCase().equals(PortForwardingProtocolType.UDP.toString()) || protocol.toUpperCase().equals(PortForwardingProtocolType.TCP.toString())) {
+        if (protocol.equalsIgnoreCase(PortForwardingProtocolType.UDP.toString()) || protocol.equalsIgnoreCase(PortForwardingProtocolType.TCP.toString())) {
             List<Tuple> pfPortList = Q.New(PortForwardingRuleVO.class).select(PortForwardingRuleVO_.vipPortStart, PortForwardingRuleVO_.vipPortEnd)
                     .eq(PortForwardingRuleVO_.vipUuid, vipUuid).eq(PortForwardingRuleVO_.protocolType, PortForwardingProtocolType.valueOf(protocol.toUpperCase())).listTuple();
             Iterator<Tuple> it = pfPortList.iterator();

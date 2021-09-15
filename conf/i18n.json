@@ -10084,6 +10084,21 @@
     "fileName": "src/main/java/org/zstack/mediator/ApiValidator.java"
   },
   {
+    "raw": "Current port range[%s, %s] is conflicted with system service port range [%s, %s] with vip[uuid: %s] protocol: %s ",
+    "en_US": "Current port range[{0}, {1}] is conflicted with system service port range [{2}, {3}] with vip[uuid: {4}] protocol: {5} ",
+    "zh_CN": "当前使用的端口范围[{0}, {1}]和虚拟IP[uuid: {4}, 协议: {5}]已经使用的系统服务端口范围[{2}, {3}]冲突",
+    "arguments": [
+      "Long.toString(range.getStart())",
+      "Long.toString(range.getEnd())",
+      "Long.toString(cur.getStart())",
+      "Long.toString(cur.getEnd())",
+      "vipUuid",
+      "protocol"
+    ],
+    "line": 225,
+    "fileName": "src/main/java/org/zstack/mediator/ApiValidator.java"
+  },
+  {
     "raw": "L3 network[uuid:%s] not found. Please correct your system tag[%s] of static IP",
     "en_US": "L3 network[uuid:{0}] not found. Please correct your system tag[{1}] of static IP",
     "zh_CN": "找不到L3网络[uuid:0]。请确认静态IP的系统标签",
