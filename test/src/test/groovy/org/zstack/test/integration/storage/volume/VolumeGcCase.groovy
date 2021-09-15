@@ -152,17 +152,17 @@ class VolumeGcCase extends SubCase {
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count()
-        HashSet<String> volumUuids = new HashSet<>()
+        HashSet<String> volumeUuids = new HashSet<>()
         SQL.New("select vo from GarbageCollectorVO vo where vo.status = :status and vo.runnerClass = :runnerClass")
                 .param("runnerClass", CephDeleteVolumeGC.getName())
                 .param("status", GCStatus.Idle)
                 .limit(1000).paginate(count, { List<GarbageCollectorVO> gcvos ->
             gcvos.forEach({ vo ->
                 String volUuid = getContextVolumeUuid(vo)
-                if (volumUuids.contains(volUuid)) {
+                if (volumeUuids.contains(volUuid)) {
                     dbf.getEntityManager().remove(vo)
                 } else {
-                    volumUuids.add(volUuid)
+                    volumeUuids.add(volUuid)
                 }
             })
         })
