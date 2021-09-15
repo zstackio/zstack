@@ -14,6 +14,7 @@ import org.zstack.core.gc.GarbageCollectorVO;
 import org.zstack.core.gc.GarbageCollectorVO_;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -40,15 +41,9 @@ public class DeleteVolumeGcExtension implements Component {
             DeleteVolumeOnPrimaryStorageGC gc;
             try {
                 gc = clz.getConstructor().newInstance();
-                DeleteVolumeGC(gc);
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
+                deleteVolumeGC(gc);
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
             }
         });
         return true;
@@ -67,7 +62,7 @@ public class DeleteVolumeGcExtension implements Component {
     }
 
     @Transactional
-    boolean DeleteVolumeGC(DeleteVolumeOnPrimaryStorageGC deleteVolumeOnPrimaryStorageGC) {
+    public boolean deleteVolumeGC(DeleteVolumeOnPrimaryStorageGC deleteVolumeOnPrimaryStorageGC) {
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .eq(GarbageCollectorVO_.runnerClass, deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
@@ -85,7 +80,26 @@ public class DeleteVolumeGcExtension implements Component {
                         volumeUuids.add(volUuid);
                     }
                 }));
+        return true;
+    }
 
+    @Transactional
+    public boolean deleteVolumeGC2() {
+        long count = Q.New(GarbageCollectorVO.class)
+                .eq(GarbageCollectorVO_.status, GCStatus.Idle)
+                .count();
+
+        HashSet<String> volumeUuids = new HashSet<>();
+        SQL.New("select vo from GarbageCollectorVO vo where vo.status = :status and vo.runnerClass = :runnerClass")
+                .param("status", GCStatus.Idle)
+                .limit(1000).paginate(count, (List<GarbageCollectorVO> vos) -> vos.forEach(vo -> {
+                    String volUuid = getContextVolumeUuid(vo);
+                    if (volumeUuids.contains(volUuid)) {
+                        dbf.getEntityManager().remove(vo);
+                    } else {
+                        volumeUuids.add(volUuid);
+                    }
+                }));
         return true;
     }
 }

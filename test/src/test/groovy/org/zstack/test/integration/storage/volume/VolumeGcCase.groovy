@@ -5,12 +5,9 @@ import com.google.gson.JsonParser
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
-import org.zstack.core.db.SQLBatch
 import org.zstack.core.gc.GCStatus
 import org.zstack.core.gc.GarbageCollectorVO
 import org.zstack.core.gc.GarbageCollectorVO_
-import org.zstack.header.storage.primary.ImageCacheShadowVO
-import org.zstack.header.storage.primary.ImageCacheVO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.PrimaryStorageInventory
@@ -26,8 +23,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.SubCase
-import org.springframework.transaction.annotation.Transactional;
-
+import org.zstack.storage.volume.DeleteVolumeGcExtension
 import java.util.concurrent.TimeUnit
 
 class VolumeGcCase extends SubCase {
@@ -136,36 +132,15 @@ class VolumeGcCase extends SubCase {
             }
         }
         dbf.persistCollection(vos)
+
         def t1 = new Date()
-        dedup()
+        def b = new DeleteVolumeGcExtension().deleteVolumeGC2()
         def t2 = new Date()
 
         assert Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count() == 3
-    }
-
-    @Transactional
-    void dedup() {
-        long count = Q.New(GarbageCollectorVO.class)
-                .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
-                .eq(GarbageCollectorVO_.status, GCStatus.Idle)
-                .count()
-        HashSet<String> volumeUuids = new HashSet<>()
-        SQL.New("select vo from GarbageCollectorVO vo where vo.status = :status and vo.runnerClass = :runnerClass")
-                .param("runnerClass", CephDeleteVolumeGC.getName())
-                .param("status", GCStatus.Idle)
-                .limit(1000).paginate(count, { List<GarbageCollectorVO> gcvos ->
-            gcvos.forEach({ vo ->
-                String volUuid = getContextVolumeUuid(vo)
-                if (volumeUuids.contains(volUuid)) {
-                    dbf.getEntityManager().remove(vo)
-                } else {
-                    volumeUuids.add(volUuid)
-                }
-            })
-        })
     }
 
     String getContextVolumeUuid(GarbageCollectorVO vo) {
