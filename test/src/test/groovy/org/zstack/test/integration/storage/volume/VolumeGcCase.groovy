@@ -140,21 +140,20 @@ class VolumeGcCase extends SubCase {
                 .count()
 
         Map<String, GarbageCollectorVO> mapVo = [:]
-        List<GarbageCollectorVO> gcVos = []
         SQL.New("select vo from GarbageCollectorVO vo where vo.status = :status and vo.runnerClass = :runnerClass")
                 .param("runnerClass", CephDeleteVolumeGC.getName())
                 .param("status", GCStatus.Idle)
                 .limit(1000).paginate(count, { List<GarbageCollectorVO> gcvos ->
             gcvos.forEach({ vo ->
                 mapVo.put(getContextVolumeUuid(vo), vo)
-                gcVos.add(vo)
+                dbf.getEntityManager().remove(vo)
             })
         })
-        dbf.removeCollection(gcVos, GarbageCollectorVO.class)
         List<GarbageCollectorVO> res = new ArrayList(mapVo.values())
         dbf.persistCollection(res)
         def t2 = new Date()
-         assert Q.New(GarbageCollectorVO.class)
+
+        assert Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.runnerClass, CephDeleteVolumeGC.getName())
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .count() == 3
