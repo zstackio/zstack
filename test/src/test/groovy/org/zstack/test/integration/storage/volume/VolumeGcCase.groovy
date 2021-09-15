@@ -138,15 +138,7 @@ class VolumeGcCase extends SubCase {
         dbf.persistCollection(vos)
 
         def t1 = new Date()
-        BeanUtils.reflections.getSubTypesOf(DeleteVolumeOnPrimaryStorageGC.class).forEach({ clz ->
-            DeleteVolumeOnPrimaryStorageGC gc
-            try {
-                gc = clz.getConstructor().newInstance();
-                new DeleteVolumeGcExtension().deleteVolumeGC(gc)
-            } catch (Exception e) {
-                throw new CloudRuntimeException(e);
-            }
-        })
+        new DeleteVolumeGcExtension().deleteVolumeGC()
         def t2 = new Date()
 
         assert Q.New(GarbageCollectorVO.class)

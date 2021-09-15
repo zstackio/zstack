@@ -37,15 +37,7 @@ public class DeleteVolumeGcExtension implements Component {
 
     @Override
     public boolean start() {
-        BeanUtils.reflections.getSubTypesOf(DeleteVolumeOnPrimaryStorageGC.class).forEach(clz -> {
-            DeleteVolumeOnPrimaryStorageGC gc;
-            try {
-                gc = clz.getConstructor().newInstance();
-                deleteVolumeGC(gc);
-            } catch (Exception e) {
-                throw new CloudRuntimeException(e);
-            }
-        });
+        deleteVolumeGC();
         return true;
     }
 
@@ -62,16 +54,16 @@ public class DeleteVolumeGcExtension implements Component {
     }
 
     @Transactional
-    public boolean deleteVolumeGC(DeleteVolumeOnPrimaryStorageGC deleteVolumeOnPrimaryStorageGC) {
+    public boolean deleteVolumeGC() {
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .eq(GarbageCollectorVO_.runnerClass, deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
                 .count();
 
         HashSet<String> volumeUuids = new HashSet<>();
-        SQL.New("select vo from GarbageCollectorVO vo where vo.status = :status and vo.runnerClass = :runnerClass")
+        SQL.New("select vo from GarbageCollectorVO vo where vo.status = :status and vo.name like 'gc-ceph%' or 'gc-shared-block%'" +
+                        "or 'gc-nfs%' or 'gc-smp%' or 'gc-delete-volume%' or 'gc-mini-storage%' or 'gc-aliyun-ebs%' or 'gc-aliyun-nas%'")
                 .param("status", GCStatus.Idle)
-                .param("runnerClass", deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
                 .limit(1000).paginate(count, (List<GarbageCollectorVO> vos) -> vos.forEach(vo -> {
                     String volUuid = getContextVolumeUuid(vo);
                     if (volumeUuids.contains(volUuid)) {
