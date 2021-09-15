@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -18,10 +19,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -68,24 +66,25 @@ public class DeleteVolumeGcExtension implements Component {
         return jo.get("volume").getAsJsonObject().get("uuid").getAsString();
     }
 
+    @Transactional
     boolean DeleteVolumeGC(DeleteVolumeOnPrimaryStorageGC deleteVolumeOnPrimaryStorageGC) {
         long count = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .eq(GarbageCollectorVO_.runnerClass, deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
                 .count();
-        Map<String, GarbageCollectorVO> mapVo = new HashMap<>();
-        List<GarbageCollectorVO> gcVos = new ArrayList<>();
 
+        HashSet<String> volumeUuids = new HashSet<>();
         SQL.New("select vo from GarbageCollectorVO vo where vo.status = :status and vo.runnerClass = :runnerClass")
                 .param("status", GCStatus.Idle)
                 .param("runnerClass", deleteVolumeOnPrimaryStorageGC.getClass().getName().split("@")[0])
                 .limit(1000).paginate(count, (List<GarbageCollectorVO> vos) -> vos.forEach(vo -> {
-                    mapVo.put(getContextVolumeUuid(vo), vo);
-                    gcVos.add(vo);
+                    String volUuid = getContextVolumeUuid(vo);
+                    if (volumeUuids.contains(volUuid)) {
+                        dbf.getEntityManager().remove(vo);
+                    } else {
+                        volumeUuids.add(volUuid);
+                    }
                 }));
-        dbf.removeCollection(gcVos, GarbageCollectorVO.class);
-        List<GarbageCollectorVO> res = new ArrayList(mapVo.values());
-        dbf.persistCollection(res);
 
         return true;
     }
