@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +53,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
@@ -64,6 +66,7 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
@@ -210,7 +213,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateVmInstanceMsg) {
             handle((APICreateVmInstanceMsg) msg);
-        } else if(msg instanceof APICreateVmNicMsg) {
+        } else if (msg instanceof APICreateVmNicMsg) {
             handle((APICreateVmNicMsg) msg);
         } else if (msg instanceof APIGetVmNicAttachedNetworkServiceMsg) {
             handle((APIGetVmNicAttachedNetworkServiceMsg) msg);
@@ -470,7 +473,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         List<BackupStorageVO> bss = bsq.getResultList();
         if (bss.isEmpty()) {
             throw new OperationFailureException(argerr("the image[uuid:%s] is not on any backup storage that has been attached to the zone[uuid:%s]",
-                            msg.getImageUuid(), msg.getZoneUuid()));
+                    msg.getImageUuid(), msg.getZoneUuid()));
         }
 
         List<L3NetworkVO> l3s = new ArrayList<>();
@@ -583,7 +586,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         } else {
             if (msg.getZoneUuid() == null) {
                 throw new OperationFailureException(argerr("zoneUuid must be set because the image[name:%s, uuid:%s] is on multiple backup storage",
-                                image.getName(), image.getUuid()));
+                        image.getName(), image.getUuid()));
             }
 
             ImageBackupStorageSelector selector = new ImageBackupStorageSelector();
@@ -649,7 +652,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         Set<String> psTypes = new HashSet<>();
         List<String> clusterUuids = new ArrayList<>();
         List<DiskOfferingInventory> dataOfferings = new ArrayList<>();
-        ImageInventory imageInv = new SQLBatchWithReturn<ImageInventory>(){
+        ImageInventory imageInv = new SQLBatchWithReturn<ImageInventory>() {
 
             @Override
             protected ImageInventory scripts() {
@@ -661,7 +664,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         " and bs.uuid = ref.backupStorageUuid", String.class)
                         .param("imageUuid", msg.getImageUuid())
                         .list().forEach(it ->
-                        psTypes.addAll(hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics((String)it)
+                        psTypes.addAll(hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics((String) it)
                         ));
 
                 clusterUuids.addAll(sql("select distinct ref.clusterUuid" +
@@ -671,7 +674,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         .param("l3Uuids", msg.getL3NetworkUuids())
                         .list());
 
-                for (String diskUuid : dataOfferingUuids){
+                for (String diskUuid : dataOfferingUuids) {
                     dataOfferings.add(DiskOfferingInventory.valueOf(
                             (DiskOfferingVO) q(DiskOfferingVO.class)
                                     .eq(DiskOfferingVO_.uuid, diskUuid)
@@ -720,13 +723,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
             msgs.add(amsg);
         }
 
-        new While<>(msgs).all((amsg, completion) ->{
+        new While<>(msgs).all((amsg, completion) -> {
             bus.send(amsg, new CloudBusCallBack(completion) {
                 @Override
                 public void run(MessageReply r) {
-                    if (r.isSuccess()){
+                    if (r.isSuccess()) {
                         AllocatePrimaryStorageDryRunReply re = r.castReply();
-                        if (amsg.getImageUuid() != null){
+                        if (amsg.getImageUuid() != null) {
                             reply.setRootVolumePrimaryStorages(re.getPrimaryStorageInventories());
                         } else {
                             reply.getDataVolumePrimaryStorages().put(amsg.getDiskOfferingUuid(), re.getPrimaryStorageInventories());
@@ -1011,7 +1014,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         if (!errorCodes.isEmpty()) {
             completion.fail(operr("handle system tag fail when creating vm because [%s]",
                     StringUtils.join(errorCodes.stream().map(ErrorCode::getDescription).collect(Collectors.toList()),
-                        ", ")));
+                            ", ")));
         }
 
         InstantiateNewCreatedVmInstanceMsg smsg = new InstantiateNewCreatedVmInstanceMsg();
@@ -1079,7 +1082,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void handle(final CreateVmInstanceMsg msg) {
-        if(msg.getZoneUuid() == null){
+        if (msg.getZoneUuid() == null) {
             String l3Uuid = VmNicSpec.getL3UuidsOfSpec(msg.getL3NetworkSpecs()).get(0);
             String zoneUuid = Q.New(L3NetworkVO.class)
                     .select(L3NetworkVO_.zoneUuid)
@@ -1123,8 +1126,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         return cmsg;
     }
 
-    private String getPSUuidForDataVolume(List<String> systemTags){
-        if(systemTags == null || systemTags.isEmpty()){
+    private String getPSUuidForDataVolume(List<String> systemTags) {
+        if (systemTags == null || systemTags.isEmpty()) {
             return null;
         }
 
@@ -1168,7 +1171,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                                 extp.releaseNetworkServiceOnDeletingNic(nic, new Completion(trigger) {
                                     @Override
                                     public void success() {
-                                        logger.debug(String.format("release eip from vmnic[%s]",nic.getUuid()));
+                                        logger.debug(String.format("release eip from vmnic[%s]", nic.getUuid()));
                                         trigger.next();
                                     }
 
@@ -1237,6 +1240,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     }
                 });
             }
+
             @Override
             public String getName() {
                 return String.format("delete-vmNic-%s", nic.getUuid());
@@ -1396,10 +1400,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 if (tuples == null || tuples.isEmpty()) {
                     return;
                 }
-                for (Tuple tuple: tuples) {
+                for (Tuple tuple : tuples) {
                     if (tuple.get(2, Long.class) > 1) {
                         throw new ApiMessageInterceptionException(operr("unable to enable this function. There are multi nics of L3 network[uuid:%s] in the vm[uuid: %s]",
-                                    tuple.get(0, String.class), tuple.get(1, String.class)));
+                                tuple.get(0, String.class), tuple.get(1, String.class)));
                     }
                 }
             }
@@ -1430,7 +1434,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                         validateHostname(sysTag, hostname);
                         List<String> l3NetworkUuids = msg.getL3NetworkUuids();
-                        l3NetworkUuids.forEach(it->validateHostNameOnDefaultL3Network(sysTag, hostname, it));
+                        l3NetworkUuids.forEach(it -> validateHostNameOnDefaultL3Network(sysTag, hostname, it));
                     } else if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
                         validateStaticIp(sysTag);
                     }
@@ -1732,6 +1736,27 @@ public class VmInstanceManagerImpl extends AbstractService implements
         installCleanTrafficValidator();
         installMachineTypeValidator();
         installClockTrackValidator();
+        installUsbRedirectValidator();
+    }
+
+    private void installUsbRedirectValidator() {
+        VmSystemTags.USB_REDIRECT.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String usbRedirectTokenByTag = null;
+                if (VmSystemTags.USB_REDIRECT.isMatch(systemTag)) {
+                    usbRedirectTokenByTag = VmSystemTags.USB_REDIRECT.getTokenByTag(systemTag, VmSystemTags.USB_REDIRECT_TOKEN);
+                } else {
+                    throw new OperationFailureException(argerr("invalid usbRedirect[%s], %s is not usbRedirect tag", systemTag, usbRedirectTokenByTag));
+                }
+                if (!isBoolean(usbRedirectTokenByTag)) {
+                    throw new OperationFailureException(argerr("invalid usbRedirect[%s], %s is not boolean class", systemTag, usbRedirectTokenByTag));
+                }
+            }
+            private boolean isBoolean(String param) {
+                return "true".equalsIgnoreCase(param) || "false".equalsIgnoreCase(param);
+            }
+        });
     }
 
     @Override
@@ -1871,7 +1896,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     @Override
     public List<Quota> reportQuota() {
-        QuotaOperator checker = new VmQuotaOperator() ;
+        QuotaOperator checker = new VmQuotaOperator();
 
         Quota quota = new Quota();
         QuotaPair p;
@@ -2096,7 +2121,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             return;
         }
 
-        for (String uuid :vmCdRomUuids) {
+        for (String uuid : vmCdRomUuids) {
             acntMgr.changeResourceOwner(uuid, newOwnerUuid);
         }
     }
@@ -2134,17 +2159,17 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vq.add(VolumeVO_.type, Op.EQ, VolumeType.Root);
         if (vq.isExists()) {
             throw new OperationFailureException(operr("the resource[uuid:%s] is a ROOT volume, you cannot change its owner, instead," +
-                            "change the owner of the VM the root volume belongs to", ref.getResourceUuid()));
+                    "change the owner of the VM the root volume belongs to", ref.getResourceUuid()));
         }
     }
 
     @Override
     public void afterChangeHostStatus(String hostUuid, HostStatus before, HostStatus next) {
-        if(next == HostStatus.Disconnected) {
+        if (next == HostStatus.Disconnected) {
             List<Tuple> vms = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid, VmInstanceVO_.state)
                     .eq(VmInstanceVO_.hostUuid, hostUuid)
                     .listTuple();
-            if(vms.isEmpty()){
+            if (vms.isEmpty()) {
                 return;
             }
 
@@ -2159,9 +2184,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 bus.send(msg, new CloudBusCallBack(completion) {
                     @Override
                     public void run(MessageReply reply) {
-                        if(!reply.isSuccess()){
+                        if (!reply.isSuccess()) {
                             logger.warn(String.format("the host[uuid:%s] disconnected, but the vm[uuid:%s] fails to " +
-                                            "change it's state to Unknown, %s", hostUuid, vmUuid, reply.getError()));
+                                    "change it's state to Unknown, %s", hostUuid, vmUuid, reply.getError()));
                             logger.warn(String.format("create an unknowngc job for vm[uuid:%s]", vmUuid));
 
                             UnknownVmGC gc = new UnknownVmGC();
