@@ -9,10 +9,26 @@ public class RangeSet {
     public static class Range {
         private long start;
         private long end;
+        private Boolean isSystem;
 
         public Range(long start, long end) {
             this.start = Math.min(start, end);
             this.end = Math.max(start, end);
+            this.isSystem = false;
+        }
+
+        public Range(long start, long end, Boolean isSystem) {
+            this.start = Math.min(start, end);
+            this.end = Math.max(start, end);
+            this.isSystem = isSystem;
+        }
+
+        public Boolean getSystem() {
+            return isSystem;
+        }
+
+        public void setSystem(Boolean system) {
+            isSystem = system;
         }
 
         public long getStart() {

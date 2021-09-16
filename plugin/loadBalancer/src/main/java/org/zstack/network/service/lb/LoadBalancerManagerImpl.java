@@ -893,7 +893,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         RangeSet portRangeList = new RangeSet();
         List<RangeSet.Range> portRanges = new ArrayList<RangeSet.Range>();
         List<String> protocols = new ArrayList<>();
-        if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(protocol.toLowerCase())) {
+        if (LoadBalancerConstants.LB_PROTOCOL_UDP.equalsIgnoreCase(protocol.toLowerCase())) {
             protocols.add(LoadBalancerConstants.LB_PROTOCOL_UDP);
         } else {
             protocols.add(LoadBalancerConstants.LB_PROTOCOL_TCP);

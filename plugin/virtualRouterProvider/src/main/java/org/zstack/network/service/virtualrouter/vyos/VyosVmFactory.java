@@ -40,19 +40,19 @@ public class VyosVmFactory extends VyosVmBaseFactory implements VipGetUsedPortRa
         VipVO vipVO = dbf.findByUuid(vipUuid, VipVO.class);
         /* system vip is the vip of public ip of vpc or vpc ha group */
         if (vipVO.isSystem()) {
-            if (protocol.equals(LoadBalancerConstants.LB_PROTOCOL_UDP)){
-                portRanges.add(new RangeSet.Range(VyosConstants.DNS_PORT, VyosConstants.DNS_PORT));
-                portRanges.add(new RangeSet.Range(VyosConstants.NTP_PORT, VyosConstants.NTP_PORT));
+            if (protocol.equalsIgnoreCase(LoadBalancerConstants.LB_PROTOCOL_UDP)){
+                portRanges.add(new RangeSet.Range(VyosConstants.DNS_PORT, VyosConstants.DNS_PORT, true));
+                portRanges.add(new RangeSet.Range(VyosConstants.NTP_PORT, VyosConstants.NTP_PORT, true));
             }
 
-            if (protocol.equals(LoadBalancerConstants.LB_PROTOCOL_TCP)){
-                portRanges.add(new RangeSet.Range(VyosConstants.DNS_PORT, VyosConstants.DNS_PORT));
+            if (protocol.equalsIgnoreCase(LoadBalancerConstants.LB_PROTOCOL_TCP)){
+                portRanges.add(new RangeSet.Range(VyosConstants.DNS_PORT, VyosConstants.DNS_PORT, true));
 
                 int sshPort = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
-                portRanges.add(new RangeSet.Range(sshPort, sshPort));
+                portRanges.add(new RangeSet.Range(sshPort, sshPort, true));
 
                 int agentPort = VirtualRouterGlobalProperty.AGENT_PORT;
-                portRanges.add(new RangeSet.Range(agentPort, agentPort));
+                portRanges.add(new RangeSet.Range(agentPort, agentPort, true));
             }
         }
 

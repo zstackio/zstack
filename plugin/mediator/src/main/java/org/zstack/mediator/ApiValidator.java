@@ -19,6 +19,7 @@ import org.zstack.network.service.eip.APICreateEipMsg;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.lb.APICreateLoadBalancerListenerMsg;
+import org.zstack.network.service.lb.LoadBalancerConstants;
 import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.lb.LoadBalancerVO_;
 import org.zstack.network.service.portforwarding.APIAttachPortForwardingRuleMsg;
@@ -223,8 +224,13 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
         while (it.hasNext()){
             RangeSet.Range cur = it.next();
             if (cur.isOverlap(range) || range.isOverlap(cur)){
-                throw new ApiMessageInterceptionException(operr("Current port range[%s, %s] is conflicted with used port range [%s, %s] with vip[uuid: %s] protocol: %s ",
-                        Long.toString(range.getStart()), Long.toString(range.getEnd()), Long.toString(cur.getStart()), Long.toString(cur.getEnd()), vipUuid, protocol));
+                if (cur.getSystem()) {
+                    throw new ApiMessageInterceptionException(operr("Current port range[%s, %s] is conflicted with system service port range [%s, %s] with vip[uuid: %s] protocol: %s ",
+                            Long.toString(range.getStart()), Long.toString(range.getEnd()), Long.toString(cur.getStart()), Long.toString(cur.getEnd()), vipUuid, protocol));
+                } else {
+                    throw new ApiMessageInterceptionException(operr("Current port range[%s, %s] is conflicted with used port range [%s, %s] with vip[uuid: %s] protocol: %s ",
+                            Long.toString(range.getStart()), Long.toString(range.getEnd()), Long.toString(cur.getStart()), Long.toString(cur.getEnd()), vipUuid, protocol));
+                }
             }
         }
     }
