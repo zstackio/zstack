@@ -2914,7 +2914,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         } else if (msg instanceof APIGetVmAttachableL3NetworkMsg) {
             handle((APIGetVmAttachableL3NetworkMsg) msg);
         } else if (msg instanceof APIGetCandidateL3NetworksForChangeVmNicNetworkMsg) {
-            handle((APIGetCandidateL3NetworksForChangeVmNicNetworkMsg)msg);
+            handle((APIGetCandidateL3NetworksForChangeVmNicNetworkMsg) msg);
         } else if (msg instanceof APIAttachIsoToVmInstanceMsg) {
             handle((APIAttachIsoToVmInstanceMsg) msg);
         } else if (msg instanceof APIDetachIsoFromVmInstanceMsg) {
@@ -4089,7 +4089,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             ret = ext.filterAttachableL3Network(VmInstanceInventory.valueOf(self), ret);
         }
 
-        VmNicVO nicVO= Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+        VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
         for (FilterVmNicChangeableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterVmNicChangeableL3NetworkExtensionPoint.class)) {
             ret = ext.filterVmNicChangeableL3Network(VmNicInventory.valueOf(nicVO), ret);
         }
@@ -5345,9 +5345,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 refreshVO();
                 ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
-                   completion.fail(allowed);
-                   chain.next();
-                   return;
+                    completion.fail(allowed);
+                    chain.next();
+                    return;
                 }
 
                 class SetStaticIp {
@@ -5528,7 +5528,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void allocateIp(L3NetworkInventory l3, VmNicInventory nic,final ReturnValueCompletion<List<UsedIpInventory>> completion) {
+    private void allocateIp(L3NetworkInventory l3, VmNicInventory nic, final ReturnValueCompletion<List<UsedIpInventory>> completion) {
         L3NetworkInventory nw = l3;
         Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(getSelf().getUuid());
         List<Integer> ipVersions = nw.getIpVersions();

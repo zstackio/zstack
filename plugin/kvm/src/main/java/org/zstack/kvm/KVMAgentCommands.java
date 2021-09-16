@@ -595,8 +595,6 @@ public class KVMAgentCommands {
     }
 
 
-
-
     public static class CreateBridgeCmd extends AgentCommand {
         private String physicalInterfaceName;
         private String bridgeName;
@@ -651,6 +649,7 @@ public class KVMAgentCommands {
 
     public static class DeleteBridgeResponse extends AgentResponse {
     }
+
     public static class CheckBridgeCmd extends AgentCommand {
         private String physicalInterfaceName;
         private String bridgeName;
@@ -876,7 +875,7 @@ public class KVMAgentCommands {
 
         public void setBootOrder(int bootOrder) {
             this.bootOrder = bootOrder;
-		}
+        }
 
         public String getVlanId() {
             return vlanId;
