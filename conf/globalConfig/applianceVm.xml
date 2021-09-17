@@ -31,4 +31,12 @@
         <defaultValue>300</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+
+    <config>
+        <category>applianceVm</category>
+        <name>deletion.timeout</name>
+        <description>The default timeout value for applianceVm deletion message timeout, by seconds </description>
+        <defaultValue>3600</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>
