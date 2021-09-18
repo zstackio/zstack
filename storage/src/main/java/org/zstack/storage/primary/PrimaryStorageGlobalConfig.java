@@ -35,4 +35,7 @@ public class PrimaryStorageGlobalConfig {
     @GlobalConfigValidation(inNumberRange = {1, 255})
     @GlobalConfigDef(defaultValue = "10", type = Integer.class,  description = "allocator concurrency level, if enabled.")
     public static GlobalConfig ALLOCATE_PRIMARYSTORAGE_CONCURRENCY = new GlobalConfig(CATEGORY, "allocate.primaryStore.Concurrency");
+    @GlobalConfigValidation(inNumberRange = {1, 255})
+    @GlobalConfigDef(defaultValue = "10", type = Integer.class,  description = "allocator concurrency level, if enabled.")
+    public static GlobalConfig RELEASE_PRIMARYSTORAGE_CONCURRENCY = new GlobalConfig(CATEGORY, "release.primaryStore.Concurrency");
 }

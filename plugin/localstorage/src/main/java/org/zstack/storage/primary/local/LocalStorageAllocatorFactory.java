@@ -1,8 +1,10 @@
 package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
@@ -26,6 +28,7 @@ import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.snapshot.SnapshotDeletionExtensionPoint;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -36,6 +39,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 
 /**
@@ -43,7 +47,7 @@ import static org.zstack.core.Platform.err;
  */
 public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStrategyFactory, Component,
         HostAllocatorFilterExtensionPoint, PrimaryStorageAllocatorStrategyExtensionPoint, PrimaryStorageAllocatorFlowNameSetter,
-        HostAllocatorStrategyExtensionPoint, SnapshotDeletionExtensionPoint {
+        HostAllocatorStrategyExtensionPoint, SnapshotDeletionExtensionPoint, PSCapacityExtensionPoint {
     private CLogger logger = Utils.getLogger(LocalStorageAllocatorFactory.class);
 
     @Autowired
@@ -54,6 +58,10 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     private PrimaryStorageOverProvisioningManager ratioMgr;
     @Autowired
     protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
+
+    public static final PrimaryStorageType psType = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
     public static PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
 
@@ -326,5 +334,86 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             return LocalStorageUtils.getHostUuidByResourceUuid(resUuid);
         }
         return null;
+    }
+
+    @Override
+    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
+        allocatedInstallUrl url = new allocatedInstallUrl();
+
+        String hostUuid = null;
+        if (msg.getRequiredInstallUrl() != null){
+            String volumeUuid = msg.getRequiredInstallUrl().replaceFirst("file://", "");
+            LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volumeUuid, LocalStorageResourceRefVO.class);
+            hostUuid = localStorageResourceRefVO.getHostUuid();
+        } else if (msg.getRequiredHostUuid() != null) {
+            hostUuid = msg.getRequiredHostUuid();
+        } else if (msg.getSystemTags() != null) {
+            for (String stag : msg.getSystemTags()) {
+                if (LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.isMatch(stag)) {
+                    hostUuid = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTokenByTag(
+                            stag, LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN);
+                    break;
+                }
+            }
+        }
+        if (hostUuid == null) {
+            throw new OperationFailureException(argerr("To create volume on the local primary storage, " +
+                            "you must specify the host that the volume is going to be created using the system tag [%s]",
+                    LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()));
+        }
+
+        url.installPath = psInv.getUrl();
+        url.hostUuid = hostUuid;
+
+        return url.makeFullPath();
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
+        allocatedInstallUrl url = new allocatedInstallUrl();
+        url.fullPath = allocatedInstallUrl;
+        String hostUuid = url.disassemble().hostUuid;
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+        new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, primaryStorageVO,false);
+        return allocatedInstallUrl;
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
+        allocatedInstallUrl url = new allocatedInstallUrl();
+        url.fullPath = allocatedInstallUrl;
+        String hostUuid = url.disassemble().hostUuid;
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+        new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, primaryStorageVO);
+        return allocatedInstallUrl;
+    }
+
+    @Override
+    public PrimaryStorageType getPrimaryStorageType() {
+        return psType;
+    }
+
+    public static class allocatedInstallUrl {
+        public String fullPath;
+        public String hostUuid;
+        public String installPath;
+
+        public allocatedInstallUrl disassemble() {
+            DebugUtils.Assert(fullPath != null, "fullPath cannot be null");
+            String[] pair = fullPath.split(";");
+            DebugUtils.Assert(pair.length == 2, String.format("invalid cache path %s", fullPath));
+            installPath = pair[0].replaceFirst("file://", "");
+            hostUuid = pair[1].replaceFirst("hostUuid://", "");
+            return this;
+        }
+
+        public String makeFullPath() {
+            DebugUtils.Assert(installPath != null, "installPath cannot be null");
+            DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
+            fullPath = String.format("file://%s;hostUuid://%s", installPath, hostUuid);
+            return fullPath;
+        }
     }
 }

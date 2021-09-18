@@ -72,7 +72,7 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
         final String hostUuid = t.get(0, String.class);
         String priUuid = t.get(1, String.class);
 
-        AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
+        AllocatePrimaryStorageSpaceMsg msg = new AllocatePrimaryStorageSpaceMsg();
         if (isThereNetworkSharedStorageForTheHost(hostUuid, priUuid)) {
             // use network-shared primary storage
             msg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
@@ -103,7 +103,8 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
 
                 spec.setDestHost(HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class)));
 
-                AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply) reply;
+                AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                data.put(AllocatePrimaryStorageSpaceReply.class, ar.getAllocatedInstallUrl());
                 data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
                 data.put(LocalStorageAllocateCapacityForAttachingVolumeFlow.class, ar.getSize());
                 trigger.next();
@@ -117,7 +118,8 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
         if (size != null) {
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(
                     VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
-            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+            ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
+            imsg.setAllocatedInstallUrl(data.get(AllocatePrimaryStorageSpaceReply.class).toString());
             imsg.setPrimaryStorageUuid(pri.getUuid());
             imsg.setDiskSize(size);
             bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());
