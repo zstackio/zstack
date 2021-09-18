@@ -79,7 +79,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component, PostMarkRootVolumeAsSnapshotExtension,
         BeforeTakeLiveSnapshotsOnVolumes, VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint,
         InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator, MarkRootVolumeAsSnapshotExtension,
-        VmCapabilitiesExtensionPoint, PreVmInstantiateResourceExtensionPoint {
+        VmCapabilitiesExtensionPoint, PreVmInstantiateResourceExtensionPoint, PSCapacityExtensionPoint {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -1203,5 +1203,23 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Override
     public void preReleaseVmResource(VmInstanceSpec spec, Completion completion) {
         completion.success();
+    }
+
+    @Override
+    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
+        PrimaryStorageVO psVo = dbf.findByUuid(psInv.getUuid(), PrimaryStorageVO.class);
+        return psVo.getUrl();
+    }
+
+    @Override
+    @Transactional
+    public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid) {
+        return allocatedInstallUrl;
+    }
+
+    @Override
+    @Transactional
+    public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
+        return allocatedInstallUrl;
     }
 }

@@ -43,7 +43,7 @@ import static org.zstack.core.Platform.operr;
  * Created by xing5 on 2016/3/26.
  */
 public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint,
-        HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint,
+        HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint, PSCapacityExtensionPoint,
         PostMarkRootVolumeAsSnapshotExtension, PrimaryStorageAttachExtensionPoint, AfterInstantiateVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SMPPrimaryStorageFactory.class);
 
@@ -423,4 +423,23 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
             exp.saveQcow2VolumeProvisioningStrategy(volume, hasBackingFile);
         }
     }
+
+    @Override
+    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
+        PrimaryStorageVO psVo = dbf.findByUuid(psInv.getUuid(), PrimaryStorageVO.class);
+        return psVo.getUrl();
+    }
+
+    @Override
+    @Transactional
+    public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid) {
+        return allocatedInstallUrl;
+    }
+
+    @Override
+    @Transactional
+    public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
+        return allocatedInstallUrl;
+    }
+
 }
