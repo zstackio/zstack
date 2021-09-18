@@ -313,6 +313,7 @@ public class VmInstanceSpec implements Serializable {
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private boolean skipIpAllocation = false;
+    private boolean newCreated = false;
 
     public boolean isSkipIpAllocation() {
         return skipIpAllocation;
@@ -695,5 +696,13 @@ public class VmInstanceSpec implements Serializable {
 
     public void setBootMode(String bootMode) {
         this.bootMode = bootMode;
+    }
+
+    public boolean isNewCreated() {
+        return newCreated;
+    }
+
+    public void setNewCreated(boolean newCreated) {
+        this.newCreated = newCreated;
     }
 }
