@@ -341,7 +341,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         allocatedInstallUrl url = new allocatedInstallUrl();
 
         String hostUuid = null;
-        if (msg.getRequiredInstallUrl() != null){
+        if (msg.getRequiredInstallUrl() != null) {
             String volumeUuid = msg.getRequiredInstallUrl().replaceFirst("file://", "");
             LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volumeUuid, LocalStorageResourceRefVO.class);
             hostUuid = localStorageResourceRefVO.getHostUuid();
@@ -370,18 +370,18 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
+    public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid) {
         allocatedInstallUrl url = new allocatedInstallUrl();
         url.fullPath = allocatedInstallUrl;
         String hostUuid = url.disassemble().hostUuid;
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
-        new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, primaryStorageVO,false);
+        new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, primaryStorageVO, false);
         return allocatedInstallUrl;
     }
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
+    public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
         allocatedInstallUrl url = new allocatedInstallUrl();
         url.fullPath = allocatedInstallUrl;
         String hostUuid = url.disassemble().hostUuid;
