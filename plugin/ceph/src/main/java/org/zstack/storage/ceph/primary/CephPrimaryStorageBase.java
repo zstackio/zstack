@@ -3084,7 +3084,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     protected class HttpCaller<T extends AgentResponse> {
         private Iterator<CephPrimaryStorageMonBase> it;
-        private List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+        private ErrorCodeList errorCodes = new ErrorCodeList();
 
         private final String path;
         private final AgentCommand cmd;
@@ -3170,8 +3170,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         private void doCall() {
             if (!it.hasNext()) {
-                callback.fail(operr(
-                        "all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes))
+                callback.fail(operr(errorCodes, "all mons failed to execute http call[%s], errors are %s", path)
                 );
 
                 return;
@@ -3203,7 +3202,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 public void fail(ErrorCode errorCode) {
                     logger.warn(String.format("mon[%s] failed to execute http call[%s], error is: %s",
                             base.getSelf().getHostname(), path, JSONObjectUtil.toJsonString(errorCode)));
-                    errorCodes.add(errorCode);
+                    errorCodes.getCauses().add(errorCode);
                     doCall();
                 }
             };
@@ -3228,19 +3227,19 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 CephPrimaryStorageMonBase::new);
 
         class Connector {
-            private List<ErrorCode> errorCodes = new ArrayList<>();
+            private ErrorCodeList errorCodes = new ErrorCodeList();
             private Iterator<CephPrimaryStorageMonBase> it = mons.iterator();
 
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
-                    if (errorCodes.size() == mons.size()) {
-                        if (errorCodes.isEmpty()) {
+                    if (errorCodes.getCauses().size() == mons.size()) {
+                        if (errorCodes.getCauses().isEmpty()) {
                             trigger.fail(operr("unable to connect to the ceph primary storage[uuid:%s]." +
                                     " Failed to connect all ceph mons.", self.getUuid()));
                         } else {
-                            trigger.fail(operr("unable to connect to the ceph primary storage[uuid:%s]." +
+                            trigger.fail(operr(errorCodes, "unable to connect to the ceph primary storage[uuid:%s]." +
                                             " Failed to connect all ceph mons. Errors are %s",
-                                    self.getUuid(), JSONObjectUtil.toJsonString(errorCodes)));
+                                    self.getUuid()));
                         }
                     } else {
                         // reload because mon status changed
@@ -3270,7 +3269,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        errorCodes.add(errorCode);
+                        errorCodes.getCauses().add(errorCode);
 
                         if (newAdded) {
                             // the mon fails to connect, remove it
