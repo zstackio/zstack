@@ -388,4 +388,9 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     public PrimaryStorageType getPrimaryStorageType() {
         return psType;
     }
+
+    @Override
+    public String getExtensionPointPrimaryStorageType(){
+        return LocalStorageConstants.LOCAL_STORAGE_TYPE;
+    }
 }
