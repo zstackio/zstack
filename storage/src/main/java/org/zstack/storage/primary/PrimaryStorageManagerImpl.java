@@ -758,7 +758,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         pluginRgty.saveExtensionAsMap(PSCapacityExtensionPoint.class, new Function<Object, PSCapacityExtensionPoint>() {
             @Override
             public Object call(PSCapacityExtensionPoint arg) {
-                return arg.getPrimaryStorageType();
+                return arg.getPrimaryStorageType().getClass().getTypeName();
             }
         });
         populateExtensions();
