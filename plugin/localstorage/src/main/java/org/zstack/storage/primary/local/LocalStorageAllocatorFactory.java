@@ -61,6 +61,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     public static PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
 
+    public static final PrimaryStorageType psType = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
+
     private List<String> allocatorFlowNames;
     private FlowChainBuilder builder = new FlowChainBuilder();
     private LocalStorageAllocatorStrategy strategy;
@@ -363,7 +365,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    //@Transactional(propagation = Propagation.MANDATORY)
+    @Transactional
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
         String[] pair = allocatedInstallUrl.split(";");
         String hostUuid = pair[1].replaceFirst("hostUuid://", "");
@@ -373,7 +375,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    //@Transactional(propagation = Propagation.MANDATORY)
+    @Transactional
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         String[] pair = allocatedInstallUrl.split(";");
         String hostUuid = pair[1].replaceFirst("hostUuid://", "");
@@ -383,7 +385,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public String getExtPrimaryStorageType() {
-        return LocalStorageConstants.LOCAL_STORAGE_TYPE;
+    public PrimaryStorageType getPrimaryStorageType() {
+        return psType;
     }
 }

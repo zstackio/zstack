@@ -789,22 +789,19 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 
     @Override
     public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
-        return "allocatedInstallUrl";
+        PrimaryStorageVO psVo = dbf.findByUuid(psInv.getUuid(), PrimaryStorageVO.class);
+        return psVo.getUrl();
     }
 
     @Override
-    @Transactional(propagation = Propagation.MANDATORY)
+    @Transactional
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
 
     @Override
+    @Transactional
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
-    }
-
-    @Override
-    public String getExtPrimaryStorageType() {
-        return NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE;
     }
 }
