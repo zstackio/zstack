@@ -105,7 +105,7 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
                 spec.setDestHost(HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class)));
 
                 AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-                data.put("allocatedInstallUrl", ar.getAllocatedInstallUrl());
+                data.put(AllocatePrimaryStorageSpaceReply.class, ar.getAllocatedInstallUrl());
                 data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
                 data.put(LocalStorageAllocateCapacityForAttachingVolumeFlow.class, ar.getSize());
                 trigger.next();
@@ -121,7 +121,7 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
                     VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
 
             ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
-            imsg.setAllocatedInstallUrl(data.get("allocatedInstallUrl").toString());
+            imsg.setAllocatedInstallUrl(data.get(AllocatePrimaryStorageSpaceReply.class).toString());
             imsg.setPrimaryStorageUuid(pri.getUuid());
             imsg.setDiskSize(size);
             bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());

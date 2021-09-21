@@ -1267,7 +1267,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 @Override
                                 public void rollback(FlowRollback trigger, Map data) {
                                     if (s) {
-                                        //IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
                                         ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
                                         imsg.setAllocatedInstallUrl(allocatedInstallUrl);
                                         imsg.setDiskSize(image.getActualSize());
@@ -1280,28 +1279,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     trigger.rollback();
                                 }
                             });
-                            /*1
-                            flow(new Flow() {
-                                String __name__ = "allocate-capacity-on-host";
-
-                                boolean success = false;
-
-                                @Override
-                                public void run(FlowTrigger trigger, Map data) {
-                                    reserveCapacityOnHost(hostUuid, image.getActualSize(), psUuid);
-                                    success = true;
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void rollback(FlowRollback trigger, Map data) {
-                                    if (success) {
-                                        returnStorageCapacityToHost(hostUuid, image.getActualSize());
-                                    }
-                                    trigger.rollback();
-                                }
-                            });
-                            */
                             flow(new NoRollbackFlow() {
                                 String __name__ = "download";
 
