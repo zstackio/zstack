@@ -333,11 +333,17 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         }
         return null;
     }
+
     @Override
     public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
 
         String hostUuid = null;
-        if (msg.getRequiredHostUuid() != null) {
+
+        if (msg.getRequiredInstallUrl() != null) {
+            String volumeId = msg.getRequiredInstallUrl().replaceFirst("volume://", "");
+            LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volumeId, LocalStorageResourceRefVO.class);
+            hostUuid = localStorageResourceRefVO.getHostUuid();
+        } else if (msg.getRequiredHostUuid() != null) {
             hostUuid = msg.getRequiredHostUuid();
         } else if (msg.getSystemTags() != null) {
             for (String stag : msg.getSystemTags()) {
@@ -349,15 +355,11 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                     break;
                 }
             }
-        } else if (msg.getRequiredInstallUrl() != null){
-            String volumeId = msg.getRequiredInstallUrl().replaceFirst("volume://", "");
-            LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volumeId, LocalStorageResourceRefVO.class);
-            hostUuid = localStorageResourceRefVO.getHostUuid();
         }
 
         if (hostUuid == null) {
-            throw new OperationFailureException(argerr("To create data volume on the local primary storage, you must specify the host that" +
-                            " the data volume is going to be created using the system tag [%s]",
+            throw new OperationFailureException(argerr("To create volume on the local primary storage, " +
+                            "you must specify the host that the volume is going to be created using the system tag [%s]",
                     LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()));
         }
 

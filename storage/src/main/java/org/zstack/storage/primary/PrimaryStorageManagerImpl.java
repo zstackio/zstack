@@ -393,6 +393,35 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void handle(ReleasePrimaryStorageSpaceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                releasePrimaryStorageSpaceMsg(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "release-primary-store-space";
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return PrimaryStorageGlobalConfig.RELEASE_PRIMARYSTORAGE_CONCURRENCY.value(Integer.class);
+            }
+        });
+    }
+
+    private void releasePrimaryStorageSpaceMsg(ReleasePrimaryStorageSpaceMsg msg, NoErrorCompletion completion) {
         long diskSize = msg.isNoOverProvisioning() ? msg.getDiskSize() : ratioMgr.calculateByRatio(msg.getPrimaryStorageUuid(), msg.getDiskSize());
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(msg.getPrimaryStorageUuid());
         if (updater.increaseAvailableCapacity(diskSize)) {
@@ -405,6 +434,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
         PSCapacityExtensionPoint PSReserveCapacityExt = pluginRgty.getExtensionFromMap(new PrimaryStorageType(primaryStorageVO.getType()), PSCapacityExtensionPoint.class);
         PSReserveCapacityExt.releaseCapacity(msg.getAllocatedInstallUrl(), msg.getDiskSize(), primaryStorageVO.getUuid());
+        completion.done();
     }
 
     private void handle(AllocatePrimaryStorageSpaceMsg msg) {
