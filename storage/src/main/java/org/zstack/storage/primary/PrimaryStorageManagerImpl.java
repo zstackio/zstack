@@ -3,6 +3,7 @@ package org.zstack.storage.primary;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.InstanceOfferingSystemTags;
@@ -421,6 +422,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         });
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
     private void releasePrimaryStorageSpaceMsg(ReleasePrimaryStorageSpaceMsg msg, NoErrorCompletion completion) {
         long diskSize = msg.isNoOverProvisioning() ? msg.getDiskSize() : ratioMgr.calculateByRatio(msg.getPrimaryStorageUuid(), msg.getDiskSize());
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(msg.getPrimaryStorageUuid());
