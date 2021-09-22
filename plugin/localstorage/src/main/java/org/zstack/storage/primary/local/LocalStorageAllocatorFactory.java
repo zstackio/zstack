@@ -27,6 +27,7 @@ import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.snapshot.SnapshotDeletionExtensionPoint;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -331,11 +332,16 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         }
         return null;
     }
+
     @Override
     public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
-
         String hostUuid = null;
-        if (msg.getRequiredHostUuid() != null) {
+
+        if (msg.getRequiredInstallUrl() != null) {
+            String volumeId = msg.getRequiredInstallUrl().replaceFirst("requiredInstallUrl://", "");
+            LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volumeId, LocalStorageResourceRefVO.class);
+            hostUuid = localStorageResourceRefVO.getHostUuid();
+        } else if (msg.getRequiredHostUuid() != null) {
             hostUuid = msg.getRequiredHostUuid();
         } else if (msg.getSystemTags() != null) {
             for (String stag : msg.getSystemTags()) {
@@ -347,36 +353,37 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                     break;
                 }
             }
-        } else if (msg.getRequiredInstallUrl() != null){
-            String volumeId = msg.getRequiredInstallUrl().replaceFirst("volume://", "");
-            LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volumeId, LocalStorageResourceRefVO.class);
-            hostUuid = localStorageResourceRefVO.getHostUuid();
         }
 
         if (hostUuid == null) {
-            throw new OperationFailureException(argerr("To create data volume on the local primary storage, you must specify the host that" +
-                            " the data volume is going to be created using the system tag [%s]",
+            throw new OperationFailureException(argerr("To create volume on the local primary storage, " +
+                            "you must specify the host that the volume is going to be created using the system tag [%s]",
                     LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()));
         }
 
-        return String.format("file://%s;hostUuid://%s", psInv.getUrl(), hostUuid);
+        allocatedInstallUrlUtil util = new allocatedInstallUrlUtil();
+        util.hostUuid = hostUuid;
+
+        return util.makeInstallUrl();
     }
 
     @Override
-    //@Transactional(propagation = Propagation.MANDATORY)
+    @Transactional
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
-        String[] pair = allocatedInstallUrl.split(";");
-        String hostUuid = pair[1].replaceFirst("hostUuid://", "");
+        allocatedInstallUrlUtil util = new allocatedInstallUrlUtil();
+        util.allocatedInstallUrl = allocatedInstallUrl;
+        String hostUuid = util.disassemble().hostUuid;
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, primaryStorageVO,false);
         return allocatedInstallUrl;
     }
 
     @Override
-    //@Transactional(propagation = Propagation.MANDATORY)
+    @Transactional
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
-        String[] pair = allocatedInstallUrl.split(";");
-        String hostUuid = pair[1].replaceFirst("hostUuid://", "");
+        allocatedInstallUrlUtil util = new allocatedInstallUrlUtil();
+        util.allocatedInstallUrl = allocatedInstallUrl;
+        String hostUuid = util.disassemble().hostUuid;
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, primaryStorageVO);
         return allocatedInstallUrl;
@@ -385,5 +392,24 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     @Override
     public String getExtPrimaryStorageType() {
         return LocalStorageConstants.LOCAL_STORAGE_TYPE;
+    }
+
+    public static class allocatedInstallUrlUtil {
+        public String allocatedInstallUrl;
+        public String hostUuid;
+
+        public allocatedInstallUrlUtil disassemble() {
+            DebugUtils.Assert(allocatedInstallUrl != null, "fullPath cannot be null");
+            String[] pair = allocatedInstallUrl.split(";");
+            DebugUtils.Assert(pair.length == 2, String.format("invalid cache path %s", allocatedInstallUrl));
+            hostUuid = pair[0].replaceFirst("hostUuid://", "");
+            return this;
+        }
+
+        public String makeInstallUrl() {
+            DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
+            allocatedInstallUrl = String.format("hostUuid://%s", hostUuid);
+            return allocatedInstallUrl;
+        }
     }
 }
