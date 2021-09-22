@@ -422,7 +422,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         });
     }
 
-    @Transactional(propagation = Propagation.MANDATORY)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     private void releasePrimaryStorageSpaceMsg(ReleasePrimaryStorageSpaceMsg msg, NoErrorCompletion completion) {
         long diskSize = msg.isNoOverProvisioning() ? msg.getDiskSize() : ratioMgr.calculateByRatio(msg.getPrimaryStorageUuid(), msg.getDiskSize());
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(msg.getPrimaryStorageUuid());
