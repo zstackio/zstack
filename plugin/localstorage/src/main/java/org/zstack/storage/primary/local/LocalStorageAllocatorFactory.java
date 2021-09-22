@@ -61,6 +61,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     public static PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
 
+    public static PrimaryStorageType psType = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
+
     private List<String> allocatorFlowNames;
     private FlowChainBuilder builder = new FlowChainBuilder();
     private LocalStorageAllocatorStrategy strategy;
@@ -383,7 +385,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public String getExtensionPointPrimaryStorageType() {
-        return LocalStorageConstants.LOCAL_STORAGE_TYPE;
+    public PrimaryStorageType getPrimaryStorageType() {
+        return psType;
     }
 }
