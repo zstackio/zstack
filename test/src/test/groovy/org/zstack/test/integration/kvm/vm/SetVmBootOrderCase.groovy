@@ -3,7 +3,7 @@ package org.zstack.test.integration.kvm.vm
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.DatabaseFacade
-import org.zstack.core.db.SQL
+import org.zstack.core.db.Q
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.tag.SystemTagVO
 import org.zstack.header.tag.SystemTagVO_
@@ -23,6 +23,7 @@ import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.TagUtils
 import org.zstack.utils.data.SizeUnit
 
 import static java.util.Arrays.asList
@@ -238,6 +239,17 @@ class SetVmBootOrderCase extends SubCase {
             uuid = vm.uuid
             bootOrder = asList(VmBootDevice.CdRom.toString(), VmBootDevice.HardDisk.toString(), VmBootDevice.Network.toString())
         }
+        
+        assert Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceUuid, vm.uuid)
+                .eq(SystemTagVO_.inherent, false)
+                .like(SystemTagVO_.tag, TagUtils.tagPatternToSqlPattern(VmSystemTags.BOOT_ORDER.tagFormat))
+                .count() == 1
+        assert !Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceUuid, vm.uuid)
+                .eq(SystemTagVO_.inherent, true)
+                .like(SystemTagVO_.tag, TagUtils.tagPatternToSqlPattern(VmSystemTags.BOOT_ORDER.tagFormat))
+                .isExists()
 
         rebootVmInstance {
             uuid = vm.uuid
@@ -400,9 +412,6 @@ class SetVmBootOrderCase extends SubCase {
             tag = "bootOrder::CdRom,HardDisk"
         }
 
-        SQL.New(SystemTagVO.class).eq(SystemTagVO_.uuid, tag1.uuid).set(SystemTagVO_.inherent, true).update()
-        SQL.New(SystemTagVO.class).eq(SystemTagVO_.uuid, tag2.uuid).set(SystemTagVO_.inherent, true).update()
-
         res = getVmBootOrder {
             uuid = vm.uuid
         }
@@ -438,9 +447,6 @@ class SetVmBootOrderCase extends SubCase {
             resourceUuid = vm.uuid
             tag = "bootOrder::CdRom,HardDisk"
         }
-
-        SQL.New(SystemTagVO.class).eq(SystemTagVO_.uuid, tag1.uuid).set(SystemTagVO_.inherent, true).update()
-        SQL.New(SystemTagVO.class).eq(SystemTagVO_.uuid, tag2.uuid).set(SystemTagVO_.inherent, true).update()
 
         setVmBootOrder {
             uuid = vm.uuid
@@ -606,8 +612,8 @@ class SetVmBootOrderCase extends SubCase {
             delegate.conditions = ["resourceUuid=${vm2.uuid}".toString()]
         } as List<SystemTagInventory>
         
-        assert tags.count { tag -> tag.tag.startsWith("${VmSystemTags.BOOT_ORDER_TOKEN}::") } == 0
-        assert tags.count { tag -> tag.tag.startsWith("${VmSystemTags.BOOT_ORDER_ONCE_TOKEN}::") } == 0
+        assert tags.count { tag -> VmSystemTags.BOOT_ORDER.isMatch(tag.tag) } == 0
+        assert tags.count { tag -> VmSystemTags.BOOT_ORDER_ONCE.isMatch(tag.tag) } == 0
         
         destroyVmInstance {
             delegate.uuid = vm2.uuid
@@ -626,7 +632,8 @@ class SetVmBootOrderCase extends SubCase {
             delegate.conditions = ["resourceUuid=${vm3.uuid}".toString()]
         } as List<SystemTagInventory>
 
-        assert tags.count { tag -> tag.tag.startsWith("${VmSystemTags.BOOT_ORDER_TOKEN}::") } == 1
+        assert tags.count { tag -> VmSystemTags.BOOT_ORDER.isMatch(tag.tag) && !tag.inherent } == 1
+        assert tags.count { tag -> VmSystemTags.BOOT_ORDER.isMatch(tag.tag) && tag.inherent } == 0
         
         setVmBootOrder {
             delegate.uuid = vm3.uuid
@@ -636,8 +643,7 @@ class SetVmBootOrderCase extends SubCase {
             delegate.conditions = ["resourceUuid=${vm3.uuid}".toString()]
         } as List<SystemTagInventory>
         
-        assert tags.count { tag -> 
-            tag.tag.startsWith("${VmSystemTags.BOOT_ORDER_TOKEN}::") && tag.inherent
-        } == 1
+        assert tags.count { tag -> VmSystemTags.BOOT_ORDER.isMatch(tag.tag) && !tag.inherent } == 1
+        assert tags.count { tag -> VmSystemTags.BOOT_ORDER.isMatch(tag.tag) && tag.inherent } == 0
     }
 }
