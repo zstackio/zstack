@@ -1212,18 +1212,19 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
-    @Transactional(propagation = Propagation.MANDATORY)
+    @Transactional
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
 
     @Override
+    @Transactional
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
 
     @Override
-    public String getExtPrimaryStorageType() {
+    public String getExtensionPointPrimaryStorageType() {
         return CephConstants.CEPH_PRIMARY_STORAGE_TYPE;
     }
 }

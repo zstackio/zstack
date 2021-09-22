@@ -793,18 +793,19 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     }
 
     @Override
-    @Transactional(propagation = Propagation.MANDATORY)
+    @Transactional
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
 
     @Override
+    @Transactional
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
 
     @Override
-    public String getExtPrimaryStorageType() {
+    public String getExtensionPointPrimaryStorageType() {
         return NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE;
     }
 }

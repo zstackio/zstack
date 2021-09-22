@@ -363,7 +363,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    //@Transactional(propagation = Propagation.MANDATORY)
+    @Transactional
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
         String[] pair = allocatedInstallUrl.split(";");
         String hostUuid = pair[1].replaceFirst("hostUuid://", "");
@@ -373,7 +373,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    //@Transactional(propagation = Propagation.MANDATORY)
+    @Transactional
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         String[] pair = allocatedInstallUrl.split(";");
         String hostUuid = pair[1].replaceFirst("hostUuid://", "");
@@ -383,7 +383,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public String getExtPrimaryStorageType() {
+    public String getExtensionPointPrimaryStorageType() {
         return LocalStorageConstants.LOCAL_STORAGE_TYPE;
     }
 }

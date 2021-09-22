@@ -431,18 +431,19 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
     }
 
     @Override
-    @Transactional(propagation = Propagation.MANDATORY)
+    @Transactional
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
 
     @Override
+    @Transactional
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
 
     @Override
-    public String getExtPrimaryStorageType() {
+    public String getExtensionPointPrimaryStorageType() {
         return SMPConstants.SMP_TYPE;
     }
 }
