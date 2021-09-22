@@ -10,6 +10,7 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.ceph.CephConstants
 import org.zstack.storage.ceph.CephPoolCapacity
+import org.zstack.storage.ceph.DataSecurityPolicy
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
@@ -84,19 +85,28 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                                 name: cspec.rootVolumePoolName,
                                 availableCapacity: rootSize,
                                 usedCapacity: cspec.totalCapacity - cspec.availableCapacity,
-                                totalCapacity: rootSize
+                                totalCapacity: rootSize,
+                                securityPolicy: DataSecurityPolicy.Copy.toString(),
+                                replicatedSize: 3,
+                                diskUtilization: 0.33
                         ),
                         new CephPoolCapacity(
                                 name: cspec.dataVolumePoolName,
                                 availableCapacity: dataSize,
                                 usedCapacity: 0,
-                                totalCapacity: dataSize
+                                totalCapacity: dataSize,
+                                securityPolicy: DataSecurityPolicy.Copy.toString(),
+                                replicatedSize: 3,
+                                diskUtilization: 0.33
                         ),
                         new CephPoolCapacity(
                                 name: cspec.imageCachePoolName,
                                 availableCapacity: cacheSize,
                                 usedCapacity: 0,
-                                totalCapacity: cacheSize
+                                totalCapacity: cacheSize,
+                                securityPolicy: DataSecurityPolicy.Copy.toString(),
+                                replicatedSize: 3,
+                                diskUtilization: 0.33
                         ),
                 ]
                 rsp.poolCapacities = poolCapacities
@@ -230,6 +240,9 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                                 availableCapacity: SizeUnit.GIGABYTE.toByte(100),
                                 usedCapacity: 0,
                                 totalCapacity: SizeUnit.GIGABYTE.toByte(100),
+                                securityPolicy: DataSecurityPolicy.Copy.toString(),
+                                replicatedSize: 3,
+                                diskUtilization: 0.33
                         )
                 ]
                 rsp.setPoolCapacities(poolCapacities)

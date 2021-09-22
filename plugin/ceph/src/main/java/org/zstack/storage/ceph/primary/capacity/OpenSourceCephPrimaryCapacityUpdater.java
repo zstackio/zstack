@@ -99,6 +99,8 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
                     poolVO.setReplicatedSize(poolCapacity.getReplicatedSize());
                     poolVO.setUsedCapacity(poolCapacity.getUsedCapacity());
                     poolVO.setTotalCapacity(poolCapacity.getTotalCapacity());
+                    poolVO.setDiskUtilization(poolCapacity.getDiskUtilization());
+                    poolVO.setSecurityPolicy(poolCapacity.getSecurityPolicy());
                     dbf.getEntityManager().merge(poolVO);
                 }
             }

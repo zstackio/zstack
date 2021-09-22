@@ -2,6 +2,7 @@ package org.zstack.storage.ceph.primary;
 
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
+import org.zstack.storage.ceph.DataSecurityPolicy;
 
 import java.sql.Timestamp;
 
@@ -36,6 +37,9 @@ public class APIAddCephPrimaryStoragePoolEvent extends APIEvent {
         inv.setAliasName("alias name");
         inv.setDescription("description");
         inv.setType(CephPrimaryStoragePoolType.Data.toString());
+        inv.setReplicatedSize(3);
+        inv.setSecurityPolicy(DataSecurityPolicy.Copy.toString());
+        inv.setDiskUtilization(0.33f);
         inv.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         inv.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         inv.setPrimaryStorageUuid(uuid());

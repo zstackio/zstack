@@ -1,6 +1,8 @@
 package org.zstack.storage.ceph.primary;
 
 import org.zstack.header.search.Inventory;
+
+import javax.persistence.Column;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,8 +23,10 @@ public class CephPrimaryStoragePoolInventory {
     private String type;
     private Long availableCapacity;
     private Long usedCapacity;
-    private Integer replicatedSize;
     private Long totalCapacity;
+    private String securityPolicy;
+    private Integer replicatedSize;
+    private Float diskUtilization;
 
     public static CephPrimaryStoragePoolInventory valueOf(CephPrimaryStoragePoolVO vo) {
         CephPrimaryStoragePoolInventory inv = new CephPrimaryStoragePoolInventory();
@@ -38,6 +42,8 @@ public class CephPrimaryStoragePoolInventory {
         inv.usedCapacity = vo.getUsedCapacity();
         inv.replicatedSize = vo.getReplicatedSize();
         inv.totalCapacity = vo.getTotalCapacity();
+        inv.diskUtilization = vo.getDiskUtilization();
+        inv.securityPolicy = vo.getSecurityPolicy();
         return inv;
     }
 
@@ -143,5 +149,21 @@ public class CephPrimaryStoragePoolInventory {
 
     public void setTotalCapacity(Long totalCapacity) {
         this.totalCapacity = totalCapacity;
+    }
+
+    public String getSecurityPolicy() {
+        return securityPolicy;
+    }
+
+    public void setSecurityPolicy(String securityPolicy) {
+        this.securityPolicy = securityPolicy;
+    }
+
+    public Float getDiskUtilization() {
+        return diskUtilization;
+    }
+
+    public void setDiskUtilization(Float diskUtilization) {
+        this.diskUtilization = diskUtilization;
     }
 }

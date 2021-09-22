@@ -2,6 +2,7 @@ package org.zstack.storage.ceph.primary;
 
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
+import org.zstack.storage.ceph.DataSecurityPolicy;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -30,6 +31,10 @@ public class APIQueryCephPrimaryStoragePoolReply extends APIQueryReply {
         cephPrimaryStoragePool.setPoolName("test pool");
         cephPrimaryStoragePool.setPrimaryStorageUuid(uuid());
         cephPrimaryStoragePool.setAliasName("alias test pool");
+        cephPrimaryStoragePool.setType(CephPrimaryStoragePoolType.Data.toString());
+        cephPrimaryStoragePool.setReplicatedSize(3);
+        cephPrimaryStoragePool.setSecurityPolicy(DataSecurityPolicy.ErasureCode.toString());
+        cephPrimaryStoragePool.setDiskUtilization(0.66f);
         cephPrimaryStoragePool.setType(CephPrimaryStoragePoolType.Data.toString());
         cephPrimaryStoragePool.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         cephPrimaryStoragePool.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
