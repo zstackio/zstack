@@ -34,7 +34,7 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
+        <hygonCpu>false</hygonCpu>
         <osRelease>WindowsServer 2019</osRelease>
     </osInfo>
     <osInfo>
@@ -52,7 +52,7 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
+        <hygonCpu>false</hygonCpu>
         <osRelease>Windows 10</osRelease>
     </osInfo>
     <osInfo>
