@@ -441,9 +441,4 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
-
-    @Override
-    public String getExtensionPointPrimaryStorageType() {
-        return SMPConstants.SMP_TYPE;
-    }
 }

@@ -1222,9 +1222,4 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
-
-    @Override
-    public String getExtensionPointPrimaryStorageType() {
-        return CephConstants.CEPH_PRIMARY_STORAGE_TYPE;
-    }
 }
