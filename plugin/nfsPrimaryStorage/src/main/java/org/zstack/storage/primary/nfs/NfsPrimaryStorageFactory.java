@@ -803,9 +803,4 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
-
-    @Override
-    public String getExtensionPointPrimaryStorageType() {
-        return NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE;
-    }
 }
