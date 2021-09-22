@@ -437,6 +437,7 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
     }
 
     @Override
+    @Transactional(propagation = Propagation.MANDATORY)
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }

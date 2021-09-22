@@ -799,6 +799,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     }
 
     @Override
+    @Transactional(propagation = Propagation.MANDATORY)
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
