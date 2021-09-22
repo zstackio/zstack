@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import com.microsoft.schemas.office.office.STInsetMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -385,7 +386,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public PrimaryStorageType getPrimaryStorageType() {
-        return psType;
+    public String getExtensionPointPrimaryStorageType() {
+        return LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
     }
 }

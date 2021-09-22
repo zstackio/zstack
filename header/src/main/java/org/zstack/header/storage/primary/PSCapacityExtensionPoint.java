@@ -12,5 +12,5 @@ public interface PSCapacityExtensionPoint {
     @Transactional(propagation = Propagation.MANDATORY)
     String releaseCapacity(String allocatedInstallUrl, long size, String psUuid);
 
-    PrimaryStorageType getPrimaryStorageType();
+    String getExtensionPointPrimaryStorageType();
 }
