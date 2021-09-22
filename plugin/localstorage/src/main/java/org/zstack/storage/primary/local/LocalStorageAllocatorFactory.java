@@ -365,7 +365,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    @Transactional
+    //@Transactional
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
         String[] pair = allocatedInstallUrl.split(";");
         String hostUuid = pair[1].replaceFirst("hostUuid://", "");
@@ -375,7 +375,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    @Transactional
+    //@Transactional
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         String[] pair = allocatedInstallUrl.split(";");
         String hostUuid = pair[1].replaceFirst("hostUuid://", "");

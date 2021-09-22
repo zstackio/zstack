@@ -431,13 +431,13 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
     }
 
     @Override
-    @Transactional
+    //@Transactional
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
 
     @Override
-    @Transactional
+    //@Transactional
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         return allocatedInstallUrl;
     }
