@@ -401,7 +401,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         public allocatedInstallUrlUtil disassemble() {
             DebugUtils.Assert(allocatedInstallUrl != null, "fullPath cannot be null");
             String[] pair = allocatedInstallUrl.split(";");
-            DebugUtils.Assert(pair.length == 2, String.format("invalid cache path %s", allocatedInstallUrl));
+            DebugUtils.Assert(pair.length == 1, String.format("invalid cache path %s", allocatedInstallUrl));
             hostUuid = pair[0].replaceFirst("hostUuid://", "");
             return this;
         }
