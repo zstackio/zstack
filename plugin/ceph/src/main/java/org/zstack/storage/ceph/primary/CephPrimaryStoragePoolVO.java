@@ -35,9 +35,16 @@ public class CephPrimaryStoragePoolVO extends ResourceVO {
     @Column
     private long usedCapacity;
     @Column
+    private long totalCapacity;
+    @Column
+    private String securityPolicy;
+    @Column
     private Integer replicatedSize;
     @Column
-    private long totalCapacity;
+    private Float diskUtilization;
+
+    public CephPrimaryStoragePoolVO() {
+    }
 
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
@@ -125,5 +132,21 @@ public class CephPrimaryStoragePoolVO extends ResourceVO {
 
     public void setTotalCapacity(long totalCapacity) {
         this.totalCapacity = totalCapacity;
+    }
+
+    public String getSecurityPolicy() {
+        return securityPolicy;
+    }
+
+    public void setSecurityPolicy(String securityPolicy) {
+        this.securityPolicy = securityPolicy;
+    }
+
+    public Float getDiskUtilization() {
+        return diskUtilization;
+    }
+
+    public void setDiskUtilization(Float diskUtilization) {
+        this.diskUtilization = diskUtilization;
     }
 }

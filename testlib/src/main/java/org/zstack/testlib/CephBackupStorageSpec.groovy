@@ -5,6 +5,7 @@ import org.zstack.core.Platform
 import org.zstack.core.agent.AgentConstant
 import org.zstack.core.db.Q
 import org.zstack.storage.ceph.CephPoolCapacity
+import org.zstack.storage.ceph.DataSecurityPolicy
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.storage.ceph.backup.CephBackupStorageMonBase
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO
@@ -71,7 +72,10 @@ class CephBackupStorageSpec extends BackupStorageSpec {
                                 name : bspec.poolName,
                                 availableCapacity : bspec.availableCapacity,
                                 usedCapacity : bspec.totalCapacity - bspec.availableCapacity,
-                                totalCapacity: bspec.totalCapacity
+                                totalCapacity: bspec.totalCapacity,
+                                replicatedSize: 3,
+                                diskUtilization: 0.67,
+                                securityPolicy: DataSecurityPolicy.ErasureCode.toString()
                         )
                 ]
                 rsp.poolCapacities = poolCapacities

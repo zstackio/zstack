@@ -39,6 +39,12 @@ public class CephBackupStorageVO extends BackupStorageVO {
     @Column
     private Integer poolReplicatedSize;
 
+    @Column
+    private Float poolDiskUtilization;
+
+    @Column
+    private String poolSecurityPolicy;
+
     public String getPoolName() {
         return poolName;
     }
@@ -97,5 +103,21 @@ public class CephBackupStorageVO extends BackupStorageVO {
 
     public void setPoolReplicatedSize(Integer poolReplicatedSize) {
         this.poolReplicatedSize = poolReplicatedSize;
+    }
+
+    public Float getPoolDiskUtilization() {
+        return poolDiskUtilization;
+    }
+
+    public void setPoolDiskUtilization(Float poolDiskUtilization) {
+        this.poolDiskUtilization = poolDiskUtilization;
+    }
+
+    public String getPoolSecurityPolicy() {
+        return poolSecurityPolicy;
+    }
+
+    public void setPoolSecurityPolicy(String poolSecurityPolicy) {
+        this.poolSecurityPolicy = poolSecurityPolicy;
     }
 }

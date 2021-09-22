@@ -9,6 +9,8 @@ import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_
 import org.zstack.sdk.*
+import org.zstack.storage.ceph.CephGlobalConfig
+import org.zstack.storage.ceph.DataSecurityPolicy
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -169,8 +171,16 @@ class CephOperationCase extends SubCase {
     }
 
     void prepare() {
-        ps = env.inventoryByName("ceph-pri") as PrimaryStorageInventory
-        bs = env.inventoryByName("ceph-bk") as BackupStorageInventory
+        ps = env.inventoryByName("ceph-pri") as CephPrimaryStorageInventory
+        bs = env.inventoryByName("ceph-bk") as CephBackupStorageInventory
+
+        assert ps.pools.securityPolicy == [DataSecurityPolicy.Copy.toString()] * 3
+        assert ps.pools.diskUtilization == [0.33f] * 3
+        assert ps.pools.replicatedSize == [3] * 3
+
+        assert bs.poolSecurityPolicy == DataSecurityPolicy.ErasureCode.toString()
+        assert bs.poolDiskUtilization == 0.67f
+        assert bs.poolReplicatedSize == 3
     }
 
     void testAddPrimaryReplaceMon() {
