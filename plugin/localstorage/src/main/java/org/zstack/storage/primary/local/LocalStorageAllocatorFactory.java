@@ -69,6 +69,11 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             return supportVmLiveMigration &
                     LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class);
         }
+
+        @Override
+        public boolean isSupportVolumeMigrationInCurrentPrimaryStorage() {
+            return true;
+        }
     };
 
     private List<String> allocatorFlowNames;
