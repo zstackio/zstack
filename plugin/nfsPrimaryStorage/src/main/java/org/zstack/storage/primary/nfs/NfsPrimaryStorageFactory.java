@@ -789,7 +789,8 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 
     @Override
     public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
-        return "allocatedInstallUrl";
+        PrimaryStorageVO psVo = dbf.findByUuid(psInv.getUuid(), PrimaryStorageVO.class);
+        return psVo.getUrl();
     }
 
     @Override
