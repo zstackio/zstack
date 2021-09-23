@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -368,7 +369,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.MANDATORY)
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid){
         allocatedInstallUrlUtil util = new allocatedInstallUrlUtil();
         util.allocatedInstallUrl = allocatedInstallUrl;
@@ -379,7 +380,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.MANDATORY)
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid){
         allocatedInstallUrlUtil util = new allocatedInstallUrlUtil();
         util.allocatedInstallUrl = allocatedInstallUrl;
