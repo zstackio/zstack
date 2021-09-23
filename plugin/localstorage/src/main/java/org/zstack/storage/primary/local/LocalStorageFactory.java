@@ -316,23 +316,22 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
             public void beforeDeliveryMessage(Message msg) {
-                if (msg instanceof ResizeVolumeOnHypervisorReply) {
-                    if (((ResizeVolumeOnHypervisorReply) msg).getError()!=null){
-                        return;
-                    }
-                    VolumeInventory volume = ((ResizeVolumeOnHypervisorReply) msg).getVolume();
-                    PrimaryStorageVO primaryStorageVO = dbf.findByUuid(volume.getPrimaryStorageUuid(), PrimaryStorageVO.class);
-                    LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volume.getUuid(), LocalStorageResourceRefVO.class);
-                    String hostUuid = localStorageResourceRefVO.getHostUuid();
-                    Long size = volume.getSize();
+                ResizeVolumeOnHypervisorReply rmsg = (ResizeVolumeOnHypervisorReply) msg;
+                if (rmsg.getError() != null) {
+                    return;
+                }
+                VolumeInventory volume = rmsg.getVolume();
+                PrimaryStorageVO primaryStorageVO = dbf.findByUuid(volume.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+                LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volume.getUuid(), LocalStorageResourceRefVO.class);
+                String hostUuid = localStorageResourceRefVO.getHostUuid();
+                Long size = volume.getSize();
 
-                    final boolean isLocalPS = LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(primaryStorageVO.getType());
-                    if (isLocalPS) {
-                        SQL.New(LocalStorageResourceRefVO.class)
-                                .condAnd(LocalStorageResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, volume.getUuid())
-                                .condAnd(LocalStorageResourceRefVO_.hostUuid, SimpleQuery.Op.EQ, hostUuid)
-                                .set(LocalStorageResourceRefVO_.size, size).update();
-                    }
+                final boolean isLocalPS = LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(primaryStorageVO.getType());
+                if (isLocalPS) {
+                    SQL.New(LocalStorageResourceRefVO.class)
+                            .condAnd(LocalStorageResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, volume.getUuid())
+                            .condAnd(LocalStorageResourceRefVO_.hostUuid, SimpleQuery.Op.EQ, hostUuid)
+                            .set(LocalStorageResourceRefVO_.size, size).update();
                 }
             }
         }, ResizeVolumeOnHypervisorReply.class);
