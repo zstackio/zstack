@@ -316,7 +316,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
             public void beforeDeliveryMessage(Message msg) {
-                if (msg instanceof ResizeVolumeOnHypervisorReply){
+                if (msg instanceof ResizeVolumeOnHypervisorReply) {
                     if (((ResizeVolumeOnHypervisorReply) msg).getError()!=null){
                         return;
                     }
