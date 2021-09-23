@@ -66,7 +66,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     public static PrimaryStorageType psType = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
         @Override
         public boolean isSupportVmLiveMigration() {
-            return false;
+            return supportVmLiveMigration &
+                    LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class);
         }
     };
 
