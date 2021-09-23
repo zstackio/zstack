@@ -93,4 +93,20 @@ public class IAM2OrganizationInventory  {
         return this.attributes;
     }
 
+    public java.lang.String organizationRootPath;
+    public void setOrganizationDetail(java.lang.String organizationDetail) {
+        this.organizationRootPath = organizationDetail;
+    }
+    public java.lang.String getOrganizationDetail() {
+        return this.organizationRootPath;
+    }
+
+    public java.lang.Long organizationId;
+    public void setOrganizationId(java.lang.Long organizationId) {
+        this.organizationId = organizationId;
+    }
+    public java.lang.Long getOrganizationId() {
+        return this.organizationId;
+    }
+
 }
