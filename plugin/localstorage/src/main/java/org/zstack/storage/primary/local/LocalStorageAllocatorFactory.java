@@ -62,6 +62,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     private PluginRegistry pluginRgty;
 
     public static PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
+    public static PrimaryStorageType psType = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
     private List<String> allocatorFlowNames;
     private FlowChainBuilder builder = new FlowChainBuilder();
@@ -391,8 +392,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public String getExtPrimaryStorageType() {
-        return LocalStorageConstants.LOCAL_STORAGE_TYPE;
+    public PrimaryStorageType getPrimaryStorageType() {
+        return psType;
     }
 
     public static class allocatedInstallUrlUtil {
