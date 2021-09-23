@@ -317,6 +317,9 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             @Override
             public void beforeDeliveryMessage(Message msg) {
                 if (msg instanceof ResizeVolumeOnHypervisorReply){
+                    if (((ResizeVolumeOnHypervisorReply) msg).getError()!=null){
+                        return;
+                    }
                     VolumeInventory volume = ((ResizeVolumeOnHypervisorReply) msg).getVolume();
                     PrimaryStorageVO primaryStorageVO = dbf.findByUuid(volume.getPrimaryStorageUuid(), PrimaryStorageVO.class);
                     LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volume.getUuid(), LocalStorageResourceRefVO.class);
