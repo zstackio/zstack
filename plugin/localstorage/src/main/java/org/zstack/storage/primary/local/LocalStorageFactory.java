@@ -319,13 +319,13 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
             public void beforeDeliveryMessage(Message msg) {
-//                ResizeVolumeOnHypervisorReply rmsg = (ResizeVolumeOnHypervisorReply) msg;
-//                if (rmsg.getError() != null) {
-//                    return;
-//                }
-//                VolumeInventory volume = rmsg.getVolume();
-//                PrimaryStorageVO primaryStorageVO = dbf.findByUuid(volume.getPrimaryStorageUuid(), PrimaryStorageVO.class);
-//                VmInstanceVO vmInstanceVO = dbf.findByUuid(volume.getVmInstanceUuid(), VmInstanceVO.class);
+                ResizeVolumeOnHypervisorReply rmsg = (ResizeVolumeOnHypervisorReply) msg;
+                if (rmsg.getError() != null) {
+                    return;
+                }
+                VolumeInventory volume = rmsg.getVolume();
+                PrimaryStorageVO primaryStorageVO = dbf.findByUuid(volume.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+                VmInstanceVO vmInstanceVO = dbf.findByUuid(volume.getVmInstanceUuid(), VmInstanceVO.class);
 //                String hostUuid = vmInstanceVO.getHostUuid();
 //                Long size = volume.getSize();
 //
