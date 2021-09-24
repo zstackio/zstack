@@ -11,4 +11,5 @@ public class SessionVO_ {
     public static volatile SingularAttribute<SessionVO, String> userUuid;
     public static volatile SingularAttribute<SessionVO, Timestamp> expiredDate;
     public static volatile SingularAttribute<SessionVO, Timestamp> createDate;
+    public static volatile SingularAttribute<SessionVO, String> createdBy;
 }

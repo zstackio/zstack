@@ -31,6 +31,10 @@ public class SessionVO {
     @Column
     private Timestamp createDate;
 
+    @Column
+    private String createdBy;
+
+
     public String getUuid() {
         return uuid;
     }
@@ -69,5 +73,13 @@ public class SessionVO {
 
     public void setCreateDate(Timestamp createDate) {
         this.createDate = createDate;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
     }
 }

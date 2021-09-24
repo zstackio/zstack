@@ -48,6 +48,7 @@ public class Session implements Component {
             List<String> currentSessionUuids = Q.New(SessionVO.class)
                     .select(SessionVO_.uuid)
                     .eq(SessionVO_.userUuid, userUuid)
+                    .eq(SessionVO_.createdBy, AccountConstant.CREATED_BY_PASSWORD)
                     .listValues();
             IdentityCanonicalEvents.SessionForceLogoutData data = new IdentityCanonicalEvents.SessionForceLogoutData();
             data.setAccountUuid(accountUuid);
@@ -83,6 +84,7 @@ public class Session implements Component {
                 vo.setUuid(Platform.getUuid());
                 vo.setAccountUuid(accountUuid);
                 vo.setUserUuid(userUuid);
+                vo.setCreatedBy(AccountConstant.CREATED_BY_PASSWORD);
                 long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(IdentityGlobalConfig.SESSION_TIMEOUT.value(Long.class));
                 vo.setExpiredDate(new Timestamp(expiredTime));
                 persist(vo);

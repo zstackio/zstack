@@ -37,3 +37,4 @@ ALTER TABLE `zstack`.`CephBackupStorageVO`
     ADD COLUMN `poolDiskUtilization` FLOAT;
 UPDATE `zstack`.`CephBackupStorageVO` SET `poolDiskUtilization` = (SELECT format(1 / `poolReplicatedSize`, 3));
 
+ALTER TABLE `zstack`.`SessionVO` ADD COLUMN `createdBy` varchar(255) NOT NULL DEFAULT 'password';

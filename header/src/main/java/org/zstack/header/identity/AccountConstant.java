@@ -29,6 +29,9 @@ public interface AccountConstant {
 
     String LOGIN_TYPE = "account";
 
+    String CREATED_BY_PASSWORD = "password";
+    String CREATED_BY_ACCESS_KEY = "accessKey";
+
     IdentityType identityType = new IdentityType("IAM");
 
     static boolean isAdminPermission(SessionInventory session) {
