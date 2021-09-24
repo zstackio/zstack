@@ -14,15 +14,11 @@ public class BootOrderKvmStartVmExtension implements KVMStartVmExtensionPoint {
     @Override
     public void startVmOnKvmSuccess(KVMHostInventory host, VmInstanceSpec spec) {
         if (VmSystemTags.BOOT_ORDER_ONCE.hasTag(spec.getVmInventory().getUuid(), VmInstanceVO.class)) {
-            VmSystemTags.BOOT_ORDER.deleteInherentTag(spec.getVmInventory().getUuid());
             VmSystemTags.BOOT_ORDER.delete(spec.getVmInventory().getUuid());
-            VmSystemTags.BOOT_ORDER_ONCE.deleteInherentTag(spec.getVmInventory().getUuid());
             VmSystemTags.BOOT_ORDER_ONCE.delete(spec.getVmInventory().getUuid());
         }
         if (VmSystemTags.CDROM_BOOT_ONCE.hasTag(spec.getVmInventory().getUuid(), VmInstanceVO.class)) {
-            VmSystemTags.BOOT_ORDER.deleteInherentTag(spec.getVmInventory().getUuid());
             VmSystemTags.BOOT_ORDER.delete(spec.getVmInventory().getUuid());
-            VmSystemTags.CDROM_BOOT_ONCE.deleteInherentTag(spec.getVmInventory().getUuid());
             VmSystemTags.CDROM_BOOT_ONCE.delete(spec.getVmInventory().getUuid());
         }
     }
