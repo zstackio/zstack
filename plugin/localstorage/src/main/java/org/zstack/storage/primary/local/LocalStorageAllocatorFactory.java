@@ -63,7 +63,20 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     public static PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
 
-    private PrimaryStorageType psType = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
+    private PrimaryStorageType psType = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
+        @Override
+        public boolean isSupportVmLiveMigration() {
+            return supportVmLiveMigration &
+                    LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class);
+        }
+    };
+
+    {
+        psType.setSupportVmLiveMigration(true);
+        psType.setSupportVolumeMigration(true);
+        psType.setSupportVolumeMigrationInCurrentPrimaryStorage(true);
+        psType.setOrder(999);
+    }
 
     private List<String> allocatorFlowNames;
     private FlowChainBuilder builder = new FlowChainBuilder();
