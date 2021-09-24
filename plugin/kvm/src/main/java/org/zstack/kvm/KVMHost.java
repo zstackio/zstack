@@ -8,10 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.cluster.ClusterGlobalConfig;
-import org.zstack.compute.host.HostBase;
-import org.zstack.compute.host.HostGlobalConfig;
-import org.zstack.compute.host.HostSystemTags;
-import org.zstack.compute.host.MigrateNetworkExtensionPoint;
+import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
@@ -28,12 +25,14 @@ import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.Constants;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
-import org.zstack.header.core.*;
+import org.zstack.header.core.AsyncLatch;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -84,7 +83,6 @@ import org.zstack.utils.tester.ZTester;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -536,9 +534,39 @@ public class KVMHost extends HostBase implements Host {
             handle((StartColoSyncMsg) msg);
         } else if (msg instanceof RegisterColoPrimaryCheckMsg) {
             handle((RegisterColoPrimaryCheckMsg) msg);
+        } else if (msg instanceof AllocateHostPortMsg) {
+            handle((AllocateHostPortMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(AllocateHostPortMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("allocate-host-%s-port", msg.getHostUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                AllocateHostPortReply reply = new AllocateHostPortReply();
+                reply.setHostPortIds(new ArrayList<>());
+                HostPortGetter portGetter = new HostPortGetter();
+                for (int i = 0; i < msg.getAllocateCount(); i++) {
+                    HostPortVO vo = portGetter.getNextHostPort(msg.getHostUuid(), "");
+                    reply.getHostPortIds().add(vo.getId());
+                }
+
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("allocate-host-%s-port", msg.getHostUuid());
+            }
+        });
     }
 
     private void handle(CheckHostCapacityMsg msg) {
