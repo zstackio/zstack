@@ -27,12 +27,14 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.identity.Quota;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
@@ -45,6 +47,7 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
@@ -313,9 +316,9 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         }
 
-//        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
-//            @Override
-//            public void beforeDeliveryMessage(Message msg) {
+        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            public void beforeDeliveryMessage(Message msg) {
 //                ResizeVolumeOnHypervisorReply rmsg = (ResizeVolumeOnHypervisorReply) msg;
 //                if (rmsg.getError() != null) {
 //                    return;
@@ -333,8 +336,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 //                            .condAnd(LocalStorageResourceRefVO_.hostUuid, SimpleQuery.Op.EQ, hostUuid)
 //                            .set(LocalStorageResourceRefVO_.size, size).update();
 //                }
-//            }
-//        }, ResizeVolumeOnHypervisorReply.class);
+            }
+        }, ResizeVolumeOnHypervisorReply.class);
 
         return true;
     }
