@@ -313,13 +313,13 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         }
 
-        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
-            @Override
-            public void beforeDeliveryMessage(Message msg) {
-                ResizeVolumeOnHypervisorReply rmsg = (ResizeVolumeOnHypervisorReply) msg;
-                if (rmsg.getError() != null) {
-                    return;
-                }
+//        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+//            @Override
+//            public void beforeDeliveryMessage(Message msg) {
+//                ResizeVolumeOnHypervisorReply rmsg = (ResizeVolumeOnHypervisorReply) msg;
+//                if (rmsg.getError() != null) {
+//                    return;
+//                }
 //                VolumeInventory volume = rmsg.getVolume();
 //                PrimaryStorageVO primaryStorageVO = dbf.findByUuid(volume.getPrimaryStorageUuid(), PrimaryStorageVO.class);
 //                VmInstanceVO vmInstanceVO = dbf.findByUuid(volume.getVmInstanceUuid(), VmInstanceVO.class);
@@ -333,8 +333,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 //                            .condAnd(LocalStorageResourceRefVO_.hostUuid, SimpleQuery.Op.EQ, hostUuid)
 //                            .set(LocalStorageResourceRefVO_.size, size).update();
 //                }
-            }
-        }, ResizeVolumeOnHypervisorReply.class);
+//            }
+//        }, ResizeVolumeOnHypervisorReply.class);
 
         return true;
     }
