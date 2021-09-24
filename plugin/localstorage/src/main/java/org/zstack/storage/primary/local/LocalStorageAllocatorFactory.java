@@ -72,7 +72,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
         @Override
         public boolean isSupportVolumeMigrationInCurrentPrimaryStorage() {
-            return true;
+            return false;
         }
     };
 
