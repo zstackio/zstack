@@ -4,8 +4,6 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  * Created by frank on 8/5/2015.
@@ -42,4 +40,7 @@ public class CephGlobalConfig {
     @GlobalConfigDef(type = Integer.class, defaultValue = "30", description = "third party platform sdk timeout, in minutes")
     @GlobalConfigValidation
     public static GlobalConfig THIRD_PARTY_SDK_TIMEOUT = new GlobalConfig(CATEGORY, "thirdPartySdkTimeout");
+    // for ui use only
+    @GlobalConfigValidation
+    public static GlobalConfig SDS_ADMIN_PASSWORD = new GlobalConfig(CATEGORY, "sds.admin.password");
 }
