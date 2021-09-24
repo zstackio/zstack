@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -197,10 +198,32 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         iq.setParameter("iuuid", spec.getImageUuid());
         List<String> hasImagePrimaryStorage = iq.getResultList();
 
+        long imageSize = 0;
         sql = "select i.actualSize from ImageVO i where i.uuid = :uuid";
         TypedQuery<Long> sq = dbf.getEntityManager().createQuery(sql, Long.class);
         sq.setParameter("uuid", spec.getImageUuid());
-        long imageSize = sq.getSingleResult();
+        List<Long> resultList = sq.getResultList();
+        if (resultList.isEmpty()) {
+            resultList = Q.New(ImageCacheVO.class)
+                    .select(ImageCacheVO_.size)
+                    .eq(ImageCacheVO_.imageUuid, spec.getImageUuid())
+                    .limit(1)
+                    .listValues();
+
+            if (resultList.isEmpty()) {
+                resultList = Q.New(ImageCacheShadowVO.class)
+                        .select(ImageCacheShadowVO_.size)
+                        .eq(ImageCacheShadowVO_.imageUuid, spec.getImageUuid())
+                        .limit(1)
+                        .listValues();
+
+                if (resultList.isEmpty()) {
+                    throw new OperationFailureException(operr("no way to get image size of %s, report exception.", spec.getImageUuid()));
+                }
+            }
+        }
+
+        imageSize = resultList.get(0);
 
         for (PrimaryStorageVO vo : vos) {
             long requiredSize = ratioMgr.calculateByRatio(vo.getUuid(), spec.getSize());
