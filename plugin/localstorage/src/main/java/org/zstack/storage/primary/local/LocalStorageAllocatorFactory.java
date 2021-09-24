@@ -47,7 +47,7 @@ import static org.zstack.core.Platform.err;
  */
 public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStrategyFactory, Component,
         HostAllocatorFilterExtensionPoint, PrimaryStorageAllocatorStrategyExtensionPoint, PrimaryStorageAllocatorFlowNameSetter,
-        HostAllocatorStrategyExtensionPoint, SnapshotDeletionExtensionPoint,PSCapacityExtensionPoint {
+        HostAllocatorStrategyExtensionPoint, SnapshotDeletionExtensionPoint, PSCapacityExtensionPoint {
     private CLogger logger = Utils.getLogger(LocalStorageAllocatorFactory.class);
 
     @Autowired
@@ -70,7 +70,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                     LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class);
         }
     };
-    
+
     static {
         psType.setSupportVmLiveMigration(true);
         psType.setSupportVolumeMigration(true);
