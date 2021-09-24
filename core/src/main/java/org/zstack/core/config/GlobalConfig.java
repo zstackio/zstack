@@ -462,7 +462,7 @@ public class GlobalConfig {
         return String.format("Global config[category: %s, name: %s]", category, name);
     }
 
-    void setValidators(List<GlobalConfigValidatorExtensionPoint> validatorExtensions) {
+    void setValidatorExtensions(List<GlobalConfigValidatorExtensionPoint> validatorExtensions) {
         this.validatorExtensions = validatorExtensions;
     }
 
