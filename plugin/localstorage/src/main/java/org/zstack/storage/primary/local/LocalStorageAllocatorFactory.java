@@ -61,22 +61,22 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     @Autowired
     private PluginRegistry pluginRgty;
 
-    public static PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
+    public static PrimaryStorageAllocatorStrategyType allsType = new PrimaryStorageAllocatorStrategyType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
 
-    public static PrimaryStorageType psType = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
-//        @Override
-//        public boolean isSupportVmLiveMigration() {
-//            return supportVmLiveMigration &
-//                    LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class);
-//        }
-//    };
+    public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
+        @Override
+        public boolean isSupportVmLiveMigration() {
+            return supportVmLiveMigration &
+                    LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class);
+        }
+    };
 
-//    static {
-//        psType.setSupportVmLiveMigration(true);
-//        psType.setSupportVolumeMigration(true);
-//        psType.setSupportVolumeMigrationInCurrentPrimaryStorage(true);
-//        psType.setOrder(999);
-//    }
+    static {
+        type.setSupportVmLiveMigration(true);
+        type.setSupportVolumeMigration(true);
+        type.setSupportVolumeMigrationInCurrentPrimaryStorage(true);
+        type.setOrder(999);
+    }
 
     private List<String> allocatorFlowNames;
     private FlowChainBuilder builder = new FlowChainBuilder();
@@ -84,7 +84,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     @Override
     public PrimaryStorageAllocatorStrategyType getPrimaryStorageAllocatorStrategyType() {
-        return type;
+        return allsType;
     }
 
     @Override
@@ -407,7 +407,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     @Override
     public PrimaryStorageType getPrimaryStorageType() {
-        return psType;
+        return type;
     }
 
     public static class allocatedInstallUrlUtil {
