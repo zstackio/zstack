@@ -63,7 +63,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     public static PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
 
-    public PrimaryStorageType psType = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
+    private PrimaryStorageType psType = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
     private List<String> allocatorFlowNames;
     private FlowChainBuilder builder = new FlowChainBuilder();
