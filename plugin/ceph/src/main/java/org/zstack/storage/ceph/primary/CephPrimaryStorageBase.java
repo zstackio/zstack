@@ -1049,6 +1049,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String format;
     }
 
+    public static class DownloadBitsFromNbdRsp extends AgentResponse {
+        public long diskSize;
+    }
+
     public static class DownloadBitsFromNbdCmd extends AgentCommand implements Serializable {
         @NoLogging
         private String nbdExportUrl;
@@ -4222,11 +4226,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.setPrimaryStorageInstallPath(msg.getPrimaryStorageInstallPath());
         cmd.setNbdExportUrl(msg.getNbdExportUrl());
 
-        httpCall(DOWNLOAD_BITS_FROM_NBD_EXPT_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
+        httpCall(DOWNLOAD_BITS_FROM_NBD_EXPT_PATH, cmd, DownloadBitsFromNbdRsp.class, new ReturnValueCompletion<DownloadBitsFromNbdRsp>(msg) {
             @Override
-            public void success(AgentResponse rsp) {
+            public void success(DownloadBitsFromNbdRsp rsp) {
                 if (!rsp.isSuccess()) {
                     reply.setError(operr("%s", rsp.getError()));
+                } else {
+                    reply.setDiskSize(rsp.diskSize);
                 }
                 bus.reply(msg, reply);
             }
