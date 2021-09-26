@@ -317,7 +317,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             @Override
             public void beforeDeliveryMessage(Message msg) {
                 ResizeVolumeOnHypervisorReply rmsg = (ResizeVolumeOnHypervisorReply) msg;
-                if (rmsg.getError() != null) {
+                if (rmsg.getError() != null || rmsg.getVolume() == null) {
                     return;
                 }
                 VolumeInventory volume = rmsg.getVolume();
