@@ -84,6 +84,22 @@ public class CephPrimaryStoragePoolInventory  {
         return this.usedCapacity;
     }
 
+    public java.lang.Long totalCapacity;
+    public void setTotalCapacity(java.lang.Long totalCapacity) {
+        this.totalCapacity = totalCapacity;
+    }
+    public java.lang.Long getTotalCapacity() {
+        return this.totalCapacity;
+    }
+
+    public java.lang.String securityPolicy;
+    public void setSecurityPolicy(java.lang.String securityPolicy) {
+        this.securityPolicy = securityPolicy;
+    }
+    public java.lang.String getSecurityPolicy() {
+        return this.securityPolicy;
+    }
+
     public java.lang.Integer replicatedSize;
     public void setReplicatedSize(java.lang.Integer replicatedSize) {
         this.replicatedSize = replicatedSize;
@@ -92,12 +108,12 @@ public class CephPrimaryStoragePoolInventory  {
         return this.replicatedSize;
     }
 
-    public java.lang.Long totalCapacity;
-    public void setTotalCapacity(java.lang.Long totalCapacity) {
-        this.totalCapacity = totalCapacity;
+    public java.lang.Float diskUtilization;
+    public void setDiskUtilization(java.lang.Float diskUtilization) {
+        this.diskUtilization = diskUtilization;
     }
-    public java.lang.Long getTotalCapacity() {
-        return this.totalCapacity;
+    public java.lang.Float getDiskUtilization() {
+        return this.diskUtilization;
     }
 
 }
