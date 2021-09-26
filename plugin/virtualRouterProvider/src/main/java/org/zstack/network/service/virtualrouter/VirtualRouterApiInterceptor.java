@@ -102,7 +102,11 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (!VirtualRouterNicMetaData.isPublicNic(target) && !VirtualRouterNicMetaData.isAddinitionalPublicNic(target)) {
-            throw new ApiMessageInterceptionException(argerr("l3 uuid[:%s] is not public network, can not be default network", msg.getDefaultRouteL3NetworkUuid()));
+            if (VirtualRouterNicMetaData.isManagementNic(target)) {
+                throw new ApiMessageInterceptionException(argerr("could not set the default network, because l3 uuid[:%s] is management network", msg.getDefaultRouteL3NetworkUuid()));
+            } else {
+                throw new ApiMessageInterceptionException(argerr("could not set the default network, because l3 uuid[:%s] is not public network", msg.getDefaultRouteL3NetworkUuid()));
+            }
         }
     }
 

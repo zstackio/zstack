@@ -13278,6 +13278,26 @@
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouter.java"
   },
   {
+    "raw": "could not set the default network, because l3 uuid[:%s] is management network",
+    "en_US": "could not set the default network, because l3 uuid[:{0}] is management network",
+    "zh_CN": "设置默认网络失败，因为三层网路[:{0}] 是管理网络",
+    "arguments": [
+      "msg.getDefaultRouteL3NetworkUuid()"
+    ],
+    "line": 106,
+    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
+  },
+  {
+    "raw": "could not set the default network, because l3 uuid[:%s] is not public network",
+    "en_US": "could not set the default network, because l3 uuid[:{0}] is not public network",
+    "zh_CN": "设置默认网络失败，因为三层网路[:{0}] 不是公有网络",
+    "arguments": [
+      "msg.getDefaultRouteL3NetworkUuid()"
+    ],
+    "line": 108,
+    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
+  },
+  {
     "raw": "image[uuid:%s]\u0027s mediaType is %s, the mediaType of a virtual router image must be %s",
     "en_US": "image[uuid:{0}]\u0027s mediaType is {1}, the mediaType of a virtual router image must be {2}",
     "zh_CN": "镜像[uuid:{0}]的mediaType为{1}，云路由的mediaType必须为{2}",
