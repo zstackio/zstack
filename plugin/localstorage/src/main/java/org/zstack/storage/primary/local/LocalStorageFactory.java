@@ -30,6 +30,8 @@ import org.zstack.header.host.*;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
+import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
@@ -310,6 +312,31 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 backupStorageMediatorMap.put(key, m);
             }
         }
+
+        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            public void beforeDeliveryMessage(Message msg) {
+                ResizeVolumeOnHypervisorReply rmsg = (ResizeVolumeOnHypervisorReply) msg;
+
+                if (rmsg.getError() != null || rmsg.getVolume() == null) {
+                    return;
+                }
+
+                VolumeInventory volume = rmsg.getVolume();
+                PrimaryStorageVO primaryStorageVO = dbf.findByUuid(volume.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+                VmInstanceVO vmInstanceVO = dbf.findByUuid(volume.getVmInstanceUuid(), VmInstanceVO.class);
+                String hostUuid = vmInstanceVO.getHostUuid();
+                Long size = volume.getSize();
+
+                final boolean isLocalPS = LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(primaryStorageVO.getType());
+//                if (isLocalPS) {
+//                    SQL.New(LocalStorageResourceRefVO.class)
+//                            .condAnd(LocalStorageResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, volume.getUuid())
+//                            .condAnd(LocalStorageResourceRefVO_.hostUuid, SimpleQuery.Op.EQ, hostUuid)
+//                            .set(LocalStorageResourceRefVO_.size, size).update();
+//                }
+            }
+        }, ResizeVolumeOnHypervisorReply.class);
 
         return true;
     }
