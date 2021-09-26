@@ -9,6 +9,8 @@ import org.zstack.header.message.Message;
 public interface ApiTimeoutManager {
     Long getTimeout();
 
+    Long getTimeoutSeconds();
+
     long getMessageTimeout(ConfigurableTimeoutMessage msg);
 
     void setMessageTimeout(Message msg);
