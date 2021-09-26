@@ -323,18 +323,20 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 }
 
                 VolumeInventory volume = rmsg.getVolume();
+
                 PrimaryStorageVO primaryStorageVO = dbf.findByUuid(volume.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+                final boolean isLocalPS = LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(primaryStorageVO.getType());
+
                 VmInstanceVO vmInstanceVO = dbf.findByUuid(volume.getVmInstanceUuid(), VmInstanceVO.class);
                 String hostUuid = vmInstanceVO.getHostUuid();
                 Long size = volume.getSize();
 
-                final boolean isLocalPS = LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(primaryStorageVO.getType());
-//                if (isLocalPS) {
-//                    SQL.New(LocalStorageResourceRefVO.class)
-//                            .condAnd(LocalStorageResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, volume.getUuid())
-//                            .condAnd(LocalStorageResourceRefVO_.hostUuid, SimpleQuery.Op.EQ, hostUuid)
-//                            .set(LocalStorageResourceRefVO_.size, size).update();
-//                }
+                if (isLocalPS) {
+                    SQL.New(LocalStorageResourceRefVO.class)
+                            .condAnd(LocalStorageResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, volume.getUuid())
+                            .condAnd(LocalStorageResourceRefVO_.hostUuid, SimpleQuery.Op.EQ, hostUuid)
+                            .set(LocalStorageResourceRefVO_.size, size).update();
+                }
             }
         }, ResizeVolumeOnHypervisorReply.class);
 
