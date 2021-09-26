@@ -317,16 +317,16 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             @Override
             public void beforeDeliveryMessage(Message msg) {
                 ResizeVolumeOnHypervisorReply rmsg = (ResizeVolumeOnHypervisorReply) msg;
-//                if (rmsg.getError() != null) {
-//                    return;
-//                }
-//                VolumeInventory volume = rmsg.getVolume();
-//                PrimaryStorageVO primaryStorageVO = dbf.findByUuid(volume.getPrimaryStorageUuid(), PrimaryStorageVO.class);
-//                VmInstanceVO vmInstanceVO = dbf.findByUuid(volume.getVmInstanceUuid(), VmInstanceVO.class);
-//                String hostUuid = vmInstanceVO.getHostUuid();
-//                Long size = volume.getSize();
-//
-//                final boolean isLocalPS = LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(primaryStorageVO.getType());
+                if (rmsg.getError() != null) {
+                    return;
+                }
+                VolumeInventory volume = rmsg.getVolume();
+                PrimaryStorageVO primaryStorageVO = dbf.findByUuid(volume.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+                VmInstanceVO vmInstanceVO = dbf.findByUuid(volume.getVmInstanceUuid(), VmInstanceVO.class);
+                String hostUuid = vmInstanceVO.getHostUuid();
+                Long size = volume.getSize();
+
+                final boolean isLocalPS = LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(primaryStorageVO.getType());
 //                if (isLocalPS) {
 //                    SQL.New(LocalStorageResourceRefVO.class)
 //                            .condAnd(LocalStorageResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, volume.getUuid())
