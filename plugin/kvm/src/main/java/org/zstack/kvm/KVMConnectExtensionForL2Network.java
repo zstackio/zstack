@@ -25,10 +25,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -96,9 +93,11 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 List<BatchCheckNetworkPhysicalInterfaceMsg> batchCheckNetworkPhysicalInterfaceMsgs = new ArrayList<>();
-
+                final List<L2NetworkInventory> l2NetworksCheckList =
+                        l2Networks.stream()
+                                .collect(Collectors.collectingAndThen(Collectors.toCollection(()->new TreeSet<>(Comparator.comparing(L2NetworkInventory::getPhysicalInterface))),ArrayList::new));
                 int step = 100;
-                int size = l2Networks.size();
+                int size = l2NetworksCheckList.size();
                 int count = size / 100;
                 if (size - count * 100 > 0) {
                     count++;
@@ -106,7 +105,7 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
 
                 for (int i = 0; i < count; i++) {
                     int end = (i + 1) * step - 1;
-                    List<String> interfaces = l2Networks.subList(i * step, Math.min(end, l2Networks.size() - 1))
+                    List<String> interfaces = l2NetworksCheckList.subList(i * step, Math.min(end, l2NetworksCheckList.size() - 1))
                             .stream()
                             .map(L2NetworkInventory::getPhysicalInterface)
                             .collect(Collectors.toList());
