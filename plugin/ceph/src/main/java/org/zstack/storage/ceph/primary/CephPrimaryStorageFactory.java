@@ -323,6 +323,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                     poolVO.setReplicatedSize(poolCapacity.getReplicatedSize());
                     poolVO.setUsedCapacity(poolCapacity.getUsedCapacity());
                     poolVO.setTotalCapacity(poolCapacity.getTotalCapacity());
+                    poolVO.setSecurityPolicy(poolCapacity.getSecurityPolicy());
+                    poolVO.setDiskUtilization(poolCapacity.getDiskUtilization());
                     dbf.getEntityManager().merge(poolVO);
                 }
 

@@ -7,6 +7,7 @@ import org.zstack.header.search.Parent;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.storage.ceph.CephConstants;
 
+import javax.persistence.Column;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -28,6 +29,8 @@ public class CephBackupStorageInventory extends BackupStorageInventory {
     private Long poolAvailableCapacity;
     private Long poolUsedCapacity;
     private Integer poolReplicatedSize;
+    private Float poolDiskUtilization;
+    private String poolSecurityPolicy;
 
     public CephBackupStorageInventory(CephBackupStorageVO vo) {
         super(vo);
@@ -37,6 +40,8 @@ public class CephBackupStorageInventory extends BackupStorageInventory {
         poolAvailableCapacity = vo.getPoolAvailableCapacity();
         poolUsedCapacity = vo.getPoolUsedCapacity();
         poolReplicatedSize = vo.getPoolReplicatedSize();
+        poolSecurityPolicy = vo.getPoolSecurityPolicy();
+        poolDiskUtilization = vo.getPoolDiskUtilization();
     }
 
     public CephBackupStorageInventory() {
@@ -101,5 +106,21 @@ public class CephBackupStorageInventory extends BackupStorageInventory {
 
     public void setPoolReplicatedSize(Integer poolReplicatedSize) {
         this.poolReplicatedSize = poolReplicatedSize;
+    }
+
+    public Float getPoolDiskUtilization() {
+        return poolDiskUtilization;
+    }
+
+    public void setPoolDiskUtilization(Float poolDiskUtilization) {
+        this.poolDiskUtilization = poolDiskUtilization;
+    }
+
+    public String getPoolSecurityPolicy() {
+        return poolSecurityPolicy;
+    }
+
+    public void setPoolSecurityPolicy(String poolSecurityPolicy) {
+        this.poolSecurityPolicy = poolSecurityPolicy;
     }
 }

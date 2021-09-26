@@ -52,4 +52,20 @@ public class CephBackupStorageInventory extends org.zstack.sdk.BackupStorageInve
         return this.poolReplicatedSize;
     }
 
+    public java.lang.Float poolDiskUtilization;
+    public void setPoolDiskUtilization(java.lang.Float poolDiskUtilization) {
+        this.poolDiskUtilization = poolDiskUtilization;
+    }
+    public java.lang.Float getPoolDiskUtilization() {
+        return this.poolDiskUtilization;
+    }
+
+    public java.lang.String poolSecurityPolicy;
+    public void setPoolSecurityPolicy(java.lang.String poolSecurityPolicy) {
+        this.poolSecurityPolicy = poolSecurityPolicy;
+    }
+    public java.lang.String getPoolSecurityPolicy() {
+        return this.poolSecurityPolicy;
+    }
+
 }

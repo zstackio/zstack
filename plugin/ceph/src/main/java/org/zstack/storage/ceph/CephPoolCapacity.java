@@ -6,6 +6,8 @@ package org.zstack.storage.ceph;
 public class CephPoolCapacity {
     String name;
     int replicatedSize;
+    String securityPolicy;
+    Float diskUtilization;
     Long availableCapacity;
     Long usedCapacity;
     Long totalCapacity;
@@ -48,5 +50,21 @@ public class CephPoolCapacity {
 
     public void setTotalCapacity(Long totalCapacity) {
         this.totalCapacity = totalCapacity;
+    }
+
+    public void setDiskUtilization(Float diskUtilization) {
+        this.diskUtilization = diskUtilization;
+    }
+
+    public Float getDiskUtilization() {
+        return diskUtilization;
+    }
+
+    public void setSecurityPolicy(String securityPolicy) {
+        this.securityPolicy = securityPolicy;
+    }
+
+    public String getSecurityPolicy() {
+        return securityPolicy;
     }
 }
