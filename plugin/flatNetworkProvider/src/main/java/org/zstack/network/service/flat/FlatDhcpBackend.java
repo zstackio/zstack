@@ -1427,6 +1427,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     return null;
                 }
 
+                if (l3Bridges.get(arg.getL3Network().getUuid()) == null) {
+                    return null;
+                }
+
                 if ((arg.getIpVersion() == IPv6Constants.IPv6) && (IPv6Constants.SLAAC.equals(arg.getRaMode()))) {
                     return null;
                 }
