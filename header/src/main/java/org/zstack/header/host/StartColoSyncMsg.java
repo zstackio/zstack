@@ -1,6 +1,9 @@
 package org.zstack.header.host;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.vm.VmNicInventory;
+
+import java.util.List;
 
 public class StartColoSyncMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
@@ -10,7 +13,7 @@ public class StartColoSyncMsg extends NeedReplyMessage implements HostMessage {
     private String secondaryVmHostIp;
     private long checkpointDelay;
     private boolean fullSync;
-    private Integer nicNumber;
+    private List<VmNicInventory> nics;
 
     @Override
     public String getHostUuid() {
@@ -69,11 +72,11 @@ public class StartColoSyncMsg extends NeedReplyMessage implements HostMessage {
         this.fullSync = fullSync;
     }
 
-    public Integer getNicNumber() {
-        return nicNumber;
+    public List<VmNicInventory> getNics() {
+        return nics;
     }
 
-    public void setNicNumber(Integer nicNumber) {
-        this.nicNumber = nicNumber;
+    public void setNics(List<VmNicInventory> nics) {
+        this.nics = nics;
     }
 }

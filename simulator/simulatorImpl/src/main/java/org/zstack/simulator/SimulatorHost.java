@@ -75,7 +75,7 @@ class SimulatorHost extends HostBase {
     }
 
     @Override
-    public void maintenanceHook(Completion completion) {
+    public void maintenanceHook(ChangeHostStateMsg msg ,Completion completion) {
         logger.debug(String.format("Host: %s entered maintenance mode", self.getName()));
         completion.success();
     }

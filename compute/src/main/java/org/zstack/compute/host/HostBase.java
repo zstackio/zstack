@@ -197,7 +197,7 @@ public abstract class HostBase extends AbstractHost {
         bus.publish(evt);
     }
 
-    protected void maintenanceHook(final Completion completion) {
+    protected void maintenanceHook(ChangeHostStateMsg changeHostStateMsg, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("maintenance-mode-host-%s-ip-%s", self.getUuid(), self.getManagementIp()));
 
@@ -330,6 +330,10 @@ public abstract class HostBase extends AbstractHost {
                         new While<>(vmUuids).step((vmUuid, coml) -> {
                             StopVmInstanceMsg msg = new StopVmInstanceMsg();
                             msg.setVmInstanceUuid(vmUuid);
+                            if (changeHostStateMsg.isForceChange()) {
+                                msg.setGcOnFailure(true);
+                                msg.setIgnoreResourceReleaseFailure(true);
+                            }
                             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
                             bus.send(msg, new CloudBusCallBack(coml) {
                                 @Override
@@ -587,7 +591,7 @@ public abstract class HostBase extends AbstractHost {
         ChangeHostStateMsg cmsg = new ChangeHostStateMsg();
         cmsg.setStateEvent(stateEvent.toString());
         cmsg.setUuid(msg.getUuid());
-        cmsg.setFromApiMsg(true);
+        cmsg.setJustChangeState(false);
         bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, cmsg.getUuid());
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
@@ -1242,7 +1246,7 @@ public abstract class HostBase extends AbstractHost {
     private void doHostStateChange(ChangeHostStateMsg msg, Completion completion) {
         HostStateEvent stateEvent = HostStateEvent.valueOf(msg.getStateEvent());
 
-        if (!msg.isFromApiMsg()) {
+        if (msg.isJustChangeState()) {
             if (self.getState() == HostState.Enabled || self.getState() == HostState.Disabled) {
                 changeState(stateEvent);
             }
@@ -1250,7 +1254,7 @@ public abstract class HostBase extends AbstractHost {
         } else if (HostStateEvent.preMaintain == stateEvent) {
             HostState originState = self.getState();
             changeState(HostStateEvent.preMaintain);
-            maintenanceHook(new Completion(msg) {
+            maintenanceHook(msg, new Completion(msg) {
                 @Override
                 public void success() {
                     changeState(HostStateEvent.maintain);

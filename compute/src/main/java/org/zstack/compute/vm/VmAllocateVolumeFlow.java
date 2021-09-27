@@ -19,6 +19,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -82,9 +83,11 @@ public class VmAllocateVolumeFlow implements Flow {
                 }
                 if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
                     msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());
-                } else {
+                } else if (spec.getImageSpec().getInventory().getFormat() != null) {
                     VolumeFormat imageFormat = VolumeFormat.valueOf(spec.getImageSpec().getInventory().getFormat());
                     msg.setFormat(imageFormat.getOutputFormat(spec.getDestHost().getHypervisorType()));
+                } else {
+                    msg.setFormat(ImageConstant.QCOW2_FORMAT_STRING);
                 }
             } else if (VolumeType.Data.toString().equals(vspec.getType())) {
                 msg.setName(String.format("DATA-for-%s", spec.getVmInventory().getName()));

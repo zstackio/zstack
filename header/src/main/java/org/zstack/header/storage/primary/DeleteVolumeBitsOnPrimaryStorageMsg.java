@@ -1,12 +1,13 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.message.ReplayableMessage;
 
 /**
  * DeleteVolumeBitsOnPrimaryStorageMsg means we delete volume
  * @see DeleteBitsOnPrimaryStorageMsg
  */
-public class DeleteVolumeBitsOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+public class DeleteVolumeBitsOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage, ReplayableMessage {
     private String primaryStorageUuid;
     private String installPath;
     private String hypervisorType;
@@ -80,5 +81,15 @@ public class DeleteVolumeBitsOnPrimaryStorageMsg extends NeedReplyMessage implem
 
     public void setFromRecycle(boolean fromRecycle) {
         this.fromRecycle = fromRecycle;
+    }
+
+    @Override
+    public String getResourceUuid() {
+        return bitsUuid;
+    }
+
+    @Override
+    public Class getReplayableClass() {
+        return DeleteVolumeBitsOnPrimaryStorageMsg.class;
     }
 }

@@ -981,6 +981,11 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     @Override
+    public String getServiceId(String targetServiceId) {
+        return targetServiceId.split(SERVICE_ID_SPLITTER)[1];
+    }
+
+    @Override
     public String makeLocalServiceId(String serviceId) {
         return toServiceId(serviceId, Platform.getManagementServerId());
     }

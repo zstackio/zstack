@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -22,7 +23,9 @@ import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +38,8 @@ import static org.zstack.core.Platform.operr;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
+    private static final CLogger logger = Utils.getLogger(ImageBackupStorageAllocatorFlow.class);
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -63,12 +68,16 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             }
         }
 
-        SimpleQuery<ImageCacheVO> cq = dbf.createQuery(ImageCacheVO.class);
-        cq.add(ImageCacheVO_.imageUuid, Op.EQ, spec.getImage().getUuid());
-        cq.add(ImageCacheVO_.primaryStorageUuid, Op.IN, psUuids);
-        cq.groupBy(ImageCacheVO_.primaryStorageUuid);
-        long count = cq.count();
-        return count < psUuids.size();
+        long imageCacheCount = SQL.New("select count(distinct cache.primaryStorageUuid) from ImageCacheVO cache where cache.primaryStorageUuid in :psUuids and cache.imageUuid = :imageUuid", Long.class)
+                .param("psUuids", psUuids)
+                .param("imageUuid", spec.getImage().getUuid())
+                .find();
+        long imageCacheShadowCount = SQL.New("select count(distinct cache.primaryStorageUuid) from ImageCacheShadowVO cache where cache.primaryStorageUuid in :psUuids and cache.imageUuid = :imageUuid", Long.class)
+                .param("psUuids", psUuids)
+                .param("imageUuid", spec.getImage().getUuid())
+                .find();
+
+        return Math.max(imageCacheCount, imageCacheShadowCount) < psUuids.size();
     }
 
     @Override
