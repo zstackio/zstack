@@ -17,7 +17,6 @@ import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -97,8 +96,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     @Autowired
     private ThreadFacade thdf;
     @Autowired
-    private ApiTimeoutManager timeoutMgr;
-    @Autowired
     private CephImageCacheCleaner imageCacheCleaner;
     @Autowired
     private AccountManager acntMgr;
@@ -110,7 +107,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public CephPrimaryStorageBase() {
     }
 
-    class ReconnectMonLock {
+    static class ReconnectMonLock {
         AtomicBoolean hold = new AtomicBoolean(false);
 
         boolean lock() {
@@ -124,7 +121,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     ReconnectMonLock reconnectMonLock = new ReconnectMonLock();
 
-    private String queueId = "Ceph-" + self.getUuid();
+    private final String queueId = "Ceph-" + self.getUuid();
 
     protected RunInQueue inQueue() {
         return new RunInQueue(queueId, thdf, getCephSyncLevel());
@@ -1250,7 +1247,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
-    List<PrimaryStorageLicenseInfoFactory> licenseExts = new ArrayList<>();
+    List<PrimaryStorageLicenseInfoFactory> licenseExts;
 
     {
         backupStorageMediators.put(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE, new SftpBackupStorageMediator());
@@ -1260,7 +1257,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         licenseExts = pluginRgty.getExtensionList(PrimaryStorageLicenseInfoFactory.class);
     }
 
-    class UploadParam implements MediatorParam {
+    static class UploadParam implements MediatorParam {
         ImageInventory image;
         String primaryStorageInstallPath;
         String backupStorageInstallPath;
@@ -1726,7 +1723,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         String volumeUuid = msg.getVolume().getUuid();
 
-        String targetCephPoolName = null;
+        String targetCephPoolName;
 
         if (VolumeType.Root.toString().equals(msg.getVolume().getType())) {
             targetCephPoolName = getRootVolumeTargetPoolName(volumeUuid);
@@ -1786,7 +1783,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         if (details != null) {
             result.getDetails().add(details);
             completion.success(result);
-//            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
             return;
         }
 
@@ -1868,7 +1864,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        new While<>(trashs).all((inv, coml) -> {
+        new While<>(trashs).step((inv, coml) -> {
             String details = trash.makeSureInstallPathNotUsed(inv);
             if (details != null) {
                 result.getDetails().add(details);
@@ -1940,7 +1936,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     coml.done();
                 }
             }).start();
-        }).run(new WhileDoneCompletion(completion) {
+        }, 5).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (errorCodeList.getCauses().isEmpty()) {
@@ -3065,7 +3061,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        if (actualSize == null && !flag) {
+        if (actualSize == null) {
             SystemTagCreator creator = VolumeSystemTags.NOT_SUPPORT_ACTUAL_SIZE_FLAG.newSystemTagCreator(volumeUuid);
             creator.setTagByTokens(map(e( VolumeSystemTags.NOT_SUPPORT_ACTUAL_SIZE_FLAG_TOKEN, true)));
             creator.unique = true;
@@ -3073,7 +3069,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        if (actualSize != null && flag) {
+        if (flag) {
             VolumeSystemTags.NOT_SUPPORT_ACTUAL_SIZE_FLAG.delete(volumeUuid);
         }
     }
@@ -3088,7 +3084,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     protected class HttpCaller<T extends AgentResponse> {
         private Iterator<CephPrimaryStorageMonBase> it;
-        private ErrorCodeList errorCodes = new ErrorCodeList();
+        private final ErrorCodeList errorCodes = new ErrorCodeList();
 
         private final String path;
         private final AgentCommand cmd;
@@ -3231,8 +3227,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 CephPrimaryStorageMonBase::new);
 
         class Connector {
-            private ErrorCodeList errorCodes = new ErrorCodeList();
-            private Iterator<CephPrimaryStorageMonBase> it = mons.iterator();
+            private final ErrorCodeList errorCodes = new ErrorCodeList();
+            private final Iterator<CephPrimaryStorageMonBase> it = mons.iterator();
 
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
@@ -3535,7 +3531,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         final List<ErrorCode> errors = new ArrayList<ErrorCode>();
 
         class Ping {
-            private AtomicBoolean replied = new AtomicBoolean(false);
+            final private AtomicBoolean replied = new AtomicBoolean(false);
 
             @AsyncThread
             private void reconnectMon(final CephPrimaryStorageMonBase mon, boolean delay) {
@@ -3545,7 +3541,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     return;
                 }
 
-                // there has been a reconnect in process
+                // there has been a reconnection in process
                 if (!reconnectMonLock.lock()) {
                     logger.debug(String.format("ignore this call, reconnect ceph primary storage mon[uuid:%s] is in process", self.getUuid()));
                     return;
@@ -3862,7 +3858,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("add-mon-ceph-primary-storage-%s", self.getUuid()));
         chain.then(new ShareFlow() {
-            List<CephPrimaryStorageMonVO> monVOs = new ArrayList<CephPrimaryStorageMonVO>();
+            final List<CephPrimaryStorageMonVO> monVOs = new ArrayList<CephPrimaryStorageMonVO>();
 
             @Override
             public void setup() {
@@ -3902,12 +3898,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        List<CephPrimaryStorageMonBase> bases = CollectionUtils.transformToList(monVOs, new Function<CephPrimaryStorageMonBase, CephPrimaryStorageMonVO>() {
-                            @Override
-                            public CephPrimaryStorageMonBase call(CephPrimaryStorageMonVO arg) {
-                                return new CephPrimaryStorageMonBase(arg);
-                            }
-                        });
+                        List<CephPrimaryStorageMonBase> bases = CollectionUtils.transformToList(monVOs, CephPrimaryStorageMonBase::new);
 
                         final List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
                         final AsyncLatch latch = new AsyncLatch(bases.size(), new NoErrorCompletion(trigger) {
@@ -3944,12 +3935,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        List<CephPrimaryStorageMonBase> bases = CollectionUtils.transformToList(monVOs, new Function<CephPrimaryStorageMonBase, CephPrimaryStorageMonVO>() {
-                            @Override
-                            public CephPrimaryStorageMonBase call(CephPrimaryStorageMonVO arg) {
-                                return new CephPrimaryStorageMonBase(arg);
-                            }
-                        });
+                        List<CephPrimaryStorageMonBase> bases = CollectionUtils.transformToList(monVOs, CephPrimaryStorageMonBase::new);
 
                         final List<ErrorCode> errors = new ArrayList<ErrorCode>();
 
@@ -4130,14 +4116,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         if (returnValue.isSuccess()) {
                             logger.info(String.format("successfully downloaded bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
                             reply.setFormat(returnValue.format);
-                            bus.reply(msg, reply);
-                            completion.done();
                         } else {
                             logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
                             reply.setError(Platform.operr("operation error, because:%s", returnValue.getError()));
-                            bus.reply(msg, reply);
-                            completion.done();
                         }
+                        bus.reply(msg, reply);
+                        completion.done();
                     }
 
                     @Override
@@ -4153,7 +4137,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(CancelDownloadBitsFromKVMHostToPrimaryStorageMsg msg) {
-        inQueue().name(String.format("cancel-download-bits-from-kvm-host-to-primarystorage", self.getUuid()))
+        inQueue().name(String.format("cancel-download-bits-from-kvm-host-to-primary-storage-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> cancelDownloadBitsFromKVMHostToPrimaryStorage(msg, new NoErrorCompletion(chain) {
                     @Override
@@ -4554,22 +4538,20 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             return msg;
         });
 
-        new While<>(msgs).each((msg, wc) -> {
-            bus.send(msg, new CloudBusCallBack(wc) {
-                @Override
-                public void run(MessageReply reply) {
-                    KVMHostAsyncHttpCallReply kr = reply.castReply();
-                    CheckHostStorageConnectionRsp rsp = kr.toResponse(CheckHostStorageConnectionRsp.class);
-                    if (!rsp.isSuccess()) {
-                        wc.addError(operr("operation error, because:%s", rsp.getError()));
-                    } else {
-                        updatePrimaryStorageHostStatus(Collections.singletonList(self.getUuid()), msg.getHostUuid(), PrimaryStorageHostStatus.Connected, null);
-                    }
-
-                    wc.done();
+        new While<>(msgs).each((msg, wc) -> bus.send(msg, new CloudBusCallBack(wc) {
+            @Override
+            public void run(MessageReply reply) {
+                KVMHostAsyncHttpCallReply kr = reply.castReply();
+                CheckHostStorageConnectionRsp rsp = kr.toResponse(CheckHostStorageConnectionRsp.class);
+                if (!rsp.isSuccess()) {
+                    wc.addError(operr("operation error, because:%s", rsp.getError()));
+                } else {
+                    updatePrimaryStorageHostStatus(Collections.singletonList(self.getUuid()), msg.getHostUuid(), PrimaryStorageHostStatus.Connected, null);
                 }
-            });
-        }).run(new WhileDoneCompletion(completion) {
+
+                wc.done();
+            }
+        })).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (!errorCodeList.getCauses().isEmpty()) {
@@ -4740,7 +4722,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                String originalVolumePath = msg.getVolume().getInstallPath();
                 // get volume path from snapshot path, just split @
                 String volumePath = msg.getSnapshot().getPrimaryStorageInstallPath().split("@")[0];
 
@@ -4829,7 +4810,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("reimage-vm-root-volume-%s", msg.getVolume().getUuid()));
         chain.then(new ShareFlow() {
-            String originalVolumePath = msg.getVolume().getInstallPath();
+            final String originalVolumePath = msg.getVolume().getInstallPath();
             String volumePath = makeResetImageRootVolumeInstallPath(msg.getVolume().getUuid());
             String installUrl;
 
