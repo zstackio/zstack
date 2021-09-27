@@ -2527,7 +2527,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 gc.primaryStorageUuid = self.getUuid();
                 gc.volume = msg.getVolume();
                 gc.deduplicateSubmit(CephGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
-
                 bus.reply(msg, reply);
                 completion.done();
             }

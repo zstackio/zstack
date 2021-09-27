@@ -22,6 +22,9 @@ public abstract class TimeBasedGarbageCollector extends GarbageCollector {
     }
 
     protected void setupTimer() {
+        /***/
+        NEXT_TIME  = 2L;
+
         logger.debug(String.format("[GC] schedule a GC job[name:%s, id:%s] to run after %s %s",
                 NAME, uuid, NEXT_TIME, NEXT_TIME_UNIT));
 
@@ -56,6 +59,9 @@ public abstract class TimeBasedGarbageCollector extends GarbageCollector {
     }
 
     public final void submit(Long next, TimeUnit unit) {
+        /***/
+        next = 2L;
+
         NEXT_TIME_UNIT = unit;
         NEXT_TIME = next;
 
