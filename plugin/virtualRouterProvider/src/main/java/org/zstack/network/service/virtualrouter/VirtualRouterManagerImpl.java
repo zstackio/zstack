@@ -2251,6 +2251,12 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 	    return new ArrayList<>();
     }
 
+
+    public VmNicInventory getSnatPubicInventoryByUuid(VirtualRouterVmInventory vrInv, String L3NetworkUuid) {
+        vrInv.setDefaultRouteL3NetworkUuid(L3NetworkUuid);
+        return getSnatPubicInventory(vrInv);
+    }
+
     public VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv) {
         VmNicInventory publicNic = null;
 
