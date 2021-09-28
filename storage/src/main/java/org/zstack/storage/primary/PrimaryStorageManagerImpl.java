@@ -585,9 +585,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 }
 
                 PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(), PSCapacityExtensionPoint.class);
-                if (PSCapacityExt == null) {
-                    installUrl[0] = inv.getUrl();
-                } else {
+                installUrl[0] = inv.getUrl();
+                if (PSCapacityExt != null) {
                     installUrl[0] = PSCapacityExt.reserveCapacity(PSCapacityExt.buildAllocatedInstallUrl(msg, inv), size, inv.getUuid());
                 }
 
