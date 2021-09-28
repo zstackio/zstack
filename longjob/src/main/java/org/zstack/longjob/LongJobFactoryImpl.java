@@ -2,6 +2,7 @@ package org.zstack.longjob;
 
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.longjob.LongJob;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.utils.BeanUtils;
@@ -58,6 +59,13 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
             logger.debug(String.format("[LongJob] collect class [%s]", job.getClass().getSimpleName()));
 
             String jobName = at.value().getSimpleName();
+
+            LongJob old = allLongJob.get(jobName);
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("[LongJob] duplicate LongJob[name: %s] and LongJob[name: %s] for %s",
+                        it.getCanonicalName(), old.getClass().getCanonicalName(), jobName));
+            }
+
             allLongJob.put(jobName, job);
             fullJobName.put(jobName, at.value().getName());
 
