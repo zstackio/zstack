@@ -10,7 +10,7 @@ public interface VirtualRouterHaBackend {
     NoRollbackFlow getAttachL3NetworkFlow();
     void detachL3NetworkFromVirtualRouterHaGroup(String vrUuid, String l3NetworkUuid, boolean isRollback, Completion completion);
     void submitVirtualRouterHaTask(VirtualRouterHaTask task, Completion completion);
-    boolean isSnatDisabledOnRouter(String vrUuid);
+    boolean isSnatEnabledOnHaRouter(String vrUuid);
     void cleanupHaNetworkService(VmInstanceInventory vrInv, Completion completion);
     String getVirtualRouterHaName(String vrUuid);
     String getVirtualRouterHaUuid(String vrUuid);

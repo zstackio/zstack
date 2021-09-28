@@ -1,6 +1,9 @@
 package org.zstack.network.service.virtualrouter.nat;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.appliancevm.ApplianceVm;
+import org.zstack.appliancevm.ApplianceVmFactory;
+import org.zstack.appliancevm.ApplianceVmSubTypeFactory;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -15,9 +18,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
-import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.NetworkServiceManager;
@@ -27,18 +27,13 @@ import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.RemoveSNATRsp;
-import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SetSNATRsp;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.IPv6Constants;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -70,6 +65,8 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
     protected PluginRegistry pluginRgty;
     @Autowired
     protected VirtualRouterHaBackend haBackend;
+    @Autowired
+    private ApplianceVmFactory apvmFactory;
 
     @Override
     public NetworkServiceProviderType getProviderType() {
@@ -120,68 +117,71 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         applySnat(snatStructList.iterator(), spec, completion);
     }
 
-    private String getNicIpv4Address(VmNicInventory nic) {
-        for (UsedIpInventory ip : nic.getUsedIps()) {
-            if (ip.getIpVersion() == IPv6Constants.IPv4) {
-                return ip.getIp();
-            }
-        }
-        return null;
+    @Override
+    public void releaseSnatService(List<SnatStruct> snatStructList, VmInstanceSpec spec, NoErrorCompletion completion) {
+        completion.done();
     }
 
-    private void releaseSnat(final Iterator<SnatStruct> it, final VmInstanceInventory vmInstanceInventory, final NoErrorCompletion completion) {
-        if (!it.hasNext()) {
-            completion.done();
+    private void releasePrivateNicSnat(String vrUuid, VmNicInventory privateNic, Completion completion) {
+        if (privateNic.isIpv6OnlyNic()) {
+            completion.success();
             return;
         }
 
-        final SnatStruct struct = it.next();
-        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vmInstanceInventory.getUuid()).find();
-        VirtualRouterVmInventory vrInv = null;
-        if (vrVO != null) {
-            vrInv = VirtualRouterVmInventory.valueOf(vrVO);
-        } else {
-            vrInv = vrMgr.getVirtualRouterVm(struct.getL3Network());
-        }
-        final VirtualRouterVmInventory vr = vrInv;
-
-        /*
-         * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
-         * */
-        if ( haBackend.isSnatDisabledOnRouter(vr.getUuid())) {
-            releaseSnat(it, vmInstanceInventory, completion);
+        try {
+            nwServiceMgr.getTypeOfNetworkServiceProviderForService(privateNic.getL3NetworkUuid(), NetworkServiceType.SNAT);
+        } catch (OperationFailureException e) {
+            completion.success();
             return;
         }
 
-        VmNicInventory privateNic = CollectionUtils.find(vr.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                if (arg.getL3NetworkUuid().equals(struct.getL3Network().getUuid())) {
-                    return arg;
-                }
-                return null;
+        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuid).find();
+        if (vrVO == null) {
+            completion.success();
+            return;
+        }
+
+        final VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
+
+        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
+        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
+        List<String> snatL3Uuids = app.getSnatL3NetworkOnRouter(vrUuid);
+        if (snatL3Uuids.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<VirtualRouterCommands.SNATInfo>();
+        List<VmNicInventory> pubNics = new ArrayList<>();
+        pubNics.add(vr.getPublicNic());
+        pubNics.addAll(vr.getAdditionalPublicNics());
+
+        for (VmNicInventory pubNic : pubNics) {
+            if (pubNic.isIpv6OnlyNic()) {
+                continue;
             }
-        });
-        DebugUtils.Assert(privateNic!=null, String.format("cannot find private nic[ip:%s] on virtual router[uuid:%s, name:%s]",
-                struct.getGuestGateway(), vr.getUuid(), vr.getName()));
 
-        VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
-        String publicIpv4 = getNicIpv4Address(publicNic);
-        if (publicIpv4 == null || privateNic.isIpv6OnlyNic()) {
-            /* only ipv4 has snat */
-            releaseSnat(it, vmInstanceInventory, completion);
-            return;
+            if (!snatL3Uuids.contains(pubNic.getL3NetworkUuid())) {
+                continue;
+            }
+
+            pubNic = vrMgr.getSnatPubicInventory(vr, pubNic.getL3NetworkUuid());
+            VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
+            info.setPrivateNicIp(privateNic.getIp());
+            info.setPrivateNicMac(privateNic.getMac());
+            info.setPublicIp(pubNic.getIp());
+            info.setPublicNicMac(pubNic.getMac());
+            info.setSnatNetmask(privateNic.getNetmask());
+            snatInfo.add(info);
         }
 
-        final VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
-        info.setPrivateNicIp(privateNic.getIp());
-        info.setPrivateNicMac(privateNic.getMac());
-        info.setPublicNicMac(publicNic.getMac());
-        info.setPublicIp(publicIpv4);
-        info.setSnatNetmask(struct.getGuestNetmask());
+        if (snatInfo.isEmpty()) {
+            completion.success();
+            return;
+        }
 
         VirtualRouterCommands.RemoveSNATCmd cmd = new VirtualRouterCommands.RemoveSNATCmd();
-        cmd.setNatInfo(Arrays.asList(info));
+        cmd.setNatInfo(snatInfo);
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setCheckStatus(true);
@@ -193,75 +193,131 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    logger.warn(String.format("failed to release snat[%s] on virtual router[name:%s, uuid:%s] for vm[uuid: %s, name: %s], %s",
-                            struct, vr.getName(), vr.getUuid(), vmInstanceInventory.getUuid(), vmInstanceInventory.getName(), reply.getError()));
+                    logger.warn(String.format("failed to release snat on virtual router[name:%s, uuid:%s] for private l3[uuid:%s], %s",
+                            vr.getName(), vr.getUuid(), privateNic.getL3NetworkUuid(), reply.getError()));
                     //TODO GC
                 } else {
                     VirtualRouterAsyncHttpCallReply re = reply.castReply();
                     RemoveSNATRsp ret = re.toResponse(RemoveSNATRsp.class);
                     if (!ret.isSuccess()) {
                         String err = String.format(
-                                "virtual router[uuid:%s, ip:%s] failed to release snat[%s] for vm[uuid:%s, name:%s] on L3Network[uuid:%s, name:%s], because %s",
-                                vr.getUuid(), vr.getManagementNic().getIp(), JSONObjectUtil.toJsonString(info), vmInstanceInventory.getUuid(), vmInstanceInventory.getName(),
-                                struct.getL3Network().getUuid(), struct.getL3Network().getName(), ret.getError());
+                                "virtual router[uuid:%s, ip:%s] failed to release snat for L3Network[uuid:%s], because %s",
+                                vr.getUuid(), vr.getManagementNic().getIp(), privateNic.getL3NetworkUuid(), ret.getError());
                         logger.warn(err);
                         //TODO GC
                     } else {
                         String msg = String.format(
-                                "virtual router[uuid:%s, ip:%s] released snat[%s] for vm[uuid:%s, name:%s] on L3Network[uuid:%s, name:%s], because %s",
-                                vr.getUuid(), vr.getManagementNic().getIp(), JSONObjectUtil.toJsonString(info), vmInstanceInventory.getUuid(), vmInstanceInventory.getName(),
-                                struct.getL3Network().getUuid(), struct.getL3Network().getName(), ret.getError());
+                                "virtual router[uuid:%s, ip:%s] successfully released snat for L3Network[uuid:%s]",
+                                vr.getUuid(), vr.getManagementNic().getIp(), privateNic.getL3NetworkUuid());
                         logger.warn(msg);
                     }
                 }
 
-                releaseSnat(it, vmInstanceInventory, completion);
+                completion.success();
             }
         });
     }
 
-    @Override
-    public void releaseSnatService(List<SnatStruct> snatStructList, VmInstanceSpec spec, NoErrorCompletion completion) {
-        completion.done();
+    private void releasePublicNicSnat(String vrUuid, VmNicInventory publicNic, Completion completion) {
+        if (publicNic.isIpv6OnlyNic()) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuid).find();
+        if (vrVO == null) {
+            completion.success();
+            return;
+        }
+        final VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
+
+        /* priviate l3 which has snat service enabled */
+        List<String> nwServed = vr.getAllL3Networks();
+        nwServed = vrMgr.selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.SNAT);
+        if (nwServed.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
+        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
+        List<String> snatL3Uuids = app.getSnatL3NetworkOnRouter(vrUuid);
+        if (!snatL3Uuids.contains(publicNic.getL3NetworkUuid())) {
+            completion.success();
+            return;
+        }
+
+        final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<VirtualRouterCommands.SNATInfo>();
+        for (VmNicInventory priNic : vr.getGuestNics()) {
+            if (priNic.isIpv6OnlyNic()) {
+                continue;
+            }
+
+            publicNic = vrMgr.getSnatPubicInventory(vr, publicNic.getL3NetworkUuid());
+            VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
+            info.setPrivateNicIp(priNic.getIp());
+            info.setPrivateNicMac(priNic.getMac());
+            info.setPublicIp(publicNic.getIp());
+            info.setPublicNicMac(publicNic.getMac());
+            info.setSnatNetmask(priNic.getNetmask());
+            snatInfo.add(info);
+        }
+
+        if (snatInfo.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterCommands.RemoveSNATCmd cmd = new VirtualRouterCommands.RemoveSNATCmd();
+        cmd.setNatInfo(snatInfo);
+
+        VmNicInventory finalNic = publicNic;
+
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setCheckStatus(true);
+        msg.setVmInstanceUuid(vr.getUuid());
+        msg.setCommand(cmd);
+        msg.setPath(VirtualRouterConstant.VR_REMOVE_SNAT_PATH);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to release snat on virtual router[name:%s, uuid:%s] for public l3[uuid:%s], %s",
+                            vr.getName(), vr.getUuid(), finalNic.getL3NetworkUuid(), reply.getError()));
+                    //TODO GC
+                } else {
+                    VirtualRouterAsyncHttpCallReply re = reply.castReply();
+                    RemoveSNATRsp ret = re.toResponse(RemoveSNATRsp.class);
+                    if (!ret.isSuccess()) {
+                        String err = String.format(
+                                "virtual router[uuid:%s, ip:%s] failed to release snat for public l3[uuid:%s], because %s",
+                                vr.getUuid(), vr.getManagementNic().getIp(), finalNic.getL3NetworkUuid(), ret.getError());
+                        logger.warn(err);
+                        //TODO GC
+                    } else {
+                        String msg = String.format(
+                                "virtual router[uuid:%s, ip:%s] successfully released snat for public l3[uuid:%s]",
+                                vr.getUuid(), vr.getManagementNic().getIp(), finalNic.getL3NetworkUuid());
+                        app.detachNetworkService(vr.getUuid(), NetworkServiceType.SNAT.toString(), finalNic.getL3NetworkUuid());
+                        logger.warn(msg);
+                    }
+                }
+
+                completion.success();
+            }
+        });
     }
 
     @Override
     public void beforeDetachNic(VmNicInventory nic, Completion completion) {
-        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+        if (VirtualRouterNicMetaData.isGuestNic(nic)) {
+            releasePrivateNicSnat(nic.getVmInstanceUuid(), nic, completion);
+        } else if (VirtualRouterNicMetaData.isPublicNic(nic) || VirtualRouterNicMetaData.isAddinitionalPublicNic(nic)) {
+            releasePublicNicSnat(nic.getVmInstanceUuid(), nic, completion);
+        } else {
             completion.success();
-            return;
         }
-
-        try {
-            nwServiceMgr.getTypeOfNetworkServiceProviderForService(nic.getL3NetworkUuid(), NetworkServiceType.SNAT);
-        } catch (OperationFailureException e) {
-            completion.success();
-            return;
-        }
-
-        L3NetworkInventory l3 = L3NetworkInventory.valueOf(
-                (L3NetworkVO) Q.New(L3NetworkVO.class)
-                        .eq(L3NetworkVO_.uuid, nic.getL3NetworkUuid())
-                        .find());
-
-        SnatStruct struct = new SnatStruct();
-        struct.setL3Network(l3);
-        struct.setGuestGateway(nic.getGateway());
-        struct.setGuestIp(nic.getIp());
-        struct.setGuestMac(nic.getMac());
-        struct.setGuestNetmask(nic.getNetmask());
-
-        VmInstanceInventory vm = VmInstanceInventory.valueOf(
-                (VmInstanceVO) Q.New(VmInstanceVO.class)
-                        .eq(VmInstanceVO_.uuid, nic.getVmInstanceUuid())
-                        .find());
-
-        releaseSnat(Arrays.asList(struct).iterator(), vm, new NoErrorCompletion() {
-            @Override
-            public void done() {
-                completion.success();
-            }
-        });
     }
 
     @Override
@@ -281,14 +337,14 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 String.format("can not find virtual router[uuid: %s] for nic[uuid: %s, ip: %s, l3NetworkUuid: %s]",
                         nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), nic.getL3NetworkUuid()));
 
-        /*
-         * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
-         * */
-        if ( haBackend.isSnatDisabledOnRouter(vrVO.getUuid())) {
+        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
+        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
+
+        List<String> snatL3Uuids = app.getSnatL3NetworkOnRouter(vrVO.getUuid());
+        if (snatL3Uuids.isEmpty()) {
             completion.success();
             return;
         }
-
         VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
 
         List<String> nwServed = vr.getAllL3Networks();
@@ -300,27 +356,36 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
 
         new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
 
-        VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
-        String publicIpv4 = getNicIpv4Address(publicNic);
-        if (publicIpv4 == null) {
-            /* only ipv4 has snat */
-            completion.success();
-            return;
-        }
-
         final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<VirtualRouterCommands.SNATInfo>();
-        for (VmNicInventory vnic : vr.getVmNics()) {
-            if (nwServed.contains(vnic.getL3NetworkUuid()) && !vnic.isIpv6OnlyNic()) {
+        List<VmNicInventory> pubNics = new ArrayList<>();
+        pubNics.add(vr.getPublicNic());
+        pubNics.addAll(vr.getAdditionalPublicNics());
+
+        for (VmNicInventory pubnic : pubNics) {
+            if (pubnic.isIpv6OnlyNic()) {
+                continue;
+            }
+
+            pubnic = vrMgr.getSnatPubicInventory(vr, pubnic.getL3NetworkUuid());
+            for (VmNicInventory priNic : vr.getGuestNics()) {
+                if (!nwServed.contains(priNic.getL3NetworkUuid()) || priNic.isIpv6OnlyNic()) {
+                    continue;
+                }
+
                 VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
-                info.setPrivateNicIp(vnic.getIp());
-                info.setPrivateNicMac(vnic.getMac());
-                info.setPublicIp(publicIpv4);
-                info.setPublicNicMac(publicNic.getMac());
-                info.setSnatNetmask(vnic.getNetmask());
+                info.setPrivateNicIp(priNic.getIp());
+                info.setPrivateNicMac(priNic.getMac());
+                info.setPublicIp(pubnic.getIp());
+                info.setPublicNicMac(pubnic.getMac());
+                info.setSnatNetmask(priNic.getNetmask());
+                if (snatL3Uuids.contains(pubnic.getL3NetworkUuid())) {
+                    info.setState(Boolean.TRUE);
+                } else {
+                    info.setState(Boolean.FALSE);
+                }
                 snatInfo.add(info);
             }
         }
-
         if (snatInfo.isEmpty()) {
             completion.success();
             return;

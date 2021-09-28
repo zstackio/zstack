@@ -35,6 +35,9 @@ public class SetVpcVRouterNetworkServiceStateAction extends AbstractAction {
     public java.lang.String state;
 
     @Param(required = false)
+    public java.lang.String l3NetworkUuid;
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)

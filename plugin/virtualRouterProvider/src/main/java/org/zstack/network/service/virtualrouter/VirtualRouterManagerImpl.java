@@ -179,6 +179,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private ResourceDestinationMaker destMaker;
     @Autowired
     protected VirtualRouterHaBackend haBackend;
+    @Autowired
+    private ApplianceVmFactory apvmFactory;
 
     @Override
     @MessageSafe
@@ -2252,10 +2254,14 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     public VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv) {
+        return getSnatPubicInventory(vrInv, vrInv.getDefaultRouteL3NetworkUuid());
+    }
+
+    public VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv, String L3NetworkUuid) {
         VmNicInventory publicNic = null;
 
         for (VmNicInventory vnic : vrInv.getVmNics()) {
-            if (vnic.getL3NetworkUuid().equals(vrInv.getDefaultRouteL3NetworkUuid())) {
+            if (vnic.getL3NetworkUuid().equals(L3NetworkUuid)) {
                 publicNic = new VmNicInventory(dbf.findByUuid(vnic.getUuid(), VmNicVO.class));
             }
         }
@@ -2272,7 +2278,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
         List<String> publicIps = null;
         for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-            publicIps = ext.getPublicIp(vrInv.getUuid(), vrInv.getDefaultRouteL3NetworkUuid());
+            publicIps = ext.getPublicIp(vrInv.getUuid(), L3NetworkUuid);
         }
         if (publicIps != null && !publicIps.isEmpty()) {
             for (String ip : publicIps) {
@@ -2293,8 +2299,14 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private List<VirtualRouterCommands.SNATInfo> getSnatInfo(VirtualRouterVmInventory vrInv) {
-        boolean snatDisable = haBackend.isSnatDisabledOnRouter(vrInv.getUuid());
-        if (snatDisable) {
+        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrInv.getUuid()).find();
+        if (vrVO == null) {
+            return null;
+        }
+        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
+        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
+        List<String> snatL3Uuids = app.getSnatL3NetworkOnRouter(vrVO.getUuid());
+        if (snatL3Uuids.isEmpty()) {
             return null;
         }
 
@@ -2323,6 +2335,21 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         return snatInfo;
+    }
+
+    private void changeVirtualRouterSnatData(String vrUuid, String newL3Uuid, String oldL3Uuid){
+        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuid).find();
+        if (vrVO == null) {
+            return ;
+        }
+        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
+        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
+        app.detachNetworkService(vrUuid, NetworkServiceType.SNAT.toString(), oldL3Uuid);
+        app.attachNetworkService(vrUuid, NetworkServiceType.SNAT.toString(), newL3Uuid);
+        String msg = String.format(
+                "virtual router[uuid:%s] successfully change snat for old default public l3[uuid:%s] to new default public l3[uuid:%s]",
+                vrUuid, oldL3Uuid, newL3Uuid);
+        logger.warn(msg);
     }
 
     @Transactional
@@ -2397,6 +2424,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                             vrUuid, ret.getError());
                     completion.fail(err);
                 } else {
+                    changeVirtualRouterSnatData(vrUuid, newL3Uuid, oldL3Uuid);
                     changeVirtualRouterNicMetaData(vrUuid, newL3Uuid, oldL3Uuid);
                     completion.success();
                 }

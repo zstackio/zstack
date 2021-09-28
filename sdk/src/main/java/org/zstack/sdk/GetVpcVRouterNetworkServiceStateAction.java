@@ -32,6 +32,9 @@ public class GetVpcVRouterNetworkServiceStateAction extends AbstractAction {
     public java.lang.String networkService;
 
     @Param(required = false)
+    public java.lang.String l3NetworkUuid;
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
