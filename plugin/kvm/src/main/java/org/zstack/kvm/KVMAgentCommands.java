@@ -3091,6 +3091,7 @@ public class KVMAgentCommands {
         public boolean enableExpRepo;
         public String excludePackages;
         public String updatePackages;
+        public String zstackRepo;
     }
 
     public static class UpdateDependencyRsp extends AgentResponse {
