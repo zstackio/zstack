@@ -549,6 +549,11 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             }
         }
 
+        if (!isValidHostType(struct)) {
+            completion.success();
+            return;
+        }
+
         // TODO: vDPA do not support Userdata service yet;
         List<VmNicInventory> tmp = new ArrayList<>();
         for (VmNicInventory vNic : struct.getVmNics()) {
@@ -674,9 +679,27 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }).start();
     }
 
+    boolean isValidHostType(UserdataStruct struct) {
+        if (struct.getHostUuid() == null) {
+            return false;
+        }
+
+        String hy = Q.New(HostVO.class)
+                .eq(HostVO_.uuid, struct.getHostUuid())
+                .select(HostVO_.hypervisorType)
+                .findValue();
+
+        return hy.equals(KVMConstant.KVM_HYPERVISOR_TYPE);
+    }
+
 
     @Override
     public void releaseUserdata(final UserdataStruct struct, final Completion completion) {
+        if (!isValidHostType(struct)) {
+            completion.success();
+            return;
+        }
+
         // TODO: vDPA do not support Userdata service yet;
         List<VmNicInventory> tmp = new ArrayList<>();
         for (VmNicInventory vNic : struct.getVmNics()) {
