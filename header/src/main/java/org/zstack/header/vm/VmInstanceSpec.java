@@ -299,7 +299,7 @@ public class VmInstanceSpec implements Serializable {
     private List<String> bootOrders;
     private boolean gcOnStopFailure;
     private boolean ignoreResourceReleaseFailure;
-    private String usbRedirect = "false";
+    private boolean usbRedirect = false;
     private String enableRDP = "false";
     private String VDIMonitorNumber = "1";
     @NoLogging
@@ -346,11 +346,11 @@ public class VmInstanceSpec implements Serializable {
         this.enableRDP = enableRDP;
     }
 
-    public String getUsbRedirect() {
+    public boolean isUsbRedirect() {
         return usbRedirect;
     }
 
-    public void setUsbRedirect(String usbRedirect) {
+    public void setUsbRedirect(boolean usbRedirect) {
         this.usbRedirect = usbRedirect;
     }
 
