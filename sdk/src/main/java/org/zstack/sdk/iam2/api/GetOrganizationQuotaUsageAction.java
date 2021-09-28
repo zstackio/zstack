@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateIAM2OrganizationAction extends AbstractAction {
+public class GetOrganizationQuotaUsageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.CreateIAM2OrganizationResult value;
+        public org.zstack.sdk.iam2.api.GetOrganizationQuotaUsageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,8 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, validValues = {"Company","Department"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.iam2.entity.OrganizationType type;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parentUuid;
-
-    @Param(required = false)
-    public java.util.List attributes;
-
-    @Param(required = false)
-    public java.util.Map quota;
-
-    @Param(required = false)
-    public java.lang.String srcType;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -70,12 +46,6 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -84,8 +54,8 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.CreateIAM2OrganizationResult value = res.getResult(org.zstack.sdk.iam2.api.CreateIAM2OrganizationResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.CreateIAM2OrganizationResult() : value; 
+        org.zstack.sdk.iam2.api.GetOrganizationQuotaUsageResult value = res.getResult(org.zstack.sdk.iam2.api.GetOrganizationQuotaUsageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.GetOrganizationQuotaUsageResult() : value; 
 
         return ret;
     }
@@ -114,11 +84,11 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/iam2/organizations";
+        info.httpMethod = "GET";
+        info.path = "/iam2/organizations/quota/{uuid}/usages";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

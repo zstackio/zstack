@@ -1,0 +1,1 @@
+ALTER TABLE QuotaVO MODIFY COLUMN `value` bigint DEFAULT 0;
