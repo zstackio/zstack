@@ -190,6 +190,13 @@ public abstract class GarbageCollector {
         GarbageCollector self = this;
         EXECUTED_TIMES++;
 
+        boolean isExists = Q.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.uuid, getUuid()).isExists();
+        if (!isExists) {
+            canceller.run();
+            gcMgr.deregisterGC(self);
+            return;
+        }
+
         try {
             triggerNow(new GCCompletion(null) {
                 @Override
