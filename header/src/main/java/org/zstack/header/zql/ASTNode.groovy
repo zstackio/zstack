@@ -89,8 +89,13 @@ class ASTNode {
          Condition right
     }
 
+    static class ExprAtom extends ASTNode {
+        String text
+        List<String> fields = new ArrayList<>()
+    }
+
     static class OrderByExpr extends ASTNode {
-        String field
+        ExprAtom target
         String direction
     }
 

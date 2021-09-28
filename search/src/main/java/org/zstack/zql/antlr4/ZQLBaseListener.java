@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7.1
+// Generated from ZQL.g4 by ANTLR 4.7
 
 package org.zstack.zql.antlr4;
 
@@ -253,6 +253,42 @@ public class ZQLBaseListener implements ZQLListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitExpr(ZQLParser.ExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterColumnNameExprAtom(ZQLParser.ColumnNameExprAtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitColumnNameExprAtom(ZQLParser.ColumnNameExprAtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterMathExprAtom(ZQLParser.MathExprAtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMathExprAtom(ZQLParser.MathExprAtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterNestedExprAtom(ZQLParser.NestedExprAtomContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNestedExprAtom(ZQLParser.NestedExprAtomContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -721,6 +757,18 @@ public class ZQLBaseListener implements ZQLListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitMultiIndexs(ZQLParser.MultiIndexsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterMathOperator(ZQLParser.MathOperatorContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMathOperator(ZQLParser.MathOperatorContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

@@ -14,6 +14,7 @@ public class ConditionVisitor extends ZQLBaseVisitor<ASTNode.Condition> {
         return l;
     }
 
+    @Override
     public ASTNode.Condition visitSimpleCondition(ZQLParser.SimpleConditionContext ctx) {
         return ctx.expr().accept(new ExprVisitor());
     }

@@ -88,6 +88,12 @@ expr
     : field operator complexValue?
     ;
 
+exprAtom
+    : ID    #columnNameExprAtom
+    | '(' exprAtom (',' exprAtom)* ')'  #nestedExprAtom
+    | left=exprAtom mathOperator right=exprAtom #mathExprAtom
+    ;
+
 equal
     : '='
     ;
@@ -114,7 +120,7 @@ queryTargetWithFunction
     ;
 
 orderByExpr
-    : ID ORDER_BY_VALUE
+    : exprAtom ORDER_BY_VALUE
     ;
 
 orderBy
@@ -222,6 +228,10 @@ keyword
 index
     : ID #singleIndex
     | ID (',' ID)+ #multiIndexs
+    ;
+
+mathOperator
+    : '*' | '/' | '%' | '+' | '-' | '--'
     ;
 
 
