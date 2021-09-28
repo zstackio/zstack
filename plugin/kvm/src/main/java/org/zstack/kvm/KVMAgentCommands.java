@@ -1484,7 +1484,7 @@ public class KVMAgentCommands {
         private String clock;
         private String clockTrack;
         private boolean useNuma;
-        private String usbRedirect;
+        private boolean usbRedirect;
         private boolean useBootMenu;
         private boolean createPaused;
         private boolean kvmHiddenState;
@@ -1648,11 +1648,11 @@ public class KVMAgentCommands {
             return createPaused;
         }
 
-        public String getUsbRedirect() {
+        public boolean isUsbRedirect() {
             return usbRedirect;
         }
 
-        public void setUsbRedirect(String usbRedirect) {
+        public void setUsbRedirect(boolean usbRedirect) {
             this.usbRedirect = usbRedirect;
         }
 

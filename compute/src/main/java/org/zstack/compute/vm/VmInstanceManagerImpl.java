@@ -1805,6 +1805,27 @@ public class VmInstanceManagerImpl extends AbstractService implements
         installBootModeValidator();
         installCleanTrafficValidator();
         installMachineTypeValidator();
+        installUsbRedirectValidator();
+    }
+
+    private void installUsbRedirectValidator() {
+        VmSystemTags.USB_REDIRECT.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String usbRedirectTokenByTag = null;
+                if (VmSystemTags.USB_REDIRECT.isMatch(systemTag)) {
+                    usbRedirectTokenByTag = VmSystemTags.USB_REDIRECT.getTokenByTag(systemTag, VmSystemTags.USB_REDIRECT_TOKEN);
+                } else {
+                    throw new OperationFailureException(argerr("invalid usbRedirect[%s], %s is not usbRedirect tag", systemTag, usbRedirectTokenByTag));
+                }
+                if (!isBoolean(usbRedirectTokenByTag)) {
+                    throw new OperationFailureException(argerr("invalid usbRedirect[%s], %s is not boolean class", systemTag, usbRedirectTokenByTag));
+                }
+            }
+            private boolean isBoolean(String param) {
+                return "true".equalsIgnoreCase(param) || "false".equalsIgnoreCase(param);
+            }
+        });
     }
 
     @Override
