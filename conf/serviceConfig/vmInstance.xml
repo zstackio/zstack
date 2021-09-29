@@ -220,4 +220,9 @@
     <message>
         <name>org.zstack.header.vm.APIGetVmsCapabilitiesMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.vm.APIGetVmvNUMATopologyMsg</name>
+    </message>
+
 </service>

@@ -50,9 +50,19 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteHostMsg) msg);
         } else if (msg instanceof APIChangeHostStateMsg){
             validate((APIChangeHostStateMsg) msg);
+        } else if (msg instanceof APIQueryHostNUMATopologyMsg) {
+            validate((APIQueryHostNUMATopologyMsg) msg);
+        } else if (msg instanceof APIGetHostResourceAllocationMsg) {
+            validate((APIGetHostResourceAllocationMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIGetHostResourceAllocationMsg msg) {
+    }
+
+    private void validate(APIQueryHostNUMATopologyMsg msg) {
     }
 
     private void validate(APIDeleteHostMsg msg) {

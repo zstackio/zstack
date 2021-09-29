@@ -146,10 +146,15 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateVmNicDriverMsg) msg);
         } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
             validate((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
+        } else if (msg instanceof APIGetVmvNUMATopologyMsg) {
+            validate((APIGetVmvNUMATopologyMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIGetVmvNUMATopologyMsg msg) {
     }
 
     private void validate(APIGetCandidateL3NetworksForChangeVmNicNetworkMsg msg) {

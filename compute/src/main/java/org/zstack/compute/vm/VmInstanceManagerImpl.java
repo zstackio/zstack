@@ -237,9 +237,17 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APIGetVmsCapabilitiesMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage) msg);
-        } else {
+        } else if (msg instanceof APIGetVmvNUMATopologyMsg) {
+            handle((APIGetVmvNUMATopologyMsg) msg);
+        }
+        else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetVmvNUMATopologyMsg msg) {
+        APIGetVmvNUMATopologyReply reply = new APIGetVmvNUMATopologyReply();
+
     }
 
     private void handle(final APIGetVmsCapabilitiesMsg msg) {

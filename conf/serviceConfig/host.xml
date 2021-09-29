@@ -35,4 +35,12 @@
     <message>
         <name>org.zstack.header.host.APIGetHostTaskMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.host.APIQueryHostNUMATopologyMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIGetHostResourceAllocationMsg</name>
+    </message>
 </service>

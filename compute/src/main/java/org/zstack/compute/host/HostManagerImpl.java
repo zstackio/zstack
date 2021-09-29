@@ -113,9 +113,36 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         } else if (msg instanceof HostMessage) {
             HostMessage hmsg = (HostMessage) msg;
             passThrough(hmsg);
-        } else {
+        } else if (msg instanceof APIQueryHostNUMATopologyMsg) {
+            handle((APIQueryHostNUMATopologyMsg) msg);
+        } else if (msg instanceof APIGetHostResourceAllocationMsg) {
+            handle((APIGetHostResourceAllocationMsg) msg);
+        }else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetHostResourceAllocationMsg msg) {
+        APIGetHostResourceAllocationReply reply = new APIGetHostResourceAllocationReply();
+        String hostUuid = msg.getUuid();
+
+
+
+        reply.setUuid(hostUuid);
+        bus.reply(msg, reply);
+
+    }
+
+    private void handle(APIQueryHostNUMATopologyMsg msg) {
+        APIQueryHostNUMATopologyReply reply = new APIQueryHostNUMATopologyReply();
+        String hostUuid = msg.getUuid();
+
+
+
+        reply.setUuid(hostUuid);
+        bus.reply(msg, reply);
+
+
     }
 
     private void handle(APIGetHypervisorTypesMsg msg) {
