@@ -49,7 +49,12 @@ public class APICreateL2NetworkEvent extends APIEvent {
  
     public static APICreateL2NetworkEvent __example__() {
         APICreateL2NetworkEvent event = new APICreateL2NetworkEvent();
-
+        L2NetworkInventory inv = new L2NetworkInventory();
+        inv.setName("test");
+        inv.setPhysicalInterface("eth0");
+        inv.setUuid(uuid());
+        inv.setZoneUuid(uuid());
+        event.setInventory(new L2NetworkInventory());
 
         return event;
     }

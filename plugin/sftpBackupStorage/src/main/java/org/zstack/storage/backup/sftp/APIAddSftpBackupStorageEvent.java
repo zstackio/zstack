@@ -1,10 +1,10 @@
 package org.zstack.storage.backup.sftp;
 
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
+import org.zstack.header.storage.backup.APIAddBackupStorageEvent;
 
 @RestResponse(allTo = "inventory")
-public class APIAddSftpBackupStorageEvent extends APIEvent {
+public class APIAddSftpBackupStorageEvent extends APIAddBackupStorageEvent {
     public APIAddSftpBackupStorageEvent(String apiId) {
         super(apiId);
     }
@@ -29,6 +29,7 @@ public class APIAddSftpBackupStorageEvent extends APIEvent {
         ssInventory.setHostname("192.168.0.1");
         ssInventory.setSshPort(8080);
         ssInventory.setUsername("tester");
+        event.setInventory(ssInventory);
         return event;
     }
 

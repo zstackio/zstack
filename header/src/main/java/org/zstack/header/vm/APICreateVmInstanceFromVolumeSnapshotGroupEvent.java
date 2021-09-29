@@ -41,8 +41,8 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupEvent extends APIEvent {
         this.inventory = inventory;
     }
 
-    public static APICreateVmInstanceFromVolumeEvent __example__() {
-        APICreateVmInstanceFromVolumeEvent evt = new APICreateVmInstanceFromVolumeEvent();
+    public static APICreateVmInstanceFromVolumeSnapshotGroupEvent __example__() {
+        APICreateVmInstanceFromVolumeSnapshotGroupEvent evt = new APICreateVmInstanceFromVolumeSnapshotGroupEvent();
 
         String defaultL3Uuid = uuid();
         String rootVolumeUuid = uuid();
