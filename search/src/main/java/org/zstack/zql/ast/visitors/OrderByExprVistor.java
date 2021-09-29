@@ -14,6 +14,6 @@ public class OrderByExprVistor implements ASTVisitor<String, ASTNode.OrderByExpr
             throw new ZQLError(Platform.i18n("invalid order by clause, expect direction[asc,desc] but got %s", node.getDirection()));
         }
 
-        return String.format("%s %s", node.getField(), node.getDirection().toUpperCase());
+        return String.format("%s %s", node.getTarget().getText(), node.getDirection().toUpperCase());
     }
 }

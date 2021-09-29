@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7.1
+// Generated from ZQL.g4 by ANTLR 4.7
 
 package org.zstack.zql.antlr4;
 
@@ -139,6 +139,27 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitExpr(ZQLParser.ExprContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code columnNameExprAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitColumnNameExprAtom(ZQLParser.ColumnNameExprAtomContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code mathExprAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMathExprAtom(ZQLParser.MathExprAtomContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code nestedExprAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNestedExprAtom(ZQLParser.NestedExprAtomContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ZQLParser#equal}.
 	 * @param ctx the parse tree
@@ -385,4 +406,10 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitMultiIndexs(ZQLParser.MultiIndexsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#mathOperator}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMathOperator(ZQLParser.MathOperatorContext ctx);
 }

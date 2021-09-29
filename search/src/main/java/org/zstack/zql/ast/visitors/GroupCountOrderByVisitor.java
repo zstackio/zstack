@@ -10,7 +10,7 @@ import static org.zstack.zql.ast.visitors.plugin.CountPlugin.GROUP_COUNT_TARGET_
  */
 public class GroupCountOrderByVisitor extends OrderByVisitor {
     @Override
-    protected boolean hasInventoryField(ASTNode.OrderByExpr node, ZQLMetadata.InventoryMetadata m) {
-        return node.getField().equalsIgnoreCase(GROUP_COUNT_TARGET_FILED) || m.hasInventoryField(node.getField());
+    protected boolean hasInventoryField(String field, ZQLMetadata.InventoryMetadata m) {
+        return field.equalsIgnoreCase(GROUP_COUNT_TARGET_FILED) || m.hasInventoryField(field);
     }
 }

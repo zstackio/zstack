@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7.1
+// Generated from ZQL.g4 by ANTLR 4.7
 
 package org.zstack.zql.antlr4;
 
@@ -223,6 +223,42 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitExpr(ZQLParser.ExprContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code columnNameExprAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 */
+	void enterColumnNameExprAtom(ZQLParser.ColumnNameExprAtomContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code columnNameExprAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 */
+	void exitColumnNameExprAtom(ZQLParser.ColumnNameExprAtomContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code mathExprAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 */
+	void enterMathExprAtom(ZQLParser.MathExprAtomContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code mathExprAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 */
+	void exitMathExprAtom(ZQLParser.MathExprAtomContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code nestedExprAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 */
+	void enterNestedExprAtom(ZQLParser.NestedExprAtomContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code nestedExprAtom}
+	 * labeled alternative in {@link ZQLParser#exprAtom}.
+	 * @param ctx the parse tree
+	 */
+	void exitNestedExprAtom(ZQLParser.NestedExprAtomContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#equal}.
 	 * @param ctx the parse tree
@@ -637,4 +673,14 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitMultiIndexs(ZQLParser.MultiIndexsContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#mathOperator}.
+	 * @param ctx the parse tree
+	 */
+	void enterMathOperator(ZQLParser.MathOperatorContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#mathOperator}.
+	 * @param ctx the parse tree
+	 */
+	void exitMathOperator(ZQLParser.MathOperatorContext ctx);
 }
