@@ -49,7 +49,7 @@ public class APIDeleteLoadBalancerServerGroupMsg extends APIMessage implements L
 
     @Override
     public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(((APIDeleteLoadBalancerMsg)msg).getUuid(), LoadBalancerVO.class);
+        return new Result(((APIDeleteLoadBalancerServerGroupMsg)msg).getUuid(), LoadBalancerVO.class);
     }
 
 
