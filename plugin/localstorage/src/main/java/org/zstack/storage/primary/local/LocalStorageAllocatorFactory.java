@@ -58,8 +58,6 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     private PrimaryStorageOverProvisioningManager ratioMgr;
     @Autowired
     protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
-    @Autowired
-    private PluginRegistry pluginRgty;
 
     public static PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
 
@@ -339,8 +337,10 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         String hostUuid = null;
 
         if (msg.getRequiredInstallUrl() != null) {
-            String volumeId = msg.getRequiredInstallUrl().replaceFirst("requiredInstallUrl://", "");
-            LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volumeId, LocalStorageResourceRefVO.class);
+            ParseRequiredInstallUrl prUtil = new ParseRequiredInstallUrl();
+            prUtil.fullPath = msg.getRequiredInstallUrl();
+            String volumeUuid = prUtil.disassemble().volume;
+            LocalStorageResourceRefVO localStorageResourceRefVO = dbf.findByUuid(volumeUuid, LocalStorageResourceRefVO.class);
             hostUuid = localStorageResourceRefVO.getHostUuid();
         } else if (msg.getRequiredHostUuid() != null) {
             hostUuid = msg.getRequiredHostUuid();
@@ -362,18 +362,19 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                     LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()));
         }
 
-        allocatedInstallUrlUtil util = new allocatedInstallUrlUtil();
-        util.hostUuid = hostUuid;
+        LocalStorageKvmBackend.CacheInstallPath path = new LocalStorageKvmBackend.CacheInstallPath();
+        path.installPath = psInv.getUrl();
+        path.hostUuid = hostUuid;
 
-        return util.makeInstallUrl();
+        return path.makeFullPath();
     }
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid) {
-        allocatedInstallUrlUtil util = new allocatedInstallUrlUtil();
-        util.allocatedInstallUrl = allocatedInstallUrl;
-        String hostUuid = util.disassemble().hostUuid;
+        LocalStorageKvmBackend.CacheInstallPath path = new LocalStorageKvmBackend.CacheInstallPath();
+        path.fullPath = allocatedInstallUrl;
+        String hostUuid = path.disassemble().hostUuid;
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, primaryStorageVO, false);
         return allocatedInstallUrl;
@@ -382,30 +383,29 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
-        allocatedInstallUrlUtil util = new allocatedInstallUrlUtil();
-        util.allocatedInstallUrl = allocatedInstallUrl;
-        String hostUuid = util.disassemble().hostUuid;
+        LocalStorageKvmBackend.CacheInstallPath path = new LocalStorageKvmBackend.CacheInstallPath();
+        path.fullPath = allocatedInstallUrl;
+        String hostUuid = path.disassemble().hostUuid;
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, primaryStorageVO);
         return allocatedInstallUrl;
     }
 
-    public class allocatedInstallUrlUtil {
-        public String allocatedInstallUrl;
-        public String hostUuid;
+    public static class ParseRequiredInstallUrl {
+        public String fullPath;
+        public String file;
+        public String volume;
 
-        public allocatedInstallUrlUtil disassemble() {
-            DebugUtils.Assert(allocatedInstallUrl != null, "fullPath cannot be null");
-            String[] pair = allocatedInstallUrl.split(";");
-            DebugUtils.Assert(pair.length == 1, String.format("invalid cache path %s", allocatedInstallUrl));
-            hostUuid = pair[0].replaceFirst("hostUuid://", "");
+        public ParseRequiredInstallUrl disassemble() {
+            String[] pair = fullPath.split(";");
+            file = pair[0].replaceFirst("file://", "");
+            volume = pair[1].replaceFirst("volume://", "");
             return this;
         }
 
-        public String makeInstallUrl() {
-            DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
-            allocatedInstallUrl = String.format("hostUuid://%s", hostUuid);
-            return allocatedInstallUrl;
+        public String makeFullPath() {
+            fullPath = String.format("file://%s;volume://%s", file, volume);
+            return fullPath;
         }
     }
 

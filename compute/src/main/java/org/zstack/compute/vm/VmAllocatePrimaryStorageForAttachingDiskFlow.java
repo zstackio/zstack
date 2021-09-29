@@ -39,6 +39,8 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
     @Autowired
     protected ErrorFacade errf;
 
+    private String allocatedInstallUrl;
+
     @Override
     public void run(final FlowTrigger chain, final Map data) {
         final VolumeInventory volume = (VolumeInventory) data.get(VmInstanceConstant.Params.AttachingVolumeInventory.toString());
@@ -90,7 +92,7 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-                    data.put(AllocatePrimaryStorageSpaceReply.class,ar.getAllocatedInstallUrl());
+                    allocatedInstallUrl = ar.getAllocatedInstallUrl();
                     data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
                     data.put(VmAllocatePrimaryStorageForAttachingDiskFlow.class, ar.getSize());
                     chain.next();
@@ -107,7 +109,7 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         if (size != null) {
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
             ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
-            imsg.setAllocatedInstallUrl(data.get(AllocatePrimaryStorageSpaceReply.class).toString());
+            imsg.setAllocatedInstallUrl(allocatedInstallUrl);
             imsg.setPrimaryStorageUuid(pri.getUuid());
             imsg.setDiskSize(size);
             bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());

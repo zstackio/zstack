@@ -44,7 +44,7 @@ import static org.zstack.core.Platform.operr;
  * Created by xing5 on 2016/3/26.
  */
 public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint,
-        HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint, PSCapacityExtensionPoint,
+        HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint,
         PostMarkRootVolumeAsSnapshotExtension, PrimaryStorageAttachExtensionPoint, AfterInstantiateVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SMPPrimaryStorageFactory.class);
 
@@ -423,23 +423,5 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
         for (CreateQcow2VolumeProvisioningStrategyExtensionPoint exp : pluginRgty.getExtensionList(CreateQcow2VolumeProvisioningStrategyExtensionPoint.class)) {
             exp.saveQcow2VolumeProvisioningStrategy(volume, hasBackingFile);
         }
-    }
-
-    @Override
-    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
-        PrimaryStorageVO psVo = dbf.findByUuid(psInv.getUuid(), PrimaryStorageVO.class);
-        return psVo.getUrl();
-    }
-
-    @Override
-    @Transactional(propagation = Propagation.MANDATORY)
-    public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid) {
-        return allocatedInstallUrl;
-    }
-
-    @Override
-    @Transactional(propagation = Propagation.MANDATORY)
-    public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
-        return allocatedInstallUrl;
     }
 }

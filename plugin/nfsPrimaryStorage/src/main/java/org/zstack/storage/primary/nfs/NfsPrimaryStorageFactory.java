@@ -58,7 +58,7 @@ import java.util.concurrent.Callable;
 import static org.zstack.utils.CollectionDSL.*;
 
 public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint,
-        PrimaryStorageDetachExtensionPoint, PrimaryStorageAttachExtensionPoint, HostDeleteExtensionPoint, PostMarkRootVolumeAsSnapshotExtension, ClusterUpdateOSExtensionPoint, AfterInstantiateVolumeExtensionPoint, PSCapacityExtensionPoint {
+        PrimaryStorageDetachExtensionPoint, PrimaryStorageAttachExtensionPoint, HostDeleteExtensionPoint, PostMarkRootVolumeAsSnapshotExtension, ClusterUpdateOSExtensionPoint, AfterInstantiateVolumeExtensionPoint {
     private static CLogger logger = Utils.getLogger(NfsPrimaryStorageFactory.class);
 
     @Autowired
@@ -785,23 +785,5 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         for (CreateQcow2VolumeProvisioningStrategyExtensionPoint exp : pluginRgty.getExtensionList(CreateQcow2VolumeProvisioningStrategyExtensionPoint.class)) {
             exp.saveQcow2VolumeProvisioningStrategy(volume, hasBackingFile);
         }
-    }
-
-    @Override
-    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
-        PrimaryStorageVO psVo = dbf.findByUuid(psInv.getUuid(), PrimaryStorageVO.class);
-        return psVo.getUrl();
-    }
-
-    @Override
-    @Transactional(propagation = Propagation.MANDATORY)
-    public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid) {
-        return allocatedInstallUrl;
-    }
-
-    @Override
-    @Transactional(propagation = Propagation.MANDATORY)
-    public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
-        return allocatedInstallUrl;
     }
 }
