@@ -1,6 +1,9 @@
 package org.zstack.network.service.virtualrouter.nat;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.appliancevm.ApplianceVm;
+import org.zstack.appliancevm.ApplianceVmFactory;
+import org.zstack.appliancevm.ApplianceVmSubTypeFactory;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -27,7 +30,6 @@ import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.RemoveSNATRsp;
-import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SetSNATRsp;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -41,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.operr;
 
@@ -70,6 +73,8 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
     protected PluginRegistry pluginRgty;
     @Autowired
     protected VirtualRouterHaBackend haBackend;
+    @Autowired
+    private ApplianceVmFactory apvmFactory;
 
     @Override
     public NetworkServiceProviderType getProviderType() {
@@ -145,10 +150,12 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         }
         final VirtualRouterVmInventory vr = vrInv;
 
+        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
+        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
         /*
          * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
          * */
-        if ( haBackend.isSnatDisabledOnRouter(vr.getUuid())) {
+        if (!app.getSnatStateOnRouter(vrVO.getUuid())) {
             releaseSnat(it, vmInstanceInventory, completion);
             return;
         }
@@ -164,24 +171,29 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         });
         DebugUtils.Assert(privateNic!=null, String.format("cannot find private nic[ip:%s] on virtual router[uuid:%s, name:%s]",
                 struct.getGuestGateway(), vr.getUuid(), vr.getName()));
-
-        VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
-        String publicIpv4 = getNicIpv4Address(publicNic);
-        if (publicIpv4 == null || privateNic.isIpv6OnlyNic()) {
+        List<String> l3Uuids = app.getSnatL3NetworkOnRouter(vrVO.getUuid());
+        List<VmNicInventory> publicNicList = new ArrayList<>();
+        l3Uuids.forEach(l3 -> {
+            publicNicList.add(vrMgr.getSnatPubicInventoryByUuid(vr, l3));
+        });
+        publicNicList.removeIf(filter -> getNicIpv4Address(privateNic) == null);
+        if (publicNicList.isEmpty() || privateNic.isIpv6OnlyNic()) {
             /* only ipv4 has snat */
             releaseSnat(it, vmInstanceInventory, completion);
             return;
         }
-
-        final VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
-        info.setPrivateNicIp(privateNic.getIp());
-        info.setPrivateNicMac(privateNic.getMac());
-        info.setPublicNicMac(publicNic.getMac());
-        info.setPublicIp(publicIpv4);
-        info.setSnatNetmask(struct.getGuestNetmask());
-
+        final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<VirtualRouterCommands.SNATInfo>();
+        publicNicList.forEach(publicNic -> {
+            VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
+            info.setPrivateNicIp(privateNic.getIp());
+            info.setPrivateNicMac(privateNic.getMac());
+            info.setPublicIp(publicNic.getIp());
+            info.setPublicNicMac(publicNic.getMac());
+            info.setSnatNetmask(privateNic.getNetmask());
+            snatInfo.add(info);
+        });
         VirtualRouterCommands.RemoveSNATCmd cmd = new VirtualRouterCommands.RemoveSNATCmd();
-        cmd.setNatInfo(Arrays.asList(info));
+        cmd.setNatInfo(snatInfo);
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setCheckStatus(true);
@@ -202,14 +214,14 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                     if (!ret.isSuccess()) {
                         String err = String.format(
                                 "virtual router[uuid:%s, ip:%s] failed to release snat[%s] for vm[uuid:%s, name:%s] on L3Network[uuid:%s, name:%s], because %s",
-                                vr.getUuid(), vr.getManagementNic().getIp(), JSONObjectUtil.toJsonString(info), vmInstanceInventory.getUuid(), vmInstanceInventory.getName(),
+                                vr.getUuid(), vr.getManagementNic().getIp(), JSONObjectUtil.toJsonString(snatInfo), vmInstanceInventory.getUuid(), vmInstanceInventory.getName(),
                                 struct.getL3Network().getUuid(), struct.getL3Network().getName(), ret.getError());
                         logger.warn(err);
                         //TODO GC
                     } else {
                         String msg = String.format(
                                 "virtual router[uuid:%s, ip:%s] released snat[%s] for vm[uuid:%s, name:%s] on L3Network[uuid:%s, name:%s], because %s",
-                                vr.getUuid(), vr.getManagementNic().getIp(), JSONObjectUtil.toJsonString(info), vmInstanceInventory.getUuid(), vmInstanceInventory.getName(),
+                                vr.getUuid(), vr.getManagementNic().getIp(), JSONObjectUtil.toJsonString(snatInfo), vmInstanceInventory.getUuid(), vmInstanceInventory.getName(),
                                 struct.getL3Network().getUuid(), struct.getL3Network().getName(), ret.getError());
                         logger.warn(msg);
                     }
@@ -281,10 +293,12 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 String.format("can not find virtual router[uuid: %s] for nic[uuid: %s, ip: %s, l3NetworkUuid: %s]",
                         nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), nic.getL3NetworkUuid()));
 
+        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
+        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
         /*
          * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
          * */
-        if ( haBackend.isSnatDisabledOnRouter(vrVO.getUuid())) {
+        if (!app.getSnatStateOnRouter(vrVO.getUuid())) {
             completion.success();
             return;
         }

@@ -179,6 +179,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private ResourceDestinationMaker destMaker;
     @Autowired
     protected VirtualRouterHaBackend haBackend;
+    @Autowired
+    private ApplianceVmFactory apvmFactory;
 
     @Override
     @MessageSafe
@@ -2299,11 +2301,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private List<VirtualRouterCommands.SNATInfo> getSnatInfo(VirtualRouterVmInventory vrInv) {
-        boolean snatDisable = haBackend.isSnatDisabledOnRouter(vrInv.getUuid());
-        if (snatDisable) {
-            return null;
-        }
-
         List<String> nwServed = vrInv.getAllL3Networks();
         nwServed = selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.SNAT);
         if (nwServed.isEmpty()) {
@@ -2377,7 +2374,15 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         VirtualRouterCommands.ChangeDefaultNicCmd cmd = new VirtualRouterCommands.ChangeDefaultNicCmd();
         cmd.setNewNic(newNicInfo);
 
-        List<VirtualRouterCommands.SNATInfo> snatInfos = getSnatInfo(vrInv);
+        List<VirtualRouterCommands.SNATInfo> snatInfos = null;
+
+        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVo.getApplianceVmType());
+        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVo);
+        if (!app.getSnatStateOnRouter(vrVo.getUuid())) {
+            snatInfos = null;
+        } else {
+            snatInfos = getSnatInfo(vrInv);
+        }
         if (snatInfos != null) {
             cmd.setSnats(snatInfos);
         }
