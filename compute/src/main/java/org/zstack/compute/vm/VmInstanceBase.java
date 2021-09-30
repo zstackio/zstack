@@ -2623,7 +2623,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void handle(final StartVmInstanceMsg msg) {
+    protected void handle(final StartVmInstanceMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getName() {
