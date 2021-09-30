@@ -798,6 +798,9 @@ public class KVMAgentCommands {
         private String vlanId;
         private String pciDeviceAddress;
 
+        // only for vdpa nic
+        private String srcPath;
+
         public List<String> getIps() {
             return ips;
         }
@@ -932,6 +935,14 @@ public class KVMAgentCommands {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public String getSrcPath() {
+            return srcPath;
+        }
+
+        public void setSrcPath(String srcPath) {
+            this.srcPath = srcPath;
         }
     }
 
