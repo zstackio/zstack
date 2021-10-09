@@ -9,6 +9,7 @@ public class ApplianceVmCanonicalEvents {
     public static final String SERVICE_UNHEALTHY_PATH = "/appliance-vm/sevice/unhealthy";
     public static final String SERVICE_HEALTHY_PATH = "/appliance-vm/sevice/healthy";
     public static final String APPLIANCEVM_HASTATUS_CHANGED_PATH = "/appliance-vm/hastatus/changed";
+    public static final String APPLIANCEVM_ABNORMAL_FILE_REPORT_PATH = "/appliance-vm/abnormalfiles/report";
 
     @NeedJsonSchema
     public static class ApplianceVmStatusChangedData {
@@ -146,6 +147,84 @@ public class ApplianceVmCanonicalEvents {
 
         public void setReason(ErrorCode reason) {
             this.reason = reason;
+        }
+    }
+
+    public static class ApplianceVmAbnormalFilesDate {
+        private String applianceVmUuid;
+        private String applianceVmType;
+        private String abnormalFiles;
+        private String diskTotal;
+        private String diskUsed;
+        private String diskUsedutilization;
+
+        static class AbnormalFile {
+            private String filePath;
+            private String fileSize;
+
+            public String getFilePath() {
+                return filePath;
+            }
+
+            public void setFilePath(String filePath) {
+                this.filePath = filePath;
+            }
+
+            public String getFileSize() {
+                return fileSize;
+            }
+
+            public void setFileSize(String fileSize) {
+                this.fileSize = fileSize;
+            }
+        }
+
+        public String getApplianceVmUuid() {
+            return applianceVmUuid;
+        }
+
+        public void setApplianceVmUuid(String applianceVmUuid) {
+            this.applianceVmUuid = applianceVmUuid;
+        }
+
+        public String getApplianceVmType() {
+            return applianceVmType;
+        }
+
+        public void setApplianceVmType(String applianceVmType) {
+            this.applianceVmType = applianceVmType;
+        }
+
+        public String getAbnormalFiles() {
+            return abnormalFiles;
+        }
+
+        public void setAbnormalFiles(String abnormalFiles) {
+            this.abnormalFiles = abnormalFiles;
+        }
+
+        public String getDiskTotal() {
+            return diskTotal;
+        }
+
+        public void setDiskTotal(String diskTotal) {
+            this.diskTotal = diskTotal;
+        }
+
+        public String getDiskUsed() {
+            return diskUsed;
+        }
+
+        public void setDiskUsed(String diskUsed) {
+            this.diskUsed = diskUsed;
+        }
+
+        public String getDiskUsedutilization() {
+            return diskUsedutilization;
+        }
+
+        public void setDiskUsedutilization(String diskUsedutilization) {
+            this.diskUsedutilization = diskUsedutilization;
         }
     }
 }
