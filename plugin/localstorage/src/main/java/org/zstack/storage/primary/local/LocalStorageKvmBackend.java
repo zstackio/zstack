@@ -41,7 +41,6 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -1174,28 +1173,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         return hostUuid;
     }
 
-    public static class CacheInstallPath {
-        public String fullPath;
-        public String hostUuid;
-        public String installPath;
-
-        public CacheInstallPath disassemble() {
-            DebugUtils.Assert(fullPath != null, "fullPath cannot be null");
-            String[] pair = fullPath.split(";");
-            DebugUtils.Assert(pair.length == 2, String.format("invalid cache path %s", fullPath));
-            installPath = pair[0].replaceFirst("file://", "");
-            hostUuid = pair[1].replaceFirst("hostUuid://", "");
-            return this;
-        }
-
-        public String makeFullPath() {
-            DebugUtils.Assert(installPath != null, "installPath cannot be null");
-            DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
-            fullPath = String.format("file://%s;hostUuid://%s", installPath, hostUuid);
-            return fullPath;
-        }
-    }
-
     class ImageCache {
         ImageInventory image;
         BackupStorageInventory backupStorage;
@@ -1341,7 +1318,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     vo.setSize(actualSize);
                                     vo.setMd5sum("not calculated");
 
-                                    CacheInstallPath path = new CacheInstallPath();
+                                    LocalStorageUtils.installPath path = new LocalStorageUtils.installPath();
                                     path.installPath = primaryStorageInstallPath;
                                     path.hostUuid = hostUuid;
                                     vo.setInstallUrl(path.makeFullPath());
@@ -1380,7 +1357,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         return;
                     }
 
-                    CacheInstallPath path = new CacheInstallPath();
+                    LocalStorageUtils.installPath path = new LocalStorageUtils.installPath();
                     path.fullPath = cache.getInstallUrl();
                     final String installPath = path.disassemble().installPath;
                     CheckBitsCmd cmd = new CheckBitsCmd();
@@ -1792,7 +1769,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             return null;
         }
 
-        CacheInstallPath path = new CacheInstallPath();
+        LocalStorageUtils.installPath path = new LocalStorageUtils.installPath();
         path.fullPath = cache.getInstallUrl();
         return path.disassemble().installPath;
     }
@@ -2688,7 +2665,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             return;
                         }
 
-                        CacheInstallPath path = new CacheInstallPath();
+                        LocalStorageUtils.installPath path = new LocalStorageUtils.installPath();
                         path.installPath = context.baseImageCachePath;
                         path.hostUuid = struct.getDestHostUuid();
                         String fullPath = path.makeFullPath();

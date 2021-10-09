@@ -1,7 +1,6 @@
 package org.zstack.test.integration.storage.primary.local.datavolume
 
 import org.springframework.beans.BeanUtils
-import org.springframework.context.annotation.Bean
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.cloudbus.CloudBus
@@ -18,7 +17,6 @@ import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.LocalStorageMigrateVolumeAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
-import org.zstack.storage.primary.PrimaryStoragePathMaker
 import org.zstack.storage.primary.local.LocalStorageCreateEmptyVolumeMsg
 import org.zstack.storage.primary.local.LocalStorageCreateEmptyVolumeReply
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
@@ -26,11 +24,11 @@ import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow
 import org.zstack.storage.primary.local.LocalStoragePrimaryStorageGlobalConfig
+import org.zstack.storage.primary.local.LocalStorageUtils
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.*
 import org.zstack.utils.ObjectUtils
-import org.zstack.utils.path.PathUtil
 
 import static org.zstack.core.Platform.operr
 
@@ -139,7 +137,7 @@ class MigrateVolumeCase extends SubCase {
 
         env.simulator(LocalStorageKvmBackend.GET_BASE_IMAGE_PATH) {
             def rsp = new LocalStorageKvmBackend.GetVolumeBaseImagePathRsp()
-            LocalStorageKvmBackend.CacheInstallPath path = new LocalStorageKvmBackend.CacheInstallPath();
+            LocalStorageKvmBackend.installPath path = new LocalStorageUtils.installPath();
             path.fullPath = originCache.installUrl
             path.disassemble()
             rsp.path = path.installPath
@@ -389,7 +387,7 @@ class MigrateVolumeCase extends SubCase {
     private void mockImageCacheOnHost(String hostUuid) {
         ImageCacheVO mock = ObjectUtils.newAndCopy(originCache, ImageCacheVO.class)
 
-        LocalStorageKvmBackend.CacheInstallPath path = new LocalStorageKvmBackend.CacheInstallPath();
+        LocalStorageKvmBackend.installPath path = new LocalStorageUtils.installPath();
         path.fullPath = mock.installUrl
         path.disassemble()
         path.hostUuid = hostUuid
@@ -403,7 +401,7 @@ class MigrateVolumeCase extends SubCase {
         ImageCacheShadowVO mock = new ImageCacheShadowVO()
         BeanUtils.copyProperties(originCache, mock)
 
-        LocalStorageKvmBackend.CacheInstallPath path = new LocalStorageKvmBackend.CacheInstallPath();
+        LocalStorageKvmBackend.installPath path = new LocalStorageUtils.installPath();
         path.fullPath = mock.installUrl
         path.disassemble()
         path.hostUuid = hostUuid

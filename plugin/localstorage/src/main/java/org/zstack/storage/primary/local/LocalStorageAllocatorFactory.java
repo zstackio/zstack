@@ -367,7 +367,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                     LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()));
         }
 
-        LocalStorageKvmBackend.CacheInstallPath path = new LocalStorageKvmBackend.CacheInstallPath();
+        LocalStorageUtils.installPath path = new LocalStorageUtils.installPath();
         path.installPath = psInv.getUrl();
         path.hostUuid = hostUuid;
 
@@ -377,7 +377,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid) {
-        LocalStorageKvmBackend.CacheInstallPath path = new LocalStorageKvmBackend.CacheInstallPath();
+        LocalStorageUtils.installPath path = new LocalStorageUtils.installPath();
         path.fullPath = allocatedInstallUrl;
         String hostUuid = path.disassemble().hostUuid;
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
@@ -388,7 +388,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
-        LocalStorageKvmBackend.CacheInstallPath path = new LocalStorageKvmBackend.CacheInstallPath();
+        LocalStorageUtils.installPath path = new LocalStorageUtils.installPath();
         path.fullPath = allocatedInstallUrl;
         String hostUuid = path.disassemble().hostUuid;
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
