@@ -144,7 +144,10 @@ public class FileVerificationInitialServiceImpl implements FileVerificationIniti
         }
         final File parentFile = file.getParentFile();
         final List<String> matchFiles = new ArrayList<>();
-        
+
+        //tmpChange
+        //copy vmlinuz permission denied on wang'an os
+        /*
         new Bash() {
             @Override
             protected void scripts() {
@@ -157,6 +160,8 @@ public class FileVerificationInitialServiceImpl implements FileVerificationIniti
                 Collections.addAll(matchFiles, outputs);
             }
         }.execute();
+
+         */
         
         return matchFiles;
     }

@@ -615,7 +615,7 @@ public class Platform {
 
     public static String getVmUuid() {
         DatabaseFacade dbf = getComponentLoader().getComponent(DatabaseFacade.class);
-        return String.format("%s%s", CoreGlobalProperty.PLATFORM_ID, dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class));
+        return String.format("%s%s", CoreGlobalProperty.PLATFORM_ID, String.format("%06d", dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class)));
     }
 
     public static String getUuidFromBytes(byte[] name) {
