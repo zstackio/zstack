@@ -73,7 +73,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
         final L2VxlanNetworkInventory l2vxlan = (L2VxlanNetworkInventory) l2Network;
         final List<String> vtepIps = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.hostUuid, hostUuid).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).listValues();
-        if (vtepIps != null && vtepIps.size() > 1) {
+        if (vtepIps.size() > 1) {
             throw new OperationFailureException(operr("find multiple vtep ips[%s] for one host[uuid:%s], need to delete host and add again",
                     vtepIps, hostUuid));
         }
