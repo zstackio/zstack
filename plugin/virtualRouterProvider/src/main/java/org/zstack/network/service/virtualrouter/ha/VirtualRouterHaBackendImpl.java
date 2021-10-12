@@ -98,7 +98,7 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
     }
 
     @Override
-    public boolean isSnatDisabledOnRouter(String vrUuid) {
+    public boolean isSnatEnabledOnHaRouter(String vrUuid) {
         List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
         if (exps.isEmpty()) {
             return false;
@@ -108,7 +108,7 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
         if (state == null || state.isEmpty()) {
             return false;
         } else {
-            return Boolean.parseBoolean(state.get(0));
+            return true;
         }
     }
 

@@ -16,7 +16,6 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.host.HostStatus;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
@@ -38,7 +37,6 @@ import org.zstack.utils.network.NetworkUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.operr;
 
@@ -92,7 +90,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
         List<String> l3Uuids = app.getSnatL3NetworkOnRouter(vrVO.getUuid());
         boolean disabled = !app.getSnatStateOnRouter(vrVO.getUuid());
         if(vrVO.isHaEnabled()) {
-            disabled = haBackend.isSnatDisabledOnRouter(vr.getUuid());
+            disabled = !haBackend.isSnatEnabledOnHaRouter(vr.getUuid());
         }
         if (disabled && !rebuildSnat) {
             chain.next();
