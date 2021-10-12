@@ -27,13 +27,32 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostPhysicalMemoryVO` (
     CONSTRAINT `fkHostPhysicalMemoryVOHostVO` FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `zstack`.`CephPrimaryStoragePoolVO`
-    ADD COLUMN `securityPolicy` varchar(255) DEFAULT 'Copy',
-    ADD COLUMN `diskUtilization` FLOAT;
-UPDATE `zstack`.`CephPrimaryStoragePoolVO` SET `diskUtilization` = (SELECT format(1 / `replicatedSize`, 3));
 
-ALTER TABLE `zstack`.`CephBackupStorageVO`
-    ADD COLUMN `poolSecurityPolicy` varchar(255) DEFAULT 'Copy',
-    ADD COLUMN `poolDiskUtilization` FLOAT;
-UPDATE `zstack`.`CephBackupStorageVO` SET `poolDiskUtilization` = (SELECT format(1 / `poolReplicatedSize`, 3));
+DROP PROCEDURE IF EXISTS `Alter_Ceph_Table`;
+DELIMITER $$
+CREATE PROCEDURE Alter_Ceph_Table()
+    BEGIN
+        IF NOT EXISTS( SELECT NULL
+                       FROM INFORMATION_SCHEMA.COLUMNS
+                       WHERE table_name = 'CephPrimaryStoragePoolVO'
+                             AND table_schema = 'zstack'
+                             AND column_name = 'securityPolicy')  THEN
+
+            ALTER TABLE `zstack`.`CephPrimaryStoragePoolVO`
+                ADD COLUMN `securityPolicy` varchar(255) DEFAULT 'Copy',
+                ADD COLUMN `diskUtilization` FLOAT;
+            UPDATE `zstack`.`CephPrimaryStoragePoolVO` SET `diskUtilization` = (SELECT format(1 / `replicatedSize`, 3));
+
+            ALTER TABLE `zstack`.`CephBackupStorageVO`
+                ADD COLUMN `poolSecurityPolicy` varchar(255) DEFAULT 'Copy',
+                ADD COLUMN `poolDiskUtilization` FLOAT;
+            UPDATE `zstack`.`CephBackupStorageVO` SET `poolDiskUtilization` = (SELECT format(1 / `poolReplicatedSize`, 3));
+        END IF;
+    END $$
+DELIMITER ;
+
+CALL Alter_Ceph_Table();
+DROP PROCEDURE Alter_Ceph_Table;
+
+
 
