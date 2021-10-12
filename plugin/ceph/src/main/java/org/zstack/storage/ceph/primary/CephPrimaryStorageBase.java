@@ -1049,11 +1049,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String format;
     }
 
-    public static class DownloadBitsFromNbdCmd extends AgentCommand implements Serializable {
+    public static class DownloadBitsFromNbdCmd extends AgentCommand implements HasThreadContext, Serializable {
         @NoLogging
         private String nbdExportUrl;
         private String primaryStorageInstallPath;
         private long bandwidth;
+        private String sendCommandUrl;
 
         public String getNbdExportUrl() {
             return nbdExportUrl;
@@ -1077,6 +1078,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setBandwidth(long bandwidth) {
             this.bandwidth = bandwidth;
+        }
+
+        public void setSendCommandUrl(String sendCommandUrl) {
+            this.sendCommandUrl = sendCommandUrl;
+        }
+
+        public String getSendCommandUrl() {
+            return sendCommandUrl;
         }
     }
 
@@ -4216,8 +4225,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void handle(DownloadBitsFromNbdToPrimaryStorageMsg msg) {
         DownloadBitsFromNbdToPrimaryStorageReply reply = new DownloadBitsFromNbdToPrimaryStorageReply();
-
         DownloadBitsFromNbdCmd cmd = new DownloadBitsFromNbdCmd();
+        cmd.setSendCommandUrl(restf.getSendCommandUrl());
         cmd.setBandwidth(msg.getBandWidth());
         cmd.setPrimaryStorageInstallPath(msg.getPrimaryStorageInstallPath());
         cmd.setNbdExportUrl(msg.getNbdExportUrl());

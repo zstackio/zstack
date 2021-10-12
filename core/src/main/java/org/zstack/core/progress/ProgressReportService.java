@@ -551,6 +551,12 @@ public class ProgressReportService extends AbstractService implements Management
         return stage;
     }
 
+    public static ParallelTaskStage markParallelTaskStage(TaskProgressRange exactStage, List<? extends Number> weight) {
+        ParallelTaskStage stage = new ParallelTaskStage(exactStage, weight);
+        Optional.ofNullable(ThreadContext.get(Constants.THREAD_CONTEXT_API)).ifPresent(it -> parallelTaskStage.put(it, stage));
+        return stage;
+    }
+
     public static TaskProgressRange getTaskStage(){
         String stage = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_STAGE) != null ?
                 ThreadContext.get(Constants.THREAD_CONTEXT_TASK_STAGE) : "0-100";
