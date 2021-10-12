@@ -554,7 +554,7 @@ public class RestServer implements Component, CloudBusEventListener {
             if (req.getQueryString() != null && !req.getQueryString().isEmpty()) {
                 sb.append(String.format(" Query: %s,", UriUtils.decode(req.getQueryString(), "UTF-8")));
             }
-            sb.append(String.format(" Body: %s", entity.getBody().isEmpty() ? null : getFormatBody(path, entity.getBody())));
+            sb.append(String.format(" Body: %s", entity.getBody() == null || entity.getBody().isEmpty() ? null : getFormatBody(path, entity.getBody())));
 
             requestLogger.trace(sb.toString());
         }
@@ -874,7 +874,12 @@ public class RestServer implements Component, CloudBusEventListener {
         }
 
         if (requestInfo.get().headers.containsKey(RestConstants.HEADER_API_TIMEOUT)) {
-            String apiTimeout = requestInfo.get().headers.get(RestConstants.HEADER_API_TIMEOUT).get(0);
+            List<String> apiTimeouts = requestInfo.get().headers.get(RestConstants.HEADER_API_TIMEOUT);
+            if (apiTimeouts == null || apiTimeouts.isEmpty()) {
+                throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid header[%s], timeout" +
+                        " is requested", RestConstants.HEADER_API_TIMEOUT));
+            }
+            String apiTimeout = apiTimeouts.get(0);
             msg.setTimeout(TimeUnit.SECONDS.toMillis(Long.parseLong(apiTimeout)));
         }
 

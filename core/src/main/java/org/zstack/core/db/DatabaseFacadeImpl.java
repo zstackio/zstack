@@ -236,7 +236,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         private void updateEO(Object entity, DataIntegrityViolationException de) {
-            if (!MySQLIntegrityConstraintViolationException.class.isAssignableFrom(de.getRootCause().getClass())) {
+            if (de.getRootCause() == null
+                    || !MySQLIntegrityConstraintViolationException.class.isAssignableFrom(de.getRootCause().getClass())) {
                 throw de;
             }
 
