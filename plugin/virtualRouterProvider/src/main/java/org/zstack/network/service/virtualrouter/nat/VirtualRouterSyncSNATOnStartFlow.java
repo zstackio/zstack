@@ -3,10 +3,7 @@ package org.zstack.network.service.virtualrouter.nat;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.appliancevm.ApplianceVm;
-import org.zstack.appliancevm.ApplianceVmConstant;
-import org.zstack.appliancevm.ApplianceVmFactory;
-import org.zstack.appliancevm.ApplianceVmSubTypeFactory;
+import org.zstack.appliancevm.*;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -19,6 +16,7 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
@@ -93,6 +91,9 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
          * */
         List<String> l3Uuids = app.getSnatL3NetworkOnRouter(vrVO.getUuid());
         boolean disabled = !app.getSnatStateOnRouter(vrVO.getUuid());
+        if(vrVO.isHaEnabled()) {
+            disabled = haBackend.isSnatDisabledOnRouter(vr.getUuid());
+        }
         if (disabled && !rebuildSnat) {
             chain.next();
             return;

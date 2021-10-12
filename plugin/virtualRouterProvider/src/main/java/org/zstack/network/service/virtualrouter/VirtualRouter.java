@@ -884,7 +884,7 @@ public class VirtualRouter extends ApplianceVmBase {
     }
 
     @Override
-    public void setSnatStateOnRouter(String uuid, String defaultRouteL3NetworkUuid) {
+    public void setSnatStateOnRouter(String uuid, String defaultRouteL3NetworkUuid, Boolean enable) {
 
     }
 

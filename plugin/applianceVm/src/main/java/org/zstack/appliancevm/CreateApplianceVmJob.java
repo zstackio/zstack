@@ -171,7 +171,7 @@ public class CreateApplianceVmJob implements Job {
 
                 ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(avo.getApplianceVmType());
                 ApplianceVm app = subTypeFactory.getSubApplianceVm(avo);
-                app.setSnatStateOnRouter(avo.getUuid(),avo.getDefaultRouteL3NetworkUuid());
+                app.setSnatStateOnRouter(avo.getUuid(), avo.getDefaultRouteL3NetworkUuid(), true);
 
                 trigger.next();
             }
