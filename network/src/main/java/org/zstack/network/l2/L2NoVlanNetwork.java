@@ -214,7 +214,9 @@ public class L2NoVlanNetwork implements L2Network {
             bus.reply(msg, reply);
         } else {
             DetachL2NetworkFromClusterReply reply = new DetachL2NetworkFromClusterReply();
-            deleteL2Bridge(
+            List<String> clusterUuids = new ArrayList<>();
+            clusterUuids.add(msg.getClusterUuid());
+            deleteL2Bridge(clusterUuids,
                     new Completion(msg) {
                         @Override
                         public void success() {
@@ -669,13 +671,20 @@ public class L2NoVlanNetwork implements L2Network {
     }
 
     protected void deleteL2Bridge(Completion completion) {
-        L2NetworkInventory l2NetworkInventory = getSelfInventory();
-        List<String> clusterUuids = l2NetworkInventory.getAttachedClusterUuids();
-        if(clusterUuids.isEmpty()){
-            logger.debug(String.format("no need to delete l2 bridge ,because l2nework[uuid:%s] is not added to any cluster",l2NetworkInventory.getUuid()));
-            completion.success();
-            return;
+        deleteL2Bridge(null, completion);
+    }
+
+    private void deleteL2Bridge(List<String> clusterUuids, Completion completion) {
+        if (clusterUuids == null) {
+            L2NetworkInventory l2NetworkInventory = getSelfInventory();
+            clusterUuids = l2NetworkInventory.getAttachedClusterUuids();
+            if(clusterUuids.isEmpty()){
+                logger.debug(String.format("no need to delete l2 bridge ,because l2nework[uuid:%s] is not added to any cluster",l2NetworkInventory.getUuid()));
+                completion.success();
+                return;
+            }
         }
+
         List<HostVO> hosts = Q.New(HostVO.class)
                 .in(HostVO_.clusterUuid, clusterUuids)
                 .list();
