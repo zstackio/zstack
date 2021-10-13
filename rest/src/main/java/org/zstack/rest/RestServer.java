@@ -167,6 +167,12 @@ public class RestServer implements Component, CloudBusEventListener {
         }
     }
 
+    public static void generateGlobalConfigMarkDown(String resultDir, DocumentGenerator.DocMode mode) {
+        DocumentGenerator rg =  GroovyUtils.newInstance("scripts/RestDocumentationGenerator.groovy");
+        rg.generateGlobalConfigMarkDown(resultDir, mode);
+    }
+
+
     public static void generateJavaSdk() {
         String path = PathUtil.join(System.getProperty("user.home"), "zstack-sdk/java");
         File folder = new File(path);

@@ -4,8 +4,20 @@ import com.google.common.io.Resources
 import groovy.json.JsonBuilder
 import org.apache.commons.io.Charsets
 import org.apache.commons.lang.StringUtils
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
+import org.jsoup.nodes.Node
+import org.jsoup.select.Elements
+import org.markdown4j.Markdown4jProcessor
 import org.springframework.http.HttpMethod
 import org.zstack.core.Platform
+import org.zstack.core.config.GlobalConfig
+import org.zstack.core.config.GlobalConfigDef
+import org.zstack.core.config.GlobalConfigDefinition
+import org.zstack.core.config.GlobalConfigException
+import org.zstack.core.config.GlobalConfigValidation
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint
 import org.zstack.header.core.NoDoc
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.exception.CloudRuntimeException
@@ -20,16 +32,22 @@ import org.zstack.header.rest.RestRequest
 import org.zstack.header.rest.RestResponse
 import org.zstack.rest.RestConstants
 import org.zstack.rest.sdk.DocumentGenerator
+import org.zstack.resourceconfig.BindResourceConfig
 import org.zstack.utils.*
+import org.zstack.utils.data.StringTemplate
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 import org.zstack.utils.path.PathUtil
 import org.zstack.utils.string.ErrorCodeElaboration
 import org.zstack.utils.string.StringSimilarity
 
+import javax.xml.bind.JAXBContext
+import javax.xml.bind.JAXBException
+import javax.xml.bind.Unmarshaller
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
+import java.nio.file.Paths
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.stream.Collectors
@@ -38,6 +56,382 @@ import java.util.stream.Collectors
  */
 class RestDocumentationGenerator implements DocumentGenerator {
     static CLogger logger = Utils.getLogger(DocumentGenerator.class)
+
+    final String PLACEHOLDER = "##GLOBALCONFIGCONTENT"
+    final String DEPRECATED = "#Deprecated"
+    GlobalConfigInitializer initializer = new GlobalConfigInitializer()
+
+    class GlobalConfigInitializer {
+        JAXBContext context
+        Map<String, String> validatorMap = new HashMap<>()
+        Map<String, Class[]> bindResources = new HashMap<>()
+        Map<String, GlobalConfig> configs = new HashMap<>()
+        List<Field> globalConfigFields = new ArrayList<>()
+        Map<String, String> propertiesMap = new HashMap<>()
+
+        GlobalConfigInitializer() {
+            init()
+        }
+
+        void init() {
+            try {
+                loadSystemProperties()
+                parseGlobalConfigFields()
+                loadConfigFromXml()
+                loadConfigFromJava()
+                link()
+            } catch (IllegalArgumentException ie) {
+                throw ie
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e)
+            }
+        }
+
+        private void loadSystemProperties() {
+            boolean noTrim = System.getProperty("DoNotTrimPropertyFile") != null
+            for (final String name : System.getProperties().stringPropertyNames()) {
+                String value = System.getProperty(name)
+                if (!noTrim) {
+                    value = value.trim()
+                }
+                propertiesMap.put(name, value)
+            }
+        }
+
+        private void parseGlobalConfigFields() {
+            Set<Class<?>> definitionClasses = BeanUtils.reflections.getTypesAnnotatedWith(GlobalConfigDefinition.class)
+            definitionClasses.each {
+                for (Field field : it.getDeclaredFields()) {
+                    if (Modifier.isStatic(field.getModifiers()) && GlobalConfig.class.isAssignableFrom(field.getType())) {
+                        field.setAccessible(true)
+                        try {
+                            def bind = field.getAnnotation(BindResourceConfig.class)
+                            def validator = field.getAnnotation(GlobalConfigValidation.class)
+                            GlobalConfig config = (GlobalConfig) field.get(null)
+                            if (config == null) {
+                                throw new CloudRuntimeException(String.format("GlobalConfigDefinition[%s] " +
+                                        "defines a null GlobalConfig[%s]." +
+                                        "You must assign a value to it using new GlobalConfig(category, name)",
+                                        it.getName(), field.getName()))
+                            }
+                            if (bind != null) {
+                                bindResources.put(config.getIdentity(), bind.value())
+                            }
+
+                            globalConfigFields.add(field)
+                            if (validator == null) {
+                                continue
+                            }
+                            if (!validator.notNull()) {
+                                continue
+                            }
+                            if (!validator.notEmpty()) {
+                                validatorMap.put(config.getIdentity(), "notNull")
+                                continue
+                            }
+                            if (validator.validValues().length != 0) {
+                                validatorMap.put(config.getIdentity(), "{"
+                                        + validator.validValues().join(", ") + "}")
+                                continue
+                            }
+                            if (validator.numberGreaterThan() == Long.MIN_VALUE
+                                    && validator.numberLessThan() == Long.MAX_VALUE) {
+                                if (validator.inNumberRange().length != 0) {
+                                    validatorMap.put(config.getIdentity(), "["
+                                            + validator.inNumberRange().join(" ,") + "]")
+                                } else {
+                                    validatorMap.put(config.getIdentity(), "[" + Long.MIN_VALUE + ", "
+                                            + Long.MAX_VALUE + "]")
+                                }
+                                continue
+                            }
+                            if (validator.numberGreaterThan() != Long.MIN_VALUE
+                                    && validator.numberLessThan() != Long.MAX_VALUE) {
+                                if (validator.numberGreaterThan() > validator.numberLessThan()) {
+                                    throw new CloudRuntimeException(
+                                            String.format("The globalConfigValidation of " +
+                                                    "GlobalConfig[%s] is illegal." +
+                                                    "Please check the value range.",
+                                                    config.getName()))
+                                }
+                                validatorMap.put(config.getIdentity(), "["
+                                        + validator.numberGreaterThan().toString() + ", "
+                                        + validator.numberLessThan().toString() + "]")
+                            } else {
+                                if (validator.numberLessThan() != Long.MAX_VALUE) {
+                                    validatorMap.put(config.getIdentity(), "["
+                                            + Long.MIN_VALUE + ", "
+                                            + validator.numberLessThan().toString() + "]")
+                                }
+                                if (validator.numberGreaterThan() != Long.MIN_VALUE) {
+                                    validatorMap.put(config.getIdentity(), "["
+                                            + validator.numberGreaterThan().toString() + ", "
+                                            + Long.MAX_VALUE + "]")
+                                }
+                            }
+
+                        } catch (IllegalAccessException e) {
+                            throw new CloudRuntimeException(e)
+                        }
+                    }
+                }
+            }
+        }
+
+
+        private void loadConfigFromJava() {
+            for (Field field : globalConfigFields) {
+                try {
+                    GlobalConfig config = (GlobalConfig) field.get(null)
+                    if (config == null) {
+                        throw new CloudRuntimeException(String.format("GlobalConfigDefinition[%s] " +
+                                "defines a null GlobalConfig[%s]." +
+                                "You must assign a value to it using new GlobalConfig(category, name)",
+                                field.getDeclaringClass().getName(), field.getName()));
+                    }
+
+                    GlobalConfigDef d = field.getAnnotation(GlobalConfigDef.class)
+                    if (d == null) {
+                        continue
+                    }
+                    if (d.defaultValue() == null) {
+                        throw new CloudRuntimeException("The default value of ${config.name} is null")
+                    }
+                    String defaultValue = StringTemplate.substitute(d.defaultValue(), propertiesMap)
+
+                    Class clz = Class.forName("org.zstack.core.config.GlobalConfig")
+                    GlobalConfig c = clz.newInstance() as GlobalConfig
+                    c.setCategory(config.getCategory())
+                    c.setName(config.getName())
+                    c.setDescription(d.description())
+                    c.setDefaultValue(defaultValue)
+                    c.setValue(defaultValue)
+                    c.setType(d.type().getName())
+                    if ("" != d.validatorRegularExpression()) {
+                        c.setValidatorRegularExpression(d.validatorRegularExpression())
+                    }
+
+                    if (configs.containsKey(c.getIdentity())) {
+                        throw new CloudRuntimeException(String.format("duplicate global configuration. %s defines a" +
+                                " global config[category: %s, name: %s] that has been defined by a XML configure or" +
+                                " another java class", field.getDeclaringClass().getName(), c.getCategory(), c.getName()))
+                    }
+
+                    configs.put(c.getIdentity(), c)
+                } catch (IllegalAccessException e) {
+                    throw new CloudRuntimeException(e)
+                }
+            }
+        }
+
+
+        private void loadConfigFromXml() throws JAXBException {
+            context = JAXBContext.newInstance("org.zstack.core.config.schema")
+            List<String> filePaths = PathUtil.scanFolderOnClassPath("globalConfig")
+            for (String path : filePaths) {
+                File f = new File(path)
+                parseConfig(f)
+            }
+        }
+
+        private void parseConfig(File file) throws JAXBException {
+            if (!file.getName().endsWith("xml")) {
+                logger.warn(String.format("file[%s] in global config folder is not end with .xml, skip it",
+                        file.getAbsolutePath()))
+                return
+            }
+
+            Unmarshaller unmarshaller = context.createUnmarshaller()
+            org.zstack.core.config.schema.GlobalConfig gb =
+                    (org.zstack.core.config.schema.GlobalConfig) unmarshaller.unmarshal(file)
+            for (org.zstack.core.config.schema.GlobalConfig.Config c : gb.getConfig()) {
+                String category = c.getCategory()
+                category = category == null ? "Others" : category;
+                c.setCategory(category);
+                if (c.getDefaultValue() == null) {
+                    throw new IllegalArgumentException(
+                            String.format("GlobalConfig[category:%s, name:%s] must have a default value",
+                                    c.getCategory(), c.getName()));
+                } else {
+                    c.setDefaultValue(StringTemplate.substitute(c.getDefaultValue(), propertiesMap))
+                }
+                if (c.getValue() == null) {
+                    c.setValue(c.getDefaultValue())
+                } else {
+                    c.setValue(StringTemplate.substitute(c.getValue(), propertiesMap))
+                }
+                GlobalConfig config = GlobalConfig.valueOf(c)
+                if (configs.containsKey(config.getIdentity())) {
+                    throw new IllegalArgumentException(
+                            String.format("duplicate GlobalConfig[category: %s, name: %s]",
+                                    config.getCategory(), config.getName()))
+                }
+                configs.put(config.getIdentity(), config)
+            }
+        }
+
+        private void link() {
+            for (Field field : globalConfigFields) {
+                field.setAccessible(true)
+                try {
+                    GlobalConfig config = (GlobalConfig) field.get(null)
+                    if (config == null) {
+                        throw new CloudRuntimeException(String.format("GlobalConfigDefinition[%s] " +
+                                "defines a null GlobalConfig[%s]." +
+                                "You must assign a value to it using new GlobalConfig(category, name)",
+                                field.getDeclaringClass().getName(), field.getName()))
+                    }
+
+                    link(field, config)
+                } catch (IllegalAccessException e) {
+                    throw new CloudRuntimeException(e)
+                }
+            }
+
+            for (GlobalConfig c : configs.values()) {
+                if (!c.isLinked()) {
+                    logger.warn(String.format("GlobalConfig[category: %s, name: %s] is not linked to any definition",
+                            c.getCategory(), c.getName()));
+                }
+            }
+        }
+
+        private void link(Field field, final GlobalConfig old) throws IllegalAccessException {
+            GlobalConfig xmlConfig = configs.get(old.getIdentity())
+            DebugUtils.Assert(xmlConfig != null,
+                    String.format("unable to find GlobalConfig[category:%s, name:%s] for linking to %s.%s",
+                            old.getCategory(), old.getName(), field.getDeclaringClass().getName(), field.getName()))
+            final GlobalConfig config = old.copy(xmlConfig)
+            field.set(null, config)
+            configs.put(old.getIdentity(), config)
+
+            final GlobalConfigValidation at = field.getAnnotation(GlobalConfigValidation.class)
+            if (at != null) {
+                config.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+                    @Override
+                    public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
+                        if (at.notNull() && value == null) {
+                            throw new GlobalConfigException(String.format("%s cannot be null", config.getCanonicalName()))
+                        }
+                    }
+                });
+
+                config.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+                    @Override
+                    public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
+                        if (at.notEmpty() && newValue.trim() == "") {
+                            throw new GlobalConfigException(String.format("%s cannot be empty string", config.getCanonicalName()))
+                        }
+                    }
+                });
+
+                if (at.inNumberRange().length > 0
+                        || at.numberGreaterThan() != Long.MIN_VALUE
+                        || at.numberLessThan() != Long.MAX_VALUE) {
+                    if (config.getType() != null && TypeUtils.isTypeOf(config.getType(), Long.class, Integer.class)) {
+                        throw new CloudRuntimeException(String.format("%s has @GlobalConfigValidation " +
+                                "defined on field[%s.%s] which indicates its numeric type, " +
+                                "but its type is neither Long nor Integer, it's %s",
+                                config.getCanonicalName(), field.getDeclaringClass(), field.getName(), config.getType()))
+                    }
+                    if (config.getType() == null) {
+                        logger.warn(String.format("%s has @GlobalConfigValidation " +
+                                "defined on field[%s.%s] which indicates it's numeric type, " +
+                                "but its is null, assume it's Long type",
+                                config.getCanonicalName(), field.getDeclaringClass(), field.getName()))
+                        config.setType(Long.class.getName())
+                    }
+                }
+
+                if (at.numberLessThan() != Long.MAX_VALUE) {
+                    config.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+                        @Override
+                        public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
+                            try {
+                                long num = Long.parseLong(value)
+                                if (num > at.numberLessThan()) {
+                                    throw new GlobalConfigException(
+                                            String.format("%s should not greater than %s, but got %s",
+                                                    config.getCanonicalName(), at.numberLessThan(), num))
+                                }
+                            } catch (NumberFormatException e) {
+                                throw new GlobalConfigException(
+                                        String.format("%s is not a number or out of range of a Long type", value), e)
+                            }
+                        }
+                    })
+                }
+
+                if (at.numberGreaterThan() != Long.MIN_VALUE) {
+                    config.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+                        @Override
+                        public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
+                            try {
+                                long num = Long.parseLong(value)
+                                if (num < at.numberGreaterThan()) {
+                                    throw new GlobalConfigException(
+                                            String.format("%s should not less than %s, but got %s",
+                                                    config.getCanonicalName(), at.numberGreaterThan(), num))
+                                }
+                            } catch (NumberFormatException e) {
+                                throw new GlobalConfigException(
+                                        String.format("%s is not a number or out of range of a Long type", value), e)
+                            }
+                        }
+                    })
+                }
+
+                if (at.inNumberRange().length > 0) {
+                    DebugUtils.Assert(at.inNumberRange().length == 2,
+                            String.format("@GlobalConfigValidation.inNumberRange " +
+                                    "defined on field[%s.%s] must have two elements, " +
+                                    "where the first one is lower bound and the second one is upper bound",
+                                    field.getDeclaringClass(), field.getName()))
+
+                    config.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+                        @Override
+                        public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
+                            try {
+                                long num = Long.parseLong(value)
+                                long lowBound = at.inNumberRange()[0]
+                                long upBound = at.inNumberRange()[1]
+                                if (!(num >= lowBound && num <= upBound)) {
+                                    throw new GlobalConfigException(String.format("%s must in range of [%s, %s]",
+                                            config.getCanonicalName(), lowBound, upBound))
+                                }
+                            } catch (NumberFormatException e) {
+                                throw new GlobalConfigException(
+                                        String.format("%s is not a number or out of range of a Long type", value), e)
+                            }
+                        }
+                    })
+                }
+
+                if (at.validValues().length > 0) {
+                    final List<String> validValues = new ArrayList<String>()
+                    Collections.addAll(validValues, at.validValues())
+                    config.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+                        @Override
+                        public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
+                            if (!validValues.contains(newValue)) {
+                                throw new GlobalConfigException(
+                                        String.format("%s is not a valid value. Valid values are %s", newValue, validValues));
+                            }
+                        }
+                    })
+                }
+            }
+
+            config.setConfigDef(field.getAnnotation(GlobalConfigDef.class));
+            config.setLinked(true)
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("linked GlobalConfig[category:%s, name:%s, value:%s] to %s.%s",
+                        config.getCategory(), config.getName(), config.getDefaultValue(),
+                        field.getDeclaringClass().getName(), field.getName()))
+            }
+        }
+    }
+
 
     String rootPath
 
@@ -243,6 +637,207 @@ class RestDocumentationGenerator implements DocumentGenerator {
             def f = k as File
             def t = v as ElaborationMarkDown
             f.append(t.table.join("\n"))
+        }
+    }
+
+    @Override
+    void generateGlobalConfigMarkDown(String resultDir, DocMode mode) {
+        Map<String, GlobalConfig> configMap = initializer.configs
+        configMap.each {
+            def newPath = PathUtil.join(resultDir, it.value.category, it.value.name) + DEPRECATED + ".md"
+            if (new File(newPath).exists()) {
+                return
+            }
+            def path = PathUtil.join(resultDir, it.value.category, it.value.name) + ".md"
+            File f = new File(path)
+            List<String> names = new ArrayList<>()
+            initializer.bindResources.get(it.value.getIdentity()).each { names.add(it.getName()) }
+            GlobalConfigMarkDown configMd = new GlobalConfigMarkDown(it.value, names,
+                    initializer.validatorMap.get(it.value.getIdentity()))
+            if (mode == DocMode.CREATE_MISSING) {
+                if (f.exists()) {
+                    logger.info("${path} exists, skip it")
+                    return
+                }
+                logger.info("generating global config markdown for config[${it.key}]")
+                if (!f.parentFile.exists()) {
+                    f.parentFile.mkdirs()
+                }
+                f.write(configMd.generate())
+                logger.info("written a global config markdown ${path}")
+            } else {
+                GlobalConfigMarkDown g = configMd
+                if (!f.exists()) {
+                    logger.info("${path} does not exist, create it")
+                } else {
+                    logger.info("start repair a global config markdown ${path}")
+                    g = getExistGlobalConfigMarkDown(path)
+                    g.merge(configMd)
+                    logger.info("re-written a global config markdown ${path}")
+                }
+                f.write(g.generate())
+            }
+        }
+    }
+
+    GlobalConfigMarkDown getExistGlobalConfigMarkDown(String path) {
+        def file = new File(path)
+        if (!file.exists()) {
+            throw new CloudRuntimeException("${path} does not exist, please create it first.")
+        }
+        String process = new Markdown4jProcessor().process(file)
+        Document document = Jsoup.parse(process)
+        GlobalConfigMarkDown globalConfigMarkDown = new GlobalConfigMarkDown()
+        Elements allElements = document.getAllElements()
+        allElements.forEach({ titleElement ->
+            Element contentElement = titleElement.nextElementSibling()
+            if (titleElement.childNodeSize() == 0) {
+                return
+            }
+            String title = titleElement.childNode(0).toString()
+            if (contentElement == null || contentElement.childNodeSize() == 0) {
+                return
+            }
+            if (contentElement != null) {
+                if ("支持的资源级配置" == title && contentElement.childNodeSize() > 1) {
+                    String s = contentElement.text()//example: || |—| |org.zstack.header.cluster.ClusterVO
+                    String[] split = s.split(" \\|")
+                    List<String> list = new ArrayList<>(Arrays.asList(split))
+                    list.remove(0)
+                    list.remove(0)
+                    globalConfigMarkDown.globalConfig.resources = list
+                }
+                String text = ""
+                if (contentElement.childNode(0).childNodeSize() != 0) {
+                    Node childNode = contentElement.childNode(0).childNode(0)
+                    text = childNode.toString().substring(0, childNode.toString().length() - 1).trim()
+                }
+                if ("h2" == titleElement.tagName()) {
+                    if ("Name" == title) {
+                        String name = text.toString()
+                        String[] split = name.split("\\(")
+                        globalConfigMarkDown.globalConfig.name = split[0]
+                        globalConfigMarkDown.name_CN = split[1].substring(0, split[1].length() - 1)
+                    }
+                    if ("注意事项" == title) {
+                        globalConfigMarkDown.additionalRemark = text
+                    }
+                }
+                if ("h3" == titleElement.tagName()) {
+                    if ("Description" == title) {
+                        globalConfigMarkDown.globalConfig.description = text
+                    }
+                    if ("含义" == title) {
+                        globalConfigMarkDown.desc_CN = text
+                    }
+                    if ("Type" == title) {
+                        globalConfigMarkDown.globalConfig.type = text
+                    }
+                    if ("Category" == title) {
+                        globalConfigMarkDown.globalConfig.category = text
+                    }
+                    if ("取值范围" == title) {
+                        globalConfigMarkDown.globalConfig.valueRange = text == "" ? null : text
+                    }
+                    if ("DefaultValue" == title) {
+                        globalConfigMarkDown.globalConfig.defaultValue = text
+                    }
+                    if ("默认值补充说明" == title) {
+                        globalConfigMarkDown.defaultValueRemark = text
+                    }
+                    if ("取值范围补充说明" == title) {
+                        globalConfigMarkDown.valueRangeRemark = text
+                    }
+                    if ("资源粒度说明" == title) {
+                        globalConfigMarkDown.resourcesGranularitiesRemark = text
+                    }
+                    if ("背景信息" == title) {
+                        globalConfigMarkDown.backgroundInformation = text
+                    }
+                    if ("UI暴露" == title) {
+                        globalConfigMarkDown.isUIExposed = text
+                    }
+                    if ("CLI手册暴露" == title) {
+                        globalConfigMarkDown.isCLIExposed = text
+                    }
+                }
+            }
+        })
+        return globalConfigMarkDown
+    }
+
+    Boolean isConsistent(GlobalConfigMarkDown md, GlobalConfig globalConfig) {
+        if (md == null || globalConfig == null) {
+            return false
+        }
+        String mdPath =
+                PathUtil.join(PathUtil.join(Paths.get("../doc").toAbsolutePath().normalize().toString(),
+                        "globalconfig"), md.globalConfig.category, md.globalConfig.name) + ".md"
+        List<String> classes = new ArrayList<>()
+        initializer.bindResources.get(globalConfig.getIdentity()).each { classes.add(it.getName()) }
+        List<String> newClasses = classes.sort()
+        String validatorString = initializer.validatorMap.get(globalConfig.getIdentity())
+        Boolean flag = true
+        if (md.globalConfig.name != globalConfig.name) {
+            logger.info("name of ${mdPath} is not latest")
+            flag = false
+        }
+        if (md.globalConfig.defaultValue != globalConfig.defaultValue) {
+            logger.info("defaultValue of ${mdPath} is not latest")
+            flag = false
+        }
+        if (StringUtils.trimToEmpty(md.globalConfig.description) != StringUtils.trimToEmpty(globalConfig.description)) {
+            logger.info("desc of ${mdPath} is not latest")
+                flag = false
+        }
+        if (md.globalConfig.type != globalConfig.type) {
+            if (globalConfig.type != null) {
+                logger.info("type of ${mdPath} is not latest")
+                flag = false
+            }
+        }
+        if (md.globalConfig.category != globalConfig.category) {
+            logger.info("category of ${mdPath} is not latest")
+            flag = false
+        }
+            List<String> oldClasses = md.globalConfig.resources.sort()
+            if (oldClasses != newClasses) {
+                logger.info("classes of ${mdPath} is not latest")
+                flag = false
+            }
+
+        if (md.globalConfig.valueRange != (validatorString)) {
+            boolean useBooleanValidator = (globalConfig.type == "java.lang.Boolean"
+                    && md.globalConfig.valueRange == "{true, false}")
+            if (validatorString != null || !useBooleanValidator) {
+                logger.info("valueRange of ${mdPath} is not latest")
+                flag = false
+            }
+        }
+        return flag
+    }
+
+    void checkMD(String mdPath, GlobalConfig globalConfig) {
+        String result = ShellUtils.runAndReturn(
+                "grep '${PLACEHOLDER}' ${mdPath}").stdout.replaceAll("\n", "")
+        if (!result.empty) {
+            throw new CloudRuntimeException("Placeholders are detected in ${mdPath}, please replace them by content.")
+        }
+        GlobalConfigMarkDown markDown = getExistGlobalConfigMarkDown(mdPath)
+        if (markDown.desc_CN.isEmpty()
+                || markDown.name_CN.isEmpty()
+                || markDown.valueRangeRemark.isEmpty()
+                || markDown.defaultValueRemark.isEmpty()
+                || markDown.resourcesGranularitiesRemark.isEmpty()
+                || markDown.additionalRemark.isEmpty()
+                || markDown.backgroundInformation.isEmpty()
+                || markDown.isUIExposed.isEmpty()
+                || markDown.isCLIExposed.isEmpty()
+        ) {
+            throw new CloudRuntimeException("The necessary information of ${mdPath} is missing, please complete the information before submission.")
+        }
+        if (!isConsistent(markDown, globalConfig)) {
+            throw new CloudRuntimeException("${mdPath} is not match with its definition, please use Repair mode to correct it.")
         }
     }
 
@@ -1850,6 +2445,169 @@ ${paramString}
         }
     }
 
+    class Config {
+        String name = ""
+        String description = ""
+        String type = ""
+        String category = ""
+        String valueRange = ""
+        String defaultValue = ""
+        List<String> resources = new ArrayList<>()
+    }
+
+    class GlobalConfigMarkDown {
+        Config globalConfig
+        String name_CN = PLACEHOLDER + "中文名-必填##"
+        String desc_CN = PLACEHOLDER + "该条目的作用是什么-必填##"
+        String defaultValueRemark = PLACEHOLDER + "对默认值的解读-如无需写：无##"
+        String additionalRemark = PLACEHOLDER + "该条目有哪些注意事项-如无需写：无##"
+        String resourcesGranularitiesRemark = PLACEHOLDER + "该条目支持的资源粒度-如无需写：无##"
+        String backgroundInformation = PLACEHOLDER + "触发该条目增删改的背景-如无需写：无##"
+        String isUIExposed = PLACEHOLDER + "该条目是否需UI暴露？-必填##"
+        String isCLIExposed = PLACEHOLDER + "该条目是否需CLI手册暴露？-必填##"
+        String valueRangeRemark = PLACEHOLDER + "对取值范围的解读-如无需写：无##"
+
+        GlobalConfigMarkDown(GlobalConfig config, List<String> classes, String validatorString) {
+            translate(config)
+            if (validatorString == null) {
+                if (config.type == "java.lang.Boolean") {
+                    validatorString = "{true, false}"
+                } else {
+                    validatorString = ""
+                }
+            }
+            globalConfig.valueRange = validatorString
+            globalConfig.resources = classes
+        }
+
+        GlobalConfigMarkDown() {
+            globalConfig = new Config()
+        }
+
+        void translate(GlobalConfig gc) {
+            globalConfig = new Config()
+            globalConfig.name = gc.name
+            globalConfig.description = gc.description
+            globalConfig.description = gc.description == null ? "" : gc.description
+            globalConfig.category = gc.category
+            globalConfig.type = gc.type == null ? "java.lang.String" : gc.type
+            globalConfig.defaultValue = gc.defaultValue == null ? "" : gc.defaultValue
+        }
+
+        void merge(GlobalConfigMarkDown newMd) {
+            if (globalConfig.name != newMd.globalConfig.name) {
+                name_CN = PLACEHOLDER + name_CN
+            }
+            if (globalConfig.valueRange != newMd.globalConfig.valueRange) {
+                if (globalConfig.valueRange != null || !newMd.globalConfig.valueRange.isEmpty()) {
+                    valueRangeRemark = PLACEHOLDER + valueRangeRemark
+                }
+            }
+            if (globalConfig.defaultValue != newMd.globalConfig.defaultValue) {
+                defaultValueRemark = PLACEHOLDER + defaultValueRemark
+            }
+            globalConfig = newMd.globalConfig
+        }
+
+        String generate() {
+            String text = ""
+            if (!globalConfig.resources.isEmpty()) {
+                text = """||
+|---|
+|${globalConfig.resources.join("\n|")}"""
+            }
+            return """
+## Name
+
+```
+${globalConfig.name}(${name_CN})
+```
+
+### Description
+
+```
+${globalConfig.description}
+```
+
+### 含义
+
+```
+${desc_CN}
+```
+
+### Type
+
+```
+${globalConfig.type}
+```
+
+### Category
+
+```
+${globalConfig.category}
+```
+
+### 取值范围
+
+```
+${globalConfig.valueRange}
+```
+
+### 取值范围补充说明
+
+```
+${valueRangeRemark}
+```
+
+### DefaultValue
+
+```
+${globalConfig.defaultValue}
+```
+
+### 默认值补充说明
+
+```
+${defaultValueRemark}
+```
+
+### 支持的资源级配置
+
+${text}
+
+### 资源粒度说明
+
+```
+${resourcesGranularitiesRemark}
+```
+
+### 背景信息
+
+```
+${backgroundInformation}
+```
+
+### UI暴露
+
+```
+${isUIExposed}
+```
+
+### CLI手册暴露
+
+```
+${isCLIExposed}
+```
+
+## 注意事项
+
+```
+${additionalRemark}
+```
+"""
+        }
+    }
+
     List<Field> getApiFieldsOfClass(Class apiClass) {
         def apiFields = []
 
@@ -1983,5 +2741,25 @@ ${paramString}
 
     boolean ignoreError() {
         return System.getProperty("ignoreError") != null
+    }
+
+    void testGlobalConfigTemplateAndMarkDown() {
+        Map<String, GlobalConfig> allConfigs = initializer.configs
+        allConfigs.each {
+            String newPath =
+                    PathUtil.join(PathUtil.join(Paths.get("../doc").toAbsolutePath().normalize().toString(),
+                            "globalconfig"), it.value.category, it.value.name) + DEPRECATED + ".md"
+            if (new File(newPath).exists()) {
+                return
+            }
+            String mdPath =
+                    PathUtil.join(PathUtil.join(Paths.get("../doc").toAbsolutePath().normalize().toString(),
+                            "globalconfig"), it.value.category, it.value.name) + ".md"
+            File mdFile = new File(mdPath)
+            if (!mdFile.exists()) {
+                throw new CloudRuntimeException("Not found the document markdown of the global config ${it.value.name} , please generate it first.")
+            }
+            checkMD(mdPath, it.value)
+        }
     }
 }

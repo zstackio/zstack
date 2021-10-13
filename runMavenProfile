@@ -224,6 +224,12 @@ sdk() {
     set +u
 }
 
+globalconfigdocmd(){
+    cd premium/test-premium
+    $MVNTest -Dtest=TestGenerateGlobalConfigMarkDown
+    cd - > /dev/null
+}
+
 run_profile() {
     if test x$1 = x'premium'; then
         mvn -Dmaven.test.skip=true -P premium clean install
@@ -267,6 +273,8 @@ run_profile() {
         errorcode
     elif test x$1 = x'ts'; then
         ts
+    elif test x$1 = x'globalconfigdocmd'; then
+        globalconfigdocmd
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi
