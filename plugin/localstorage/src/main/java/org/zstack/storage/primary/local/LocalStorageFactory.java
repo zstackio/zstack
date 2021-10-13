@@ -887,6 +887,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     }
 
+    @Transactional(readOnly = true)
     private ErrorCode checkVmMigrationCapability(VmInstanceInventory vm) {
         // if not local storage, return
         String sql = "select count(ps)" +
@@ -922,13 +923,15 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    @Transactional(readOnly = true, noRollbackForClassName = {"org.zstack.header.errorcode.OperationFailureException"})
-    public void preVmMigration(VmInstanceInventory vm) {
+    public void preVmMigration(VmInstanceInventory vm, Completion completion) {
         ErrorCode err = checkVmMigrationCapability(vm);
 
         if (err != null) {
-            throw new OperationFailureException(err);
+            completion.fail(err);
+            return;
         }
+
+        completion.success();
     }
 
     @Override
