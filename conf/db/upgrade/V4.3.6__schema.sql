@@ -54,5 +54,5 @@ DELIMITER ;
 CALL Alter_Ceph_Table();
 DROP PROCEDURE Alter_Ceph_Table;
 
-
-
+UPDATE `zstack`.`BareMetal2ChassisVO` SET status = "IPxeBootFailed" WHERE status = "iPxeBootFailed";
+UPDATE `zstack`.`BareMetal2ChassisVO` SET status = "IPxeBooting" WHERE status = "iPxeBooting";
