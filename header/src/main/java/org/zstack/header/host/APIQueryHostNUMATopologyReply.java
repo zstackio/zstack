@@ -7,15 +7,33 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.*;
 
-@RestResponse(allTo = "inventories")
+@RestResponse(fieldsTo = {"name", "uuid", "topology"})
 public class APIQueryHostNUMATopologyReply extends MessageReply {
-    private HostNumaInventory inventories;
+    private String name;
+    private String uuid;
+    private Map<String, Map<String, Object>> topology;
 
-    public void setInventories(HostNumaInventory inventories) {
-        this.inventories = inventories;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public HostNumaInventory getInventories() {
-        return inventories;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void setTopology(Map<String, Map<String, Object>> topology) {
+        this.topology = topology;
+    }
+
+    public Map<String, Map<String, Object>> getTopology() {
+        return topology;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getUuid() {
+        return uuid;
     }
 }

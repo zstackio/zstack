@@ -139,8 +139,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
         HostVO host = dbf.findByUuid(msg.getUuid(), HostVO.class);
 
-        HostNumaInventory hn = new HostNumaInventory();
-
         List<String> hosts = Arrays.asList(msg.getUuid());
 
         GetHostNumaTopologyMsg kmsg = new GetHostNumaTopologyMsg();
@@ -162,11 +160,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                             } else {
                                 //TODO: deal numa info
                                 GetHostNumaTopologyReply rpy = (GetHostNumaTopologyReply) kreply;
-                                hn.setTopology(dealNumaTopologyWithVms(msg, rpy.getNuma()));
-                                hn.setUuid(msg.getUuid());
-                                hn.setName(host.getName());
-
-                                reply.setInventories(hn);
+                                reply.setTopology(dealNumaTopologyWithVms(msg, rpy.getNuma()));
+                                reply.setUuid(msg.getUuid());
+                                reply.setName(host.getName());
                             }
                             completion.done();
                         }
