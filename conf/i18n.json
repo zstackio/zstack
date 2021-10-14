@@ -22240,17 +22240,18 @@
     "fileName": "src/main/java/org/zstack/vmware/VCenterHostAllocatorFilterExtensionPoint.java"
   },
   {
-    "raw": "Duplicated mac address[%s] on VM[uuid: %s, name: %s] and VM[uuid: %s, name: %s]",
-    "en_US": "Duplicated mac address[{0}] on VM[uuid: {1}, name: {2}] and VM[uuid: {3}, name: {4}]",
-    "zh_CN": "云主机[uuid：{1}，名称：{2}]和云主机 [uuid：{3}，名称：{4}]中存在重复的mac地址[{0}]",
+    "raw": "Duplicated mac address[%s] on VM[uuid: %s, name: %s] and VM[uuid: %s, name: %s], and current mac address conflicting strategy is: %s.",
+    "en_US": "Duplicated mac address[{0}] on VM[uuid: {1}, name: {2}] and VM[uuid: {3}, name: {4}], and current mac address conflicting strategy is: {5}.",
+    "zh_CN": "云主机[uuid：{1}，名称：{2}]和云主机 [uuid：{3}，名称：{4}]中存在重复的mac地址[{0}]，当前的 MAC 地址冲突策略是：{5}。",
     "arguments": [
-      "nicvo.getMac()",
-      "vm1.getUuid()",
-      "vm1.getName()",
-      "vm2.getUuid()",
-      "vm2.getName()"
+      "nNic.getMac()",
+      "nVm.getUuid()",
+      "nVm.getName()",
+      "eVM.getUuid()",
+      "eVM.getName()",
+      "VCENTER_MAC_CONFLICT_STRATEGY_STRICT"
     ],
-    "line": 938,
+    "line": 1031,
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
