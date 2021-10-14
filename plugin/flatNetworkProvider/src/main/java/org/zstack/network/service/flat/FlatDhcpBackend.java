@@ -28,6 +28,8 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -38,10 +40,7 @@ import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperati
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
-import org.zstack.network.service.DhcpExtension;
-import org.zstack.network.service.NetworkProviderFinder;
-import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.NetworkServiceProviderLookup;
+import org.zstack.network.service.*;
 import org.zstack.network.service.flat.IpStatisticConstants.VmType;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.tag.SystemTagCreator;
@@ -1497,6 +1496,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     private void applyDhcpToHosts(List<DhcpInfo> dhcpInfo, final String hostUuid, final boolean rebuild, final Completion completion) {
+        if (new FlatNetworkServiceValidator().validate(hostUuid)) {
+            completion.success();
+            return;
+        }
+
         final Map<String, List<DhcpInfo>> l3DhcpMap = new HashMap<>();
         for (DhcpInfo d : dhcpInfo) {
             // TODO: vDPA do not support flat dhcp service yet;
@@ -1538,6 +1542,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     private void releaseDhcpService(List<DhcpInfo> info, final String vmUuid, final String hostUuid, final NoErrorCompletion completion) {
+        if (new FlatNetworkServiceValidator().validate(hostUuid)) {
+            completion.done();
+            return;
+        }
+
         final ReleaseDhcpCmd cmd = new ReleaseDhcpCmd();
         cmd.dhcp = info;
 
