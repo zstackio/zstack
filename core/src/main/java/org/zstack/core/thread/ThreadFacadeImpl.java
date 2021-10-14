@@ -367,11 +367,19 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         long completedTask = _pool.getCompletedTaskCount();
         long pendingTask = _pool.getTaskCount() - completedTask;
 
+        long completedSyncTask = _syncpool.getCompletedTaskCount();
+        long pendingSyncTask = _syncpool.getTaskCount() - completedSyncTask;
+
         StringBuilder builder = new StringBuilder();
         builder.append("check thread poolSize and tasks: ");
         builder.append(String.format("poolSize: %s, activeSize: %s, corePoolSize: %s, maximumPoolSize: %s, " +
                 "completedTasks: %s, pendingTasks: %s, queueTasks: %s", _pool.getPoolSize(), _pool.getActiveCount(),
                 _pool.getCorePoolSize(), _pool.getMaximumPoolSize(), completedTask, pendingTask, _pool.getQueue().size()));
+        builder.append("check sync thread poolSize and tasks: ");
+        builder.append(String.format("syncPoolSize: %s, activeSize: %s, coreSyncPoolSize: %s, maximumSyncPoolSize: %s, " +
+                        "completedSyncTask: %s, pendingSyncTask: %s, queueSyncTasks: %s", _syncpool.getPoolSize(), _syncpool.getActiveCount(),
+                _syncpool.getCorePoolSize(), _syncpool.getMaximumPoolSize(), completedSyncTask, pendingSyncTask,
+                _syncpool.getQueue().size()));
 
         _logger.debug(builder.toString());
     }

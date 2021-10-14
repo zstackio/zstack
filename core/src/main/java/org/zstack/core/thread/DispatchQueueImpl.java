@@ -1,6 +1,7 @@
 package org.zstack.core.thread;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -71,6 +72,47 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         }
 
         sb.append(StringUtils.join(asyncTasks, "\n"));
+
+        sb.append("\nSYNC TASK QUEUE DUMP:");
+        sb.append(String.format("\nTASK QUEUE NUMBER: %s\n", syncTasks.size()));
+        List<String> queueSyncTasks = new ArrayList<>();
+        synchronized (syncTasks) {
+            for (Map.Entry<String, SyncTaskQueueWrapper> e : syncTasks.entrySet()) {
+                StringBuilder tb = new StringBuilder(String.format("\nQUEUE SYNC SIGNATURE: %s", e.getKey()));
+                SyncTaskQueueWrapper w = e.getValue();
+                tb.append(String.format("\nRUNNING SYNC TASK NUMBER: %s", w.counter));
+                tb.append(String.format("\nPENDING TASK NUMBER: %s", w.queue.size()));
+                tb.append(String.format("\nSYNC LEVEL: %s", w.maxThreadNum));
+                tb.append(String.format("\nPENDING TASK[NAME: %s, TASK QUEUE SIZE: %d, MAX THREAD: %d] ",
+                        w.syncSignature, w.queue.size(), w.maxThreadNum));
+                for (Object obj : w.queue) {
+                    SyncTask task = ((SyncTaskFuture) obj).getTask();
+
+                    if (task.getThreadContext() == null) {
+                        break;
+                    }
+
+                    String taskId = null;
+                    if (task.getThreadContext().containsKey(Constants.THREAD_CONTEXT_API)) {
+                        taskId = task.getThreadContext().get(Constants.THREAD_CONTEXT_API);
+                    }
+
+                    if (task.getThreadContext().containsKey(Constants.THREAD_CONTEXT_TASK)) {
+                        taskId = task.getThreadContext().get(Constants.THREAD_CONTEXT_TASK);
+                    }
+
+                    if (taskId == null) {
+                        break;
+                    }
+
+                    tb.append(String.format("\nPENDING TASK[NAME: %s, TASK ID: %s] ",
+                            task.getName(), taskId));
+                }
+                queueSyncTasks.add(tb.toString());
+            }
+        }
+
+        sb.append(StringUtils.join(queueSyncTasks, "\n"));
         sb.append("\n================= END TASK QUEUE DUMP ==================\n");
         _threadFacade.printThreadsAndTasks();
         logger.debug(sb.toString());
