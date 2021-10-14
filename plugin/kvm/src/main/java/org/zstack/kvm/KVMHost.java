@@ -18,6 +18,7 @@ import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.agent.AgentConstant;
 import org.zstack.core.ansible.*;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -167,6 +168,7 @@ public class KVMHost extends HostBase implements Host {
     private String configSecondaryVmPath;
     private String startColoSyncPath;
     private String registerPrimaryVmHeartbeatPath;
+    private String getHostNumaPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
@@ -344,6 +346,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_REGISTER_PRIMARY_VM_HEARTBEAT);
         registerPrimaryVmHeartbeatPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_NUMA_PATH);
+        getHostNumaPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -536,9 +542,48 @@ public class KVMHost extends HostBase implements Host {
             handle((StartColoSyncMsg) msg);
         } else if (msg instanceof RegisterColoPrimaryCheckMsg) {
             handle((RegisterColoPrimaryCheckMsg) msg);
+        } else if (msg instanceof GetHostNumaTopologyMsg) {
+            handle((GetHostNumaTopologyMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(GetHostNumaTopologyMsg msg) {
+        GetHostNumaTopologyReply reply = new GetHostNumaTopologyReply();
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+
+        GetHostNUMATopologyCmd cmd = new GetHostNUMATopologyCmd();
+        cmd.setHostUuid(msg.getUuid());
+
+        chain.setName(String.format("get-kvm-host-numa-%s", self.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                logger.debug("build cmd prepare to send!");
+                new Http<>(getHostNumaPath, cmd, GetHostNUMATopologyResponse.class).call(new ReturnValueCompletion<GetHostNUMATopologyResponse>(msg) {
+                    @Override
+                    public void success(GetHostNUMATopologyResponse ret) {
+                        if (!ret.isSuccess()) {
+                            trigger.fail(operr("%s", ret.getError()));
+                        } else {
+                            logger.debug("get cmd reply to reply!");
+
+                            reply.setNuma(ret.getTopology());
+                            bus.reply(msg, reply);
+                            trigger.next();
+                        }
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     private void handle(CheckHostCapacityMsg msg) {

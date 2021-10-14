@@ -1,6 +1,8 @@
 package org.zstack.header.vm;
 
 
+import org.zstack.header.message.APIReply;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 
@@ -10,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestResponse
-public class APIGetVmvNUMATopologyReply extends APIQueryReply {
+public class APIGetVmvNUMATopologyReply extends MessageReply {
     private String name;
     private String uuid;
     private String hostUuid;

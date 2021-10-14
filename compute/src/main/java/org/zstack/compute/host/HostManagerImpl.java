@@ -37,6 +37,8 @@ import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vo.FindSameNodeExtensionPoint;
 import org.zstack.header.vo.ResourceInventory;
 import org.zstack.header.zone.ZoneVO;
@@ -124,25 +126,80 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
     private void handle(APIGetHostResourceAllocationMsg msg) {
         APIGetHostResourceAllocationReply reply = new APIGetHostResourceAllocationReply();
-        String hostUuid = msg.getUuid();
 
 
 
-        reply.setUuid(hostUuid);
+
+        reply.setUuid(msg.getUuid());
         bus.reply(msg, reply);
-
     }
 
     private void handle(APIQueryHostNUMATopologyMsg msg) {
         APIQueryHostNUMATopologyReply reply = new APIQueryHostNUMATopologyReply();
-        String hostUuid = msg.getUuid();
 
+        HostVO host = dbf.findByUuid(msg.getUuid(), HostVO.class);
 
+        HostNumaInventory hn = new HostNumaInventory();
 
-        reply.setUuid(hostUuid);
-        bus.reply(msg, reply);
+        List<String> hosts = Arrays.asList(msg.getUuid());
 
+        GetHostNumaTopologyMsg kmsg = new GetHostNumaTopologyMsg();
+        kmsg.setUuid(msg.getUuid());
+        kmsg.setHostUuid(msg.getUuid());
 
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("get-numa-on-host-%s", msg.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(hosts).each((h, completion) -> {
+                    bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, kmsg.getHostUuid());
+                    bus.send(kmsg, new CloudBusCallBack(completion) {
+                        @Override
+                        public void run(MessageReply kreply) {
+                            if (!kreply.isSuccess()) {
+                                reply.setError(kreply.getError());
+                            } else {
+                                //TODO: deal numa info
+                                GetHostNumaTopologyReply rpy = (GetHostNumaTopologyReply) kreply;
+                                hn.setTopology(dealNumaTopologyWithVms(msg, rpy.getNuma()));
+                                hn.setUuid(msg.getUuid());
+                                hn.setName(host.getName());
+
+                                reply.setInventories(hn);
+                            }
+                            completion.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (errorCodeList.getCauses().isEmpty()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(errorCodeList.getCauses().get(0));
+                            reply.setError(errorCodeList.getCauses().get(0));
+                            bus.reply(msg, reply);
+                        }
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private Map<String, Map<String, Object>> dealNumaTopologyWithVms(APIQueryHostNUMATopologyMsg msg, Map<String, Map<String, Object>> nodes) {
+        if (msg.getTopology() != null && msg.getTopology().equals("true")) {
+            SimpleQuery<VmInstanceVO> vmQuery = dbf.createQuery(VmInstanceVO.class);
+            vmQuery.select(VmInstanceVO_.uuid);
+            vmQuery.add(VmInstanceVO_.hostUuid, Op.EQ, msg.getUuid());
+            List<Tuple> tuples = vmQuery.listTuple();
+            for (Tuple vm: tuples) {
+                // TODO: analysis each vm vnuma node
+
+            }
+        }
+        return nodes;
     }
 
     private void handle(APIGetHypervisorTypesMsg msg) {

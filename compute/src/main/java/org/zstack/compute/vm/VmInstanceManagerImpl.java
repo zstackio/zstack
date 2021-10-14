@@ -248,6 +248,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void handle(APIGetVmvNUMATopologyMsg msg) {
         APIGetVmvNUMATopologyReply reply = new APIGetVmvNUMATopologyReply();
 
+        VmInstanceVO vm = dbf.findByUuid(msg.getUuid(), VmInstanceVO.class);
+        if (vm != null) {
+            reply.setName(vm.getName());
+            reply.setHostUuid(vm.getHostUuid());
+        }
+
+
+        reply.setUuid(msg.getUuid());
+        bus.reply(msg, reply);
     }
 
     private void handle(final APIGetVmsCapabilitiesMsg msg) {
