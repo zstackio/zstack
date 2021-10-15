@@ -357,6 +357,8 @@ public class SourceClassMap {
 			put("org.zstack.license.AdditionalLicenseType", "org.zstack.sdk.AdditionalLicenseType");
 			put("org.zstack.license.LicenseAddOnInventory", "org.zstack.sdk.LicenseAddOnInventory");
 			put("org.zstack.license.LicenseInventory", "org.zstack.sdk.LicenseInventory");
+			put("org.zstack.license.UKeyInventory", "org.zstack.sdk.UKeyInventory");
+			put("org.zstack.license.UKeyStatus", "org.zstack.sdk.UKeyStatus");
 			put("org.zstack.login.entity.LdapResourceRefInventory", "org.zstack.sdk.LdapResourceRefInventory");
 			put("org.zstack.loginControl.entity.AccessControlRuleInventory", "org.zstack.sdk.AccessControlRuleInventory");
 			put("org.zstack.loginControl.entity.ControlStrategy", "org.zstack.sdk.ControlStrategy");
@@ -1010,6 +1012,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TwoFactorAuthenticationInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretStatus", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus");
+			put("org.zstack.sdk.UKeyInventory", "org.zstack.license.UKeyInventory");
+			put("org.zstack.sdk.UKeyStatus", "org.zstack.license.UKeyStatus");
 			put("org.zstack.sdk.UsbDeviceInventory", "org.zstack.usbDevice.UsbDeviceInventory");
 			put("org.zstack.sdk.UsbDeviceState", "org.zstack.usbDevice.UsbDeviceState");
 			put("org.zstack.sdk.UsedIpInventory", "org.zstack.header.network.l3.UsedIpInventory");
