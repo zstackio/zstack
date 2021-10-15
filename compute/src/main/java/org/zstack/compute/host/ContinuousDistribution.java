@@ -74,6 +74,7 @@ public class ContinuousDistribution extends HostResourceAllocationStrategyBase {
                 pin.put("vCPU", vCPUID.toString());
                 pin.put("pCPU", pCPUID);
                 pins.add(pin);
+                vCPUID += 1;
             }
 
         }

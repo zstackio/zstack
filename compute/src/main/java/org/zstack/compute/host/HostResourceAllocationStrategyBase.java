@@ -44,7 +44,6 @@ public class HostResourceAllocationStrategyBase {
     }
 
     public List<Map<String, String>> allocate(int vCPU, Long memSize) {
-        List<Map<String, String>> pins = new ArrayList<>();
-        return pins;
+        return new ArrayList<>();
     }
 }
