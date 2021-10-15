@@ -1,8 +1,6 @@
 package org.zstack.header.host;
 
-import org.zstack.header.message.APIReply;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 
 import java.util.ArrayList;
@@ -11,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 
-@RestResponse
+@RestResponse(fieldsTo = {"name", "uuid", "vCPUPin"})
 public class APIGetHostResourceAllocationReply extends MessageReply {
     private String name;
     private String uuid;

@@ -10,8 +10,6 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 
-//@AutoQuery(replyClass = APIQueryHostNUMATopologyReply.class, inventoryClass = HostInventory.class)
-//@Action(category = HostConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/hosts/{uuid}/numa",
         responseClass = APIQueryHostNUMATopologyReply.class,

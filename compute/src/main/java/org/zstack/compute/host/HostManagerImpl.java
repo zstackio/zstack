@@ -127,12 +127,63 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handle(APIGetHostResourceAllocationMsg msg) {
         APIGetHostResourceAllocationReply reply = new APIGetHostResourceAllocationReply();
 
+        HostVO host = dbf.findByUuid(msg.getUuid(), HostVO.class);
 
+        GetHostNumaTopologyMsg kmsg = new GetHostNumaTopologyMsg();
+        kmsg.setUuid(msg.getUuid());
+        kmsg.setHostUuid(msg.getUuid());
 
-
-        reply.setUuid(msg.getUuid());
-        bus.reply(msg, reply);
+        new While<>(Arrays.asList(msg.getUuid())).each((h, completion) -> {
+            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, kmsg.getHostUuid());
+            bus.send(kmsg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply kreply) {
+                    if (!kreply.isSuccess()) {
+                        reply.setError(kreply.getError());
+                    } else {
+                        //TODO: deal with numa and allocate
+                        GetHostNumaTopologyReply rpy = (GetHostNumaTopologyReply) kreply;
+                        List<Map<String, String>> pins = allocateHostResource(msg.getStrategy(),
+                                msg.getScene(), msg.getVcpu(), 0L, rpy.getNuma());
+                        reply.setvCPUPin(pins);
+                        reply.setName(host.getName());
+                        reply.setUuid(msg.getUuid());
+                    }
+                    completion.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(kmsg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if(!errorCodeList.getCauses().isEmpty()) {
+                    logger.error(errorCodeList.getCauses().toString());
+                    reply.setError(errorCodeList.getCauses().get(0));
+                }
+                bus.reply(msg, reply);
+            }
+        });
     }
+
+    private List<Map<String, String>> allocateHostResource(String strategy,
+                                                           String scene,
+                                                           Integer vCPUNum,
+                                                           Long memSize,
+                                                           Map<String, Map<String, Object>> numa) {
+        HostResourceAllocationStrategyBase allocation = new HostResourceAllocationStrategyBase(numa);
+
+
+
+        if (scene.equals("normal")) {
+           memSize = 0L;
+        }
+        if (strategy.equals("continuous")) {
+            allocation = new ContinuousDistribution(numa);
+        }
+
+        return allocation.allocate(vCPUNum, memSize);
+
+    }
+
 
     private void handle(APIQueryHostNUMATopologyMsg msg) {
         APIQueryHostNUMATopologyReply reply = new APIQueryHostNUMATopologyReply();
