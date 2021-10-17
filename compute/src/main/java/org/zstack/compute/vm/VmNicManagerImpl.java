@@ -7,10 +7,13 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.header.Component;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.l3.UsedIpVO_;
+import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -23,7 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, PrepareDbInitialValueExtensionPoint, VmPlatformChangedExtensionPoint {
+public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, PrepareDbInitialValueExtensionPoint, VmPlatformChangedExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(VmNicManagerImpl.class);
 
     private List<String> supportNicDriverTypes;
@@ -160,15 +163,15 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
     @Override
     public void vmPlatformChange(VmInstanceInventory vm, String previousPlatform, String nowPlatform) {
         if (ImagePlatform.valueOf(nowPlatform).isParaVirtualization()) {
-            resetVmNicDriverType(vm, defaultPVNicDriver);
+            resetVmNicDriverType(vm.getUuid(), defaultPVNicDriver);
             return;
         }
 
-        resetVmNicDriverType(vm, defaultNicDriver);
+        resetVmNicDriverType(vm.getUuid(), defaultNicDriver);
     }
 
-    private void resetVmNicDriverType(VmInstanceInventory vm, String driverType) {
-        VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.getUuid()).find();
+    private void resetVmNicDriverType(String vmUuid, String driverType) {
+        VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).find();
         List<String> needUpdateNics = vo.getVmNics().stream()
                 .filter(nic -> nic.getDriverType() == null || !nic.getDriverType().equals(driverType))
                 .map(VmNicVO::getUuid)
@@ -206,5 +209,31 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
     @Override
     public String getDefaultNicDriver() {
         return defaultNicDriver;
+    }
+
+    @Override
+    public boolean start() {
+        VmSystemTags.VIRTIO.installLifeCycleListener(new SystemTagLifeCycleListener() {
+            @Override
+            public void tagCreated(SystemTagInventory tag) {
+                resetVmNicDriverType(tag.getResourceUuid(), defaultPVNicDriver);
+            }
+
+            @Override
+            public void tagDeleted(SystemTagInventory tag) {
+                resetVmNicDriverType(tag.getResourceUuid(), defaultNicDriver);
+            }
+
+            @Override
+            public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+
+            }
+        });
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
     }
 }
