@@ -407,8 +407,7 @@ public class VolumeBase implements Volume {
         chain.then(new ShareFlow() {
             String installPath;
             String format;
-            String allocateInstallUrl;
-
+            
             @Override
             public void setup() {
                 if (!msg.isPrimaryStorageAllocated()) {
@@ -416,6 +415,7 @@ public class VolumeBase implements Volume {
                         String __name__ = "allocate-primary-storage";
 
                         boolean success;
+                        String allocateInstallUrl;
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
@@ -451,7 +451,6 @@ public class VolumeBase implements Volume {
                                 bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                                 bus.send(imsg);
                             }
-
                             trigger.rollback();
                         }
                     });
