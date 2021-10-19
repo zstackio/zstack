@@ -1207,7 +1207,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         String psUuid;
                         long actualSize = image.getActualSize();
                         String allocatedInstallUrl;
-
+                        long allocatedSize;
                         @Override
                         public void setup() {
                             flow(new Flow() {
@@ -1232,6 +1232,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                                 s = true;
                                                 AllocatePrimaryStorageSpaceReply r = (AllocatePrimaryStorageSpaceReply) reply;
                                                 allocatedInstallUrl = r.getAllocatedInstallUrl();
+                                                allocatedSize = r.getSize();
                                                 psUuid = r.getPrimaryStorageInventory().getUuid();
                                                 trigger.next();
                                             } else {
@@ -1246,7 +1247,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     if (s) {
                                         ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
                                         imsg.setAllocatedInstallUrl(allocatedInstallUrl);
-                                        imsg.setDiskSize(image.getActualSize());
+                                        imsg.setDiskSize(allocatedSize);
                                         imsg.setNoOverProvisioning(true);
                                         imsg.setPrimaryStorageUuid(self.getUuid());
                                         bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);

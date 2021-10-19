@@ -226,7 +226,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
             return;
         }
 
-        List<IncreasePrimaryStorageCapacityMsg> msgs = CollectionUtils.transformToList(spec.getVolumeSpecs(), new Function<IncreasePrimaryStorageCapacityMsg, VolumeSpec>() {
+        List<ReleasePrimaryStorageSpaceMsg> msgs = CollectionUtils.transformToList(spec.getVolumeSpecs(), new Function<ReleasePrimaryStorageSpaceMsg, VolumeSpec>() {
             @Override
             public ReleasePrimaryStorageSpaceMsg call(VolumeSpec arg) {
                 if (arg.isVolumeCreated()) {

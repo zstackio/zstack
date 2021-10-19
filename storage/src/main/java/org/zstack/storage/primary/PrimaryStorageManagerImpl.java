@@ -465,16 +465,22 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         });
     }
 
+    private class reserveData {
+        String allocatedInstallUrl;
+        long allocatedSize;
+        boolean success;
+    }
+
     private void allocatePrimaryStoreSpace(AllocatePrimaryStorageSpaceMsg msg, NoErrorCompletion completion) {
         AllocatePrimaryStorageSpaceReply reply = new AllocatePrimaryStorageSpaceReply(null);
 
         if (msg.getRequiredInstallUri() != null && msg.isForce()) {
             PrimaryStorageVO psVO = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, msg.getRequiredPrimaryStorageUuid()).find();
             PrimaryStorageInventory psInv = PrimaryStorageInventory.valueOf(psVO);
-            String allocatedInstallUrl = reserveSpaceForceIsTrue(psInv, msg.getSize(), msg);
-            reply.setAllocatedInstallUrl(allocatedInstallUrl);
+            reserveData data = reserveSpaceForceIsTrue(psInv, msg.getSize(), msg);
+            reply.setAllocatedInstallUrl(data.allocatedInstallUrl);
             reply.setPrimaryStorageInventory(psInv);
-            reply.setSize(msg.getSize());
+            reply.setSize(data.allocatedSize);
             bus.reply(msg, reply);
             completion.done();
             return;
@@ -500,6 +506,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         Iterator<PrimaryStorageInventory> it = ret.iterator();
         List<String> errs = new ArrayList<>();
         PrimaryStorageInventory target = null;
+        reserveData data = new reserveData();
+
         while (it.hasNext()) {
             PrimaryStorageInventory psInv = it.next();
 
@@ -514,10 +522,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 requiredSize = ratioMgr.calculateByRatio(psInv.getUuid(), requiredSize);
             }
 
-            String allocatedInstallUrl;
-            if ((allocatedInstallUrl = reserveSpaceForceIsFail(psInv, requiredSize, msg)) != null) {
+            data = reserveSpaceForceIsFalse(psInv, requiredSize, msg);
+            if (data.success) {
                 target = psInv;
-                reply.setAllocatedInstallUrl(allocatedInstallUrl);
                 break;
             } else {
                 errs.add(String.format("unable to reserve capacity on the primary storage[uuid:%s], it has no space", psInv.getUuid()));
@@ -529,8 +536,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             throw new OperationFailureException(operr("cannot find any qualified primary storage, errors are %s", errs));
         }
 
+        reply.setAllocatedInstallUrl(data.allocatedInstallUrl);
         reply.setPrimaryStorageInventory(target);
-        reply.setSize(msg.getSize());
+        reply.setSize(data.allocatedSize);
         bus.reply(msg, reply);
         completion.done();
     }
@@ -581,15 +589,15 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         return spec;
     }
 
-    private String reserveSpaceForceIsFail(final PrimaryStorageInventory inv, final long size, AllocatePrimaryStorageSpaceMsg msg) {
-        final String[] installUrl = new String[1];
+    private reserveData reserveSpaceForceIsFalse(final PrimaryStorageInventory inv, final long size, AllocatePrimaryStorageSpaceMsg msg) {
+        reserveData data = new reserveData();
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(inv.getUuid());
-
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
                 long avail = cap.getAvailableCapacity() - size;
                 if (avail < 0 && !msg.isForce()) {
+                    data.success = false;
                     logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed," +
                             " no available capacity on it", inv.getUuid()));
                     return null;
@@ -597,6 +605,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
                 long origin = cap.getAvailableCapacity();
                 cap.setAvailableCapacity(avail);
+                data.allocatedSize = avail;
 
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s," +
@@ -604,23 +613,22 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 }
 
                 PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(), PSCapacityExtensionPoint.class);
-                installUrl[0] = inv.getUrl();
+                data.allocatedInstallUrl = inv.getUrl();
                 if (PSCapacityExt != null) {
-                    installUrl[0] = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
-                    PSCapacityExt.forceReserveCapacity(msg, installUrl[0], size, inv.getUuid());
+                    data.allocatedInstallUrl = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
+                    PSCapacityExt.forceReserveCapacity(msg, data.allocatedInstallUrl, size, inv.getUuid());
                 }
 
                 return cap;
             }
         });
-
-        return installUrl[0];
+        data.success = true;
+        return data;
     }
 
-    private String reserveSpaceForceIsTrue(final PrimaryStorageInventory inv, final long size, AllocatePrimaryStorageSpaceMsg msg) {
-        final String[] installUrl = new String[1];
+    private reserveData reserveSpaceForceIsTrue(final PrimaryStorageInventory inv, final long size, AllocatePrimaryStorageSpaceMsg msg) {
+        reserveData data = new reserveData();
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(inv.getUuid());
-
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
@@ -629,20 +637,22 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 long avail = 0;
 
                 PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(), PSCapacityExtensionPoint.class);
-                installUrl[0] = inv.getUrl();
+                data.allocatedInstallUrl = inv.getUrl();
                 if (PSCapacityExt != null) {
-                    installUrl[0] = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
-                    hostCapacityBeforeAllocated = PSCapacityExt.forceReserveCapacity(msg, PSCapacityExt.buildAllocatedInstallUrl(msg, inv), size, inv.getUuid());
+                    data.allocatedInstallUrl = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
+                    hostCapacityBeforeAllocated = PSCapacityExt.forceReserveCapacity(msg, data.allocatedInstallUrl, size, inv.getUuid());
                 }
                 long diff = hostCapacityBeforeAllocated - size;
 
+                avail = cap.getAvailableCapacity() - size;
+
                 if (diff < 0 && msg.isForce()) {
                     avail = cap.getAvailableCapacity() - hostCapacityBeforeAllocated;
-                } else if (diff > 0 && msg.isForce()) {
-                    avail = cap.getAvailableCapacity() - size;
                 }
 
                 cap.setAvailableCapacity(avail);
+
+                data.allocatedSize = avail;
 
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s," +
@@ -651,8 +661,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 return cap;
             }
         });
-
-        return installUrl[0];
+        data.success = true;
+        return data;
     }
 
     /**

@@ -180,7 +180,7 @@ public class VolumeBase implements Volume {
 
                     boolean success;
                     String allocatedInstallUrl;
-
+                    long allocatedSize;
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
@@ -197,6 +197,7 @@ public class VolumeBase implements Volume {
                                 } else {
                                     AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                                     allocatedInstallUrl = ar.getAllocatedInstallUrl();
+                                    allocatedSize = ar.getSize();
                                     success = true;
                                     trigger.next();
                                 }
@@ -209,7 +210,7 @@ public class VolumeBase implements Volume {
                         if (success) {
                             ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
                             rmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
-                            rmsg.setDiskSize(self.getSize());
+                            rmsg.setDiskSize(allocatedSize);
                             rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
                             bus.send(rmsg);
@@ -416,6 +417,7 @@ public class VolumeBase implements Volume {
 
                         boolean success;
                         String allocateInstallUrl;
+                        long allocateSize;
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
@@ -435,6 +437,7 @@ public class VolumeBase implements Volume {
                                         success = true;
                                         AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                                         allocateInstallUrl = ar.getAllocatedInstallUrl();
+                                        allocateSize = ar.getSize();
                                         trigger.next();
                                     }
                                 }
@@ -447,7 +450,7 @@ public class VolumeBase implements Volume {
                                 ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
                                 imsg.setAllocatedInstallUrl(allocateInstallUrl);
                                 imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-                                imsg.setDiskSize(self.getSize());
+                                imsg.setDiskSize(allocateSize);
                                 bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                                 bus.send(imsg);
                             }

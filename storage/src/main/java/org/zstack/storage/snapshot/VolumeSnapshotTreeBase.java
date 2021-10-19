@@ -797,6 +797,7 @@ public class VolumeSnapshotTreeBase {
 
                     boolean success;
                     String allocatedInstall;
+                    long allocatedSize;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -815,6 +816,7 @@ public class VolumeSnapshotTreeBase {
                                 }
                                 AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                                 allocatedInstall = ar.getAllocatedInstallUrl();
+                                allocatedSize = ar.getSize();
                                 success = true;
                                 trigger.next();
                             }
@@ -824,10 +826,9 @@ public class VolumeSnapshotTreeBase {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (success) {
-                            long requiredSize = psRaitoMgr.calculateByRatio(currentRoot.getPrimaryStorageUuid(), size);
                             ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
                             rmsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
-                            rmsg.setDiskSize(requiredSize);
+                            rmsg.setDiskSize(allocatedSize);
                             rmsg.setAllocatedInstallUrl(allocatedInstall);
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, currentRoot.getPrimaryStorageUuid());
                             bus.send(rmsg);

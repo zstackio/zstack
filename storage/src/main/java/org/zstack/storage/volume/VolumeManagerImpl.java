@@ -262,6 +262,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 flow(new Flow() {
                     String __name__ = "allocate-primary-storage";
                     String allocatedInstallUrl;
+                    long allocatedSize;
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
@@ -295,7 +296,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     public void rollback(FlowRollback trigger, Map data) {
                         if (targetPrimaryStorage != null) {
                             ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
-                            rmsg.setDiskSize(template.getSize());
+                            rmsg.setDiskSize(allocatedSize);
                             rmsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
                             rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
