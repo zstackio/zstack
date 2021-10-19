@@ -190,8 +190,8 @@ public abstract class GarbageCollector {
         GarbageCollector self = this;
         EXECUTED_TIMES++;
 
-        boolean isExists = Q.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.uuid, getUuid()).isExists();
-        if (!isExists) {
+        boolean isExisting = Q.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.uuid, getUuid()).isExists();
+        if (!isExisting) {
             canceller.run();
             gcMgr.deregisterGC(self);
             return;
