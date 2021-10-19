@@ -380,6 +380,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
         long hostCapacityBeforeAllocated = Q.New(LocalStorageHostRefVO.class)
                 .eq(LocalStorageHostRefVO_.hostUuid, hostUuid)
+                .eq(LocalStorageHostRefVO_.primaryStorageUuid, psUuid)
                 .select(LocalStorageHostRefVO_.availableCapacity)
                 .findValue();
 
