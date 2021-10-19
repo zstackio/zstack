@@ -1867,61 +1867,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         FlowChain chain = new SimpleFlowChain();
         chain.setName("re-init-root-volume-on-primary-storage");
-
-//        chain.then(new Flow() {
-//            String __name__ = "allocate-capacity-on-host";
-//
-//            boolean reserved = false;
-//            String allocatedInstallUrl;
-//
-//            @Override
-//            public void run(FlowTrigger trigger, Map data) {
-//                reserveCapacityOnHost(hostUuid, msg.getOriginSize(), self.getUuid());
-//                reserved = true;
-//
-////                AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
-////                amsg.setRequiredPrimaryStorageUuid(self.getUuid());
-////                amsg.setSize(msg.getOriginSize());
-////                amsg.setRequiredHostUuid(hostUuid);
-////                amsg.setVolumeUuid(msg.getVolume().getUuid());
-////                amsg.setImageUuid(msg.getVolume().getRootImageUuid());
-////                amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-////
-////                bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
-////                bus.send(amsg, new CloudBusCallBack(trigger) {
-////                    @Override
-////                    public void run(MessageReply reply) {
-////                        if (reply.isSuccess()) {
-////                            AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-////                            allocatedInstallUrl = ar.getAllocatedInstallUrl();
-////                            reserved = true;
-////                            trigger.next();
-////                        } else {
-////                            trigger.fail(reply.getError());
-////                        }
-////                    }
-////                });
-//
-//                trigger.next();
-//            }
-//
-//            @Override
-//            public void rollback(FlowRollback trigger, Map data) {
-//                if (reserved) {
-//                    returnStorageCapacityToHost(hostUuid, msg.getOriginSize());
-//
-////                    returnStorageCapacityToHost(hostUuid, msg.getOriginSize());
-////                    ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
-////                    rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
-////                    rmsg.setDiskSize(msg.getOriginSize());
-////                    rmsg.setPrimaryStorageUuid(hostUuid);
-////                    bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
-////                    bus.send(rmsg);
-//                }
-//
-//                trigger.rollback();
-//            }
-//        }).
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
