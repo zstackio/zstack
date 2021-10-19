@@ -526,12 +526,12 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         }
                     });
                 }
-//未修改
+
                 flow(new Flow() {
                     String __name__ = "reserve-capacity-on-host";
 
                     boolean s = false;
-//                    String allocatedInstallUrl;
+
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         reserveStorageCapacityOnHost(dstHostUuid, ref.getPrimaryStorageUuid(), requiredSize, new Completion(trigger) {
@@ -546,41 +546,12 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                 trigger.fail(errorCode);
                             }
                         });
-
-//                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
-//                        amsg.setRequiredPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-//                        amsg.setSize(requiredSize);
-//                        amsg.setRequiredHostUuid(dstHostUuid);
-//                        amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-//
-//                        bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
-//                        bus.send(amsg, new CloudBusCallBack(trigger) {
-//                            @Override
-//                            public void run(MessageReply reply) {
-//                                if (reply.isSuccess()) {
-//                                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-//                                    allocatedInstallUrl = ar.getAllocatedInstallUrl();
-//                                    s = true;
-//                                    trigger.next();
-//                                } else {
-//                                    trigger.fail(reply.getError());
-//                                }
-//                            }
-//                        });
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
                             returnStorageCapacityToHost(dstHostUuid, ref.getPrimaryStorageUuid(), requiredSize);
-
-//                            returnStorageCapacityToHost(dstHostUuid, ref.getPrimaryStorageUuid(), requiredSize);
-//                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
-//                            rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
-//                            rmsg.setDiskSize(requiredSize);
-//                            rmsg.setPrimaryStorageUuid(ref.getPrimaryStorageUuid());
-//                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, ref.getPrimaryStorageUuid());
-//                            bus.send(rmsg);
                         }
 
                         trigger.rollback();
