@@ -284,6 +284,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                                     AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                                     allocatedInstallUrl = ar.getAllocatedInstallUrl();
                                     targetPrimaryStorage = ((AllocatePrimaryStorageSpaceReply) reply).getPrimaryStorageInventory();
+                                    allocatedSize = ar.getSize();
                                     trigger.next();
                                 } else {
                                     trigger.fail(reply.getError());
