@@ -605,7 +605,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
                 long origin = cap.getAvailableCapacity();
                 cap.setAvailableCapacity(avail);
-                data.allocatedSize = avail;
+                data.allocatedSize = size;
 
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s," +
@@ -645,14 +645,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 long diff = hostCapacityBeforeAllocated - size;
 
                 avail = cap.getAvailableCapacity() - size;
+                data.allocatedSize = size;
 
                 if (diff < 0 && msg.isForce()) {
                     avail = cap.getAvailableCapacity() - hostCapacityBeforeAllocated;
+                    data.allocatedSize = hostCapacityBeforeAllocated;
                 }
 
                 cap.setAvailableCapacity(avail);
-
-                data.allocatedSize = avail;
 
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s," +
