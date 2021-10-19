@@ -8,6 +8,7 @@
                 <replaces>
                    <!-- <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
                     <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                    <replace regex="(ipmitool.*.-P)( ')(.*?)(')" replacement="$1$2*****$4"/>
                 </replaces>
             </Masksensitivepatternlayout>
             <Policies>
@@ -30,6 +31,7 @@
                 <replaces>
                     <!--<replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
                     <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                    <replace regex="(ipmitool.*.-P)( ')(.*?)(')" replacement="$1$2*****$4"/>
                 </replaces>
             </Masksensitivepatternlayout>
             <Policies>
@@ -52,6 +54,7 @@
                 <replaces>
                    <!-- <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
                     <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                    <replace regex="(ipmitool.*.-P)( ')(.*?)(')" replacement="$1$2*****$4"/>
                 </replaces>
             </Masksensitivepatternlayout>
             <Policies>
@@ -68,6 +71,7 @@
                 <replaces>
                    <!-- <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "| )(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
                     <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                    <replace regex="(ipmitool.*.-P)( ')(.*?)(')" replacement="$1$2*****$4"/>
                 </replaces>
             </Masksensitivepatternlayout>
             <Policies>
