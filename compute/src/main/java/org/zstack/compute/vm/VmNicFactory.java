@@ -1,15 +1,11 @@
 package org.zstack.compute.vm;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.jpa.JpaSystemException;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
 import org.zstack.header.core.workflow.FlowException;
 import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.utils.ExceptionDSL;
@@ -49,6 +45,32 @@ public class VmNicFactory implements VmInstanceNicFactory {
 
         List<UsedIpVO> ipVOS = new ArrayList<>();
         for (UsedIpInventory ip : ips) {
+            /* update usedIpVo */
+            UsedIpVO ipVO = dbf.findByUuid(ip.getUuid(), UsedIpVO.class);
+            ipVO.setVmNicUuid(vnic.getUuid());
+            ipVOS.add(ipVO);
+        }
+        dbf.updateCollection(ipVOS);
+
+        vnic = dbf.reload(vnic);
+        spec.getDestNics().add(VmNicInventory.valueOf(vnic));
+        return vnic;
+    }
+
+    @Override
+    public VmNicVO createApplianceVmNic(VmNicInventory inv, VmInstanceSpec spec) {
+        String acntUuid = Account.getAccountUuidOfResource(spec.getVmInventory().getUuid());
+
+        VmNicVO vnic = VmInstanceNicFactory.createApplianceVmNic(inv);
+        vnic.setAccountUuid(acntUuid);
+        vnic.setType(type.toString());
+        vnic = persistAndRetryIfMacCollision(vnic);
+        if (vnic == null) {
+            throw new FlowException(err(VmErrors.ALLOCATE_MAC_ERROR, "unable to find an available mac address after re-try 5 times, too many collisions"));
+        }
+
+        List<UsedIpVO> ipVOS = new ArrayList<>();
+        for (UsedIpInventory ip : inv.getUsedIps()) {
             /* update usedIpVo */
             UsedIpVO ipVO = dbf.findByUuid(ip.getUuid(), UsedIpVO.class);
             ipVO.setVmNicUuid(vnic.getUuid());
