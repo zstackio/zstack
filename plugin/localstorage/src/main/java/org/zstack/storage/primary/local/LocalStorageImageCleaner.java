@@ -24,6 +24,7 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.ImageCacheCleaner;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
@@ -99,6 +100,12 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
             List<ImageCacheVO> refs = e.getValue();
             List<Long> cacheIds = CollectionUtils.transformToList(refs, ImageCacheVO::getId);
 
+            sql = "select vol.rootImageUuid from VolumeVO vol where vol.rootImageUuid is not null and vol.status = :status";
+            TypedQuery<String> query = dbf.getEntityManager().createQuery(sql, String.class);
+            query = dbf.getEntityManager().createQuery(sql, String.class);
+            query.setParameter("status", VolumeStatus.NotInstantiated);
+            List<String> filterIds = query.getResultList();
+
             sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol, LocalStorageResourceRefVO ref" +
                     " where vol.uuid = ref.resourceUuid and ref.resourceType = :rtype and ref.hostUuid = :huuid and ref.primaryStorageUuid = :psUuid and vol.rootImageUuid is not null) and c.id in (:ids)";
             cq = dbf.getEntityManager().createQuery(sql, ImageCacheVO.class);
@@ -106,7 +113,11 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
             cq.setParameter("huuid", hostUuid);
             cq.setParameter("psUuid", psUUid);
             cq.setParameter("ids", cacheIds);
-            stale.addAll(cq.getResultList());
+            List<ImageCacheVO> results = cq.getResultList();
+
+            results.removeIf(c -> filterIds.contains(c.getImageUuid()));
+
+            stale.addAll(results);
         }
 
         if (stale.isEmpty()) {
