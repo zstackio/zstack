@@ -407,7 +407,7 @@ public class VolumeBase implements Volume {
         chain.then(new ShareFlow() {
             String installPath;
             String format;
-            
+
             @Override
             public void setup() {
                 if (!msg.isPrimaryStorageAllocated()) {

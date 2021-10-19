@@ -26,6 +26,7 @@ import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.snapshot.SnapshotDeletionExtensionPoint;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
@@ -335,7 +336,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     @Override
     public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
-        final String[] hostUuid = {null};
+        String hostUuid = null;
 
         if (msg.getRequiredInstallUri() != null) {
             ParseRequiredInstallUri(msg.getRequiredInstallUri());
@@ -347,18 +348,16 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 throw new OperationFailureException(argerr("invalid url, correct example is file://xxx;hostUuid://xxx or volume://xxx "));
             }
 
-            hostUuid[0] = ParseUris.get(protocol).parse(msg.getRequiredInstallUri());
+            hostUuid = ParseUris.get(protocol).parse(msg.getRequiredInstallUri());
         } else if (msg.getRequiredHostUuid() != null) {
-            hostUuid[0] = msg.getRequiredHostUuid();
+            hostUuid = msg.getRequiredHostUuid();
         } else if (msg.getSystemTags() != null) {
-            msg.getSystemTags().forEach((stag) -> {
-                if (LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.isMatch(stag)) {
-                    hostUuid[0] = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTokenByTag(stag, LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN);
-                }
-            });
+            PatternedSystemTag lsTag = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME;
+            String localStorageSystemTag = msg.getSystemTags().stream().filter(lsTag::isMatch).findAny().get();
+            hostUuid = lsTag.getTokenByTag(localStorageSystemTag, LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN);
         }
 
-        if (hostUuid[0] == null) {
+        if (hostUuid == null) {
             throw new OperationFailureException(argerr("To create volume on the local primary storage, " +
                             "you must specify the host that the volume is going to be created using the system tag [%s]",
                     LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()));
@@ -366,31 +365,36 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
         LocalStorageUtils.installPath path = new LocalStorageUtils.installPath();
         path.installPath = psInv.getUrl();
-        path.hostUuid = hostUuid[0];
+        path.hostUuid = hostUuid;
 
         return path.makeFullPath();
     }
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid, boolean force) {
+    public long forceReserveCapacity(AllocatePrimaryStorageSpaceMsg msg, String allocatedInstallUrl, long size, String psUuid) {
         LocalStorageUtils.installPath path = new LocalStorageUtils.installPath();
         path.fullPath = allocatedInstallUrl;
         String hostUuid = path.disassemble().hostUuid;
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
-        new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, primaryStorageVO, force);
-        return allocatedInstallUrl;
+
+        long hostCapacityBeforeAllocated = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, hostUuid)
+                .select(LocalStorageHostRefVO_.availableCapacity)
+                .findValue();
+
+        new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, primaryStorageVO, msg.isForce());
+        return hostCapacityBeforeAllocated;
     }
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public String releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
+    public void releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
         LocalStorageUtils.installPath path = new LocalStorageUtils.installPath();
         path.fullPath = allocatedInstallUrl;
         String hostUuid = path.disassemble().hostUuid;
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, primaryStorageVO);
-        return allocatedInstallUrl;
     }
 
     private void ParseRequiredInstallUri(String uri) {
