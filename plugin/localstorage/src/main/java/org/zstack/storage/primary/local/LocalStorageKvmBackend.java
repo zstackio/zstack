@@ -1228,16 +1228,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     bus.send(amsg, new CloudBusCallBack(trigger) {
                                         @Override
                                         public void run(MessageReply reply) {
-                                            if (reply.isSuccess()) {
-                                                s = true;
-                                                AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-                                                allocatedInstallUrl = ar.getAllocatedInstallUrl();
-                                                allocatedSize = ar.getSize();
-                                                psUuid = ar.getPrimaryStorageInventory().getUuid();
-                                                trigger.next();
-                                            } else {
+                                            if (!reply.isSuccess()) {
                                                 trigger.fail(reply.getError());
+                                                return;
                                             }
+                                            s = true;
+                                            AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                                            allocatedInstallUrl = ar.getAllocatedInstallUrl();
+                                            allocatedSize = ar.getSize();
+                                            psUuid = ar.getPrimaryStorageInventory().getUuid();
+                                            trigger.next();
                                         }
                                     });
                                 }

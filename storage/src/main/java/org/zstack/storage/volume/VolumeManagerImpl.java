@@ -280,15 +280,15 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         bus.send(amsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
-                                if (reply.isSuccess()) {
-                                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-                                    allocatedInstallUrl = ar.getAllocatedInstallUrl();
-                                    targetPrimaryStorage = ((AllocatePrimaryStorageSpaceReply) reply).getPrimaryStorageInventory();
-                                    allocatedSize = ar.getSize();
-                                    trigger.next();
-                                } else {
+                                if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
+                                    return;
                                 }
+                                AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                                allocatedInstallUrl = ar.getAllocatedInstallUrl();
+                                targetPrimaryStorage = ((AllocatePrimaryStorageSpaceReply) reply).getPrimaryStorageInventory();
+                                allocatedSize = ar.getSize();
+                                trigger.next();
                             }
                         });
                     }

@@ -194,13 +194,13 @@ public class VolumeBase implements Volume {
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
-                                } else {
-                                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-                                    allocatedInstallUrl = ar.getAllocatedInstallUrl();
-                                    allocatedSize = ar.getSize();
-                                    success = true;
-                                    trigger.next();
+                                    return;
                                 }
+                                AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                                allocatedInstallUrl = ar.getAllocatedInstallUrl();
+                                allocatedSize = ar.getSize();
+                                success = true;
+                                trigger.next();
                             }
                         });
                     }
@@ -433,13 +433,13 @@ public class VolumeBase implements Volume {
                                 public void run(MessageReply reply) {
                                     if (!reply.isSuccess()) {
                                         trigger.fail(reply.getError());
-                                    } else {
-                                        success = true;
-                                        AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-                                        allocateInstallUrl = ar.getAllocatedInstallUrl();
-                                        allocateSize = ar.getSize();
-                                        trigger.next();
+                                        return;
                                     }
+                                    success = true;
+                                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                                    allocateInstallUrl = ar.getAllocatedInstallUrl();
+                                    allocateSize = ar.getSize();
+                                    trigger.next();
                                 }
                             });
                         }
