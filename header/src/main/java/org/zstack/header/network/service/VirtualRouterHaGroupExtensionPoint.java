@@ -25,7 +25,6 @@ public interface VirtualRouterHaGroupExtensionPoint {
     List<String> getHaVrUuidsFromNetworkService(String type, String Uuid);
     List<String> getHaVrUuidsFromNetworkService(String type);
     List<String> getNetworkServicesFromHaVrUuid(String type, String vrUuid);
-    List<String> getNetworkServicesFromHaVrUuidByNetworkServicesUuid(String type, String vrUuid, String networkServicesUuid);
     List<String> getNetworkServicesFromHaGroupUuid(String type, String haGroupUuid);
 
     String getHaGroupName(String vrUuid);

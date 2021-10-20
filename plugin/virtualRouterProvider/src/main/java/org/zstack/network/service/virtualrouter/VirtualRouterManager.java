@@ -55,7 +55,7 @@ public interface VirtualRouterManager {
 
     VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv);
 
-    VmNicInventory getSnatPubicInventoryByUuid(VirtualRouterVmInventory vrInv, String L3NetworkUuid);
+    VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv, String L3NetworkUuid);
 
     void changeVirutalRouterDefaultL3Network(String vrUuid, String newL3Uuid, String oldL3Uuid, Completion completion);
 
