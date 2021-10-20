@@ -655,8 +655,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                     data.allocatedSize = hostCapacityBeforeAllocated;
                 }
 
-                if
-
                 cap.setAvailableCapacity(avail);
 
                 if (logger.isTraceEnabled()) {
