@@ -119,7 +119,7 @@ public class PrimaryStorageCapacityUpdater {
                 originalCopy.getTotalPhysicalCapacity() != capacityVO.getTotalPhysicalCapacity();
     }
 
-    private void checkResize() {
+    private void  checkResize() {
         if (isResized()) {
             logger.debug(String.format("the physical capacity of primary storage[uuid:%s] changed from %s to %s," +
                             " this indicates the primary storage is re-sized." +
