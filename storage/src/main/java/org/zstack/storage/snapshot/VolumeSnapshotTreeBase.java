@@ -813,6 +813,7 @@ public class VolumeSnapshotTreeBase {
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
+                                    return;
                                 }
                                 AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                                 allocatedInstall = ar.getAllocatedInstallUrl();
