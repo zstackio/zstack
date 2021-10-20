@@ -302,7 +302,6 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             completion.success();
             return;
         }
-
         VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
 
         List<String> nwServed = vr.getAllL3Networks();
@@ -321,20 +320,27 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             completion.success();
             return;
         }
-
+        List<String> l3Uuids = app.getSnatL3NetworkOnRouter(vrVO.getUuid());
+        List<VmNicInventory> publicNicList = new ArrayList<>();
+        l3Uuids.forEach( l3 -> {
+            publicNicList.add(vrMgr.getSnatPubicInventoryByUuid(vr, l3));
+        });
+        publicNicList.removeIf(VmNicInventory::isIpv6OnlyNic);
+        List<String> finalNwServed = nwServed;
         final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<VirtualRouterCommands.SNATInfo>();
-        for (VmNicInventory vnic : vr.getVmNics()) {
-            if (nwServed.contains(vnic.getL3NetworkUuid()) && !vnic.isIpv6OnlyNic()) {
-                VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
-                info.setPrivateNicIp(vnic.getIp());
-                info.setPrivateNicMac(vnic.getMac());
-                info.setPublicIp(publicIpv4);
-                info.setPublicNicMac(publicNic.getMac());
-                info.setSnatNetmask(vnic.getNetmask());
-                snatInfo.add(info);
+        publicNicList.forEach(pNic -> {
+            for (VmNicInventory vNic : vr.getVmNics()) {
+                if (finalNwServed.contains(vNic.getL3NetworkUuid()) && !vNic.isIpv6OnlyNic()) {
+                    VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
+                    info.setPrivateNicIp(vNic.getIp());
+                    info.setPrivateNicMac(vNic.getMac());
+                    info.setPublicIp(pNic.getIp());
+                    info.setPublicNicMac(pNic.getMac());
+                    info.setSnatNetmask(vNic.getNetmask());
+                    snatInfo.add(info);
+                }
             }
-        }
-
+        });
         if (snatInfo.isEmpty()) {
             completion.success();
             return;
