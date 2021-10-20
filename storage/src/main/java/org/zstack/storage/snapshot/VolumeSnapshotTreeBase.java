@@ -797,14 +797,12 @@ public class VolumeSnapshotTreeBase {
 
                     boolean success;
                     String allocatedInstall;
-                    long allocatedSize;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        long requiredSize = psRaitoMgr.calculateByRatio(currentRoot.getPrimaryStorageUuid(), size);
                         AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                         amsg.setRequiredPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
-                        amsg.setSize(requiredSize);
+                        amsg.setSize(size);
                         amsg.setRequiredInstallUri(String.format("volume://%s", msg.getVolume().getUuid()));
 
                         bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, currentRoot.getPrimaryStorageUuid());
@@ -817,7 +815,6 @@ public class VolumeSnapshotTreeBase {
                                 }
                                 AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                                 allocatedInstall = ar.getAllocatedInstallUrl();
-                                allocatedSize = ar.getSize();
                                 success = true;
                                 trigger.next();
                             }
@@ -829,7 +826,7 @@ public class VolumeSnapshotTreeBase {
                         if (success) {
                             ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
                             rmsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
-                            rmsg.setDiskSize(allocatedSize);
+                            rmsg.setDiskSize(size);
                             rmsg.setAllocatedInstallUrl(allocatedInstall);
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, currentRoot.getPrimaryStorageUuid());
                             bus.send(rmsg);

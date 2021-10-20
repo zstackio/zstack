@@ -2274,16 +2274,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 });
 
-//                flow(new NoRollbackFlow() {
-//                    String __name__ = "return-capacity-to-host";
-//
-//                    @Override
-//                    public void run(FlowTrigger trigger, Map data) {
-//                        returnStorageCapacityToHostByResourceUuid(msg.getBitsUuid());
-//                        trigger.next();
-//                    }
-//                });
-
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {

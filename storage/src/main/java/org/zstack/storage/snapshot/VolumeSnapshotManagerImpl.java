@@ -782,7 +782,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
                     boolean success;
                     String allocatedInstall;
-                    long allocatedSize;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -802,7 +801,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                                 }
                                 AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                                 allocatedInstall = ar.getAllocatedInstallUrl();
-                                allocatedSize = ar.getSize();
                                 success = true;
                                 trigger.next();
                             }
@@ -814,7 +812,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         if (success) {
                             ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
                             rmsg.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
-                            rmsg.setDiskSize(allocatedSize);
+                            rmsg.setDiskSize(snapshot.getSize());
                             rmsg.setAllocatedInstallUrl(allocatedInstall);
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
                             bus.send(rmsg);

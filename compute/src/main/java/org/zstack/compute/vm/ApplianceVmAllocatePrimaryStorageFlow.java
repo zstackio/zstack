@@ -125,7 +125,7 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
                         AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                         volumeSpec.setAllocatedInstallUrl(ar.getAllocatedInstallUrl());
                         volumeSpec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
-                        volumeSpec.setSize(ar.getSize());
+                        volumeSpec.setSize(iminv.getSize());
                         volumeSpec.setType(msg.getImageUuid() != null ? VolumeType.Root.toString() : VolumeType.Data.toString());
                         spec.getVolumeSpecs().add(volumeSpec);
 

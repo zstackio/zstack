@@ -431,7 +431,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
         PSCapacityExtensionPoint PSReserveCapacityExt = pluginRgty.getExtensionFromMap(primaryStorageVO.getType(), PSCapacityExtensionPoint.class);
         if (PSReserveCapacityExt != null) {
-            PSReserveCapacityExt.releaseCapacity(msg.getAllocatedInstallUrl(), msg.getDiskSize(), primaryStorageVO.getUuid());
+            PSReserveCapacityExt.releaseCapacity(msg.getAllocatedInstallUrl(), diskSize, primaryStorageVO.getUuid());
         }
         completion.done();
     }
@@ -479,7 +479,11 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             PrimaryStorageInventory psInv = PrimaryStorageInventory.valueOf(psVO);
             PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(psInv.getType(), PSCapacityExtensionPoint.class);
             if (PSCapacityExt != null) {
-                reserveData data = reserveSpaceForceIsTrue(psInv, msg.getSize(), msg);
+                long requiredSize = msg.getSize();
+                if (!msg.isNoOverProvisioning()) {
+                    requiredSize = ratioMgr.calculateByRatio(psInv.getUuid(), requiredSize);
+                }
+                reserveData data = reserveSpaceForceIsTrue(psInv, requiredSize, msg);
                 reply.setAllocatedInstallUrl(data.allocatedInstallUrl);
                 reply.setPrimaryStorageInventory(psInv);
                 reply.setSize(data.allocatedSize);
@@ -541,7 +545,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         reply.setAllocatedInstallUrl(data.allocatedInstallUrl);
         reply.setPrimaryStorageInventory(target);
-        reply.setSize(data.allocatedSize);
+        reply.setSize(msg.getSize());
         bus.reply(msg, reply);
         completion.done();
     }
