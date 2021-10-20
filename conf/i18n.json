@@ -23477,6 +23477,14 @@
     "fileName": "src/main/java/org/zstack/xdragon/XDragonHostFactory.java"
   },
   {
+    "raw": "xdragon host not support create vm using an iso image.",
+    "en_US": "xdragon host not support create vm using an iso image.",
+    "zh_CN": "神龙服务器不支持使用ISO镜像创建云主机。",
+    "arguments": [],
+    "line": 30,
+    "fileName": "src/main/java/org/zstack/xdragon/XDragonFilterExtensionPoint.java"
+  },
+  {
     "raw": "the url is null, please config the YunShan NSP.",
     "en_US": "the url is null, please config the YunShan NSP.",
     "zh_CN": "",
