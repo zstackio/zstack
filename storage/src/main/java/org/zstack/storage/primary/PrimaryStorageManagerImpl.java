@@ -465,12 +465,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         });
     }
 
-    private class reserveData {
-        String allocatedInstallUrl;
-        long allocatedSize;
-        boolean success;
-    }
-
     private void allocatePrimaryStoreSpace(AllocatePrimaryStorageSpaceMsg msg, NoErrorCompletion completion) {
         AllocatePrimaryStorageSpaceReply reply = new AllocatePrimaryStorageSpaceReply(null);
 
@@ -483,23 +477,23 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 if (!msg.isNoOverProvisioning()) {
                     requiredSize = ratioMgr.calculateByRatio(psInv.getUuid(), requiredSize);
                 }
-                reserveData data = reserveSpaceForceIsTrue(psInv, requiredSize, msg);
-                reply.setAllocatedInstallUrl(data.allocatedInstallUrl);
+                String allocatedInstallUrl = reserveSpaceForceIsTrue(psInv, requiredSize, msg);
+                reply.setAllocatedInstallUrl(allocatedInstallUrl);
                 reply.setPrimaryStorageInventory(psInv);
-                reply.setSize(data.allocatedSize);
+                reply.setSize(msg.getSize());
                 bus.reply(msg, reply);
                 completion.done();
                 return;
             }
         }
 
-        String allocatorStrategyType = getAllocateStrategyFrom(msg);
+        String allocatorStrategyType = getAllocateStrategyFromMsg(msg);
 
         PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAllocatorStrategyFactory(
                 PrimaryStorageAllocatorStrategyType.valueOf(allocatorStrategyType));
         PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
 
-        PrimaryStorageAllocationSpec spec = buildAllocateSpecFrom(msg);
+        PrimaryStorageAllocationSpec spec = buildAllocateSpecFromMsg(msg);
         List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
 
         if (msg.isDryRun()) {
@@ -513,7 +507,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         Iterator<PrimaryStorageInventory> it = ret.iterator();
         List<String> errs = new ArrayList<>();
         PrimaryStorageInventory target = null;
-        reserveData data = new reserveData();
 
         while (it.hasNext()) {
             PrimaryStorageInventory psInv = it.next();
@@ -528,10 +521,11 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             if (!msg.isNoOverProvisioning()) {
                 requiredSize = ratioMgr.calculateByRatio(psInv.getUuid(), requiredSize);
             }
-
-            data = reserveSpaceForceIsFalse(psInv, requiredSize, msg);
-            if (data.success) {
+            String allocatedInstallUrl;
+            allocatedInstallUrl = reserveSpaceForceIsFalse(psInv, requiredSize, msg);
+            if (allocatedInstallUrl != null) {
                 target = psInv;
+                reply.setAllocatedInstallUrl(allocatedInstallUrl);
                 break;
             } else {
                 errs.add(String.format("unable to reserve capacity on the primary storage[uuid:%s], it has no space", psInv.getUuid()));
@@ -543,14 +537,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             throw new OperationFailureException(operr("cannot find any qualified primary storage, errors are %s", errs));
         }
 
-        reply.setAllocatedInstallUrl(data.allocatedInstallUrl);
         reply.setPrimaryStorageInventory(target);
         reply.setSize(msg.getSize());
         bus.reply(msg, reply);
         completion.done();
     }
 
-    private String getAllocateStrategyFrom(AllocatePrimaryStorageMsg msg) {
+    private String getAllocateStrategyFromMsg(AllocatePrimaryStorageMsg msg) {
         String allocatorStrategyType = null;
 
         for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
@@ -574,7 +567,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         return allocatorStrategyType;
     }
 
-    private PrimaryStorageAllocationSpec buildAllocateSpecFrom(AllocatePrimaryStorageMsg msg) {
+    private PrimaryStorageAllocationSpec buildAllocateSpecFromMsg(AllocatePrimaryStorageMsg msg) {
         PrimaryStorageAllocationSpec spec = new PrimaryStorageAllocationSpec();
         spec.setPossiblePrimaryStorageTypes(msg.getPossiblePrimaryStorageTypes());
         spec.setExcludePrimaryStorageTypes(msg.getExcludePrimaryStorageTypes());
@@ -596,15 +589,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         return spec;
     }
 
-    private reserveData reserveSpaceForceIsFalse(final PrimaryStorageInventory inv, final long size, AllocatePrimaryStorageSpaceMsg msg) {
-        reserveData data = new reserveData();
+    private String reserveSpaceForceIsFalse(final PrimaryStorageInventory inv, final long size, AllocatePrimaryStorageSpaceMsg msg) {
+        final String[] allocatedInstallUrl = new String[1];
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(inv.getUuid());
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
                 long avail = cap.getAvailableCapacity() - size;
                 if (avail < 0 && !msg.isForce()) {
-                    data.success = false;
                     logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed," +
                             " no available capacity on it", inv.getUuid()));
                     return null;
@@ -612,8 +604,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
                 long origin = cap.getAvailableCapacity();
                 cap.setAvailableCapacity(avail);
-                data.allocatedSize = size;
-                data.success = true;
 
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("[Primary Storage Allocation] reserved %s bytes on primary storage[uuid:%s," +
@@ -621,20 +611,21 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 }
 
                 PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(), PSCapacityExtensionPoint.class);
-                data.allocatedInstallUrl = inv.getUrl();
+                allocatedInstallUrl[0] = inv.getUrl();
                 if (PSCapacityExt != null) {
-                    data.allocatedInstallUrl = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
-                    PSCapacityExt.forceReserveCapacity(msg, data.allocatedInstallUrl, size, inv.getUuid());
+                    allocatedInstallUrl[0] = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
+                    PSCapacityExt.forceReserveCapacity(msg, allocatedInstallUrl[0], size, inv.getUuid());
                 }
 
                 return cap;
             }
         });
-        return data;
+
+        return allocatedInstallUrl[0];
     }
 
-    private reserveData reserveSpaceForceIsTrue(final PrimaryStorageInventory inv, final long size, AllocatePrimaryStorageSpaceMsg msg) {
-        reserveData data = new reserveData();
+    private String reserveSpaceForceIsTrue(final PrimaryStorageInventory inv, final long size, AllocatePrimaryStorageSpaceMsg msg) {
+        final String[] allocatedInstallUrl = new String[1];
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(inv.getUuid());
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
@@ -644,19 +635,17 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 long avail = 0;
 
                 PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(), PSCapacityExtensionPoint.class);
-                data.allocatedInstallUrl = inv.getUrl();
+                allocatedInstallUrl[0] = inv.getUrl();
                 if (PSCapacityExt != null) {
-                    data.allocatedInstallUrl = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
-                    hostCapacityBeforeAllocated = PSCapacityExt.forceReserveCapacity(msg, data.allocatedInstallUrl, size, inv.getUuid());
+                    allocatedInstallUrl[0] = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
+                    hostCapacityBeforeAllocated = PSCapacityExt.forceReserveCapacity(msg, allocatedInstallUrl[0], size, inv.getUuid());
                 }
                 long diff = hostCapacityBeforeAllocated - size;
 
                 avail = cap.getAvailableCapacity() - size;
-                data.allocatedSize = size;
 
                 if (diff < 0 && msg.isForce()) {
                     avail = cap.getAvailableCapacity() - hostCapacityBeforeAllocated;
-                    data.allocatedSize = hostCapacityBeforeAllocated;
                 }
 
                 cap.setAvailableCapacity(avail);
@@ -668,8 +657,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 return cap;
             }
         });
-        data.success = true;
-        return data;
+
+        return allocatedInstallUrl[0];
     }
 
     /**
@@ -714,13 +703,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private void allocatePrimaryStore(AllocatePrimaryStorageMsg msg, NoErrorCompletion completion) {
         AllocatePrimaryStorageReply reply = new AllocatePrimaryStorageReply(null);
 
-        String allocatorStrategyType = getAllocateStrategyFrom(msg);
+        String allocatorStrategyType = getAllocateStrategyFromMsg(msg);
 
         PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAllocatorStrategyFactory(
                 PrimaryStorageAllocatorStrategyType.valueOf(allocatorStrategyType));
         PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
 
-        PrimaryStorageAllocationSpec spec = buildAllocateSpecFrom(msg);
+        PrimaryStorageAllocationSpec spec = buildAllocateSpecFromMsg(msg);
         List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
 
         if (msg.isDryRun()) {
