@@ -60,6 +60,13 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIGetHostResourceAllocationMsg msg) {
+        if (msg.getMemSize() == null) {
+            msg.setMemSize(0L);
+        }
+
+        if (msg.getVcpu() == null) {
+            msg.setVcpu(0);
+        }
     }
 
     private void validate(APIQueryHostNUMATopologyMsg msg) {

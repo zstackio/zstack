@@ -16,6 +16,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.*;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
+import org.zstack.header.allocator.HostAllocatedCPUVO;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.cluster.ClusterVO;
@@ -128,10 +129,17 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         APIGetHostResourceAllocationReply reply = new APIGetHostResourceAllocationReply();
 
         HostVO host = dbf.findByUuid(msg.getUuid(), HostVO.class);
+        HostAllocatedCPUVO hac = dbf.findByUuid(msg.getUuid(), HostAllocatedCPUVO.class);
+        String allocatedCPUs = "";
+        if (hac != null) {
+            allocatedCPUs = hac.getAllocatedCPU();
+        }
 
         GetHostNumaTopologyMsg kmsg = new GetHostNumaTopologyMsg();
         kmsg.setUuid(msg.getUuid());
         kmsg.setHostUuid(msg.getUuid());
+
+        String finalAllocatedCPUs = allocatedCPUs;
 
         new While<>(Arrays.asList(msg.getUuid())).each((h, completion) -> {
             bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, kmsg.getHostUuid());
@@ -141,10 +149,21 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     if (!kreply.isSuccess()) {
                         reply.setError(kreply.getError());
                     } else {
-                        //TODO: deal with numa and allocate
                         GetHostNumaTopologyReply rpy = (GetHostNumaTopologyReply) kreply;
-                        List<Map<String, String>> pins = allocateHostResource(msg.getStrategy(),
-                                msg.getScene(), msg.getVcpu(), 0L, rpy.getNuma());
+                        HostResourceAllocationManager HRAM = new HostResourceAllocationManager(msg.getStrategy(),
+                                msg.getScene(), rpy.getNuma(), finalAllocatedCPUs);
+                        HRAM.allocate(msg.getVcpu(), msg.getMemSize());
+                        List<Map<String, String>> pins = HRAM.getCPUPins();
+                        if (hac != null) {
+                            hac.setAllocatedCPU(HRAM.getAllocatedNodeInfo());
+                            dbf.update(hac);
+                        } else {
+                            HostAllocatedCPUVO hac = new HostAllocatedCPUVO();
+                            hac.setUuid(msg.getUuid());
+                            hac.setAllocatedCPU(HRAM.getAllocatedNodeInfo());
+                            dbf.persist(hac);
+                        }
+
                         reply.setvCPUPin(pins);
                         reply.setName(host.getName());
                         reply.setUuid(msg.getUuid());
@@ -163,27 +182,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             }
         });
     }
-
-    private List<Map<String, String>> allocateHostResource(String strategy,
-                                                           String scene,
-                                                           Integer vCPUNum,
-                                                           Long memSize,
-                                                           Map<String, Map<String, Object>> numa) {
-        HostResourceAllocationStrategyBase allocation = new HostResourceAllocationStrategyBase(numa);
-
-
-
-        if (scene.equals("normal")) {
-           memSize = 0L;
-        }
-        if (strategy.equals("continuous")) {
-            allocation = new ContinuousDistribution(numa);
-        }
-
-        return allocation.allocate(vCPUNum, memSize);
-
-    }
-
 
     private void handle(APIQueryHostNUMATopologyMsg msg) {
         APIQueryHostNUMATopologyReply reply = new APIQueryHostNUMATopologyReply();

@@ -552,14 +552,13 @@ public class KVMHost extends HostBase implements Host {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
 
         GetHostNUMATopologyCmd cmd = new GetHostNUMATopologyCmd();
-        cmd.setHostUuid(msg.getUuid());
+        cmd.setHostUuid(msg.getHostUuid());
 
         chain.setName(String.format("get-kvm-host-numa-%s", self.getUuid()));
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                logger.debug("build cmd prepare to send!");
-                new Http<>(getHostNumaPath, cmd, GetHostNUMATopologyResponse.class).call(new ReturnValueCompletion<GetHostNUMATopologyResponse>(msg) {
+                new Http<>(getHostNumaPath, cmd, GetHostNUMATopologyResponse.class).call(msg.getHostUuid(), new ReturnValueCompletion<GetHostNUMATopologyResponse>(msg) {
                     @Override
                     public void success(GetHostNUMATopologyResponse ret) {
                         if (!ret.isSuccess()) {

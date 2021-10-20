@@ -1,39 +1,50 @@
 package org.zstack.compute.host;
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class ContinuousDistribution extends HostResourceAllocationStrategyBase {
-
-    public ContinuousDistribution(Map<String, Map<String, Object>> numa) {
-        super(numa);
+public class ContinuousDistribution extends HostResourceAllocationStrategy {
+    public ContinuousDistribution(Map<String, Map<String, Object>> numas, Map<String, List<String>> allocatedCPUs) {
+        super(numas, allocatedCPUs);
     }
 
-    public  List<Map<String, String>> allocate(int vCPUNum, Long memSize) {
-        List<Map<String, String>> pins = new ArrayList<>();
+    @Override
+    public List<Map<String, Object>> allocate(int vCPUNum, Long memSize, boolean cycle) {
+        List<Map<String, Object>> vNumas = new ArrayList<>();
 
-        if (!this.isCPUEnough(vCPUNum) | !this.isMemSizeEnough(memSize)) {
-            return pins;
-        }
+        int index = this.nodesNum - 1;
+        while(true) {
+            // 判断是否遍历结束,如果遍历结束且需要再次重新分配则将下表重新设置为最大的nodeID,同时清除已被分配CPU信息
+            if (index < 0) {
+                if (cycle) {
+                    index= this.nodesNum - 1;
+                    this.allocatedCPUs.clear();
+                } else {
+                    break;
+                }
+            }
 
-        int nodes_num = (int) Math.ceil((float) vCPUNum / (float) this.CPUNumPerNode);
-        if (nodes_num > this.nodesNum) {
-            return pins;
-        }
+            String nodeID = String.valueOf(index);
+            List<String> nodeCPUs = this.nodesCPUInfo.get(index);
 
-        Map<Integer, Object> numa = new HashMap<>();
-        boolean needBreak = false;
 
-        for ( int index = this.nodesNum -1; index >= 0; index--) {
+            if (this.allocatedCPUs.containsKey(nodeID)) {
+                if (nodeCPUs.size() <= this.allocatedCPUs.get(nodeID).size()) {
+                    index -= 1;
+                    continue;
+                } else {
+                    nodeCPUs.removeAll(this.allocatedCPUs.get(nodeID));
+                }
+            }
+
             Map<String, Object> node = new HashMap<>();
-            List<Integer> nodeCPUs = this.nodesCPUInfo.get(index);
+            node.put("nodeID", nodeID);
+
             Long nodeMemSize = this.nodesMemInfo.get(index);
             List<String> distance = this.nodesDistance.get(index);
 
-            if (!(nodeCPUs.size() > 0)) {
+            if (nodeCPUs.size() <= 0) {
+                index -= 1;
                 continue;
             }
 
@@ -43,15 +54,18 @@ public class ContinuousDistribution extends HostResourceAllocationStrategyBase {
 
                 node.put("memSize", allocationMemSize);
                 memSize -= allocationMemSize;
-                node.put("CPUs", nodeCPUs.subList(0, vCPUNum));
-                vCPUNum = 0;
+                List<String> CPUs = new ArrayList<>(nodeCPUs.subList(0, vCPUNum));
+                node.put("CPUs", CPUs);
+
                 node.put("distance", distance);
 
-                numa.put(index, node);
-                needBreak = true;
-            }
+                vNumas.add(node);
 
-            if (needBreak) {
+
+                updateAllocatedCPUs(nodeID, CPUs);
+
+                vCPUNum = 0;
+                index -= 1;
                 break;
             }
 
@@ -61,24 +75,25 @@ public class ContinuousDistribution extends HostResourceAllocationStrategyBase {
             vCPUNum -= nodeCPUs.size();
             node.put("distance", distance);
 
-            numa.put(index, node);
+            updateAllocatedCPUs(nodeID, nodeCPUs);
+
+            vNumas.add(node);
+            index -= 1;
 
         }
+        return vNumas;
+    }
 
-        Integer vCPUID = (Integer) 0;
-        for(Object node: numa.values()) {
-            Map<String, Object> value = (Map<String, Object>) node;
-            List<String> pCPUIDs = (List<String>) value.get("CPUs");
-            for (String pCPUID:pCPUIDs) {
-                Map<String, String> pin = new HashMap<>();
-                pin.put("vCPU", vCPUID.toString());
-                pin.put("pCPU", pCPUID);
-                pins.add(pin);
-                vCPUID += 1;
+    public void updateAllocatedCPUs(String nodeID, List<String> nodeCPUs) {
+        this.allocatedCPUs.compute(nodeID, (k, v) -> {
+            if ((v == null) || (v.isEmpty())) {
+                v = nodeCPUs;
+            } else {
+                Set<String> sv = new HashSet<>(v);
+                sv.addAll(nodeCPUs);
+                v = new ArrayList<>(sv);
             }
-
-        }
-
-        return pins;
+            return v;
+        });
     }
 }

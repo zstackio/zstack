@@ -28,6 +28,9 @@ public class APIGetHostResourceAllocationMsg extends APISyncCallMessage {
     @APIParam
     private String vcpu;
 
+    @APIParam(required = false)
+    private String memSize;
+
     public String getUuid() {
         return uuid;
     }
@@ -44,6 +47,10 @@ public class APIGetHostResourceAllocationMsg extends APISyncCallMessage {
         this.vcpu = vcpu;
     }
 
+    public void setVcpu(int vcpu) {
+        this.vcpu = String.valueOf(vcpu);
+    }
+
     public void setScene(String scene) {
         this.scene = scene;
     }
@@ -58,6 +65,22 @@ public class APIGetHostResourceAllocationMsg extends APISyncCallMessage {
 
     public String getStrategy() {
         return strategy;
+    }
+
+    public void setMemSize(Long memSize) {
+        this.memSize = memSize.toString();
+    }
+
+    public void setMemSize(String memSize) {
+        this.memSize = memSize;
+    }
+
+    public Long getMemSize() {
+        if (memSize == null) {
+            return 0L;
+        } else {
+            return Long.parseLong(memSize);
+        }
     }
 
     public static List<String> __example__() {
