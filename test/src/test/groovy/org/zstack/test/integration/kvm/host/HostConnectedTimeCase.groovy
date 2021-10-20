@@ -13,6 +13,9 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.header.network.l2.BatchCheckNetworkPhysicalInterfaceMsg
+import org.zstack.header.network.l2.BatchCheckNetworkPhysicalInterfaceReply
+import org.zstack.core.cloudbus.CloudBus
 
 class HostConnectedTimeCase extends SubCase {
 
@@ -52,6 +55,15 @@ class HostConnectedTimeCase extends SubCase {
 
         env.afterSimulator(KVMConstant.KVM_CONNECT_PATH) { rsp, HttpEntity<String> e ->
             throw new Exception("on purpose")
+        }
+
+        int sizeFlag = 0
+        env.message(BatchCheckNetworkPhysicalInterfaceMsg.class) { BatchCheckNetworkPhysicalInterfaceMsg msg, CloudBus bus ->
+
+            sizeFlag = msg.physicalInterfaces.size()
+
+            BatchCheckNetworkPhysicalInterfaceReply reply = new BatchCheckNetworkPhysicalInterfaceReply()
+            bus.reply(msg, reply)
         }
 
         expect(AssertionError.class) {
@@ -111,5 +123,7 @@ class HostConnectedTimeCase extends SubCase {
                 .eq(SystemTagVO_.resourceType, HostVO.getSimpleName())
                 .like(SystemTagVO_.tag, "ConnectedTime::%")
                 .count() == 0
+
+        assert sizeFlag == 1
     }
 }

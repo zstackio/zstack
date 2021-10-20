@@ -105,7 +105,7 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
 
                 for (int i = 0; i < count; i++) {
                     int end = (i + 1) * step - 1;
-                    List<String> interfaces = l2NetworksCheckList.subList(i * step, Math.min(end, l2NetworksCheckList.size() - 1))
+                    List<String> interfaces = l2NetworksCheckList.subList(i * step, Math.min(end, l2NetworksCheckList.size()))
                             .stream()
                             .map(L2NetworkInventory::getPhysicalInterface)
                             .collect(Collectors.toList());
