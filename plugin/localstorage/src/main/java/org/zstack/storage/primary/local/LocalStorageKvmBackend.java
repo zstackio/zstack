@@ -1230,10 +1230,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                         public void run(MessageReply reply) {
                                             if (reply.isSuccess()) {
                                                 s = true;
-                                                AllocatePrimaryStorageSpaceReply r = (AllocatePrimaryStorageSpaceReply) reply;
-                                                allocatedInstallUrl = r.getAllocatedInstallUrl();
-                                                allocatedSize = r.getSize();
-                                                psUuid = r.getPrimaryStorageInventory().getUuid();
+                                                AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                                                allocatedInstallUrl = ar.getAllocatedInstallUrl();
+                                                allocatedSize = ar.getSize();
+                                                psUuid = ar.getPrimaryStorageInventory().getUuid();
                                                 trigger.next();
                                             } else {
                                                 trigger.fail(reply.getError());

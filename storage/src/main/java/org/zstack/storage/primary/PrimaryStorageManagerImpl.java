@@ -477,13 +477,16 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         if (msg.getRequiredInstallUri() != null && msg.isForce()) {
             PrimaryStorageVO psVO = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, msg.getRequiredPrimaryStorageUuid()).find();
             PrimaryStorageInventory psInv = PrimaryStorageInventory.valueOf(psVO);
-            reserveData data = reserveSpaceForceIsTrue(psInv, msg.getSize(), msg);
-            reply.setAllocatedInstallUrl(data.allocatedInstallUrl);
-            reply.setPrimaryStorageInventory(psInv);
-            reply.setSize(data.allocatedSize);
-            bus.reply(msg, reply);
-            completion.done();
-            return;
+            PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(psInv.getType(), PSCapacityExtensionPoint.class);
+            if (PSCapacityExt != null) {
+                reserveData data = reserveSpaceForceIsTrue(psInv, msg.getSize(), msg);
+                reply.setAllocatedInstallUrl(data.allocatedInstallUrl);
+                reply.setPrimaryStorageInventory(psInv);
+                reply.setSize(data.allocatedSize);
+                bus.reply(msg, reply);
+                completion.done();
+                return;
+            }
         }
 
         String allocatorStrategyType = getAllocateStrategyFrom(msg);
@@ -651,6 +654,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                     avail = cap.getAvailableCapacity() - hostCapacityBeforeAllocated;
                     data.allocatedSize = hostCapacityBeforeAllocated;
                 }
+
+                if
 
                 cap.setAvailableCapacity(avail);
 
