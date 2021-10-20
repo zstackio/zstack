@@ -6081,7 +6081,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             APIStartVmInstanceMsg amsg = (APIStartVmInstanceMsg) msg;
             spec.setRequiredClusterUuid(amsg.getClusterUuid());
             spec.setRequiredHostUuid(amsg.getHostUuid());
-            spec.setUsbRedirect(Boolean.valueOf(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN)));
+            spec.setUsbRedirect(Boolean.valueOf(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN)) );
             spec.setEnableRDP(VmSystemTags.RDP_ENABLE.getTokenByResourceUuid(self.getUuid(), VmSystemTags.RDP_ENABLE_TOKEN));
             spec.setVDIMonitorNumber(VmSystemTags.VDI_MONITOR_NUMBER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.VDI_MONITOR_NUMBER_TOKEN));
         }
