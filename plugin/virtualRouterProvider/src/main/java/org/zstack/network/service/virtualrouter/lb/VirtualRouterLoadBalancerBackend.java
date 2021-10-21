@@ -1,7 +1,6 @@
 package org.zstack.network.service.virtualrouter.lb;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -31,9 +30,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccountVO_;
-import org.zstack.header.identity.role.RoleVO;
-import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -51,6 +47,7 @@ import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
+import org.zstack.network.service.virtualrouter.vip.VipConfigProxy;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -93,6 +90,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     private VirtualRouterHaBackend haBackend;
     @Autowired
     private LoadBalancerManager lbMgr;
+    @Autowired
+    private VipConfigProxy vipProxy;
 
     private static final String REFRESH_CERTIFICATE_TASK = "refreshCertificate";
     private static final String DELETE_CERTIFICATE_TASK = "deleteCertificate";
@@ -2417,8 +2416,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             l3NetworkUuids = getAttachableL3UuidsForVirtualRouter(vr, LoadBalancerInventory.valueOf(lbVO));
         } else {
             VipVO vipVO = dbf.findByUuid(lbVO.getVipUuid(), VipVO.class);
-            vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
-                    .eq(VmNicVO_.l3NetworkUuid, vipVO.getL3NetworkUuid()).notNull(VmNicVO_.metaData).listValues();
+            if (vipVO.isSystem()) {
+                vrUuids = vipProxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), vipVO.getUuid());
+            } else {
+                vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
+                        .eq(VmNicVO_.l3NetworkUuid, vipVO.getL3NetworkUuid()).notNull(VmNicVO_.metaData).listValues();
+            }
             if (!vrUuids.isEmpty()) {
                 List<String> l3Uuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid)
                         .in(VmNicVO_.vmInstanceUuid, vrUuids)
