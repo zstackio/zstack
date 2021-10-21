@@ -18,7 +18,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.NetworkServiceManager;
@@ -29,13 +28,10 @@ import org.zstack.network.service.vip.VipVO_;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.RemoveSNATRsp;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.IPv6Constants;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -382,9 +378,9 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 info.setPublicNicMac(pubnic.getMac());
                 info.setSnatNetmask(priNic.getNetmask());
                 if (snatL3Uuids.contains(pubnic.getL3NetworkUuid())) {
-                    info.setEnable(Boolean.TRUE);
+                    info.setState(Boolean.TRUE);
                 } else {
-                    info.setEnable(Boolean.FALSE);
+                    info.setState(Boolean.FALSE);
                 }
                 snatInfo.add(info);
             }
