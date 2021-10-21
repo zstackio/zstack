@@ -437,7 +437,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
         PSCapacityExtensionPoint PSReserveCapacityExt = pluginRgty.getExtensionFromMap(primaryStorageVO.getType(), PSCapacityExtensionPoint.class);
         if (PSReserveCapacityExt != null) {
-            PSReserveCapacityExt.releaseCapacity(msg.getAllocatedInstallUrl(), msg.getDiskSize(), primaryStorageVO.getUuid());
+            PSReserveCapacityExt.releaseCapacity(msg.getAllocatedInstallUrl(), diskSize, primaryStorageVO.getUuid());
         }
         completion.done();
     }
