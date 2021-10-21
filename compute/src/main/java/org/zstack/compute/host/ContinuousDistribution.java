@@ -10,7 +10,6 @@ public class ContinuousDistribution extends HostResourceAllocationStrategy {
 
     @Override
     public List<Map<String, Object>> allocate(int vCPUNum, Long memSize, boolean cycle) {
-        List<Map<String, Object>> vNumas = new ArrayList<>();
 
         int index = this.nodesNum - 1;
         while(true) {
@@ -25,15 +24,14 @@ public class ContinuousDistribution extends HostResourceAllocationStrategy {
             }
 
             String nodeID = String.valueOf(index);
-            List<String> nodeCPUs = this.nodesCPUInfo.get(index);
+            List<String> nodeCPUs = new ArrayList<>(this.nodesCPUInfo.get(index));
 
 
             if (this.allocatedCPUs.containsKey(nodeID)) {
-                if (nodeCPUs.size() <= this.allocatedCPUs.get(nodeID).size()) {
+                nodeCPUs.removeAll(this.allocatedCPUs.get(nodeID));
+                if (nodeCPUs.size() == 0) {
                     index -= 1;
                     continue;
-                } else {
-                    nodeCPUs.removeAll(this.allocatedCPUs.get(nodeID));
                 }
             }
 
@@ -59,7 +57,7 @@ public class ContinuousDistribution extends HostResourceAllocationStrategy {
 
                 node.put("distance", distance);
 
-                vNumas.add(node);
+                this.addNodeIntovNuma(nodeID, node);
 
 
                 updateAllocatedCPUs(nodeID, CPUs);
@@ -77,11 +75,11 @@ public class ContinuousDistribution extends HostResourceAllocationStrategy {
 
             updateAllocatedCPUs(nodeID, nodeCPUs);
 
-            vNumas.add(node);
+            this.addNodeIntovNuma(nodeID, node);
             index -= 1;
 
         }
-        return vNumas;
+        return new ArrayList<>(this.allocatedNodes.values());
     }
 
     public void updateAllocatedCPUs(String nodeID, List<String> nodeCPUs) {

@@ -64,8 +64,8 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             msg.setMemSize(0L);
         }
 
-        if (msg.getVcpu() == null) {
-            msg.setVcpu(0);
+        if (msg.getVcpu() == null || msg.getVcpu() <= 0) {
+            throw new ApiMessageInterceptionException(argerr("vcpu must be int and greater than 0, but given [%s].", msg.getVcpu()));
         }
     }
 

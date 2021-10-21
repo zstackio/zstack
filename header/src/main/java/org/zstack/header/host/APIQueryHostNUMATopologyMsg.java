@@ -34,8 +34,12 @@ public class APIQueryHostNUMATopologyMsg extends APISyncCallMessage {
         this.topology = topology;
     }
 
-    public String getTopology() {
-        return topology;
+    public boolean getTopology() {
+        if (topology != null) {
+            return Boolean.parseBoolean(topology);
+        } else {
+            return false;
+        }
     }
 
     public static List<String> __example__() {

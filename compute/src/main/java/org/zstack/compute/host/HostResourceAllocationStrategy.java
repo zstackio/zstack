@@ -14,6 +14,7 @@ public class HostResourceAllocationStrategy {
     protected int availableCPUNum;
     protected Long availableMemSize;
     protected Map<String, List<String>> allocatedCPUs;
+    protected Map<String, Map<String, Object>> allocatedNodes;
 
     public HostResourceAllocationStrategy(Map<String, Map<String, Object>> numas,
                                           Map<String, List<String>> allocatedCPUs) {
@@ -24,6 +25,7 @@ public class HostResourceAllocationStrategy {
         this.availableCPUNum = 0;
         this.availableMemSize = 0L;
         this.allocatedCPUs = allocatedCPUs;
+        this.allocatedNodes = new HashMap<>();
 
         if (!numas.isEmpty()) {
             this.CPUNumPerNode = ((List) ((Map<String, Object>) numas.get("0")).get("cpus")).size();
@@ -49,6 +51,21 @@ public class HostResourceAllocationStrategy {
         }
     }
 
+    public void addNodeIntovNuma(String nodeID, Map<String, Object> node) {
+        if (this.allocatedNodes.containsKey(nodeID)) {
+            Map<String, Object> oldNode = this.allocatedNodes.get(nodeID);
+            List<String> CPUs = (List<String>) oldNode.get("CPUs");
+            CPUs.addAll((List<String>) node.get("CPUs"));
+            Long oldMemSize = (Long) oldNode.get("memSize");
+            Long newMwmSize = (Long) node.get("memSize");
+            oldNode.put("memSize", oldMemSize < newMwmSize? newMwmSize:oldMemSize);
+            oldNode.put("CPUs", CPUs);
+            this.allocatedNodes.put(nodeID, oldNode);
+        } else {
+            this.allocatedNodes.put(nodeID, node);
+        }
+    }
+
     public boolean isCPUEnough(int CPUNum) {
         return CPUNum <= this.availableCPUNum;
     }
@@ -59,6 +76,66 @@ public class HostResourceAllocationStrategy {
 
     public Map<String, List<String>> getAllocatedCPUs() {
         return allocatedCPUs;
+    }
+
+    public void setAllocatedCPUs(Map<String, List<String>> allocatedCPUs) {
+        this.allocatedCPUs = allocatedCPUs;
+    }
+
+    public void setAvailableCPUNum(int availableCPUNum) {
+        this.availableCPUNum = availableCPUNum;
+    }
+
+    public void setAvailableMemSize(Long availableMemSize) {
+        this.availableMemSize = availableMemSize;
+    }
+
+    public void setCPUNumPerNode(int CPUNumPerNode) {
+        this.CPUNumPerNode = CPUNumPerNode;
+    }
+
+    public void setNodesCPUInfo(List<List<String>> nodesCPUInfo) {
+        this.nodesCPUInfo = nodesCPUInfo;
+    }
+
+    public void setNodesDistance(List<List<String>> nodesDistance) {
+        this.nodesDistance = nodesDistance;
+    }
+
+    public void setNodesMemInfo(List<Long> nodesMemInfo) {
+        this.nodesMemInfo = nodesMemInfo;
+    }
+
+    public void setNodesNum(int nodesNum) {
+        this.nodesNum = nodesNum;
+    }
+
+    public int getAvailableCPUNum() {
+        return availableCPUNum;
+    }
+
+    public int getCPUNumPerNode() {
+        return CPUNumPerNode;
+    }
+
+    public int getNodesNum() {
+        return nodesNum;
+    }
+
+    public List<List<String>> getNodesCPUInfo() {
+        return nodesCPUInfo;
+    }
+
+    public List<List<String>> getNodesDistance() {
+        return nodesDistance;
+    }
+
+    public List<Long> getNodesMemInfo() {
+        return nodesMemInfo;
+    }
+
+    public Long getAvailableMemSize() {
+        return availableMemSize;
     }
 
     public List<Map<String, Object>> allocate(int vCPUNum, Long memSize, boolean cycle) {
