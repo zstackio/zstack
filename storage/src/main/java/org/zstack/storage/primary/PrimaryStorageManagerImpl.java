@@ -616,11 +616,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                     allocatedInstallUrl[0] = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
                     PSCapacityExt.forceReserveCapacity(msg, allocatedInstallUrl[0], size, inv.getUuid());
                 }
-
                 return cap;
             }
         });
-
         return allocatedInstallUrl[0];
     }
 
@@ -635,13 +633,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 long avail = 0;
 
                 PSCapacityExtensionPoint PSCapacityExt = pluginRgty.getExtensionFromMap(inv.getType(), PSCapacityExtensionPoint.class);
-                allocatedInstallUrl[0] = inv.getUrl();
-                if (PSCapacityExt != null) {
-                    allocatedInstallUrl[0] = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
-                    hostCapacityBeforeAllocated = PSCapacityExt.forceReserveCapacity(msg, allocatedInstallUrl[0], size, inv.getUuid());
-                }
-                long diff = hostCapacityBeforeAllocated - size;
+                allocatedInstallUrl[0] = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
+                hostCapacityBeforeAllocated = PSCapacityExt.forceReserveCapacity(msg, allocatedInstallUrl[0], size, inv.getUuid());
 
+                long diff = hostCapacityBeforeAllocated - size;
                 avail = cap.getAvailableCapacity() - size;
 
                 if (diff < 0 && msg.isForce()) {
@@ -657,7 +652,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 return cap;
             }
         });
-
         return allocatedInstallUrl[0];
     }
 
