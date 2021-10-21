@@ -261,11 +261,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
                 flow(new Flow() {
                     String __name__ = "allocate-primary-storage";
-                    String allocatedInstallUrl;
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+                        AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                         amsg.setSize(template.getSize());
                         amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
                         amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
@@ -279,31 +278,74 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         bus.send(amsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
-                                if (reply.isSuccess()) {
-                                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-                                    allocatedInstallUrl = ar.getAllocatedInstallUrl();
-                                    targetPrimaryStorage = ((AllocatePrimaryStorageSpaceReply) reply).getPrimaryStorageInventory();
-                                    trigger.next();
-                                } else {
+                                if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
+                                } else {
+                                    targetPrimaryStorage = ((AllocatePrimaryStorageReply) reply).getPrimaryStorageInventory();
+                                    trigger.next();
                                 }
                             }
                         });
                     }
-                    
+
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (targetPrimaryStorage != null) {
-                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
-                            rmsg.setDiskSize(template.getSize());
-                            rmsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
-                            rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
-                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
-                            bus.send(rmsg);
+                            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                            imsg.setDiskSize(template.getSize());
+                            imsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
+                            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
+                            bus.send(imsg);
                         }
                         trigger.rollback();
                     }
                 });
+
+//                flow(new Flow() {
+//                    String __name__ = "allocate-primary-storage";
+//                    String allocatedInstallUrl;
+//
+//                    @Override
+//                    public void run(final FlowTrigger trigger, Map data) {
+//                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+//                        amsg.setSize(template.getSize());
+//                        amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
+//                        amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+//                        amsg.setRequiredHostUuid(msg.getHostUuid());
+//
+//                        if (vvo.isShareable()) {
+//                            amsg.setPossiblePrimaryStorageTypes(PrimaryStorageType.getSupportSharedVolumePSTypeNames());
+//                        }
+//
+//                        bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
+//                        bus.send(amsg, new CloudBusCallBack(trigger) {
+//                            @Override
+//                            public void run(MessageReply reply) {
+//                                if (reply.isSuccess()) {
+//                                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+//                                    allocatedInstallUrl = ar.getAllocatedInstallUrl();
+//                                    targetPrimaryStorage = ((AllocatePrimaryStorageSpaceReply) reply).getPrimaryStorageInventory();
+//                                    trigger.next();
+//                                } else {
+//                                    trigger.fail(reply.getError());
+//                                }
+//                            }
+//                        });
+//                    }
+//
+//                    @Override
+//                    public void rollback(FlowRollback trigger, Map data) {
+//                        if (targetPrimaryStorage != null) {
+//                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+//                            rmsg.setDiskSize(template.getSize());
+//                            rmsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
+//                            rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
+//                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
+//                            bus.send(rmsg);
+//                        }
+//                        trigger.rollback();
+//                    }
+//                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "get-download-data-volume-template-to-primary-storage-for-garbage";
