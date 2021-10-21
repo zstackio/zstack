@@ -323,9 +323,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 }
 
                 VolumeInventory volume = rmsg.getVolume();
-
-                PrimaryStorageVO primaryStorageVO = dbf.findByUuid(volume.getPrimaryStorageUuid(), PrimaryStorageVO.class);
-                final boolean isLocalPS = LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(primaryStorageVO.getType());
+                String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
+                        .eq(PrimaryStorageVO_.uuid, volume.getPrimaryStorageUuid())
+                        .findValue();
+                final boolean isLocalPS = LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(psType);
 
                 VmInstanceVO vmInstanceVO = dbf.findByUuid(volume.getVmInstanceUuid(), VmInstanceVO.class);
                 String hostUuid = vmInstanceVO.getHostUuid();

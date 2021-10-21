@@ -1,13 +1,22 @@
 package org.zstack.header.storage.primary;
 
 public class AllocatePrimaryStorageSpaceMsg extends AllocatePrimaryStorageMsg {
-    private String requiredInstallUrl;
+    private boolean force;
+    private String requiredInstallUri;
 
-    public String getRequiredInstallUrl() {
-        return requiredInstallUrl;
+    public boolean isForce() {
+        return force;
     }
 
-    public void setRequiredInstallUrl(String requiredInstallUrl) {
-        this.requiredInstallUrl = requiredInstallUrl;
+    public void setForce(boolean force) {
+        this.force = force;
+    }
+
+    public String getRequiredInstallUri() {
+        return requiredInstallUri;
+    }
+
+    public void setRequiredInstallUri(String requiredInstallUrl) {
+        this.requiredInstallUri = requiredInstallUrl;
     }
 }

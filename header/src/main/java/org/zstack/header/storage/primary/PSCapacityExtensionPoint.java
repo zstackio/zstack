@@ -7,8 +7,7 @@ public interface PSCapacityExtensionPoint {
     String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv);
 
     @Transactional(propagation = Propagation.MANDATORY)
-    String reserveCapacity(String allocatedInstallUrl, long size, String psUuid);
-
+    String reserveCapacity(String allocatedInstallUrl, long size, String psUuid, boolean force);
     @Transactional(propagation = Propagation.MANDATORY)
     String releaseCapacity(String allocatedInstallUrl, long size, String psUuid);
 

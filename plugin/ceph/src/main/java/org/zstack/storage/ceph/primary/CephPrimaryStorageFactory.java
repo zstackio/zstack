@@ -1214,7 +1214,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid) {
+    public String reserveCapacity(String allocatedInstallUrl, long size, String psUuid, boolean force) {
         return allocatedInstallUrl;
     }
 
