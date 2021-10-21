@@ -512,6 +512,7 @@ public class VirtualRouterCommands {
 		private String privateNicMac;
 		private String privateNicIp;
 		private String snatNetmask;
+		private Boolean enable;
 
 		public String getPrivateNicMac() {
 			return privateNicMac;
@@ -542,6 +543,14 @@ public class VirtualRouterCommands {
 		}
 		public void setPublicIp(String publicIp) {
 			this.publicIp = publicIp;
+		}
+
+		public Boolean getEnable() {
+			return enable;
+		}
+
+		public void setEnable(Boolean enable) {
+			this.enable = enable;
 		}
 	}
 

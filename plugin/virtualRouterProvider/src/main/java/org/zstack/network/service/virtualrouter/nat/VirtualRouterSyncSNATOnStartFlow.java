@@ -65,10 +65,6 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
     public void run(final FlowTrigger chain, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vr.getUuid()).find();
-        Boolean rebuildSnat = false;
-        if (data.get(ApplianceVmConstant.Params.rebuildSnat.toString()) != null) {
-            rebuildSnat = (Boolean) data.get(ApplianceVmConstant.Params.rebuildSnat.toString());
-        }
 
         List<String> nwServed = vr.getAllL3Networks();
         nwServed = vrMgr.selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.SNAT);
@@ -82,46 +78,51 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
             return;
         }
 
+        new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
+
         ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
         ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
-        /*
-         * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
-         * */
-        List<String> l3Uuids = app.getSnatL3NetworkOnRouter(vrVO.getUuid());
-        boolean disabled = !app.getSnatStateOnRouter(vrVO.getUuid());
-        if(vrVO.isHaEnabled()) {
-            disabled = !haBackend.isSnatEnabledOnHaRouter(vr.getUuid());
-        }
-        if (disabled && !rebuildSnat) {
-            chain.next();
-            return;
-        }
-        List<VmNicInventory> publicNicList = new ArrayList<>();
-        l3Uuids.forEach( l3 -> {
-            publicNicList.add(vrMgr.getSnatPubicInventoryByUuid(vr, l3));
-        });
-        publicNicList.removeIf(VmNicInventory::isIpv6OnlyNic);
 
-        new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
+        /* when sync snat,
+        *  for all public nic with snat enabled, send snat enabed flags,
+        *  for all public nic with snat disabled, send snat disable flags,*/
+        List<String> snatL3Uuids = app.getSnatL3NetworkOnRouter(vrVO.getUuid());
+
         final List<SNATInfo> snatInfo = new ArrayList<SNATInfo>();
-        List<String> finalNwServed = nwServed;
-        publicNicList.forEach(publicNic -> {
-            for (VmNicInventory nic : vr.getVmNics()) {
-                if (finalNwServed.contains(nic.getL3NetworkUuid()) && !nic.isIpv6OnlyNic()) {
+        List<VmNicInventory> pubNics = new ArrayList<>();
+        pubNics.add(vr.getPublicNic());
+        pubNics.addAll(vr.getAdditionalPublicNics());
+        for (VmNicInventory pubNic : pubNics) {
+            if (pubNic.isIpv6OnlyNic()) {
+                continue;
+            }
+
+            for (VmNicInventory priNic : vr.getGuestNics()) {
+                if (nwServed.contains(priNic.getL3NetworkUuid()) && !priNic.isIpv6OnlyNic()) {
                     SNATInfo info = new SNATInfo();
-                    info.setPrivateNicIp(nic.getIp());
-                    info.setPrivateNicMac(nic.getMac());
-                    info.setPublicIp(publicNic.getIp());
-                    info.setPublicNicMac(publicNic.getMac());
-                    info.setSnatNetmask(nic.getNetmask());
+                    info.setPrivateNicIp(priNic.getIp());
+                    info.setPrivateNicMac(priNic.getMac());
+                    info.setPublicIp(pubNic.getIp());
+                    info.setPublicNicMac(pubNic.getMac());
+                    info.setSnatNetmask(priNic.getNetmask());
+                    if (snatL3Uuids.contains(pubNic.getL3NetworkUuid())) {
+                        info.setEnable(Boolean.TRUE);
+                    } else {
+                        info.setEnable(Boolean.FALSE);
+                    }
                     snatInfo.add(info);
                 }
             }
-        });
+        }
+
+        if (snatInfo.isEmpty()) {
+            chain.next();
+            return;
+        }
 
         VirtualRouterCommands.SyncSNATCmd cmd = new VirtualRouterCommands.SyncSNATCmd();
         cmd.setSnats(snatInfo);
-        cmd.setEnable(!disabled);
+        cmd.setEnable(Boolean.TRUE);
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VirtualRouterConstant.VR_SYNC_SNAT_PATH);
         msg.setCommand(cmd);

@@ -2253,17 +2253,15 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 	    return new ArrayList<>();
     }
 
-
-    public VmNicInventory getSnatPubicInventoryByUuid(VirtualRouterVmInventory vrInv, String L3NetworkUuid) {
-        vrInv.setDefaultRouteL3NetworkUuid(L3NetworkUuid);
-        return getSnatPubicInventory(vrInv);
+    public VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv) {
+        return getSnatPubicInventory(vrInv, vrInv.getDefaultRouteL3NetworkUuid());
     }
 
-    public VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv) {
+    public VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv, String L3NetworkUuid) {
         VmNicInventory publicNic = null;
 
         for (VmNicInventory vnic : vrInv.getVmNics()) {
-            if (vnic.getL3NetworkUuid().equals(vrInv.getDefaultRouteL3NetworkUuid())) {
+            if (vnic.getL3NetworkUuid().equals(L3NetworkUuid)) {
                 publicNic = new VmNicInventory(dbf.findByUuid(vnic.getUuid(), VmNicVO.class));
             }
         }
@@ -2280,7 +2278,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
         List<String> publicIps = null;
         for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-            publicIps = ext.getPublicIp(vrInv.getUuid(), vrInv.getDefaultRouteL3NetworkUuid());
+            publicIps = ext.getPublicIp(vrInv.getUuid(), L3NetworkUuid);
         }
         if (publicIps != null && !publicIps.isEmpty()) {
             for (String ip : publicIps) {
@@ -2298,34 +2296,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         return publicNic;
-    }
-
-    private List<VirtualRouterCommands.SNATInfo> getSnatInfo(VirtualRouterVmInventory vrInv) {
-        List<String> nwServed = vrInv.getAllL3Networks();
-        nwServed = selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.SNAT);
-        if (nwServed.isEmpty()) {
-            return null;
-        }
-
-        VmNicInventory publicNic = getSnatPubicInventory(vrInv);
-        if (publicNic.isIpv6OnlyNic()) {
-            return null;
-        }
-
-        final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<>();
-        for (VmNicInventory vnic : vrInv.getVmNics()) {
-            if (nwServed.contains(vnic.getL3NetworkUuid()) && !vnic.isIpv6OnlyNic()) {
-                VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
-                info.setPrivateNicIp(vnic.getIp());
-                info.setPrivateNicMac(vnic.getMac());
-                info.setPublicIp(publicNic.getIp());
-                info.setPublicNicMac(publicNic.getMac());
-                info.setSnatNetmask(vnic.getNetmask());
-                snatInfo.add(info);
-            }
-        }
-
-        return snatInfo;
     }
 
     @Transactional
@@ -2373,19 +2343,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         VirtualRouterCommands.ChangeDefaultNicCmd cmd = new VirtualRouterCommands.ChangeDefaultNicCmd();
         cmd.setNewNic(newNicInfo);
-
-        List<VirtualRouterCommands.SNATInfo> snatInfos = null;
-
-        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVo.getApplianceVmType());
-        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVo);
-        if (!app.getSnatStateOnRouter(vrVo.getUuid())) {
-            snatInfos = null;
-        } else {
-            snatInfos = getSnatInfo(vrInv);
-        }
-        if (snatInfos != null) {
-            cmd.setSnats(snatInfos);
-        }
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setVmInstanceUuid(vrUuid);

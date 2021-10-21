@@ -169,10 +169,6 @@ public class CreateApplianceVmJob implements Job {
 
                 ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
 
-                ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(avo.getApplianceVmType());
-                ApplianceVm app = subTypeFactory.getSubApplianceVm(avo);
-                app.setSnatStateOnRouter(avo.getUuid(), avo.getDefaultRouteL3NetworkUuid(), true);
-
                 trigger.next();
             }
 

@@ -875,17 +875,8 @@ public class VirtualRouter extends ApplianceVmBase {
 
     @Override
     public List<String> getSnatL3NetworkOnRouter(String vrUuid) {
-        return Q.New(VirtualRouterVmVO.class).select(VirtualRouterVmVO_.publicNetworkUuid).eq(VirtualRouterVmVO_.uuid, vrUuid).listValues();
-    }
-
-    @Override
-    public Boolean getSnatStateOnRouter(String vrUuid) {
-        return true;
-    }
-
-    @Override
-    public void setSnatStateOnRouter(String uuid, String defaultRouteL3NetworkUuid, Boolean enable) {
-
+        return Q.New(VirtualRouterVmVO.class).select(VirtualRouterVmVO_.defaultRouteL3NetworkUuid)
+                .eq(VirtualRouterVmVO_.uuid, vrUuid).listValues();
     }
 
     public class virtualRouterAfterAttachNicFlow extends NoRollbackFlow {
