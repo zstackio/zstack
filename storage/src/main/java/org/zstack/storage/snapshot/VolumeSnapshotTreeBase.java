@@ -792,47 +792,15 @@ public class VolumeSnapshotTreeBase {
                     }
                 });
 
-                flow(new Flow() {
+                flow(new NoRollbackFlow() {
                     String __name__ = "reserve-capacity-on-primary-storage";
-
-                    boolean success;
-                    String allocatedInstall;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         long requiredSize = psRaitoMgr.calculateByRatio(currentRoot.getPrimaryStorageUuid(), size);
-                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
-                        amsg.setRequiredPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
-                        amsg.setSize(requiredSize);
-                        amsg.setRequiredInstallUri(String.format("volume://%s", msg.getVolume().getUuid()));
-
-                        bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, currentRoot.getPrimaryStorageUuid());
-                        bus.send(amsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                }
-                                AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-                                allocatedInstall = ar.getAllocatedInstallUrl();
-                                success = true;
-                                trigger.next();
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (success) {
-                            long requiredSize = psRaitoMgr.calculateByRatio(currentRoot.getPrimaryStorageUuid(), size);
-                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
-                            rmsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
-                            rmsg.setDiskSize(requiredSize);
-                            rmsg.setAllocatedInstallUrl(allocatedInstall);
-                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, currentRoot.getPrimaryStorageUuid());
-                            bus.send(rmsg);
-                        }
-                        trigger.rollback();
+                        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(currentRoot.getPrimaryStorageUuid());
+                        updater.reserve(requiredSize);
+                        trigger.next();
                     }
                 });
 
