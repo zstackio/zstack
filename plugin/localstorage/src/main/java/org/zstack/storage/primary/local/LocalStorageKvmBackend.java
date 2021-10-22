@@ -1244,13 +1244,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 @Override
                                 public void rollback(FlowRollback trigger, Map data) {
                                     if (s) {
-                                        ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
-                                        imsg.setAllocatedInstallUrl(allocatedInstallUrl);
-                                        imsg.setDiskSize(image.getActualSize());
-                                        imsg.setNoOverProvisioning(true);
-                                        imsg.setPrimaryStorageUuid(self.getUuid());
-                                        bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);
-                                        bus.send(imsg);
+                                        ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+                                        rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
+                                        rmsg.setDiskSize(image.getActualSize());
+                                        rmsg.setNoOverProvisioning(true);
+                                        rmsg.setPrimaryStorageUuid(self.getUuid());
+                                        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+                                        bus.send(rmsg);
                                     }
 
                                     trigger.rollback();

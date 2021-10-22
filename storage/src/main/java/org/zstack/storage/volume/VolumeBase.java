@@ -446,12 +446,12 @@ public class VolumeBase implements Volume {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             if (success) {
-                                ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
-                                imsg.setAllocatedInstallUrl(allocateInstallUrl);
-                                imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-                                imsg.setDiskSize(allocateSize);
-                                bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
-                                bus.send(imsg);
+                                ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+                                rmsg.setAllocatedInstallUrl(allocateInstallUrl);
+                                rmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                                rmsg.setDiskSize(allocateSize);
+                                bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                                bus.send(rmsg);
                             }
                             trigger.rollback();
                         }

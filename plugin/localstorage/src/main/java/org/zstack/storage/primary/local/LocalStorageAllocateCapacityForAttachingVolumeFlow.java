@@ -75,28 +75,28 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
         final String hostUuid = t.get(0, String.class);
         String priUuid = t.get(1, String.class);
 
-        AllocatePrimaryStorageSpaceMsg msg = new AllocatePrimaryStorageSpaceMsg();
+        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
         if (isThereNetworkSharedStorageForTheHost(hostUuid, priUuid)) {
             // use network-shared primary storage
-            msg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
+            amsg.addExcludeAllocatorStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
 
             SimpleQuery<LocalStorageHostRefVO> sq = dbf.createQuery(LocalStorageHostRefVO.class);
             sq.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, hostUuid);
             List<LocalStorageHostRefVO> localStorageHostRefVOList = sq.list();
             if (localStorageHostRefVOList != null && !localStorageHostRefVOList.isEmpty()) {
-                localStorageHostRefVOList.forEach(r -> msg.addExcludePrimaryStorageUuid(r.getPrimaryStorageUuid()));
+                localStorageHostRefVOList.forEach(r -> amsg.addExcludePrimaryStorageUuid(r.getPrimaryStorageUuid()));
             }
         } else {
-            msg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-            msg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
+            amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
+            amsg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
         }
 
-        msg.setRequiredHostUuid(hostUuid);
-        msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
-        msg.setSize(volume.getSize());
-        msg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
-        bus.makeLocalServiceId(msg, PrimaryStorageConstant.SERVICE_ID);
-        bus.send(msg, new CloudBusCallBack(trigger) {
+        amsg.setRequiredHostUuid(hostUuid);
+        amsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
+        amsg.setSize(volume.getSize());
+        amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
+        bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
+        bus.send(amsg, new CloudBusCallBack(trigger) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
@@ -122,12 +122,12 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(
                     VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
 
-            ReleasePrimaryStorageSpaceMsg imsg = new ReleasePrimaryStorageSpaceMsg();
-            imsg.setAllocatedInstallUrl(allocatedInstallUrl);
-            imsg.setPrimaryStorageUuid(pri.getUuid());
-            imsg.setDiskSize(size);
-            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());
-            bus.send(imsg);
+            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+            rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
+            rmsg.setPrimaryStorageUuid(pri.getUuid());
+            rmsg.setDiskSize(size);
+            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());
+            bus.send(rmsg);
         }
 
         trigger.rollback();
