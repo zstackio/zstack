@@ -62,6 +62,10 @@ public class VmSystemTags {
     public static String RDP_ENABLE_TOKEN = "RDPEnable";
     public static PatternedSystemTag RDP_ENABLE = new PatternedSystemTag(String.format("RDPEnable::{%s}",RDP_ENABLE_TOKEN),VmInstanceVO.class);
 
+    // set vnumaEnable::true to enable Vnuma tag
+    public static String VNUMA_ENABLE_TOKEN = "VNUMAEnable";
+    public static PatternedSystemTag VNUMA_ENABLE = new PatternedSystemTag(String.format("VNUMAEnable::{%s}",VNUMA_ENABLE_TOKEN),VmInstanceVO.class);
+
     // set VDIMonitorNumber::Integer to set how many monitor will be support for VDI
     public static String VDI_MONITOR_NUMBER_TOKEN = "VDIMonitorNumber";
     public static PatternedSystemTag VDI_MONITOR_NUMBER = new PatternedSystemTag(String.format("VDIMonitorNumber::{%s}",VDI_MONITOR_NUMBER_TOKEN),VmInstanceVO.class);

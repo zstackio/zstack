@@ -2755,7 +2755,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         String architecture = spec.getDestHost().getArchitecture();
-
+        String hostUuid = spec.getDestHost().getUuid();
         int cpuNum = spec.getVmInventory().getCpuNum();
         cmd.setCpuNum(cpuNum);
 

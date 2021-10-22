@@ -301,6 +301,7 @@ public class VmInstanceSpec implements Serializable {
     private boolean ignoreResourceReleaseFailure;
     private String usbRedirect = "false";
     private String enableRDP = "false";
+    private String enableVNUMA = "false";
     private String VDIMonitorNumber = "1";
     @NoLogging
     private String consolePassword;
@@ -343,7 +344,15 @@ public class VmInstanceSpec implements Serializable {
     }
 
     public void setEnableRDP(String enableRDP) {
-        this.enableRDP = enableRDP;
+        this.enableRDP = enableVNUMA;
+    }
+
+    public String getEnableVnuma() {
+        return enableVNUMA;
+    }
+
+    public void setEnableVnuma(String enableVNUMA) {
+        this.enableVNUMA = enableVNUMA;
     }
 
     public String getUsbRedirect() {
