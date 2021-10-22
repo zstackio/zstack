@@ -1,5 +1,5 @@
 package org.zstack.network.service.flat;
 
-public interface FlatDhcpExtensionPoint {
+public interface FlatDhcpGetSlbLoadBalancerUuidExtensionPoint {
     String syncUuidToDb(String uuid);
 }
