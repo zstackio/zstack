@@ -1582,6 +1582,7 @@ public class KVMAgentCommands {
         private List<VolumeTO> cacheVolumes;
         private List<VolumeTO> Volumes;
         private List<NicTO> nics;
+        private List<Map> numa;
         private long timeout;
         private Map<String, Object> addons;
         private boolean instanceOfferingOnlineChange;
@@ -1616,6 +1617,7 @@ public class KVMAgentCommands {
         private boolean consoleLogToFile;
         private boolean acpi;
         private boolean hygonCpu;
+
 
         // TODO: only for test
         private boolean useColoBinary;
@@ -1940,6 +1942,14 @@ public class KVMAgentCommands {
 
         public void setNics(List<NicTO> nics) {
             this.nics = nics;
+        }
+
+        public List<Map> getNuma() {
+            return numa;
+        }
+
+        public void setNuma(List<Map> numa) {
+            this.numa = numa;
         }
 
         public long getTimeout() {

@@ -78,7 +78,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
-public class KVMHostFactory extends AbstractService implements HypervisorFactory, Component,
+public class KVMHostFac tory extends AbstractService implements HypervisorFactory, Component,
         ManagementNodeReadyExtensionPoint, MaxDataVolumeNumberExtensionPoint, HypervisorMessageFactory {
     private static final CLogger logger = Utils.getLogger(KVMHostFactory.class);
 
