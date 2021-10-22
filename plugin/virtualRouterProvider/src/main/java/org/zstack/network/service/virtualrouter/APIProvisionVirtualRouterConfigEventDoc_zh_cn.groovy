@@ -23,4 +23,10 @@ doc {
 		since "3.10"
 		clz ApplianceVmInventory.class
 	}
+	field {
+		name "success"
+		desc "操作是否成功"
+		type "boolean"
+		since "0.6"
+	}
 }
