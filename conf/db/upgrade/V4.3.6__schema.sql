@@ -109,6 +109,7 @@ BEGIN
     DECLARE cur CURSOR FOR SELECT DISTINCT vgr.vpcHaRouterUuid FROM `zstack`.`VpcHaGroupApplianceVmRefVO` vgr ;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
     OPEN cur;
+    DELETE FROM `zstack`.`VpcHaGroupNetworkServiceRefVO` WHERE networkServiceName = 'SNAT' AND networkServiceUuid != 'true';
     read_loop: LOOP
         FETCH cur INTO thisVpcHaRouterUuid;
         IF done THEN
@@ -123,6 +124,7 @@ BEGIN
                                       FROM `zstack`.`VpcHaGroupApplianceVmRefVO`
                                       WHERE `vpcHaRouterUuid` = thisVpcHaRouterUuid)
                        AND `haStatus` != 'NoHa')
+        LIMIT 1
         INTO vpcHaRouterDefaultPublicNetworkUuid;
 
         INSERT INTO `zstack`.`VpcHaGroupNetworkServiceRefVO` (vpcHaRouterUuid, networkServiceName, networkServiceUuid, lastOpDate, createDate)
