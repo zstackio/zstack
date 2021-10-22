@@ -240,6 +240,13 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         return res;
     }
 
+    //GetL3NetworkIpStatistic 中 slb实例"vmInstanceUuid" ->  SlbVmInstanceVO -> slbGroupUuid
+    //1.if  "vmInstanceType"="SLB", vmInstanceUuid=slbGroupUuid √
+    //2.添加字段 slbGroupUuid 其余类型设置为null不显示 x
+    //3.前端联表查询获取slbGroupUuid x
+    //finally: 将slb的vmInstanceUuid值改为SlbLoadBalancerVO的uuid
+    //添加工厂类 获得premium里面的SlbLoadBalancerVO的uuid 然后返回一个接口
+
     private List<IpStatisticData> ipStatisticAll(APIGetL3NetworkIpStatisticMsg msg, String sortBy) {
         /*
         select uip.ip, vip.uuid as vipUuid, vip.name as vipName, it.uuid as vmInstanceUuid, it.name as vmInstanceName, it.type, uip.createDate
@@ -318,9 +325,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     element.setVipName((String) result[2]);
                     resourceTypes.add(ResourceType.VIP);
                 }
-
                 if (result[3] != null && ownedVms.contains(result[3])) {
-                    element.setVmInstanceUuid((String) result[3]);
+                    String slbUuid;
+                    for (FlatDhcpExtensionPoint exp : pluginRgty.getExtensionList(FlatDhcpExtensionPoint.class)) {
+                        slbUuid = exp.syncUuidToDb(result[3]));
+                    }
+                    element.setVmInstanceUuid((String) slbUuid);
                     element.setVmInstanceName((String) result[4]);
                     element.setVmInstanceType((String) result[5]);
                     vmUuids.add((String) result[3]);
@@ -365,7 +375,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 .param("l3Uuid", msg.getL3NetworkUuid())
                 .find();
     }
-
     private List<IpStatisticData> ipStatisticVip(APIGetL3NetworkIpStatisticMsg msg, String sortBy) {
         /*
         select ip, vip.uuid, vip.name as vipName, state, useFor, vip.createDate, ac.name as ownerName
