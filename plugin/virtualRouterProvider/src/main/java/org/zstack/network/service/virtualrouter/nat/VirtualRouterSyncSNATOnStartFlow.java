@@ -106,9 +106,9 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                     info.setPublicNicMac(pubNic.getMac());
                     info.setSnatNetmask(priNic.getNetmask());
                     if (snatL3Uuids.contains(pubNic.getL3NetworkUuid())) {
-                        info.setEnable(Boolean.TRUE);
+                        info.setState(Boolean.TRUE);
                     } else {
-                        info.setEnable(Boolean.FALSE);
+                        info.setState(Boolean.FALSE);
                     }
                     snatInfo.add(info);
                 }

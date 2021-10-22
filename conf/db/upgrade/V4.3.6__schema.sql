@@ -98,3 +98,42 @@ END $$
 DELIMITER ;
 CALL addSnatConfigForVirtualRouter();
 DROP PROCEDURE IF EXISTS addSnatConfigForVirtualRouter;
+
+DROP PROCEDURE IF EXISTS addSnatConfigForVpcHa;
+DELIMITER $$
+CREATE PROCEDURE addSnatConfigForVpcHa()
+BEGIN
+    DECLARE thisVpcHaRouterUuid VARCHAR(32);
+    DECLARE vpcHaRouterDefaultPublicNetworkUuid VARCHAR(32);
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT DISTINCT vgr.vpcHaRouterUuid FROM `zstack`.`VpcHaGroupApplianceVmRefVO` vgr ;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO thisVpcHaRouterUuid;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SELECT publicNetworkUuid
+        FROM `zstack`.`VirtualRouterVmVO`
+        WHERE uuid IN (SELECT uuid
+                       FROM `zstack`.`ApplianceVmVO`
+                       WHERE uuid IN (SELECT uuid
+                                      FROM `zstack`.`VpcHaGroupApplianceVmRefVO`
+                                      WHERE `vpcHaRouterUuid` = thisVpcHaRouterUuid)
+                       AND `haStatus` != 'NoHa')
+        INTO vpcHaRouterDefaultPublicNetworkUuid;
+
+        INSERT INTO `zstack`.`VpcHaGroupNetworkServiceRefVO` (vpcHaRouterUuid, networkServiceName, networkServiceUuid, lastOpDate, createDate)
+        values(thisVpcHaRouterUuid, 'SNAT', vpcHaRouterDefaultPublicNetworkUuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+    END LOOP;
+    CLOSE cur;
+    DELETE FROM `zstack`.`VpcHaGroupNetworkServiceRefVO` WHERE networkServiceName = 'SNAT' AND vpcHaRouterUuid IN
+    (SELECT a.vpcHaRouterUuid FROM
+    (SELECT vpcHaRouterUuid FROM `zstack`.`VpcHaGroupNetworkServiceRefVO` WHERE networkServiceName = 'SNAT' AND networkServiceUuid = 'true') a);
+    SELECT CURTIME();
+END $$
+DELIMITER ;
+CALL addSnatConfigForVpcHa();
+DROP PROCEDURE IF EXISTS addSnatConfigForVpcHa;
