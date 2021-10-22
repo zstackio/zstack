@@ -1560,6 +1560,14 @@
     "message_en": "Could not create snapshot group because shared volumes [%1$s] are attached."
   },
   {
+    "category": "VOLUME",
+    "code": "1006",
+    "method": "regex",
+    "regex": "Could not attach volume.The VM instance is running a CDP task. After the volume is attached, the capacity required for full backup will exceed the CDP task planned size. Please plan the size properly and try again.*",
+    "message_cn": "无法加载云盘。检测到云主机正在运行 CDP 任务，加载云盘后全量备份所需容量将超过 CDP 任务规划容量，请合理规划后再执行此操作。",
+    "message_en": "Could not attach volume.The VM instance is running a CDP task. After the volume is attached, the capacity required for full backup will exceed the CDP task planned size. Please plan the size properly and try again."
+  },
+  {
     "category": "VPC",
     "code": "1000",
     "method": "regex",
