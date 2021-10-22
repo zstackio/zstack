@@ -349,8 +349,8 @@ CREATE PROCEDURE migrateSchedulerJob()
             VALUES(groupUuid, legacyJobName, legacyJobDescription, legacyJobClassName, legacyJobData, groupJobType, legacyJobstate, NOW(), NOW());
             INSERT INTO zstack.ResourceVO(uuid, resourceName, resourceType, concreteResourceType)
             VALUES(groupUuid, legacyJobName, 'SchedulerJobGroupVO', 'org.zstack.header.scheduler.SchedulerJobGroupVO');
-            INSERT INTO zstack.AccountResourceRefVO (accountUuid, ownerAccountUuid, resourceUuid, resourceType, permission, isShared, lastOpDate, createDate)
-            VALUES(legacyJobAccountUuid, legacyJobAccountUuid, groupUuid, 'SchedulerJobGroupVO', 2, 0,  NOW(), NOW());
+            INSERT INTO zstack.AccountResourceRefVO (accountUuid, ownerAccountUuid, resourceUuid, resourceType, permission, isShared, lastOpDate, createDate, concreteResourceType)
+            VALUES(legacyJobAccountUuid, legacyJobAccountUuid, groupUuid, 'SchedulerJobGroupVO', 2, 0,  NOW(), NOW(), 'org.zstack.header.scheduler.SchedulerJobGroupVO');
 
             INSERT INTO zstack.SchedulerJobGroupJobRefVO(schedulerJobUuid, schedulerJobGroupUuid, lastOpDate, createDate)
             VALUES(legacyJobUuid, groupUuid, NOW(), NOW());
