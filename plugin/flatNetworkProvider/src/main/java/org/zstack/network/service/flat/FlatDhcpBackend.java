@@ -320,7 +320,15 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 }
 
                 if (result[3] != null && ownedVms.contains(result[3])) {
-                    element.setVmInstanceUuid((String) result[3]);
+                    if((String) result[5] == "SLB"){
+                        String slbUuid;
+                        for (L3NetworkGetIpStatisticExtensionPoint exp : pluginRgty.getExtensionList(L3NetworkGetIpStatisticExtensionPoint.class)) {
+                            slbUuid = exp.syncUuidToDb((String) result[3]));
+                        }
+                        element.setVmInstanceUuid(slbUuid);
+                    }else{
+                        element.setVmInstanceUuid((String) result[3]);
+                    }
                     element.setVmInstanceName((String) result[4]);
                     element.setVmInstanceType((String) result[5]);
                     vmUuids.add((String) result[3]);
