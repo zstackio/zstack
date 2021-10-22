@@ -154,6 +154,11 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                                 msg.getScene(), rpy.getNuma(), finalAllocatedCPUs);
                         HRAM.allocate(msg.getVcpu(), msg.getMemSize());
                         List<Map<String, String>> pins = HRAM.getCPUPins();
+                        Map<String, Object> vNUMAConfiguration= HRAM.getvNUMAConfiguration();
+                        if (pins.isEmpty()) {
+                            ErrorCode err = Platform.err(SysErrors.OPERATION_ERROR, "Not enough resource on Host[%s].", host.getUuid());
+                            throw new OperationFailureException(err);
+                        }
                         if (hac != null) {
                             hac.setAllocatedCPU(HRAM.getAllocatedNodeInfo());
                             dbf.update(hac);
@@ -234,7 +239,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     }
 
     private Map<String, Map<String, Object>> dealNumaTopologyWithVms(APIQueryHostNUMATopologyMsg msg, Map<String, Map<String, Object>> nodes) {
-        if (msg.getTopology() != null && msg.getTopology().equals("true")) {
+        if (msg.getTopology()) {
             SimpleQuery<VmInstanceVO> vmQuery = dbf.createQuery(VmInstanceVO.class);
             vmQuery.select(VmInstanceVO_.uuid);
             vmQuery.add(VmInstanceVO_.hostUuid, Op.EQ, msg.getUuid());

@@ -8,6 +8,7 @@ public class HostResourceAllocationManager {
     protected Map<String, List<String>> allocatedCPUs;
     protected Map<String, Map<String, Object>> numas;
     protected List<Map<String, Object>> vNumas;
+    private HostResourceAllocationStrategy allocator;
 
     public HostResourceAllocationManager(String strategy, String scene, Map<String, Map<String, Object>> numas, String allocatedCPUs) {
         this.allocatedCPUs = getAllocatedNodeInfo(allocatedCPUs);
@@ -15,6 +16,57 @@ public class HostResourceAllocationManager {
         this.scene = scene;
         this.strategy = strategy;
         this.vNumas = new ArrayList<>();
+        this.allocator = new HostResourceAllocationStrategy(this.numas, this.allocatedCPUs);
+    }
+
+    public HostResourceAllocationManager() {}
+
+    public void setAllocatedCPUs(Map<String, List<String>> allocatedCPUs) {
+        this.allocatedCPUs = allocatedCPUs;
+    }
+
+    public void setAllocatedCPUs(String allocatedCPUs) {
+        this.allocatedCPUs = getAllocatedNodeInfo(allocatedCPUs);
+    }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
+    }
+
+    public void setScene(String scene) {
+        this.scene = scene;
+    }
+
+    public void setNumas(Map<String, Map<String, Object>> numas) {
+        this.numas = numas;
+    }
+
+    public void setvNumas(List<Map<String, Object>> vNumas) {
+        this.vNumas = vNumas;
+    }
+
+    public HostResourceAllocationStrategy getAllocator() {
+        return allocator;
+    }
+
+    public void setAllocator(HostResourceAllocationStrategy allocator) {
+        this.allocator = allocator;
+    }
+
+    public String getStrategy() {
+        return strategy;
+    }
+
+    public String getScene() {
+        return scene;
+    }
+
+    public List<Map<String, Object>> getvNumas() {
+        return vNumas;
+    }
+
+    public Map<String, Map<String, Object>> getNumas() {
+        return numas;
     }
 
     public Map<String, List<String>> getAllocatedCPUs() {
@@ -24,21 +76,20 @@ public class HostResourceAllocationManager {
     public void allocate(int vCPUNum, Long memSize) {
         if (vCPUNum == 0) {return ;}
 
-        HostResourceAllocationStrategy allocator = new HostResourceAllocationStrategy(this.numas, this.allocatedCPUs);
         boolean cycle = false;
         if (this.scene.equals("normal")) {
             cycle = true;
             memSize = 0L;
         } else {
-            if (!allocator.isCPUEnough(vCPUNum) || (!allocator.isMemSizeEnough(memSize))) {
+            if (!this.allocator.isCPUEnough(vCPUNum) || (!this.allocator.isMemSizeEnough(memSize))) {
                 return ;
             }
         }
         if (this.strategy.equals("continuous")) {
-            allocator = new ContinuousDistribution(this.numas, this.allocatedCPUs);
+            this.allocator = new ContinuousDistribution(this.numas, this.allocatedCPUs);
         }
-        this.vNumas = allocator.allocate(vCPUNum, memSize, cycle);
-        this.allocatedCPUs = allocator.getAllocatedCPUs();
+        this.vNumas = this.allocator.allocate(vCPUNum, memSize, cycle);
+        this.allocatedCPUs = this.allocator.getAllocatedCPUs();
     }
 
     public List<Map<String, String>> getCPUPins() {
@@ -78,10 +129,49 @@ public class HostResourceAllocationManager {
             allocatedNodeInfo.append(String.format("%s:%s", nodeID, CPUString));
             allocatedNodeInfo.append(";");
         }
-        if (allocatedNodeInfo == null) {
+        if (allocatedNodeInfo.length() == 0) {
             return "";
         } else {
             return allocatedNodeInfo.toString();
         }
+    }
+
+    public Map<String, Object> getvNUMAConfiguration() {
+        int nodeID = 0;
+        int vCPUID = 0;
+        Map<String, String> vCPUPins = new HashMap<>();
+        Map<String, Object> nodes = new HashMap<>();
+        List<Integer> pNodes = new ArrayList<>();
+
+        for (Map<String, Object> node: this.vNumas) {
+            String pNodeID = (String) node.get("nodeID");
+            String startvCPUID = String.valueOf(vCPUID);
+
+            List<String> CPUList = (List<String>) node.get("CPUs");
+            for (String pCPUID: CPUList) {
+                vCPUPins.put(String.valueOf(vCPUID), pCPUID);
+                vCPUID += 1;
+            }
+
+            Map<String, Object> vNode = new HashMap<>();
+            pNodes.add(Integer.parseInt(pNodeID));
+            vNode.put("pNodeID", pNodeID);
+            vNode.put("CPUs", String.format("%s-%d", startvCPUID, vCPUID-1));
+            vNode.put("memSize", node.get("memSize"));
+            nodes.put(String.valueOf(nodeID), vNode);
+
+            nodeID += 1;
+        }
+
+
+        for (Integer pNodeID: pNodes) {
+            List<String> pNodeDistance = new ArrayList<>();
+            for (Integer anotherPNode: pNodes) {
+                 pNodeDistance.add(this.allocator.getNodesDistance().get(pNodeID).get(anotherPNode));
+            }
+            Map<String, Object> vNode = (Map<String, Object>) nodes.get(String.valueOf(pNodes.indexOf(pNodeID)));
+            vNode.put("distance", pNodeDistance);
+        }
+        return nodes;
     }
 }
