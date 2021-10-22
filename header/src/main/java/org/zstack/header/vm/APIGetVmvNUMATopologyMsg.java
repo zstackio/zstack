@@ -15,7 +15,7 @@ import static java.util.Arrays.asList;
         method = HttpMethod.GET
 )
 public class APIGetVmvNUMATopologyMsg extends APISyncCallMessage {
-    @APIParam(required = true)
+    @APIParam
     private String uuid;
 
     public void setUuid(String uuid) {

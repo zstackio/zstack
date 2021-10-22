@@ -60,7 +60,7 @@ public class ContinuousDistribution extends HostResourceAllocationStrategy {
                 this.addNodeIntovNuma(nodeID, node);
 
 
-                updateAllocatedCPUs(nodeID, CPUs);
+                this.updateAllocatedCPUs(nodeID, CPUs);
 
                 vCPUNum = 0;
                 index -= 1;
@@ -73,7 +73,7 @@ public class ContinuousDistribution extends HostResourceAllocationStrategy {
             vCPUNum -= nodeCPUs.size();
             node.put("distance", distance);
 
-            updateAllocatedCPUs(nodeID, nodeCPUs);
+            this.updateAllocatedCPUs(nodeID, nodeCPUs);
 
             this.addNodeIntovNuma(nodeID, node);
             index -= 1;
@@ -82,16 +82,4 @@ public class ContinuousDistribution extends HostResourceAllocationStrategy {
         return new ArrayList<>(this.allocatedNodes.values());
     }
 
-    public void updateAllocatedCPUs(String nodeID, List<String> nodeCPUs) {
-        this.allocatedCPUs.compute(nodeID, (k, v) -> {
-            if ((v == null) || (v.isEmpty())) {
-                v = nodeCPUs;
-            } else {
-                Set<String> sv = new HashSet<>(v);
-                sv.addAll(nodeCPUs);
-                v = new ArrayList<>(sv);
-            }
-            return v;
-        });
-    }
 }

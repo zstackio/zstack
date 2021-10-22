@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@RestResponse
+@RestResponse(fieldsTo = {"name", "uuid", "hostUuid", "topology"})
 public class APIGetVmvNUMATopologyReply extends MessageReply {
     private String name;
     private String uuid;
@@ -53,8 +53,8 @@ public class APIGetVmvNUMATopologyReply extends MessageReply {
 
         List<Map<String,Object>> topology = new ArrayList<Map<String,Object>> ();
         Map<String, Object> node = new HashMap<String, Object>();
-        node.put("nodeID", 0);
-        node.put("phyNodeID", 1);
+        node.put("nodeID", "0");
+        node.put("phyNodeID", "1");
 
         List<String> CPUsID = new ArrayList<String>();
         CPUsID.add("0");

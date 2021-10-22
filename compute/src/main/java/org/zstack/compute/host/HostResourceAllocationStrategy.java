@@ -1,9 +1,6 @@
 package org.zstack.compute.host;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class HostResourceAllocationStrategy {
     protected List<List<String>> nodesCPUInfo;
@@ -51,6 +48,13 @@ public class HostResourceAllocationStrategy {
         }
     }
 
+    //负责分配pNode给vNUMA
+    public List<Map<String, Object>> allocate(int vCPUNum, Long memSize, boolean cycle) {
+        return new ArrayList<>();
+    };
+
+    //记录分配的node到NUMA中如果新增加的node与已分配的node重复则合并node
+    //只有scene为normal时因为超分导致同一个node被多次分配,因而出现重复的被分配的node
     public void addNodeIntovNuma(String nodeID, Map<String, Object> node) {
         if (this.allocatedNodes.containsKey(nodeID)) {
             Map<String, Object> oldNode = this.allocatedNodes.get(nodeID);
@@ -66,10 +70,26 @@ public class HostResourceAllocationStrategy {
         }
     }
 
+    //更新已分配对应NUMA node的CPU列表
+    public void updateAllocatedCPUs(String nodeID, List<String> nodeCPUs) {
+        this.allocatedCPUs.compute(nodeID, (k, v) -> {
+            if ((v == null) || (v.isEmpty())) {
+                v = nodeCPUs;
+            } else {
+                Set<String> sv = new HashSet<>(v);
+                sv.addAll(nodeCPUs);
+                v = new ArrayList<>(sv);
+            }
+            return v;
+        });
+    }
+
+    //计算CPU数量是否能够满足云主机vCPU数量
     public boolean isCPUEnough(int CPUNum) {
         return CPUNum <= this.availableCPUNum;
     }
 
+    //计算总可用内存大小是否满足云主机内存需求
     public boolean isMemSizeEnough(Long memSize) {
         return memSize <= this.availableMemSize;
     }
@@ -137,8 +157,4 @@ public class HostResourceAllocationStrategy {
     public Long getAvailableMemSize() {
         return availableMemSize;
     }
-
-    public List<Map<String, Object>> allocate(int vCPUNum, Long memSize, boolean cycle) {
-        return new ArrayList<>();
-    };
 }

@@ -164,5 +164,6 @@
         <class>org.zstack.header.vm.VmPriorityConfigVO</class>
         <class>org.zstack.header.host.HostPortVO</class>
         <class>org.zstack.header.allocator.HostAllocatedCPUVO</class>
+        <class>org.zstack.header.vm.VmInstanceNUMAVO</class>
     </persistence-unit>
 </persistence>

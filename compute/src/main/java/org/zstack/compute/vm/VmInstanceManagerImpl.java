@@ -254,7 +254,26 @@ public class VmInstanceManagerImpl extends AbstractService implements
             reply.setHostUuid(vm.getHostUuid());
         }
 
+        SimpleQuery<VmInstanceNUMAVO> vmQuery = dbf.createQuery(VmInstanceNUMAVO.class);
+        vmQuery.add(VmInstanceNUMAVO_.uuid, Op.EQ, msg.getUuid());
+        List<VmInstanceNUMAVO> tuples = vmQuery.listValue();
+        List<Map<String, Object>> topology = new ArrayList<>();
+        for (VmInstanceNUMAVO vNode: tuples) {
+            Map<String, Object> node = new HashMap<>();
+            node.put("nodeID", vNode.getvNodeID());
+            node.put("phyNodeID", vNode.getpNodeID());
+            node.put("memSize", vNode.getvNodeMemSize());
 
+
+            String CPUString = (String) vNode.getvNodeCPUs();
+            node.put("CPUsID", Arrays.asList(CPUString.split(",")));
+
+            String distanceString = (String) vNode.getvNodeDistance();
+            node.put("distance", Arrays.asList(distanceString.split(",")));
+
+            topology.add(node);
+        }
+        reply.setTopology(topology);
         reply.setUuid(msg.getUuid());
         bus.reply(msg, reply);
     }

@@ -38,6 +38,8 @@ import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
+import org.zstack.header.vm.VmInstanceNUMAVO;
+import org.zstack.header.vm.VmInstanceNUMAVO_;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vo.FindSameNodeExtensionPoint;
@@ -240,13 +242,29 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
     private Map<String, Map<String, Object>> dealNumaTopologyWithVms(APIQueryHostNUMATopologyMsg msg, Map<String, Map<String, Object>> nodes) {
         if (msg.getTopology()) {
-            SimpleQuery<VmInstanceVO> vmQuery = dbf.createQuery(VmInstanceVO.class);
-            vmQuery.select(VmInstanceVO_.uuid);
-            vmQuery.add(VmInstanceVO_.hostUuid, Op.EQ, msg.getUuid());
-            List<Tuple> tuples = vmQuery.listTuple();
-            for (Tuple vm: tuples) {
-                // TODO: analysis each vm vnuma node
+            Map<String, List<String>> pNodeIDMapVmID = new HashMap<>();
 
+            SimpleQuery<VmInstanceVO> vmIDsQuery = dbf.createQuery(VmInstanceVO.class);
+            vmIDsQuery.select(VmInstanceVO_.uuid);
+            vmIDsQuery.add(VmInstanceVO_.hostUuid, Op.EQ, msg.getUuid());
+            SimpleQuery<VmInstanceNUMAVO> vmQuery = dbf.createQuery(VmInstanceNUMAVO.class);
+            vmQuery.add(VmInstanceNUMAVO_.uuid, Op.IN, vmIDsQuery.listValue());
+            List<VmInstanceNUMAVO> vNodes = vmQuery.listValue(); // why duplicate?
+            for (VmInstanceNUMAVO vNode: vNodes) {
+                String pNodeID = String.valueOf(vNode.getpNodeID());
+                if (pNodeIDMapVmID.containsKey(pNodeID)) {
+                    List<String> VmIDs = new ArrayList<>(pNodeIDMapVmID.get(pNodeID));
+                    VmIDs.add(vNode.getUuid());
+                    pNodeIDMapVmID.put(pNodeID, VmIDs);
+                } else {
+                    pNodeIDMapVmID.put(pNodeID, Arrays.asList(vNode.getUuid()));
+                }
+            }
+
+            for (String pNodeID: pNodeIDMapVmID.keySet()) {
+                if (nodes.containsKey(pNodeID)) {
+                    nodes.get(pNodeID).put("VMsUuid", pNodeIDMapVmID.get(pNodeID));
+                }
             }
         }
         return nodes;
