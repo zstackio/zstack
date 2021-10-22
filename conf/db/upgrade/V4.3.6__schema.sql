@@ -77,7 +77,7 @@ BEGIN
     DECLARE publicNetworkUuid VARCHAR(32);
     DECLARE ruuid VARCHAR(32);
     DECLARE done INT DEFAULT FALSE;
-    DECLARE cur CURSOR FOR SELECT vrv.uuid, vrv.publicNetworkUuid FROM `zstack`.`VirtualRouterVmVO` vrv;
+    DECLARE cur CURSOR FOR SELECT vrv.uuid, vrv.publicNetworkUuid FROM `zstack`.`VirtualRouterVmVO` vrv WHERE vrv.uuid IN (SELECT uuid FROM `zstack`.`ApplianceVmVO` WHERE `haStatus` = 'NoHa');
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
     OPEN cur;
     read_loop: LOOP
@@ -90,7 +90,7 @@ BEGIN
         values(ruuid, virtualRouterUuid, publicNetworkUuid, 'enable', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
     END LOOP;
     CLOSE cur;
-    UPDATE `zstack`.`VpcSnatStateVO` SET `state` = 'disable' WHERE vpcUuid IN (
+    DELETE FROM `zstack`.`VpcSnatStateVO` WHERE vpcUuid IN (
         SELECT resourceUuid FROM SystemTagVO WHERE tag = 'disabledService::SNAT'
     );
     SELECT CURTIME();
