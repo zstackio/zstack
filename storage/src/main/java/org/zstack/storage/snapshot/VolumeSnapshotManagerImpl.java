@@ -777,49 +777,68 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     }
                 });
 
-                flow(new Flow() {
+                flow(new NoRollbackFlow() {
                     String __name__ = "reserve-snapshot-size-on-primary-storage";
 
-                    boolean success;
-                    String allocatedInstall;
-
                     @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
-                        amsg.setRequiredPrimaryStorageUuid(vol.getPrimaryStorageUuid());
-                        amsg.setSize(snapshot.getSize());
-                        amsg.setRequiredInstallUri(String.format("volume://%s",snapshot.getVolumeUuid()));
-                        amsg.setForce(true);
-
-                        bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
-                        bus.send(amsg, new CloudBusCallBack(trigger) {
+                    public void run(final FlowTrigger trigger, Map data) {
+                        ExceptionDSL.exceptionSafe(new Runnable() {
                             @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
-                                AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-                                allocatedInstall = ar.getAllocatedInstallUrl();
-                                success = true;
-                                trigger.next();
+                            public void run() {
+                                // TODO
+                                PrimaryStorageCapacityUpdater updater =
+                                        new PrimaryStorageCapacityUpdater(vol.getPrimaryStorageUuid());
+                                updater.reserve(snapshot.getSize());
                             }
                         });
-                    }
 
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (success) {
-                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
-                            rmsg.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
-                            rmsg.setDiskSize(snapshot.getSize());
-                            rmsg.setAllocatedInstallUrl(allocatedInstall);
-                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
-                            bus.send(rmsg);
-                        }
-                        trigger.rollback();
+                        trigger.next();
                     }
                 });
+
+//                flow(new Flow() {
+//                    String __name__ = "reserve-snapshot-size-on-primary-storage";
+//
+//                    boolean success;
+//                    String allocatedInstall;
+//
+//                    @Override
+//                    public void run(FlowTrigger trigger, Map data) {
+//                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+//                        amsg.setRequiredPrimaryStorageUuid(vol.getPrimaryStorageUuid());
+//                        amsg.setSize(snapshot.getSize());
+//                        amsg.setRequiredInstallUri(String.format("volume://%s",snapshot.getVolumeUuid()));
+//                        amsg.setForce(true);
+//
+//                        bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
+//                        bus.send(amsg, new CloudBusCallBack(trigger) {
+//                            @Override
+//                            public void run(MessageReply reply) {
+//                                if (!reply.isSuccess()) {
+//                                    trigger.fail(reply.getError());
+//                                    return;
+//                                }
+//                                AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+//                                allocatedInstall = ar.getAllocatedInstallUrl();
+//                                success = true;
+//                                trigger.next();
+//                            }
+//                        });
+//                    }
+//
+//                    @Override
+//                    public void rollback(FlowRollback trigger, Map data) {
+//                        if (success) {
+//                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+//                            rmsg.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
+//                            rmsg.setDiskSize(snapshot.getSize());
+//                            rmsg.setAllocatedInstallUrl(allocatedInstall);
+//                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
+//                            bus.send(rmsg);
+//                        }
+//                        trigger.rollback();
+//                    }
+//                });
 
                 done(new FlowDoneHandler(msg) {
                     @Override

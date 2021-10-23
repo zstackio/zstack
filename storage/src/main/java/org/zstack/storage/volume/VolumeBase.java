@@ -175,15 +175,56 @@ public class VolumeBase implements Volume {
 
             @Override
             public void setup() {
+//                flow(new Flow() {
+//                    String __name__ = "allocate-primary-storage";
+//
+//                    boolean success;
+//                    String allocatedInstallUrl;
+//
+//                    @Override
+//                    public void run(FlowTrigger trigger, Map data) {
+//                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+//                        amsg.setRequiredPrimaryStorageUuid(self.getPrimaryStorageUuid());
+//                        amsg.setSize(originSize);
+//                        amsg.setRequiredHostUuid(msg.getHostUuid());
+//
+//                        bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+//                        bus.send(amsg, new CloudBusCallBack(trigger) {
+//                            @Override
+//                            public void run(MessageReply reply) {
+//                                if (!reply.isSuccess()) {
+//                                    trigger.fail(reply.getError());
+//                                } else {
+//                                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+//                                    allocatedInstallUrl = ar.getAllocatedInstallUrl();
+//                                    success = true;
+//                                    trigger.next();
+//                                }
+//                            }
+//                        });
+//                    }
+//
+//                    @Override
+//                    public void rollback(FlowRollback trigger, Map data) {
+//                        if (success) {
+//                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+//                            rmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+//                            rmsg.setDiskSize(self.getSize());
+//                            rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
+//                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+//                            bus.send(rmsg);
+//                        }
+//                        trigger.rollback();
+//                    }
+//                });
                 flow(new Flow() {
                     String __name__ = "allocate-primary-storage";
 
                     boolean success;
-                    String allocatedInstallUrl;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+                        AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                         amsg.setRequiredPrimaryStorageUuid(self.getPrimaryStorageUuid());
                         amsg.setSize(originSize);
                         amsg.setRequiredHostUuid(msg.getHostUuid());
@@ -195,8 +236,6 @@ public class VolumeBase implements Volume {
                                 if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
                                 } else {
-                                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
-                                    allocatedInstallUrl = ar.getAllocatedInstallUrl();
                                     success = true;
                                     trigger.next();
                                 }
@@ -207,17 +246,16 @@ public class VolumeBase implements Volume {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (success) {
-                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
-                            rmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
-                            rmsg.setDiskSize(self.getSize());
-                            rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
-                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
-                            bus.send(rmsg);
+                            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                            imsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                            imsg.setDiskSize(self.getSize());
+                            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+                            bus.send(imsg);
                         }
+
                         trigger.rollback();
                     }
                 });
-
                 flow(new NoRollbackFlow() {
                     String __name__ = "mark-root-volume-as-snapshot-on-primary-storage";
 

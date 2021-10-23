@@ -158,15 +158,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                 //1.count the image size of volume
                 long size = SQL.New("select vol.size" +
-                        " from VolumeVO vol" +
-                        " where vol.uuid = :uuid")
+                                " from VolumeVO vol" +
+                                " where vol.uuid = :uuid")
                         .param("uuid", msg.getVolumeUuid()).find();
                 size = ratioMgr.calculateByRatio(self.getUuid(), size);
 
 
                 Long snapshotSize = SQL.New("select sum(sp.size)" +
-                        " from VolumeSnapshotVO sp" +
-                        " where sp.volumeUuid = :volUuid")
+                                " from VolumeSnapshotVO sp" +
+                                " where sp.volumeUuid = :volUuid")
                         .param("volUuid", msg.getVolumeUuid()).find();
                 if (snapshotSize != null) {
                     size += snapshotSize;
@@ -176,19 +176,19 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 //2.select hosts that have enough capacity
                 double physicalThreshold = physicalCapacityMgr.getRatio(self.getUuid());
                 List<String> hostUuids = SQL.New("select href.hostUuid" +
-                        " from LocalStorageHostRefVO href" +
-                        " where href.hostUuid !=" +
-                        " (" +
-                        " select rref.hostUuid" +
-                        " from LocalStorageResourceRefVO rref" +
-                        " where rref.resourceUuid = :volUuid" +
-                        " and rref.resourceType = :rtype" +
-                        " )" +
-                        " and (href.totalPhysicalCapacity * (1.0 - :thres)) <= href.availablePhysicalCapacity" +
-                        " and href.availablePhysicalCapacity != 0" +
-                        " and href.availableCapacity >= :size" +
-                        " and href.primaryStorageUuid = :psUuid" +
-                        " group by href.hostUuid")
+                                " from LocalStorageHostRefVO href" +
+                                " where href.hostUuid !=" +
+                                " (" +
+                                " select rref.hostUuid" +
+                                " from LocalStorageResourceRefVO rref" +
+                                " where rref.resourceUuid = :volUuid" +
+                                " and rref.resourceType = :rtype" +
+                                " )" +
+                                " and (href.totalPhysicalCapacity * (1.0 - :thres)) <= href.availablePhysicalCapacity" +
+                                " and href.availablePhysicalCapacity != 0" +
+                                " and href.availableCapacity >= :size" +
+                                " and href.primaryStorageUuid = :psUuid" +
+                                " group by href.hostUuid")
                         .param("volUuid", msg.getVolumeUuid())
                         .param("rtype", VolumeVO.class.getSimpleName())
                         .param("thres", physicalThreshold)
@@ -202,8 +202,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 }
 
                 List<HostVO> hosts = new LinkedList<>(SQL.New("select h from HostVO h " +
-                        " where h.uuid in (:uuids)" +
-                        " and h.status = :hstatus")
+                                " where h.uuid in (:uuids)" +
+                                " and h.status = :hstatus")
                         .param("uuids", hostUuids)
                         .param("hstatus", HostStatus.Connected).list());
 
@@ -633,7 +633,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
-
                 flow(new Flow() {
                     String __name__ = "reserve-capacity-on-dest-host";
                     boolean success = false;
@@ -899,10 +898,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
-            APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
-            imageCacheCleaner.setForce(msg.isForce());
-            imageCacheCleaner.cleanup(msg.getUuid(), false);
-            bus.publish(evt);
+        APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
+        imageCacheCleaner.setForce(msg.isForce());
+        imageCacheCleaner.cleanup(msg.getUuid(), false);
+        bus.publish(evt);
     }
 
 
@@ -1340,7 +1339,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
         String hostUuid = getHostUuidByResourceUuid(msg.getSnapshot().getUuid());
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-
         bkd.handle(msg, hostUuid, new ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply>(msg) {
             @Override
             public void success(RevertVolumeFromSnapshotOnPrimaryStorageReply returnValue) {
@@ -1552,9 +1550,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 .find();
 
         List<VolumeVO> volumeVOS = SQL.New("select vo from VolumeVO vo, LocalStorageResourceRefVO ref " +
-                "where vo.uuid = ref.resourceUuid and ref.hostUuid =:hostUuid " +
-                "and ref.primaryStorageUuid=:primaryStorageUuid and ref.resourceType=:resourceType " +
-                "and vo.type=:type")
+                        "where vo.uuid = ref.resourceUuid and ref.hostUuid =:hostUuid " +
+                        "and ref.primaryStorageUuid=:primaryStorageUuid and ref.resourceType=:resourceType " +
+                        "and vo.type=:type")
                 .param("hostUuid", msg.getHostUuid())
                 .param("primaryStorageUuid", self.getUuid())
                 .param("resourceType", VolumeVO.class.getSimpleName())
@@ -1588,8 +1586,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         List<String> volumeUuids = volumeVOS.stream().map(VolumeVO::getUuid).collect(Collectors.toList());
                         if (!volumeUuids.isEmpty()) {
                             List<VmInstanceVO> vmInstanceVOS = SQL.New("select vm from VmInstanceVO vm where vm.rootVolumeUuid in" +
-                                    " (select vol.uuid from VolumeVO vol where vol.uuid in (:volUuids)" +
-                                    " and vol.type = :volType)")
+                                            " (select vol.uuid from VolumeVO vol where vol.uuid in (:volUuids)" +
+                                            " and vol.type = :volType)")
                                     .param("volUuids", volumeUuids)
                                     .param("volType", VolumeType.Root).list();
 
@@ -1908,24 +1906,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @ExceptionSafe
-    @Deprecated
     protected void reserveCapaciryOnHostIgnoreError(String hostUuid, long size, String psUuid) {
         new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, self, true);
     }
 
-    @Deprecated
     protected void reserveCapacityOnHost(String hostUuid, long size, String psUuid) {
         new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, self, false);
     }
 
     @Transactional
-    @Deprecated
     protected void returnStorageCapacityToHost(String hostUuid, long size) {
         new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, self);
     }
 
     @Transactional
-    @Deprecated
     protected void returnStorageCapacityToHostByResourceUuid(String resUuid) {
         String sql = "select href, rref" +
                 " from LocalStorageHostRefVO href, LocalStorageResourceRefVO rref" +
@@ -2221,6 +2215,22 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
+                flow(new Flow() {
+                    String __name__ = "allocate-capacity-on-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        reserveCapacityOnHost(msg.getHostUuid(), requiredSize, self.getUuid());
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        returnStorageCapacityToHost(msg.getHostUuid(), requiredSize);
+                        trigger.rollback();
+                    }
+                });
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "download-the-data-volume-to-host";
 
@@ -3031,9 +3041,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
     protected void handle(CheckVolumeSnapshotOperationOnPrimaryStorageMsg msg) {
         CheckVolumeSnapshotOperationOnPrimaryStorageReply r = new CheckVolumeSnapshotOperationOnPrimaryStorageReply();
         List<String> disconnectHostUuids = SQL.New("select h.uuid from HostVO h, LocalStorageResourceRefVO ref" +
-                " where ref.resourceUuid in :volUuids" +
-                " and ref.hostUuid = h.uuid" +
-                " and h.status != :hstatus", String.class)
+                        " where ref.resourceUuid in :volUuids" +
+                        " and ref.hostUuid = h.uuid" +
+                        " and h.status != :hstatus", String.class)
                 .param("hstatus", HostStatus.Connected)
                 .param("volUuids", msg.getVolumeUuids())
                 .list();
