@@ -790,6 +790,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         amsg.setSize(snapshot.getSize());
                         amsg.setRequiredInstallUri(String.format("volume://%s", snapshot.getVolumeUuid()));
                         amsg.setForce(true);
+                        amsg.setNoOverProvisioning(true);
 
                         bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
                         bus.send(amsg, new CloudBusCallBack(trigger) {
