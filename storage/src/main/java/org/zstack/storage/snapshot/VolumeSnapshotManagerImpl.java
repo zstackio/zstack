@@ -788,7 +788,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                         amsg.setRequiredPrimaryStorageUuid(vol.getPrimaryStorageUuid());
                         amsg.setSize(snapshot.getSize());
-                        amsg.setRequiredInstallUri(String.format("volume://%s",snapshot.getVolumeUuid()));
+                        amsg.setRequiredInstallUri(String.format("volume://%s", snapshot.getVolumeUuid()));
                         amsg.setForce(true);
 
                         bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
