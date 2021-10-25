@@ -1,10 +1,20 @@
 package org.zstack.sdk.iam2.api;
 
+import org.zstack.sdk.AbstractAction;
+import org.zstack.sdk.ApiException;
+import org.zstack.sdk.ApiResult;
+import org.zstack.sdk.Completion;
+import org.zstack.sdk.ErrorCode;
+import org.zstack.sdk.InternalCompletion;
+import org.zstack.sdk.NonAPIParam;
+import org.zstack.sdk.Param;
+import org.zstack.sdk.RestInfo;
+import org.zstack.sdk.ZSClient;
+
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
-public class CreateIAM2OrganizationAction extends AbstractAction {
+public class UpdateOrganizationQuotaAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +22,7 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.CreateIAM2OrganizationResult value;
+        public org.zstack.sdk.iam2.api.UpdateOrganizationQuotaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +35,14 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String identityUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, validValues = {"Company","Department"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.iam2.entity.OrganizationType type;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parentUuid;
-
-    @Param(required = false)
-    public java.util.List attributes;
-
-    @Param(required = false)
-    public java.util.Map quota;
-
-    @Param(required = false)
-    public java.lang.String srcType;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public long value = 0L;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -84,8 +76,8 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.CreateIAM2OrganizationResult value = res.getResult(org.zstack.sdk.iam2.api.CreateIAM2OrganizationResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.CreateIAM2OrganizationResult() : value; 
+        org.zstack.sdk.iam2.api.UpdateOrganizationQuotaResult value = res.getResult(org.zstack.sdk.iam2.api.UpdateOrganizationQuotaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.UpdateOrganizationQuotaResult() : value; 
 
         return ret;
     }
@@ -114,11 +106,11 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/iam2/organizations";
+        info.httpMethod = "PUT";
+        info.path = "/iam2/Organization/quotas/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateOrganizationQuota";
         return info;
     }
 
