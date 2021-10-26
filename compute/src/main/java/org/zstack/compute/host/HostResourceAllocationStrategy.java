@@ -28,14 +28,19 @@ public class HostResourceAllocationStrategy {
             this.CPUNumPerNode = ((List) ((Map<String, Object>) numas.get("0")).get("cpus")).size();
         }
 
-        Integer nodeID= (Integer) 0;
-        while (numas.containsKey(nodeID.toString())) {
-            Map<String, Object> node = numas.get(nodeID.toString());
+        int nodeID= 0;
+        while (numas.containsKey(String.valueOf(nodeID))) {
+            Map<String, Object> node = numas.get(String.valueOf(nodeID));
             List<String> nodeCPUs = (List<String>) node.get("cpus");
+            int nodeCPUNum = nodeCPUs.size();
 
-            if (nodeCPUs.isEmpty()) {continue;}
+            if (nodeCPUNum == 0) {continue;}
             this.nodesCPUInfo.add(nodeCPUs);
-            this.availableCPUNum += nodeCPUs.size();
+
+            if (this.allocatedCPUs.containsKey(String.valueOf(nodeID))) {
+                nodeCPUNum -= this.allocatedCPUs.get(String.valueOf(nodeID)).size();
+            }
+            this.availableCPUNum += nodeCPUNum;
 
             Float availableMemSize = Float.parseFloat(String.valueOf(node.get("free")));
             Long nodeMemSize = availableMemSize.longValue();
@@ -48,7 +53,7 @@ public class HostResourceAllocationStrategy {
         }
     }
 
-    //负责分配pNode给vNUMA
+    //负责分配pNode给vNUMA,cycle参数表示是否需要循环分配
     public List<Map<String, Object>> allocate(int vCPUNum, Long memSize, boolean cycle) {
         return new ArrayList<>();
     };

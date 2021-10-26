@@ -13,23 +13,24 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/hosts/{uuid}/resource-allocation",
         responseClass = APIGetHostResourceAllocationReply.class,
-        method = HttpMethod.GET
+        method = HttpMethod.POST,
+        parameterName = "params"
 )
 public class APIGetHostResourceAllocationMsg extends APISyncCallMessage {
     @APIParam
     private String uuid;
 
-    @APIParam
+    @APIParam(validValues = {"continuous"})
     private String strategy;
 
-    @APIParam
+    @APIParam(validValues = {"normal", "highPerformance"})
     private String scene;
 
     @APIParam
-    private String vcpu;
+    private int vcpu;
 
     @APIParam(required = false)
-    private String memSize;
+    private Long memSize;
 
     public String getUuid() {
         return uuid;
@@ -40,15 +41,11 @@ public class APIGetHostResourceAllocationMsg extends APISyncCallMessage {
     }
 
     public Integer getVcpu() {
-        return Integer.parseInt(vcpu);
-    }
-
-    public void setVcpu(String vcpu) {
-        this.vcpu = vcpu;
+        return vcpu;
     }
 
     public void setVcpu(int vcpu) {
-        this.vcpu = String.valueOf(vcpu);
+        this.vcpu = vcpu;
     }
 
     public void setScene(String scene) {
@@ -68,10 +65,6 @@ public class APIGetHostResourceAllocationMsg extends APISyncCallMessage {
     }
 
     public void setMemSize(Long memSize) {
-        this.memSize = memSize.toString();
-    }
-
-    public void setMemSize(String memSize) {
         this.memSize = memSize;
     }
 
@@ -79,7 +72,7 @@ public class APIGetHostResourceAllocationMsg extends APISyncCallMessage {
         if (memSize == null) {
             return 0L;
         } else {
-            return Long.parseLong(memSize);
+            return memSize;
         }
     }
 

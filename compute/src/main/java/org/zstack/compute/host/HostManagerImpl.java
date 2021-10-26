@@ -156,7 +156,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                                 msg.getScene(), rpy.getNuma(), finalAllocatedCPUs);
                         HRAM.allocate(msg.getVcpu(), msg.getMemSize());
                         List<Map<String, String>> pins = HRAM.getCPUPins();
-                        Map<String, Object> vNUMAConfiguration= HRAM.getvNUMAConfiguration();
                         if (pins.isEmpty()) {
                             ErrorCode err = Platform.err(SysErrors.OPERATION_ERROR, "Not enough resource on Host[%s].", host.getUuid());
                             throw new OperationFailureException(err);
@@ -249,7 +248,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             vmIDsQuery.add(VmInstanceVO_.hostUuid, Op.EQ, msg.getUuid());
             SimpleQuery<VmInstanceNUMAVO> vmQuery = dbf.createQuery(VmInstanceNUMAVO.class);
             vmQuery.add(VmInstanceNUMAVO_.uuid, Op.IN, vmIDsQuery.listValue());
-            List<VmInstanceNUMAVO> vNodes = vmQuery.listValue(); // why duplicate?
+            List<VmInstanceNUMAVO> vNodes = vmQuery.listValue();
             for (VmInstanceNUMAVO vNode: vNodes) {
                 String pNodeID = String.valueOf(vNode.getpNodeID());
                 if (pNodeIDMapVmID.containsKey(pNodeID)) {

@@ -95,13 +95,12 @@ public class HostResourceAllocationManager {
     public List<Map<String, String>> getCPUPins() {
         List<Map<String, String>> pins = new ArrayList<>();
 
-        Integer vCPUID = (Integer) 0;
+        int vCPUID = 0;
         for(Map<String, Object> node: this.vNumas) {
-            String nodeID = (String) node.get("nodeID");
             List<String> pCPUIDs = (List<String>) node.get("CPUs");
             for (String pCPUID:pCPUIDs) {
                 Map<String, String> pin = new HashMap<>();
-                pin.put("vCPU", vCPUID.toString());
+                pin.put("vCPU", String.valueOf(vCPUID));
                 pin.put("pCPU", pCPUID);
                 vCPUID += 1;
                 pins.add(pin);
@@ -110,7 +109,7 @@ public class HostResourceAllocationManager {
         return pins;
     }
 
-    public static Map<String, List<String>> getAllocatedNodeInfo(String allocatedCPUs) {
+    public Map<String, List<String>> getAllocatedNodeInfo(String allocatedCPUs) {
         String[] nodeString = allocatedCPUs.split(";");
         Map<String, List<String>> allocatedNodeInfo = new HashMap<>();
         for (String node: nodeString) {
