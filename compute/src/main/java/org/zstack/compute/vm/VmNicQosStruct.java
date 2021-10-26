@@ -9,4 +9,5 @@ public class VmNicQosStruct {
     public Long inboundBandwidth;
     public Long outboundBandwidthUpthreshold;
     public Long inboundBandwidthUpthreshold;
+    public Integer dscp;
 }
