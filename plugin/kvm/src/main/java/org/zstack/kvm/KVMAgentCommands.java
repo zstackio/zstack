@@ -1,5 +1,7 @@
 package org.zstack.kvm;
 
+import org.zstack.header.host.VmNicRedirectConfig;
+import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
@@ -83,6 +85,7 @@ public class KVMAgentCommands {
     public static class DetachNicCommand extends AgentCommand {
         private String vmUuid;
         private NicTO nic;
+        private Map addons = new HashMap();
 
         public String getVmUuid() {
             return vmUuid;
@@ -98,6 +101,14 @@ public class KVMAgentCommands {
 
         public void setNic(NicTO nic) {
             this.nic = nic;
+        }
+
+        public Map getAddons() {
+            return addons;
+        }
+
+        public void setAddons(Map addons) {
+            this.addons = addons;
         }
     }
 
@@ -299,6 +310,7 @@ public class KVMAgentCommands {
 
     public static class PingCmd extends AgentCommand {
         public String hostUuid;
+        public boolean checkIdleState;
     }
 
     public static class PingResponse extends AgentResponse {
@@ -778,6 +790,7 @@ public class KVMAgentCommands {
 
     public static class NicTO {
         private String mac;
+        private List<String> usedIps;
         private List<String> ips;
         private String bridgeName;
         // run `bridge fdb add NicTO.mac dev NicTO.physicalInterface` on vnics to allow vf <-> vnic communication
@@ -932,6 +945,14 @@ public class KVMAgentCommands {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public void setUsedIps(List<String> usedIps) {
+            this.usedIps = usedIps;
+        }
+
+        public List<String> getUsedIps() {
+            return usedIps;
         }
     }
 

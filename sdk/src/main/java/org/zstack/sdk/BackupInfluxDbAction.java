@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetNicQosAction extends AbstractAction {
+public class BackupInfluxDbAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetNicQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetNicQosResult value;
+        public org.zstack.sdk.BackupInfluxDbResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,8 @@ public class SetNicQosAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {8192L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long outboundBandwidth;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {8192L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long inboundBandwidth;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer dscp;
+    @Param(required = false)
+    public java.lang.String backupPath;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -69,8 +60,8 @@ public class SetNicQosAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetNicQosResult value = res.getResult(org.zstack.sdk.SetNicQosResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetNicQosResult() : value; 
+        org.zstack.sdk.BackupInfluxDbResult value = res.getResult(org.zstack.sdk.BackupInfluxDbResult.class);
+        ret.value = value == null ? new org.zstack.sdk.BackupInfluxDbResult() : value; 
 
         return ret;
     }
@@ -99,11 +90,11 @@ public class SetNicQosAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/backup-influxdb";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "setNicQos";
+        info.parameterName = "params";
         return info;
     }
 

@@ -35,4 +35,12 @@ public class GetNicQosResult {
         return this.inboundBandwidthUpthreshold;
     }
 
+    public int dscp;
+    public void setDscp(int dscp) {
+        this.dscp = dscp;
+    }
+    public int getDscp() {
+        return this.dscp;
+    }
+
 }

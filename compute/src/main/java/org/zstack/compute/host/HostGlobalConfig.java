@@ -1,6 +1,7 @@
 package org.zstack.compute.host;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.resourceconfig.BindResourceConfig;
@@ -49,4 +50,7 @@ public class HostGlobalConfig {
     public static GlobalConfig REPORT_HOST_CAPACITY_INTERVAL = new GlobalConfig(CATEGORY, "reportHostCapacityInterval");
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 65535)
     public static GlobalConfig HOST_PORT_ALLOCATION_START_PORT = new GlobalConfig(CATEGORY, "host.port.allocate.start.port");
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "shutdown the host which no vm running on it automatically")
+    public static GlobalConfig AUTO_SHUTDOWN_IDLE_HOST = new GlobalConfig(CATEGORY, "auto.shutdown.idle.host");
 }
