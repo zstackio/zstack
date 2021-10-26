@@ -26,6 +26,7 @@ class SimpleEnvSpec extends EnvSpec {
         adminLogin()
 
         installDeletionMethods()
+        initializeMockedResource()
         installSimulatorHandlers()
 
         deploy()

@@ -107,6 +107,8 @@ class EnvSpec extends ApiHelper implements Node  {
 
     static Set<Closure> cleanupClosures = []
 
+    static Set<Closure> mockedResources = []
+
     static List deletionMethods = [
             [CreateZoneAction.metaClass, CreateZoneAction.Result.metaClass, DeleteZoneAction.class],
             [AddCephBackupStorageAction.metaClass, AddCephBackupStorageAction.Result.metaClass, DeleteBackupStorageAction.class],
@@ -573,6 +575,16 @@ class EnvSpec extends ApiHelper implements Node  {
         return spec
     }
 
+    protected void initializeMockedResource() {
+        logger.debug("Initialize mocked resource")
+
+        mockedResources.each {
+            it(this)
+        }
+
+        logger.debug("Initialize mocked resource finished")
+    }
+
     protected void installSimulatorHandlers() {
         logger.debug("Install simulator handlers started")
         simulatorClasses.each { clz ->
@@ -606,6 +618,7 @@ class EnvSpec extends ApiHelper implements Node  {
         adminLogin()
         resetAllGlobalConfig()
 
+        initializeMockedResource()
         installSimulatorHandlers()
         installDeletionMethods()
 
@@ -879,6 +892,10 @@ class EnvSpec extends ApiHelper implements Node  {
         }
 
         lst.add(new Tuple(condition, c))
+    }
+
+    static void installMockedResourceToInitialize(Closure c) {
+        mockedResources.add(c)
     }
 
     void mockFactory(Class clz, Closure c) {
