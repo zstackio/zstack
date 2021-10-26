@@ -16,16 +16,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Plugin(name = "Masksensitivepatternlayout", category = Node.CATEGORY, elementType = Layout.ELEMENT_TYPE, printObject = true)
-public class Masksensitivepatternlayout extends AbstractStringLayout {
-    private static final long serialVersionUID = 1L;
-
+@Plugin(name = "MaskSensitivePatternLayout", category = Node.CATEGORY, elementType = Layout.ELEMENT_TYPE, printObject = true)
+public class MaskSensitivePatternLayout extends AbstractStringLayout {
 
     public static final String DEFAULT_CONVERSION_PATTERN = "%m%n";
-
-    public static final String TTCC_CONVERSION_PATTERN = "%r [%t] %p %c %x - %m%n";
-
-    public static final String SIMPLE_CONVERSION_PATTERN = "%d [%t] %p %c - %m%n";
 
     public static final String KEY = "Converter";
 
@@ -42,7 +36,7 @@ public class Masksensitivepatternlayout extends AbstractStringLayout {
     private final boolean noConsoleNoAnsi;
 
 
-    private Masksensitivepatternlayout(final Configuration config, final MaskSensitiveRegexReplaces replace, final String pattern,
+    private MaskSensitivePatternLayout(final Configuration config, final MaskSensitiveRegexReplaces replace, final String pattern,
                                        final Charset charset, final boolean alwaysWriteExceptions, final boolean noConsoleNoAnsi,
                                        final String header, final String footer) {
         super(charset, toBytes(header, charset), toBytes(footer, charset));
@@ -129,7 +123,7 @@ public class Masksensitivepatternlayout extends AbstractStringLayout {
 
 
     @PluginFactory
-    public static Masksensitivepatternlayout createLayout(
+    public static MaskSensitivePatternLayout createLayout(
             @PluginAttribute(value = "pattern", defaultString = DEFAULT_CONVERSION_PATTERN) final String pattern,
             @PluginConfiguration final Configuration config,
             @PluginElement("Replaces") final MaskSensitiveRegexReplaces replace,
@@ -137,14 +131,12 @@ public class Masksensitivepatternlayout extends AbstractStringLayout {
             @PluginAttribute(value = "alwaysWriteExceptions", defaultBoolean = true) final boolean alwaysWriteExceptions,
             @PluginAttribute(value = "noConsoleNoAnsi", defaultBoolean = false) final boolean noConsoleNoAnsi,
             @PluginAttribute("header") final String header, @PluginAttribute("footer") final String footer) {
-        System.out.println("==============");
         return newBuilder().withPattern(pattern).withConfiguration(config).withRegexReplacement(replace)
                 .withCharset(charset).withAlwaysWriteExceptions(alwaysWriteExceptions)
                 .withNoConsoleNoAnsi(noConsoleNoAnsi).withHeader(header).withFooter(footer).build();
     }
 
-    public static Masksensitivepatternlayout createDefaultLayout() {
-        System.out.println("11111111");
+    public static MaskSensitivePatternLayout createDefaultLayout() {
         return newBuilder().build();
     }
 
@@ -155,7 +147,7 @@ public class Masksensitivepatternlayout extends AbstractStringLayout {
     }
 
 
-    public static class Builder implements org.apache.logging.log4j.core.util.Builder<Masksensitivepatternlayout> {
+    public static class Builder implements org.apache.logging.log4j.core.util.Builder<MaskSensitivePatternLayout> {
 
         // FIXME: it seems rather redundant to repeat default values (same goes
         // for field names)
@@ -163,7 +155,7 @@ public class Masksensitivepatternlayout extends AbstractStringLayout {
         // own and uses reflection?
 
         @PluginBuilderAttribute
-        private String pattern = Masksensitivepatternlayout.DEFAULT_CONVERSION_PATTERN;
+        private String pattern = MaskSensitivePatternLayout.DEFAULT_CONVERSION_PATTERN;
 
         @PluginConfiguration
         private Configuration configuration = null;
@@ -233,12 +225,12 @@ public class Masksensitivepatternlayout extends AbstractStringLayout {
         }
 
         @Override
-        public Masksensitivepatternlayout build() {
+        public MaskSensitivePatternLayout build() {
             // fall back to DefaultConfiguration
             if (configuration == null) {
                 configuration = new DefaultConfiguration();
             }
-            return new Masksensitivepatternlayout(configuration, regexReplacement, pattern, charset, alwaysWriteExceptions,
+            return new MaskSensitivePatternLayout(configuration, regexReplacement, pattern, charset, alwaysWriteExceptions,
                     noConsoleNoAnsi, header, footer);
         }
     }
