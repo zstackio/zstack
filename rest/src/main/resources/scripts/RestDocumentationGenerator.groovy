@@ -2090,7 +2090,7 @@ ${txt}
 
         String createRef(String n, String path, String desc, String type, Class clz, Boolean overrideDesc=null) {
             DebugUtils.Assert(!PRIMITIVE_TYPES.contains(clz), "${clz.name} is a primitive class!!!")
-            if (!clz instanceof ErrorCode) {
+            if (!ErrorCode.getClass().isAssignableFrom(clz)) {
                 laterResolveClasses.add(clz)
             }
             imports.add("import ${clz.canonicalName}")
