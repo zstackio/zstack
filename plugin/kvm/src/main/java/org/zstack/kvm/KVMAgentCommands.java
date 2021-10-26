@@ -1,7 +1,6 @@
 package org.zstack.kvm;
 
 import org.zstack.header.host.VmNicRedirectConfig;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
