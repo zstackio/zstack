@@ -549,7 +549,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             }
         }
 
-        if (!isValidHostType(struct)) {
+        if (new FlatNetworkServiceValidator().validate(struct.getHostUuid())) {
             completion.success();
             return;
         }
@@ -679,23 +679,9 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }).start();
     }
 
-    boolean isValidHostType(UserdataStruct struct) {
-        if (struct.getHostUuid() == null) {
-            return false;
-        }
-
-        String hy = Q.New(HostVO.class)
-                .eq(HostVO_.uuid, struct.getHostUuid())
-                .select(HostVO_.hypervisorType)
-                .findValue();
-
-        return hy.equals(KVMConstant.KVM_HYPERVISOR_TYPE);
-    }
-
-
     @Override
     public void releaseUserdata(final UserdataStruct struct, final Completion completion) {
-        if (!isValidHostType(struct)) {
+        if (new FlatNetworkServiceValidator().validate(struct.getHostUuid())) {
             completion.success();
             return;
         }
