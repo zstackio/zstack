@@ -180,6 +180,7 @@
             <zstack:extension interface="org.zstack.compute.vm.VmNicExtensionPoint" />
             <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
             <zstack:extension interface="org.zstack.header.vm.VmPlatformChangedExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
         
         <property name="supportNicDriverTypes" ref="SupportNicDriverTypes"/>
