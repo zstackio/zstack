@@ -303,7 +303,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             if (isAdmin) {
                 element.setVipUuid((String) result[1]);
                 element.setVipName((String) result[2]);
-                element.setVmInstanceUuid((String) result[3]);
+                for (L3NetworkGetIpStatisticExtensionPoint exp : pluginRgty.getExtensionList(L3NetworkGetIpStatisticExtensionPoint.class)) {
+                    element.setVmInstanceUuid(exp.getParentUuid((String) result[3]));
+                }
                 element.setVmInstanceName((String) result[4]);
                 element.setVmInstanceType((String) result[5]);
                 if (result[3] != null) {
@@ -320,7 +322,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 }
 
                 if (result[3] != null && ownedVms.contains(result[3])) {
-                    element.setVmInstanceUuid((String) result[3]);
+                    for (L3NetworkGetIpStatisticExtensionPoint exp : pluginRgty.getExtensionList(L3NetworkGetIpStatisticExtensionPoint.class)) {
+                        element.setVmInstanceUuid(exp.getParentUuid((String) result[3]));
+                    }
                     element.setVmInstanceName((String) result[4]);
                     element.setVmInstanceType((String) result[5]);
                     vmUuids.add((String) result[3]);
@@ -511,12 +515,13 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             ipStatistics.add(element);
             element.setIp((String) result[0]);
 
-            String uuid = (String) result[1];
-            element.setVmInstanceUuid(uuid);
-            if (StringUtils.isNotEmpty(uuid)) {
-                vmUuids.add(element.getVmInstanceUuid());
+            for (L3NetworkGetIpStatisticExtensionPoint exp : pluginRgty.getExtensionList(L3NetworkGetIpStatisticExtensionPoint.class)) {
+                String uuid = (String) result[1];
+                element.setVmInstanceUuid(exp.getParentUuid(uuid));
+                if (StringUtils.isNotEmpty(uuid)) {
+                    vmUuids.add(element.getVmInstanceUuid());
+                }
             }
-
             element.setVmInstanceName((String) result[2]);
 
             String type = (String) result[3];
