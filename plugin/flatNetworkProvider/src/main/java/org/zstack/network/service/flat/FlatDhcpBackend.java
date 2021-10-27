@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.StaticIpOperator;
 import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -26,11 +27,14 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
@@ -64,8 +68,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.network.service.flat.IpStatisticConstants.ResourceType;
 import static org.zstack.network.service.flat.IpStatisticConstants.SortBy;
 import static org.zstack.utils.CollectionDSL.*;
@@ -92,6 +95,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private DhcpExtension dhcpExtension;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
+
+    private Map<String, L3NetworkGetIpStatisticExtensionPoint> getIpStatisticExts = new HashMap<>();
 
     public static final String APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/apply";
     public static final String BATCH_APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/batchApply";
@@ -351,6 +356,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     resourceTypes.add(ResourceType.VPC_VROUTER);
                 }
             }
+
+            L3NetworkGetIpStatisticExtensionPoint exp = getExtensionPointFactory(null);
+            if (exp != null) {
+                element.setVmInstanceUuid(exp.getParentUuid(element.getVmInstanceUuid()));
+            }
         }
 
         return ipStatistics;
@@ -510,13 +520,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             IpStatisticData element = new IpStatisticData();
             ipStatistics.add(element);
             element.setIp((String) result[0]);
-
             String uuid = (String) result[1];
             element.setVmInstanceUuid(uuid);
             if (StringUtils.isNotEmpty(uuid)) {
                 vmUuids.add(element.getVmInstanceUuid());
             }
-
             element.setVmInstanceName((String) result[2]);
 
             String type = (String) result[3];
@@ -563,6 +571,15 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 element.setVmDefaultIp(vmToDefaultIpMap.get(vmvo.getUuid()));
             } else {
                 element.setVmDefaultIp(vmToDefaultIpMap.get(vmvo.getUuid()));
+            }
+
+            L3NetworkGetIpStatisticExtensionPoint exp = getExtensionPointFactory(null);
+            String uuid = element.getVmInstanceUuid();
+            if (exp != null) {
+                element.setVmInstanceUuid(exp.getParentUuid(uuid));
+            }
+            if (StringUtils.isNotEmpty(uuid)) {
+                vmUuids.add(element.getVmInstanceUuid());
             }
         }
 
@@ -805,7 +822,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Override
     public boolean start() {
+        for (L3NetworkGetIpStatisticExtensionPoint ext : pluginRgty.getExtensionList(L3NetworkGetIpStatisticExtensionPoint.class)) {
+            getIpStatisticExts.put(ext.getApplianceVmInstanceType(), ext);
+        }
         return true;
+    }
+
+    private L3NetworkGetIpStatisticExtensionPoint getExtensionPointFactory(String type) {
+        return getIpStatisticExts.get(type);
     }
 
     @Override
