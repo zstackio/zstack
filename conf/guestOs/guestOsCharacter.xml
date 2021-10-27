@@ -15,56 +15,189 @@
 
     <osInfo>
         <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>CentOS 5</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>CentOS 6</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>CentOS 7</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>CentOS 8</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>RHEL 5</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>RHEL 6</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>RHEL 7</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>RHEL 8</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Ubuntu 16</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Ubuntu 18</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Ubuntu 20</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Debian 7</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Debian 8</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Debian 9</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Debian 10</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Fedora</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Kylin 4</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Kylin 7</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Kylin 10</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>UOS 20</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>openEuler 20.03</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Linux</osRelease>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
+    </osInfo>
+
+    <osInfo>
+        <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
         <osRelease>WindowsServer 2008</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
         <osRelease>WindowsServer 2012</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
         <osRelease>WindowsServer 2016</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>false</hygonCpu>
+        <EPYCNeedIfOnHygon>false</EPYCNeedIfOnHygon>
         <osRelease>WindowsServer 2019</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
         <osRelease>Windows 7</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
         <osRelease>Windows 8</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>false</hygonCpu>
+        <EPYCNeedIfOnHygon>false</EPYCNeedIfOnHygon>
         <osRelease>Windows 10</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
         <osRelease>Windows xp</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
-        <hygonCpu>true</hygonCpu>
+        <EPYCNeedIfOnHygon>true</EPYCNeedIfOnHygon>
         <osRelease>Windows</osRelease>
     </osInfo>
 </character>

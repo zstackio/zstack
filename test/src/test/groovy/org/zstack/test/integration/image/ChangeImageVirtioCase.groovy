@@ -11,7 +11,6 @@ import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.ImageSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.VmSpec
 import org.zstack.utils.data.SizeUnit
@@ -187,7 +186,7 @@ class ChangeImageVirtioCase extends SubCase{
             l3NetworkUuids = [l3.uuid]
             rootDiskOfferingUuid = diskOffering.uuid
         }
-        assert !cmd.hygonCpu
+        assert !cmd.EPYCNeedIfOnHygon
 
         ImageInventory imageInventory = updateImage {
             uuid = image.uuid
@@ -202,6 +201,6 @@ class ChangeImageVirtioCase extends SubCase{
             l3NetworkUuids = [l3.uuid]
             rootDiskOfferingUuid = diskOffering.uuid
         }
-        assert cmd.hygonCpu
+        assert cmd.EPYCNeedIfOnHygon
     }
 }

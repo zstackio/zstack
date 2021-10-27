@@ -25,7 +25,7 @@ public class GuestOsCharacter {
             "platform",
             "osRelease",
             "acpi",
-            "hygonCpu"
+            "EPYCNeedIfOnHygon"
     })
     public static class Config {
         @XmlElement(required = true)
@@ -41,7 +41,7 @@ public class GuestOsCharacter {
         protected Boolean acpi;
 
         @XmlElement(required = false)
-        protected Boolean hygonCpu;
+        protected Boolean EPYCNeedIfOnHygon;
 
         public String getPlatform() {
             return platform;
@@ -76,12 +76,12 @@ public class GuestOsCharacter {
         }
 
 
-        public Boolean getHygonCpu() {
-            return hygonCpu;
+        public Boolean getEPYCNeedIfOnHygon() {
+            return EPYCNeedIfOnHygon;
         }
 
-        public void setHygonCpu(Boolean hygonCpu) {
-            this.hygonCpu = hygonCpu;
+        public void setEPYCNeedIfOnHygon(Boolean EPYCNeedIfOnHygon) {
+            this.EPYCNeedIfOnHygon = EPYCNeedIfOnHygon;
         }
     }
 }
