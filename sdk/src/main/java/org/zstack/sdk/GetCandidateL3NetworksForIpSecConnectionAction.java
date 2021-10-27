@@ -29,6 +29,9 @@ public class GetCandidateL3NetworksForIpSecConnectionAction extends AbstractActi
     public java.lang.String uuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vipUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String publicL3Uuid;
 
     @Param(required = false)
