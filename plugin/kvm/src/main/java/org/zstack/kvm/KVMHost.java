@@ -24,8 +24,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.retry.Retry;
-import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -63,7 +61,6 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
@@ -94,7 +91,6 @@ import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
-import static org.zstack.utils.StringDSL.ln;
 
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
@@ -2789,7 +2785,7 @@ public class KVMHost extends HostBase implements Host {
         String vmArchPlatformRelease = String.format("%s_%s_%s", spec.getVmInventory().getArchitecture(), spec.getVmInventory().getPlatform(), spec.getVmInventory().getGuestOsType());
         if (allGuestOsCharacter.containsKey(vmArchPlatformRelease)) {
             cmd.setAcpi(allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi());
-            cmd.setHygonCpu(allGuestOsCharacter.get(vmArchPlatformRelease).getHygonCpu() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getHygonCpu());
+            cmd.setEPYCNeedIfOnHygon(allGuestOsCharacter.get(vmArchPlatformRelease).getEPYCNeedIfOnHygon() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getEPYCNeedIfOnHygon());
         }
 
         addons(spec, cmd);

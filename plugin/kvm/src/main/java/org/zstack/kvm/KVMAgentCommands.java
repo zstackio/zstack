@@ -1595,7 +1595,7 @@ public class KVMAgentCommands {
         private boolean coloSecondary;
         private boolean consoleLogToFile;
         private boolean acpi;
-        private boolean hygonCpu;
+        private boolean EPYCNeedIfOnHygon;
 
         // TODO: only for test
         private boolean useColoBinary;
@@ -1995,12 +1995,12 @@ public class KVMAgentCommands {
             this.consoleLogToFile = consoleLogToFile;
         }
 
-        public boolean getHygonCpu() {
-            return hygonCpu;
+        public boolean getEPYCNeedIfOnHygon() {
+            return EPYCNeedIfOnHygon;
         }
 
-        public void setHygonCpu(boolean hygonCpu) {
-            this.hygonCpu = hygonCpu;
+        public void setEPYCNeedIfOnHygon(boolean EPYCNeedIfOnHygon) {
+            this.EPYCNeedIfOnHygon = EPYCNeedIfOnHygon;
         }
 
         public boolean getAcpi() {
