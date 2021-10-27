@@ -18,10 +18,8 @@ public class MaskSensitiveRegexReplaces {
 
 
     public String format(String msg) {
-        if (msg.contains("Pass") || msg.contains("pass")) {
-            for (RegexReplacement replace : replaces) {
-                msg = replace.format(msg);
-            }
+        for (RegexReplacement replace : replaces) {
+            msg = replace.format(msg);
         }
         return msg;
     }

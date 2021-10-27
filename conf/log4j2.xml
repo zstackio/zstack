@@ -3,14 +3,14 @@
     <Appenders>
         <RollingFile name="RollingFile" fileName="${sys:catalina.home}/logs/management-server.log"
                      filePattern="${sys:catalina.home}/logs/management-server-%d{yyyy-MM-dd}-%i.log.gz">
-            <Masksensitivepatternlayout>
+            <MaskSensitivePatternLayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] %X{api,task} (%t) %m%n</pattern>
                 <replaces>
                    <!-- <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
                     <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
                     <replace regex="(ipmitool.*.-P)( ')(.*?)(')" replacement="$1$2*****$4"/>
                 </replaces>
-            </Masksensitivepatternlayout>
+            </MaskSensitivePatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="450 MB"/>
             </Policies>
@@ -26,14 +26,14 @@
 
         <RollingFile name="ApiRequestLogger" fileName="${sys:catalina.home}/logs/zstack-api.log"
                      filePattern="${sys:catalina.home}/logs/zstack-api-%d{yyyy-MM-dd}-%i.log.gz" >
-            <Masksensitivepatternlayout>
+            <MaskSensitivePatternLayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
                 <replaces>
                     <!--<replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
                     <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
                     <replace regex="(ipmitool.*.-P)( ')(.*?)(')" replacement="$1$2*****$4"/>
                 </replaces>
-            </Masksensitivepatternlayout>
+            </MaskSensitivePatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB" />
             </Policies>
@@ -49,14 +49,14 @@
 
         <RollingFile name="DiskCapacityLogger" fileName="${sys:catalina.home}/logs/zstack-disk-capacity.log"
                      filePattern="${sys:catalina.home}/logs/zstack-disk-capacity-%d{yyyy-MM-dd}-%i.log.gz">
-            <Masksensitivepatternlayout>
+            <MaskSensitivePatternLayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
                 <replaces>
                    <!-- <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
                     <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
                     <replace regex="(ipmitool.*.-P)( ')(.*?)(')" replacement="$1$2*****$4"/>
                 </replaces>
-            </Masksensitivepatternlayout>
+            </MaskSensitivePatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB"/>
             </Policies>
@@ -66,14 +66,14 @@
         <RollingFile name="DiskCapacityLoggerDetails"
                      fileName="${sys:catalina.home}/logs/zstack-disk-capacity-details.log"
                      filePattern="${sys:catalina.home}/logs/zstack-disk-capacity-details-%d{yyyy-MM-dd}-%i.log.gz">
-            <Masksensitivepatternlayout>
+            <MaskSensitivePatternLayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
                 <replaces>
                    <!-- <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "| )(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
                     <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
                     <replace regex="(ipmitool.*.-P)( ')(.*?)(')" replacement="$1$2*****$4"/>
                 </replaces>
-            </Masksensitivepatternlayout>
+            </MaskSensitivePatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB"/>
             </Policies>
