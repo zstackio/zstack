@@ -13,6 +13,7 @@ public class IpStatisticData {
     private String vmInstanceUuid;
     private String vmInstanceName;
     private String vmInstanceType;
+    private String vmInstanceParentUuid;
     private List<String> vmDefaultIp;
     private List<String> resourceTypes;
     private String state;
@@ -114,5 +115,13 @@ public class IpStatisticData {
 
     public void setVmDefaultIp(List<String> vmDefaultIp) {
         this.vmDefaultIp = vmDefaultIp;
+    }
+
+    public String getVmInstanceParentUuid() {
+        return vmInstanceParentUuid;
+    }
+
+    public void setVmInstanceParentUuid(String vmInstanceParentUuid) {
+        this.vmInstanceParentUuid = vmInstanceParentUuid;
     }
 }

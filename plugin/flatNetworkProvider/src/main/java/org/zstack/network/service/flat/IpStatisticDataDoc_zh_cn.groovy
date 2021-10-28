@@ -43,6 +43,12 @@ doc {
         since "3.7.0"
     }
     field {
+        name "vmInstanceParentUuid"
+        desc "虚拟机实例所属组的父Uuid"
+        type "String"
+        since "4.3.12"
+    }
+    field {
         name "vmDefaultIp"
         desc "虚拟机实例默认IP"
         type "String"
