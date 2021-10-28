@@ -64,8 +64,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.network.service.flat.IpStatisticConstants.ResourceType;
 import static org.zstack.network.service.flat.IpStatisticConstants.SortBy;
 import static org.zstack.utils.CollectionDSL.*;
@@ -92,6 +91,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private DhcpExtension dhcpExtension;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
+
+    private Map<String, L3NetworkGetIpStatisticExtensionPoint> getIpStatisticExts = new HashMap<>();
 
     public static final String APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/apply";
     public static final String BATCH_APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/batchApply";
@@ -351,6 +352,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     resourceTypes.add(ResourceType.VPC_VROUTER);
                 }
             }
+
+            L3NetworkGetIpStatisticExtensionPoint exp = getExtensionPointFactory(element.getVmInstanceType());
+            if (exp != null) {
+                element.setApplianceVmOwnerUuid(exp.getParentUuid(element.getVmInstanceUuid()));
+            }
         }
 
         return ipStatistics;
@@ -510,13 +516,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             IpStatisticData element = new IpStatisticData();
             ipStatistics.add(element);
             element.setIp((String) result[0]);
-
             String uuid = (String) result[1];
             element.setVmInstanceUuid(uuid);
             if (StringUtils.isNotEmpty(uuid)) {
                 vmUuids.add(element.getVmInstanceUuid());
             }
-
             element.setVmInstanceName((String) result[2]);
 
             String type = (String) result[3];
@@ -537,6 +541,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         Map<String, VmInstanceVO> vmvos = vms.stream()
                 .collect(Collectors.toMap(VmInstanceVO::getUuid, inv -> inv));
         Map<String, List<String>> vmToDefaultIpMap = new HashMap<>();
+        Map<String, Tuple> vrInfos = getApplianceVmInfo(vmUuids);
+
         for (IpStatisticData element : ipStatistics) {
             VmInstanceVO vmvo = vmvos.get(element.getVmInstanceUuid());
             if (vmvo == null) {
@@ -564,6 +570,18 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             } else {
                 element.setVmDefaultIp(vmToDefaultIpMap.get(vmvo.getUuid()));
             }
+
+            if (element.getVmInstanceUuid() != null) {
+                Tuple vrInfo = vrInfos.get(element.getVmInstanceUuid());
+                if (vrInfo != null) {
+                    String vmInstanceType = vrInfo.get(1, String.class);
+                    L3NetworkGetIpStatisticExtensionPoint exp = getExtensionPointFactory(vmInstanceType);
+                    if (exp != null) {
+                        element.setApplianceVmOwnerUuid(exp.getParentUuid(element.getVmInstanceUuid()));
+                    }
+                }
+            }
+
         }
 
         return ipStatistics;
@@ -805,7 +823,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Override
     public boolean start() {
+        for (L3NetworkGetIpStatisticExtensionPoint ext : pluginRgty.getExtensionList(L3NetworkGetIpStatisticExtensionPoint.class)) {
+            getIpStatisticExts.put(ext.getApplianceVmInstanceType(), ext);
+        }
         return true;
+    }
+
+    private L3NetworkGetIpStatisticExtensionPoint getExtensionPointFactory(String type) {
+        return getIpStatisticExts.get(type);
     }
 
     @Override
