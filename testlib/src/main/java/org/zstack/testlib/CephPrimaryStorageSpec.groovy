@@ -30,11 +30,11 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
     @SpecParam
     Map<String, String> monAddrs = [:]
     @SpecParam
-    String rootVolumePoolName = "pri-c-" + Platform.getUuid()
+    String rootVolumePoolName = "pri-v-r-" + Platform.getUuid()
     @SpecParam
     String dataVolumePoolName = "pri-v-d-" + Platform.getUuid()
     @SpecParam
-    String imageCachePoolName = "pri-v-r-" + Platform.getUuid()
+    String imageCachePoolName = "pri-c-" + Platform.getUuid()
 
     CephPrimaryStorageSpec(EnvSpec envSpec) {
         super(envSpec)
