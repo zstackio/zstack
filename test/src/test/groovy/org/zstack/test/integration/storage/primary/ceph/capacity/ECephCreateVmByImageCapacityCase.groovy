@@ -75,12 +75,31 @@ class ECephCreateVmByImageCapacityCase extends SubCase {
             primaryStorageUuids = [ps.uuid]
         }
 
-        createVmInstance {
+        VmInstanceInventory vm = createVmInstance {
             name = "crt-vm"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = sizedImage.uuid
             l3NetworkUuids = [l3.uuid]
             rootDiskOfferingUuid = diskOffering.uuid
+        } as VmInstanceInventory
+
+        def volume1 = createDataVolume {
+            name = "dataVolume1"
+            diskOfferingUuid = diskOfferingInventory.uuid
+            primaryStorageUuid = ps.uuid
+        } as VolumeInventory
+        def volume2 = createDataVolume {
+            name = "dataVolume2"
+            diskOfferingUuid = diskOfferingInventory.uuid
+            primaryStorageUuid = ps.uuid
+        } as VolumeInventory
+        attachDataVolumeToVm {
+            volumeUuid = volume1.uuid
+            vmInstanceUuid = vm.uuid
+        }
+        attachDataVolumeToVm {
+            volumeUuid = volume2.uuid
+            vmInstanceUuid = vm.uuid
         }
 
         GetPrimaryStorageCapacityResult capacityResult = getPrimaryStorageCapacity {
