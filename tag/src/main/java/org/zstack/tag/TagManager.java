@@ -61,4 +61,6 @@ public interface TagManager {
     void createTags(List<String> systemTags, List<String> userTags, String resourceUuid, String resourceType);
 
     List<String> filterSystemTags(List<String> systemTags, String resourceType);
+
+    boolean isCloneable(String tag, String resourceType);
 }
