@@ -145,7 +145,7 @@ class ECephCreateVmByImageCapacityCase extends SubCase {
         DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         L3NetworkInventory l3 = env.inventoryByName("l3")
-        def bs = env.inventoryByName("ceph-bk")
+        BackupStorageInventory bs = env.inventoryByName("ceph-bk")
 
         def download_image_path_invoked = false
         def image_virtual_size = SizeUnit.GIGABYTE.toByte(10)//10G
