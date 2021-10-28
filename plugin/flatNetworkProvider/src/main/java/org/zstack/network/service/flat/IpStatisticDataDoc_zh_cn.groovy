@@ -43,6 +43,12 @@ doc {
         since "3.7.0"
     }
     field {
+        name "applianceVmOwnerUuid"
+        desc "应用虚拟机实例的网络服务Uuid"
+        type "String"
+        since "4.3.12"
+    }
+    field {
         name "vmDefaultIp"
         desc "虚拟机实例默认IP"
         type "String"
