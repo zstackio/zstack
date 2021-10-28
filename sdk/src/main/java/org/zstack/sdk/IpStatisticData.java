@@ -52,6 +52,14 @@ public class IpStatisticData  {
         return this.vmInstanceType;
     }
 
+    public java.lang.String applianceVmOwnerUuid;
+    public void setApplianceVmOwnerUuid(java.lang.String vmInstanceParentUuid) {
+        this.applianceVmOwnerUuid = vmInstanceParentUuid;
+    }
+    public java.lang.String getApplianceVmOwnerUuid() {
+        return this.applianceVmOwnerUuid;
+    }
+
     public java.util.List vmDefaultIp;
     public void setVmDefaultIp(java.util.List vmDefaultIp) {
         this.vmDefaultIp = vmDefaultIp;
