@@ -3,24 +3,33 @@ package org.zstack.core.encrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.convert.PasswordConverter;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.workflow.ShareFlow;
+import org.zstack.core.workflow.ShareFlowChain;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.DisableEncryptMsg;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.encrypt.*;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.image.*;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.snapshot.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Convert;
 import javax.persistence.Query;
+import javax.persistence.Tuple;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -32,11 +41,36 @@ public class EncryptManagerImpl extends AbstractService {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private EncryptFacadeImpl encryptFacade;
+    @Autowired
+    private EncryptDriver encryptDriver;
 
+    public static Map<String, SignedColumn> signedMap = new HashMap<>();
+
+    private static Map<String, SignedColumn> getAllSignedIntegrity() {
+        Set<Field> fields = Platform.getReflections().getFieldsAnnotatedWith(SignedText.class);
+        Map<String, SignedColumn> signedColumnMap = new HashMap<>();
+        for (Field field : fields) {
+            SignedColumn signedColumn = new SignedColumn();
+            signedColumn.setSignedColumnNames(Arrays.stream(field.getAnnotation(SignedText.class).signedColumnName()).collect(Collectors.toList()));
+
+            AppointColumn[] appoints = field.getAnnotationsByType(AppointColumn.class);
+            for (AppointColumn appoint : appoints) {
+                Map<String, String> appointColumn = new HashMap<>();
+                appointColumn.put(appoint.column(), appoint.vaule());
+
+                signedColumn.setAppointMap(appointColumn);
+            }
+            signedColumnMap.put(field.getAnnotation(SignedText.class).tableName(), signedColumn);
+        }
+        return signedColumnMap;
+    }
 
 
     @Override
     public boolean start() {
+        signedMap = getAllSignedIntegrity();
         return true;
     }
 
@@ -47,12 +81,300 @@ public class EncryptManagerImpl extends AbstractService {
 
     @Override
     public void handleMessage(Message msg) {
+        if (msg instanceof APIMessage) {
+            handleApiMessage((APIMessage) msg);
+        } else {
+            handleLocalMessage(msg);
+        }
+    }
+
+    private void handleLocalMessage(Message msg) {
+         if (msg instanceof StartDataProtectionMsg) {
+             handle((StartDataProtectionMsg) msg);
+         } else {
+             bus.dealWithUnknownMessage(msg);
+         }
+
+    }
+
+    private void handle(StartDataProtectionMsg msg) {
+        StartDataProtectionReply reply = new StartDataProtectionReply();
+        FlowChain chain = new ShareFlowChain();
+        chain.setName("start-data-protection");
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                String __name__ = "start-encrypted-Confidentiality";
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        encryptAllConfidentiality(msg.getEncryptType());
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "start-encrypted-audits-and-globalconfig-integrity";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        encryptedAllDateIntegrity();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "start-image-integrity";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<String> imageUuids = Q.New(ImageVO.class).select(ImageVO_.uuid).listValues();
+
+                        new While<>(imageUuids).each((uuid, completion) -> {
+                            GetImageEncryptedMsg encryptedMsg = new GetImageEncryptedMsg();
+                            encryptedMsg.setImageUuid(uuid);
+                            bus.makeTargetServiceIdByResourceUuid(encryptedMsg, ImageConstant.SERVICE_ID, uuid);
+                            bus.send(encryptedMsg, new CloudBusCallBack(completion) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        completion.addError(reply.getError());
+                                        completion.done();
+                                        return;
+                                    }
+                                    GetImageEncryptedReply encryptedReply = reply.castReply();
+                                    EncryptionIntegrityVO vo = new EncryptionIntegrityVO();
+                                    vo.setResourceType(ImageVO.class.getSimpleName());
+                                    vo.setResourceUuid(encryptedReply.getImageUuid());
+                                    //todo integrity
+                                    vo.setSignedText(encryptDriver.encrypt(encryptedReply.getEncrypted()));
+                                    dbf.persist(vo);
+                                    completion.done();
+                                }
+                            });
+                        } ).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errorCodeList.getCauses().isEmpty()) {
+                                    trigger.fail(errorCodeList.getCause());
+                                    return;
+                                }
+
+                                trigger.next();
+                            }
+                        });
+
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "start-snapshot-integrity";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<VolumeSnapshotVO> snapshotVOS = Q.New(VolumeSnapshotVO.class).list();
+
+                        new While<>(snapshotVOS).each((snapshotVO, com)-> {
+                            GetVolumeSnapshotEncryptedMsg encryptMsg = new GetVolumeSnapshotEncryptedMsg();
+
+                            encryptMsg.setSnapshotUuid(snapshotVO.getUuid());
+                            encryptMsg.setPrimaryStorageUuid(snapshotVO.getPrimaryStorageUuid());
+                            encryptMsg.setPrimaryStorageInstallPath(snapshotVO.getPrimaryStorageInstallPath());
+                            bus.makeTargetServiceIdByResourceUuid(encryptMsg, VolumeSnapshotConstant.SERVICE_ID, snapshotVO.getUuid());
+                            bus.send(msg, new CloudBusCallBack(com) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        com.addError(reply.getError());
+                                        com.done();
+                                        return;
+                                    }
+
+                                    GetVolumeSnapshotEncryptedReply encryptedReply = reply.castReply();
+                                    EncryptionIntegrityVO vo = new EncryptionIntegrityVO();
+                                    vo.setResourceType(ImageVO.class.getSimpleName());
+                                    vo.setResourceUuid(encryptedReply.getSnapshotUuid());
+                                    //todo integrity
+                                    vo.setSignedText(encryptDriver.encrypt(encryptedReply.getEncrypt()));
+                                    dbf.persist(vo);
+                                    com.done();
+                                }
+                            });
+
+                        }).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errorCodeList.getCauses().isEmpty()) {
+                                    trigger.fail(errorCodeList.getCause());
+                                    return;
+                                }
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                    }
+                });
+
+            }
+        }).start();
+    }
+
+    private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIUpdateEncryptKeyMsg) {
             handle((APIUpdateEncryptKeyMsg) msg);
+        } else if (msg instanceof APIStartDataProtectionMsg) {
+            handle((APIStartDataProtectionMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
+
+    private void handle(APIStartDataProtectionMsg msg) {
+        APIStartDataProtectionEvent event = new APIStartDataProtectionEvent(msg.getId());
+        StartDataProtectionMsg dataProtectionMsg = new StartDataProtectionMsg();
+        dataProtectionMsg.setEncryptType(msg.getEncryptType());
+        bus.makeLocalServiceId(msg, EncryptGlobalConfig.SERVICE_ID);
+        bus.send(dataProtectionMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    event.setError(reply.getError());
+                }
+                bus.publish(event);
+            }
+        });
+    }
+
+    private void encryptedAllDateIntegrity() {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                signedMap.forEach((tableName, signedColumn) -> {
+                    String sql = String.format("select uuid from %s ", tableName);
+
+                    String splicingSql = null;
+                    if (!signedColumn.getAppointMap().isEmpty()) {
+                        StringBuilder sb = new StringBuilder();
+                        splicingSql = " where";
+                        signedColumn.getAppointMap().forEach((appointName, appointValue) -> {
+                            if (sb.length() > 0) {
+                                sb.append(" and ");
+                            }
+                           sb.append(String.format("%s = '%s'", appointName, appointValue));
+                        });
+                        splicingSql += sb.toString();
+                    }
+
+                    if (splicingSql != null) {
+                        sql += splicingSql;
+                    }
+                    List<String> uuids = sql(sql).list();
+                    for (String uuid : uuids) {
+                        String valueSql = String.format("select %s from %s ",
+                                String.join(",", signedColumn.getSignedColumnNames()), tableName);
+                        if (splicingSql != null) {
+                            valueSql += splicingSql;
+                        }
+                        Tuple tuple = sql(valueSql + String.format(" and uuid = '%s'", uuid), Tuple.class).find();
+                        String encryotValue = String.join("_", (CharSequence) Arrays.asList(tuple.toArray()));
+
+                        try {
+                            //todo integrity
+                            String encryptedString = encryptDriver.encrypt(encryotValue);
+                            String updateSql = String.format("insert into %s (resourceUuid, resourceType, signedText) values('%s', '%s', '%s')",
+                                    EncryptionIntegrityVO.class.getSimpleName() , uuid, tableName, encryptedString);
+                            Query query = dbf.getEntityManager().createQuery(updateSql);
+                            query.executeUpdate();
+                        } catch (Exception e) {
+                            logger.debug(String.format("encrypt error because : %s",e.getMessage()));
+                        }
+                    }
+
+                });
+            }
+        }.execute();
+    }
+
+    @Transactional
+    private void encryptAllConfidentiality(String encryptType) {
+        Set<Field> encryptedFields = encryptFacade.encryptedFields;
+
+        if (EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(Integer.class) == 1) {
+            decryptAllPassword(encryptedFields);
+        }
+
+        EncryptGlobalConfig.ENCRYPT_DRIVER.updateValue(encryptType);
+        encryptAllPassword(encryptedFields);
+    }
+
+    private void encryptAllPassword(Set<Field> encryptedFields) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                for (Field field : encryptedFields) {
+                    String className = field.getDeclaringClass().getSimpleName();
+
+                    List<String> uuids = sql(String.format("select uuid from %s", className)).list();
+
+                    for (String uuid : uuids) {
+                        String value = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
+
+                        try {
+                            String encryptedString = encryptDriver.encrypt(value);
+
+                            String sql = String.format("update %s set %s = :encrypted where uuid = :uuid", className, field.getName());
+
+                            Query query = dbf.getEntityManager().createQuery(sql);
+                            query.setParameter("encrypted", encryptedString);
+                            query.setParameter("uuid", uuid);
+                            query.executeUpdate();
+                        } catch (Exception e) {
+                            logger.debug(String.format("encrypt error because : %s",e.getMessage()));
+                        }
+                    }
+                }
+            }
+        }.execute();
+    }
+    private void decryptAllPassword(Set<Field> encryptedFields) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                for (Field field : encryptedFields) {
+                    String className = field.getDeclaringClass().getSimpleName();
+
+                    List<String> uuids = sql(String.format("select uuid from %s", className)).list();
+
+                    for (String uuid : uuids) {
+                        String encryptedString = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
+
+                        try {
+                            String decryptString = encryptDriver.decrypt(encryptedString);
+
+                            String sql = String.format("update %s set %s = :decrypted where uuid = :uuid", className, field.getName());
+
+                            Query query = dbf.getEntityManager().createQuery(sql);
+                            query.setParameter("decrypted", decryptString);
+                            query.setParameter("uuid", uuid);
+                            query.executeUpdate();
+                        } catch (Exception e) {
+                            logger.debug(String.format("decrypt password error because : %s",e.getMessage()));
+                        }
+                    }
+                }
+            }
+        }.execute();
+    }
+
 
     @Transactional
     private void handle(APIUpdateEncryptKeyMsg msg){

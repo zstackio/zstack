@@ -11,10 +11,7 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
@@ -34,6 +31,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.image.*;
+import org.zstack.header.image.GetImageEncryptedReply;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.message.*;
@@ -45,7 +43,6 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -131,9 +128,53 @@ public class ImageBase implements Image {
             handle((SyncSystemTagFromTagMsg) msg);
         } else if (msg instanceof UpdateImageMsg) {
             handle((UpdateImageMsg) msg);
+        } else if (msg instanceof GetImageEncryptedMsg) {
+            handle((GetImageEncryptedMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(GetImageEncryptedMsg msg) {
+        GetImageEncryptedReply reply = new GetImageEncryptedReply();
+        getImageMd5(msg, new ReturnValueCompletion<String>(msg) {
+            @Override
+            public void success(String encrypted) {
+                reply.setEncrypted(encrypted);
+                reply.setImageUuid(msg.getImageUuid());
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+
+    }
+
+    private void getImageMd5(GetImageEncryptedMsg msg, final ReturnValueCompletion<String> completion) {
+        GetImageEncryptedOnBackupStorageMsg backupStorageMsg = new GetImageEncryptedOnBackupStorageMsg();
+        String backupStorageUuid = Q.New(ImageBackupStorageRefVO.class)
+                .select(ImageBackupStorageRefVO_.backupStorageUuid)
+                .eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
+                .findValue();
+        backupStorageMsg.setImageUuid(msg.getImageUuid());
+        backupStorageMsg.setBackupStorageUuid(backupStorageUuid);
+
+        bus.makeTargetServiceIdByResourceUuid(backupStorageMsg, BackupStorageConstant.SERVICE_ID, backupStorageUuid);
+        bus.send(backupStorageMsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                } else {
+                    GetImageEncryptedOnBackupStorageReply sr = reply.castReply();
+                    completion.success(sr.getEncrypted());
+                }
+            }
+        });
     }
 
     class ImageSize {

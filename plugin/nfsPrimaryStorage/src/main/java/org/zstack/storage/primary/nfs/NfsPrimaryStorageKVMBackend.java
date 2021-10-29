@@ -132,6 +132,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/nfsprimarystorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/nfsprimarystorage/kvmhost/download/progress";
     public static final String CREATE_VOLUME_FROM_TEMPLATE_PATH = "/nfsprimarystorage/sftp/createvolumefromtemplate";
+    public static final String GET_QCOW2_HASH_VALUE_PATH = "/nfsprimarystorage/getqcow2hash";
 
 
     //////////////// For unit test //////////////////////////
@@ -1563,6 +1564,30 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
             @Override
             public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory pinv, GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeSnapshotEncryptedOnPrimaryStorageReply> completion) {
+        GetVolumeSnapshotEncryptedOnPrimaryStorageReply reply = new GetVolumeSnapshotEncryptedOnPrimaryStorageReply();
+        HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
+        GetQcow2HashValueCmd cmd = new GetQcow2HashValueCmd();
+        cmd.setInstallPath(msg.getPrimaryStorageInstallPath());
+        cmd.setHostUuid(host.getUuid());
+        asyncHttpCall(GET_QCOW2_HASH_VALUE_PATH, host.getUuid(), cmd, GetQcow2HashValueRsp.class, pinv, new ReturnValueCompletion<GetQcow2HashValueRsp>(completion) {
+
+            @Override
+            public void success(GetQcow2HashValueRsp rsp) {
+                reply.setSnapshotUuid(msg.getSnapshotUuid());
+                reply.setEncrypt(rsp.getHashValue());
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
                 completion.fail(errorCode);
             }
         });

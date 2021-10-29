@@ -13,8 +13,12 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigVO;
+import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.encrypt.EncryptDriver;
+import org.zstack.core.encrypt.EncryptGlobalConfig;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -24,6 +28,8 @@ import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.*;
+import org.zstack.header.core.encrypt.EncryptionIntegrityVO;
+import org.zstack.header.core.encrypt.EncryptionIntegrityVO_;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -86,6 +92,8 @@ public class VolumeSnapshotTreeBase {
 
     @Autowired
     private StorageTrash trash;
+    @Autowired
+    private EncryptDriver encryptDriver;
 
     @Autowired
     private TagManager tagMgr;
@@ -1789,6 +1797,51 @@ public class VolumeSnapshotTreeBase {
                         }
                     });
                 }
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "revert-volume-before-snap-integrity";
+                    @Override
+                    public boolean skip(Map data) {
+                        return Q.New(GlobalConfigVO.class)
+                                .eq(GlobalConfigVO_.category, EncryptGlobalConfig.CATEGORY)
+                                .eq(GlobalConfigVO_.name, EncryptGlobalConfig.ENCRYPT_DRIVER.getName())
+                                .eq(GlobalConfigVO_.value, EncryptGlobalConfig.defaultDriverValue)
+                                .isExists();
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        GetVolumeSnapshotEncryptedMsg encryptMsg = new GetVolumeSnapshotEncryptedMsg();
+
+                        encryptMsg.setSnapshotUuid(getSelfInventory().getUuid());
+                        encryptMsg.setPrimaryStorageUuid(getSelfInventory().getPrimaryStorageUuid());
+                        encryptMsg.setPrimaryStorageInstallPath(getSelfInventory().getPrimaryStorageInstallPath());
+                        bus.makeTargetServiceIdByResourceUuid(encryptMsg, VolumeSnapshotConstant.SERVICE_ID, getSelfInventory().getUuid());
+                        bus.send(encryptMsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+                                GetVolumeSnapshotEncryptedReply encryptedReply = reply.castReply();
+                                String encrypt = Q.New(EncryptionIntegrityVO.class)
+                                        .select(EncryptionIntegrityVO_.signedText)
+                                        .eq(EncryptionIntegrityVO_.resourceUuid, getSelfInventory().getUuid())
+                                        .eq(EncryptionIntegrityVO_.resourceType, VolumeSnapshotVO.class.getSimpleName())
+                                        .findValue();
+
+                                String encryptString = encryptDriver.encrypt(encryptedReply.getEncrypt());
+
+                                if (encrypt.isEmpty() || !encrypt.equals(encryptString)) {
+                                    trigger.fail(operr("volumeSnapshot[] is Integrity destroyed", getSelfInventory().getUuid()));
+                                    return;
+                                }
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "revert-volume-from-volume-snapshot-on-primary-storage";

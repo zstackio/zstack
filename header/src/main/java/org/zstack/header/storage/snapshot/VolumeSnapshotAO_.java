@@ -29,4 +29,5 @@ public class VolumeSnapshotAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VolumeSnapshotAO, VolumeSnapshotStatus> status;
     public static volatile SingularAttribute<VolumeSnapshotAO, Timestamp> createDate;
     public static volatile SingularAttribute<VolumeSnapshotAO, Timestamp> lastOpDate;
+    public static volatile SingularAttribute<VolumeSnapshotAO, String> md5sum;
 }

@@ -11,6 +11,7 @@ import org.zstack.core.convert.PasswordConverter;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorFactory;
 import org.zstack.utils.Utils;
@@ -21,6 +22,8 @@ import javax.persistence.Query;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by kayo on 2018/9/7.
@@ -64,7 +67,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                         String value = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
 
                         try {
-                            String encryptedString = rsa.encrypt1(value);
+                            String encryptedString = encrypt(value);
 
                             String sql = String.format("update %s set %s = :encrypted where uuid = :uuid", className, field.getName());
 
@@ -94,7 +97,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                         String encryptedString = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
 
                         try {
-                            String decryptString = (String) rsa.decrypt1(encryptedString);
+                            String decryptString = decrypt(encryptedString);
 
                             String sql = String.format("update %s set %s = :decrypted where uuid = :uuid", className, field.getName());
 
@@ -125,8 +128,8 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                         String encryptedString = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
 
                         try {
-                            String decryptString = (String) rsa.decrypt1(encryptedString);
-                            encryptedString = rsa.encrypt(decryptString, key);
+                            String decryptString = decrypt(encryptedString);
+                            encryptedString = encryptDriver.encrypt(decryptString, key);
 
                             String sql = String.format("update %s set %s = :encrypted where uuid = :uuid", className, field.getName());
 
@@ -166,6 +169,19 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
 
         encryptedFields = getAllEncryptPassword();
 
+        EncryptGlobalConfig.ENCRYPT_DRIVER.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                for (EncryptDriver driver : pluginRegistry.getExtensionList(EncryptDriver.class)) {
+                    if (!newConfig.value().equals(driver.getDriverType().toString())) {
+                        continue;
+                    }
+
+                    encryptDriver = driver;
+                }
+            }
+        });
+
         EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.installLocalBeforeUpdateExtension(new GlobalConfigBeforeUpdateExtensionPoint() {
             @Override
             public void beforeUpdateExtensionPoint(GlobalConfig oldConfig, String newValue) {
@@ -173,7 +189,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                 // e.g. use javax.persistence.Query set password to update encrypt password
                 // when PasswordConverter check this value is true the password will be encrypt
                 // again before persist, so this beforeUpdateExtension is necessary
-                if (Boolean.parseBoolean(newValue)) {
+                if (Integer.parseInt(newValue) > 0) {
                     encryptAllPassword();
                 }
             }
@@ -182,7 +198,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.installLocalUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
-                if (!newConfig.value(Boolean.class)) {
+                if (Integer.parseInt(newConfig.value()) == 0) {
                     decryptAllPassword();
                 }
             }

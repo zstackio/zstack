@@ -165,6 +165,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(ShrinkVolumeSnapshotOnPrimaryStorageMsg msg);
 
+    protected abstract void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg);
+
     public PrimaryStorageBase(PrimaryStorageVO self) {
         this.self = self;
     }

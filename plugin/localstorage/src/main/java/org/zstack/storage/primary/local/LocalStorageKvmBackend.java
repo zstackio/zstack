@@ -761,6 +761,39 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static class LinkVolumeNewDirRsp extends AgentResponse {
     }
 
+    public static class GetQcow2HashValueCmd extends AgentCommand {
+        private String hostUuid;
+        private String installPath;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+    }
+
+    public static class GetQcow2HashValueRsp extends AgentResponse {
+        private String hashValue;
+
+        public String getHashValue() {
+            return hashValue;
+        }
+
+        public void setHashValue(String hashValue) {
+            this.hashValue = hashValue;
+        }
+    }
+
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
@@ -788,6 +821,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/localstorage/kvmhost/download/progress";
+    public static final String GET_QCOW2_HASH_VALUE_PATH = "/localstorage/getqcow2hash";
 
     public LocalStorageKvmBackend() {
     }
@@ -3450,6 +3484,30 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void success(GetDownloadBitsFromKVMHostProgressRsp rsp) {
                 reply.setTotalSize(rsp.totalSize);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeSnapshotEncryptedOnPrimaryStorageReply> completion) {
+        GetVolumeSnapshotEncryptedOnPrimaryStorageReply reply = new GetVolumeSnapshotEncryptedOnPrimaryStorageReply();
+        GetQcow2HashValueCmd cmd = new GetQcow2HashValueCmd();
+
+        String hostUuid = getHostUuidByResourceUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class.getSimpleName());
+        cmd.setHostUuid(hostUuid);
+        cmd.setInstallPath(msg.getPrimaryStorageInstallPath());
+        httpCall(GET_QCOW2_HASH_VALUE_PATH, hostUuid, cmd, true, GetQcow2HashValueRsp.class, new ReturnValueCompletion<GetQcow2HashValueRsp>(completion) {
+
+            @Override
+            public void success(GetQcow2HashValueRsp returnValue) {
+                reply.setSnapshotUuid(msg.getSnapshotUuid());
+                reply.setEncrypt(returnValue.getHashValue());
                 completion.success(reply);
             }
 

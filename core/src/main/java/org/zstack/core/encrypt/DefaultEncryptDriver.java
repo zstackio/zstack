@@ -29,4 +29,14 @@ public class DefaultEncryptDriver implements EncryptDriver {
             throw new CloudRuntimeException(e.getMessage());
         }
     }
+
+    @Override
+    public String encrypt(String data, String signed) {
+        return rsa.encrypt(data, signed);
+    }
+
+    @Override
+    public String decrypt(String data, String signed) {
+        return rsa.decrypt(data, signed);
+    }
 }

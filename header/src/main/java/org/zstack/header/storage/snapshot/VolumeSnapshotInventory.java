@@ -166,6 +166,8 @@ public class VolumeSnapshotInventory {
             joinColumn = @JoinColumn(name = "volumeSnapshotUuid", referencedColumnName = "volumeSnapshotGroupUuid"))
     private String groupUuid;
 
+    private String md5Sum;
+
     public static VolumeSnapshotInventory valueOf(VolumeSnapshotVO vo) {
         VolumeSnapshotInventory inv = new VolumeSnapshotInventory();
         inv.setName(vo.getName());
@@ -186,6 +188,7 @@ public class VolumeSnapshotInventory {
         inv.setVolumeType(vo.getVolumeType());
         inv.setTreeUuid(vo.getTreeUuid());
         inv.setBackupStorageRefs(VolumeSnapshotBackupStorageRefInventory.valueOf(vo.getBackupStorageRefs()));
+        inv.setMd5Sum(vo.getMd5sum());
         if (vo.getGroupRef() != null) {
             inv.setGroupUuid(vo.getGroupRef().getVolumeSnapshotGroupUuid());
         }
@@ -360,5 +363,13 @@ public class VolumeSnapshotInventory {
 
     public void setGroupUuid(String groupUuid) {
         this.groupUuid = groupUuid;
+    }
+
+    public String getMd5Sum() {
+        return md5Sum;
+    }
+
+    public void setMd5Sum(String md5Sum) {
+        this.md5Sum = md5Sum;
     }
 }

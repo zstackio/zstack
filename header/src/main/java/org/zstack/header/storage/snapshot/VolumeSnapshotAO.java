@@ -79,6 +79,9 @@ public class VolumeSnapshotAO extends ResourceVO implements ShadowEntity {
     @Transient
     private VolumeSnapshotAO shadow;
 
+    @Column
+    private String md5sum;
+
     public VolumeSnapshotAO getShadow() {
         return shadow;
     }
@@ -235,5 +238,13 @@ public class VolumeSnapshotAO extends ResourceVO implements ShadowEntity {
     @Override
     public void setShadow(Object o) {
         shadow = (VolumeSnapshotAO) o;
+    }
+
+    public String getMd5sum() {
+        return md5sum;
+    }
+
+    public void setMd5sum(String md5sum) {
+        this.md5sum = md5sum;
     }
 }

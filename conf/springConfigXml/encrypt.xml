@@ -36,6 +36,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="InfosecEncryptDriver" class="org.zstack.core.encrypt.InfoSecEncryptDriver">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.encrypt.EncryptDriver"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="EncryptApiInterceptor" class="org.zstack.core.encrypt.EncryptApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />

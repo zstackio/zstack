@@ -34,7 +34,9 @@ public class PasswordConverter implements AttributeConverter<String, String> {
         if (!EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(Boolean.class)) {
             return attribute;
         }
-
+        if (attribute == null || attribute.isEmpty()) {
+            return attribute;
+        }
         return encryptFacade.encrypt(attribute);
     }
 
@@ -42,6 +44,10 @@ public class PasswordConverter implements AttributeConverter<String, String> {
     public String convertToEntityAttribute(String dbData) {
         if (!EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(Boolean.class)) {
             return dbData;
+        }
+
+        if (dbData == null || dbData.isEmpty()) {
+            return dbData ;
         }
 
         return encryptFacade.decrypt(dbData);
