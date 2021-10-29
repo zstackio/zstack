@@ -274,6 +274,39 @@ public class KvmBackend extends HypervisorBackend {
     public static class LinkVolumeNewDirRsp extends AgentRsp {
     }
 
+    public static class GetQcow2HashValueCmd extends AgentCmd {
+        private String hostUuid;
+        private String installPath;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+    }
+
+    public static class GetQcow2HashValueRsp extends AgentRsp {
+        private String hashValue;
+
+        public String getHashValue() {
+            return hashValue;
+        }
+
+        public void setHashValue(String hashValue) {
+            this.hashValue = hashValue;
+        }
+    }
+
     public static final String CONNECT_PATH = "/sharedmountpointprimarystorage/connect";
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/sharedmountpointprimarystorage/createrootvolume";
     public static final String CREATE_VOLUME_WITH_BACKING_PATH = "/sharedmountpointprimarystorage/createvolumewithbacking";
@@ -293,6 +326,7 @@ public class KvmBackend extends HypervisorBackend {
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/sharedmountpointprimarystorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/sharedmountpointprimarystorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/sharedmountpointprimarystorage/kvmhost/download/progress";
+    public static final String GET_QCOW2_HASH_VALUE_PATH = "/sharedmountpointprimarystorage/getqcow2hash";
 
     public KvmBackend(PrimaryStorageVO self) {
         super(self);
@@ -641,6 +675,9 @@ public class KvmBackend extends HypervisorBackend {
                                     logger.debug(String.format("downloaded image[uuid:%s, name:%s] to the image cache of local shared mount point storage[uuid: %s, installPath: %s]",
                                             image.getUuid(), image.getName(), self.getUuid(), primaryStorageInstallPath));
 
+                                    pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)
+                                            .forEach(exp -> exp.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(vo)));
+
                                     completion.success(ImageCacheInventory.valueOf(vo));
                                     chain.next();
                                 }
@@ -655,6 +692,30 @@ public class KvmBackend extends HypervisorBackend {
                             });
                         }
                     }).start();
+                }
+
+                private void checkEncryptImageCache(ImageCacheInventory inventory, final SyncTaskChain chain) {
+                    List<AfterCreateImageCacheExtensionPoint> extensionList = pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class);
+
+                    if (extensionList.isEmpty()) {
+                        completion.success(inventory);
+                        chain.next();
+                        return;
+                    }
+
+                    extensionList.forEach(ext -> ext.checkEncryptImageCache(null, inventory, new Completion(chain) {
+                        @Override
+                        public void success() {
+                            completion.success(inventory);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                            chain.next();
+                        }
+                    }));
                 }
 
                 @Override
@@ -676,8 +737,7 @@ public class KvmBackend extends HypervisorBackend {
                         public void success(AgentRsp returnValue) {
                             CheckBitsRsp rsp = (CheckBitsRsp) returnValue;
                             if (rsp.existing) {
-                                completion.success(ImageCacheInventory.valueOf(cache));
-                                chain.next();
+                                checkEncryptImageCache(ImageCacheInventory.valueOf(cache), chain);
                                 return;
                             }
 
@@ -1498,6 +1558,35 @@ public class KvmBackend extends HypervisorBackend {
             @Override
             public void success(ImageCacheInventory returnValue) {
                 completion.success(returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeSnapshotEncryptedOnPrimaryStorageReply> completion) {
+        String hostUuid = primaryStorageFactory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
+        GetQcow2HashValueCmd cmd = new GetQcow2HashValueCmd();
+        cmd.setHostUuid(hostUuid);
+        cmd.setInstallPath(msg.getPrimaryStorageInstallPath());
+        new KvmCommandSender(hostUuid).send(cmd, GET_QCOW2_HASH_VALUE_PATH, new KvmCommandFailureChecker() {
+            @Override
+            public ErrorCode getError(KvmResponseWrapper wrapper) {
+                GetQcow2HashValueRsp rsp = wrapper.getResponse(GetQcow2HashValueRsp.class);
+                return rsp.success ? null : operr("operation error, because:%s", rsp.error);
+            }
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper returnValue) {
+                GetVolumeSnapshotEncryptedOnPrimaryStorageReply reply = new GetVolumeSnapshotEncryptedOnPrimaryStorageReply();
+                GetQcow2HashValueRsp rsp = returnValue.getResponse(GetQcow2HashValueRsp.class);
+                reply.setEncrypt(rsp.hashValue);
+                reply.setSnapshotUuid(msg.getSnapshotUuid());
+                completion.success(reply);
             }
 
             @Override

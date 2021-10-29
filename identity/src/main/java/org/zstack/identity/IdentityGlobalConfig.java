@@ -1,9 +1,7 @@
 package org.zstack.identity;
 
-import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigDef;
-import org.zstack.core.config.GlobalConfigDefinition;
-import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.core.config.*;
+import org.zstack.header.core.encrypt.GlobalConfigEncrypt;
 
 /**
  */
@@ -13,6 +11,8 @@ public class IdentityGlobalConfig {
 
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig MAX_CONCURRENT_SESSION = new GlobalConfig(CATEGORY, "session.maxConcurrent");
+
+    @GlobalConfigEncrypt(category = CATEGORY, name = "session.timeout")
     @GlobalConfigValidation(numberGreaterThan = 0,numberLessThan = 31536000)
     public static GlobalConfig SESSION_TIMEOUT = new GlobalConfig(CATEGORY, "session.timeout");
     @GlobalConfigValidation(numberGreaterThan = 1)
@@ -21,6 +21,7 @@ public class IdentityGlobalConfig {
     public static GlobalConfig SHOW_ALL_RESOURCE_TO_ADMIN = new GlobalConfig(CATEGORY, "admin.showAllResource");
     @GlobalConfigValidation(notEmpty = false)
     public static GlobalConfig ACCOUNT_API_CONTROL = new GlobalConfig(CATEGORY, "account.api.control");
+    @GlobalConfigEncrypt(category = CATEGORY, name = "enable.unique.session")
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ENABLE_UNIQUE_SESSION = new GlobalConfig(CATEGORY, "enable.unique.session");
 }

@@ -25,6 +25,6 @@ public interface SftpBackupStorageConstant {
     public static final String ANSIBLE_MODULE_PATH = "ansible/sftpbackupstorage";
     public static final String GET_IMAGE_SIZE = "/sftpbackupstorage/getimagesize";
     public static final String GET_LOCAL_FILE_SIZE = "/sftpbackupstorage/getlocalfilesize/";
-
+    public static final String GET_IMAGE_HASH = "/sftpbackupstorage/gethash";
     public static final String IPTABLES_COMMENTS = "sftpbs.allow.port";
 }
