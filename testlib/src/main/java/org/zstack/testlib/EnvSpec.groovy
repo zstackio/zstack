@@ -672,7 +672,7 @@ class EnvSpec extends ApiHelper implements Node  {
                               "CaptchaVO", "LoginAttemptsVO", "SchedulerJobHistoryVO",
                               "HistoricalPasswordVO", "BuildAppExportHistoryVO", "InstallPathRecycleVO", 
                               "PortMirrorSessionSequenceNumberVO", "LicenseHistoryVO", "EventLogVO",
-                              "EventRecordsVO", "AuditsVO", "AlarmRecordsVO", "VmCrashHistoryVO"]) {
+                              "EventRecordsVO", "AuditsVO", "AlarmRecordsVO", "VmCrashHistoryVO", "EncryptionIntegrityVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
             }

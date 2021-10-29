@@ -65,7 +65,7 @@ class HostPasswordEncryptCase extends SubCase {
         updateGlobalConfig {
             category = EncryptGlobalConfig.CATEGORY
             name = EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.name
-            value = true
+            value = "LocalEncryption"
         }
 
         retryInSecs {
@@ -77,7 +77,7 @@ class HostPasswordEncryptCase extends SubCase {
         updateGlobalConfig {
             category = EncryptGlobalConfig.CATEGORY
             name = EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.name
-            value = false
+            value = "None"
         }
 
         retryInSecs {

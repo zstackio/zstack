@@ -7,8 +7,11 @@ import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigVO;
+import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.encrypt.EncryptGlobalConfig;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -16,14 +19,14 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.progress.*;
+import org.zstack.header.core.encrypt.EncryptionIntegrityVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.*;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
@@ -31,10 +34,7 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -43,12 +43,10 @@ import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.header.volume.VolumeJustBeforeDeleteFromDbExtensionPoint;
-import org.zstack.storage.volume.VolumeBase;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
-import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -63,6 +61,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.snapshot.VolumeSnapshotTagHelper.getBackingVolumeTag;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -155,9 +154,36 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             handle((BatchDeleteVolumeSnapshotMsg) msg);
         } else if (msg instanceof GetVolumeSnapshotTreeRootNodeMsg) {
             handle((GetVolumeSnapshotTreeRootNodeMsg) msg);
+        } else if (msg instanceof GetVolumeSnapshotEncryptedMsg) {
+            handle((GetVolumeSnapshotEncryptedMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(GetVolumeSnapshotEncryptedMsg msg) {
+        GetVolumeSnapshotEncryptedReply snapshotEncryptedReply = new GetVolumeSnapshotEncryptedReply();
+        GetVolumeSnapshotEncryptedOnPrimaryStorageMsg encryptedMsg = new GetVolumeSnapshotEncryptedOnPrimaryStorageMsg();
+        encryptedMsg.setSnapshotUuid(msg.getSnapshotUuid());
+        encryptedMsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        encryptedMsg.setPrimaryStorageInstallPath(msg.getPrimaryStorageInstallPath());
+        bus.makeTargetServiceIdByResourceUuid(encryptedMsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+        bus.send(encryptedMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                GetVolumeSnapshotEncryptedOnPrimaryStorageReply encryptedReply = reply.castReply();
+                if (!reply.isSuccess()) {
+                    snapshotEncryptedReply.setError(reply.getError());
+                    bus.reply(msg, snapshotEncryptedReply);
+                    return;
+                }
+
+                snapshotEncryptedReply.setEncrypt(encryptedReply.getEncrypt());
+                snapshotEncryptedReply.setSnapshotUuid(encryptedReply.getSnapshotUuid());
+                bus.reply(msg, snapshotEncryptedReply);
+            }
+        });
+
     }
 
     private void handleSnapshotGroup(VolumeSnapshotGroupMessage msg) {
@@ -774,6 +800,32 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                                 trigger.next();
                             }
                         });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "save-volume-snapshot-integrity";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<AfterCreateVolumeSnapshotExtensionPoint> extensionList = pluginRgty.getExtensionList(AfterCreateVolumeSnapshotExtensionPoint.class);
+
+                        if (extensionList.isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        extensionList.forEach(exp -> exp.afterCreateVolumeSnapshot(snapshot, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        }));
                     }
                 });
 

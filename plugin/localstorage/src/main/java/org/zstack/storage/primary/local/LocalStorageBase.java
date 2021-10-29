@@ -2877,6 +2877,25 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class.getSimpleName());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<GetVolumeSnapshotEncryptedOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(GetVolumeSnapshotEncryptedOnPrimaryStorageReply reply) {
+               bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                GetVolumeSnapshotEncryptedOnPrimaryStorageReply reply = new GetVolumeSnapshotEncryptedOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
     final protected void syncPhysicalCapacity(final ReturnValueCompletion<PhysicalCapacityUsage> completion) {
         final List<FactoryCluster> fs = getAllFactoriesForAttachedClusters();
         class Sync {

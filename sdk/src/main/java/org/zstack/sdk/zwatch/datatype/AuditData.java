@@ -4,6 +4,14 @@ package org.zstack.sdk.zwatch.datatype;
 
 public class AuditData  {
 
+    public long id;
+    public void setId(long id) {
+        this.id = id;
+    }
+    public long getId() {
+        return this.id;
+    }
+
     public java.lang.String resourceUuid;
     public void setResourceUuid(java.lang.String resourceUuid) {
         this.resourceUuid = resourceUuid;
