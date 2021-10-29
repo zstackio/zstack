@@ -14,13 +14,18 @@ public class EncryptGlobalConfig {
 
     public static final String SERVICE_ID = "encrypt";
 
+    public static final String DEAFULT_DRIVER_VALUE = "default";
+
     @GlobalConfigValidation
     public static GlobalConfig ENCRYPT_ALGORITHM = new GlobalConfig(CATEGORY, "encrypt.algorithm");
 
-    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable encrypt host " +
+
+
+    @GlobalConfigValidation(validValues = {"None", "LocalEncryption", "ScurityResoueceEncryption"})
+    @GlobalConfigDef(defaultValue = "None", type = String.class, description = "enable encrypt host " +
             "password to database")
     public static GlobalConfig ENABLE_PASSWORD_ENCRYPT = new GlobalConfig(CATEGORY, "enable.password.encrypt");
 
-    @GlobalConfigValidation(validValues = {"default"})
+    //@GlobalConfigValidation(validValues = {"default"})
     public static GlobalConfig ENCRYPT_DRIVER = new GlobalConfig(CATEGORY, "encrypt.driver");
 }

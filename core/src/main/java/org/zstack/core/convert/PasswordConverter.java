@@ -1,5 +1,7 @@
 package org.zstack.core.convert;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.poi.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -7,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.zstack.core.encrypt.EncryptFacade;
 import org.zstack.core.encrypt.EncryptGlobalConfig;
+import org.zstack.header.core.encrypt.PasswordEncryptType;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -31,17 +34,23 @@ public class PasswordConverter implements AttributeConverter<String, String> {
 
     @Override
     public String convertToDatabaseColumn(String attribute) {
-        if (!EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(Boolean.class)) {
+        if (PasswordEncryptType.None.toString().equals(EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(String.class))) {
             return attribute;
         }
-
+        if (StringUtils.isEmpty(attribute)) {
+            return attribute;
+        }
         return encryptFacade.encrypt(attribute);
     }
 
     @Override
     public String convertToEntityAttribute(String dbData) {
-        if (!EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(Boolean.class)) {
+        if (PasswordEncryptType.None.toString().equals(EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(String.class))) {
             return dbData;
+        }
+
+        if (StringUtils.isEmpty(dbData)) {
+            return dbData ;
         }
 
         return encryptFacade.decrypt(dbData);

@@ -32,6 +32,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageBase;
@@ -556,6 +557,26 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     protected void handle(ShrinkVolumeSnapshotOnPrimaryStorageMsg msg) {
         bus.dealWithUnknownMessage(msg);
+    }
+
+    @Override
+    protected void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg) {
+        VolumeSnapshotVO snapshotVO = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
+
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(snapshotVO.getVolumeUuid());
+        bkd.handle(msg, new ReturnValueCompletion<GetVolumeSnapshotEncryptedOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(GetVolumeSnapshotEncryptedOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                GetVolumeSnapshotEncryptedOnPrimaryStorageReply reply = new GetVolumeSnapshotEncryptedOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override

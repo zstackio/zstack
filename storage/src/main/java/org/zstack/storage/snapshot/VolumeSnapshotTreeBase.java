@@ -13,8 +13,12 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigVO;
+import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.encrypt.EncryptDriver;
+import org.zstack.core.encrypt.EncryptGlobalConfig;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -24,6 +28,8 @@ import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.*;
+import org.zstack.header.core.encrypt.EncryptionIntegrityVO;
+import org.zstack.header.core.encrypt.EncryptionIntegrityVO_;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -1789,6 +1795,26 @@ public class VolumeSnapshotTreeBase {
                         }
                     });
                 }
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "revert-volume-before-check-snap-integrity";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        pluginRgty.getExtensionList(BeforeRevertVolumeFromSnapshotExtensionPoint.class)
+                                .forEach(exp -> exp.beforeRevertVolumeFromSnapshot(getSelfInventory(), new Completion(trigger) {
+                                    @Override
+                                    public void success() {
+                                        trigger.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                }));
+                    }
+                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "revert-volume-from-volume-snapshot-on-primary-storage";

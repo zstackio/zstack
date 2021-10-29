@@ -134,6 +134,13 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.totalSize = 1L
                 return rsp
             }
+
+            simulator(KvmBackend.GET_QCOW2_HASH_VALUE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.GetQcow2HashValueCmd.class)
+                def rsp = new KvmBackend.GetQcow2HashValueRsp()
+                rsp.hashValue = cmd.installPath
+                return rsp
+            }
         }
     }
 

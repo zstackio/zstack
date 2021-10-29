@@ -226,6 +226,14 @@ public class SftpBackupStorageCommands {
         public long actualSize;
     }
 
+    public static class GetImageHashCmd extends AgentCommand {
+        public String path ;
+    }
+
+    public static class GetImageHashRsp extends AgentResponse {
+        public String hash;
+    }
+
     public static class GetImagesMetaDataCmd extends AgentCommand {
         private String backupStoragePath;
 

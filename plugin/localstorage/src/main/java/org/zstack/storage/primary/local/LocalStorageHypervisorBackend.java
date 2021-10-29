@@ -99,4 +99,6 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
     abstract void initializeHostAttachedPSMountPath(String hostUuid, Completion completion);
 
     abstract void handle(GetDownloadBitsFromKVMHostProgressMsg msg, ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressReply> completion);
+
+    abstract void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeSnapshotEncryptedOnPrimaryStorageReply> completion);
 }
