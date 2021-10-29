@@ -65,19 +65,19 @@ class HostPasswordEncryptCase extends SubCase {
         updateGlobalConfig {
             category = EncryptGlobalConfig.CATEGORY
             name = EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.name
-            value = true
+            value = 1
         }
 
         retryInSecs {
             password = Q.New(KVMHostVO.class).select(KVMHostVO_.password).eq(KVMHostVO_.uuid, host.uuid).findValue()
 
-            assert password == "password"
+            assert password != "password" //The encrypted data is different
         }
 
         updateGlobalConfig {
             category = EncryptGlobalConfig.CATEGORY
             name = EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.name
-            value = false
+            value = 0
         }
 
         retryInSecs {

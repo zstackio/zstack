@@ -17,7 +17,6 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -1257,6 +1256,20 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    @Override
+    protected void handle(GetImageEncryptedOnBackupStorageMsg msg) {
+        GetImageEncryptedOnBackupStorageReply reply = new GetImageEncryptedOnBackupStorageReply();
+
+        String  installPath = Q.New(ImageBackupStorageRefVO.class)
+                .select(ImageBackupStorageRefVO_.installPath)
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, self.getUuid())
+                .eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
+                .findValue();
+
+        reply.setEncrypted(installPath);
+        bus.reply(msg, reply);
     }
 
     @Override

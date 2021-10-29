@@ -22,7 +22,7 @@ public interface EncryptDriver {
      */
     EncryptFacadeResult<X509Certificate> parseCertificate(String certificateText);
 
-    EncryptFacadeResult<String> encrypt(String data, EncryptType algType);
+    EncryptFacadeResult<String> encrypt(String data, String algType);
 
-    EncryptFacadeResult<String> decrypt(String data, EncryptType algType);
+    EncryptFacadeResult<String> decrypt(String data, String algType);
 }

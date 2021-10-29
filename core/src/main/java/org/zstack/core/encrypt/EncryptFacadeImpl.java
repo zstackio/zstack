@@ -11,16 +11,22 @@ import org.zstack.core.convert.PasswordConverter;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Convert;
+import javax.persistence.Entity;
 import javax.persistence.Query;
+import javax.persistence.Table;
 import java.lang.reflect.Field;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by kayo on 2018/9/7.
@@ -62,12 +68,12 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
     }
 
     @Override
-    public EncryptFacadeResult<String> encrypt(String data, EncryptType algType) {
+    public EncryptFacadeResult<String> encrypt(String data, String algType) {
         return encryptDriver.encrypt(data, algType);
     }
 
     @Override
-    public EncryptFacadeResult<String> decrypt(String data, EncryptType algType) {
+    public EncryptFacadeResult<String> decrypt(String data, String algType) {
         return encryptDriver.decrypt(data, algType);
     }
 
@@ -76,24 +82,35 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
             @Override
             protected void scripts() {
                 for (Field field : encryptedFields) {
-                    String className = field.getDeclaringClass().getSimpleName();
+                    List<String> classNames = new ArrayList<>();
 
-                    List<String> uuids = sql(String.format("select uuid from %s", className)).list();
+                    if (field.getDeclaringClass().getAnnotation(Entity.class) != null && field.getDeclaringClass().getAnnotation(Table.class) != null) {
+                        classNames.add(field.getDeclaringClass().getSimpleName());
+                    } else {
+                        classNames.addAll(BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
+                                .filter(aClass -> aClass.getAnnotation(Entity.class) != null && aClass.getAnnotation(Table.class) != null)
+                                .map(Class::getSimpleName)
+                                .collect(Collectors.toList()));
+                    }
 
-                    for (String uuid : uuids) {
-                        String value = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
+                    for (String className : classNames) {
+                        List<String> uuids = sql(String.format("select uuid from %s", className)).list();
 
-                        try {
-                            String encryptedString = rsa.encrypt1(value);
+                        for (String uuid : uuids) {
+                            String value = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
 
-                            String sql = String.format("update %s set %s = :encrypted where uuid = :uuid", className, field.getName());
+                            try {
+                                String encryptedString = encrypt(value);
 
-                            Query query = dbf.getEntityManager().createQuery(sql);
-                            query.setParameter("encrypted", encryptedString);
-                            query.setParameter("uuid", uuid);
-                            query.executeUpdate();
-                        } catch (Exception e) {
-                            logger.debug(String.format("encrypt error because : %s",e.getMessage()));
+                                String sql = String.format("update %s set %s = :encrypted where uuid = :uuid", className, field.getName());
+
+                                Query query = dbf.getEntityManager().createQuery(sql);
+                                query.setParameter("encrypted", encryptedString);
+                                query.setParameter("uuid", uuid);
+                                query.executeUpdate();
+                            } catch (Exception e) {
+                                logger.debug(String.format("encrypt error because : %s",e.getMessage()));
+                            }
                         }
                     }
                 }
@@ -106,24 +123,35 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
             @Override
             protected void scripts() {
                 for (Field field : encryptedFields) {
-                    String className = field.getDeclaringClass().getSimpleName();
+                    List<String> classNames = new ArrayList<>();
 
-                    List<String> uuids = sql(String.format("select uuid from %s", className)).list();
+                    if (field.getDeclaringClass().getAnnotation(Entity.class) != null && field.getDeclaringClass().getAnnotation(Table.class) != null) {
+                        classNames.add(field.getDeclaringClass().getSimpleName());
+                    } else {
+                        classNames.addAll(BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
+                                .filter(aClass -> aClass.getAnnotation(Entity.class) != null && aClass.getAnnotation(Table.class) != null)
+                                .map(Class::getSimpleName)
+                                .collect(Collectors.toList()));
+                    }
 
-                    for (String uuid : uuids) {
-                        String encryptedString = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
+                    for (String className : classNames) {
+                        List<String> uuids = sql(String.format("select uuid from %s", className)).list();
 
-                        try {
-                            String decryptString = (String) rsa.decrypt1(encryptedString);
+                        for (String uuid : uuids) {
+                            String encryptedString = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
 
-                            String sql = String.format("update %s set %s = :decrypted where uuid = :uuid", className, field.getName());
+                            try {
+                                String decryptString = decrypt(encryptedString);
 
-                            Query query = dbf.getEntityManager().createQuery(sql);
-                            query.setParameter("decrypted", decryptString);
-                            query.setParameter("uuid", uuid);
-                            query.executeUpdate();
-                        } catch (Exception e) {
-                            logger.debug(String.format("decrypt password error because : %s",e.getMessage()));
+                                String sql = String.format("update %s set %s = :decrypted where uuid = :uuid", className, field.getName());
+
+                                Query query = dbf.getEntityManager().createQuery(sql);
+                                query.setParameter("decrypted", decryptString);
+                                query.setParameter("uuid", uuid);
+                                query.executeUpdate();
+                            } catch (Exception e) {
+                                logger.debug(String.format("decrypt password error because : %s",e.getMessage()));
+                            }
                         }
                     }
                 }
@@ -137,25 +165,40 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
             @Override
             protected void scripts() {
                 for (Field field : encryptedFields) {
-                    String className = field.getDeclaringClass().getSimpleName();
+                    List<String> classNames = new ArrayList<>();
 
-                    List<String> uuids = sql(String.format("select uuid from %s", className)).list();
+                    if (field.getDeclaringClass().getAnnotation(Entity.class) != null && field.getDeclaringClass().getAnnotation(Table.class) != null) {
+                        classNames.add(field.getDeclaringClass().getSimpleName());
+                    } else {
+                        classNames.addAll(BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
+                                .filter(aClass -> aClass.getAnnotation(Entity.class) != null && aClass.getAnnotation(Table.class) != null)
+                                .map(Class::getSimpleName)
+                                .collect(Collectors.toList()));
+                    }
 
-                    for (String uuid : uuids) {
-                        String encryptedString = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
+                    for (String className : classNames) {
+                        List<String> uuids = sql(String.format("select uuid from %s", className)).list();
 
-                        try {
-                            String decryptString = (String) rsa.decrypt1(encryptedString);
-                            encryptedString = rsa.encrypt(decryptString, key);
+                        for (String uuid : uuids) {
+                            String encryptedString = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
 
-                            String sql = String.format("update %s set %s = :encrypted where uuid = :uuid", className, field.getName());
+                            try {
+                                String decryptString = decrypt(encryptedString);
+                                EncryptFacadeResult<String> encrypt = encrypt(decryptString, key);
+                                if (encrypt.error != null) {
+                                    logger.error(String.format("Encryption error : %s", encrypt.error));
+                                    throw new OperationFailureException(operr("Encryption error : %s", encrypt.error));
+                                }
 
-                            Query query = dbf.getEntityManager().createQuery(sql);
-                            query.setParameter("encrypted", encryptedString);
-                            query.setParameter("uuid", uuid);
-                            query.executeUpdate();
-                        } catch (Exception e) {
-                            logger.debug(String.format("decrypt origin password error because : %s",e.getMessage()));
+                                String sql = String.format("update %s set %s = :encrypted where uuid = :uuid", className, field.getName());
+
+                                Query query = dbf.getEntityManager().createQuery(sql);
+                                query.setParameter("encrypted", encrypt.getResult());
+                                query.setParameter("uuid", uuid);
+                                query.executeUpdate();
+                            } catch (Exception e) {
+                                logger.debug(String.format("decrypt origin password error because : %s",e.getMessage()));
+                            }
                         }
                     }
                 }
@@ -186,6 +229,19 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
 
         encryptedFields = getAllEncryptPassword();
 
+        EncryptGlobalConfig.ENCRYPT_DRIVER.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                for (EncryptDriver driver : pluginRegistry.getExtensionList(EncryptDriver.class)) {
+                    if (!newConfig.value().equals(driver.getDriverType().toString())) {
+                        continue;
+                    }
+
+                    encryptDriver = driver;
+                }
+            }
+        });
+
         EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.installLocalBeforeUpdateExtension(new GlobalConfigBeforeUpdateExtensionPoint() {
             @Override
             public void beforeUpdateExtensionPoint(GlobalConfig oldConfig, String newValue) {
@@ -193,7 +249,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                 // e.g. use javax.persistence.Query set password to update encrypt password
                 // when PasswordConverter check this value is true the password will be encrypt
                 // again before persist, so this beforeUpdateExtension is necessary
-                if (Boolean.parseBoolean(newValue)) {
+                if (Integer.parseInt(newValue) > 0) {
                     encryptAllPassword();
                 }
             }
@@ -202,7 +258,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.installLocalUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
-                if (!newConfig.value(Boolean.class)) {
+                if (Integer.parseInt(newConfig.value()) == 0) {
                     decryptAllPassword();
                 }
             }

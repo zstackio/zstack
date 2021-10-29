@@ -79,3 +79,15 @@ CREATE TABLE IF NOT EXISTS `zstack`.`InfoSecSecurityMachineVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT fkInfoSecSecurityMachineVOSecurityMachineVO FOREIGN KEY (uuid) REFERENCES SecurityMachineVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE IF NOT EXISTS `zstack`.`EncryptionIntegrityVO` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `resourceUuid` varchar(128),
+    `resourceType` varchar(64) ,
+    `signedText` text,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `resource` (`resourceUuid`,`resourceType`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
