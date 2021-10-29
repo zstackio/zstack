@@ -91,6 +91,9 @@ public class SourceClassMap {
 			put("org.zstack.core.eventlog.EventLogInventory", "org.zstack.sdk.EventLogInventory");
 			put("org.zstack.core.gc.GarbageCollectorInventory", "org.zstack.sdk.GarbageCollectorInventory");
 			put("org.zstack.core.jsonlabel.JsonLabelInventory", "org.zstack.sdk.JsonLabelInventory");
+			put("org.zstack.crypto.ccs.CCSCertificateInventory", "org.zstack.sdk.CCSCertificateInventory");
+			put("org.zstack.crypto.ccs.CCSCertificateUserRefInventory", "org.zstack.sdk.CCSCertificateUserRefInventory");
+			put("org.zstack.crypto.ccs.CCSCertificateUserState", "org.zstack.sdk.CCSCertificateUserState");
 			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
 			put("org.zstack.drs.api.Threshold", "org.zstack.sdk.Threshold");
 			put("org.zstack.drs.entity.ClusterDRSInventory", "org.zstack.sdk.ClusterDRSInventory");
@@ -697,6 +700,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BillingInventory", "org.zstack.billing.generator.BillingInventory");
 			put("org.zstack.sdk.BuildAppExportHistoryInventory", "org.zstack.header.buildapp.BuildAppExportHistoryInventory");
 			put("org.zstack.sdk.BuildApplicationInventory", "org.zstack.header.buildapp.BuildApplicationInventory");
+			put("org.zstack.sdk.CCSCertificateInventory", "org.zstack.crypto.ccs.CCSCertificateInventory");
+			put("org.zstack.sdk.CCSCertificateUserRefInventory", "org.zstack.crypto.ccs.CCSCertificateUserRefInventory");
+			put("org.zstack.sdk.CCSCertificateUserState", "org.zstack.crypto.ccs.CCSCertificateUserState");
 			put("org.zstack.sdk.CdpPolicyInventory", "org.zstack.header.storage.cdp.CdpPolicyInventory");
 			put("org.zstack.sdk.CdpPolicyState", "org.zstack.header.storage.cdp.CdpPolicyState");
 			put("org.zstack.sdk.CdpTaskInventory", "org.zstack.header.storage.cdp.CdpTaskInventory");
