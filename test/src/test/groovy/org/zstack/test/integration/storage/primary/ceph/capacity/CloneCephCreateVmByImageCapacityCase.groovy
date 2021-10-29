@@ -76,13 +76,13 @@ class CloneCephCreateVmByImageCapacityCase extends SubCase {
             primaryStorageUuids = [ps.uuid]
         }
 
-        createVmInstance {
-            name = "crt-vm"
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = sizedImage.uuid
             l3NetworkUuids = [l3.uuid]
             rootDiskOfferingUuid = diskOffering.uuid
-        }
+        } as VmInstanceInventory
 
         GetPrimaryStorageCapacityResult capacityResult = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
@@ -114,7 +114,7 @@ class CloneCephCreateVmByImageCapacityCase extends SubCase {
             vmInstanceUuid = vm.uuid
             full = true
         }
-        
+
         assert 1 == 1
     }
 }
