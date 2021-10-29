@@ -22,6 +22,7 @@ public aspect AsyncSafeAspect {
     pointcut asyncSafe2() : execution(* *.*(.., NoErrorCompletion+, ..));
     pointcut asyncSafe3() : execution(* *.*(.., ReturnValueCompletion, ..));
     pointcut asyncSafe4() : execution(* *.*(.., WhileDoneCompletion, ..));
+    pointcut asyncSafe5() : execution(* *.*(.., HaCheckerCompletion, ..));
 
     @Autowired
     private ErrorFacade errf;
@@ -70,6 +71,8 @@ public aspect AsyncSafeAspect {
                     WhileDoneCompletion completion = (WhileDoneCompletion)arg;
                     completion.done(errs);
                 };
+            } else if (arg instanceof HaCheckerCompletion) {
+                w = err -> ((HaCheckerCompletion) arg).noWay();
             } else if (arg instanceof Message) {
                 w = new Wrapper() {
                     @Override
@@ -89,7 +92,7 @@ public aspect AsyncSafeAspect {
         return wrappers;
     }
 
-    Object around() : asyncSafe1() || asyncSafe2() || asyncSafe3() || asyncSafe4() {
+    Object around() : asyncSafe1() || asyncSafe2() || asyncSafe3() || asyncSafe4() || asyncSafe5() {
         try {
             return proceed();
         } catch (Throwable t) {
