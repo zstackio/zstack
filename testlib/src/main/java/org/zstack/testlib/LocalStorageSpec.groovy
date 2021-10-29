@@ -228,6 +228,13 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 rsp.totalSize = 1L
                 return rsp
             }
+
+            simulator(LocalStorageKvmBackend.GET_QCOW2_HASH_VALUE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.GetQcow2HashValueCmd.class)
+                LocalStorageKvmBackend.GetQcow2HashValueRsp rsp = new LocalStorageKvmBackend.GetQcow2HashValueRsp()
+                rsp.hashValue = cmd.installPath
+                return rsp
+            }
         }
     }
 

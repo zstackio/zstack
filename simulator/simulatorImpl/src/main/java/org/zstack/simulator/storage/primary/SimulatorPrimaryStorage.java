@@ -213,6 +213,11 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
+    @Override
     public void handle(AskInstallPathForNewSnapshotMsg msg) {
         AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
         bus.reply(msg, reply);

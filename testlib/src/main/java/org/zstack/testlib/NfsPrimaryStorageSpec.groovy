@@ -210,6 +210,13 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.totalSize = 1L
                 return rsp
             }
+
+            simulator(NfsPrimaryStorageKVMBackend.GET_QCOW2_HASH_VALUE_PATH) { HttpEntity<String> e, EnvSpec espec ->
+                def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.GetQcow2HashValueCmd.class)
+                def rsp = new NfsPrimaryStorageKVMBackendCommands.GetQcow2HashValueRsp()
+                rsp.hashValue = cmd.installPath
+                return rsp
+            }
         }
     }
 
