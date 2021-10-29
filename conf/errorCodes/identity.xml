@@ -35,5 +35,25 @@
         <id>1006</id>
         <description>Max number of active sessions exceeded</description>
     </code>
+
+    <code>
+        <id>2000</id>
+        <description>Addition authentication error</description>
+    </code>
+
+    <code>
+        <id>2001</id>
+        <description>The user has to login by addition authentication</description>
+    </code>
+
+    <code>
+        <id>2002</id>
+        <description>Fail to authenticate a user due to addition authentication</description>
+    </code>
+
+    <code>
+        <id>2003</id>
+        <description>Fail to authenticate a user due to remote authentication server error</description>
+    </code>
 </error>
 
