@@ -10,6 +10,7 @@ import java.util.List;
 @PythonClassInventory
 @Inventory(mappingVOClass = GlobalConfigVO.class)
 public class GlobalConfigInventory {
+	private Long id;
 	private String name;
 	private String category;
 	private String description;
@@ -18,6 +19,7 @@ public class GlobalConfigInventory {
 
 	public static GlobalConfigInventory valueOf(GlobalConfigVO vo) {
 		GlobalConfigInventory inv = new GlobalConfigInventory();
+		inv.setId(vo.getId());
 		inv.setName(vo.getName());
 		inv.setDefaultValue(vo.getDefaultValue());
 		inv.setDescription(vo.getDescription());
@@ -82,5 +84,13 @@ public class GlobalConfigInventory {
 
 	public void setValue(String value) {
 		this.value = value;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
 	}
 }

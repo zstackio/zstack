@@ -104,6 +104,12 @@ public class SimulatorBackupStorage extends BackupStorageBase {
     }
 
     @Override
+    protected void handle(GetImageEncryptedOnBackupStorageMsg msg) {
+        GetImageEncryptedOnBackupStorageReply reply = new GetImageEncryptedOnBackupStorageReply();
+        bus.reply(msg, reply);
+    }
+
+    @Override
     protected void connectHook(boolean newAdded, Completion completion) {
         completion.success();
     }

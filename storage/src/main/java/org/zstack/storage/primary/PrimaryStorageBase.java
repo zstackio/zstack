@@ -165,6 +165,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(ShrinkVolumeSnapshotOnPrimaryStorageMsg msg);
 
+    protected abstract void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg);
+
     public PrimaryStorageBase(PrimaryStorageVO self) {
         this.self = self;
     }
@@ -386,6 +388,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((ShrinkVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ChangeVolumeTypeOnPrimaryStorageMsg) {
             handle((ChangeVolumeTypeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) {
+            handle((GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
