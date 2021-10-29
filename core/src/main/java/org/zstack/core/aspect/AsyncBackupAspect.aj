@@ -34,6 +34,7 @@ public aspect AsyncBackupAspect {
                 || backup instanceof FlowTrigger
                 || backup instanceof SyncTaskChain
                 || backup instanceof NoErrorCompletion
+                || backup instanceof HaCheckerCompletion
                 || backup instanceof FlowRollback
                 || backup instanceof ChainTask;
     }
@@ -69,8 +70,10 @@ public aspect AsyncBackupAspect {
                 ((FlowTrigger) ancestor).fail(err);
             } else if (ancestor instanceof FlowRollback) {
                 ((FlowRollback) ancestor).rollback();
-            } else if (ancestor instanceof  SyncTaskChain) {
+            } else if (ancestor instanceof SyncTaskChain) {
                 ((SyncTaskChain) ancestor).next();
+            } else if (ancestor instanceof HaCheckerCompletion) {
+                ((HaCheckerCompletion) ancestor).noWay();
             } else if (ancestor instanceof NoErrorCompletion) {
                 ((NoErrorCompletion) ancestor).done();
             } else if (ancestor instanceof Message) {
