@@ -76,7 +76,7 @@ class LocalStorageMaintenanceVolumNotInstantiatedCase extends SubCase{
         List<VmInstanceInventory> list = getDataVolumeAttachableVm {
             volumeUuid = volumeInventory.uuid
         }
-        assert list.isEmpty() == false
+        assert list.isEmpty() == true
 
         primaryStorage = changePrimaryStorageState {
             uuid=primaryStorage.uuid
@@ -104,3 +104,4 @@ class LocalStorageMaintenanceVolumNotInstantiatedCase extends SubCase{
         env.delete()
     }
 }
+
