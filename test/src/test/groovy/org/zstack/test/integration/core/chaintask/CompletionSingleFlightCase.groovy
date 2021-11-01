@@ -7,6 +7,7 @@ import org.zstack.header.Constants
 import org.zstack.header.core.ReturnValueCompletion
 import org.zstack.header.core.progress.RunningTaskInfo
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.test.core.asyncbackup.TestSafeCompletion
 import org.zstack.testlib.SubCase
 
 import java.util.concurrent.CountDownLatch
@@ -31,6 +32,7 @@ class CompletionSingleFlightCase extends SubCase {
 
     @Override
     void test() {
+        testHaCheckerCompletionAJ()
         testCompletionSingleFlight()
         testSingleFlightHandleException()
         testTaskSingleFlight()
@@ -57,6 +59,10 @@ class CompletionSingleFlightCase extends SubCase {
         void setDone() {
             done = true
         }
+    }
+
+    static void testHaCheckerCompletionAJ() {
+        new TestSafeCompletion().testSafeCompletion();
     }
 
     void testCompletionSingleFlight() {
