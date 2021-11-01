@@ -165,6 +165,7 @@ class ECephCreateVmByImageCapacityCase extends SubCase {
         }
         assert download_image_path_invoked
 
+        
         GetPrimaryStorageCapacityResult beforeCapacityResult = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
         }
