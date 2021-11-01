@@ -686,6 +686,37 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = String.format("soc-create-snapshot");
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VmVsocCreateSnapshotMsg vmsg = new VmVsocCreateSnapshotMsg();
+                        String hostUuid = Q.New(VmInstanceVO.class)
+                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue();
+                        if (hostUuid == null) {
+                            hostUuid = Q.New(VmInstanceVO.class)
+                                    .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.lastHostUuid).findValue();
+                        }
+                        vmsg.setHostUuid(hostUuid);
+                        vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
+                        vmsg.setSnapshotUuid(struct.getCurrent().getUuid());
+                        vmsg.setVmUuid(Q.New(VmInstanceVO.class)
+                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
+                        bus.makeTargetServiceIdByResourceUuid(vmsg, HostConstant.SERVICE_ID, vmsg.getHostUuid());
+                        bus.send(vmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "take-volume-snapshot";
 
                     @Override
@@ -724,37 +755,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                             }
                         });
                         trigger.next();
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = String.format("soc-create-snapshot");
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        VmVsocCreateSnapshotMsg vmsg = new VmVsocCreateSnapshotMsg();
-                        String hostUuid = Q.New(VmInstanceVO.class)
-                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue();
-                        if (hostUuid == null) {
-                            hostUuid = Q.New(VmInstanceVO.class)
-                                    .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.lastHostUuid).findValue();
-                        }
-                        vmsg.setHostUuid(hostUuid);
-                        vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
-                        vmsg.setSnapshotUuid(snapshot.getUuid());
-                        vmsg.setVmUuid(Q.New(VmInstanceVO.class)
-                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
-                        bus.makeTargetServiceIdByResourceUuid(vmsg, HostConstant.SERVICE_ID, vmsg.getHostUuid());
-                        bus.send(vmsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                } else {
-                                    trigger.next();
-                                }
-                            }
-                        });
                     }
                 });
 
