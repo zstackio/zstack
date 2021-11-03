@@ -387,6 +387,14 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Override
     @Transactional
     public void copySystemTag(String srcResourceUuid, String srcResourceType,
+                              String dstResourceUuid, String dstResourceType) {
+        copySystemTag(srcResourceUuid, srcResourceType, dstResourceUuid, dstResourceType, true);
+        copySystemTag(srcResourceUuid, srcResourceType, dstResourceUuid, dstResourceType, false);
+    }
+
+    @Override
+    @Transactional
+    public void copySystemTag(String srcResourceUuid, String srcResourceType,
                               String dstResourceUuid, String dstResourceType, boolean inherent) {
         String sql = "select stag" +
                 " from SystemTagVO stag" +
