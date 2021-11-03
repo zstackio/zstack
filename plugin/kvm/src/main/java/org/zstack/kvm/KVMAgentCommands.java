@@ -1616,6 +1616,9 @@ public class KVMAgentCommands {
         private boolean consoleLogToFile;
         private boolean acpi;
         private boolean hygonCpu;
+        private int quota;
+        private int period;
+        private int shares;
 
         // TODO: only for test
         private boolean useColoBinary;
@@ -1900,6 +1903,30 @@ public class KVMAgentCommands {
 
         public void setNestedVirtualization(String nestedVirtualization) {
             this.nestedVirtualization = nestedVirtualization;
+        }
+
+        public int getQuota() {
+            return quota;
+        }
+
+        public void setQuota(int quota) {
+            this.quota = quota;
+        }
+
+        public int getPeriod() {
+            return period;
+        }
+
+        public void setPeriod(int period) {
+            this.period = period;
+        }
+
+        public int getShares() {
+            return shares;
+        }
+
+        public void setShares(int shares) {
+            this.shares = shares;
         }
 
         public String getHostManagementIp() {
