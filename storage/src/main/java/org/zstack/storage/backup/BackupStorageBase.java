@@ -12,6 +12,7 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
@@ -89,6 +90,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     protected RESTFacade restf;
     @Autowired
     protected StorageTrash trash;
+    @Autowired
+    protected PluginRegistry pluginRgty;
 
     protected String id;
 
@@ -285,7 +288,11 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             @Override
             public void fail(ErrorCode errorCode) {
                 if (changeStatus(BackupStorageStatus.Disconnected)) {
+                    BackupStorageStatus currentState = self.getStatus();
                     fireDisconnectedCanonicalEvent(errorCode);
+                    for (BackupStorageStatusChangedExtensionPoint ext : pluginRgty.getExtensionList(BackupStorageStatusChangedExtensionPoint.class)) {
+                        ext.backupStorageStateChanged(self.getUuid(), currentState, BackupStorageStatus.Disconnected);
+                    }
                 }
 
                 Boolean doReconnect = (Boolean) errorCode.getFromOpaque(Opaque.RECONNECT_AGENT.toString());
@@ -369,6 +376,9 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
                         if (fireDisconnecteEvent) {
                             fireDisconnectedCanonicalEvent(errorCode);
+                            for (BackupStorageStatusChangedExtensionPoint ext : pluginRgty.getExtensionList(BackupStorageStatusChangedExtensionPoint.class)) {
+                                ext.backupStorageStateChanged(self.getUuid(), BackupStorageStatus.Connected, BackupStorageStatus.Disconnected);
+                            }
                         }
 
                         reply.setError(errorCode);
