@@ -91,6 +91,13 @@
                                     </includes>
                                 </resource>
                                 <resource>
+                                    <directory>../premium/crypto/ext-libs</directory>
+                                    <targetPath>WEB-INF/lib</targetPath>
+                                    <includes>
+                                        <include>*.jar</include>
+                                    </includes>
+                                </resource>
+                                <resource>
                                     <directory>../search/ext-libs</directory>
                                     <targetPath>WEB-INF/lib</targetPath>
                                     <includes>
