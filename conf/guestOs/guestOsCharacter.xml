@@ -67,4 +67,16 @@
         <hygonCpu>true</hygonCpu>
         <osRelease>Windows</osRelease>
     </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <hygonCpu>true</hygonCpu>
+        <osRelease>UOS 20</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <hygonCpu>true</hygonCpu>
+        <osRelease>Kylin 10</osRelease>
+    </osInfo>
 </character>
