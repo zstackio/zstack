@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class SetVolumeQosAction extends AbstractAction {
 
@@ -31,8 +30,11 @@ public class SetVolumeQosAction extends AbstractAction {
     @Param(required = false, validValues = {"total","read","write"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String mode = "total";
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, noTrim = false)
     public java.lang.Long volumeBandwidth;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long volumeIOPS;
 
     @Param(required = false)
     public java.util.List systemTags;
