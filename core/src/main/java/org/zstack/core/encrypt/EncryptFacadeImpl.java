@@ -12,13 +12,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HypervisorFactory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Convert;
 import javax.persistence.Query;
 import java.lang.reflect.Field;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,6 +49,26 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
     @Override
     public String decrypt(String encryptString) {
         return encryptDriver.decrypt(encryptString);
+    }
+
+    @Override
+    public EncryptFacadeResult<String> attachedVerify(String cipherText) {
+        return encryptDriver.attachedVerify(cipherText);
+    }
+
+    @Override
+    public EncryptFacadeResult<X509Certificate> parseCertificate(String certificateText) {
+        return encryptDriver.parseCertificate(certificateText);
+    }
+
+    @Override
+    public EncryptFacadeResult<String> encrypt(String data, EncryptType algType) {
+        return encryptDriver.encrypt(data, algType);
+    }
+
+    @Override
+    public EncryptFacadeResult<String> decrypt(String data, EncryptType algType) {
+        return encryptDriver.decrypt(data, algType);
     }
 
     private void encryptAllPassword() {
