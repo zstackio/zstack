@@ -64,6 +64,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.getTaskStage;
@@ -503,7 +504,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                     return;
                 }
 
-                final List<String> ips = Arrays.asList(extraIps.split(","));
+                final List<String> ips = Arrays.stream(extraIps.split(",")).collect(Collectors.toList());
 
                 // if no storage network set for primary storage
                 if (d.getInventory().getManagementIp() != null) {
