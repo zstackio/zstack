@@ -879,6 +879,10 @@ public class VirtualRouter extends ApplianceVmBase {
                 .eq(VirtualRouterVmVO_.uuid, vrUuid).listValues();
     }
 
+    @Override
+    public void detachNetworkService(String vrUuid, String networkServiceType, String l3NetworkUuid){
+    }
+
     public class virtualRouterAfterAttachNicFlow extends NoRollbackFlow {
         @Override
         public void run(FlowTrigger trigger, Map data) {

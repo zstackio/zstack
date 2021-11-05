@@ -299,6 +299,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                         String msg = String.format(
                                 "virtual router[uuid:%s, ip:%s] successfully released snat for public l3[uuid:%s]",
                                 vr.getUuid(), vr.getManagementNic().getIp(), finalNic.getL3NetworkUuid());
+                        app.detachNetworkService(vr.getUuid(), NetworkServiceType.SNAT.toString(), finalNic.getL3NetworkUuid());
                         logger.warn(msg);
                     }
                 }
