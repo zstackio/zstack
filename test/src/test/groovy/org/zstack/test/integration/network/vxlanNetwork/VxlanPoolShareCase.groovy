@@ -170,6 +170,7 @@ class VxlanPoolShareCase extends SubCase{
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             VxlanKvmAgentCommands.CheckVxlanCidrResponse resp = new VxlanKvmAgentCommands.CheckVxlanCidrResponse()
             resp.setError("on purpose")
+            resp.setSuccess(false)
             return resp
         }
 
