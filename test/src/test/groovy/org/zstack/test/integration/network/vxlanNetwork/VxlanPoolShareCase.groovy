@@ -1,8 +1,15 @@
 package org.zstack.test.integration.network.vxlanNetwork
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.identity.SharedResourceVO
 import org.zstack.header.identity.SharedResourceVO_
+import org.zstack.header.network.l2.L2NetworkClusterRefVO
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
+import org.zstack.sdk.ClusterInventory
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.L2VxlanNetworkPoolInventory
 import org.zstack.sdk.ZoneInventory
 import org.zstack.test.integration.network.NetworkTest
@@ -58,7 +65,17 @@ class VxlanPoolShareCase extends SubCase{
 
                     kvm {
                         name = "kvm1"
-                        managementIp = "localhost"
+                        managementIp = "127.0.0.1"
+                        username = "root"
+                        password = "password"
+
+                        totalCpu = 8
+                        totalMem = SizeUnit.GIGABYTE.toByte(20)
+                    }
+
+                    kvm {
+                        name = "kvm1-2"
+                        managementIp = "127.0.0.2"
                         username = "root"
                         password = "password"
 
@@ -76,7 +93,7 @@ class VxlanPoolShareCase extends SubCase{
 
                     kvm {
                         name = "kvm2"
-                        managementIp = "127.0.0.1"
+                        managementIp = "127.0.1.1"
                         username = "root"
                         password = "password"
                     }
@@ -104,6 +121,7 @@ class VxlanPoolShareCase extends SubCase{
     void test() {
         env.create {
             testShareVxlanPool()
+            testReConnectHostFail()
         }
     }
 
@@ -131,5 +149,37 @@ class VxlanPoolShareCase extends SubCase{
         }
 
         assert !Q.New(SharedResourceVO.class).eq(SharedResourceVO_.resourceUuid, poolinv.uuid).isExists()
+    }
+
+    void testReConnectHostFail() {
+        HostInventory h1 = env.inventoryByName("kvm1") as HostInventory
+        ClusterInventory cluster = env.inventoryByName("cluster1") as ClusterInventory
+        ZoneInventory zone = env.inventoryByName("zone") as ZoneInventory
+
+        L2VxlanNetworkPoolInventory poolinv = createL2VxlanNetworkPool {
+            name = "TestVxlanPool"
+            zoneUuid = zone.getUuid()
+        } as L2VxlanNetworkPoolInventory
+
+        attachL2NetworkToCluster {
+            l2NetworkUuid = poolinv.uuid
+            clusterUuid = cluster.uuid
+            systemTags = ["l2NetworkUuid::${poolinv.getUuid()}::clusterUuid::${cluster.uuid}::cidr::{127.1.0.0/16}".toString()]
+        }
+
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            VxlanKvmAgentCommands.CheckVxlanCidrResponse resp = new VxlanKvmAgentCommands.CheckVxlanCidrResponse()
+            resp.setError("on purpose")
+            return resp
+        }
+
+        reconnectHost {
+            uuid = h1.uuid
+        }
+
+        L2NetworkClusterRefVO ref = Q.New(L2NetworkClusterRefVO.class)
+                .eq(L2NetworkClusterRefVO_.clusterUuid, cluster.uuid)
+                .eq(L2NetworkClusterRefVO_.l2NetworkUuid, poolinv.uuid).find()
+        assert ref != null
     }
 }
