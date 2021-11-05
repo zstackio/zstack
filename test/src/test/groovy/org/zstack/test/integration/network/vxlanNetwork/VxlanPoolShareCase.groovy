@@ -174,8 +174,10 @@ class VxlanPoolShareCase extends SubCase{
             return resp
         }
 
-        reconnectHost {
-            uuid = h1.uuid
+        expect(AssertionError.class) {
+            reconnectHost {
+                uuid = h1.uuid
+            }
         }
 
         L2NetworkClusterRefVO ref = Q.New(L2NetworkClusterRefVO.class)
