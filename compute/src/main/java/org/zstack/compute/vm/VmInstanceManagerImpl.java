@@ -2186,7 +2186,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         completion.done();
                     }
                 });
-            }, 200).run(new NopeWhileDoneCompletion());
+            }, 20).run(new NopeWhileDoneCompletion());
         }
     }
 
