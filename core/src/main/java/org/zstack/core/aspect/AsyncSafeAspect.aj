@@ -3,6 +3,7 @@ package org.zstack.core.aspect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.core.HaCheckerCompletion;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -22,6 +23,7 @@ public aspect AsyncSafeAspect {
     pointcut asyncSafe1() : execution(* *.*(.., Completion, ..));
     pointcut asyncSafe2() : execution(* *.*(.., NoErrorCompletion, ..));
     pointcut asyncSafe3() : execution(* *.*(.., ReturnValueCompletion, ..));
+    pointcut asyncSafe5() : execution(* *.*(.., HaCheckerCompletion, ..));
 
     @Autowired
     private ErrorFacade errf;
@@ -60,6 +62,8 @@ public aspect AsyncSafeAspect {
                         completion.done();
                     }
                 };
+            } else if (arg instanceof HaCheckerCompletion) {
+                w = err -> ((HaCheckerCompletion) arg).noWay();
             } else if (arg instanceof Message) {
                 w = new Wrapper() {
                     @Override
@@ -79,7 +83,7 @@ public aspect AsyncSafeAspect {
         return wrappers;
     }
 
-    Object around() : asyncSafe1() || asyncSafe2() || asyncSafe3() {
+    Object around() : asyncSafe1() || asyncSafe2() || asyncSafe3() || asyncSafe5() {
         try {
             return proceed();
         } catch (Throwable t) {
