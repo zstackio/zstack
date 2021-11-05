@@ -58,3 +58,8 @@ UPDATE `zstack`.`BareMetal2ChassisVO` SET status = "IPxeBootFailed" WHERE status
 UPDATE `zstack`.`BareMetal2ChassisVO` SET status = "IPxeBooting" WHERE status = "iPxeBooting";
 
 ALTER TABLE QuotaVO MODIFY COLUMN `value` bigint DEFAULT 0;
+
+ALTER TABLE SlbVmInstanceVO DROP FOREIGN KEY fkSlbVmInstanceVOSlbGroupVO;
+ALTER TABLE SlbVmInstanceVO DROP KEY fkSlbVmInstanceVOSlbGroupVO;
+ALTER TABLE SlbVmInstanceVO MODIFY COLUMN slbGroupUuid varchar(32) DEFAULT NULL;
+ALTER TABLE SlbVmInstanceVO ADD CONSTRAINT fkSlbVmInstanceVOSlbGroupVO FOREIGN KEY (slbGroupUuid) REFERENCES SlbGroupVO (uuid) ON DELETE SET NULL;
