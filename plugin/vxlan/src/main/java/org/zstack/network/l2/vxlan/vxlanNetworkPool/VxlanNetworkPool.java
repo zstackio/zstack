@@ -743,28 +743,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                L2NetworkInventory l2Network = L2NetworkInventory.valueOf(self);
-                List<String> clusterUuids = hosts.stream().map(HostInventory::getClusterUuid).distinct().collect(Collectors.toList());
-                new While<>(clusterUuids).step((clusterUuid,completion1)->{
-                    L2NetworkDetachFromClusterMsg dmsg = new L2NetworkDetachFromClusterMsg();
-                    dmsg.setL2NetworkUuid(l2Network.getUuid());
-                    dmsg.setClusterUuid(clusterUuid);
-                    bus.makeTargetServiceIdByResourceUuid(dmsg, L2NetworkConstant.SERVICE_ID, dmsg.getL2NetworkUuid());
-                    bus.send(dmsg, new CloudBusCallBack(dmsg) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.warn(reply.getError().toString());
-                            }
-                            completion1.done();
-                        }
-                    });
-                },3).run(new WhileDoneCompletion(completion){
-                    @Override
-                    public void done(ErrorCodeList errorCodeList) {
-                        completion.fail(errCode);
-                    }
-                });
+                completion.fail(errCode);
             }
         }).start();
     }
