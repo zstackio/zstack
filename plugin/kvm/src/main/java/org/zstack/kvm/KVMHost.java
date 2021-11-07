@@ -3123,6 +3123,7 @@ public class KVMHost extends HostBase implements Host {
         if (spec.isCreatePaused()) {
             cmd.setCreatePaused(true);
         }
+        cmd.setDiskEncryption(CoreGlobalProperty.DISK_ENCRYPTION);
 
         addons(spec, cmd);
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());

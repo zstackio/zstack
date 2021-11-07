@@ -1519,6 +1519,16 @@ public class KVMAgentCommands {
         private boolean useColoBinary;
         private String platformId;
 
+        public boolean isDiskEncryption() {
+            return diskEncryption;
+        }
+
+        public void setDiskEncryption(boolean diskEncryption) {
+            this.diskEncryption = diskEncryption;
+        }
+
+        private boolean diskEncryption;
+
         public String getPlatformId() {
             return platformId;
         }

@@ -78,4 +78,6 @@ public class CoreGlobalProperty {
     public static boolean DISABLE_SBLK_ZSNET;
     @GlobalProperty(name = "enable.kysec", defaultValue = "true")
     public static boolean ENABLE_KYSEC;
+    @GlobalProperty(name = "disk.encryption", defaultValue = "false")
+    public static boolean DISK_ENCRYPTION;
 }
