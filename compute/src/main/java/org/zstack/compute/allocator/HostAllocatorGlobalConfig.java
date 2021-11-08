@@ -28,4 +28,7 @@ public class HostAllocatorGlobalConfig {
     public static GlobalConfig HOST_ALLOCATOR_CONCURRENT_LEVEL = new GlobalConfig(CATEGORY, "hostAllocator.concurrent.level");
     @GlobalConfigValidation
     public static GlobalConfig HOST_ALLOCATOR_MAX_MEMORY = new GlobalConfig(CATEGORY, "hostAllocator.checkHostMem");
+    @GlobalConfigValidation
+    @GlobalConfigDef(defaultValue = "http://127.0.0.1:8989/example", description = "use this URL to get 'hostUuid' or 'vmUuid' from a third party source")
+    public static GlobalConfig GET_HOST_VM_UUID_URL = new GlobalConfig(CATEGORY, "hostAllocator.url");
 }
