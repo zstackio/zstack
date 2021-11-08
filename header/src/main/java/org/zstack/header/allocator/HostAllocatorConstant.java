@@ -6,6 +6,7 @@ public interface HostAllocatorConstant {
     String SERVICE_ID = "host.allocator";
     String DEFAULT_HOST_ALLOCATOR_STRATEGY_TYPE = "DefaultHostAllocatorStrategy";
     String DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE = "DesignatedHostAllocatorStrategy";
+    String FOURTEEN_DESIGNATED_ALLOCATOR_STRATEGY_TYPE = "FourteenDesignatedHostAllocatorStrategy";
     String LAST_HOST_PREFERRED_ALLOCATOR_STRATEGY_TYPE = "LastHostPreferredAllocatorStrategy";
     String MIGRATE_VM_ALLOCATOR_TYPE = "MigrateVmAllocatorStrategy";
     String LEAST_VM_PREFERRED_HOST_ALLOCATOR_STRATEGY_TYPE = "LeastVmPreferredHostAllocatorStrategy";

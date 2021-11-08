@@ -212,6 +212,32 @@
         </property>
     </bean>
 
+    <bean id="FourteenDesignatedHostAllocatorStrategyFactory"
+          class="org.zstack.compute.allocator.FourteenDesignatedHostAllocatorStrategyFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.allocator.HostAllocatorStrategyFactory"/>
+        </zstack:plugin>
+
+        <property name="allocatorFlowNames">
+            <list>
+                <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.QuotaAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.FourteenDesignatedHostAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.ImageBackupStorageAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.HostCapacityAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.HostPrimaryStorageAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.AvoidHostAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.TagAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.ResourceBindingAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.FilterFlow</value>
+                <value>org.zstack.compute.allocator.LastHostAllocatorFlow</value>
+            </list>
+        </property>
+    </bean>
+
     <bean id="LastHostPreferredAllocatorStrategyFactory"
           class="org.zstack.compute.allocator.LastHostPreferredAllocatorStrategyFactory">
         <zstack:plugin>
