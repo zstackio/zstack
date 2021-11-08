@@ -12,6 +12,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -684,6 +685,10 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                         if (errList.getCauses().isEmpty()) {
                             trigger.next();
                         } else {
+                            // clean Vtep if faild attach vxlanPool to cluster by ZSTAC-41263
+                            if(vtepIpChanged != null && !vtepIpChanged.isEmpty()) {
+                                SQL.New(VtepVO.class).eq(VtepVO_.poolUuid, l2NetworkUuid).in(VtepVO_.hostUuid, vtepIpChanged).delete();
+                            }
                             trigger.fail(errList.getCauses().get(0));
                         }
                     }
