@@ -26,13 +26,13 @@ public class GetClusterHostNetworkFactsAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String clusterUuid;
+    public java.lang.String clusterUuid;
 
     @Param(required = false)
-    public int limit = 100;
+    public java.lang.Integer limit = 1000;
 
     @Param(required = false)
-    public int start = 0;
+    public java.lang.Integer start = 0;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -59,9 +59,9 @@ public class GetClusterHostNetworkFactsAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
-        GetClusterHostNetworkFactsResult value = res.getResult(GetClusterHostNetworkFactsResult.class);
-        ret.value = value == null ? new GetClusterHostNetworkFactsResult() : value;
+        
+        org.zstack.sdk.GetClusterHostNetworkFactsResult value = res.getResult(org.zstack.sdk.GetClusterHostNetworkFactsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetClusterHostNetworkFactsResult() : value; 
 
         return ret;
     }

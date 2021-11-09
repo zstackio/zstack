@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class LocateHostNetworkInterfaceAction extends AbstractAction {
 
@@ -16,7 +17,7 @@ public class LocateHostNetworkInterfaceAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                        String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
+                    String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
             
@@ -30,7 +31,7 @@ public class LocateHostNetworkInterfaceAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String networkInterfaceName;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L, 255L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,255L}, noTrim = false)
     public java.lang.Long interval = 15L;
 
     @Param(required = false)
@@ -64,9 +65,9 @@ public class LocateHostNetworkInterfaceAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.LocateHostNetworkInterfaceResult value = res.getResult(org.zstack.sdk.LocateHostNetworkInterfaceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.LocateHostNetworkInterfaceResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.LocateHostNetworkInterfaceResult() : value; 
 
         return ret;
     }

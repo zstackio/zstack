@@ -4,83 +4,83 @@ package org.zstack.sdk;
 
 public class HostPhysicalMemoryInventory  {
 
-    public String uuid;
-    public void setUuid(String uuid) {
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
         this.uuid = uuid;
     }
-    public String getUuid() {
+    public java.lang.String getUuid() {
         return this.uuid;
     }
 
-    public String hostUuid;
-    public void setHostUuid(String hostUuid) {
+    public java.lang.String hostUuid;
+    public void setHostUuid(java.lang.String hostUuid) {
         this.hostUuid = hostUuid;
     }
-    public String getHostUuid() {
+    public java.lang.String getHostUuid() {
         return this.hostUuid;
     }
 
-    public String manufacturer;
-    public void setManufacturer(String manufacturer) {
+    public java.lang.String manufacturer;
+    public void setManufacturer(java.lang.String manufacturer) {
         this.manufacturer = manufacturer;
     }
-    public String getManufacturer() {
+    public java.lang.String getManufacturer() {
         return this.manufacturer;
     }
 
-    public String size;
-    public void setSize(String size) {
+    public java.lang.String size;
+    public void setSize(java.lang.String size) {
         this.size = size;
     }
-    public String getSize() {
+    public java.lang.String getSize() {
         return this.size;
     }
 
-    public String speed;
-    public void setSpeed(String speed) {
+    public java.lang.String speed;
+    public void setSpeed(java.lang.String speed) {
         this.speed = speed;
     }
-    public String getSpeed() {
+    public java.lang.String getSpeed() {
         return this.speed;
     }
 
-    public String clockSpeed;
-    public void setClockSpeed(String clockSpeed) {
+    public java.lang.String clockSpeed;
+    public void setClockSpeed(java.lang.String clockSpeed) {
         this.clockSpeed = clockSpeed;
     }
-    public String getClockSpeed() {
-        return clockSpeed;
+    public java.lang.String getClockSpeed() {
+        return this.clockSpeed;
     }
 
-    public String locator;
-    public void setLocator(String locator) {
+    public java.lang.String locator;
+    public void setLocator(java.lang.String locator) {
         this.locator = locator;
     }
-    public String getLocator() {
+    public java.lang.String getLocator() {
         return this.locator;
     }
 
-    public String serialNumber;
-    public void setSerialNumber(String serialNumber) {
+    public java.lang.String serialNumber;
+    public void setSerialNumber(java.lang.String serialNumber) {
         this.serialNumber = serialNumber;
     }
-    public String getSerialNumber() {
+    public java.lang.String getSerialNumber() {
         return this.serialNumber;
     }
 
-    public String rank;
-    public void setRank(String rank) {
+    public java.lang.String rank;
+    public void setRank(java.lang.String rank) {
         this.rank = rank;
     }
-    public String getRank() {
+    public java.lang.String getRank() {
         return this.rank;
     }
 
-    public String voltage;
-    public void setVoltage(String voltage) {
+    public java.lang.String voltage;
+    public void setVoltage(java.lang.String voltage) {
         this.voltage = voltage;
     }
-    public String getVoltage() {
+    public java.lang.String getVoltage() {
         return this.voltage;
     }
 

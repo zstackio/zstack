@@ -43,7 +43,7 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
     @Param(required = false)
     public java.util.Map quota;
 
-    @Param(required = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String srcType;
 
     @Param(required = false)
