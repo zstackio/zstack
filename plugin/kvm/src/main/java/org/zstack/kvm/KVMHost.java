@@ -2711,11 +2711,6 @@ public class KVMHost extends HostBase implements Host {
             cmd.setQuota(Integer.valueOf(quota));
         }
 
-        String shares = KVMSystemTags.CPU_SHARES.getTokenByResourceUuid(cmd.getVmInstanceUuid(), VmInstanceVO.class, KVMSystemTags.CPU_SHARES_TOKEN);
-        if (StringUtils.isNotEmpty(shares)) {
-            cmd.setShares(Integer.valueOf(shares));
-        }
-
         if (KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.hasTag(spec.getVmInventory().getUuid())) {
             cmd.setPredefinedPciBridgeNum(Integer.valueOf(KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.getTokenByResourceUuid(spec.getVmInventory().getUuid(), KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN)));
         }
@@ -2731,6 +2726,12 @@ public class KVMHost extends HostBase implements Host {
         VmPriorityLevel level = new VmPriorityOperator().getVmPriority(spec.getVmInventory().getUuid());
         VmPriorityConfigVO priorityVO = Q.New(VmPriorityConfigVO.class).eq(VmPriorityConfigVO_.level, level).find();
         cmd.setPriorityConfigStruct(new PriorityConfigStruct(priorityVO, spec.getVmInventory().getUuid()));
+
+        String shares = KVMSystemTags.CPU_SHARES.getTokenByResourceUuid(cmd.getVmInstanceUuid(), VmInstanceVO.class, KVMSystemTags.CPU_SHARES_TOKEN);
+        // if vm is normal priority its cpu shares take effects
+        if (StringUtils.isNotEmpty(shares) && cmd.getPriorityConfigStruct().getCpuShares() == 512) {
+            cmd.getPriorityConfigStruct().setCpuShares(Integer.valueOf(shares));
+        }
 
         VolumeTO rootVolume = new VolumeTO();
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
