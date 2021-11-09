@@ -16487,6 +16487,33 @@ abstract class ApiHelper {
     }
 
 
+    def getClusterHostNetworkFacts(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetClusterHostNetworkFactsAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetClusterHostNetworkFactsAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getConnectionAccessPointFromRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetConnectionAccessPointFromRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.GetConnectionAccessPointFromRemoteAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -17135,109 +17162,26 @@ abstract class ApiHelper {
     }
 
 
-    def getClusterHostNetworkFacts(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetClusterHostNetworkFactsAction.class) Closure c) {
-        def a = new org.zstack.sdk.GetClusterHostNetworkFactsAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def locateHostNetworkInterface(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.LocateHostNetworkInterfaceAction.class) Closure c) {
-        def a = new org.zstack.sdk.LocateHostNetworkInterfaceAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def getHostPhysicalMemoryFacts(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetHostPhysicalMemoryFactsAction.class) Closure c) {
         def a = new org.zstack.sdk.GetHostPhysicalMemoryFactsAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
+        
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def queryHostPhysicalMemory(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryHostPhysicalMemoryAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryHostPhysicalMemoryAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-
-        a.conditions = a.conditions.collect { it.toString() }
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-
+        
             return out
         } else {
             return errorOut(a.call())
@@ -20782,6 +20726,33 @@ abstract class ApiHelper {
     }
 
 
+    def locateHostNetworkInterface(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.LocateHostNetworkInterfaceAction.class) Closure c) {
+        def a = new org.zstack.sdk.LocateHostNetworkInterfaceAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def locateLocalRaidPhysicalDrive(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.LocateLocalRaidPhysicalDriveAction.class) Closure c) {
         def a = new org.zstack.sdk.LocateLocalRaidPhysicalDriveAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -23947,6 +23918,35 @@ abstract class ApiHelper {
 
     def queryHostNetworkInterface(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryHostNetworkInterfaceAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryHostNetworkInterfaceAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryHostPhysicalMemory(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryHostPhysicalMemoryAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryHostPhysicalMemoryAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -37478,32 +37478,32 @@ abstract class ApiHelper {
     }
 
 
-
     def getIAM2VirtualIDInGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.GetIAM2VirtualIDInGroupAction.class) Closure c) {
         def a = new org.zstack.sdk.iam2.api.GetIAM2VirtualIDInGroupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
+        
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
+        
             return out
         } else {
             return errorOut(a.call())
         }
     }
+
 
     def getOrganizationQuotaUsage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.GetOrganizationQuotaUsageAction.class) Closure c) {
         def a = new org.zstack.sdk.iam2.api.GetOrganizationQuotaUsageAction()

@@ -12,7 +12,7 @@ public class GetHostPhysicalMemoryFactsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetHostPhysicalMemoryFactsResult value;
+        public org.zstack.sdk.GetHostPhysicalMemoryFactsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,7 @@ public class GetHostPhysicalMemoryFactsAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String hostUuid;
+    public java.lang.String hostUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +54,8 @@ public class GetHostPhysicalMemoryFactsAction extends AbstractAction {
             return ret;
         }
         
-        GetHostPhysicalMemoryFactsResult value = res.getResult(GetHostPhysicalMemoryFactsResult.class);
-        ret.value = value == null ? new GetHostPhysicalMemoryFactsResult() : value;
+        org.zstack.sdk.GetHostPhysicalMemoryFactsResult value = res.getResult(org.zstack.sdk.GetHostPhysicalMemoryFactsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetHostPhysicalMemoryFactsResult() : value; 
 
         return ret;
     }

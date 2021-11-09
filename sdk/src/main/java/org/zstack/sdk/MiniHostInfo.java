@@ -13,6 +13,14 @@ public class MiniHostInfo  {
         return this.sn;
     }
 
+    public java.util.List dnsAddresses;
+    public void setDnsAddresses(java.util.List dnsAddresses) {
+        this.dnsAddresses = dnsAddresses;
+    }
+    public java.util.List getDnsAddresses() {
+        return this.dnsAddresses;
+    }
+
     public MiniNetworkConfigStruct ipmi;
     public void setIpmi(MiniNetworkConfigStruct ipmi) {
         this.ipmi = ipmi;

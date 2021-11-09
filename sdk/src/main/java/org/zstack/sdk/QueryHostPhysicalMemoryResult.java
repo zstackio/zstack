@@ -11,11 +11,11 @@ public class QueryHostPhysicalMemoryResult {
         return this.inventories;
     }
 
-    public Long total;
-    public void setTotal(Long total) {
+    public java.lang.Long total;
+    public void setTotal(java.lang.Long total) {
         this.total = total;
     }
-    public Long getTotal() {
+    public java.lang.Long getTotal() {
         return this.total;
     }
 

@@ -34,6 +34,12 @@ public class RecoverResourceSplitBrainAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String primaryStorageUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean forceRecover = false;
+
+    @Param(required = false)
+    public java.lang.String resourceType;
+
     @Param(required = false)
     public java.util.List systemTags;
 
