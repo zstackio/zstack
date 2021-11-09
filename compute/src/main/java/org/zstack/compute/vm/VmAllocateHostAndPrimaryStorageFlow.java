@@ -478,7 +478,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 return true;
             }
         }
-        
+
         return false;
     }
 
