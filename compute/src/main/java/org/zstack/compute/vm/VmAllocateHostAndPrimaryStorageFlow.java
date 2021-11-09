@@ -20,9 +20,8 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.host.*;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -34,6 +33,8 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.*;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Create by lining at 2020/08/17
@@ -55,6 +56,14 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+
+        String rootPs = spec.getRequiredPrimaryStorageUuidForRootVolume();
+        String dataPs = spec.getRequiredPrimaryStorageUuidForDataVolume();
+        if (rootPs != null && dataPs != null) {
+            if (Objects.equals(getClusterUuidFromPS(rootPs), getClusterUuidFromPS(dataPs))) {
+                throw new OperationFailureException(operr("root data volume must be as a same cluster"));
+            }
+        }
 
         // The creation parameter specifies the primary storage, no need to automatically allocate the primary storage
         if (!needAutoAllocatePS(spec)) {
@@ -478,8 +487,14 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 return true;
             }
         }
-
         return false;
+    }
+
+    private String getClusterUuidFromPS(String PSUuid) {
+        return Q.New(PrimaryStorageClusterRefVO.class)
+                .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, PSUuid)
+                .findValue();
     }
 
     private FlowChain buildAllocateHostAndPrimaryStorageFlowChain(final FlowTrigger trigger, VmInstanceSpec spec) {
