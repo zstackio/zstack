@@ -138,7 +138,7 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
         findAuthorizationBackend(session).validatePermission(targetApis, session);
     }
 
-    public static ErrorCode createNeedAdditionAuthErrorCode(String credentials, String... authentications) {
+    public static ErrorCode createAdditionAuthErrorCode(String credentials, String... authentications) {
         JsonObject o = new JsonObject();
         JsonArray authArray = new JsonArray(authentications.length);
         Arrays.asList(authentications).forEach(authArray::add);
