@@ -35,7 +35,10 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
@@ -46,7 +49,6 @@ import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
-import org.zstack.storage.snapshot.VolumeSnapshot;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupCreationValidator;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -62,7 +64,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created with IntelliJ IDEA.
@@ -1278,6 +1280,12 @@ public class VolumeBase implements Volume {
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "delete-transient-volume-" + transientVolume.getUuid();
+
+            @Override
+            public boolean skip(Map data) {
+                return Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, transientVolume.getUuid())
+                        .like(VolumeSnapshotVO_.primaryStorageInstallPath, transientVolume.getInstallPath()).isExists();
+            }
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
