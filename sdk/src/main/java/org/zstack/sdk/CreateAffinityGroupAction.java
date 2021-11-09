@@ -31,7 +31,7 @@ public class CreateAffinityGroupAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, validValues = {"antiSoft","antiHard"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"antiSoft","antiHard", "affinitySoft", "affinityHard"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String policy;
 
     @Param(required = false, validValues = {"host"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
