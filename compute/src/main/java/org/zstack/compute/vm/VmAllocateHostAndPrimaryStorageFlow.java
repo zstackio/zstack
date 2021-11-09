@@ -34,8 +34,6 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import java.util.*;
 
-import static org.zstack.core.Platform.operr;
-
 /**
  * Create by lining at 2020/08/17
  */
@@ -56,6 +54,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+
         // The creation parameter specifies the primary storage, no need to automatically allocate the primary storage
         if (!needAutoAllocatePS(spec)) {
             allocate(trigger, spec);
@@ -478,6 +477,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 return true;
             }
         }
+        
         return false;
     }
 
