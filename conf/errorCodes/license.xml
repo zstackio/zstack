@@ -35,5 +35,10 @@
         <id>1006</id>
         <description>The uploaded file does not contain valid license data</description>
     </code>
+
+    <code>
+        <id>1007</id>
+        <description>License capacity policy mismatch</description>
+    </code>
 </error>
 
