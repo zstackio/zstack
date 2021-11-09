@@ -56,15 +56,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-
-        String rootPs = spec.getRequiredPrimaryStorageUuidForRootVolume();
-        String dataPs = spec.getRequiredPrimaryStorageUuidForDataVolume();
-        if (rootPs != null && dataPs != null) {
-            if (Objects.equals(getClusterUuidFromPS(rootPs), getClusterUuidFromPS(dataPs))) {
-                throw new OperationFailureException(operr("root data volume must be as a same cluster"));
-            }
-        }
-
         // The creation parameter specifies the primary storage, no need to automatically allocate the primary storage
         if (!needAutoAllocatePS(spec)) {
             allocate(trigger, spec);
@@ -488,13 +479,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
         }
         return false;
-    }
-
-    private String getClusterUuidFromPS(String PSUuid) {
-        return Q.New(PrimaryStorageClusterRefVO.class)
-                .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, PSUuid)
-                .findValue();
     }
 
     private FlowChain buildAllocateHostAndPrimaryStorageFlowChain(final FlowTrigger trigger, VmInstanceSpec spec) {
