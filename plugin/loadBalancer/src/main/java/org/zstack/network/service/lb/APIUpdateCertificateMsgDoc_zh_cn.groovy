@@ -81,6 +81,16 @@ doc {
 					since "2.3"
 					
 				}
+				column {
+					name "tagUuids"
+					enclosedIn "updateCertificate"
+					desc "标签UUID列表"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 

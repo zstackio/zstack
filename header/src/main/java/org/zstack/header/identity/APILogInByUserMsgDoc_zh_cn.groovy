@@ -69,7 +69,7 @@ doc {
 					type "Map"
 					optional true
 					since "3.5.0"
-
+					
 				}
 				column {
 					name "systemTags"
@@ -95,7 +95,7 @@ doc {
         }
 
         response {
-			clz APILogInReply.class
-		}
+            clz APILogInReply.class
+        }
     }
 }

@@ -1,8 +1,15 @@
 package org.zstack.header.volume
 
+import java.lang.Long
+import java.lang.Long
+import java.lang.Integer
+import java.sql.Timestamp
+import java.sql.Timestamp
+import java.lang.Boolean
+
 doc {
 
-	title "云盘清单"
+	title "在这里输入结构的名称"
 
 	field {
 		name "uuid"
@@ -42,37 +49,37 @@ doc {
 	}
 	field {
 		name "rootImageUuid"
-		desc "云盘根镜像UUID"
+		desc ""
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "installPath"
-		desc "云盘在主存储上的路径"
+		desc ""
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "type"
-		desc "云盘类型，数据云盘/根云盘"
+		desc ""
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "format"
-		desc "云盘格式"
+		desc ""
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "size"
-		desc "云盘大小"
+		desc ""
 		type "Long"
 		since "0.6"
 	}
 	field {
 		name "actualSize"
-		desc "云盘真实大小"
+		desc ""
 		type "Long"
 		since "0.6"
 	}
@@ -84,13 +91,13 @@ doc {
 	}
 	field {
 		name "state"
-		desc "云盘是否开启"
+		desc ""
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "status"
-		desc "云盘状态"
+		desc ""
 		type "String"
 		since "0.6"
 	}
@@ -108,14 +115,14 @@ doc {
 	}
 	field {
 		name "isShareable"
-		desc "是否共享云盘"
+		desc ""
 		type "Boolean"
 		since "0.6"
 	}
 	field {
 		name "volumeQos"
-		desc "云盘Qos，格式如total=1048576"
+		desc ""
 		type "String"
-		since "3.2.0"
+		since "0.6"
 	}
 }

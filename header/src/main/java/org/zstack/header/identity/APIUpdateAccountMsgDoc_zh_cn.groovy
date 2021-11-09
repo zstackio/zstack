@@ -81,6 +81,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "oldPassword"
+					enclosedIn "updateAccount"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 

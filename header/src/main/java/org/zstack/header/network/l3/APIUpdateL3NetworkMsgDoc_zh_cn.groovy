@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIUpdateL3NetworkMsg.class
 
             desc """"""
@@ -91,6 +90,16 @@ doc {
 					optional true
 					since "2.2"
 					values ("Public","Private","System")
+				}
+				column {
+					name "dnsDomain"
+					enclosedIn "updateL3Network"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
 				}
 			}
         }

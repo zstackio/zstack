@@ -6,56 +6,56 @@ import java.sql.Timestamp
 
 doc {
 
-	title "标签模版"
+	title "在这里输入结构的名称"
 
 	field {
 		name "uuid"
 		desc "资源的UUID，唯一标示该资源"
 		type "String"
-		since "3.2.0"
+		since "0.6"
 	}
 	field {
 		name "name"
 		desc "资源名称"
 		type "String"
-		since "3.2.0"
+		since "0.6"
 	}
 	field {
 		name "value"
-		desc "标签的值"
+		desc ""
 		type "String"
-		since "3.2.0"
+		since "0.6"
 	}
 	field {
 		name "description"
 		desc "资源的详细描述"
 		type "String"
-		since "3.2.0"
+		since "0.6"
 	}
 	field {
 		name "color"
-		desc "标签的颜色"
+		desc ""
 		type "String"
-		since "3.2.0"
+		since "0.6"
 	}
 	ref {
 		name "type"
 		path "org.zstack.header.tag.TagPatternInventory.type"
-		desc "标签的类型"
+		desc "null"
 		type "TagPatternType"
-		since "3.2.0"
+		since "0.6"
 		clz TagPatternType.class
 	}
 	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"
-		since "3.2.0"
+		since "0.6"
 	}
 	field {
 		name "lastOpDate"
 		desc "最后一次修改时间"
 		type "Timestamp"
-		since "3.2.0"
+		since "0.6"
 	}
 }

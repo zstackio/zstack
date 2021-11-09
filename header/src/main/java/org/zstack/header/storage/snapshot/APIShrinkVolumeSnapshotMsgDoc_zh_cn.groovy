@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn ""
+					enclosedIn "shrinkVolumeSnapshot"
 					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"

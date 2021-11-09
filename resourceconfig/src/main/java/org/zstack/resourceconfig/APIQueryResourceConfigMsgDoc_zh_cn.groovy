@@ -2,6 +2,7 @@ package org.zstack.resourceconfig
 
 import org.zstack.resourceconfig.APIQueryResourceConfigReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryResourceConfig"

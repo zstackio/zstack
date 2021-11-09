@@ -50,7 +50,7 @@ doc {
 					desc "指定IP地址"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 					
 				}

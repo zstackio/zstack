@@ -2,6 +2,7 @@ package org.zstack.header.vm.cdrom
 
 import org.zstack.header.vm.cdrom.APIQueryVmCdRomReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryVmCdRom"

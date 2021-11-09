@@ -2,6 +2,7 @@ package org.zstack.header.storage.snapshot.group
 
 import org.zstack.header.storage.snapshot.group.APIQueryVolumeSnapshotGroupReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryVolumeSnapshotGroup"

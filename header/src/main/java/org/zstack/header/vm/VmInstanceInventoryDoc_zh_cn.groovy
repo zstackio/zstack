@@ -7,6 +7,7 @@ import java.sql.Timestamp
 import java.sql.Timestamp
 import org.zstack.header.vm.VmNicInventory
 import org.zstack.header.volume.VolumeInventory
+import org.zstack.header.vm.cdrom.VmCdRomInventory
 
 doc {
 
@@ -74,6 +75,12 @@ doc {
 	}
 	field {
 		name "platform"
+		desc ""
+		type "String"
+		since "0.6"
+	}
+	field {
+		name "architecture"
 		desc ""
 		type "String"
 		since "0.6"
@@ -153,5 +160,19 @@ doc {
 		type "List"
 		since "0.6"
 		clz VolumeInventory.class
+	}
+	ref {
+		name "vmCdRoms"
+		path "org.zstack.header.vm.VmInstanceInventory.vmCdRoms"
+		desc "null"
+		type "List"
+		since "0.6"
+		clz VmCdRomInventory.class
+	}
+	field {
+		name "guestOsType"
+		desc ""
+		type "String"
+		since "0.6"
 	}
 }

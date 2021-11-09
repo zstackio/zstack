@@ -39,7 +39,7 @@ doc {
 					type "String"
 					optional true
 					since "3.5.0"
-
+					
 				}
 				column {
 					name "resourceType"
@@ -49,7 +49,7 @@ doc {
 					type "String"
 					optional true
 					since "3.5.0"
-
+					
 				}
 				column {
 					name "trashType"
@@ -59,7 +59,7 @@ doc {
 					type "String"
 					optional true
 					since "3.5.0"
-					values ("MigrateVolume", "MigrateVolumeSnapshot", "RevertVolume", "VolumeSnapshot")
+					values ("MigrateVolume","MigrateVolumeSnapshot","RevertVolume","VolumeSnapshot")
 				}
 				column {
 					name "systemTags"

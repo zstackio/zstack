@@ -111,6 +111,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "scope"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional false
+					since "0.6"
+					values ("account","IAM2")
+				}
 			}
         }
 
