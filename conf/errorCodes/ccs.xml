@@ -30,4 +30,9 @@
         <id>2015</id>
         <description>The CCS certificate is expired</description>
     </code>
+
+    <code>
+        <id>2016</id>
+        <description>The CCS certificate UKey authentication fail</description>
+    </code>
 </error>
