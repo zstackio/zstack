@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.Q;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -20,7 +19,6 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
@@ -50,6 +48,7 @@ public class VmCreateOnHypervisorFlow implements Flow {
     @Override
     public void run(final FlowTrigger chain, final Map data) {
         taskProgress("start on the hypervisor");
+
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         fireExtensions(spec);
