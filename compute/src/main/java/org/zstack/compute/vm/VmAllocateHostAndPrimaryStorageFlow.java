@@ -539,6 +539,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
     private List<String> getPrimaryStorageUuidsFromCluster(String clusterUuid) {
         return Q.New(PrimaryStorageClusterRefVO.class)
-                .eq(PrimaryStorageClusterRefVO_.clusterUuid, clusterUuid).list();
+                .select(PrimaryStorageClusterRefVO_.primaryStorageUuid)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, clusterUuid).find();
     }
 }
