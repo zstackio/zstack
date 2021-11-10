@@ -161,11 +161,11 @@ public class VmAllocateVolumeFlow implements Flow {
 
                 String rootPs = spec.getRequiredPrimaryStorageUuidForRootVolume();
                 String dataPs = spec.getRequiredPrimaryStorageUuidForDataVolume();
-                if (rootPs != null && dataPs != null) {
-                    if (Objects.equals(getClusterUuidFromPS(rootPs), getClusterUuidFromPS(dataPs))) {
-                        throw new OperationFailureException(operr("the primary storage allocated to root and data volume should be in one cluster"));
-                    }
-                }
+//                if (rootPs != null && dataPs != null) {
+//                    if (Objects.equals(getClusterUuidFromPS(rootPs), getClusterUuidFromPS(dataPs))) {
+//                        throw new OperationFailureException(operr("the primary storage allocated to root and data volume should be in one cluster"));
+//                    }
+//                }
 
                 if (err != null) {
                     trigger.fail(err);
