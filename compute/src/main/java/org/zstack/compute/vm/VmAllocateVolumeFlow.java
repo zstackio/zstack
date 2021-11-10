@@ -120,13 +120,6 @@ public class VmAllocateVolumeFlow implements Flow {
         return msgs;
     }
 
-    private String getClusterUuidFromPS(String PSUuid) {
-        return Q.New(PrimaryStorageClusterRefVO.class)
-                .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, PSUuid)
-                .findValue();
-    }
-
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
@@ -158,15 +151,7 @@ public class VmAllocateVolumeFlow implements Flow {
                         vspec.setIsVolumeCreated(false);
                     }
                 }
-
-                String rootPs = spec.getRequiredPrimaryStorageUuidForRootVolume();
-                String dataPs = spec.getRequiredPrimaryStorageUuidForDataVolume();
-//                if (rootPs != null && dataPs != null) {
-//                    if (Objects.equals(getClusterUuidFromPS(rootPs), getClusterUuidFromPS(dataPs))) {
-//                        throw new OperationFailureException(operr("the primary storage allocated to root and data volume should be in one cluster"));
-//                    }
-//                }
-
+                
                 if (err != null) {
                     trigger.fail(err);
                 } else {
