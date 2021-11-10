@@ -94,7 +94,7 @@ public class AddCCSCertificateAction extends AbstractAction {
         info.path = "/crypto/ccs-certificate/add";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "addCCSCertificate";
+        info.parameterName = "params";
         return info;
     }
 
