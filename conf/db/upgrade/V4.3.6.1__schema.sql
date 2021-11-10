@@ -1,0 +1,1 @@
+delete from SharedResourceVO where resourceUuid ='f2f474c60e7340c0a1d44080d5bde3a9' and resourceType = 'RoleVO' and toPublic = 1;
