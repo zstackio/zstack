@@ -880,6 +880,10 @@ public class VirtualRouter extends ApplianceVmBase {
     }
 
     @Override
+    public void attachNetworkService(String vrUuid, String networkServiceType, String l3NetworkUuid){
+    }
+
+    @Override
     public void detachNetworkService(String vrUuid, String networkServiceType, String l3NetworkUuid){
     }
 
