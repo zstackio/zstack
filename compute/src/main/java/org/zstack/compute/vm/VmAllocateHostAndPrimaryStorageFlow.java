@@ -39,7 +39,7 @@ import java.util.*;
  * Create by lining at 2020/08/17
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
+public class  VmAllocateHostAndPrimaryStorageFlow implements Flow {
     private static final CLogger logger = Utils.getLogger(VmAllocateHostAndPrimaryStorageFlow.class);
     @Autowired
     protected DatabaseFacade dbf;

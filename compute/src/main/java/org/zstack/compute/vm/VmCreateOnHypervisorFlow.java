@@ -11,12 +11,9 @@ import org.zstack.core.db.Q;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
-import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -25,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -51,25 +47,10 @@ public class VmCreateOnHypervisorFlow implements Flow {
         }
     }
 
-    private String getClusterUuidFromPS(String PSUuid) {
-        return Q.New(PrimaryStorageClusterRefVO.class)
-                .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, PSUuid)
-                .findValue();
-    }
-
     @Override
     public void run(final FlowTrigger chain, final Map data) {
         taskProgress("start on the hypervisor");
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-
-        String rootPs = spec.getRequiredPrimaryStorageUuidForRootVolume();
-        String dataPs = spec.getRequiredPrimaryStorageUuidForDataVolume();
-//        if (rootPs != null && dataPs != null) {
-//            if (Objects.equals(getClusterUuidFromPS(rootPs), getClusterUuidFromPS(dataPs))) {
-//                throw new OperationFailureException(operr("the primary storage allocated to root and data volume should be in one cluster"));
-//            }
-//        }
 
         fireExtensions(spec);
 

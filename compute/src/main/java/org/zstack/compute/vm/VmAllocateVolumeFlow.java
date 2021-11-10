@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -18,10 +19,13 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
@@ -37,6 +41,7 @@ import org.zstack.utils.function.Function;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -115,6 +120,13 @@ public class VmAllocateVolumeFlow implements Flow {
         return msgs;
     }
 
+    private String getClusterUuidFromPS(String PSUuid) {
+        return Q.New(PrimaryStorageClusterRefVO.class)
+                .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, PSUuid)
+                .findValue();
+    }
+
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
@@ -144,6 +156,14 @@ public class VmAllocateVolumeFlow implements Flow {
                     } else {
                         err = r.getError();
                         vspec.setIsVolumeCreated(false);
+                    }
+                }
+
+                String rootPs = spec.getRequiredPrimaryStorageUuidForRootVolume();
+                String dataPs = spec.getRequiredPrimaryStorageUuidForDataVolume();
+                if (rootPs != null && dataPs != null) {
+                    if (Objects.equals(getClusterUuidFromPS(rootPs), getClusterUuidFromPS(dataPs))) {
+                        throw new OperationFailureException(operr("the primary storage allocated to root and data volume should be in one cluster"));
                     }
                 }
 
