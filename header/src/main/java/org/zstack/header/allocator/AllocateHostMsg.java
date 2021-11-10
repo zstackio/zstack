@@ -25,12 +25,21 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private List<DiskOfferingInventory> diskOfferings;
     private boolean allowNoL3Networks;
     private boolean listAllHosts;
+    private boolean listAllHostsGroupByCluster;
     private String requiredBackupStorageUuid;
     private Set<String> requiredPrimaryStorageUuids = new HashSet<>();
     private boolean fullAllocate = true;
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
     private String architecture;
+
+    public boolean isListAllHostsGroupByCluster() {
+        return listAllHostsGroupByCluster;
+    }
+
+    public void setListAllHostsGroupByCluster(boolean listAllHostsGroupByCluster) {
+        this.listAllHostsGroupByCluster = listAllHostsGroupByCluster;
+    }
 
     public AllocationScene getAllocationScene() {
         return allocationScene;
