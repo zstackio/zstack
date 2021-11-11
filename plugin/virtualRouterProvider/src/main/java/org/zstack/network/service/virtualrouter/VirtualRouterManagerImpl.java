@@ -2298,6 +2298,60 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         return publicNic;
     }
 
+    private List<VirtualRouterCommands.SNATInfo> getSnatInfo(VirtualRouterVmInventory vrInv) {
+        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrInv.getUuid()).find();
+        if (vrVO == null) {
+            return null;
+        }
+        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
+        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
+        List<String> snatL3Uuids = app.getSnatL3NetworkOnRouter(vrVO.getUuid());
+        if (snatL3Uuids.isEmpty()) {
+            return null;
+        }
+
+        List<String> nwServed = vrInv.getAllL3Networks();
+        nwServed = selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.SNAT);
+        if (nwServed.isEmpty()) {
+            return null;
+        }
+
+        VmNicInventory publicNic = getSnatPubicInventory(vrInv);
+        if (publicNic.isIpv6OnlyNic()) {
+            return null;
+        }
+
+        final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<>();
+        for (VmNicInventory vnic : vrInv.getVmNics()) {
+            if (nwServed.contains(vnic.getL3NetworkUuid()) && !vnic.isIpv6OnlyNic()) {
+                VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
+                info.setPrivateNicIp(vnic.getIp());
+                info.setPrivateNicMac(vnic.getMac());
+                info.setPublicIp(publicNic.getIp());
+                info.setPublicNicMac(publicNic.getMac());
+                info.setSnatNetmask(vnic.getNetmask());
+                snatInfo.add(info);
+            }
+        }
+
+        return snatInfo;
+    }
+
+    private void changeVirtualRouterSnatData(String vrUuid, String newL3Uuid, String oldL3Uuid){
+        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuid).find();
+        if (vrVO == null) {
+            return ;
+        }
+        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
+        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
+        app.detachNetworkService(vrUuid, NetworkServiceType.SNAT.toString(), oldL3Uuid);
+        app.attachNetworkService(vrUuid, NetworkServiceType.SNAT.toString(), newL3Uuid);
+        String msg = String.format(
+                "virtual router[uuid:%s] successfully change snat for old default public l3[uuid:%s] to new default public l3[uuid:%s]",
+                vrUuid, oldL3Uuid, newL3Uuid);
+        logger.warn(msg);
+    }
+
     @Transactional
     protected void changeVirtualRouterNicMetaData(String vrUuid, String newL3Uuid, String oldL3Uuid) {
         VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
@@ -2344,6 +2398,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         VirtualRouterCommands.ChangeDefaultNicCmd cmd = new VirtualRouterCommands.ChangeDefaultNicCmd();
         cmd.setNewNic(newNicInfo);
 
+        List<VirtualRouterCommands.SNATInfo> snatInfos = getSnatInfo(vrInv);
+        if (snatInfos != null) {
+            cmd.setSnats(snatInfos);
+        }
+
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setVmInstanceUuid(vrUuid);
         msg.setPath(VirtualRouterConstant.VR_CHANGE_DEFAULT_ROUTE_NETWORK);
@@ -2365,6 +2424,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                             vrUuid, ret.getError());
                     completion.fail(err);
                 } else {
+                    changeVirtualRouterSnatData(vrUuid, newL3Uuid, oldL3Uuid);
                     changeVirtualRouterNicMetaData(vrUuid, newL3Uuid, oldL3Uuid);
                     completion.success();
                 }
