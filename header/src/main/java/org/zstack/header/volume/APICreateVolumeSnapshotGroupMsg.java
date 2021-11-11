@@ -5,11 +5,14 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.DefaultTimeout;
+import org.zstack.header.message.*;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.ConsistentType;
 import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.vm.VmInstanceInventory;
 
 import java.util.concurrent.TimeUnit;
@@ -25,7 +28,7 @@ import java.util.concurrent.TimeUnit;
         parameterName = "params"
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
-public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements VolumeMessage, CreateVolumeSnapshotGroupMessage {
+public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements VolumeMessage, CreateVolumeSnapshotGroupMessage, APIAuditor {
     /**
      * @desc root volume uuid. See :ref:`VolumeInventory`
      */
@@ -111,5 +114,10 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
 
     public void setConsistentType(ConsistentType consistentType) {
         this.consistentType = consistentType;
+    }
+
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APICreateVolumeSnapshotGroupEvent)rsp).getInventory().getUuid() : "", VolumeSnapshotGroupVO.class);
     }
 }
