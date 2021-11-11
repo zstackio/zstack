@@ -1931,9 +1931,13 @@ public class VolumeSnapshotTreeBase {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-snapshot-%s", msg.getSnapshotUuid()));
 
+        // call vsoc-delete-snapshot twice
+        /*
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                String __name__ = "vsoc-delete-snapshot";
+
                 VmVsocDeleteSnapshotMsg vmsg = new VmVsocDeleteSnapshotMsg();
                 vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
                 vmsg.setSnapshotUuid(msg.getSnapshotUuid());
@@ -1955,6 +1959,8 @@ public class VolumeSnapshotTreeBase {
                 });
             }
         });
+
+         */
 
         reportProgress("20");
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {

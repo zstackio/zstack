@@ -686,7 +686,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = String.format("soc-create-snapshot");
+                    String __name__ = String.format("vsoc-create-snapshot");
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
