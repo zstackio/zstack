@@ -1,7 +1,9 @@
 package org.zstack.core.db;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -235,13 +237,14 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             }
         }
 
-        private void updateEO(Object entity, DataIntegrityViolationException de) {
-            if (de.getRootCause() == null
-                    || !MySQLIntegrityConstraintViolationException.class.isAssignableFrom(de.getRootCause().getClass())) {
+        private void updateEO(Object entity, RuntimeException de) {
+            Throwable rootCause = NestedExceptionUtils.getRootCause(de);
+            if (rootCause == null
+                    || !MySQLIntegrityConstraintViolationException.class.isAssignableFrom(rootCause.getClass())) {
                 throw de;
             }
 
-            MySQLIntegrityConstraintViolationException me = (MySQLIntegrityConstraintViolationException) de.getRootCause();
+            MySQLIntegrityConstraintViolationException me = (MySQLIntegrityConstraintViolationException) rootCause;
             if (!(me.getErrorCode() == 1062 && "23000".equals(me.getSQLState()) && me.getMessage().contains("PRIMARY"))) {
                 throw de;
             }
@@ -276,8 +279,8 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
                     getEntityManager().refresh(e);
                 }
                 return e;
-            } catch (DataIntegrityViolationException de) {
-                updateEO(e, de);
+            } catch (DataIntegrityViolationException | ConstraintViolationException exception) {
+                updateEO(e, exception);
             }
 
             return e;

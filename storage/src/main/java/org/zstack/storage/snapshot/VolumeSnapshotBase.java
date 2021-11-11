@@ -1,5 +1,6 @@
 package org.zstack.storage.snapshot;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -236,7 +237,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                         VolumeSnapshotPrimaryStorageDeletionReply dreply = new VolumeSnapshotPrimaryStorageDeletionReply();
                         try {
                             updateDb();
-                        } catch (DataIntegrityViolationException e) {
+                        } catch (DataIntegrityViolationException | ConstraintViolationException e) {
                             // volume snapshot group may has been removed, try again.
                             updateDb();
                         }

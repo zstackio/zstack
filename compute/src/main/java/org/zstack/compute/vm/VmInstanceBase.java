@@ -2,6 +2,7 @@ package org.zstack.compute.vm;
 
 
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
@@ -346,7 +347,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         };
         try {
             sql.execute();
-        } catch (DataIntegrityViolationException e) {
+        } catch (DataIntegrityViolationException | ConstraintViolationException e) {
             sql.execute();
         }
 
