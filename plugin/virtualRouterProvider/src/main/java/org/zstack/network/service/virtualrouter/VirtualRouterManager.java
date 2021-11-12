@@ -54,6 +54,9 @@ public interface VirtualRouterManager {
     int getParallelismDegree(String vrUuid);
 
     VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv);
+
+    VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv, String L3NetworkUuid);
+
     void changeVirutalRouterDefaultL3Network(String vrUuid, String newL3Uuid, String oldL3Uuid, Completion completion);
 
     List<String> getVirtualRouterVips(String vrUuid, List<String> vipUuids);

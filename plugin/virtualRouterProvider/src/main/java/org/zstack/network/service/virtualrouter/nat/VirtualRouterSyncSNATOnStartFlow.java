@@ -3,10 +3,11 @@ package org.zstack.network.service.virtualrouter.nat;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.appliancevm.ApplianceVmConstant;
+import org.zstack.appliancevm.*;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
@@ -18,7 +19,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.NetworkServiceManager;
@@ -58,14 +58,13 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected VirtualRouterHaBackend haBackend;
+    @Autowired
+    private ApplianceVmFactory apvmFactory;
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
-        Boolean rebuildSnat = false;
-        if (data.get(ApplianceVmConstant.Params.rebuildSnat.toString()) != null) {
-            rebuildSnat = (Boolean) data.get(ApplianceVmConstant.Params.rebuildSnat.toString());
-        }
+        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vr.getUuid()).find();
 
         List<String> nwServed = vr.getAllL3Networks();
         nwServed = vrMgr.selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.SNAT);
@@ -79,37 +78,51 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
             return;
         }
 
-        /*
-        * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
-        * */
-        boolean disabled = haBackend.isSnatDisabledOnRouter(vr.getUuid());
-        if (disabled && !rebuildSnat) {
-            chain.next();
-            return;
-        }
-        VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
-        if (publicNic.isIpv6OnlyNic()) {
-            chain.next();
-            return;
-        }
         new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
 
+        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
+        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
+
+        /* when sync snat,
+        *  for all public nic with snat enabled, send snat enabed flags,
+        *  for all public nic with snat disabled, send snat disable flags,*/
+        List<String> snatL3Uuids = app.getSnatL3NetworkOnRouter(vrVO.getUuid());
+
         final List<SNATInfo> snatInfo = new ArrayList<SNATInfo>();
-        for (VmNicInventory nic : vr.getVmNics()) {
-            if (nwServed.contains(nic.getL3NetworkUuid()) && !nic.isIpv6OnlyNic()) {
-                SNATInfo info = new SNATInfo();
-                info.setPrivateNicIp(nic.getIp());
-                info.setPrivateNicMac(nic.getMac());
-                info.setPublicIp(publicNic.getIp());
-                info.setPublicNicMac(publicNic.getMac());
-                info.setSnatNetmask(nic.getNetmask());
-                snatInfo.add(info);
+        List<VmNicInventory> pubNics = new ArrayList<>();
+        pubNics.add(vr.getPublicNic());
+        pubNics.addAll(vr.getAdditionalPublicNics());
+        for (VmNicInventory pubNic : pubNics) {
+            if (pubNic.isIpv6OnlyNic()) {
+                continue;
             }
+
+            for (VmNicInventory priNic : vr.getGuestNics()) {
+                if (nwServed.contains(priNic.getL3NetworkUuid()) && !priNic.isIpv6OnlyNic()) {
+                    SNATInfo info = new SNATInfo();
+                    info.setPrivateNicIp(priNic.getIp());
+                    info.setPrivateNicMac(priNic.getMac());
+                    info.setPublicIp(pubNic.getIp());
+                    info.setPublicNicMac(pubNic.getMac());
+                    info.setSnatNetmask(priNic.getNetmask());
+                    if (snatL3Uuids.contains(pubNic.getL3NetworkUuid())) {
+                        info.setState(Boolean.TRUE);
+                    } else {
+                        info.setState(Boolean.FALSE);
+                    }
+                    snatInfo.add(info);
+                }
+            }
+        }
+
+        if (snatInfo.isEmpty()) {
+            chain.next();
+            return;
         }
 
         VirtualRouterCommands.SyncSNATCmd cmd = new VirtualRouterCommands.SyncSNATCmd();
         cmd.setSnats(snatInfo);
-        cmd.setEnable(!disabled);
+        cmd.setEnable(Boolean.TRUE);
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VirtualRouterConstant.VR_SYNC_SNAT_PATH);
         msg.setCommand(cmd);
