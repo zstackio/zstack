@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.ShareFlowChain;
@@ -17,6 +18,7 @@ import org.zstack.header.core.encrypt.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -31,6 +33,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by mingjian.deng on 16/12/28.
@@ -233,9 +237,44 @@ public class EncryptManagerImpl extends AbstractService {
             handle((APIUpdateEncryptKeyMsg) msg);
         } else if (msg instanceof APIStartDataProtectionMsg) {
             handle((APIStartDataProtectionMsg) msg);
+        } else if (msg instanceof APICheckBatchDataIntegrityMsg) {
+            handle((APICheckBatchDataIntegrityMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APICheckBatchDataIntegrityMsg msg) {
+        APICheckBatchDataIntegrityReply reply = new APICheckBatchDataIntegrityReply();
+
+        Map<String, Boolean> map = new HashMap<>();
+        SignedColumn signedColumn = signedMap.get(msg.getResourceType());
+        if (signedColumn == null) {
+            throw new OperationFailureException(operr("This resourceType[%s] of data encryption does not exist", msg.getResourceType()));
+        }
+
+        for (String uuid : msg.getResourceUuids()) {
+            String encryptDB = Q.New(EncryptionIntegrityVO.class)
+                    .select(EncryptionIntegrityVO_.signedText)
+                    .eq(EncryptionIntegrityVO_.resourceType, msg.getResourceType())
+                    .eq(EncryptionIntegrityVO_.resourceUuid, uuid)
+                    .findValue();
+            if (encryptDB == null) {
+                map.put(uuid, false);
+                continue;
+            }
+
+            String valueSql = String.format("select %s from %s where uuid = '%s'",
+                    String.join(",", signedColumn.getSignedColumnNames()), msg.getResourceType(), uuid);
+            Tuple tuple = SQL.New(valueSql + String.format(" and uuid = '%s'", uuid), Tuple.class).find();
+            String encryotValue = String.join("_", (CharSequence) Arrays.asList(tuple.toArray()));
+            String encryptedString = encryptDriver.encrypt(encryotValue);
+
+            map.put(uuid, encryptDB.equals(encryptedString));
+        }
+        reply.setResourceMap(map);
+        bus.reply(msg, reply);
+
     }
 
     private void handle(APIStartDataProtectionMsg msg) {
