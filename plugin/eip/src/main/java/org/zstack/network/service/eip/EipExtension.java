@@ -103,6 +103,7 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
         boolean stateNeed = EipConstant.vmOperationForDetachEip.contains(operation);
 
         return ipChanged || l3Need || stateNeed;
+        logger.debug(String.format("eip modified for vm [vmUuid:%s] while [ipChanged:%d] | [l3Need:%d] | [stateNeed:%d]", ipChanged, l3Need, stateNeed));
     }
 
     private Map<String, List<EipStruct>> workOutEipStruct(VmInstanceSpec spec) {
