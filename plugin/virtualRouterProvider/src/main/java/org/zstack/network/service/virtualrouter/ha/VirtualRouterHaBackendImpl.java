@@ -98,21 +98,17 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
     }
 
     @Override
-    public boolean isSnatDisabledOnRouter(String vrUuid) {
-        if (vrHasNoHA(vrUuid)) {
-            return VirtualRouterSystemTags.VR_DISABLE_NETWORK_SERVICE_SNAT.hasTag(vrUuid);
-        } else {
-            List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
-            if (exps.isEmpty()) {
-                return false;
-            }
+    public boolean isSnatEnabledOnHaRouter(String vrUuid) {
+        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+        if (exps.isEmpty()) {
+            return false;
+        }
 
-            List<String> state = exps.get(0).getNetworkServicesFromHaVrUuid(NetworkServiceType.SNAT.toString(),  vrUuid);
-            if (state == null || state.isEmpty()) {
-                return false;
-            } else {
-                return Boolean.parseBoolean(state.get(0));
-            }
+        List<String> state = exps.get(0).getNetworkServicesFromHaVrUuid(NetworkServiceType.SNAT.toString(),  vrUuid);
+        if (state == null || state.isEmpty()) {
+            return false;
+        } else {
+            return true;
         }
     }
 

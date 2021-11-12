@@ -873,6 +873,20 @@ public class VirtualRouter extends ApplianceVmBase {
         }).start();
     }
 
+    @Override
+    public List<String> getSnatL3NetworkOnRouter(String vrUuid) {
+        return Q.New(VirtualRouterVmVO.class).select(VirtualRouterVmVO_.defaultRouteL3NetworkUuid)
+                .eq(VirtualRouterVmVO_.uuid, vrUuid).listValues();
+    }
+
+    @Override
+    public void attachNetworkService(String vrUuid, String networkServiceType, String l3NetworkUuid){
+    }
+
+    @Override
+    public void detachNetworkService(String vrUuid, String networkServiceType, String l3NetworkUuid){
+    }
+
     public class virtualRouterAfterAttachNicFlow extends NoRollbackFlow {
         @Override
         public void run(FlowTrigger trigger, Map data) {
