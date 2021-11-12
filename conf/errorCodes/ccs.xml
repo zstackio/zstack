@@ -1,0 +1,43 @@
+<error>
+    <prefix>CCS</prefix>
+
+    <code>
+        <id>2010</id>
+        <description>CCS certificate error</description>
+    </code>
+
+    <code>
+        <id>2011</id>
+        <description>The CCS certificate is not exist</description>
+    </code>
+
+    <code>
+        <id>2012</id>
+        <description>The CCS certificate or user has already been attached</description>
+    </code>
+
+    <code>
+        <id>2013</id>
+        <description>The CCS certificate or user has not been attached yet</description>
+    </code>
+
+    <code>
+        <id>2014</id>
+        <description>Parsing CCS certificate raise an error</description>
+    </code>
+
+    <code>
+        <id>2015</id>
+        <description>The CCS certificate is not valid</description>
+    </code>
+
+    <code>
+        <id>2016</id>
+        <description>The CCS certificate UKey authentication fail</description>
+    </code>
+
+    <code>
+        <id>2017</id>
+        <description>The CCS certificate authentication source is disabled or not exist</description>
+    </code>
+</error>

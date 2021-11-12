@@ -536,8 +536,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
 
         for (AdditionalLoginExtensionPoint exp : pluginRgty.getExtensionList(AdditionalLoginExtensionPoint.class)){
-            if (!exp.authenticate(msg, struct.getUserUuid(), struct.getResourceType())) {
-                reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR, "additional authentication failed"));
+            ErrorCode errorCode = exp.authenticate(msg, struct.getUserUuid(), struct.getResourceType());
+            if (errorCode != null) {
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
                 return;
             }
