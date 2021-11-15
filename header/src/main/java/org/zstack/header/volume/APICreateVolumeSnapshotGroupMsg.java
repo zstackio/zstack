@@ -10,6 +10,8 @@ import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.ConsistentType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
@@ -121,7 +123,15 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
     public List<APIAuditor.Result> multiAudit(APIMessage msg, APIEvent rsp) {
         APICreateVolumeSnapshotGroupMsg cmsg = (APICreateVolumeSnapshotGroupMsg) msg;
         List<APIAuditor.Result> res = new ArrayList<>();
-        res.add(new APIAuditor.Result(rsp.isSuccess() ? ((APICreateVolumeSnapshotGroupEvent) rsp).getInventory().getUuid() : "", VolumeSnapshotGroupVO.class));
+        if (rsp.isSuccess()) {
+            res.add(new APIAuditor.Result(((APICreateVolumeSnapshotGroupEvent) rsp).getInventory().getUuid(), VolumeSnapshotGroupVO.class));
+
+            List<VolumeSnapshotGroupRefInventory> volumeSnapshotRefs = ((APICreateVolumeSnapshotGroupEvent) rsp).getInventory().getVolumeSnapshotRefs();
+            volumeSnapshotRefs.forEach(it -> {
+                res.add(new APIAuditor.Result(it.getVolumeUuid(), VolumeSnapshotVO.class));
+            });
+        }
+
         res.add(new APIAuditor.Result(cmsg.getVmInstance().getUuid(), VmInstanceVO.class));
         return res;
     }
