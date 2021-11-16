@@ -98,52 +98,26 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
         }
 
-        //试运行，根据策略获取满足条件的可能物理机，这个物理机是有顺序的（满足策略，但是不一定能够成功）
+        // 试运行，根据策略获取满足条件的可能物理机，这个物理机是有顺序的（满足策略，但是不一定能够成功）
         // 依据物理的顺序，对集群排序
-        AllocateHostMsg amsg = this.prepareMsg(spec);
+
+        AllocateHostMsg amsg = prepareMsg(spec);
         bus.makeLocalServiceId(amsg, HostAllocatorConstant.SERVICE_ID);
-        bus.send(amsg, new CloudBusCallBack(amsg) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    areply.setError(reply.getError());
-                } else {
-                    AllocateHostDryRunReply re = reply.castReply();
-
-                    if (!re.getHosts().isEmpty()) {
-                        areply.setHosts(re.getHosts());
-
-                        List<String> clusterUuids = re.getHosts().stream().
-                                map(HostInventory::getClusterUuid).collect(Collectors.toList());
-                        areply.setClusters(ClusterInventory.valueOf(dbf.listByPrimaryKeys(clusterUuids, ClusterVO.class)));
-
-                        List<String> zoneUuids = re.getHosts().stream().
-                                map(HostInventory::getZoneUuid).collect(Collectors.toList());
-                        areply.setZones(ZoneInventory.valueOf(dbf.listByPrimaryKeys(zoneUuids, ZoneVO.class)));
-                    } else {
-                        areply.setHosts(new ArrayList<>());
-                        areply.setClusters(new ArrayList<>());
-                        areply.setZones(new ArrayList<>());
-                    }
-                }
-
-                bus.reply(msg, areply);
-            }
-        });
-
-        bus.makeLocalServiceId(amsg, HostAllocatorConstant.SERVICE_ID);
-        bus.send(amsg, new CloudBusCallBack(amsg) {
+        bus.send(amsg, new CloudBusCallBack(trigger) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
                     trigger.fail(reply.getError());
                     return;
                 }
-
                 AllocateHostDryRunReply r = reply.castReply();
-
+                data.put("hostInventories", r.getHosts());
+                data.put("clusterInventories", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
             }
         });
+
+        List<HostInventory> hostInventories = (List<HostInventory>) data.get("hostInventories");
+        List<ClusterInventory> clusterInventories = (List<ClusterInventory>) data.get("clusterInventories");
 
         // 限制可能的主存储和可能的集群。使用分组中的集群和主存储进行分配。
         for (Map.Entry<List<String>, List<String>> entry : clusterGroup.entrySet()) {
@@ -374,6 +348,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             msg.setRequiredBackupStorageUuid(spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
         }
 
+        msg.setDryRun(true);
         msg.setListAllHostsGroupByCluster(true);
         return msg;
     }
