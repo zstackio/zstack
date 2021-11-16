@@ -100,7 +100,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
         // 试运行，根据策略获取满足条件的可能物理机，这个物理机是有顺序的（满足策略，但是不一定能够成功）
         // 依据物理的顺序，对集群排序
-
         AllocateHostMsg amsg = prepareMsg(spec);
         bus.makeLocalServiceId(amsg, HostAllocatorConstant.SERVICE_ID);
         bus.send(amsg, new CloudBusCallBack(trigger) {
@@ -113,6 +112,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 AllocateHostDryRunReply r = reply.castReply();
                 data.put("hostInventories", r.getHosts());
                 data.put("clusterInventories", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
+                trigger.next();
             }
         });
 
