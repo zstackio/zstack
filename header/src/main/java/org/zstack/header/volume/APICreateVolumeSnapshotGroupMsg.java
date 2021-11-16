@@ -1,17 +1,23 @@
 package org.zstack.header.volume;
 
 import org.springframework.http.HttpMethod;
+
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIParam;
-import org.zstack.header.message.DefaultTimeout;
+import org.zstack.header.message.*;
+import org.zstack.header.other.APIAuditor;
+import org.zstack.header.other.APIMultiAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.ConsistentType;
-import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefInventory;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceVO;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -25,7 +31,7 @@ import java.util.concurrent.TimeUnit;
         parameterName = "params"
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
-public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements VolumeMessage, CreateVolumeSnapshotGroupMessage {
+public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements VolumeMessage, CreateVolumeSnapshotGroupMessage, APIMultiAuditor {
     /**
      * @desc root volume uuid. See :ref:`VolumeInventory`
      */
@@ -111,5 +117,22 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
 
     public void setConsistentType(ConsistentType consistentType) {
         this.consistentType = consistentType;
+    }
+
+    @Override
+    public List<APIAuditor.Result> multiAudit(APIMessage msg, APIEvent rsp) {
+        APICreateVolumeSnapshotGroupMsg cmsg = (APICreateVolumeSnapshotGroupMsg) msg;
+        List<APIAuditor.Result> res = new ArrayList<>();
+        if (rsp.isSuccess()) {
+            res.add(new APIAuditor.Result(((APICreateVolumeSnapshotGroupEvent) rsp).getInventory().getUuid(), VolumeSnapshotGroupVO.class));
+
+            List<VolumeSnapshotGroupRefInventory> volumeSnapshotRefs = ((APICreateVolumeSnapshotGroupEvent) rsp).getInventory().getVolumeSnapshotRefs();
+            volumeSnapshotRefs.forEach(it -> {
+                res.add(new APIAuditor.Result(it.getVolumeSnapshotUuid(), VolumeSnapshotVO.class));
+            });
+        }
+
+        res.add(new APIAuditor.Result(cmsg.getVmInstance().getUuid(), VmInstanceVO.class));
+        return res;
     }
 }
