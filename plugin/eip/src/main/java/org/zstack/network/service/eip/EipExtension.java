@@ -102,6 +102,7 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
         /* when vm is destroyed, eip configure will be deleted */
         boolean stateNeed = EipConstant.vmOperationForDetachEip.contains(operation);
 
+        logger.debug(String.format("eip modified for vm [vmUuid:%s] while [ipChanged:%s] | [l3Need:%s] | [stateNeed:%s]", vmUuid, ipChanged, l3Need, stateNeed));
         return ipChanged || l3Need || stateNeed;
     }
 
