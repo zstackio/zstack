@@ -11,7 +11,7 @@ public class HostCanonicalEvents {
     public static final String HOST_DELETED_PATH = "/host/delete";
     public static final String HOST_DISCONNECTED_PATH = "/host/disconnected";
     public static final String HOST_CHECK_MOUNT_FAULT = "/host/mount/path/fault";
-    public static final String HOST_CHECK_INITIALIZED_FAILED = "/host/check/initialized/falied";
+    public static final String HOST_CHECK_INITIALIZED_FAILED = "/host/check/initialized/failed";
 
     public static class HostDisconnectedData {
         public String hostUuid;
