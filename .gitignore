@@ -1,6 +1,7 @@
 .metadata/
 */bin/
 */.settings/
+.DS_Store
 *~
 management-server.log
 management-server*.gz
