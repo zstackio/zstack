@@ -91,7 +91,7 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             return allocateIfNotNewCreate(huuids, requiredPsUuids);
         }
 
-        
+
         // for new created vm
         String sql = "select ps.uuid" +
                 " from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps, HostVO h" +
