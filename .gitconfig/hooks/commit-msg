@@ -24,6 +24,7 @@ import subprocess
 import traceback
 import sys
 import re
+import shutil
 
 class bcolors:
     HEADER = '\033[95m'
@@ -47,10 +48,33 @@ def main():
         check_commit_msg(sys.argv[1])
         if WARNS > 3:
             print(bcolors.FAIL + bcolors.BOLD + "ERROR: get %s warning, stop commit for world peace\n\nCOMMIT STOPPED" % WARNS + bcolors.ENDC)
-            exit(1)
+            backup_and_exit(sys.argv[1])
+        fix_commit_msg(sys.argv[1])
     except Exception as e:
         print("get exception while check commit msg: %s" % e)
         traceback.print_exc()
+
+def backup_and_exit(file_path):
+    shutil.copy(file_path, "%s.bak" % file_path)
+    print("the bad commit msg has been saved to %s.bak" % file_path)
+    exit(1)
+
+def fix_commit_msg(file_path):
+    # NOTE(weiw): sometimes diff would be added to commit msg
+    # see: https://superuser.com/questions/1367811/sometimes-git-includes-the-diff-to-commit-message-when-using-verbose
+
+    fixed_commit_msg = []
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
+        for no, line in enumerate(lines):
+            if "# Everything below it will be ignored." in line.strip() or \
+                    line.strip().startswith("diff --git a/"):
+                fixed_commit_msg = lines[0:no]
+                break
+    if len(fixed_commit_msg) == 0:
+        return
+    with open(file_path, 'w') as f:
+        f.writelines(fixed_commit_msg)
 
 
 def check_commit_msg(file_path):
@@ -62,6 +86,7 @@ def check_commit_msg(file_path):
     header_not_change = False
     change_id = False
     jira_link_not_changed = False
+    old_style_jira_link = False
     msg_lines = 0
     FAIL = False
 
@@ -84,8 +109,12 @@ def check_commit_msg(file_path):
                 bump_version = True
             if "change-id" in l.lower():
                 change_id = True
-            if "ZSTAC-XXXX".lower() in l.lower():
+            if "ZSTAC-XXXX".lower() in l.lower() or \
+                    "ZSTACK-XXXX".lower() in l.lower():
                 jira_link_not_changed = True
+            if re.search(r"\bZSTACK-\d+\b", l, re.I) or \
+                    re.search(r'\bZSTACK-(X){3,}\b', l, re.I):
+                old_style_jira_link = True
             for pattern in jira_patterns:
                 if re.search(pattern, l, re.I):
                     jira_link = True
@@ -102,6 +131,9 @@ def check_commit_msg(file_path):
     if not jira_link:
         WARNS += 1
         print(bcolors.FAIL + "WARNING: no jira link found! it should be very rarely!" + bcolors.ENDC)
+    if old_style_jira_link:
+        WARNS += 1
+        print(bcolors.FAIL + "WARNING: jira link in the form of ZSTACK-XXXX is deprecated, ZSTAC-XXXX would in stead!" + bcolors.ENDC + bcolors.ENDC)
     if header_not_change:
         WARNS += 1
         FAIL = True
@@ -113,11 +145,11 @@ def check_commit_msg(file_path):
     if jira_link_not_changed:
         WARNS += 1
         FAIL = True
-        print(bcolors.FAIL + bcolors.BOLD + "ERROR: jira link same as template! ZSTAC-XXXX should be replaced!" + bcolors.ENDC + bcolors.ENDC)
+        print(bcolors.FAIL + bcolors.BOLD + "ERROR: jira link same as template! ZSTAC-XXXX should be filled!" + bcolors.ENDC + bcolors.ENDC)
 
     if FAIL is True:
         print(bcolors.FAIL + bcolors.BOLD + "\nCOMMIT STOPPED" + bcolors.ENDC + bcolors.ENDC)
-        exit(1)
+        backup_and_exit(file_path)
 
 def check_user_email():
     global WARNS
