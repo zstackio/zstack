@@ -91,6 +91,8 @@ def write_commit_msg(commit_msg_filepath, type, scope, tags, jiras):
             real_commit_msg.append("\n")
             for jira in jiras:
                 real_commit_msg.append("Resolves: %s\n" % jira.upper())
+        else:
+            real_commit_msg.append("Resolves: ZSTAC-XXXX\n")
         
         real_commit_msg.append("\nChange-Id: %s\n" % get_change_id())
 
