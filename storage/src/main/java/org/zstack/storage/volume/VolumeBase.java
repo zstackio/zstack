@@ -1054,7 +1054,8 @@ public class VolumeBase implements Volume {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            if (self.getStatus() == VolumeStatus.Ready) {
+                            if (self.getStatus() == VolumeStatus.Ready &&
+                                 self.getPrimaryStorageUuid() != null) {
                                 DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
                                 dmsg.setVolume(getSelfInventory());
                                 dmsg.setUuid(self.getPrimaryStorageUuid());
