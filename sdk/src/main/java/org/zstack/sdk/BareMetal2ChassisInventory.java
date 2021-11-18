@@ -84,6 +84,14 @@ public class BareMetal2ChassisInventory  {
         return this.powerStatus;
     }
 
+    public java.lang.String provisionType;
+    public void setProvisionType(java.lang.String provisionType) {
+        this.provisionType = provisionType;
+    }
+    public java.lang.String getProvisionType() {
+        return this.provisionType;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

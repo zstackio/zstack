@@ -60,6 +60,14 @@ public class BareMetal2InstanceInventory extends org.zstack.sdk.VmInstanceInvent
         return this.status;
     }
 
+    public java.lang.String provisionType;
+    public void setProvisionType(java.lang.String provisionType) {
+        this.provisionType = provisionType;
+    }
+    public java.lang.String getProvisionType() {
+        return this.provisionType;
+    }
+
     public BareMetal2InstanceProvisionNicInventory provisionNic;
     public void setProvisionNic(BareMetal2InstanceProvisionNicInventory provisionNic) {
         this.provisionNic = provisionNic;

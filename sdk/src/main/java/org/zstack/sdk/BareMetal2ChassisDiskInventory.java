@@ -36,6 +36,14 @@ public class BareMetal2ChassisDiskInventory  {
         return this.type;
     }
 
+    public java.lang.String wwn;
+    public void setWwn(java.lang.String wwn) {
+        this.wwn = wwn;
+    }
+    public java.lang.String getWwn() {
+        return this.wwn;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
