@@ -90,8 +90,6 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         if (!VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
             return allocateIfNotNewCreate(huuids, requiredPsUuids);
         }
-
-        
         // for new created vm
         String sql = "select ps.uuid" +
                 " from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps, HostVO h" +
@@ -111,6 +109,13 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         if (!requiredPsUuids.isEmpty()) {
+            String sqlappend = requiredPsUuids.size() == 1 ?
+                    String.format(" and ps.uuid = '%s'", requiredPsUuids.iterator().next()) :
+                    String.format(" and ps.uuid in ('%s')" +
+                                    " group by ref.clusterUuid" +
+                                    " having count(distinct ref.clusterUuid) = %d",
+                            String.join("','", requiredPsUuids), 1);
+
             if (psUuids.containsAll(requiredPsUuids)) {
                 psUuids.clear();
                 psUuids.addAll(requiredPsUuids);
@@ -120,7 +125,8 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                         " select ref.hostUuid from PrimaryStorageHostRefVO ref" +
                         " where ref.primaryStorageUuid in :psUuids" +
                         " and ref.status != :phStatus" +
-                        " )", String.class)
+                        " )" +
+                        sqlappend, String.class)
                         .param("huuids", huuids)
                         .param("psUuids", requiredPsUuids)
                         .param("phStatus", PrimaryStorageHostStatus.Connected)
