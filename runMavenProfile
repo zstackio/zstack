@@ -305,13 +305,13 @@ gitconfig(){
         zprint "searching in repo zstack ..."
         zprint "============================"
         sha1s=`git log --oneline --all --grep "$3" | cut -d" " -f1 | tr '\n' ' '`
-        if test x`zprint $sha1s|tr -d ' '` = x''; then
+        if test x`echo $sha1s|tr -d ' '` = x''; then
             zprint "\033[33mcan not find any related commits in repo zstack\033[0m"
         else
             zprint "\n\033[32mfind commits \033[34m$sha1s\033[0mrelated to \033[34m$3\033[0m \033[0m"
             for sha1 in $sha1s; do
-                br=`git branch --remote --contains $sha1 | grep -Eo '[1-5]\.[0-9]+\.[0-9]+.*' | grep -Eo '[1-5].[0-9]+.[0-9]+.*'`
-                zprint "\n\033[32mbranches with commit \033[34m$sha1\033[0m:\033[0m \n${bold}$br ${normal}"
+                br=`git branch --remote --contains $sha1 | grep -Eo '/[1-5]\.[0-9]+\.[0-9]+.*' | grep -Eo '[1-5].[0-9]+.[0-9]+.*' | grep -v '/'`
+                zprint "\n\033[32mrelase branches with commit \033[34m$sha1\033[0m:\033[0m \n${bold}$br ${normal}"
             done
         fi
 
@@ -331,8 +331,8 @@ gitconfig(){
         fi
         zprint "\n\033[32mfind commits \033[34m$sha1s\033[0mrelated to \033[34m$3\033[0m \033[0m"
         for sha1 in $sha1s; do
-            br=`git branch --remote --contains $sha1 | grep -Eo '[1-5]\.[0-9]+\.[0-9]+.*' | grep -Eo '[1-5].[0-9]+.[0-9]+.*'`
-            zprint "\n\033[32mbranches with commit \033[34m$sha1\033[0m:\033[0m \n${bold}$br ${normal}"
+            br=`git branch --remote --contains $sha1 | grep -Eo '/[1-5]\.[0-9]+\.[0-9]+.*' | grep -Eo '[1-5].[0-9]+.[0-9]+.*' | grep -v '/'`
+            zprint "\n\033[32mrelease branches with commit \033[34m$sha1\033[0m:\033[0m \n${bold}$br ${normal}"
         done
 
     elif test x$2 = x'init'; then
