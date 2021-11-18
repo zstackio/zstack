@@ -15,6 +15,7 @@ import org.zstack.core.log.LogSafeGson;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.core.NonCloneable;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -60,6 +61,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     private List<SystemTag> systemTags = new ArrayList<>();
     private List<SystemTag> adminOnlySystemTags = new ArrayList<>();
     private List<PatternedSystemTag> sensitiveTags = new ArrayList<>();
+    private List<SystemTag> nonCloneableTags = new ArrayList<>();
     private Map<String, List<SystemTag>> resourceTypeSystemTagMap = new HashMap<>();
     private Map<String, Class> resourceTypeClassMap = new HashMap<>();
     private Map<Class, Class> resourceTypeCreateMessageMap = new HashMap<>();
@@ -110,6 +112,10 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
                 if (f.isAnnotationPresent(AdminOnlyTag.class)) {
                     adminOnlySystemTags.add(stag);
+                }
+
+                if (f.isAnnotationPresent(NonCloneable.class)) {
+                    nonCloneableTags.add(stag);
                 }
 
                 if (f.isAnnotationPresent(SensitiveTag.class) && stag instanceof PatternedSystemTag) {
@@ -708,6 +714,12 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return systemTags.stream()
                 .filter(it -> tags.stream().anyMatch(sys -> sys.isMatch(it)))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean isCloneable(String tag, String resourceType) {
+        return nonCloneableTags.stream().noneMatch(it -> resourceType.equals(it.resourceClass.getSimpleName())
+                && it.isMatch(tag));
     }
 
     @Override

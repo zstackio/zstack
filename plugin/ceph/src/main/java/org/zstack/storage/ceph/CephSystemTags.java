@@ -1,5 +1,6 @@
 package org.zstack.storage.ceph;
 
+import org.zstack.header.core.NonCloneable;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagDefinition;
@@ -27,6 +28,7 @@ public class CephSystemTags {
     public static PatternedSystemTag DEFAULT_CEPH_PRIMARY_STORAGE_IMAGE_CACHE_POOL = new PatternedSystemTag(String.format("ceph::default::imageCachePoolName::{%s}", DEFAULT_CEPH_PRIMARY_STORAGE_IMAGE_CACHE_POOL_TOKEN), PrimaryStorageVO.class);
 
     public static final String USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN = "poolName";
+    @NonCloneable
     public static PatternedSystemTag USE_CEPH_PRIMARY_STORAGE_POOL = new PatternedSystemTag(String.format("ceph::pool::{%s}", USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN), VolumeVO.class);
 
     public static final String KVM_SECRET_UUID_TOKEN = "uuid";
@@ -36,5 +38,6 @@ public class CephSystemTags {
     public static PatternedSystemTag NO_CEPHX = new PatternedSystemTag(NO_CEPHX_TOKEN, PrimaryStorageVO.class);
 
     public static final String USE_CEPH_ROOT_POOL_TOKEN = "rootPoolName";
+    @NonCloneable
     public static PatternedSystemTag USE_CEPH_ROOT_POOL = new PatternedSystemTag(String.format("ceph::rootPoolName::{%s}", USE_CEPH_ROOT_POOL_TOKEN), VolumeVO.class);
 }
