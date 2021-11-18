@@ -110,7 +110,7 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         if (!requiredPsUuids.isEmpty()) {
-            String sa = requiredPsUuids.size() == 1 ?
+            String sqlappend = requiredPsUuids.size() == 1 ?
                     String.format(" and ps.uuid = '%s'", requiredPsUuids.iterator().next()) :
                     String.format(" and ps.uuid in ('%s')" +
                                     " group by ref.clusterUuid" +
@@ -131,11 +131,16 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                         " ("+
                         " select ref.clusterUuid from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps" +
                         " where ref.primaryStorageUuid = ps.uuid" +
-                        sa +
+                        " and (ps.state = :state or ps.state =:state1)" +
+                        " and ps.status = :status" +
+                        sqlappend +
                         " )", String.class)
                         .param("huuids", huuids)
                         .param("psUuids", requiredPsUuids)
                         .param("phStatus", PrimaryStorageHostStatus.Connected)
+                        .param("state", PrimaryStorageState.Enabled)
+                        .param("state1", PrimaryStorageState.Disabled)
+                        .param("status", PrimaryStorageStatus.Connected)
                         .list();
                 if (huuids.isEmpty()) {
                     return new ArrayList<>();
