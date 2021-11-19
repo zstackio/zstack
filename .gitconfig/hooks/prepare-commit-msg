@@ -90,8 +90,8 @@ def write_commit_msg(commit_msg_filepath, type, scope, tags, jiras):
         if len(tags) > 0:
             real_commit_msg.append("%s\n" % "\n".join(tags))
 
+        real_commit_msg.append("\n")
         if jiras:
-            real_commit_msg.append("\n")
             for jira in jiras:
                 real_commit_msg.append("Resolves: %s\n" % jira.upper())
         else:
@@ -149,7 +149,7 @@ def get_scope(changed_folders, changed_paths):
     if most_common in ["sdk", "header", "core"]:
         modules = []
         for p in changed_paths.keys():
-            if "/org/zstack/sdk/" in changed_paths:
+            if "/org/zstack/sdk/" in p:
                 word_after_sdk = p.split("org/zstack/sdk/")[-1].split("/")[0]
                 if "." in word_after_sdk:
                     # eg. sdk/src/main/java/org/zstack/sdk/CreateSchedulerJobGroupAction.java
@@ -157,10 +157,10 @@ def get_scope(changed_folders, changed_paths):
                 else:
                     # eg. sdk/src/main/java/org/zstack/sdk/iam2/api/AddRolesToIAM2VirtualIDGroupAction.java
                     modules.append(word_after_sdk)
-            elif "/org/zstack/header/" in changed_paths:
+            elif "/org/zstack/header/" in p:
                 # eg. header/src/main/java/org/zstack/header/image/APIAddImageMsg.java
                 modules.append(p.split("org/zstack/header/")[-1].split("/")[0])
-            elif "/org/zstack/core/" in changed_paths:
+            elif "/org/zstack/core/" in p:
                 word_after_core = p.split("org/zstack/core/")[-1].split("/")[0]
                 if "." in word_after_core:
                     # eg. core/src/main/java/org/zstack/core/rest/RESTFacadeImpl.java
@@ -291,7 +291,7 @@ if __name__ == "__main__":
 ## ,|template,)
 ##   /usr/bin/perl -i.bak -pe '
 ##      print "\n" . `git diff --cached --name-status -r`
-##	 if /^#/ && $first++ == 0' "$1" ;;
+##      if /^#/ && $first++ == 0' "$1" ;;
 #
 #  *) ;;
 #esac
