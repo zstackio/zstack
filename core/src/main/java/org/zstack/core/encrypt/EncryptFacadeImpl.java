@@ -1,7 +1,6 @@
 package org.zstack.core.encrypt;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -18,7 +17,6 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Convert;
 import javax.persistence.Query;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.security.cert.X509Certificate;
 import java.util.*;
