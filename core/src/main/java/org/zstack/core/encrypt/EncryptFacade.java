@@ -1,6 +1,5 @@
 package org.zstack.core.encrypt;
 
-import java.io.InputStream;
 import java.security.cert.X509Certificate;
 
 /**
