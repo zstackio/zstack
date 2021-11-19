@@ -311,8 +311,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }
 
         List<String> userdataList = new UserdataBuilder().buildByVmUuid(inv.getUuid());
-        if (userdataList == null || userdataList.isEmpty()) {
-            return null;
+        if (userdataList == null) {
+            // Apply userdata anyway after migrating VM to redeploy lighttpd server
+            // so that the VM can still send metric data to pushgateway through lighttpd
+            userdataList = Collections.emptyList();
         }
 
         UserdataStruct struct = new UserdataStruct();
