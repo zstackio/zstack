@@ -46,7 +46,7 @@ def main():
             return
         check_user_email()
         check_commit_msg(sys.argv[1])
-        if WARNS > 3:
+        if WARNS >= 3:
             print(bcolors.FAIL + bcolors.BOLD + "ERROR: get %s warning, stop commit for world peace\n\nCOMMIT STOPPED" % WARNS + bcolors.ENDC)
             backup_and_exit(sys.argv[1])
         fix_commit_msg(sys.argv[1])
@@ -90,18 +90,24 @@ def check_commit_msg(file_path):
     revert_commit = False
     header_too_long = False
     msg_too_long = False
+    header_form = False
     msg_lines = 0
+    full_lines = 0
     FAIL = False
 
     jira_patterns = [r"\bZSTAC-\d+\b", r"\bZSTACK-\d+\b", r"\bMINI-\d+\b", 
                      r"\bZOPS-\d+\b", r"\bZHCI-\d+\b"]
     with open(file_path, 'r') as f:
         lines = f.readlines()
+        full_lines = len(lines)
+
+        if re.search(r'<.*>\[.*\]\:.*', lines[0], re.I):
+            header_form = True
         if "revert" in lines[0].lower():
             revert_commit = True
         if "merge branch" in lines[0].lower():
             merge_commit = True
-        if "" == lines[1].strip():
+        if full_lines > 1 and "" == lines[1].strip():
             second_line_is_blank = True
         if lines[0].strip().endswith("]: <description>"):
             header_not_change = True
@@ -131,7 +137,7 @@ def check_commit_msg(file_path):
     if bump_version or merge_commit or revert_commit:
         return
 
-    if msg_lines == 1:
+    if full_lines == 1 or msg_lines == 1:
         WARNS += 1
         print(bcolors.FAIL + "WARNING: one-line commit msg should only appropriate for bump version!" + bcolors.ENDC)
     if not second_line_is_blank:
@@ -149,6 +155,10 @@ def check_commit_msg(file_path):
     if msg_too_long:
         WARNS += 1
         print(bcolors.FAIL + "WARNING: line length of commit msg longger than 72 characters!" + bcolors.ENDC)
+    if header_form is False:
+        WARNS += 1
+        FAIL = True
+        print(bcolors.FAIL + bcolors.BOLD + "ERROR: header form is not <type>[scope]: <descrption>!" + bcolors.ENDC + bcolors.ENDC)
     if header_not_change:
         WARNS += 1
         FAIL = True
@@ -197,9 +207,9 @@ if __name__ == "__main__":
     main()
 
 #test "" = "$(grep '^Signed-off-by: ' "$1" |
-#	 sort | uniq -c | sed -e '/^[ 	]*1[ 	]/d')" || {
-#	echo >&2 Duplicate Signed-off-by lines.
-#	exit 1
+#     sort | uniq -c | sed -e '/^[   ]*1[    ]/d')" || {
+#     echo >&2 Duplicate Signed-off-by lines.
+#     exit 1
 #}
 #
 #grep '<description>' $1 && echo "\033[33mdescription in commit msg header not filed!"
