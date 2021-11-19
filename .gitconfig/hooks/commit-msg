@@ -87,6 +87,9 @@ def check_commit_msg(file_path):
     change_id = False
     jira_link_not_changed = False
     old_style_jira_link = False
+    revert_commit = False
+    header_too_long = False
+    msg_too_long = False
     msg_lines = 0
     FAIL = False
 
@@ -94,16 +97,22 @@ def check_commit_msg(file_path):
                      r"\bZOPS-\d+\b", r"\bZHCI-\d+\b"]
     with open(file_path, 'r') as f:
         lines = f.readlines()
+        if "revert" in lines[0].lower():
+            revert_commit = True
         if "merge branch" in lines[0].lower():
             merge_commit = True
         if "" == lines[1].strip():
             second_line_is_blank = True
         if lines[0].strip().endswith("]: <description>"):
             header_not_change = True
+        if len(lines[0].strip()) > 50:
+            header_too_long = True
 
         for l in lines:
             if l.startswith("# Please enter the commit"):
                 break
+            if not l.strip().startswith("#") and len(l.strip()) > 72:
+                msg_too_long = True
             msg_lines += 1
             if "bump " in l.lower():
                 bump_version = True
@@ -119,7 +128,7 @@ def check_commit_msg(file_path):
                 if re.search(pattern, l, re.I):
                     jira_link = True
         
-    if bump_version or merge_commit:
+    if bump_version or merge_commit or revert_commit:
         return
 
     if msg_lines == 1:
@@ -133,7 +142,13 @@ def check_commit_msg(file_path):
         print(bcolors.FAIL + "WARNING: no jira link found! it should be very rarely!" + bcolors.ENDC)
     if old_style_jira_link:
         WARNS += 1
-        print(bcolors.FAIL + "WARNING: jira link in the form of ZSTACK-XXXX is deprecated, ZSTAC-XXXX would in stead!" + bcolors.ENDC + bcolors.ENDC)
+        print(bcolors.FAIL + "WARNING: jira link in the form of ZSTACK-XXXX is deprecated, ZSTAC-XXXX would in stead!" + bcolors.ENDC)
+    # if header_too_long:
+    #     WARNS += 1
+    #     print(bcolors.FAIL + "WARNING: header longer than 50 characters!" + bcolors.ENDC + bcolors.ENDC)
+    if msg_too_long:
+        WARNS += 1
+        print(bcolors.FAIL + "WARNING: line length of commit msg longger than 72 characters!" + bcolors.ENDC)
     if header_not_change:
         WARNS += 1
         FAIL = True
