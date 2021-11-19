@@ -3,7 +3,6 @@ package org.zstack.network.l2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -86,15 +85,6 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
 
         if (!VSwitchType.hasType(msg.getvSwitchType())) {
             throw new ApiMessageInterceptionException(argerr("unsupported vSwitch type[%s]", msg.getvSwitchType()));
-        }
-
-        // only same vSwitch type can be created based on the same physical interface.
-        boolean isVSwitchTypeConflict = Q.New(L2NetworkVO.class)
-                .eq(L2NetworkVO_.physicalInterface, msg.getPhysicalInterface())
-                .notEq(L2NetworkVO_.vSwitchType, msg.getvSwitchType())
-                .isExists();
-        if (isVSwitchTypeConflict) {
-            throw new ApiMessageInterceptionException(argerr("can not create %s with physical interface:[%s] which was already been used by another vSwitch type.", msg.getvSwitchType(), msg.getPhysicalInterface()));
         }
     }
 }
