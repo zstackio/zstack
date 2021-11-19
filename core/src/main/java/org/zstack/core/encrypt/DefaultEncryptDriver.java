@@ -54,7 +54,7 @@ public class DefaultEncryptDriver implements EncryptDriver {
     @Override
     public EncryptFacadeResult<String> decrypt(String data, EncryptType algType) {
         try {
-            return new EncryptFacadeResult<>((String) rsa.decrypt(data, algType.toString()));
+            return new EncryptFacadeResult<>(rsa.decrypt(data, algType.toString()));
         } catch (Exception e) {
             throw new CloudRuntimeException(e.getMessage());
         }
