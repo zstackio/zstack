@@ -40,7 +40,8 @@ public class SshFileMd5Checker implements AnsibleChecker {
         Ssh ssh = new Ssh();
         ssh.setUsername(username).setPrivateKey(privateKey)
                 .setPassword(password).setPort(sshPort)
-                .setHostname(targetIp);
+                .setHostname(targetIp)
+                .setTimeout(5);
         try {
             for (SrcDestPair b : srcDestPairs) {
                 String sourceFilePath = b.srcPath;
