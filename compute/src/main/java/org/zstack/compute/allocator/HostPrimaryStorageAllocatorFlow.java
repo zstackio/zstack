@@ -131,16 +131,16 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                         " ("+
                         " select ref.clusterUuid from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps" +
                         " where ref.primaryStorageUuid = ps.uuid" +
-                        " and (ps.state = :state or ps.state =:state1)" +
-                        " and ps.status = :status" +
+//                        " and (ps.state = :state or ps.state =:state1)" +
+//                        " and ps.status = :status" +
                         sqlappend +
                         " )", String.class)
                         .param("huuids", huuids)
                         .param("psUuids", requiredPsUuids)
                         .param("phStatus", PrimaryStorageHostStatus.Connected)
-                        .param("state", PrimaryStorageState.Enabled)
-                        .param("state1", PrimaryStorageState.Disabled)
-                        .param("status", PrimaryStorageStatus.Connected)
+//                        .param("state", PrimaryStorageState.Enabled)
+//                        .param("state1", PrimaryStorageState.Disabled)
+//                        .param("status", PrimaryStorageStatus.Connected)
                         .list();
                 if (huuids.isEmpty()) {
                     return new ArrayList<>();
