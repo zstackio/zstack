@@ -148,10 +148,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SecurityMachineVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`InfoSecSecretResourcePoolVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
-    `connectionMode` int unsigned NOT NULL DEFAULT 2,
-    `autoCheck` boolean NOT NULL DEFAULT TRUE,
-    `connectTimeOut` bigint unsigned NOT NULL DEFAULT 30000,
-    `checkInterval` bigint unsigned NOT NULL DEFAULT 30000,
+    `connectionMode` int unsigned NOT NULL,
     `activatedToken` varchar(32) DEFAULT NULL,
     `protectToken` varchar(32) DEFAULT NULL,
     `hmacToken` varchar(32) DEFAULT NULL,

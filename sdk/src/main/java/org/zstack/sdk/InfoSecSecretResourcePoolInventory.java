@@ -4,30 +4,6 @@ package org.zstack.sdk;
 
 public class InfoSecSecretResourcePoolInventory extends org.zstack.sdk.SecretResourcePoolInventory {
 
-    public long connectTimeOut;
-    public void setConnectTimeOut(long connectTimeOut) {
-        this.connectTimeOut = connectTimeOut;
-    }
-    public long getConnectTimeOut() {
-        return this.connectTimeOut;
-    }
-
-    public boolean autoCheck;
-    public void setAutoCheck(boolean autoCheck) {
-        this.autoCheck = autoCheck;
-    }
-    public boolean getAutoCheck() {
-        return this.autoCheck;
-    }
-
-    public long checkInterval;
-    public void setCheckInterval(long checkInterval) {
-        this.checkInterval = checkInterval;
-    }
-    public long getCheckInterval() {
-        return this.checkInterval;
-    }
-
     public java.lang.Integer connectionMode;
     public void setConnectionMode(java.lang.Integer connectionMode) {
         this.connectionMode = connectionMode;
