@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetSecurityMachineKeyAction extends AbstractAction {
+public class SecurityMachineEncryptAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetSecurityMachineKeyResult value;
+        public org.zstack.sdk.SecurityMachineEncryptResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,13 +26,10 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String text;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String tokenName;
+    public java.lang.String algType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +63,8 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetSecurityMachineKeyResult value = res.getResult(org.zstack.sdk.SetSecurityMachineKeyResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetSecurityMachineKeyResult() : value; 
+        org.zstack.sdk.SecurityMachineEncryptResult value = res.getResult(org.zstack.sdk.SecurityMachineEncryptResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SecurityMachineEncryptResult() : value; 
 
         return ret;
     }
@@ -97,7 +94,7 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/secret-resource-pool-token/set/{uuid}/actions";
+        info.path = "/security-machine/encrypt/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetSecurityMachineKeyAction extends AbstractAction {
+public class QuerySecurityMachineAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetSecurityMachineKeyResult value;
+        public org.zstack.sdk.QuerySecurityMachineResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String tokenName;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetSecurityMachineKeyResult value = res.getResult(org.zstack.sdk.SetSecurityMachineKeyResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetSecurityMachineKeyResult() : value; 
+        org.zstack.sdk.QuerySecurityMachineResult value = res.getResult(org.zstack.sdk.QuerySecurityMachineResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QuerySecurityMachineResult() : value; 
 
         return ret;
     }
@@ -96,11 +64,11 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/secret-resource-pool-token/set/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/security-machines";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
