@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetSecurityMachineKeyAction extends AbstractAction {
+public class DeleteSecurityMachineAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetSecurityMachineKeyResult value;
+        public org.zstack.sdk.DeleteSecurityMachineResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,11 +28,8 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String tokenName;
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +63,8 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetSecurityMachineKeyResult value = res.getResult(org.zstack.sdk.SetSecurityMachineKeyResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetSecurityMachineKeyResult() : value; 
+        org.zstack.sdk.DeleteSecurityMachineResult value = res.getResult(org.zstack.sdk.DeleteSecurityMachineResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteSecurityMachineResult() : value; 
 
         return ret;
     }
@@ -96,11 +93,11 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/secret-resource-pool-token/set/{uuid}/actions";
+        info.httpMethod = "DELETE";
+        info.path = "/security-machines/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

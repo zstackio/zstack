@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetSecurityMachineKeyAction extends AbstractAction {
+public class UpdateInfoSecSecurityMachineAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetSecurityMachineKeyResult value;
+        public org.zstack.sdk.UpdateSecurityMachineResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,26 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
         }
     }
 
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public java.lang.Integer port;
+
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String tokenName;
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String managementIp;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String model;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +78,8 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetSecurityMachineKeyResult value = res.getResult(org.zstack.sdk.SetSecurityMachineKeyResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetSecurityMachineKeyResult() : value; 
+        org.zstack.sdk.UpdateSecurityMachineResult value = res.getResult(org.zstack.sdk.UpdateSecurityMachineResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateSecurityMachineResult() : value; 
 
         return ret;
     }
@@ -96,11 +108,11 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/secret-resource-pool-token/set/{uuid}/actions";
+        info.httpMethod = "PUT";
+        info.path = "/security-machines/infoSec/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateInfoSecSecurityMachine";
         return info;
     }
 
