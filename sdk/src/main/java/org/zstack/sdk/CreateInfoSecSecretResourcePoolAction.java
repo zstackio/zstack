@@ -40,6 +40,9 @@ public class CreateInfoSecSecretResourcePoolAction extends AbstractAction {
     @Param(required = true, validValues = {"CloudSecurityMachine","OrdinarySecurityMachine"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
+    public java.lang.Integer heartbeatInterval;
+
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String zoneUuid;
 

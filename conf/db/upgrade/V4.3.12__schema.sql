@@ -118,6 +118,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SecretResourcePoolVO` (
     `type` varchar(255) NOT NULL,
     `state` varchar(32) NOT NULL,
     `model` varchar(32) NOT NULL,
+    `heartbeatInterval` int unsigned DEFAULT NULL,
     `description` varchar(2048) DEFAULT NULL,
     `createDate`  timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate`  timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
