@@ -60,6 +60,14 @@ public class SecretResourcePoolInventory  {
         return this.model;
     }
 
+    public java.lang.Integer heartbeatInterval;
+    public void setHeartbeatInterval(java.lang.Integer heartbeatInterval) {
+        this.heartbeatInterval = heartbeatInterval;
+    }
+    public java.lang.Integer getHeartbeatInterval() {
+        return this.heartbeatInterval;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
