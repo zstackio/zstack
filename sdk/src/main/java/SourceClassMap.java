@@ -95,7 +95,9 @@ public class SourceClassMap {
 			put("org.zstack.crypto.ccs.CCSCertificateUserRefInventory", "org.zstack.sdk.CCSCertificateUserRefInventory");
 			put("org.zstack.crypto.ccs.CCSCertificateUserState", "org.zstack.sdk.CCSCertificateUserState");
 			put("org.zstack.crypto.securitymachine.InfoSecSecretResourcePoolInventory", "org.zstack.sdk.InfoSecSecretResourcePoolInventory");
+			put("org.zstack.crypto.securitymachine.InfoSecSecurityMachineInventory", "org.zstack.sdk.InfoSecSecurityMachineInventory");
 			put("org.zstack.crypto.securitymachine.SecretResourcePoolInventory", "org.zstack.sdk.SecretResourcePoolInventory");
+			put("org.zstack.crypto.securitymachine.SecurityMachineInventory", "org.zstack.sdk.SecurityMachineInventory");
 			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
 			put("org.zstack.drs.api.Threshold", "org.zstack.sdk.Threshold");
 			put("org.zstack.drs.entity.ClusterDRSInventory", "org.zstack.sdk.ClusterDRSInventory");
@@ -799,6 +801,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ImageStoreGcResult", "org.zstack.storage.backup.imagestore.ImageStoreGcResult");
 			put("org.zstack.sdk.ImageStoreImageStruct", "org.zstack.storage.backup.imagestore.ImageStoreImageStruct");
 			put("org.zstack.sdk.InfoSecSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.InfoSecSecretResourcePoolInventory");
+			put("org.zstack.sdk.InfoSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.InfoSecSecurityMachineInventory");
 			put("org.zstack.sdk.InstallPathRecycleInventory", "org.zstack.header.core.trash.InstallPathRecycleInventory");
 			put("org.zstack.sdk.InstanceOfferingInventory", "org.zstack.header.configuration.InstanceOfferingInventory");
 			put("org.zstack.sdk.IpCapacityData", "org.zstack.header.network.l3.datatypes.IpCapacityData");
@@ -977,6 +980,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SecurityGroupIngressRuleTO", "org.zstack.network.securitygroup.SecurityGroupIngressRuleTO");
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
+			put("org.zstack.sdk.SecurityMachineInventory", "org.zstack.crypto.securitymachine.SecurityMachineInventory");
 			put("org.zstack.sdk.SessionInventory", "org.zstack.header.identity.SessionInventory");
 			put("org.zstack.sdk.SessionStatus", "org.zstack.header.portMirror.SessionStatus");
 			put("org.zstack.sdk.SessionType", "org.zstack.header.portMirror.SessionType");
