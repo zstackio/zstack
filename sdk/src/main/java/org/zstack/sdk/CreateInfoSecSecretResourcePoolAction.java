@@ -25,15 +25,6 @@ public class CreateInfoSecSecretResourcePoolAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {6000L,180000L}, noTrim = false)
-    public java.lang.Long connectTimeOut;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean autoCheck = false;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {6000L,180000L}, noTrim = false)
-    public java.lang.Long interval;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,4L}, noTrim = false)
     public int connectionMode = 0;
 
