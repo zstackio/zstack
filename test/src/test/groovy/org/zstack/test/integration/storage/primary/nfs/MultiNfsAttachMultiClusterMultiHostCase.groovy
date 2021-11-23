@@ -88,7 +88,7 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
 
             bus = bean(CloudBus)
             simulatorEnv()
-            //testCreateAndStartVmNotOnHostDisconnectNfs()
+            testCreateAndStartVmNotOnHostDisconnectNfs()
             testReconnectHostNoNfsAccessed()
             testReconnectHostOneNfsNotAccessed()
             testReconnectNfsOneHostNotAccessed()
