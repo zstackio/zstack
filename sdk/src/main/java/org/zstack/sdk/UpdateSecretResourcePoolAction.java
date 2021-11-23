@@ -37,6 +37,9 @@ public class UpdateSecretResourcePoolAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String model;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
+    public java.lang.Integer heartbeatInterval;
+
     @Param(required = false)
     public java.util.List systemTags;
 
