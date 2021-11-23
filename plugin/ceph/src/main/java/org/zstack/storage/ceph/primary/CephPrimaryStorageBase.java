@@ -1729,13 +1729,29 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
+    private String getPoolNameFromSystemTags(List<String> systemTags, String volumeType) {
+        if (systemTags == null || systemTags.isEmpty()) {
+            return null;
+        }
+        for (int i = systemTags.size()-1; i >= 0; --i) {
+            if (volumeType.equals(VolumeType.Root.toString()) && TagUtils.isMatch(CephSystemTags.USE_CEPH_ROOT_POOL.getTagFormat(), systemTags.get(i))) {
+                return TagUtils.parse(CephSystemTags.USE_CEPH_ROOT_POOL.getTagFormat(), systemTags.get(i)).get(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN);
+            } else if (volumeType.equals(VolumeType.Data.toString()) && TagUtils.isMatch(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.getTagFormat(), systemTags.get(i))) {
+                return TagUtils.parse(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.getTagFormat(), systemTags.get(i)).get(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN);
+            }
+        }
+        return null;
+    }
+
     private void createEmptyVolume(final InstantiateVolumeOnPrimaryStorageMsg msg) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         String volumeUuid = msg.getVolume().getUuid();
 
-        String targetCephPoolName;
+        String targetCephPoolName = getPoolNameFromSystemTags(msg.getSystemTags(), msg.getVolume().getType());
 
-        if (VolumeType.Root.toString().equals(msg.getVolume().getType())) {
+        if (targetCephPoolName != null) {
+            cmd.installPath = String.format("ceph://%s/%s", targetCephPoolName, volumeUuid);
+        } else if (VolumeType.Root.toString().equals(msg.getVolume().getType())) {
             targetCephPoolName = getRootVolumeTargetPoolName(volumeUuid);
             cmd.installPath = makeRootVolumeInstallPath(msg.getVolume().getUuid());
         } else {
