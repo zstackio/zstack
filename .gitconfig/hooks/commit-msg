@@ -117,7 +117,8 @@ def check_commit_msg(file_path):
         for l in lines:
             if l.startswith("# Please enter the commit"):
                 break
-            if not l.strip().startswith("#") and len(l.strip()) > 72:
+            if not l.strip().startswith("#") and change_id is False and \
+                    len(l.strip()) > 72:
                 msg_too_long = True
             msg_lines += 1
             if "bump " in l.lower():
