@@ -88,7 +88,7 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
 
             bus = bean(CloudBus)
             simulatorEnv()
-            testCreateAndStartVmNotOnHostDisconnectNfs()
+            //testCreateAndStartVmNotOnHostDisconnectNfs()
             testReconnectHostNoNfsAccessed()
             testReconnectHostOneNfsNotAccessed()
             testReconnectNfsOneHostNotAccessed()
@@ -155,52 +155,52 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
         assert vm3.allVolumes[0].primaryStorageUuid == ps1.uuid
     }
 
-//    void testCreateAndStartVmNotOnHostDisconnectNfs(){
-//        disconnectHostPS(host1.uuid, ps1.uuid)
-//        disconnectHostPS(host2.uuid, ps2.uuid)
-//
-//        VmInstanceInventory vm3 = createVmInstance {
-//            name = "vm3"
-//            instanceOfferingUuid = ins.uuid
-//            imageUuid = image.uuid
-//            l3NetworkUuids = [l3.uuid]
-//            primaryStorageUuidForRootVolume = ps1.uuid
-//            dataDiskOfferingUuids = [diskOffering.uuid]
-//            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): ps2.uuid])]
-//        } as VmInstanceInventory
-//
-//        assert vm3.hostUuid == host3.uuid
-//        assert vm3.allVolumes.size() == 2
-//        assert vm3.allVolumes.primaryStorageUuid.containsAll([ps1.uuid, ps2.uuid])
-//        // assert !Q.New(SystemTagVO.class).like(SystemTagVO_.tag, "%primaryStorageUuidForDataVolume%").isExists()
-//
-//        stopVmInstance {
-//            uuid = vm3.uuid
-//        }
-//
-//        assert retryInSecs(){
-//            return Q.New(VmInstanceVO.class).select(VmInstanceVO_.state)
-//                    .eq(VmInstanceVO_.uuid, vm3.uuid).findValue() == VmInstanceState.Stopped
-//        }
-//
-//        recoverConnectHostPS()
-//        disconnectHostPS(host1.uuid, ps1.uuid)
-//        disconnectHostPS(host3.uuid, ps1.uuid)
-//        startVmInstance {
-//            uuid = vm3.uuid
-//        }
-//
-//        retryInSecs() {
-//            Tuple t = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
-//                    .eq(VmInstanceVO_.uuid, vm3.uuid).findTuple()
-//            return {
-//                assert t.get(0) == VmInstanceState.Running
-//                assert t.get(1) == host2.uuid
-//            }
-//        }
-//
-//        recoverConnectHostPS()
-//    }
+    void testCreateAndStartVmNotOnHostDisconnectNfs(){
+        disconnectHostPS(host1.uuid, ps1.uuid)
+        disconnectHostPS(host2.uuid, ps2.uuid)
+
+        VmInstanceInventory vm3 = createVmInstance {
+            name = "vm3"
+            instanceOfferingUuid = ins.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            primaryStorageUuidForRootVolume = ps1.uuid
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): ps2.uuid])]
+        } as VmInstanceInventory
+
+        assert vm3.hostUuid == host3.uuid
+        assert vm3.allVolumes.size() == 2
+        assert vm3.allVolumes.primaryStorageUuid.containsAll([ps1.uuid, ps2.uuid])
+        // assert !Q.New(SystemTagVO.class).like(SystemTagVO_.tag, "%primaryStorageUuidForDataVolume%").isExists()
+
+        stopVmInstance {
+            uuid = vm3.uuid
+        }
+
+        assert retryInSecs(){
+            return Q.New(VmInstanceVO.class).select(VmInstanceVO_.state)
+                    .eq(VmInstanceVO_.uuid, vm3.uuid).findValue() == VmInstanceState.Stopped
+        }
+
+        recoverConnectHostPS()
+        disconnectHostPS(host1.uuid, ps1.uuid)
+        disconnectHostPS(host3.uuid, ps1.uuid)
+        startVmInstance {
+            uuid = vm3.uuid
+        }
+
+        retryInSecs() {
+            Tuple t = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
+                    .eq(VmInstanceVO_.uuid, vm3.uuid).findTuple()
+            return {
+                assert t.get(0) == VmInstanceState.Running
+                assert t.get(1) == host2.uuid
+            }
+        }
+
+        recoverConnectHostPS()
+    }
 
     void testCreateVmFailedOnHostConnectingNfs(){
         connectingHostPS(host1.uuid, ps1.uuid)
