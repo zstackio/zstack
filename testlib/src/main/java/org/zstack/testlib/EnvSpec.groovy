@@ -92,6 +92,7 @@ class EnvSpec extends ApiHelper implements Node  {
     private boolean hasCreated
     private ConcurrentHashMap<String, Closure> httpHandlers = [:]
     private ConcurrentHashMap<String, Closure> httpPostHandlers = [:]
+    private ConcurrentHashMap<String, Closure> httpFinalHandlers = [:]
     private ConcurrentHashMap<String, AtomicInteger> httpHandlerCounters = [:]
     private ConcurrentHashMap<String, AtomicInteger> httpPostHandlerCounters = [:]
     private ConcurrentHashMap<String, Closure> defaultHttpHandlers = [:]
@@ -250,6 +251,10 @@ class EnvSpec extends ApiHelper implements Node  {
         httpPostHandlers.clear()
         httpPostHandlerCounters.clear()
         httpPostHandlers.putAll(defaultHttpPostHandlers)
+    }
+
+    void cleanFinalSimulatorHandlers() {
+        httpFinalHandlers.clear()
     }
 
     void cleanMessageHandlers() {
@@ -878,6 +883,10 @@ class EnvSpec extends ApiHelper implements Node  {
         httpPostHandlers[path] = c
     }
 
+    void hijackSimulator(String path, Closure c) {
+        httpFinalHandlers[path] = c
+    }
+
     void conditionSimulator(String path, Closure condition, Closure c) {
         def lst = httpConditionHandlers[path]
         if (lst == null) {
@@ -997,6 +1006,27 @@ class EnvSpec extends ApiHelper implements Node  {
 
                 httpPostHandlerCounters.putIfAbsent(url, new AtomicInteger(0))
                 httpPostHandlerCounters.get(url).incrementAndGet()
+            }
+
+            Closure finalHandler = httpFinalHandlers[url]
+
+            if (finalHandler == null) {
+                for (String httpUrl : httpFinalHandlers.keys()) {
+                    if (Pattern.matches(httpUrl, url)) {
+                        finalHandler = httpFinalHandlers.get(httpUrl)
+                        break
+                    }
+                }
+            }
+
+            if (finalHandler != null) {
+                if (finalHandler.maximumNumberOfParameters <= 1) {
+                    ret = finalHandler(ret)
+                } else if (finalHandler.maximumNumberOfParameters == 2) {
+                    ret = finalHandler(ret, entity)
+                } else {
+                    ret = finalHandler(ret, entity, this)
+                }
             }
 
             if (ret == null) {
