@@ -1,5 +1,6 @@
 package org.zstack.core.encrypt;
 
+import org.zstack.header.core.encrypt.EncryptConstant;
 import org.zstack.header.exception.CloudRuntimeException;
 
 import java.security.cert.X509Certificate;
@@ -43,18 +44,18 @@ public class DefaultEncryptDriver implements EncryptDriver {
     }
 
     @Override
-    public EncryptFacadeResult<String> encrypt(String data, EncryptType algType) {
+    public EncryptFacadeResult<String> encrypt(String data, String algType) {
         try {
-            return new EncryptFacadeResult<>(rsa.encrypt(data, algType.toString()));
+            return new EncryptFacadeResult<>(rsa.encrypt(data, algType));
         } catch (Exception e) {
             throw new CloudRuntimeException(e.getMessage());
         }
     }
 
     @Override
-    public EncryptFacadeResult<String> decrypt(String data, EncryptType algType) {
+    public EncryptFacadeResult<String> decrypt(String data, String algType) {
         try {
-            return new EncryptFacadeResult<>(rsa.decrypt(data, algType.toString()));
+            return new EncryptFacadeResult<>(rsa.decrypt(data, algType));
         } catch (Exception e) {
             throw new CloudRuntimeException(e.getMessage());
         }
