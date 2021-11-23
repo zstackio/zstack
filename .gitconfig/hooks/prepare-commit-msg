@@ -72,17 +72,20 @@ def write_commit_msg(commit_msg_filepath, type, scope, tags, jiras):
 # 2. How does it address the problem?
 # 3. Are there any side effects?\n
 '''
-    break_line = 0
 
     with open(commit_msg_filepath, 'r+') as msg:
         in_usable_content = False
         useable_contents = []
         for line in msg.readlines():
-            if in_usable_content is False and not line.startswith("# Please enter the commit message"):
+            if line.startswith("Resolves/Related: ZSTAC"):
+                in_usable_content = True
                 continue
-            in_usable_content = True
+            if line.startswith("# ------------------------ >8 ------------------------"):
+                in_usable_content = True
+                # NOTE(weiw): do not continue, it's usable!
+            if in_usable_content is False:
+                continue
             useable_contents.append(line)
-        line = msg.readline()
 
         real_commit_msg = []
         real_commit_msg.append("<%s>[%s]: <description>\n\n" % (type, scope))
@@ -99,7 +102,7 @@ def write_commit_msg(commit_msg_filepath, type, scope, tags, jiras):
         
         real_commit_msg.append("\nChange-Id: %s\n" % get_change_id())
 
-        msg.seek(0)
+    with open(commit_msg_filepath, 'w') as msg:
         real_commit_msg.extend(useable_contents)
         msg.writelines(real_commit_msg)
 
@@ -116,9 +119,6 @@ def process_metadata(commit_msg_filepath):
     changed_folders = []
     changed_paths = {}
     with open(commit_msg_filepath, 'r+') as msg:
-
-        processing = False
-
         content = msg.readlines()
         for no, line in enumerate(content):
             line = line.strip()
