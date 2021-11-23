@@ -175,7 +175,6 @@ class EnvSpec extends ApiHelper implements Node  {
             [CreateAliyunProxyVSwitchAction.metaClass, CreateAliyunProxyVSwitchAction.Result.metaClass, DeleteAliyunProxyVSwitchAction.class],
             [CreateMonitorGroupAction.metaClass, CreateMonitorGroupAction.Result.metaClass, DeleteMonitorGroupAction.class],
             [CreateMonitorTemplateAction.metaClass, CreateMonitorTemplateAction.Result.metaClass, DeleteMonitorTemplateAction.class],
-            [AddCCSCertificateAction.metaClass, AddCCSCertificateAction.Result.metaClass, DeleteCCSCertificateAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK

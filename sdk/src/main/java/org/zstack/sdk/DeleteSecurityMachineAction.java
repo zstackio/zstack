@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateInfoSecSecretResourcePoolAction extends AbstractAction {
+public class DeleteSecurityMachineAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateInfoSecSecretResourcePoolAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateSecretResourcePoolResult value;
+        public org.zstack.sdk.DeleteSecurityMachineResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,11 @@ public class UpdateInfoSecSecretResourcePoolAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,4L}, noTrim = false)
-    public java.lang.Integer connectionMode;
-
-    @Param(required = false, maxLength = 30, minLength = 4, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String activatedToken;
-
-    @Param(required = false, maxLength = 30, minLength = 4, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String protectToken;
-
-    @Param(required = false, maxLength = 30, minLength = 4, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hmacToken;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String model;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {6L,180L}, noTrim = false)
-    public java.lang.Integer heartbeatInterval;
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -84,8 +63,8 @@ public class UpdateInfoSecSecretResourcePoolAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateSecretResourcePoolResult value = res.getResult(org.zstack.sdk.UpdateSecretResourcePoolResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateSecretResourcePoolResult() : value; 
+        org.zstack.sdk.DeleteSecurityMachineResult value = res.getResult(org.zstack.sdk.DeleteSecurityMachineResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteSecurityMachineResult() : value; 
 
         return ret;
     }
@@ -114,11 +93,11 @@ public class UpdateInfoSecSecretResourcePoolAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/secret-resource-pools/infoSec/{uuid}/actions";
+        info.httpMethod = "DELETE";
+        info.path = "/security-machines/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateInfoSecSecretResourcePool";
+        info.parameterName = "";
         return info;
     }
 
