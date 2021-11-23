@@ -156,8 +156,8 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
     }
 
     void testCreateAndStartVmNotOnHostDisconnectNfs(){
-//        disconnectHostPS(host1.uuid, ps1.uuid)
-//        disconnectHostPS(host2.uuid, ps2.uuid)
+        disconnectHostPS(host1.uuid, ps1.uuid)
+        disconnectHostPS(host2.uuid, ps2.uuid)
 
         VmInstanceInventory vm3 = createVmInstance {
             name = "vm3"
