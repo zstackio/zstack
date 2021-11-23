@@ -398,8 +398,8 @@ clear_git_config() {
     support_config_hook=$?
 
     if [ $support_config_hook -eq 1 ]; then
-        rm $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg 2> /dev/null
-        rm $(git rev-parse --show-toplevel)/.git/hooks/commit-msg 2> /dev/null
+        mv $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg.bak.`date +%s` 2> /dev/null
+        mv $(git rev-parse --show-toplevel)/.git/hooks/commit-msg $(git rev-parse --show-toplevel)/.git/hooks/commit-msg.bak.`date +%s` 2> /dev/null
     else
         git config --unset core.hooksPath
     fi
@@ -407,8 +407,8 @@ clear_git_config() {
 
     cd ./premium
     if [ $support_config_hook -eq 1 ]; then
-        rm $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg 2> /dev/null
-        rm $(git rev-parse --show-toplevel)/.git/hooks/commit-msg 2> /dev/null
+        mv $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg.bak.`date +%s` 2> /dev/null
+        mv $(git rev-parse --show-toplevel)/.git/hooks/commit-msg $(git rev-parse --show-toplevel)/.git/hooks/commit-msg.bak.`date +%s` 2> /dev/null
     else
         git config --unset core.hooksPath
     fi
