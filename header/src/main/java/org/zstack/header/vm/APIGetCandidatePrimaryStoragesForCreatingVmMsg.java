@@ -31,13 +31,23 @@ public class APIGetCandidatePrimaryStoragesForCreatingVmMsg extends APISyncCallM
     private List<String> l3NetworkUuids;
     @APIParam(required = false, resourceType = DiskOfferingVO.class, checkAccount = true)
     private String rootDiskOfferingUuid;
-    @APIParam(numberRange = {1, Long.MAX_VALUE}, numberRangeUnit = {"byte", "bytes"}, required = false)
-    private Long rootDiskSize;
     @APIParam(required = false, nonempty = true, resourceType = DiskOfferingVO.class, checkAccount = true)
     private List<String> dataDiskOfferingUuids;
+    @APIParam(numberRange = {1, Long.MAX_VALUE}, numberRangeUnit = {"byte", "bytes"}, required = false)
+    private Long rootDiskSize;
+    @APIParam(numberRange = {1, 100}, numberRangeUnit = {"byte", "bytes"}, required = false)
+    List<Long> dataDiskSizes;
     private String zoneUuid;
     private String clusterUuid;
     private String defaultL3NetworkUuid;
+
+    public List<Long> getDataDiskSizes() {
+        return dataDiskSizes;
+    }
+
+    public void setDataDiskSizes(List<Long> dataDiskSizes) {
+        this.dataDiskSizes = dataDiskSizes;
+    }
 
     public Long getRootDiskSize() {
         return rootDiskSize;

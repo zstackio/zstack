@@ -7,6 +7,7 @@ import org.zstack.test.integration.network.NetworkTest
 import org.zstack.test.integration.network.l3network.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.data.SizeUnit
 
 import java.util.stream.Collectors
 
@@ -48,6 +49,7 @@ class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
     void test() {
         env.create {
             prepareEnv()
+            testGetCandidatePrimaryStoragesAndClustersHostsForCreatingVmMsg1()
             testGetCandidateZonesClustersHostsForCreatingVm()
             testGetCandidatePrimaryStoragesAndClustersHostsForCreatingVmMsg()
         }
@@ -65,6 +67,16 @@ class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
         bs2 = env.inventoryByName("sftp2")
         zone = env.inventoryByName("zone")
         ps = env.inventoryByName("nfs")
+    }
+
+    void testGetCandidatePrimaryStoragesAndClustersHostsForCreatingVmMsg1() {
+        GetCandidatePrimaryStoragesForCreatingVmResult getPsSuccessres = getCandidatePrimaryStoragesForCreatingVm {
+            sessionId= adminSession()
+            zoneUuid = zone.uuid
+            l3NetworkUuids = [l3.uuid]
+            dataDiskSizes= [SizeUnit.GIGABYTE.toByte(10)]
+        }
+        assert getPsSuccessres.rootVolumePrimaryStorages.stream().map { psInv -> psInv.getUuid() }.collect(Collectors.toList()).contains(ps.uuid)
     }
 
     void testGetCandidatePrimaryStoragesAndClustersHostsForCreatingVmMsg() {
