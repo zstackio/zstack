@@ -15,13 +15,13 @@ public interface EncryptFacade {
      * @return Not null.
      * If decrypt process raise an Exception, describe it in {@link EncryptFacadeResult#error}.
      */
-    EncryptFacadeResult<String> attachedVerify(String cipherText);
+    EncryptFacadeResult<byte[][]> attachedVerify(String cipherText);
 
     /**
      * Parse the CCS certificate cipher text and return the CCS certificate information.
      * @return CCS certificate information, not null
      */
-    EncryptFacadeResult<X509Certificate> parseCertificate(String certificateText);
+    EncryptFacadeResult<X509Certificate> parseCertificate(byte[] certificateText);
 
     EncryptFacadeResult<String> encrypt(String data, String algType);
 

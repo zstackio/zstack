@@ -59,12 +59,12 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
     }
 
     @Override
-    public EncryptFacadeResult<String> attachedVerify(String cipherText) {
+    public EncryptFacadeResult<byte[][]> attachedVerify(String cipherText) {
         return encryptDriver.attachedVerify(cipherText);
     }
 
     @Override
-    public EncryptFacadeResult<X509Certificate> parseCertificate(String certificateText) {
+    public EncryptFacadeResult<X509Certificate> parseCertificate(byte[] certificateText) {
         return encryptDriver.parseCertificate(certificateText);
     }
 

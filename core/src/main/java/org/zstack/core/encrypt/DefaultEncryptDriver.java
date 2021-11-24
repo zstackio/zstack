@@ -34,12 +34,12 @@ public class DefaultEncryptDriver implements EncryptDriver {
     }
 
     @Override
-    public EncryptFacadeResult<String> attachedVerify(String cipherText) {
+    public EncryptFacadeResult<byte[][]> attachedVerify(String cipherText) {
         return null;
     }
 
     @Override
-    public EncryptFacadeResult<X509Certificate> parseCertificate(String certificateText) {
+    public EncryptFacadeResult<X509Certificate> parseCertificate(byte[] certificateText) {
         return null;
     }
 
