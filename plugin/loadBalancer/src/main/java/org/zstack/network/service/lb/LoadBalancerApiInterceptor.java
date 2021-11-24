@@ -105,6 +105,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validate((APIGetCandidateVmNicsForLoadBalancerMsg) msg);
         } else if (msg instanceof APIGetCandidateL3NetworksForLoadBalancerMsg) {
             validate((APIGetCandidateL3NetworksForLoadBalancerMsg) msg);
+        } else if(msg instanceof APIGetCandidateL3NetworksForServerGroupMsg){
+            validate((APIGetCandidateL3NetworksForServerGroupMsg) msg);
         } else if(msg instanceof APIUpdateLoadBalancerListenerMsg){
             validate((APIUpdateLoadBalancerListenerMsg) msg);
         } else if(msg instanceof APIAddCertificateToLoadBalancerListenerMsg){
@@ -179,6 +181,16 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         lq.add(LoadBalancerListenerVO_.uuid, Op.EQ, msg.getListenerUuid());
         String lbuuid = lq.findValue();
         msg.setLoadBalancerUuid(lbuuid);
+    }
+
+    private void validate(APIGetCandidateL3NetworksForServerGroupMsg msg) {
+        if (msg.getServerGroupUuid() != null) {
+            LoadBalancerServerGroupVO groupVO = dbf.findByUuid(msg.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+            msg.setLoadBalancerUuid(groupVO.getLoadBalancerUuid());
+        } else if (msg.getLoadBalancerUuid() == null) {
+            throw new ApiMessageInterceptionException(
+                    operr("could not get candidate l3 network, because both load balancer uuid and server group uuid are not specified"));
+        }
     }
 
     private void validate(APIRemoveAccessControlListFromLoadBalancerMsg msg) {
