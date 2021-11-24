@@ -678,6 +678,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         if (ImageMediaType.ISO.toString().equals(imageInv.getMediaType())) {
             if (msg.getRootDiskOfferingUuid() == null) {
                 rmsg.setSize(msg.getRootDiskSize());
+            } else if (msg.getDataDiskSizes() == null) {
+                rmsg.setSize(msg.getDataDiskSizes().iterator().next());
             } else {
                 Tuple t = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, msg.getRootDiskOfferingUuid())
                         .select(DiskOfferingVO_.diskSize, DiskOfferingVO_.allocatorStrategy).findTuple();
