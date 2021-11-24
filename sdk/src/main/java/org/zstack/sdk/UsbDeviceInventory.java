@@ -60,6 +60,14 @@ public class UsbDeviceInventory  {
         return this.busNum;
     }
 
+    public java.lang.String portNum;
+    public void setPortNum(java.lang.String portNum) {
+        this.portNum = portNum;
+    }
+    public java.lang.String getPortNum() {
+        return this.portNum;
+    }
+
     public java.lang.String devNum;
     public void setDevNum(java.lang.String devNum) {
         this.devNum = devNum;

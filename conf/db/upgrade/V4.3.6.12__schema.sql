@@ -1,0 +1,2 @@
+ALTER TABLE `UsbDeviceVO` ADD COLUMN `portNum` varchar(32) DEFAULT NULL;
+ALTER TABLE `ZBoxVO` ADD COLUMN `portNum` varchar(32) DEFAULT NULL;
