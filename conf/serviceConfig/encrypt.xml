@@ -6,11 +6,5 @@
     <message>
         <name>org.zstack.header.core.encrypt.APIUpdateEncryptKeyMsg</name>
     </message>
-    <message>
-        <name>org.zstack.header.core.encrypt.APIStartDataProtectionMsg</name>
-    </message>
-    <message>
-        <name>org.zstack.header.core.encrypt.APICheckBatchDataIntegrityMsg</name>
-    </message>
 
 </service>
