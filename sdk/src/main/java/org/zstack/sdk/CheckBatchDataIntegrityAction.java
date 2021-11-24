@@ -28,7 +28,7 @@ public class CheckBatchDataIntegrityAction extends AbstractAction {
     @Param(required = false)
     public java.util.List resourceUuids;
 
-    @Param(required = false)
+    @Param(required = true, validValues = {"AccessControlRuleVO","GlobalConfigVO","AuditsVO"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String resourceType;
 
     @Param(required = false)
@@ -88,7 +88,7 @@ public class CheckBatchDataIntegrityAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/check/Batch/data/integrity/";
+        info.path = "/check/batch/data/integrity/";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
