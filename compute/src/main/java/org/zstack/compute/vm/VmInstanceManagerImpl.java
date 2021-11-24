@@ -678,8 +678,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         if (ImageMediaType.ISO.toString().equals(imageInv.getMediaType())) {
             if (msg.getRootDiskOfferingUuid() == null) {
                 rmsg.setSize(msg.getRootDiskSize());
-            } else if (msg.getDataDiskSizes() == null) {
-                rmsg.setSize(msg.getDataDiskSizes().iterator().next());
             } else {
                 Tuple t = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, msg.getRootDiskOfferingUuid())
                         .select(DiskOfferingVO_.diskSize, DiskOfferingVO_.allocatorStrategy).findTuple();
@@ -706,6 +704,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }
+
+    if (msg.getDataDiskSizes() == null) {
+        AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+        amsg.setDryRun(true);
+        amsg.setSize(msg.getDataDiskSizes().iterator().next());
+        amsg.setRequiredClusterUuids(clusterUuids);
+        bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
+        msgs.add(amsg);
+    }
 
         new While<>(msgs).all((amsg, completion) ->{
             bus.send(amsg, new CloudBusCallBack(completion) {
