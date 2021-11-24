@@ -1,5 +1,6 @@
 package org.zstack.storage.volume;
 
+import org.zstack.header.core.NonCloneable;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
@@ -27,6 +28,7 @@ public class VolumeSystemTags {
     public static String AUTO_SCALING_GROUP_UUID_TOKEN = "autoScalingGroupUuid";
     public static PatternedSystemTag AUTO_SCALING_GROUP_UUID = new PatternedSystemTag(String.format("autoScalingGroupUuid::{%s}", AUTO_SCALING_GROUP_UUID_TOKEN), VolumeVO.class);
 
+    @NonCloneable
     public static String OVERWRITED_VOLUME_TOKEN = "overwritedVolumeUuid";
     public static PatternedSystemTag OVERWRITED_VOLUME = new PatternedSystemTag(String.format("overwriteBy::volume::{%s}", OVERWRITED_VOLUME_TOKEN), VolumeVO.class);
 
@@ -35,5 +37,6 @@ public class VolumeSystemTags {
 
     public static PatternedSystemTag PACKER_BUILD = new PatternedSystemTag("packer", VolumeVO.class);
 
+    @NonCloneable
     public static EphemeralSystemTag FAST_CREATE = new EphemeralSystemTag("volume::fastCreate");
 }
