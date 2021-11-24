@@ -705,6 +705,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
             msgs.add(amsg);
         }
 
+        if (msg.getDataDiskSizes() != null) {
+            AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+            amsg.setDryRun(true);
+            amsg.setSize(msg.getDataDiskSizes().iterator().next());
+            amsg.setRequiredClusterUuids(clusterUuids);
+            bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
+            msgs.add(amsg);
+        }
+
         new While<>(msgs).all((amsg, completion) ->{
             bus.send(amsg, new CloudBusCallBack(completion) {
                 @Override
@@ -713,8 +722,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         AllocatePrimaryStorageDryRunReply re = r.castReply();
                         if (amsg.getImageUuid() != null){
                             reply.setRootVolumePrimaryStorages(re.getPrimaryStorageInventories());
-                        } else {
+                        } else if (amsg.getDiskOfferingUuid() != null) {
                             reply.getDataVolumePrimaryStorages().put(amsg.getDiskOfferingUuid(), re.getPrimaryStorageInventories());
+                        } else {
+                            reply.getDataVolumePrimaryStorages().put(String.valueOf(amsg.getSize()), re.getPrimaryStorageInventories());
                         }
                     }
                     completion.done();
