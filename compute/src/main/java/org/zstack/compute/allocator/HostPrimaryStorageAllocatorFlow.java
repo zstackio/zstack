@@ -121,27 +121,39 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                 psUuids.clear();
                 psUuids.addAll(requiredPsUuids);
                 huuids = SQL.New("select h.uuid from HostVO h" +
-                        " where h.uuid in :huuids" +
-                        " and h.uuid not in (" +
-                        " select ref.hostUuid from PrimaryStorageHostRefVO ref" +
-                        " where ref.primaryStorageUuid in :psUuids" +
-                        " and ref.status != :phStatus" +
-                        " )" +
-                        " and h.clusterUuid in" +
-                        " ("+
-                        " select ref.clusterUuid from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps" +
-                        " where ref.primaryStorageUuid = ps.uuid" +
-                        " and (ps.state = :state or ps.state =:state1)" +
-                        " and ps.status = :status" +
-                        sqlappend +
-                        " )", String.class)
+                                " where h.uuid in :huuids" +
+                                " and h.uuid not in (" +
+                                " select ref.hostUuid from PrimaryStorageHostRefVO ref" +
+                                " where ref.primaryStorageUuid in :psUuids" +
+                                " and ref.status != :phStatus" +
+                                " )", String.class)
                         .param("huuids", huuids)
                         .param("psUuids", requiredPsUuids)
                         .param("phStatus", PrimaryStorageHostStatus.Connected)
-                        .param("state", PrimaryStorageState.Enabled)
-                        .param("state1", PrimaryStorageState.Disabled)
-                        .param("status", PrimaryStorageStatus.Connected)
                         .list();
+
+//                huuids = SQL.New("select h.uuid from HostVO h" +
+//                        " where h.uuid in :huuids" +
+//                        " and h.uuid not in (" +
+//                        " select ref.hostUuid from PrimaryStorageHostRefVO ref" +
+//                        " where ref.primaryStorageUuid in :psUuids" +
+//                        " and ref.status != :phStatus" +
+//                        " )" +
+//                        " and h.clusterUuid in" +
+//                        " ("+
+//                        " select ref.clusterUuid from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps" +
+//                        " where ref.primaryStorageUuid = ps.uuid" +
+//                        " and (ps.state = :state or ps.state =:state1)" +
+//                        " and ps.status = :status" +
+//                        sqlappend +
+//                        " )", String.class)
+//                        .param("huuids", huuids)
+//                        .param("psUuids", requiredPsUuids)
+//                        .param("phStatus", PrimaryStorageHostStatus.Connected)
+//                        .param("state", PrimaryStorageState.Enabled)
+//                        .param("state1", PrimaryStorageState.Disabled)
+//                        .param("status", PrimaryStorageStatus.Connected)
+//                        .list();
                 if (huuids.isEmpty()) {
                     return new ArrayList<>();
                 }
