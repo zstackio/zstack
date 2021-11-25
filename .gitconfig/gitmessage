@@ -1,0 +1,14 @@
+<type>[scope]: <description>
+
+# Possible types: fix/feature/test/refactor/chore
+# Possible tags: APIImpact/GlobalConfigImpact/GlobalPropertyImpact/DBImpact/ZQLImpact
+# Possible jira-footers: Resolves/Related
+# Please describe the commit as detailed as possible!
+
+[body]
+
+[footer(s)]
+
+APIImpact/GlobalConfigImpact/GlobalPropertyImpact/DBImpact/ZQLImpact
+
+Resolves/Related: ZSTAC-XXXX
