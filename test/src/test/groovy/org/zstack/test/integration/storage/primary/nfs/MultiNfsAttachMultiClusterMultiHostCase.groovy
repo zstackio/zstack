@@ -159,6 +159,21 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
         disconnectHostPS(host1.uuid, ps1.uuid)
         disconnectHostPS(host2.uuid, ps2.uuid)
 
+        expectError {
+            createVmInstance {
+                name = "vm_failed"
+                instanceOfferingUuid = ins.uuid
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                primaryStorageUuidForRootVolume = ps1.uuid
+                dataDiskOfferingUuids = [diskOffering.uuid]
+                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): ps2.uuid])]
+            }
+        }
+
+        recoverConnectHostPS()
+        disconnectHostPS(host3.uuid, ps1.uuid)
+        disconnectHostPS(host2.uuid, ps2.uuid)
         VmInstanceInventory vm3 = createVmInstance {
             name = "vm3"
             instanceOfferingUuid = ins.uuid
@@ -169,10 +184,9 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
             systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): ps2.uuid])]
         } as VmInstanceInventory
 
-        assert vm3.hostUuid == host3.uuid
+        assert vm3.hostUuid == host1.uuid
         assert vm3.allVolumes.size() == 2
         assert vm3.allVolumes.primaryStorageUuid.containsAll([ps1.uuid, ps2.uuid])
-        // assert !Q.New(SystemTagVO.class).like(SystemTagVO_.tag, "%primaryStorageUuidForDataVolume%").isExists()
 
         stopVmInstance {
             uuid = vm3.uuid

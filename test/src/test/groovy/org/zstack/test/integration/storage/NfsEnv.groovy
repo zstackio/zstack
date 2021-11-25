@@ -71,7 +71,7 @@ class NfsEnv {
                 }
 
                 cluster {
-                    name = "cluster1"
+                    name = "cluster2"
                     hypervisorType = "KVM"
 
                     kvm {

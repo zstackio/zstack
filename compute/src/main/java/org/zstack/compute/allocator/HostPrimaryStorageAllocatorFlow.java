@@ -13,6 +13,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -29,7 +30,7 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
     @Autowired
     private PrimaryStorageOverProvisioningManager ratioMgr;
 
-    private List<HostVO> allocateIfNotNewCreate(List<String> huuids, Set<String> requiredPsUuids) {
+    private List<HostVO> filterHostHavingAccessiblePrimaryStorage(List<String> huuids, Set<String> requiredPsUuids, String vmOperation){
         String sqlappend = "";
         if (!requiredPsUuids.isEmpty()) {
             sqlappend = requiredPsUuids.size() == 1 ?
@@ -40,6 +41,13 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                             String.join("','", requiredPsUuids), requiredPsUuids.size());
         }
 
+        String psStatus = "";
+        if (!VmOperation.NewCreate.toString().equals(vmOperation)) {
+            psStatus = " and (ps.state = :state or ps.state =:state1)";
+        } else {
+            psStatus = " and ps.state = :state";
+        }
+
         String sql = "select h" +
                 " from HostVO h" +
                 " where h.uuid in :uuids" +
@@ -48,16 +56,18 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                 " select ref.clusterUuid" +
                 " from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps" +
                 " where ref.primaryStorageUuid = ps.uuid" +
-                " and (ps.state = :state or ps.state =:state1)" +
                 " and ps.status = :status" +
+                psStatus +
                 sqlappend +
                 " )";
 
         TypedQuery<HostVO> query = dbf.getEntityManager().createQuery(sql, HostVO.class);
         query.setParameter("uuids", huuids);
         query.setParameter("state", PrimaryStorageState.Enabled);
-        query.setParameter("state1", PrimaryStorageState.Disabled);
         query.setParameter("status", PrimaryStorageStatus.Connected);
+        if (!VmOperation.NewCreate.toString().equals(vmOperation)) {
+            query.setParameter("state1", PrimaryStorageState.Disabled);
+        }
         List<HostVO> hosts = query.getResultList();
 
         // in case no host is connected
@@ -88,7 +98,10 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         List<String> huuids = getHostUuidsFromCandidates();
         Set<String> requiredPsUuids = spec.getRequiredPrimaryStorageUuids();
         if (!VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
-            return allocateIfNotNewCreate(huuids, requiredPsUuids);
+            return filterHostHavingAccessiblePrimaryStorage(huuids, requiredPsUuids, spec.getVmOperation());
+        } else {
+            huuids = filterHostHavingAccessiblePrimaryStorage(huuids, requiredPsUuids, spec.getVmOperation())
+                    .stream().map(ResourceVO::getUuid).collect(Collectors.toList());
         }
 
         // for new created vm
