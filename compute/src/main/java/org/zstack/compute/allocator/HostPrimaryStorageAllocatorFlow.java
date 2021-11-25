@@ -121,12 +121,12 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                 psUuids.clear();
                 psUuids.addAll(requiredPsUuids);
                 huuids = SQL.New("select h.uuid from HostVO h" +
-                                " where h.uuid in :huuids" +
-                                " and h.uuid not in (" +
-                                " select ref.hostUuid from PrimaryStorageHostRefVO ref" +
-                                " where ref.primaryStorageUuid in :psUuids" +
-                                " and ref.status != :phStatus" +
-                                " )", String.class)
+                        " where h.uuid in :huuids" +
+                        " and h.uuid not in (" +
+                        " select ref.hostUuid from PrimaryStorageHostRefVO ref" +
+                        " where ref.primaryStorageUuid in :psUuids" +
+                        " and ref.status != :phStatus" +
+                        " )", String.class)
                         .param("huuids", huuids)
                         .param("psUuids", requiredPsUuids)
                         .param("phStatus", PrimaryStorageHostStatus.Connected)
