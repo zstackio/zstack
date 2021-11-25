@@ -50,6 +50,7 @@ class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
             prepareEnv()
             testGetCandidateZonesClustersHostsForCreatingVm()
             testGetCandidatePrimaryStoragesAndClustersHostsForCreatingVmMsg()
+            testGetCandidatePrimaryStoragesWhenAssignDataDisksForCreatingVmMsg()
         }
     }
 
@@ -65,6 +66,18 @@ class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
         bs2 = env.inventoryByName("sftp2")
         zone = env.inventoryByName("zone")
         ps = env.inventoryByName("nfs")
+    }
+
+    void testGetCandidatePrimaryStoragesWhenAssignDataDisksForCreatingVmMsg() {
+        GetCandidatePrimaryStoragesForCreatingVmResult getPsSuccessres = getCandidatePrimaryStoragesForCreatingVm {
+            sessionId = adminSession()
+            zoneUuid = zone.uuid
+            l3NetworkUuids = [l3.uuid]
+            imageUuid = image.uuid
+            dataDiskSizes = [1024 * 1024 * 1024]
+        }
+        assert getPsSuccessres.rootVolumePrimaryStorages.size() == 1
+        assert getPsSuccessres.dataVolumePrimaryStorages.size() == 1
     }
 
     void testGetCandidatePrimaryStoragesAndClustersHostsForCreatingVmMsg() {

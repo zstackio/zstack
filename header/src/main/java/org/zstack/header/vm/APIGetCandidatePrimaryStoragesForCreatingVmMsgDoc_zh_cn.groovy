@@ -52,6 +52,16 @@ doc {
 					
 				}
 				column {
+					name "rootDiskSize"
+					enclosedIn ""
+					desc "自定义根云盘大小。仅在`imageUuid`指定的镜像是ISO时且`rootDiskOfferingUuid`为空需要指定"
+					location "query"
+					type "Long"
+					optional true
+					since "4.1.2"
+
+				}
+				column {
 					name "dataDiskOfferingUuids"
 					enclosedIn ""
 					desc "数据云盘使用的云盘规格UUID"
@@ -60,6 +70,16 @@ doc {
 					optional true
 					since "2.1"
 					
+				}
+				column {
+					name "dataDiskSizes"
+					enclosedIn ""
+					desc "自定义数据云盘大小"
+					location "query"
+					type "List"
+					optional true
+					since "4.3.9"
+
 				}
 				column {
 					name "zoneUuid"
