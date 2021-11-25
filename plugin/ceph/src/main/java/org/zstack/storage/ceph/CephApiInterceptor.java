@@ -8,11 +8,16 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterMsg;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.storage.ceph.backup.*;
 import org.zstack.storage.ceph.primary.*;
 import org.zstack.utils.CharacterUtils;
+import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -28,7 +33,7 @@ import static org.zstack.core.Platform.argerr;
 /**
  * Created by frank on 7/29/2015.
  */
-public class CephApiInterceptor implements ApiMessageInterceptor {
+public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(CephApiInterceptor.class);
 
     @Autowired
@@ -58,6 +63,8 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddCephPrimaryStoragePoolMsg) msg);
         } else if (msg instanceof APIUpdateCephPrimaryStoragePoolMsg) {
             validate((APIUpdateCephPrimaryStoragePoolMsg) msg);
+        } else if (msg instanceof APIAttachPrimaryStorageToClusterMsg) {
+            validate((APIAttachPrimaryStorageToClusterMsg) msg);
         }
         
         return msg;
@@ -245,5 +252,31 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
 
         checkMonUrls(msg.getMonUrls());
         checkExistingBackupStorage(msg.getMonUrls());
+    }
+
+    private void validate(APIAttachPrimaryStorageToClusterMsg msg) {
+        List<String> existPSs = Q.New(PrimaryStorageClusterRefVO.class)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, msg.getClusterUuid())
+                .select(PrimaryStorageClusterRefVO_.primaryStorageUuid)
+                .listValues();
+
+        if (existPSs.isEmpty()) {
+            return;
+        }
+
+        existPSs.add(msg.getPrimaryStorageUuid());
+        if (existPSs.stream().anyMatch(v -> CephSystemTags.THIRDPARTY_PLATFORM.hasTag(v))) {
+            throw new ApiMessageInterceptionException(argerr("Third-party ceph cannot mixed with other primary storage."));
+        }
+    }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return CollectionDSL.list(APIAttachPrimaryStorageToClusterMsg.class);
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.END;
     }
 }
