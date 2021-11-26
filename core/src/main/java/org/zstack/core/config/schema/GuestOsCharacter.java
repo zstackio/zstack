@@ -40,6 +40,7 @@ public class GuestOsCharacter {
         @XmlElement(required = false)
         protected Boolean acpi;
 
+        //whether guest need to set EPYC cpu model on Hygon
         @XmlElement(required = false)
         protected Boolean hygonCpu;
 
