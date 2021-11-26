@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 usage() {
     echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium|openapi|errorcode|check|git]"
