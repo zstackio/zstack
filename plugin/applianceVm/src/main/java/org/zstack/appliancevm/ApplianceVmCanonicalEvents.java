@@ -5,6 +5,7 @@ import org.zstack.header.message.NeedJsonSchema;
 
 public class ApplianceVmCanonicalEvents {
     public static final String DISCONNECTED_PATH = "/appliance-vm/disconnected";
+    public static final String APPLIANCEVM_STATE_CHANGED_PATH = "/appliance-vm/state/change";
     public static final String APPLIANCEVM_STATUS_CHANGED_PATH = "/appliance-vm/status/change";
     public static final String SERVICE_UNHEALTHY_PATH = "/appliance-vm/sevice/unhealthy";
     public static final String SERVICE_HEALTHY_PATH = "/appliance-vm/sevice/healthy";
@@ -40,6 +41,45 @@ public class ApplianceVmCanonicalEvents {
 
         public void setNewStatus(String newStatus) {
             this.newStatus = newStatus;
+        }
+
+        public ApplianceVmInventory getInv() {
+            return inv;
+        }
+
+        public void setInv(ApplianceVmInventory inv) {
+            this.inv = inv;
+        }
+    }
+
+    public static class ApplianceVmStateChangeData {
+        private String applianceVmUuid;
+        private String oldState;
+        private String newState;
+        private ApplianceVmInventory inv;
+
+        public String getApplianceVmUuid() {
+            return applianceVmUuid;
+        }
+
+        public void setApplianceVmUuid(String applianceVmUuid) {
+            this.applianceVmUuid = applianceVmUuid;
+        }
+
+        public String getOldState() {
+            return oldState;
+        }
+
+        public void setOldState(String oldState) {
+            this.oldState = oldState;
+        }
+
+        public String getNewState() {
+            return newState;
+        }
+
+        public void setNewState(String newState) {
+            this.newState = newState;
         }
 
         public ApplianceVmInventory getInv() {
