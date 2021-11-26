@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <character xmlns="http://zstack.org/schema/zstack">
+    <!-- aarch64 -->
     <osInfo>
         <architecture>aarch64</architecture>
         <platform>Linux</platform>
@@ -13,6 +14,140 @@
         <acpi>true</acpi>
     </osInfo>
 
+
+    <!-- x86_64 -->
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>CentOS 5</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>CentOS 6</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>CentOS 7</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>CentOS 8</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>RHEL 5</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>RHEL 6</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>RHEL 7</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>RHEL 8</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Ubuntu 16</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Ubuntu 18</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Ubuntu 20</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Debian 7</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Debian 8</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Debian 9</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Debian 10</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Fedora</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Kylin 4</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Kylin 7</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Kylin 10</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>UOS 20</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>openEuler 20.03</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Linux</osRelease>
+        <hygonCpu>true</hygonCpu>
+    </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
