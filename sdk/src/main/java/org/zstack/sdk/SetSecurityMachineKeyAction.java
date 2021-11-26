@@ -31,8 +31,11 @@ public class SetSecurityMachineKeyAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String tokenName;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean dryRun = false;
 
     @Param(required = false)
     public java.util.List systemTags;
