@@ -275,16 +275,7 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public static class GetQcow2HashValueCmd extends AgentCmd {
-        private String hostUuid;
         private String installPath;
-
-        public String getHostUuid() {
-            return hostUuid;
-        }
-
-        public void setHostUuid(String hostUuid) {
-            this.hostUuid = hostUuid;
-        }
 
         public String getInstallPath() {
             return installPath;
@@ -1571,7 +1562,6 @@ public class KvmBackend extends HypervisorBackend {
     void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeSnapshotEncryptedOnPrimaryStorageReply> completion) {
         String hostUuid = primaryStorageFactory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
         GetQcow2HashValueCmd cmd = new GetQcow2HashValueCmd();
-        cmd.setHostUuid(hostUuid);
         cmd.setInstallPath(msg.getPrimaryStorageInstallPath());
         new KvmCommandSender(hostUuid).send(cmd, GET_QCOW2_HASH_VALUE_PATH, new KvmCommandFailureChecker() {
             @Override
