@@ -3,6 +3,7 @@ package org.zstack.storage.primary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -12,6 +13,8 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
@@ -19,8 +22,10 @@ import org.zstack.header.volume.APICreateVolumeSnapshotGroupMsg;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -41,6 +46,8 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private PluginRegistry pluginRegistry;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof PrimaryStorageMessage) {
@@ -162,6 +169,25 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
                         url));
             }
         }
+
+        String clusterType = Q.New(ClusterVO.class)
+                .eq(ClusterVO_.uuid, msg.getClusterUuid())
+                .select(ClusterVO_.hypervisorType)
+                .findValue();
+
+        String primaryStorageType = Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
+                .select(PrimaryStorageVO_.type)
+                .findValue();
+
+        List<StorageAttachClusterMetric> storageAttachClusterMetrics =
+                new ArrayList<>(pluginRegistry.getExtensionList(StorageAttachClusterMetric.class));
+
+        storageAttachClusterMetrics.stream().filter(m ->
+                m.getClusterHypervisorType().toString().equals(clusterType) && m.getPrimaryStorageType().toString().equals(primaryStorageType)
+        ).forEach(m ->
+                m.checkSupport(msg.getPrimaryStorageUuid(), msg.getClusterUuid())
+        );
     }
 
     private void validate(APIDeletePrimaryStorageMsg msg) {

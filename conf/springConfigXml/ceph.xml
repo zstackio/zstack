@@ -54,6 +54,7 @@
     <bean id="CephApiInterceptor" class="org.zstack.storage.ceph.CephApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
 
@@ -104,6 +105,12 @@
     <bean id="SandStoneCephPrimaryCapacityBaseUpdater" class="org.zstack.storage.ceph.primary.capacity.SandStoneCephPrimaryCapacityBaseUpdater">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="CephStorageAttachKvmClusterMetric" class="org.zstack.storage.ceph.primary.CephStorageAttachKvmClusterMetric">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.primary.StorageAttachClusterMetric"/>
         </zstack:plugin>
     </bean>
 </beans>
