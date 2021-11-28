@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 usage() {
     echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium|openapi|errorcode|check|git]"
@@ -231,8 +231,11 @@ globalconfigdocmd(){
 }
 
 zprint(){
+    # NOTE(weiw): `sh` in CentOS is an alias of `bash` actually
+    # and `echo` behaves different for `sh` in MacOS and CentOS
+    # sinec we changed shebang into bash, now it could be unify actually
     if test x`uname` = x"Darwin"; then
-        echo $@
+        echo -e $@
     else
         echo -e $@
     fi
