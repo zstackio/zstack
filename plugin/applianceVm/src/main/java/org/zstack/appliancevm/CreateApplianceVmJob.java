@@ -136,6 +136,12 @@ public class CreateApplianceVmJob implements Job {
                     protected ApplianceVmVO scripts() {
                         finalAvo1.setAccountUuid(spec.getAccountUuid());
                         ApplianceVmVO vo = factory.persistApplianceVm(spec, finalAvo1);
+
+                        if (ApplianceVmGlobalConfig.APPLIANCENUMA.value(Boolean.class)) {
+                            ResourceConfig rc = rcf.getResourceConfig(VmGlobalConfig.NUMA.getIdentity());
+                            rc.updateValue(finalAvo1.getUuid(), Boolean.TRUE.toString());
+                        }
+
                         return reload(vo);
                     }
                 }.execute();
@@ -176,6 +182,10 @@ public class CreateApplianceVmJob implements Job {
             public void rollback(FlowRollback trigger, Map data) {
                 ApplianceVmVO avo = (ApplianceVmVO) data.get(ApplianceVmVO.class.getSimpleName());
                 if (avo != null) {
+                    if (ApplianceVmGlobalConfig.APPLIANCENUMA.value(Boolean.class)) {
+                        ResourceConfig rc = rcf.getResourceConfig(VmGlobalConfig.NUMA.getIdentity());
+                        rc.deleteValue(avo.getUuid());
+                    }
                     ApplianceVmSubTypeFactory factory = apvmFactory.getApplianceVmSubTypeFactory(avo.getApplianceVmType());
                     factory.removeApplianceVm(spec, avo);
                 }
