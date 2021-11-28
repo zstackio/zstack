@@ -60,6 +60,7 @@ import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.image.ImageSystemTags;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.NetworkServiceManager;
@@ -605,6 +606,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         installSystemValidator();
         installConfigValidateExtension();
         rebootVirtualRouterVmOnRebootEvent();
+        setupCanonicalEvents();
 
         VirtualRouterSystemTags.VR_PARALLELISM_DEGREE.installLifeCycleListener(new SystemTagLifeCycleListener() {
             @Override
@@ -630,6 +632,27 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         upgradeVirtualRouterImageType();
         return true;
 	}
+
+    private void setupCanonicalEvents() {
+        evf.on(VmCanonicalEvents.VM_FULL_STATE_CHANGED_PATH, new EventCallback() {
+
+            @Override
+            protected void run(Map tokens, Object data) {
+                VmCanonicalEvents.VmStateChangedData d = (VmCanonicalEvents.VmStateChangedData) data;
+                if ( VmInstanceState.Paused.toString() == d.getNewState() ) {
+                    ApplianceVmVO applianceVmVO = Q.New(ApplianceVmVO.class).eq(ApplianceVmVO_.uuid, d.getInventory().getUuid()).find();
+                    if (applianceVmVO != null) {
+                        ApplianceVmCanonicalEvents.ApplianceVmStateChangeData applianceVmStateChangeData = new ApplianceVmCanonicalEvents.ApplianceVmStateChangeData();
+                        applianceVmStateChangeData.setOldState(d.getOldState());
+                        applianceVmStateChangeData.setNewState(d.getNewState());
+                        applianceVmStateChangeData.setApplianceVmUuid(d.getVmUuid());
+                        applianceVmStateChangeData.setInv(ApplianceVmInventory.valueOf(applianceVmVO));
+                        evf.fire(ApplianceVmCanonicalEvents.APPLIANCEVM_STATE_CHANGED_PATH, applianceVmStateChangeData);
+                    }
+                }
+            }
+        });
+    }
 
 	@Override
 	public boolean stop() {
