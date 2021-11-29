@@ -40,6 +40,9 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataDiskOfferingUuids;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L, 100L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
+    public java.util.List dataDiskSizes;
+
     @Param(required = false)
     public java.lang.String zoneUuid;
 
