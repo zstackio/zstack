@@ -940,7 +940,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Transactional(readOnly = true)
-    private String getAvailableHostUuidForOperation() {
+    protected String getAvailableHostUuidForOperation() {
         String sql = "select host.uuid from PrimaryStorageClusterRefVO ref, HostVO host where" +
                 " ref.clusterUuid = host.clusterUuid and ref.primaryStorageUuid = :psUuid and host.status = :hstatus" +
                 " and host.state = :hstate";
