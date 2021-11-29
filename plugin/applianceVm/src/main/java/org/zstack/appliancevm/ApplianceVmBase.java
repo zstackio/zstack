@@ -576,6 +576,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         prepareLifeCycleInfo(chain);
         prepareFirewallInfo(chain);
 
+        chain.then(setApplianceStateRunningFlow());
         addBootstrapFlows(chain, HypervisorType.valueOf(inv.getHypervisorType()));
 
         List<Flow> subRebootFlows = getPostRebootFlows();
@@ -626,6 +627,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             }
         });
 
+        chain.then(setApplianceStateRunningFlow());
         prepareLifeCycleInfo(chain);
         prepareFirewallInfo(chain);
 
@@ -748,6 +750,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
             chain.getData().put(ApplianceVmConstant.Params.applianceVmFirewallRules.toString(), aspec.getFirewallRules());
 
+            chain.then(setApplianceStateRunningFlow());
             addBootstrapFlows(chain, VolumeFormat.getMasterHypervisorTypeByVolumeFormat(imvo.getFormat()));
 
             List<Flow> subCreateFlows = getPostCreateFlows();
@@ -841,5 +844,17 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
         logger.debug(String.format("the virtual router [uuid:%s, name:%s] changed status from %s to %s",
                 self.getUuid(), self.getName(), oldStatus.toString(), newStatus.toString()));
+    }
+    
+    private Flow setApplianceStateRunningFlow() {
+        return new NoRollbackFlow() {
+            String __name__ = "set applianceVm state running";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                changeVmStateInDb(VmInstanceStateEvent.running);
+                trigger.next();
+            }
+        };
     }
 }
