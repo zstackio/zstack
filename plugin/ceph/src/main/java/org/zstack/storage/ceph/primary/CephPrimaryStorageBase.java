@@ -2332,6 +2332,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             cvo.setSize(actualSize);
                             cvo = dbf.persistAndRefresh(cvo);
 
+                            ImageCacheVO finalCvo = cvo;
+                            pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)
+                                    .forEach(exp -> exp.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(finalCvo)));
+
                             completion.success(cvo);
                         }
                     });
@@ -2353,6 +2357,31 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     return String.format("ceph-p-%s-download-image-%s", self.getUuid(), image.getInventory().getUuid());
                 }
 
+                private void checkEncryptImageCache(ImageCacheVO cacheVO, final SyncTaskChain chain) {
+                    List<AfterCreateImageCacheExtensionPoint> extensionList = pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class);
+
+                    if (extensionList.isEmpty()) {
+                        completion.success(cacheVO);
+                        chain.next();
+                        return;
+                    }
+
+                    extensionList.forEach(ext -> ext.checkEncryptImageCache(null, ImageCacheInventory.valueOf(cacheVO), new Completion(chain) {
+                        @Override
+                        public void success() {
+                            completion.success(cacheVO);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                            chain.next();
+                        }
+                    }));
+                }
+
+
                 @Override
                 public void run(final SyncTaskChain chain) {
                     ImageCacheVO cache = Q.New(ImageCacheVO.class)
@@ -2368,8 +2397,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             public void success(CheckIsBitsExistingRsp returnValue) {
                                 if (returnValue.isExisting()) {
                                     logger.debug("image has been existing");
-                                    completion.success(cache);
-                                    chain.next();
+                                    checkEncryptImageCache(cache, chain);
+                                    return;
                                 } else {
                                     logger.debug("image not found, remove vo and re-download");
                                     SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
