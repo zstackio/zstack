@@ -12,6 +12,7 @@ public class ConsoleInventory {
     private String hostname;
     private int port;
     private String token;
+    private String version;
 
     public static ConsoleInventory valueOf(ConsoleProxyVO vo) {
         ConsoleInventory inv = new ConsoleInventory();
@@ -20,6 +21,7 @@ public class ConsoleInventory {
         inv.setPort(vo.getProxyPort());
         inv.setScheme(vo.getScheme());
         inv.setTargetScheme(vo.getTargetSchema());
+        inv.setVersion(vo.getVersion());
         return inv;
     }
 
@@ -61,5 +63,13 @@ public class ConsoleInventory {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 }

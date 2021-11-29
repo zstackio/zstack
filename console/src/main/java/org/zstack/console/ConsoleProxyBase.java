@@ -11,6 +11,7 @@ import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyRsp;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -54,7 +55,9 @@ public class ConsoleProxyBase implements ConsoleProxy {
         this.agentPort = agentPort;
     }
 
-    private void doEstablish(URI uri, final ReturnValueCompletion<ConsoleProxyInventory> completion) {
+    private void doEstablishConsoleProxyConnection(ConsoleUrl consoleUrl, final ReturnValueCompletion<ConsoleProxyInventory> completion) {
+        URI uri = consoleUrl.getUri();
+
         final String targetSchema = uri.getScheme();
         final String targetHostname = uri.getHost();
         final int targetPort = uri.getPort();
@@ -99,6 +102,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
                     self.setTargetPort(targetPort);
                     self.setProxyPort(ret.getProxyPort());
                     self.setToken(ret.getToken());
+                    self.setVersion(consoleUrl.getVersion());
                     completion.success(self);
                 } else {
                     completion.fail(operr("operation error, because:%s", ret.getError()));
@@ -112,14 +116,47 @@ public class ConsoleProxyBase implements ConsoleProxy {
         });
     }
 
+    void doEstablishDirectConsoleConnection(ConsoleUrl consoleUrl, final ReturnValueCompletion<ConsoleProxyInventory> completion) {
+        URI uri = consoleUrl.getUri();
+
+        final String targetSchema = uri.getScheme();
+        final String targetHostname = uri.getHost();
+        final String targetPath = uri.getPath();
+        final int targetPort = uri.getPort();
+
+        if (targetHostname == null || targetPort < 0) {
+            completion.fail(operr("establish VNC: unexpected uri: %s", uri.toString()));
+            return;
+        }
+
+        self.setTargetSchema(targetSchema);
+        self.setTargetHostname(targetHostname);
+        self.setTargetPort(targetPort);
+        self.setProxyHostname(targetHostname);
+        self.setProxyPort(targetPort);
+        self.setToken(targetPath);
+        self.setScheme(targetSchema);
+        self.setVersion(consoleUrl.getVersion());
+
+        completion.success(self);
+    }
+
+    private void doEstablish(ConsoleUrl consoleUrl, final ReturnValueCompletion<ConsoleProxyInventory> completion) {
+        if (consoleUrl.isNeedConsoleProxy()) {
+            doEstablishConsoleProxyConnection(consoleUrl, completion);
+        } else {
+            doEstablishDirectConsoleConnection(consoleUrl, completion);
+        }
+    }
+
     @Override
     public void establishProxy(final SessionInventory session, final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleProxyInventory> completion) {
         ConsoleHypervisorBackend bkd = consoleMgr.getHypervisorConsoleBackend(HypervisorType.valueOf(vm.getHypervisorType()));
-        bkd.generateConsoleUrl(vm, new ReturnValueCompletion<URI>(completion) {
+        bkd.generateConsoleUrl(vm, new ReturnValueCompletion<ConsoleUrl>(completion) {
 
             @Override
-            public void success(URI uri) {
-                doEstablish(uri, completion);
+            public void success(ConsoleUrl consoleUrl) {
+                doEstablish(consoleUrl, completion);
             }
 
             @Override

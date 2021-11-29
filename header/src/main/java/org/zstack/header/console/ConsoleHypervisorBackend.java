@@ -15,5 +15,5 @@ import java.net.URI;
 public interface ConsoleHypervisorBackend {
     HypervisorType getConsoleBackendHypervisorType();
 
-    void generateConsoleUrl(VmInstanceInventory vm, ReturnValueCompletion<URI> complete);
+    void generateConsoleUrl(VmInstanceInventory vm, ReturnValueCompletion<ConsoleUrl> complete);
 }

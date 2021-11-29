@@ -24,6 +24,7 @@ public interface ConsoleConstants {
 
     String VNC_SCHEMA = "vnc";
     String HTTP_SCHEMA = "http";
+    String WSS_SCHEMA = "wss";
 
     public static enum ConsoleGlobalConfig {
         ProxyIdleTimeout;

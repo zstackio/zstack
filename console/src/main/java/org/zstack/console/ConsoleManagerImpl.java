@@ -18,6 +18,7 @@ import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.identity.SessionInventory;
@@ -27,12 +28,15 @@ import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -101,12 +105,10 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
                 bkd.grantConsoleAccess(msg.getSession(), VmInstanceInventory.valueOf(vmvo), new ReturnValueCompletion<ConsoleInventory>(chain) {
                     @Override
                     public void success(ConsoleInventory returnValue) {
-                        if (!"0.0.0.0".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP) &&
-                                !"".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)) {
-                            returnValue.setHostname(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
-                        } else {
-                            returnValue.setHostname(CoreGlobalProperty.UNIT_TEST_ON ? "127.0.0.1" : Platform.getManagementServerIp());
+                        if (ConsoleConstants.HTTP_SCHEMA.equals(returnValue.getScheme())) {
+                            overriddenConsoleProxyIP(returnValue);
                         }
+
                         evt.setInventory(returnValue);
                         bus.publish(evt);
                         chain.next();
@@ -120,6 +122,15 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
                         chain.next();
                     }
                 });
+            }
+
+            private void overriddenConsoleProxyIP(ConsoleInventory consoleInventory) {
+                if (!"0.0.0.0".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP) &&
+                        !"".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)) {
+                    consoleInventory.setHostname(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
+                } else {
+                    consoleInventory.setHostname(CoreGlobalProperty.UNIT_TEST_ON ? "127.0.0.1" : Platform.getManagementServerIp());
+                }
             }
 
             @Override
