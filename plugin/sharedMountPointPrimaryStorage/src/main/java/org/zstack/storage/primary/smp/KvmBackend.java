@@ -666,6 +666,9 @@ public class KvmBackend extends HypervisorBackend {
                                     logger.debug(String.format("downloaded image[uuid:%s, name:%s] to the image cache of local shared mount point storage[uuid: %s, installPath: %s]",
                                             image.getUuid(), image.getName(), self.getUuid(), primaryStorageInstallPath));
 
+                                    pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)
+                                            .forEach(exp -> exp.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(vo)));
+
                                     completion.success(ImageCacheInventory.valueOf(vo));
                                     chain.next();
                                 }
@@ -680,6 +683,30 @@ public class KvmBackend extends HypervisorBackend {
                             });
                         }
                     }).start();
+                }
+
+                private void checkEncryptImageCache(ImageCacheInventory inventory, final SyncTaskChain chain) {
+                    List<AfterCreateImageCacheExtensionPoint> extensionList = pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class);
+
+                    if (extensionList.isEmpty()) {
+                        completion.success(inventory);
+                        chain.next();
+                        return;
+                    }
+
+                    extensionList.forEach(ext -> ext.checkEncryptImageCache(null, inventory, new Completion(chain) {
+                        @Override
+                        public void success() {
+                            completion.success(inventory);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                            chain.next();
+                        }
+                    }));
                 }
 
                 @Override
@@ -701,8 +728,7 @@ public class KvmBackend extends HypervisorBackend {
                         public void success(AgentRsp returnValue) {
                             CheckBitsRsp rsp = (CheckBitsRsp) returnValue;
                             if (rsp.existing) {
-                                completion.success(ImageCacheInventory.valueOf(cache));
-                                chain.next();
+                                checkEncryptImageCache(ImageCacheInventory.valueOf(cache), chain);
                                 return;
                             }
 

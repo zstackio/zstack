@@ -249,7 +249,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
             @Override
             public void beforeUpdateExtensionPoint(GlobalConfig oldConfig, String newValue) {
                 //encryption cannot be changed
-                if (PasswordEncryptType.ScurityResoueceEncryption.toString().equals(oldConfig)) {
+                if (PasswordEncryptType.ScurityResoueceEncryption.toString().equals(oldConfig.value())) {
                     throw new OperationFailureException(operr("ScurityResoueceEncryption cannot be change"));
                 }
 
