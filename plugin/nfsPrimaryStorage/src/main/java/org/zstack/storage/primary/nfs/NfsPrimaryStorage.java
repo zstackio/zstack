@@ -79,7 +79,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorage.class);
 
     @Autowired
-    private NfsPrimaryStorageFactory factory;
+    protected NfsPrimaryStorageFactory factory;
     @Autowired
     private ErrorFacade errf;
     @Autowired
