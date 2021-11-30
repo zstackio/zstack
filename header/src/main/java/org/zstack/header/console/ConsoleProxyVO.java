@@ -65,6 +65,9 @@ public class ConsoleProxyVO extends ResourceVO {
     private String token;
 
     @Column
+    private String version;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -185,5 +188,13 @@ public class ConsoleProxyVO extends ResourceVO {
 
     public void setStatus(ConsoleProxyStatus status) {
         this.status = status;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 }

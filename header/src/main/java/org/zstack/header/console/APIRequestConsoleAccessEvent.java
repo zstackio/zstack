@@ -36,6 +36,7 @@ public class APIRequestConsoleAccessEvent extends APIEvent {
         inventory.setPort(4900);
         inventory.setScheme("http");
         inventory.setToken(uuid());
+        inventory.setVersion("1.0.0");
 
         event.setInventory(inventory);
         return event;

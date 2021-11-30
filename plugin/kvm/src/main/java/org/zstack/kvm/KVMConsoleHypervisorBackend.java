@@ -7,6 +7,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.console.ConsoleHypervisorBackend;
+import org.zstack.header.console.ConsoleUrl;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostVO;
@@ -40,7 +41,7 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
     }
 
     @Override
-    public void generateConsoleUrl(final VmInstanceInventory vm, final ReturnValueCompletion<URI> complete) {
+    public void generateConsoleUrl(final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleUrl> complete) {
         KVMAgentCommands.GetVncPortCmd cmd = new KVMAgentCommands.GetVncPortCmd();
         cmd.setVmUuid(vm.getUuid());
 
@@ -76,7 +77,10 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                 try {
                     // see https://tools.ietf.org/html/rfc7869#section-2.1
                     URI uri = new URI(String.format("vnc://%s:%s/", mgmtIp, rsp.getPort()));
-                    complete.success(uri);
+                    ConsoleUrl consoleUrl = new ConsoleUrl();
+                    consoleUrl.setUri(uri);
+                    consoleUrl.setVersion(dbf.getDbVersion());
+                    complete.success(consoleUrl);
                 } catch (URISyntaxException e) {
                     complete.fail(inerr(e.getMessage()));
                 }

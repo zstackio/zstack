@@ -30,6 +30,7 @@ public class ConsoleProxyInventory {
     private String scheme;
     private String proxyIdentity;
     private String status;
+    private String version;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -48,6 +49,7 @@ public class ConsoleProxyInventory {
         inv.setTargetPort(vo.getTargetPort());
         inv.setProxyIdentity(vo.getProxyIdentity());
         inv.setCreateDate(vo.getCreateDate());
+        inv.setVersion(vo.getVersion());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setStatus(vo.getStatus().toString());
         return inv;
@@ -179,5 +181,13 @@ public class ConsoleProxyInventory {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 }
