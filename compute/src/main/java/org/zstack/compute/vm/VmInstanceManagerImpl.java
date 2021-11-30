@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.validator.routines.DomainValidator;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
@@ -1430,7 +1431,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         l3NetworkUuids.forEach(it->validateHostNameOnDefaultL3Network(sysTag, hostname, it));
                     } else if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
                         validateStaticIp(sysTag);
-                    }
+                    } 
                 }
             }
 
@@ -1692,43 +1693,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
         VmSystemTags.MACHINE_TYPE.installValidator(validator);
     }
 
-    private void installClockTrackValidator() {
-        class ClockTrackValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
-            @Override
-            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
-                Optional.ofNullable(msg.getSystemTags()).ifPresent(it -> it.forEach(this::validateClockTrack));
-            }
-
-            @Override
-            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
-                validateClockTrack(systemTag);
-            }
-
-            private void validateClockTrack(String systemTag) {
-                if (!VmSystemTags.CLOCK_TRACK.isMatch(systemTag)) {
-                    return;
-                }
-
-                String track = VmSystemTags.CLOCK_TRACK.getTokenByTag(systemTag, VmSystemTags.CLOCK_TRACK_TOKEN);
-                VmClockTrack value = VmClockTrack.get(track);
-                if (value == null || !value.equals(VmClockTrack.guest)) {
-                    throw new ApiMessageInterceptionException(argerr("vm clock track requires guest, but get [%s]", track));
-                }
-            }
-        }
-
-        ClockTrackValidator validator = new ClockTrackValidator();
-        tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), validator);
-        VmSystemTags.CLOCK_TRACK.installValidator(validator);
-    }
-
     private void installSystemTagValidator() {
         installHostnameValidator();
         installUserdataValidator();
         installBootModeValidator();
         installCleanTrafficValidator();
         installMachineTypeValidator();
-        installClockTrackValidator();
         installUsbRedirectValidator();
     }
 

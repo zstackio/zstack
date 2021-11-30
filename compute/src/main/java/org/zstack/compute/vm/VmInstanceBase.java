@@ -60,6 +60,7 @@ import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
@@ -3462,15 +3463,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(APISetVmClockTrackMsg msg) {
         APISetVmClockTrackEvent evt = new APISetVmClockTrackEvent(msg.getId());
-        if (msg.getTrack().equals(VmClockTrack.guest.toString())) {
-            SystemTagCreator creator = VmSystemTags.CLOCK_TRACK.newSystemTagCreator(self.getUuid());
-            creator.recreate = true;
-            creator.setTagByTokens(map(e(VmSystemTags.CLOCK_TRACK_TOKEN, msg.getTrack())));
-            creator.create();
-        } else {
-            VmSystemTags.CLOCK_TRACK.delete(self.getUuid());
-        }
-
+        ResourceConfig rc = rcf.getResourceConfig(VmGlobalConfig.VM_CLOCK_TRACK.getIdentity());
+        rc.updateValue(msg.getVmInstanceUuid(), msg.getTrack());
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }

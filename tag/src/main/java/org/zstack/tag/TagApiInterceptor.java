@@ -57,6 +57,11 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg instanceof APICreateSystemTagMsg) {
+            // early return if new system tag match resource config
+            if (tagMgr.isResourceConfigSystemTag(msg.getTag())) {
+                return;
+            }
+
             try {
                 tagMgr.validateSystemTag(msg.getResourceUuid(), msg.getResourceType(), msg.getTag());
             } catch (OperationFailureException oe) {

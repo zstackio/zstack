@@ -86,4 +86,8 @@ public class VmGlobalConfig {
     @GlobalConfigDef(defaultValue = "Microsoft Hv", type = String.class, description = "set vendor_id")
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VENDOR_ID = new GlobalConfig(CATEGORY, "vendorId");
+
+    @BindResourceConfig(value = {VmInstanceVO.class})
+    @GlobalConfigValidation(validValues = {"guest", "host"})
+    public static GlobalConfig VM_CLOCK_TRACK = new GlobalConfig(CATEGORY, "vm.clock.track");
 }
