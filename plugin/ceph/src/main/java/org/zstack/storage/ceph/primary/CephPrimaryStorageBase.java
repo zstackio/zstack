@@ -3977,6 +3977,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                                     "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
                                             );
                                         }
+                                        CephPrimaryStorageMonVO monVO = dbf.reload(base.getSelf());
+                                        if (monVO != null) {
+                                            monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
+                                            dbf.update(monVO);
+                                        }
                                     }
 
                                     latch.ack();
