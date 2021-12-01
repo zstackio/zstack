@@ -350,8 +350,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(final APIUpdateVmNicDriverMsg msg) {
         VmInstanceVO vo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
-        if (!vo.getPlatform().equals(ImagePlatform.Linux.toString()) &&
-            !vo.getPlatform().equals(ImagePlatform.Paravirtualization.toString())) {
+        if (vo.getPlatform().equals(ImagePlatform.Other.toString())) {
             throw new ApiMessageInterceptionException(argerr(
                     "Current platform %s not support update nic driver yet", vo.getPlatform()));
         }
