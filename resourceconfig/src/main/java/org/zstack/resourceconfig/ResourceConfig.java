@@ -75,6 +75,12 @@ public class ResourceConfig {
         validatorExtensions.add(ext);
     }
 
+    public void validateOnly(String newValue) {
+        String oldValue = globalConfig.value();
+        globalConfig.getValidators().forEach(it ->
+                it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
+    }
+
     public void updateValue(String resourceUuid, String newValue) {
         String resourceType = getResourceType(resourceUuid);
         updateValue(resourceUuid, resourceType, newValue, true);

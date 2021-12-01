@@ -56,6 +56,8 @@ public interface TagManager {
 
     void validateSystemTag(String resourceUuid, String resourceType, String tag);
 
+    boolean isResourceConfigSystemTag(String tag);
+
     void installCreateMessageValidator(String resourceType, SystemTagCreateMessageValidator validator);
 
     void installAfterResourceDeletionOperator(String resourceType, SystemTagResourceDeletionOperator operator);

@@ -6,6 +6,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
@@ -63,6 +64,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     private List<PatternedSystemTag> sensitiveTags = new ArrayList<>();
     private List<SystemTag> nonCloneableTags = new ArrayList<>();
     private Map<String, List<SystemTag>> resourceTypeSystemTagMap = new HashMap<>();
+    private ResourceConfigSystemTag resourceConfigSystemTag;
     private Map<String, Class> resourceTypeClassMap = new HashMap<>();
     private Map<Class, Class> resourceTypeCreateMessageMap = new HashMap<>();
     private Map<String, List<SystemTagCreateMessageValidator>> createMessageValidators = new HashMap<>();
@@ -147,6 +149,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         try {
             // this makes sure DatabaseFacade is injected into every SystemTag object
             initSystemTags();
+            resourceConfigSystemTag = new ResourceConfigSystemTag();
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
@@ -269,12 +272,27 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
     }
 
+    private SystemTagInventory createResourceConfigFromTag(String resourceUuid, String tag) {
+        try {
+            resourceConfigSystemTag.newResourceConfig(resourceUuid, tag);
+        } catch (GlobalConfigException e) {
+            logger.debug(String.format("Failed to create resource config, because %s", e.getMessage()));
+            throw new ApiMessageInterceptionException(argerr(e.getMessage()));
+        }
+
+        return null;
+    }
+
     @Override
     @Deferred
     @Transactional(noRollbackFor = ApiMessageInterceptionException.class)
     public SystemTagInventory createNonInherentSystemTag(String resourceUuid, String tag, String resourceType) {
         if (isTagExisting(resourceUuid, tag, TagType.System, resourceType)) {
             return null;
+        }
+
+        if (resourceConfigSystemTag.isMatch(tag)) {
+            return createResourceConfigFromTag(resourceUuid, tag);
         }
 
         validateSystemTag(resourceUuid, resourceType, tag);
@@ -638,6 +656,11 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             return;
         }
 
+        if (resourceConfigSystemTag.isMatch(msg.getTag())) {
+            throw new ApiMessageInterceptionException(
+                    argerr("no system tag matches[%s] for resourceType[%s]", msg.getTag(), msg.getResourceType()));
+        }
+
         SystemTagInventory inv = createNonInherentSystemTag(msg.getResourceUuid(), msg.getTag(), msg.getResourceType());
         evt.setInventory(inv);
         bus.publish(evt);
@@ -700,6 +723,11 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             throw new ApiMessageInterceptionException(
                     argerr("no system tag matches[%s] for resourceType[%s]", tag, resourceType));
         }
+    }
+
+    @Override
+    public boolean isResourceConfigSystemTag(String tag) {
+        return resourceConfigSystemTag.isMatch(tag);
     }
 
     @Override
@@ -855,6 +883,10 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return false;
     }
 
+    private boolean isMatchedSystemTag(String tag) {
+        return systemTags.parallelStream().anyMatch(stag -> stag.isMatch(tag));
+    }
+
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         APICreateMessage cmsg = (APICreateMessage) msg;
@@ -862,21 +894,22 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             cmsg.setSystemTags(removeDuplicateFromList(cmsg.getSystemTags()));
 
             for (String tag : cmsg.getSystemTags()) {
-                boolean checked = false;
-                for (SystemTag stag : systemTags) {
-                    if (stag.isMatch(tag)) {
-                        checked = true;
-                        break;
-                    }
-                }
+                boolean matchSystemTag = isMatchedSystemTag(tag);
+                boolean matchResourceTag = isResourceConfigSystemTag(tag);
 
                 ErrorCode err = checkPemission(tag, msg.getSession());
                 if (err != null) {
                     throw new ApiMessageInterceptionException(err);
                 }
 
-                if (!checked) {
+                if (!matchSystemTag && !matchResourceTag) {
                     throw new ApiMessageInterceptionException(argerr("no system tag matches %s", tag));
+                }
+
+                // resource config system tag will create new resource config
+                // so need a early validate for api message
+                if (matchResourceTag) {
+                    resourceConfigSystemTag.validateResourceConfig(tag);
                 }
             }
 

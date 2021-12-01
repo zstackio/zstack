@@ -3,14 +3,20 @@ package org.zstack.test.integration.kvm.vm
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.IsoOperator
 import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.core.db.Q
 import org.zstack.header.image.ImageConstant
+import org.zstack.header.tag.SystemTagVO
+import org.zstack.header.tag.SystemTagVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.resourceconfig.ResourceConfig
+import org.zstack.resourceconfig.ResourceConfigFacade
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.tag.SystemTag
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -167,10 +173,13 @@ class IsoBasicCase extends SubCase {
             imageUuid = iso0.uuid
             l3NetworkUuids = [l3.uuid]
             rootDiskOfferingUuid = diskOffering.uuid
-            systemTags = ["clockTrack::guest"]
+            systemTags = ["resourceConfig::vm::vm.clock.track::guest"]
         }
         assert null != cmd
         assert cmd.clockTrack == "guest"
+        assert !Q.New(SystemTagVO.class).eq(SystemTagVO_.tag, "clockTrack::guest").isExists()
+        ResourceConfigFacade rcf = bean(ResourceConfigFacade.class)
+        assert rcf.getResourceConfigValue(VmGlobalConfig.VM_CLOCK_TRACK, newVm.uuid, String.class) == "guest"
 
         checkIsoSystemTag(newVm.uuid, iso0.uuid, 0)
         checkVmIsoNum(newVm.uuid, 1)
