@@ -34,7 +34,16 @@ public class Ssh {
     private String privateKey;
     private String password;
     private int port = 22;
-    private int timeout = 0;
+    /**
+     * used for ssh channel connection
+     *
+     * jsch uses this value as timeout waiting for
+     * ssh connection message which contains
+     * SSH_MSG_CHANNEL_OPEN_CONFIRMATION.
+     *
+     * try to extend timeout if fails to open the channel
+     */
+    private int timeout = 5;
     private int execTimeout = 604800;
     private int socketTimeout = 300;
     private List<SshRunner> commands = new ArrayList<SshRunner>();
@@ -524,6 +533,14 @@ public class Ssh {
     public Ssh setSocketTimeout(int socketTimeout) {
         this.socketTimeout = socketTimeout;
         return this;
+    }
+
+    public Session getSession() {
+        return session;
+    }
+
+    public void setSession(Session session) {
+        this.session = session;
     }
 
     public Ssh reset() {
