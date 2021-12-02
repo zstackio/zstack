@@ -89,7 +89,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Autowired
     private ApiTimeoutManager timeoutMgr;
     @Autowired
-    private CloudBus bus;
+    protected CloudBus bus;
     @Autowired
     private AccountManager acntMgr;
     @Autowired
@@ -1653,7 +1653,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         asyncHttpCall(path, hostUuid, cmd, false, rspType, inv, completion);
     }
 
-    private <T extends NfsPrimaryStorageAgentResponse> void asyncHttpCall(String path, final String hostUuid, NfsPrimaryStorageAgentCommand cmd, boolean noCheckStatus, final Class<T> rspType, PrimaryStorageInventory inv, final ReturnValueCompletion<T> completion) {
+    protected <T extends NfsPrimaryStorageAgentResponse> void asyncHttpCall(String path, final String hostUuid, NfsPrimaryStorageAgentCommand cmd, boolean noCheckStatus, final Class<T> rspType, PrimaryStorageInventory inv, final ReturnValueCompletion<T> completion) {
         cmd.setUuid(inv.getUuid());
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
