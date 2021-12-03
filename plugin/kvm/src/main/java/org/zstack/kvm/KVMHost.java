@@ -1682,6 +1682,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setInstallPath(msg.getInstallPath());
         cmd.setFullSnapshot(msg.isFullSnapshot());
         cmd.setVolumeUuid(msg.getVolume().getUuid());
+        cmd.setTimeout(timeoutManager.getTimeout());
 
         completeTakeSnapshotCmd(msg, cmd);
 

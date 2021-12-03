@@ -2862,6 +2862,8 @@ public class KVMAgentCommands {
         // for baremetal2 instance
         private boolean isBaremetal2InstanceOnlineSnapshot;
 
+        private long timeout;
+
         public String getVolumeUuid() {
             return volumeUuid;
         }
@@ -2932,6 +2934,14 @@ public class KVMAgentCommands {
 
         public void setBaremetal2InstanceOnlineSnapshot(boolean baremetal2InstanceOnlineSnapshot) {
             isBaremetal2InstanceOnlineSnapshot = baremetal2InstanceOnlineSnapshot;
+        }
+
+        public long getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(long timeout) {
+            this.timeout = timeout;
         }
     }
 
