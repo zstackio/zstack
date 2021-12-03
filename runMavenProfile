@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium|openapi|errorcode|check]"
+    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium|openapi|errorcode|check|git]"
 }
 
 MVNTest="mvn test -Djacoco.skip=true"
@@ -230,15 +230,202 @@ globalconfigdocmd(){
     cd - > /dev/null
 }
 
+zprint(){
+    if test x`uname` = x"Darwin"; then
+        echo $@
+    else
+        echo -e $@
+    fi
+}
+
+vercomp(){
+    # returns: $1 > $2: return 0
+    #          $2 < $1: return 1
+    #          $1 = $2: return 2
+    echo -e 'test' | grep -- '-e' > /dev/null
+    not_suuport_e=$?
+    if [[ $not_support_e = 0 ]]; then
+        echo "$1\n$2" | sort --version-sort | head -n1 | grep $2 > /dev/null
+        first_larger=$?
+        echo "$1\n$2" | sort --version-sort | head -n1 | grep $1 > /dev/null
+        second_larger=$?
+    else
+        echo -e "$1\n$2" | sort --version-sort | head -n1 | grep $2 > /dev/null
+        first_larger=$?
+        echo -e "$1\n$2" | sort --version-sort | head -n1 | grep $1 > /dev/null
+        second_larger=$?
+    fi
+    if [[ $first_larger = 0 ]]; then
+        if [[ $second_larger = 0 ]]; then
+            return 2
+        else
+            return 0
+        fi
+    fi
+    return 1
+}
+
+gitconfig(){
+    bold=$(tput bold)
+    normal=$(tput sgr0)
+    if test x$2 = x; then
+        zprint "\033[33mplease specify sub-command: init|clear|search\n\033[0m"
+
+        zprint "search which branches have commits related to ZSTACK-43023: "
+        zprint "\033[34m./runMavenProfile git search ZSTACK-43023 \033[0m"
+        zprint "\nwill fetch remote by default, you can add --no-update to avoid update, like: "
+        zprint "\033[34m./runMavenProfile git search ZSTACK-43023 --no-update \033[0m"
+        zprint "\ninit git config(commit msg template and hook): just type:"
+        zprint "\033[34m./runMavenProfile git init \033[0m"
+        zprint "\nclear git config(commit msg template and hook): just type:"
+        zprint "\033[34m./runMavenProfile git clear \033[0m"
+        exit 1
+
+    elif test x$2 = x'search'; then
+        update="y"
+        if test x$3 = x; then
+            zprint "\033[33mplease input commit message you want to search\n\033[0m"
+            zprint "search which branches have commits related to ZSTACK-43023: "
+            zprint "\033[34m./runMavenProfile git search ZSTACK-43023 \033[0m"
+            zprint "\nwill fetch remote by default, you can add --no-update to avoid update, like: "
+            zprint "\033[34m./runMavenProfile git search ZSTACK-43023 --no-update \033[0m"
+            exit 1
+        fi
+
+        if test x$4 = x"--no-update"; then
+            update="n"
+        fi
+
+        zprint "============================"
+        if test x$update = x'y'; then
+            zprint "updating repo zstack ..."
+            timeout 20 git fetch --all > /dev/null 2>&1
+        fi
+
+        zprint "searching in repo zstack ..."
+        zprint "============================"
+        sha1s=`git log --oneline --all --grep "$3" | cut -d" " -f1 | tr '\n' ' '`
+        if test x`zprint $sha1s|tr -d ' '` = x''; then
+            zprint "\033[33mcan not find any related commits in repo zstack\033[0m"
+        else
+            zprint "\n\033[32mfind commits \033[34m$sha1s\033[0mrelated to \033[34m$3\033[0m \033[0m"
+            for sha1 in $sha1s; do
+                br=`git branch --remote --contains $sha1 | grep -Eo '[1-5]\.[0-9]+\.[0-9]+.*' | grep -Eo '[1-5].[0-9]+.[0-9]+.*'`
+                zprint "\n\033[32mbranches with commit \033[34m$sha1\033[0m:\033[0m \n${bold}$br ${normal}"
+            done
+        fi
+
+        cd ./premium
+        zprint "\n============================"
+        if test x$update = x'y'; then
+            zprint "updating repo premium ..."
+            timeout 20 git fetch --all > /dev/null 2>&1
+        fi
+
+        zprint "searching in repo premium ..."
+        zprint "============================"
+        sha1s=`git log --oneline --grep "$3" | cut -d" " -f1 | tr '\n' ' '`
+        if test x`zprint $sha1s|tr -d ' '` = x''; then
+            zprint "\n\033[33mcan not find any related commits in repo premium\033[0m"
+            exit 0
+        fi
+        zprint "\n\033[32mfind commits \033[34m$sha1s\033[0mrelated to \033[34m$3\033[0m \033[0m"
+        for sha1 in $sha1s; do
+            br=`git branch --remote --contains $sha1 | grep -Eo '[1-5]\.[0-9]+\.[0-9]+.*' | grep -Eo '[1-5].[0-9]+.[0-9]+.*'`
+            zprint "\n\033[32mbranches with commit \033[34m$sha1\033[0m:\033[0m \n${bold}$br ${normal}"
+        done
+
+    elif test x$2 = x'init'; then
+        init_git_config
+    
+    elif test x$2 = x'clear'; then
+        clear_git_config
+
+    else
+        zprint "\033[31mnot support ${bold}\"$2\"${normal} \033[31myet\033[0m"
+    fi
+}
+
+init_git_config() {
+    git config --global commit.verbose true
+
+    message_path=$(git rev-parse --show-toplevel)/.gitconfig/gitmessage
+    hook_dir=$(git rev-parse --show-toplevel)/.gitconfig/hooks
+
+    if [ ! -f $message_path ]; then
+        zprint "\033[33mERROR: can not find git message template at $message_path \033[0m"
+    fi
+
+    if [ ! -d $hook_dir ]; then
+        zprint "\033[33mERROR: can not find git hook at $hook_dir \033[0m"
+    fi
+
+    curr_git_ver=`git version | awk '{print $3}'`
+    vercomp $curr_git_ver 2.9
+    support_config_hook=$?
+
+    if [ $support_config_hook -eq 1 ]; then
+        zprint "\033[33mgit version older than 2.9, would replace git hook in .git rather than config hook path\033[0m"
+        mv $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg.bak.`date +%s` 2>/dev/null
+        mv $(git rev-parse --show-toplevel)/.git/hooks/commit-msg $(git rev-parse --show-toplevel)/.git/hooks/commit-msg.bak.`date +%s` 2>/dev/null
+
+        cp $(git rev-parse --show-toplevel)/.gitconfig/hooks/* $(git rev-parse --show-toplevel)/.git/hooks/
+    else
+        zprint "\033[33mgit version newer than 2.9, would config hook path\033[0m"
+        git config core.hooksPath $(git rev-parse --show-toplevel)/.gitconfig/hooks
+    fi
+
+    git config commit.template $(git rev-parse --show-toplevel)/.gitconfig/gitmessage
+
+    cd ./premium
+
+    if [ $support_config_hook -eq 1 ]; then
+        mv $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg.bak.`date +%s` 2>/dev/null
+        mv $(git rev-parse --show-toplevel)/.git/hooks/commit-msg $(git rev-parse --show-toplevel)/.git/hooks/commit-msg.bak.`date +%s` 2>/dev/null
+
+        cp $(git rev-parse --show-toplevel)/../.gitconfig/hooks/* $(git rev-parse --show-toplevel)/.git/hooks/
+    else
+        git config core.hooksPath $(git rev-parse --show-toplevel)/../.gitconfig/hooks
+    fi
+
+    git config commit.template $(git rev-parse --show-toplevel)/../.gitconfig/gitmessage
+    zprint "\033[32mconfig git commit msg template and hook success!\033[0m"
+}
+
+clear_git_config() {
+    curr_git_ver=`git version | awk '{print $3}'`
+    vercomp $curr_git_ver 2.9
+    support_config_hook=$?
+
+    if [ $support_config_hook -eq 1 ]; then
+        mv $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg.bak.`date +%s` 2> /dev/null
+        mv $(git rev-parse --show-toplevel)/.git/hooks/commit-msg $(git rev-parse --show-toplevel)/.git/hooks/commit-msg.bak.`date +%s` 2> /dev/null
+    else
+        git config --unset core.hooksPath
+    fi
+    git config --unset commit.template
+
+    cd ./premium
+    if [ $support_config_hook -eq 1 ]; then
+        mv $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg $(git rev-parse --show-toplevel)/.git/hooks/prepare-commit-msg.bak.`date +%s` 2> /dev/null
+        mv $(git rev-parse --show-toplevel)/.git/hooks/commit-msg $(git rev-parse --show-toplevel)/.git/hooks/commit-msg.bak.`date +%s` 2> /dev/null
+    else
+        git config --unset core.hooksPath
+    fi
+    git config --unset commit.template
+
+    zprint "\033[32mclear git commit msg template and hook success!\033[0m"
+}
+
 run_profile() {
     if test x$1 = x'premium'; then
         mvn -Dmaven.test.skip=true -P premium clean install
     elif test x$1 = x'md'; then
-	md
+	      md
     elif test x$1 = x'sdk'; then
         sdk
     elif test x$1 = x'doc'; then
-	doc
+	      doc
     elif test x$1 = x'docpremium'; then
         docpremium
     elif test x$1 = x'check'; then
@@ -248,25 +435,25 @@ run_profile() {
     elif test x$1 = x'mdpremium'; then
         mdpremium 
     elif test x$1 = x'py'; then
-	py
+	      py
     elif test x$1 = x'pysdk'; then
-	pysdk
+	      pysdk
     elif test x$1 = x'apihelper'; then
-	apihelper
+	      apihelper
     elif test x$1 = x'i18njson'; then
-	i18njson
+	      i18njson
     elif test x$1 = x'i18n'; then
-	i18n
+	      i18n
     elif test x$1 = x'foreignkey'; then
-	foreignkey
+	      foreignkey
     elif test x$1 = x'triggerexpression'; then
-	triggerexpression
+	      triggerexpression
     elif test x$1 = x'zql'; then
         zql
     elif test x$1 = x'cloudwatchfunction'; then
-	    cloudwatchfunction
+	      cloudwatchfunction
     elif test x$1 = x'zwatchzql'; then
-	    zwatchzql
+	      zwatchzql
     elif test x$1 = x'openapi'; then
         openapi
     elif test x$1 = x'errorcode'; then
@@ -275,6 +462,8 @@ run_profile() {
         ts
     elif test x$1 = x'globalconfigdocmd'; then
         globalconfigdocmd
+    elif test x$1 = x'git'; then
+        gitconfig $@
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi
@@ -282,6 +471,11 @@ run_profile() {
 
 if [ "$#" -eq 0 ]; then
     usage
+    exit 1
+fi
+
+if test x$1 = x'git'; then
+    run_profile $@
     exit 1
 fi
 
