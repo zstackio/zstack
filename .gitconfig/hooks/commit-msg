@@ -67,11 +67,11 @@ def backup_and_exit(file_path):
             if l.startswith("# Please enter the commit") or \
                     l.startswith("# ------------------------ >8 ------------------------"):
                 break
-            if l.startswith( "# "):
+            if l.startswith( "# ") or l == "\n":
                 continue
+            if l.startswith("diff --git"):
+                break
             useful.append(l)
-    if useful[-1] == "\n":
-        useful[-1] = ""
     print("".join(useful))
     exit(1)
 
