@@ -129,6 +129,24 @@ def process_metadata(commit_msg_filepath):
             changed_folders.append(get_top_folder_from_path(path))
             changed_paths[path] = 'new file' if content[no+1].startswith('new file') else 'modified'
 
+    if changed_folders != []:
+        return changed_folders, changed_paths
+
+    bashCommand = "git diff HEAD"
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    output, error = process.communicate()
+    content = output.decode()
+    if error != None:
+        raise Exception(error)
+
+    for no, line in enumerate(content.splitlines()):
+        line = line.strip()
+        if not line.startswith("diff --git a/"):
+            continue
+
+        path = line.split(" ")[2][2:]
+        changed_folders.append(get_top_folder_from_path(path))
+        changed_paths[path] = 'new file' if content[no+1].startswith('new file') else 'modified'
     return changed_folders, changed_paths
 
 def get_top_folder_from_path(filepath):
