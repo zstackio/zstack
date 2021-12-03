@@ -39,6 +39,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 WARNS = 0
+REPO_NAME =""
 
 def main():
     try:
@@ -56,8 +57,30 @@ def main():
 
 def backup_and_exit(file_path):
     shutil.copy(file_path, "%s.bak" % file_path)
-    print("the bad commit msg has been saved to %s.bak" % file_path)
+    print("the following bad commit msg has been saved to %s.bak" % file_path)
+
+    lines = []
+    useful = ["\n\n"]
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
+    for l in lines:
+            if l.startswith("# Please enter the commit") or \
+                    l.startswith("# ------------------------ >8 ------------------------"):
+                break
+            if l.startswith( "# "):
+                continue
+            useful.append(l)
+    if useful[-1] == "\n":
+        useful[-1] = ""
+    print("".join(useful))
     exit(1)
+
+def get_repo_name():
+    global REPO_NAME
+    bashCommand = "sename -s .git $(git config --get remote.origin.url)"
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    output, error = process.communicate()
+    REPO_NAME = output.decode()
 
 def fix_commit_msg(file_path):
     # NOTE(weiw): sometimes diff would be added to commit msg
@@ -84,6 +107,8 @@ def check_commit_msg(file_path):
     merge_commit = False
     second_line_is_blank = False
     header_not_change = False
+    body_not_change = False
+    footer_not_change = False
     change_id = False
     jira_link_not_changed = False
     old_style_jira_link = False
@@ -91,7 +116,9 @@ def check_commit_msg(file_path):
     header_too_long = False
     msg_too_long = False
     header_form = False
+    header_contains_nonsense = False
     msg_lines = 0
+    modified_test = False
     full_lines = 0
     FAIL = False
 
@@ -103,6 +130,9 @@ def check_commit_msg(file_path):
 
         if re.search(r'<.*>\[.*\]\:.*', lines[0], re.I):
             header_form = True
+        if re.search(r'<.*>\[.*\]\: <.*>', lines[0], re.I) or \
+                re.search(r'<.*>\[.*\]\: \[.*\]', lines[0], re.I):
+            header_contains_nonsense = True
         if "revert" in lines[0].lower():
             revert_commit = True
         if "merge branch" in lines[0].lower():
@@ -115,12 +145,17 @@ def check_commit_msg(file_path):
             header_too_long = True
 
         for l in lines:
-            if l.startswith("# Please enter the commit"):
+            if l.startswith("# Please enter the commit") or \
+                    l.startswith("# ------------------------ >8 ------------------------"):
                 break
             if not l.strip().startswith("#") and change_id is False and \
                     len(l.strip()) > 72:
                 msg_too_long = True
             msg_lines += 1
+            if "[body]" == l.strip():
+                body_not_change = True
+            if "[footer(s)]" == l.strip():
+                footer_not_change = True
             if "bump " in l.lower():
                 bump_version = True
             if "change-id" in l.lower():
@@ -134,6 +169,13 @@ def check_commit_msg(file_path):
             for pattern in jira_patterns:
                 if re.search(pattern, l, re.I):
                     jira_link = True
+
+        for l in lines:
+            if not l.startswith("diff --git a/"):
+                continue
+            # path = l.split(" ")[2][2:]
+            if "test" in l.lower():
+                modified_test = True
         
     if bump_version or merge_commit or revert_commit:
         return
@@ -156,10 +198,20 @@ def check_commit_msg(file_path):
     if msg_too_long:
         WARNS += 1
         print(bcolors.FAIL + "WARNING: line length of commit msg longger than 72 characters!" + bcolors.ENDC)
+    if not modified_test and REPO_NAME in ("zstack-vyos"):
+        WARNS += 1
+        print(bcolors.FAIL + "WARNING: seems no test cover!" + bcolors.ENDC)
+    if body_not_change or footer_not_change:
+        WARNS += 1
+        print(bcolors.FAIL + "WARNING: the '[body]' or '[footer(s)]' should be removed")
     if header_form is False:
         WARNS += 1
         FAIL = True
         print(bcolors.FAIL + bcolors.BOLD + "ERROR: header form is not <type>[scope]: <descrption>!" + bcolors.ENDC + bcolors.ENDC)
+    if header_contains_nonsense:
+        WARNS += 1
+        FAIL = True
+        print(bcolors.FAIL + bcolors.BOLD + "ERROR: bracket(including '<>' and '[]') in description of header should be removed!" + bcolors.ENDC + bcolors.ENDC)
     if header_not_change:
         WARNS += 1
         FAIL = True
@@ -172,7 +224,6 @@ def check_commit_msg(file_path):
         WARNS += 1
         FAIL = True
         print(bcolors.FAIL + bcolors.BOLD + "ERROR: jira link same as template! ZSTAC-XXXX should be filled!" + bcolors.ENDC + bcolors.ENDC)
-
     if FAIL is True:
         print(bcolors.FAIL + bcolors.BOLD + "\nCOMMIT STOPPED" + bcolors.ENDC + bcolors.ENDC)
         backup_and_exit(file_path)
