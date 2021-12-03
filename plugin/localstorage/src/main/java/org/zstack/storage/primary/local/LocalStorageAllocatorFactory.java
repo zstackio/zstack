@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
@@ -21,10 +22,13 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.snapshot.SnapshotDeletionExtensionPoint;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
@@ -32,10 +36,13 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 
 /**
@@ -43,7 +50,7 @@ import static org.zstack.core.Platform.err;
  */
 public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStrategyFactory, Component,
         HostAllocatorFilterExtensionPoint, PrimaryStorageAllocatorStrategyExtensionPoint, PrimaryStorageAllocatorFlowNameSetter,
-        HostAllocatorStrategyExtensionPoint, SnapshotDeletionExtensionPoint {
+        HostAllocatorStrategyExtensionPoint, SnapshotDeletionExtensionPoint, PSCapacityExtensionPoint {
     private CLogger logger = Utils.getLogger(LocalStorageAllocatorFactory.class);
 
     @Autowired
@@ -60,6 +67,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     private List<String> allocatorFlowNames;
     private FlowChainBuilder builder = new FlowChainBuilder();
     private LocalStorageAllocatorStrategy strategy;
+    private static HashMap<String, AbstractUriParser> uriParsers = new HashMap<>();
 
     @Override
     public PrimaryStorageAllocatorStrategyType getPrimaryStorageAllocatorStrategyType() {
@@ -77,6 +85,10 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     public void setAllocatorFlowNames(List<String> allocatorFlowNames) {
         this.allocatorFlowNames = allocatorFlowNames;
+    }
+
+    static {
+        parseRequiredInstallUri();
     }
 
     @Override
@@ -326,5 +338,111 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             return LocalStorageUtils.getHostUuidByResourceUuid(resUuid);
         }
         return null;
+    }
+
+    @Override
+    public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
+        String hostUuid = null;
+        if (msg.getRequiredInstallUri() != null) {
+            String protocol;
+            try {
+                protocol = new URI(msg.getRequiredInstallUri()).getScheme();
+            } catch (URISyntaxException e) {
+                throw new OperationFailureException(
+                        argerr("invalid uri, correct example is file://$URL;hostUuid://$HOSTUUID or volume://$VOLUMEUUID "));
+            }
+            hostUuid = uriParsers.get(protocol).parseUri(msg.getRequiredInstallUri()).hostUuid;
+        } else if (msg.getRequiredHostUuid() != null) {
+            hostUuid = msg.getRequiredHostUuid();
+        } else if (msg.getSystemTags() != null) {
+            PatternedSystemTag lsTag = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME;
+            hostUuid = msg.getSystemTags().stream().filter(lsTag::isMatch)
+                    .map(it -> lsTag.getTokenByTag(it, LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN))
+                    .findAny().orElse(null);
+        }
+
+        if (hostUuid == null) {
+            throw new OperationFailureException(argerr("To create volume on the local primary storage, " +
+                            "you must specify the host that the volume is going to be created using the system tag [%s]",
+                    LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()));
+        }
+
+        LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
+        path.installPath = psInv.getUrl();
+        path.hostUuid = hostUuid;
+
+        return path.makeFullPath();
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public long reserveCapacity(AllocatePrimaryStorageSpaceMsg msg, String allocatedInstallUrl, long size, String psUuid) {
+        LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
+        path.fullPath = allocatedInstallUrl;
+        String hostUuid = path.disassemble().hostUuid;
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+
+        long hostCapacityBeforeAllocate = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, hostUuid)
+                .eq(LocalStorageHostRefVO_.primaryStorageUuid, psUuid)
+                .select(LocalStorageHostRefVO_.availableCapacity)
+                .findValue();
+
+        new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, primaryStorageVO, msg.isForce());
+        return hostCapacityBeforeAllocate;
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void releaseCapacity(String allocatedInstallUrl, long size, String psUuid) {
+        LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
+        path.fullPath = allocatedInstallUrl;
+        String hostUuid = path.disassemble().hostUuid;
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+        new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, primaryStorageVO);
+    }
+
+    private static void parseRequiredInstallUri() {
+        String protocolVolume = "volume";
+        String protocolFile = "file";
+
+        AbstractUriParser volumeParser = new AbstractUriParser() {
+            @Override
+            LocalStorageUtils.InstallPath parseUri(String uri) {
+                String volumeUuid = uri.replaceFirst("volume://", "");
+                String path = Q.New(VolumeVO.class).select(VolumeVO_.installPath).eq(VolumeVO_.uuid, volumeUuid).findValue();
+                String hostUuid = Q.New(LocalStorageResourceRefVO.class)
+                        .select(LocalStorageResourceRefVO_.hostUuid)
+                        .eq(LocalStorageResourceRefVO_.resourceUuid, volumeUuid)
+                        .eq(LocalStorageResourceRefVO_.resourceType, VolumeVO.class.getSimpleName())
+                        .findValue();
+                LocalStorageUtils.InstallPath p = new LocalStorageUtils.InstallPath();
+                p.hostUuid = hostUuid;
+                p.installPath = path;
+                return p;
+            }
+        };
+
+        AbstractUriParser fileParser = new AbstractUriParser() {
+            @Override
+            LocalStorageUtils.InstallPath parseUri(String uri) {
+                LocalStorageUtils.InstallPath p = new LocalStorageUtils.InstallPath();
+                p.fullPath = uri;
+                p.disassemble();
+                return p;
+            }
+        };
+
+        uriParsers.put(protocolVolume, volumeParser);
+        uriParsers.put(protocolFile, fileParser);
+    }
+
+    abstract static class AbstractUriParser {
+        abstract LocalStorageUtils.InstallPath parseUri(String uri);
+    }
+
+    @Override
+    public PrimaryStorageType getPrimaryStorageType() {
+        return LocalStorageFactory.type;
     }
 }
