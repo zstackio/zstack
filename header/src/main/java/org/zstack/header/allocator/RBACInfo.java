@@ -7,12 +7,16 @@ public class RBACInfo implements RBACDescription {
     public void permissions() {
         permissionBuilder()
                 .adminOnlyAPIs("org.zstack.header.allocator.**")
+                .normalAPIs(APIGetCpuMemoryCapacityMsg.class)
                 .build();
     }
 
     @Override
     public void contributeToRoles() {
-
+        roleContributorBuilder()
+                .roleName("other")
+                .actions(APIGetCpuMemoryCapacityMsg.class)
+                .build();
     }
 
     @Override
