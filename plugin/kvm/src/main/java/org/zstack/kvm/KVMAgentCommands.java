@@ -3203,13 +3203,39 @@ public class KVMAgentCommands {
         public long availableSize;
         public long dirSize;
     }
-    
+
     public static class CheckFileOnHostCmd extends AgentCommand {
         public Set<String> paths;
         public boolean md5Return;
     }
-    
+
     public static class CheckFileOnHostResponse extends AgentResponse {
         public Map<String, String> existPaths;
     }
+
+    public static class GetHostNUMATopologyCmd extends AgentCommand {
+        public String HostUuid;
+
+        public void setHostUuid(String hostUuid) {
+            HostUuid = hostUuid;
+        }
+
+        public String getHostUuid() {
+            return HostUuid;
+        }
+    }
+
+    public static class GetHostNUMATopologyResponse extends AgentResponse {
+        public Map<String, Map<String, Object>> topology;
+
+
+        public void setTopology(Map<String, Map<String, Object>> topology) {
+            this.topology = topology;
+        }
+
+        public Map<String, Map<String, Object>> getTopology() {
+            return topology;
+        }
+    }
+
 }

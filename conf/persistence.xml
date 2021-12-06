@@ -163,5 +163,9 @@
         <class>org.zstack.header.core.trash.InstallPathRecycleVO</class>
         <class>org.zstack.header.vm.VmPriorityConfigVO</class>
         <class>org.zstack.header.host.HostPortVO</class>
+        <class>org.zstack.header.allocator.HostAllocatedCPUVO</class>
+        <class>org.zstack.header.vm.VmInstanceNUMAVO</class>
+        <class>org.zstack.header.host.HostNUMATopologyVO</class>
+
     </persistence-unit>
 </persistence>
