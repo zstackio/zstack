@@ -38,37 +38,37 @@ ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD CONSTRAINT `fkSlbVmInstanceVOVmInstan
 ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD CONSTRAINT `fkSlbVmInstanceVOSlbGroupVO` FOREIGN KEY (`slbGroupUuid`) REFERENCES `SlbGroupVO` (`uuid`) ON DELETE SET NULL;
 
 create table if not exists `zstack`.`HostAllocatedCPUVO` (
-    uuid varchar(32) not null,
-    allocatedCPU TEXT not null,
+    `uuid` varchar(32) not null,
+    `allocatedCPU` TEXT not null,
     constraint HostAllocatedCPUVO_pk
-    primary key (uuid),
+    primary key (`uuid`),
     constraint HostAllocatedCPUVO_HostEO_uuid_fk
-    foreign key (uuid) references HostEO (uuid)
-);
+    foreign key (`uuid`) references `zstack`.`HostEO` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 create table if not exists `zstack`.`VmInstanceNUMAVO` (
-    id bigint not null auto_increment,
-    uuid varchar(32) not null,
-    vNodeID int not null,
-    vNodeCPUs varchar(512) not null,
-    vNodeMemSize bigint not null,
-    vNodeDistance varchar(512) not null,
-    pNodeID int not null,
+    `id` bigint not null auto_increment,
+    `uuid` varchar(32) not null,
+    `vNodeID` int not null,
+    `vNodeCPUs` varchar(512) not null,
+    `vNodeMemSize` bigint not null,
+    `vNodeDistance` varchar(512) not null,
+    `pNodeID` int not null,
     constraint VmInstanceNUMAVO_pk
-    primary key (id),
+    primary key (`id`),
     constraint VmInstanceNUMAVO_VmInstanceEO_uuid_fk
-    foreign key (uuid) references VmInstanceEO (uuid)
-);
+    foreign key (`uuid`) references `zstack`.`VmInstanceEO` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 create table if not exists `zstack`.`HostNUMATopologyVO` (
-    id bigint not null auto_increment,
-    uuid varchar(32) not null,
-    nodeID int not null,
-    nodeCPUs varchar(512) not null,
-    nodeMemSize bigint not null,
-    nodeDistance varchar(512) not null,
+    `id` bigint not null auto_increment,
+    `uuid` varchar(32) not null,
+    `nodeID` int not null,
+    `nodeCPUs` varchar(512) not null,
+    `nodeMemSize` bigint not null,
+    `nodeDistance` varchar(512) not null,
     constraint HostNumaTopologyVO_pk
-    primary key (id),
+    primary key (`id`),
     constraint HostNumaTopologyVO_HostEO_uuid_fk
-    foreign key (uuid) references HostEO (uuid)
-);
+    foreign key (`uuid`) references `zstack`.`HostEO` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
