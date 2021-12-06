@@ -182,7 +182,13 @@ public class VirtualRouter extends ApplianceVmBase {
             @Override
             public void success(PingRsp ret) {
                 PingVirtualRouterVmReply reply = new PingVirtualRouterVmReply();
-                reply.setDoReconnect(true);
+                refreshVO();
+                if (getSelf().getStatus() == ApplianceVmStatus.Connecting) {
+                    reply.setDoReconnect(false);
+                } else {
+                    reply.setDoReconnect(true);
+                }
+
                 if (!ret.isSuccess()) {
                     logger.warn(String.format("failed to ping the virtual router vm[uuid:%s], %s. We will reconnect it soon", self.getUuid(), ret.getError()));
                     reply.setConnected(false);
