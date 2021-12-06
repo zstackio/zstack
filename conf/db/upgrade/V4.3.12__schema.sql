@@ -38,11 +38,11 @@ ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD CONSTRAINT `fkSlbVmInstanceVOVmInstan
 ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD CONSTRAINT `fkSlbVmInstanceVOSlbGroupVO` FOREIGN KEY (`slbGroupUuid`) REFERENCES `SlbGroupVO` (`uuid`) ON DELETE SET NULL;
 
 create table if not exists `zstack`.`HostAllocatedCPUVO` (
-    uuid varchar(32) null,
+    uuid varchar(32) not null,
     allocatedCPU TEXT not null,
     constraint HostAllocatedCPUVO_pk
     primary key (uuid),
-    constraint uuid
+    constraint HostAllocatedCPUVO_HostEO_uuid_fk
     foreign key (uuid) references HostEO (uuid)
 );
 
