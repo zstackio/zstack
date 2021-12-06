@@ -639,7 +639,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             @Override
             protected void run(Map tokens, Object data) {
                 VmCanonicalEvents.VmStateChangedData d = (VmCanonicalEvents.VmStateChangedData) data;
-                if ( VmInstanceState.Paused.toString() == d.getNewState() ) {
+                if (VmInstanceState.Paused.toString().equals(d.getNewState())) {
                     ApplianceVmVO applianceVmVO = Q.New(ApplianceVmVO.class).eq(ApplianceVmVO_.uuid, d.getInventory().getUuid()).find();
                     if (applianceVmVO != null) {
                         ApplianceVmCanonicalEvents.ApplianceVmStateChangeData applianceVmStateChangeData = new ApplianceVmCanonicalEvents.ApplianceVmStateChangeData();
