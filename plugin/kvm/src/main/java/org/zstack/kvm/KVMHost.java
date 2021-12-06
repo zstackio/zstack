@@ -167,6 +167,7 @@ public class KVMHost extends HostBase implements Host {
     private String configSecondaryVmPath;
     private String startColoSyncPath;
     private String registerPrimaryVmHeartbeatPath;
+    private String getHostNumaPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
@@ -344,6 +345,11 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_REGISTER_PRIMARY_VM_HEARTBEAT);
         registerPrimaryVmHeartbeatPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_NUMA_PATH);
+        getHostNumaPath = ub.build().toString();
+
     }
 
     class Http<T> {
@@ -538,9 +544,45 @@ public class KVMHost extends HostBase implements Host {
             handle((RegisterColoPrimaryCheckMsg) msg);
         } else if (msg instanceof AllocateHostPortMsg) {
             handle((AllocateHostPortMsg) msg);
+        } else if (msg instanceof GetHostNumaTopologyMsg) {
+            handle((GetHostNumaTopologyMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(GetHostNumaTopologyMsg msg) {
+        GetHostNumaTopologyReply reply = new GetHostNumaTopologyReply();
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+
+        GetHostNUMATopologyCmd cmd = new GetHostNUMATopologyCmd();
+        cmd.setHostUuid(msg.getHostUuid());
+
+        chain.setName(String.format("get-kvm-host-numa-%s", self.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new Http<>(getHostNumaPath, cmd, GetHostNUMATopologyResponse.class).call(msg.getHostUuid(), new ReturnValueCompletion<GetHostNUMATopologyResponse>(msg) {
+                    @Override
+                    public void success(GetHostNUMATopologyResponse ret) {
+                        if (!ret.isSuccess()) {
+                            trigger.fail(operr("%s", ret.getError()));
+                        } else {
+                            reply.setNuma(ret.getTopology());
+                            bus.reply(msg, reply);
+                            trigger.next();
+                        }
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     private void handle(AllocateHostPortMsg msg) {
