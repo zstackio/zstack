@@ -23,7 +23,6 @@ import javax.persistence.Entity;
 import javax.persistence.Query;
 import javax.persistence.Table;
 import java.lang.reflect.Field;
-import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -56,16 +55,6 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
     @Override
     public String decrypt(String encryptString) {
         return encryptDriver.decrypt(encryptString);
-    }
-
-    @Override
-    public EncryptFacadeResult<String> attachedVerify(String cipherText) {
-        return encryptDriver.attachedVerify(cipherText);
-    }
-
-    @Override
-    public EncryptFacadeResult<X509Certificate> parseCertificate(String certificateText) {
-        return encryptDriver.parseCertificate(certificateText);
     }
 
     @Override
