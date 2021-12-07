@@ -43,7 +43,7 @@ create table if not exists `zstack`.`HostAllocatedCPUVO` (
     constraint HostAllocatedCPUVO_pk
     primary key (`uuid`),
     constraint HostAllocatedCPUVO_HostEO_uuid_fk
-    foreign key (`uuid`) references `zstack`.`HostEO` (`uuid`)
+    foreign key (`uuid`) references `zstack`.`HostEO` (`uuid`) on delete cascade
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 create table if not exists `zstack`.`VmInstanceNUMAVO` (
@@ -57,7 +57,7 @@ create table if not exists `zstack`.`VmInstanceNUMAVO` (
     constraint VmInstanceNUMAVO_pk
     primary key (`id`),
     constraint VmInstanceNUMAVO_VmInstanceEO_uuid_fk
-    foreign key (`uuid`) references `zstack`.`VmInstanceEO` (`uuid`)
+    foreign key (`uuid`) references `zstack`.`VmInstanceEO` (`uuid`) on delete cascade
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 create table if not exists `zstack`.`HostNUMATopologyVO` (
@@ -70,5 +70,5 @@ create table if not exists `zstack`.`HostNUMATopologyVO` (
     constraint HostNumaTopologyVO_pk
     primary key (`id`),
     constraint HostNumaTopologyVO_HostEO_uuid_fk
-    foreign key (`uuid`) references `zstack`.`HostEO` (`uuid`)
+    foreign key (`uuid`) references `zstack`.`HostEO` (`uuid`) on delete cascade
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
