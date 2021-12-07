@@ -6,7 +6,7 @@ import org.zstack.utils.CollectionDSL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AllocatePrimaryStorageMsg  extends NeedReplyMessage {
+public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private String requiredZoneUuid;
     private List<String> requiredClusterUuids;
     private String requiredHostUuid;
