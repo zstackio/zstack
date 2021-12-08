@@ -3,8 +3,6 @@ package org.zstack.core.encrypt;
 import org.zstack.header.core.encrypt.EncryptConstant;
 import org.zstack.header.exception.CloudRuntimeException;
 
-import java.security.cert.X509Certificate;
-
 public class DefaultEncryptDriver implements EncryptDriver {
     private EncryptDriverType type = new EncryptDriverType(EncryptConstant.DEFAULT);
 
@@ -31,16 +29,6 @@ public class DefaultEncryptDriver implements EncryptDriver {
         } catch (Exception e) {
             throw new CloudRuntimeException(e.getMessage());
         }
-    }
-
-    @Override
-    public EncryptFacadeResult<String> attachedVerify(String cipherText) {
-        return null;
-    }
-
-    @Override
-    public EncryptFacadeResult<X509Certificate> parseCertificate(String certificateText) {
-        return null;
     }
 
     @Override
