@@ -45,8 +45,10 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -601,20 +603,21 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 }
 
                 for (Tuple tuple : tuples) {
-                    Long totalCpu = tuple.get(0, Long.class);
-                    Long availCpu = tuple.get(1, Long.class);
-                    Long availMemory = tuple.get(2, Long.class);
-                    Long totalMemory = tuple.get(3, Long.class);
-                    Long managedCpuNum = tuple.get(4, Long.class);
+                    //The result of the query is in type of tuple<BigDecimal>
+                    BigDecimal totalCpu = tuple.get(0, BigDecimal.class);
+                    BigDecimal availCpu = tuple.get(1, BigDecimal.class);
+                    BigDecimal availMemory = tuple.get(2, BigDecimal.class);
+                    BigDecimal totalMemory = tuple.get(3, BigDecimal.class);
+                    BigDecimal managedCpuNum = tuple.get(4, BigDecimal.class);
                     String elementUuid = tuple.get(5, String.class);
 
                     CpuMemCapacity element = res.elements.getOrDefault(elementUuid, new CpuMemCapacity());
                     res.elements.put(elementUuid, element);
-                    element.totalCpu = totalCpu == null ? 0L : totalCpu;
-                    element.availCpu = availCpu == null ? 0L : availCpu;
-                    element.totalMem = totalMemory == null ? 0L : totalMemory;
-                    element.availMem = availMemory == null ? 0L : availMemory;
-                    element.managedCpu = managedCpuNum == null ? 0L : managedCpuNum;
+                    element.totalCpu = totalCpu == null ? 0L : totalCpu.longValue();
+                    element.availCpu = availCpu == null ? 0L : availCpu.longValue();
+                    element.totalMem = totalMemory == null ? 0L : totalMemory.longValue();
+                    element.availMem = availMemory == null ? 0L : availMemory.longValue();
+                    element.managedCpu = managedCpuNum == null ? 0L : managedCpuNum.longValue();
                 }
 
 
@@ -641,78 +644,103 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             @Override
             @Transactional(readOnly = true)
             public CpuMemCapacity call() {
-                boolean checkHypervisor = false;
+                String sql = "";
                 String addHypervisorSqlString = "";
                 if (msg.getHypervisorType() != null) {
-                    checkHypervisor = true;
-                    addHypervisorSqlString = " and host.hypervisorType = :hhtype";
+                    addHypervisorSqlString = " and host.hypervisorType = '" + msg.getHypervisorType() + "'";
                 }
+                String hstatus = HostStatus.Connected.toString();
+                String hstate = HostState.Enabled.toString();
 
                 CpuMemCapacity res = new CpuMemCapacity();
 
                 if (msg.getHostUuids() != null && !msg.getHostUuids().isEmpty()) {
                     reply.setResourceType(HostVO.class.getSimpleName());
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.uuid" +
-                            " from HostCapacityVO hc, HostVO host" +
-                            " where hc.uuid in (:hostUuids)" +
-                            " and hc.uuid = host.uuid" +
-                            " and host.state = :hstate" +
-                            " and host.status = :hstatus" +
+                    String hostUuids = String.join("','", msg.getHostUuids());
+                    sql = "select totalCpu, availableCpu, availableMemory, totalMemory, cpuNum, a.hostUuid " +
+                            " from (select sum(hc.availableMemory) as availableMemory," +
+                            " sum(hc.totalMemory) as totalMemory," +
+                            "host.uuid as hostUuid " +
+                            " from HostCapacityVO hc," +
+                            "HostVO host " +
+                            " where hc.uuid in ('" +
+                            hostUuids +
+                            "') and hc.uuid = host.uuid " +
                             addHypervisorSqlString +
-                            " group by hc.uuid";
-                    TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-                    q.setParameter("hostUuids", msg.getHostUuids());
-                    q.setParameter("hstate", HostState.Enabled);
-                    q.setParameter("hstatus", HostStatus.Connected);
-                    if (checkHypervisor) {
-                        q.setParameter("hhtype", msg.getHypervisorType());
-                    }
-                    List<Tuple> ts = q.getResultList();
-                    calcElementCap(ts, res);
-                    return res;
+                            " and host.status = '" +
+                            hstatus +
+                            "' group by hc.uuid) a " +
+                            "left join " +
+                            " (select sum(hc.totalCpu) as totalCpu," +
+                            " sum(hc.availableCpu) as availableCpu," +
+                            " sum(hc.cpuNum) as cpuNum," +
+                            "host.uuid as hostUuid " +
+                            " from HostCapacityVO hc," +
+                            "HostVO host " +
+                            " where hc.uuid in ('" +
+                            hostUuids +
+                            "') and hc.uuid = host.uuid " +
+                            addHypervisorSqlString +
+                            " and host.state = '" +
+                            hstate +
+                            "' and host.status = '" +
+                            hstatus +
+                            "' group by hc.uuid) b " +
+                            " on a.hostUuid = b.hostUuid";
                 } else if (msg.getClusterUuids() != null && !msg.getClusterUuids().isEmpty()) {
                     reply.setResourceType(ClusterVO.class.getSimpleName());
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.clusterUuid" +
-                            " from HostCapacityVO hc, HostVO host" +
-                            " where hc.uuid = host.uuid" +
-                            " and host.clusterUuid in (:clusterUuids)" +
-                            " and host.state = :hstate" +
-                            " and host.status = :hstatus" +
+                    String clusterUuids = String.join("','", msg.getClusterUuids());
+                    sql = "select totalCpu, availableCpu, availableMemory, totalMemory, cpuNum, a.clusterUuid " +
+                            " from (select sum(hc.totalCpu) as totalCpu," +
+                            " sum(hc.totalMemory) as totalMemory," +
+                            " sum(hc.cpuNum) as cpuNum," +
+                            "host.clusterUuid as clusterUuid " +
+                            " from HostCapacityVO hc," +
+                            "HostVO host " +
+                            " where hc.uuid = host.uuid  " +
                             addHypervisorSqlString +
-                            " group by host.clusterUuid";
-                    TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-                    q.setParameter("clusterUuids", msg.getClusterUuids());
-                    q.setParameter("hstate", HostState.Enabled);
-                    q.setParameter("hstatus", HostStatus.Connected);
-                    if (checkHypervisor) {
-                        q.setParameter("hhtype", msg.getHypervisorType());
-                    }
-                    List<Tuple> ts = q.getResultList();
-                    calcElementCap(ts, res);
-                    return res;
+                            " and host.clusterUuid in ('" +
+                            clusterUuids +
+                            "') and host.status = '" +
+                            hstatus +
+                            "' group by host.clusterUuid) a " +
+                            "left join " +
+                            "(select sum(hc.availableCpu) as availableCpu," +
+                            "sum(hc.availableMemory) as availableMemory," +
+                            "host.clusterUuid as clusterUuid " +
+                            " from HostCapacityVO hc," +
+                            "HostVO host " +
+                            " where hc.uuid = host.uuid " +
+                            " and host.clusterUuid in ('" +
+                            clusterUuids +
+                            "') and host.state = '" +
+                            hstate +
+                            "' and host.status = '" +
+                            hstatus +
+                            "' group by host.clusterUuid) b " +
+                            " on a.clusterUuid = b.clusterUuid";
                 } else if (msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty()) {
                     reply.setResourceType(ZoneVO.class.getSimpleName());
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.zoneUuid" +
+                    String zoneUuids = String.join("','", msg.getZoneUuids());
+                    sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.zoneUuid" +
                             " from HostCapacityVO hc, HostVO host" +
                             " where hc.uuid = host.uuid" +
-                            " and host.zoneUuid in (:zoneUuids)" +
-                            " and host.state = :hstate" +
-                            " and host.status = :hstatus" +
-                            addHypervisorSqlString +
+                            " and host.zoneUuid in ('" +
+                            zoneUuids +
+                            "') and host.state = '" +
+                            hstate +
+                            "' and host.status = '" +
+                            hstatus +
+                            "'" + addHypervisorSqlString +
                             " group by host.zoneUuid";
-                    TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-                    q.setParameter("zoneUuids", msg.getZoneUuids());
-                    q.setParameter("hstate", HostState.Enabled);
-                    q.setParameter("hstatus", HostStatus.Connected);
-                    if (checkHypervisor) {
-                        q.setParameter("hhtype", msg.getHypervisorType());
-                    }
-                    List<Tuple> ts = q.getResultList();
-                    calcElementCap(ts, res);
-                    return res;
                 }
-
-                throw new CloudRuntimeException("should not be here");
+                if (sql.isEmpty()) {
+                    throw new CloudRuntimeException("should not be here");
+                }
+                Query query = dbf.getEntityManager().createNativeQuery(sql, Tuple.class);
+                List<Tuple> ts = query.getResultList();
+                calcElementCap(ts, res);
+                return res;
             }
         }.call();
 
