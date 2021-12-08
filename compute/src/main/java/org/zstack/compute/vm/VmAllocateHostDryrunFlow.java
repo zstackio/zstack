@@ -67,7 +67,7 @@ public class VmAllocateHostDryrunFlow implements Flow {
 
         // 试运行，根据策略获取满足条件的可能物理机，这个物理机是有顺序的（满足策略，但是不一定能够成功）
         // 还有集群信息，
-        // 依据物理的顺序，对集群排序，
+        // 依据物理机的顺序，对应集群排序，
         AllocateHostMsg amsg = prepareMsg(spec);
         bus.send(amsg, new CloudBusCallBack(trigger) {
             @Override

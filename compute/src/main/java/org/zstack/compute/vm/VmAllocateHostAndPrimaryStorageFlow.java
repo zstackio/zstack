@@ -97,81 +97,82 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         List<ArrayList<String>> ps = new ArrayList(clusterGroup.keySet());
         List<ArrayList<String>> cluster = new ArrayList(clusterGroup.values());
 
-        // 创建以一个list，记录集群组的顺序，记录长度和集群组相同
-        ArrayList<Integer> clushunxu = new ArrayList<>();
-        for (int i = 0; i < cluster.size(); i++) {
-            clushunxu.add(clusterInventories.size());
-        }
-
-        // 依据已经排好序的集群，将每一个集群组遍历排好序的集群，获得集群组包含的集群在排好序的集群中的坐标，并获得最小坐标，作为集群组的顺寻
-        for (int i = 0; i < cluster.size(); i++) {
-            int finalI = i;
-            cluster.get(i).forEach(it -> {
-                int j = clusterInventories.indexOf(it);
-                if (j <= clushunxu.get(finalI)) {
-                    clushunxu.set(finalI, j);
-                }
-            });
-        }
-
-        //新建一个list，用来获得拍好序的集群组
-        ArrayList<ArrayList<String>> paixudecluster = new ArrayList<>();
-        for (int i = 0; i < cluster.size(); i++) {
-            paixudecluster.add(new ArrayList<>());
-        }
-        // 将集群组按照顺序，放入到新建的list中
-        for (int m = 0; m < clushunxu.size(); m++) {
-            paixudecluster.set(clushunxu.get(m), cluster.get(m));
-        }
-
-        //新建一个list，用来获得拍好序的ps组
-        ArrayList<ArrayList<String>> paixudeps = new ArrayList<>();
-        for (int i = 0; i < cluster.size(); i++) {
-            paixudeps.add(new ArrayList<>());
-        }
-        // 将ps组按照顺序，放入到新建的list中
-        for (int n = 0; n < clushunxu.size(); n++) {
-            paixudeps.set(clushunxu.get(n), ps.get(n));
-        }
-
-        for (int j = 0; j < paixudecluster.size(); j++) {
-            possibleClusterUuids = paixudecluster.get(j);
-            possiblePsUuids = paixudeps.get(j);
-
-            //如果执行成功，打断for循环；如果失败，尝试下一组；
-            if (possibleClusterUuids.size() == 1 && possiblePsUuids.size() == 1) {
-                //单ps和单clu 非混合存储，直接分配
-                spec.setRequiredClusterUuid(possibleClusterUuids.get(0));
-                //执行代码
-                //返回结果
-//                break;
-//                continue;
-            } else if (possibleClusterUuids.size() > 1 && possiblePsUuids.size() == 1) {
-                //单ps和多clu 非混合存储，直接分配
-            } else if (possibleClusterUuids.size() == 1 && possiblePsUuids.size() > 1) {
-                //多ps和单clu 存在混合存储和非混合存储，需要判断
-
-                //判断是否为混合存储，不是混合存储直接分配
-                // Not local + non-local，no need to automatically allocate the primary storage
-                if (!isMixPrimaryStorage(spec)) {
-                    allocate(trigger, spec);
-                    return;
-                }
-
-            } else if (possibleClusterUuids.size() > 1 && possiblePsUuids.size() > 1) {
-                //多ps和多clu 存在混合存储和非混合存储，需要判断
-
-                //判断是否为混合存储，不是混合存储直接分配
-                // Not local + non-local，no need to automatically allocate the primary storage
-                if (!isMixPrimaryStorage(spec)) {
-                    allocate(trigger, spec);
-                    return;
-                }
-            }
-
-        }
+//        // 创建以一个list，记录集群组的顺序，记录长度和集群组相同
+//        ArrayList<Integer> clushunxu = new ArrayList<>();
+//        for (int i = 0; i < cluster.size(); i++) {
+//            clushunxu.add(clusterInventories.size());
+//        }
+//
+//        // 依据已经排好序的集群，将每一个集群组遍历排好序的集群，获得集群组包含的集群在排好序的集群中的坐标，并获得最小坐标，作为集群组的顺寻
+//        for (int i = 0; i < cluster.size(); i++) {
+//            int finalI = i;
+//            cluster.get(i).forEach(it -> {
+//                int j = clusterInventories.indexOf(it);
+//                if (j <= clushunxu.get(finalI)) {
+//                    clushunxu.set(finalI, j);
+//                }
+//            });
+//        }
+//
+//        //新建一个list，用来获得拍好序的集群组
+//        ArrayList<ArrayList<String>> paixudecluster = new ArrayList<>();
+//        for (int i = 0; i < cluster.size(); i++) {
+//            paixudecluster.add(new ArrayList<>());
+//        }
+//        // 将集群组按照顺序，放入到新建的list中
+//        for (int m = 0; m < clushunxu.size(); m++) {
+//            paixudecluster.set(clushunxu.get(m), cluster.get(m));
+//        }
+//
+//        //新建一个list，用来获得拍好序的ps组
+//        ArrayList<ArrayList<String>> paixudeps = new ArrayList<>();
+//        for (int i = 0; i < cluster.size(); i++) {
+//            paixudeps.add(new ArrayList<>());
+//        }
+//        // 将ps组按照顺序，放入到新建的list中
+//        for (int n = 0; n < clushunxu.size(); n++) {
+//            paixudeps.set(clushunxu.get(n), ps.get(n));
+//        }
+//
+//        for (int j = 0; j < paixudecluster.size(); j++) {
+//            possibleClusterUuids = paixudecluster.get(j);
+//            possiblePsUuids = paixudeps.get(j);
+//
+//            //如果执行成功，打断for循环；如果失败，尝试下一组；
+//            if (possibleClusterUuids.size() == 1 && possiblePsUuids.size() == 1) {
+//                //单ps和单clu 非混合存储，直接分配
+//                spec.setRequiredClusterUuid(possibleClusterUuids.get(0));
+//                //执行代码
+//                //返回结果
+////                break;
+////                continue;
+//            } else if (possibleClusterUuids.size() > 1 && possiblePsUuids.size() == 1) {
+//                //单ps和多clu 非混合存储，直接分配
+//            } else if (possibleClusterUuids.size() == 1 && possiblePsUuids.size() > 1) {
+//                //多ps和单clu 存在混合存储和非混合存储，需要判断
+//
+//                //判断是否为混合存储，不是混合存储直接分配
+//                // Not local + non-local，no need to automatically allocate the primary storage
+//                if (!isMixPrimaryStorage(spec)) {
+//                    allocate(trigger, spec);
+//                    return;
+//                }
+//
+//            } else if (possibleClusterUuids.size() > 1 && possiblePsUuids.size() > 1) {
+//                //多ps和多clu 存在混合存储和非混合存储，需要判断
+//
+//                //判断是否为混合存储，不是混合存储直接分配
+//                // Not local + non-local，no need to automatically allocate the primary storage
+//                if (!isMixPrimaryStorage(spec)) {
+//                    allocate(trigger, spec);
+//                    return;
+//                }
+//            }
+//
+//        }
 
         // 限制可能的主存储和可能的集群。使用分组中的集群和主存储进行分配。
+
         for (Map.Entry<List<String>, List<String>> entry : clusterGroup.entrySet()) {
             possibleClusterUuids = entry.getValue();
             possiblePsUuids = entry.getKey();
@@ -192,15 +193,19 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 }
 
                 if (!clusterWithSamePs) {
-                    allocate(trigger, spec);
-                    return;
+                    if (tryAllocate(trigger, spec, data)){
+                        return;
+                    }
+                    continue;
                 }
             }
 
             // Not local + non-local，no need to automatically allocate the primary storage
             if (!isMixPrimaryStorage(spec)) {
-                allocate(trigger, spec);
-                return;
+                if (tryAllocate(trigger, spec, data)){
+                    return;
+                }
+                continue;
             }
 
             List<Tuple> availablePsTuples = Q.New(PrimaryStorageVO.class)
@@ -580,7 +585,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
     }
 
     private boolean needAutoAllocateRootVolumePS(VmInstanceSpec spec) {
-        return spec.getRequiredPrimaryStorageUuidForRootVolume() == null;
+        return spec.getRequiredPrimaryStorageUuidForRootVolume() == null; //未指定根云盘主存储，返回true；指定根云盘主存储返回，false
     }
 
     private boolean needAutoAllocateDataVolumePS(VmInstanceSpec spec) {
@@ -625,6 +630,23 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
         });
         chain.start();
+    }
+
+    private boolean tryAllocate(final FlowTrigger trigger, VmInstanceSpec spec, final Map data) {
+        FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
+        chain.done(new FlowDoneHandler(trigger) {
+            @Override
+            public void handle(Map data) {
+                trigger.next();
+            }
+        }).error(new FlowErrorHandler(trigger) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                data.put("f","f");
+            }
+        });
+        chain.start();
+        return !data.containsKey("f");
     }
 
     private List<String> getPrimaryStorageUuidsFromCluster(String clusterUuid) {
