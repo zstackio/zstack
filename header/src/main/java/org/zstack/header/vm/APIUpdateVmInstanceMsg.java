@@ -37,6 +37,8 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     private Long memorySize;
     @APIParam(required = false, maxLength = 255)
     private String guestOsType;
+    @APIParam(required = false, validValues = {"virtio", "ide"})
+    private String diskBus;
 
     public String getDefaultL3NetworkUuid() {
         return defaultL3NetworkUuid;
@@ -114,7 +116,15 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
     }
- 
+
+    public String getDiskBus() {
+        return diskBus;
+    }
+
+    public void setDiskBus(String diskBus) {
+        this.diskBus = diskBus;
+    }
+
     public static APIUpdateVmInstanceMsg __example__() {
         APIUpdateVmInstanceMsg msg = new APIUpdateVmInstanceMsg();
         msg.uuid = uuid();

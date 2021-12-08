@@ -5047,6 +5047,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 updateVmIsoFirstOrder(msg.getSystemTags());
+                updateVmDiskBus(msg.getDiskBus());
 
                 CollectionUtils.safeForEach(extensions, Runnable::run);
 
@@ -5119,6 +5120,28 @@ public class VmInstanceBase extends AbstractVmInstance {
                 return "update-vm-info";
             }
         });
+    }
+
+    private void updateVmDiskBus(String diskBus) {
+        if (diskBus == null) {
+            return;
+        }
+
+        VmInstanceDiskBus vmInstanceDiskBus = VmInstanceDiskBus.findByName(diskBus);
+
+        if (vmInstanceDiskBus == null) {
+            throw new OperationFailureException(operr("failed to find VmInstanceDiskBus with name %s", diskBus));
+        }
+
+        if (VmInstanceDiskBus.VIRTIO == vmInstanceDiskBus) {
+            SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(self.getUuid());
+            creator.recreate = true;
+            creator.inherent = false;
+            creator.tag = VmSystemTags.VIRTIO.getTagFormat();
+            creator.create();
+        } else if (VmInstanceDiskBus.IDE == vmInstanceDiskBus) {
+            VmSystemTags.VIRTIO.delete(self.getUuid());
+        }
     }
 
     // Specify an iso as the first one, restart vm effective

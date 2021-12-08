@@ -52,6 +52,9 @@ public class UpdateVmInstanceAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String guestOsType;
 
+    @Param(required = false, validValues = {"virtio","ide"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String diskBus;
+
     @Param(required = false)
     public java.util.List systemTags;
 
