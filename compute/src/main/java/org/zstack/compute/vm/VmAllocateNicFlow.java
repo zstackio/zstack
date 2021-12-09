@@ -189,7 +189,10 @@ public class VmAllocateNicFlow implements Flow {
                         if (nicSpec.getNicDriverType() != null) {
                             nic.setDriverType(nicSpec.getNicDriverType());
                         } else {
-                            nic.setDriverType(ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization() ?
+                            boolean paraVirtualizationPlatform = ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization();
+                            boolean enableVirtio = VmSystemTags.VIRTIO.hasTag(spec.getVmInventory().getUuid());
+
+                            nic.setDriverType(paraVirtualizationPlatform || enableVirtio ?
                                     nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
                         }
 
