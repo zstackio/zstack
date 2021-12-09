@@ -2,6 +2,7 @@ package org.zstack.network.service.virtualrouter.ha;
 
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
 import org.zstack.header.network.service.VirtualRouterHaTask;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -16,4 +17,5 @@ public interface VirtualRouterHaBackend {
     String getVirtualRouterHaUuid(String vrUuid);
     VirtualRouterHaCallbackInterface getCallback(String type);
     String getVirtualRouterPeerUuid(String vrUuid);
+    void virtualRouterOverlayMsgHandle(OverlayMessage msg, Completion completion);
 }

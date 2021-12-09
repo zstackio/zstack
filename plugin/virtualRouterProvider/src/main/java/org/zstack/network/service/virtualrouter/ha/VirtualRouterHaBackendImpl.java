@@ -10,10 +10,12 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.*;
+import static org.zstack.core.Platform.operr;
 
 import java.util.List;
 import java.util.Map;
@@ -52,6 +54,17 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
                 });
             }
         };
+    }
+
+    @Override
+    public void virtualRouterOverlayMsgHandle(OverlayMessage message, Completion completion) {
+        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+        if (exps.isEmpty()) {
+            completion.fail(operr("ha group extension point nil"));
+            return;
+        }
+
+        exps.get(0).virtualRouterOverlayMsgHandle(message, completion);
     }
 
     @Override

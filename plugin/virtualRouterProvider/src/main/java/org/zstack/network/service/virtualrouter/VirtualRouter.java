@@ -29,6 +29,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
@@ -150,6 +151,10 @@ public class VirtualRouter extends ApplianceVmBase {
             handle((APIUpdateVirtualRouterMsg) msg);
         } else if (msg instanceof APIProvisionVirtualRouterConfigMsg) {
             handle((APIProvisionVirtualRouterConfigMsg) msg);
+        } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
+            handle((APIAttachL3NetworkToVmMsg) msg);
+        } else if (msg instanceof APIDetachL3NetworkFromVmMsg) {
+            handle((APIDetachL3NetworkFromVmMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
@@ -165,6 +170,8 @@ public class VirtualRouter extends ApplianceVmBase {
             handle((PingVirtualRouterVmMsg) msg);
         } else if (msg instanceof ProvisionVirtualRouterConfigMsg) {
             handle((ProvisionVirtualRouterConfigMsg) msg);
+        } else if (msg instanceof VirtualRouterOverlayInnerMsg) {
+            handle((VirtualRouterOverlayInnerMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -215,6 +222,114 @@ public class VirtualRouter extends ApplianceVmBase {
                 return PingRsp.class;
             }
         }, TimeUnit.SECONDS, (long)ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class));
+    }
+
+    private void handle(final VirtualRouterOverlayInnerMsg msg) {
+        NeedReplyMessage originMsg =  msg.getMessage();
+
+        if (originMsg instanceof APIAttachL3NetworkToVmMsg){
+            handle(msg, (APIAttachL3NetworkToVmMsg)originMsg);
+        } else if (originMsg instanceof APIDetachL3NetworkFromVmMsg){
+            handle(msg, (APIDetachL3NetworkFromVmMsg)originMsg);
+        } else {
+            super.handleMessage(msg);
+        }
+    }
+
+    private void handle(final VirtualRouterOverlayInnerMsg msg, final APIAttachL3NetworkToVmMsg originMsg) {
+        final VmAttachNicReply reply  = new VmAttachNicReply();
+        attachNicInQueue(originMsg, originMsg.getL3NetworkUuid(), originMsg.isApplyToBackend(), new ReturnValueCompletion<VmNicInventory>(msg) {
+            @Override
+            public void success(VmNicInventory returnValue) {
+                reply.setInventroy(returnValue);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final VirtualRouterOverlayInnerMsg msg, final APIDetachL3NetworkFromVmMsg originMsg) {
+        MessageReply reply = new MessageReply();
+        detachNicInQueue(originMsg, originMsg.getVmNicUuid(), new ReturnValueCompletion<VmInstanceInventory>(msg) {
+            @Override
+            public void success(VmInstanceInventory returnValue) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final APIAttachL3NetworkToVmMsg msg) {
+        if (vr.getHaStatus().equals(ApplianceVmHaStatus.NoHa.toString())) {
+            super.handleApiMessage(msg);
+            return;
+        }
+        VirtualRouterOverlayInnerMsg innerMsg = new VirtualRouterOverlayInnerMsg();
+        innerMsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        innerMsg.setMessage(msg);
+        bus.makeTargetServiceIdByResourceUuid(innerMsg, VmInstanceConstant.SERVICE_ID, msg.getVmInstanceUuid());
+
+        VirtualRouterOverlayMsg omsg = new VirtualRouterOverlayMsg();
+        omsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        omsg.setMessage(innerMsg);
+
+        final APIAttachL3NetworkToVmEvent evt = new APIAttachL3NetworkToVmEvent(msg.getId());
+        haBackend.virtualRouterOverlayMsgHandle(omsg, new Completion(msg) {
+            @Override
+            public void success() {
+                self = dbf.reload(self);
+                evt.setInventory(VmInstanceInventory.valueOf(self));
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(final APIDetachL3NetworkFromVmMsg msg) {
+
+        if (vr.getHaStatus().equals(ApplianceVmHaStatus.NoHa.toString())) {
+            super.handleApiMessage(msg);
+            return;
+        }
+        VirtualRouterOverlayInnerMsg innerMsg = new VirtualRouterOverlayInnerMsg();
+        innerMsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        innerMsg.setMessage(msg);
+        bus.makeTargetServiceIdByResourceUuid(innerMsg, VmInstanceConstant.SERVICE_ID, msg.getVmInstanceUuid());
+
+        VirtualRouterOverlayMsg omsg = new VirtualRouterOverlayMsg();
+        omsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        omsg.setMessage(innerMsg);
+
+        final APIDetachL3NetworkFromVmEvent evt = new APIDetachL3NetworkFromVmEvent(msg.getId());
+        haBackend.virtualRouterOverlayMsgHandle(omsg, new Completion(msg) {
+            @Override
+            public void success() {
+                self = dbf.reload(self);
+                evt.setInventory(VmInstanceInventory.valueOf(self));
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(final PingVirtualRouterVmMsg msg) {

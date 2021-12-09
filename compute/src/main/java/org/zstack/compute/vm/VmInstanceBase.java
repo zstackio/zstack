@@ -2303,7 +2303,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void attachNicInQueue(final VmInstanceMessage msg, final String l3Uuid, boolean applyToBackend, final ReturnValueCompletion<VmNicInventory> completion) {
+    protected void attachNicInQueue(final VmInstanceMessage msg, final String l3Uuid, boolean applyToBackend, final ReturnValueCompletion<VmNicInventory> completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
@@ -4480,8 +4480,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
-    private void handle(final APIDetachL3NetworkFromVmMsg msg) {
-        VmNicVO vmNicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+    protected void detachNicInQueue(final NeedReplyMessage msg, final String nicUuid, final ReturnValueCompletion<VmInstanceInventory> completion){
+        VmNicVO vmNicVO = dbf.findByUuid(nicUuid, VmNicVO.class);
         String vmNicAccountUuid = acntMgr.getOwnerAccountUuidOfResource(vmNicVO.getUuid());
 
         thdf.chainSubmit(new ChainTask(msg) {
@@ -4492,13 +4492,10 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                final APIDetachL3NetworkFromVmEvent evt = new APIDetachL3NetworkFromVmEvent(msg.getId());
-
                 refreshVO();
                 ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
-                    evt.setError(allowed);
-                    bus.publish(evt);
+                    completion.fail(allowed);
                     chain.next();
                     return;
                 }
@@ -4509,8 +4506,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (self.getState().equals(VmInstanceState.Running)) {
                     ErrorCode error = validateOperationByVmTypeAndL3Type(vmNicVO.getL3NetworkUuid());
                     if (error != null) {
-                        evt.setError(error);
-                        bus.publish(evt);
+                        completion.fail(error);
                         chain.next();
                         return;
                     }
@@ -4519,9 +4515,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 doDetachNic(VmNicInventory.valueOf(vmNicVO), releaseNic, false, new Completion(chain) {
                     @Override
                     public void success() {
-                        self = dbf.reload(self);
-                        evt.setInventory(VmInstanceInventory.valueOf(self));
-                        bus.publish(evt);
+                        //self = dbf.reload(self);
+                        completion.success(VmInstanceInventory.valueOf(self));
                         chain.next();
 
                         VmNicInventory vmNicInventory = VmNicInventory.valueOf(vmNicVO);
@@ -4534,8 +4529,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setError(errorCode);
-                        bus.publish(evt);
+                        completion.fail(errorCode);
                         chain.next();
                     }
                 });
@@ -4544,6 +4538,24 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public String getName() {
                 return "detach-nic";
+            }
+        });
+    }
+
+    private void handle(final APIDetachL3NetworkFromVmMsg msg) {
+        final APIDetachL3NetworkFromVmEvent evt = new APIDetachL3NetworkFromVmEvent(msg.getId());
+        detachNicInQueue(msg, msg.getVmNicUuid(), new ReturnValueCompletion<VmInstanceInventory>(msg) {
+            @Override
+            public void success(VmInstanceInventory returnValue) {
+                self = dbf.reload(self);
+                evt.setInventory(VmInstanceInventory.valueOf(self));
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
             }
         });
     }
