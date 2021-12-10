@@ -69,21 +69,21 @@ class LocalStorageForceAllocateCapacityCase extends SubCase {
 
                     kvm {
                         name = "kvm1"
-                        managementIp = "localhost"
+                        managementIp = "127.0.0.1"
                         username = "root"
                         password = "password"
                     }
 
                     kvm {
                         name = "kvm2"
-                        managementIp = "localhost"
+                        managementIp = "127.0.0.2"
                         username = "root"
                         password = "password"
                     }
 
                     kvm {
                         name = "kvm3"
-                        managementIp = "localhost"
+                        managementIp = "127.0.0.3"
                         username = "root"
                         password = "password"
                     }
