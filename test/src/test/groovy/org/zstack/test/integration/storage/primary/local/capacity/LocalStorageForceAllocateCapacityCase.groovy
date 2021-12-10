@@ -1,8 +1,12 @@
 package org.zstack.test.integration.storage.primary.local.capacity
 
-
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.image.ImageConstant
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.*
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
@@ -12,6 +16,7 @@ import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 class LocalStorageForceAllocateCapacityCase extends SubCase {
     EnvSpec env
@@ -118,12 +123,12 @@ class LocalStorageForceAllocateCapacityCase extends SubCase {
     @Override
     void test() {
         env.create {
-            PrimaryStorageInventory local_ps = env.inventoryByName("local") as PrimaryStorageInventory
-            InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
-            L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
-            BackupStorageInventory sftp_bs = env.inventoryByName("sftp") as BackupStorageInventory
-            DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
-            HostInventory host1 = env.inventoryByName("host1") as HostInventory
+            local_ps = env.inventoryByName("local") as PrimaryStorageInventory
+            instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+            l3 = env.inventoryByName("l3") as L3NetworkInventory
+            sftp_bs = env.inventoryByName("sftp") as BackupStorageInventory
+            diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+            host1 = env.inventoryByName("host1") as HostInventory
 
             testForceAllocateCapacity()
         }
@@ -151,6 +156,15 @@ class LocalStorageForceAllocateCapacityCase extends SubCase {
 
         assert download_image_path_invoked
 
+        env.simulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            KVMAgentCommands.TakeSnapshotCmd cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.TakeSnapshotCmd.class)
+            def rsp = new KVMAgentCommands.TakeSnapshotResponse()
+            rsp.newVolumeInstallPath = cmd.installPath
+            rsp.snapshotInstallPath = cmd.volumeInstallPath
+            rsp.size = SizeUnit.GIGABYTE.toByte(60)
+            return rsp
+        }
+
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
@@ -160,10 +174,22 @@ class LocalStorageForceAllocateCapacityCase extends SubCase {
             hostUuid = host1.uuid
         } as VmInstanceInventory
 
+        psCapacity = Q.New(PrimaryStorageCapacityVO.class)
+                .select(PrimaryStorageCapacityVO_.availableCapacity)
+                .eq(PrimaryStorageCapacityVO_.uuid, local_ps.uuid)
+                .findValue()
+
+        hostCapacity = Q.New(LocalStorageHostRefVO.class)
+                .select(LocalStorageHostRefVO_.availableCapacity)
+                .eq(LocalStorageHostRefVO_.hostUuid,host1.uuid)
+                .findValue()
+
         def snapshot = createVolumeSnapshot {
             name = "root-volume-snapshot"
             volumeUuid = vm.rootVolumeUuid
         } as VolumeSnapshotInventory
+
+
 
     }
 
