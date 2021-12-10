@@ -174,12 +174,12 @@ class LocalStorageForceAllocateCapacityCase extends SubCase {
             hostUuid = host1.uuid
         } as VmInstanceInventory
 
-        psCapacity = Q.New(PrimaryStorageCapacityVO.class)
+        def psCapacity = Q.New(PrimaryStorageCapacityVO.class)
                 .select(PrimaryStorageCapacityVO_.availableCapacity)
                 .eq(PrimaryStorageCapacityVO_.uuid, local_ps.uuid)
                 .findValue()
 
-        hostCapacity = Q.New(LocalStorageHostRefVO.class)
+        def hostCapacity = Q.New(LocalStorageHostRefVO.class)
                 .select(LocalStorageHostRefVO_.availableCapacity)
                 .eq(LocalStorageHostRefVO_.hostUuid,host1.uuid)
                 .findValue()
@@ -189,8 +189,18 @@ class LocalStorageForceAllocateCapacityCase extends SubCase {
             volumeUuid = vm.rootVolumeUuid
         } as VolumeSnapshotInventory
 
+        def afterSnapshotPsCapacity = Q.New(PrimaryStorageCapacityVO.class)
+                .select(PrimaryStorageCapacityVO_.availableCapacity)
+                .eq(PrimaryStorageCapacityVO_.uuid, local_ps.uuid)
+                .findValue()
 
+        def afterSnapshotHostCapacity = Q.New(LocalStorageHostRefVO.class)
+                .select(LocalStorageHostRefVO_.availableCapacity)
+                .eq(LocalStorageHostRefVO_.hostUuid,host1.uuid)
+                .findValue()
 
+        assert psCapacity == afterSnapshotPsCapacity - hostCapacity
+        assert afterSnapshotHostCapacity == 0
     }
 
     void checkPSAvailableCapacityAfterCreateSnapshot(){
