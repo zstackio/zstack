@@ -1,6 +1,7 @@
 package org.zstack.header.network.service;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.message.OverlayMessage;
 
 import java.util.List;
 
@@ -29,4 +30,5 @@ public interface VirtualRouterHaGroupExtensionPoint {
 
     String getHaGroupName(String vrUuid);
     String getHaGroupUuid(String vrUuid);
+    void virtualRouterOverlayMsgHandle(OverlayMessage msg, Completion completion);
 }
