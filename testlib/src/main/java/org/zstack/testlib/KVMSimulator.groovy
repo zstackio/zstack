@@ -360,5 +360,13 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.KVM_REGISTER_PRIMARY_VM_HEARTBEAT) {
             return new KVMAgentCommands.AgentResponse()
         }
+
+        spec.simulator(KVMConstant.KVM_HOST_CHECK_FILE_PATH) { HttpEntity<String> e ->
+            KVMAgentCommands.CheckFileOnHostCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.CheckFileOnHostCmd.class)
+            KVMAgentCommands.CheckFileOnHostResponse response = new KVMAgentCommands.CheckFileOnHostResponse()
+            response.existPaths = new HashMap<>()
+            cmd.paths.forEach({path -> response.existPaths.put(path, "")})
+            return response
+        }
     }
 }

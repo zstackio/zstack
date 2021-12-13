@@ -21,8 +21,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.retry.Retry;
-import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -145,6 +143,7 @@ public class KVMHost extends HostBase implements Host {
     private String checkSnapshotPath;
     private String mergeSnapshotPath;
     private String hostFactPath;
+    private String hostCheckFilePath;
     private String attachIsoPath;
     private String detachIsoPath;
     private String updateNicPath;
@@ -256,6 +255,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_FACT_PATH);
         hostFactPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_CHECK_FILE_PATH);
+        hostCheckFilePath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_ATTACH_ISO_PATH);
@@ -538,6 +541,8 @@ public class KVMHost extends HostBase implements Host {
             handle((RegisterColoPrimaryCheckMsg) msg);
         } else if (msg instanceof AllocateHostPortMsg) {
             handle((AllocateHostPortMsg) msg);
+        } else if (msg instanceof CheckFileOnHostMsg) {
+            handle((CheckFileOnHostMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -4329,6 +4334,36 @@ public class KVMHost extends HostBase implements Host {
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
             }
+        });
+    }
+
+    private void handle(CheckFileOnHostMsg msg) {
+        CheckFileOnHostReply reply = new CheckFileOnHostReply();
+        inQueue().name(String.format("check-file-on-host-%s", msg.getHostUuid())).asyncBackup(msg).run(chain -> {
+            CheckFileOnHostCmd cmd = new CheckFileOnHostCmd();
+            cmd.paths = new HashSet<>(msg.getPaths());
+            cmd.md5Return = msg.isMd5Return();
+            new Http<>(hostCheckFilePath, cmd, CheckFileOnHostResponse.class).call(new ReturnValueCompletion<CheckFileOnHostResponse>(chain, msg) {
+                @Override
+                public void success(CheckFileOnHostResponse response) {
+                    if (response.isSuccess()) {
+                        reply.setExistPaths(response.existPaths == null ? Collections.emptyMap() : new HashMap<>(response.existPaths));
+                    } else {
+                        logger.warn(String.format("failed to check file %s on host[uuid:%s]", msg.getPaths(), msg.getHostUuid()));
+                        reply.setError(Platform.operr(response.getError(),
+                                "fail to check file %s on host[uuid:%s]", msg.getPaths(), msg.getHostUuid()));
+                    }
+                    bus.reply(msg, reply);
+                    chain.next();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                    chain.next();
+                }
+            });
         });
     }
 
