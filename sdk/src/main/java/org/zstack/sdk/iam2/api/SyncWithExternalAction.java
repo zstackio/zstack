@@ -32,9 +32,6 @@ public class SyncWithExternalAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = false)
-    public org.zstack.sdk.CLogger logger = org.zstack.utils.logging.CLoggerImpl@67d716f0;
-
-    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
