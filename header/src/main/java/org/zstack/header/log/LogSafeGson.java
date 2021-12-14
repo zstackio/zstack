@@ -1,8 +1,7 @@
-package org.zstack.core.log;
+package org.zstack.header.log;
 
 import com.google.gson.*;
 import org.apache.logging.log4j.util.Strings;
-import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.GsonTransient;
 import org.zstack.header.message.Message;
 import org.zstack.utils.BeanUtils;
@@ -187,6 +186,21 @@ public class LogSafeGson {
 
         results.remove(Strings.EMPTY);
         return results;
+    }
+
+    public static void maskInventory(Object o) {
+        maskFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
+            Object obj = f.getValue(o);
+            if (obj != null) {
+                String maskedValue = f.getMaskedValue(obj.toString());
+                f.field.setAccessible(true);
+                try {
+                    f.field.set(o,maskedValue);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     public static Map<String, NoLogging.Type> getSensitiveFields(Class<?> clz) {

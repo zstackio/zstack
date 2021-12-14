@@ -3,6 +3,7 @@ package org.zstack.header.vo;
 import org.apache.commons.lang.StringUtils;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.log.LogSafeGson;
 import org.zstack.header.search.Inventory;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
@@ -98,7 +99,9 @@ public interface ToInventory {
         }
 
         try {
-            return m.valueOf.invoke(null, vo);
+            Object invoke = m.valueOf.invoke(null, vo);
+            LogSafeGson.maskInventory(invoke);
+            return invoke;
         } catch (Exception e) {
             logger.warn(String.format("unable to convert class[%s] to inventory[%s]", vo.getClass(), m.inventoryClass));
             throw new CloudRuntimeException(e);
