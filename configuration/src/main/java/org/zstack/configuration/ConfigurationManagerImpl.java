@@ -22,7 +22,7 @@ import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.log.LogSafeGson;
+import org.zstack.header.log.LogSafeGson;
 import org.zstack.core.rest.RESTApiJsonTemplateGenerator;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.HostAllocatorConstant;

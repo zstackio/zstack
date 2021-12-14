@@ -121,18 +121,18 @@ public class ZQL {
     private Object entityVOtoInventory(Object vo) {
         try {
             ZQLMetadata.InventoryMetadata inventoryMetadata = astResult.inventoryMetadata;
-            Object inv = inventoryMetadata.selfInventoryClass.getConstructor().newInstance();
+            Object mappingVO = inventoryMetadata.mappingVOClass.getConstructor().newInstance();
             if (vo instanceof Object[]) {
                 Object[] fieldValues = (Object[]) vo;
                 for (int i = 0; i < astResult.targetFieldNames.size(); i++) {
                     String fieldName = astResult.targetFieldNames.get(i);
-                    BeanUtils.setProperty(inv, fieldName, inventoryMetadata.toInventoryFieldObject(fieldName, fieldValues[i]));
+                    BeanUtils.setProperty(mappingVO, fieldName, inventoryMetadata.toInventoryFieldObject(fieldName, fieldValues[i]));
                 }
             } else {
                 String fieldName =  astResult.targetFieldNames.get(0);
-                BeanUtils.setProperty(inv, fieldName, astResult.inventoryMetadata.toInventoryFieldObject(fieldName, vo));
+                BeanUtils.setProperty(mappingVO, fieldName, astResult.inventoryMetadata.toInventoryFieldObject(fieldName, vo));
             }
-            return inv;
+            return ToInventory.toInventory(mappingVO);
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }

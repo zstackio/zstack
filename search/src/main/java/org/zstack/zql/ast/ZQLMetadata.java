@@ -40,6 +40,7 @@ public class ZQLMetadata {
     }
 
     public static class InventoryMetadata {
+        public Class mappingVOClass;
         public Class selfInventoryClass;
         public transient Inventory inventoryAnnotation;
         public Map<String, ExpandQueryMetadata> expandQueries = new HashMap<>();
@@ -365,6 +366,7 @@ public class ZQLMetadata {
         InventoryMetadata metadata = inventoryMetadata.computeIfAbsent(clz.getName(), x-> {
             InventoryMetadata m = new InventoryMetadata();
             m.inventoryAnnotation = inventory;
+            m.mappingVOClass = inventory.mappingVOClass();
             m.selfInventoryClass = clz;
             m.selfInventoryFieldNames = FieldUtils.getAllFields(clz).stream()
                     .filter(i->!i.isAnnotationPresent(APINoSee.class))

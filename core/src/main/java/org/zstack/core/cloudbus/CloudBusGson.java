@@ -1,7 +1,7 @@
 package org.zstack.core.cloudbus;
 
 import com.google.gson.*;
-import org.zstack.core.log.LogSafeGson;
+import org.zstack.header.log.LogSafeGson;
 import org.zstack.header.message.GsonTransient;
 import org.zstack.header.message.Message;
 import org.zstack.utils.gson.GsonTypeCoder;
