@@ -1527,7 +1527,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         return new UserdataBuilder().buildByVmUuid(self.getUuid());
     }
 
-    private void handle(final DetachNicFromVmMsg msg) {
+    protected void detachNicInQueueForNoApi(final DetachNicFromVmMsg msg, final Completion completion) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -1539,7 +1539,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                 final DetachNicFromVmReply reply = new DetachNicFromVmReply();
 
                 refreshVO();
-
+                if (self == null) {
+                    completion.success();
+                    chain.next();
+                    return;
+                }
                 if (self.getState() == VmInstanceState.Destroyed) {
                     // the cascade framework may send this message when
                     // the vm has been destroyed
@@ -1554,15 +1558,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                         dbf.remove(nic);
                     }
 
-                    bus.reply(msg, reply);
+                    completion.success();
                     chain.next();
                     return;
                 }
 
                 final ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
-                    reply.setError(allowed);
-                    bus.reply(msg, reply);
+                    completion.fail(allowed);
                     chain.next();
                     return;
                 }
@@ -1571,7 +1574,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 if (nicVO == null) {
                     logger.debug(String.format("vm nic[uuid:%s] not exists. It may have been deleted", msg.getVmNicUuid()));
-                    bus.reply(msg, reply);
+                    completion.success();
                     chain.next();
                     return;
                 }
@@ -1579,8 +1582,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (self.getState().equals(VmInstanceState.Running)) {
                     ErrorCode error = validateOperationByVmTypeAndL3Type(nicVO.getL3NetworkUuid());
                     if (error != null) {
-                        reply.setError(error);
-                        bus.reply(msg, reply);
+                        completion.fail(error);
                         chain.next();
                         return;
                     }
@@ -1590,14 +1592,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                     @Override
                     public void success() {
                         self = dbf.reload(self);
-                        bus.reply(msg, reply);
+                        completion.success();
                         chain.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        reply.setError(errorCode);
-                        bus.reply(msg, reply);
+                        completion.fail(errorCode);
                         chain.next();
                     }
                 });
@@ -1606,6 +1607,22 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public String getName() {
                 return "nic-detach";
+            }
+        });
+    }
+
+    private void handle(final DetachNicFromVmMsg msg) {
+        final DetachNicFromVmReply reply = new DetachNicFromVmReply();
+        detachNicInQueueForNoApi(msg, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }
@@ -4515,7 +4532,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 doDetachNic(VmNicInventory.valueOf(vmNicVO), releaseNic, false, new Completion(chain) {
                     @Override
                     public void success() {
-                        //self = dbf.reload(self);
+                        self = dbf.reload(self);
                         completion.success(VmInstanceInventory.valueOf(self));
                         chain.next();
 

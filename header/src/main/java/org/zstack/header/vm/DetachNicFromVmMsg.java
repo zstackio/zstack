@@ -8,6 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class DetachNicFromVmMsg extends NeedReplyMessage implements VmInstanceMessage {
     private String vmInstanceUuid;
     private String vmNicUuid;
+    private boolean haPeer = false;
 
     // do not call DetachNicFromVmOnHypervisorMsg even vm is running
     private boolean dbOnly = false;
@@ -36,4 +37,7 @@ public class DetachNicFromVmMsg extends NeedReplyMessage implements VmInstanceMe
     public void setDbOnly(boolean dbOnly) {
         this.dbOnly = dbOnly;
     }
+
+    public boolean isHaPeer() { return haPeer; }
+    public void setHaPeer(boolean haPeer) { this.haPeer = haPeer; }
 }
