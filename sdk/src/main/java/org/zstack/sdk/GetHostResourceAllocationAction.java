@@ -31,7 +31,7 @@ public class GetHostResourceAllocationAction extends AbstractAction {
     @Param(required = true, validValues = {"continuous"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String strategy;
 
-    @Param(required = true, validValues = {"normal","highPerformance"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"normal","performance"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String scene;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,512L}, noTrim = false)
@@ -57,6 +57,12 @@ public class GetHostResourceAllocationAction extends AbstractAction {
 
     @Param(required = false)
     public String requestIp;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -99,7 +105,7 @@ public class GetHostResourceAllocationAction extends AbstractAction {
         info.httpMethod = "POST";
         info.path = "/hosts/{uuid}/resource-allocation";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "params";
         return info;
     }

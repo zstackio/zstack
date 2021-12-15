@@ -6,6 +6,7 @@ import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.core.db.SimpleQuery
 import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.host.*
@@ -23,8 +24,8 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.tester.ZTester
-/**
- * Created by mingjian.deng on 2019/1/3.*/
+
+
 class AddHostCheckNUMATopologyCase extends SubCase {
     EnvSpec env
     ClusterInventory cluster
@@ -224,6 +225,9 @@ class AddHostCheckNUMATopologyCase extends SubCase {
 
         assert res.error != null
         assert Q.New(HostVO.class).count() == 0
+
+        SQL.New("delete from HostNumaNodeVO where hostUuid = :uuid").param("uuid", action.resourceUuid).execute()
+        SQL.New("delete from HostAllocatedCpuVO where hostUuid = :uuid").param("uuid", action.resourceUuid).execute()
     }
 
     void testCheckHostManagementFailure() {
@@ -262,13 +266,13 @@ class AddHostCheckNUMATopologyCase extends SubCase {
 
         assert getHostNUMACmdCall
 
-        SimpleQuery<HostNUMATopologyVO> hvoQuery = dbf.createQuery(HostNUMATopologyVO.class);
-        hvoQuery.add(HostNUMATopologyVO_.uuid, SimpleQuery.Op.EQ, reply.inventory.uuid);
-        List<HostNUMATopologyVO> nodes = hvoQuery.list();
+        SimpleQuery<HostNumaNodeVO> hvoQuery = dbf.createQuery(HostNumaNodeVO.class);
+        hvoQuery.add(HostNumaNodeVO_.hostUuid, SimpleQuery.Op.EQ, reply.inventory.uuid);
+        List<HostNumaNodeVO> nodes = hvoQuery.list();
 
         assert !nodes.isEmpty()
 
-        for (HostNUMATopologyVO node: nodes) {
+        for (HostNumaNodeVO node: nodes) {
             if (node.nodeID == 0) {
                 assert node.nodeCPUs.equals("0,1,2,3,4,5,6,7")
                 assert node.nodeDistance.equals("10,21")

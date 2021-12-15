@@ -12,7 +12,7 @@ public class SetVmEmulatorPinningAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetVmVnumaResult value;
+        public org.zstack.sdk.SetVmEmulatorPinningResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -63,8 +63,8 @@ public class SetVmEmulatorPinningAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetVmVnumaResult value = res.getResult(org.zstack.sdk.SetVmVnumaResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVmVnumaResult() : value; 
+        org.zstack.sdk.SetVmEmulatorPinningResult value = res.getResult(org.zstack.sdk.SetVmEmulatorPinningResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmEmulatorPinningResult() : value; 
 
         return ret;
     }
