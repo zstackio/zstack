@@ -172,6 +172,32 @@ public class PathUtil {
         }
     }
 
+    /**
+     * @param src not null, no directory
+     * @param expectMd5 not null, example: db4d30c06fb3506e6669c9709efe43c5
+     */
+    public static boolean checkFileByMd5(File src, String expectMd5) {
+        if (expectMd5 == null || !expectMd5.matches("^[0-9a-z]{32}$")) {
+            throw new RuntimeException(String.format("not valid md5sum %s", expectMd5));
+        }
+
+        if (!src.exists()) {
+            throw new RuntimeException(String.format("file[%s] is not exist", src));
+        }
+        if (src.isDirectory()) {
+            throw new RuntimeException(String.format("file[%s] is a directory", src));
+        }
+        if (!src.canRead()) {
+            throw new RuntimeException(String.format("file[%s] is not readable", src));
+        }
+        
+        try (FileInputStream srcIn = new FileInputStream(src)) {
+            return expectMd5.equalsIgnoreCase(DigestUtils.md5Hex(srcIn));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static List<String> scanFolderOnClassPath(String folderName) {
         URL folderUrl = PathUtil.class.getClassLoader().getResource(folderName);
         if (folderUrl == null || !folderUrl.getProtocol().equals("file")) {
