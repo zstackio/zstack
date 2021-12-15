@@ -46,7 +46,7 @@ public class AddBareMetal2IpmiChassisAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String clusterUuid;
 
-    @Param(required = true, validValues = {"Remote","Local","Direct"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"Remote","Local","Direct"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String provisionType = "Remote";
 
     @Param(required = false)
