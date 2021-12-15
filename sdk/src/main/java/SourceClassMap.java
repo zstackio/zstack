@@ -186,6 +186,7 @@ public class SourceClassMap {
 			put("org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory", "org.zstack.sdk.NetworkRouterFlowMeterRefInventory");
 			put("org.zstack.header.host.AddHostFromFileResult", "org.zstack.sdk.AddHostFromFileResult");
 			put("org.zstack.header.host.HostInventory", "org.zstack.sdk.HostInventory");
+			put("org.zstack.header.host.HostNUMANode", "org.zstack.sdk.HostNUMANode");
 			put("org.zstack.header.host.HostNetworkBondingInventory", "org.zstack.sdk.HostNetworkBondingInventory");
 			put("org.zstack.header.host.HostNetworkInterfaceInventory", "org.zstack.sdk.HostNetworkInterfaceInventory");
 			put("org.zstack.header.host.HostPhysicalMemoryInventory", "org.zstack.sdk.HostPhysicalMemoryInventory");
@@ -771,6 +772,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostIommuStateType", "org.zstack.pciDevice.HostIommuStateType");
 			put("org.zstack.sdk.HostIommuStatusType", "org.zstack.pciDevice.HostIommuStatusType");
 			put("org.zstack.sdk.HostLoad", "org.zstack.drs.api.HostLoad");
+			put("org.zstack.sdk.HostNUMANode", "org.zstack.header.host.HostNUMANode");
 			put("org.zstack.sdk.HostNetworkBondingInventory", "org.zstack.header.host.HostNetworkBondingInventory");
 			put("org.zstack.sdk.HostNetworkInterfaceInventory", "org.zstack.header.host.HostNetworkInterfaceInventory");
 			put("org.zstack.sdk.HostPhysicalMemoryInventory", "org.zstack.header.host.HostPhysicalMemoryInventory");

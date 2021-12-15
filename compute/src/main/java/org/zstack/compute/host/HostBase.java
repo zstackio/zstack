@@ -47,9 +47,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
-import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -1159,52 +1157,6 @@ public abstract class HostBase extends AbstractHost {
                                 bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
                                 bus.send(msg);
                                 trigger.next();
-                            }
-                        });
-
-                        flow(new NoRollbackFlow() {
-                            String __name__ = "update-host-NUMA";
-
-                            @Override
-                            public void run(FlowTrigger trigger, Map data) {
-                                GetHostNumaTopologyMsg msg = new GetHostNumaTopologyMsg();
-                                msg.setHostUuid(self.getUuid());
-                                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
-                                bus.send(msg, new CloudBusCallBack(completion) {
-                                    @Override
-                                    public void run(MessageReply kreply) {
-                                        if (!kreply.isSuccess()) {
-                                            logger.error(String.format("Get Host[%s] NUMA Topology error: %s", self.getUuid(), kreply.getError().toString()));
-                                        } else {
-                                            GetHostNumaTopologyReply rpy = (GetHostNumaTopologyReply) kreply;
-                                            Map<String, Map<String, Object>> nodes = rpy.getNuma();
-                                            Iterator<Map.Entry<String, Map<String, Object>>> nodeEntries = nodes.entrySet().iterator();
-                                            SQL.New("delete from HostNUMATopologyVO where uuid = :uuid")
-                                                    .param("uuid", self.getUuid())
-                                                    .execute();
-                                            while (nodeEntries.hasNext()) {
-                                                Map.Entry<String, Map<String, Object>> node = nodeEntries.next();
-                                                Map<String, Object> nodeInfo = node.getValue();
-
-                                                HostNUMATopologyVO hostNumaNode = new HostNUMATopologyVO();
-                                                hostNumaNode.setUuid(self.getUuid());
-                                                hostNumaNode.setNodeID(node.getKey());
-
-                                                hostNumaNode.setNodeMemSize(((Double) nodeInfo.get("size")).longValue());
-
-                                                List<String> CPUIDs = (List<String>) nodeInfo.get("cpus");
-                                                hostNumaNode.setNodeCPUs(String.join(",", CPUIDs));
-
-                                                List<String> distance = (List<String>) nodeInfo.get("distance");
-                                                hostNumaNode.setNodeDistance(String.join(",", distance));
-
-                                                dbf.persist(hostNumaNode);
-                                            }
-                                            logger.info(String.format("Update Host[%s] NUMA Topology Successfully!", self.getUuid()));
-                                        }
-                                        trigger.next();
-                                    }
-                                });
                             }
                         });
 

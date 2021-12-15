@@ -6,42 +6,60 @@ import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table
 @EntityGraph(
         parents = {
-                @EntityGraph.Neighbour(type = HostVO.class, myField = "uuid", targetField = "uuid")
+                @EntityGraph.Neighbour(type = HostVO.class, myField = "hostUuid", targetField = "uuid")
         }
 )
-public class HostAllocatedCPUVO {
+public class HostAllocatedCpuVO {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
-    @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ReferenceOption.CASCADE)
-    private String uuid;
+    private Long id;
 
-    // value like nodeID0:CPUID0,CPUID1;nodeID1CPUID10,CPUID11
+    @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
+    private String hostUuid;
+
     @Column
-    private String allocatedCPU;
+    private Integer allocatedCPU;
 
+    public HostAllocatedCpuVO() {}
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
+    public HostAllocatedCpuVO(String hostUuid, String CPUID) {
+        this.hostUuid = hostUuid;
+        this.allocatedCPU = Integer.parseInt(CPUID);
     }
 
-    public void setAllocatedCPU(String allocatedCPU) {
+    public HostAllocatedCpuVO(String hostUuid, Integer CPUID) {
+        this.hostUuid = hostUuid;
+        this.allocatedCPU = CPUID;
+    }
+
+    public Integer getAllocatedCPU() {
+        return allocatedCPU;
+    }
+
+    public void setAllocatedCPU(Integer allocatedCPU) {
         this.allocatedCPU = allocatedCPU;
     }
 
-    public String getUuid() {
-        return uuid;
+    public String getHostUuid() {
+        return hostUuid;
     }
 
-    public String getAllocatedCPU() {
-        return allocatedCPU;
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }

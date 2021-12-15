@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetVmVnumaAction extends AbstractAction {
+public class SetVmNumaAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetVmVnumaAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVmVnumaResult value;
+        public org.zstack.sdk.SetVmNumaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,6 +27,9 @@ public class GetVmVnumaAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean enable = false;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -46,6 +49,12 @@ public class GetVmVnumaAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -54,8 +63,8 @@ public class GetVmVnumaAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetVmVnumaResult value = res.getResult(org.zstack.sdk.GetVmVnumaResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVmVnumaResult() : value; 
+        org.zstack.sdk.SetVmNumaResult value = res.getResult(org.zstack.sdk.SetVmNumaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmNumaResult() : value; 
 
         return ret;
     }
@@ -84,11 +93,11 @@ public class GetVmVnumaAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/vm-instances/{uuid}/vnuma";
+        info.httpMethod = "PUT";
+        info.path = "/vm-instances/{uuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "setVmNuma";
         return info;
     }
 
