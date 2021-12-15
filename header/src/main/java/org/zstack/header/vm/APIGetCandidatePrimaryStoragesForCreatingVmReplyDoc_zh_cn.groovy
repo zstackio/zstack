@@ -17,7 +17,7 @@ doc {
 	}
 	field {
 		name "dataVolumePrimaryStorages"
-		desc "数据云盘可选主存储，分别对应每一个数据云盘规格"
+		desc "数据云盘可选主存储，分别对应每一个数据云盘规格（2.1 以后）或自定义数据云盘大小（4.3.9 以后）"
 		type "Map"
 		since "2.1"
 	}
