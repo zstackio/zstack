@@ -1,23 +1,13 @@
 package org.zstack.core.thread;
 
-import org.zstack.header.PassMaskWords;
-import org.zstack.header.core.AbstractCompletion;
 import org.zstack.header.core.AsyncBackup;
 
-import java.util.Map;
-
-public abstract class ChainTask extends AbstractCompletion implements PassMaskWords {
+public abstract class ChainTask extends AbstractChainTask {
     public ChainTask(AsyncBackup one, AsyncBackup...others) {
         super(one, others);
     }
 
-    public Map<Object, Object> taskContext = null;
-
-    public abstract String getSyncSignature();
-
     public abstract void run(SyncTaskChain chain);
-
-    public abstract String getName();
 
     protected int getSyncLevel() {
         return 1;

@@ -21,6 +21,7 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * Created by Wenhao.Zhang on 21/08/10
  */
+@Deprecated
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class TaskSingleFlight<K, V> extends CompletionSingleFlight<K, V> {
     private static final CLogger logger = Utils.getLogger(TaskSingleFlight.class);
