@@ -211,4 +211,11 @@
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="VmInstanceNumaCascadeExtension" class="org.zstack.compute.vm.VmInstanceNumaCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>

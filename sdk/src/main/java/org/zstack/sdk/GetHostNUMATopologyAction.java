@@ -28,9 +28,6 @@ public class GetHostNUMATopologyAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, validValues = {"true","false"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String needVMID;
-
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -48,6 +45,12 @@ public class GetHostNUMATopologyAction extends AbstractAction {
 
     @Param(required = false)
     public String requestIp;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -90,7 +93,7 @@ public class GetHostNUMATopologyAction extends AbstractAction {
         info.httpMethod = "GET";
         info.path = "/hosts/{uuid}/numa";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "";
         return info;
     }

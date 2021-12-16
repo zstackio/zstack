@@ -4,6 +4,7 @@ import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.vm.PriorityConfigStruct;
@@ -3207,14 +3208,14 @@ public class KVMAgentCommands {
     }
 
     public static class GetHostNUMATopologyResponse extends AgentResponse {
-        public Map<String, Map<String, Object>> topology;
+        public Map<String, HostNUMANode> topology;
 
 
-        public void setTopology(Map<String, Map<String, Object>> topology) {
+        public void setTopology(Map<String, HostNUMANode> topology) {
             this.topology = topology;
         }
 
-        public Map<String, Map<String, Object>> getTopology() {
+        public Map<String, HostNUMANode> getTopology() {
             return topology;
         }
     }

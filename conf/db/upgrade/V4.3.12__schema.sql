@@ -37,38 +37,41 @@ ALTER TABLE `zstack`.`SlbVmInstanceVO` MODIFY COLUMN `slbGroupUuid` varchar(32) 
 ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD CONSTRAINT `fkSlbVmInstanceVOVmInstanceEO` FOREIGN KEY (`uuid`) REFERENCES `VmInstanceEO` (`uuid`) ON DELETE CASCADE;
 ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD CONSTRAINT `fkSlbVmInstanceVOSlbGroupVO` FOREIGN KEY (`slbGroupUuid`) REFERENCES `SlbGroupVO` (`uuid`) ON DELETE SET NULL;
 
-create table if not exists `zstack`.`HostAllocatedCPUVO` (
-    `uuid` varchar(32) not null,
-    `allocatedCPU` TEXT not null,
-    constraint HostAllocatedCPUVO_pk
-    primary key (`uuid`),
-    constraint HostAllocatedCPUVO_HostEO_uuid_fk
-    foreign key (`uuid`) references `zstack`.`HostEO` (`uuid`) on delete cascade
+create table if not exists `zstack`.`HostAllocatedCpuVO` (
+    `id` bigint not null auto_increment,
+    `hostUuid` varchar(32) not null,
+    `allocatedCPU` smallint not null,
+    constraint HostAllocatedCpuVO_pk
+    primary key (`id`),
+    constraint HostAllocatedCpuVO_UniqueIndex_HostUuid_CPUID
+    unique (hostUuid, allocatedCPU),
+    constraint HostAllocatedCpuVO_HostEO_uuid_fk
+    foreign key (`hostUuid`) references `zstack`.`HostEO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-create table if not exists `zstack`.`VmInstanceNUMAVO` (
+create table if not exists `zstack`.`VmInstanceNumaNodeVO` (
     `id` bigint not null auto_increment,
-    `uuid` varchar(32) not null,
+    `vmUuid` varchar(32) not null,
     `vNodeID` int not null,
     `vNodeCPUs` varchar(512) not null,
     `vNodeMemSize` bigint not null,
     `vNodeDistance` varchar(512) not null,
     `pNodeID` int not null,
-    constraint VmInstanceNUMAVO_pk
+    constraint VmInstanceNumaNodeVO_pk
     primary key (`id`),
-    constraint VmInstanceNUMAVO_VmInstanceEO_uuid_fk
-    foreign key (`uuid`) references `zstack`.`VmInstanceEO` (`uuid`) on delete cascade
+    constraint VmInstanceNumaNodeVO_VmInstanceEO_uuid_fk
+    foreign key (`vmUuid`) references `zstack`.`VmInstanceEO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-create table if not exists `zstack`.`HostNUMATopologyVO` (
+create table if not exists `zstack`.`HostNumaNodeVO` (
     `id` bigint not null auto_increment,
-    `uuid` varchar(32) not null,
+    `hostUuid` varchar(32) not null,
     `nodeID` int not null,
     `nodeCPUs` varchar(512) not null,
     `nodeMemSize` bigint not null,
     `nodeDistance` varchar(512) not null,
-    constraint HostNumaTopologyVO_pk
+    constraint HostNumaNodeVO_pk
     primary key (`id`),
-    constraint HostNumaTopologyVO_HostEO_uuid_fk
-    foreign key (`uuid`) references `zstack`.`HostEO` (`uuid`) on delete cascade
+    constraint HostNumaNodeVO_HostEO_uuid_fk
+    foreign key (`hostUuid`) references `zstack`.`HostEO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
