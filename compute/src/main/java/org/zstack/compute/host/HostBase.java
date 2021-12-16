@@ -17,10 +17,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.singleflight.TaskSingleFlight;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.*;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.allocator.AllocationScene;
@@ -52,10 +49,13 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
+import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -91,9 +91,6 @@ public abstract class HostBase extends AbstractHost {
     protected EventFacade evtf;
     @Autowired
     protected HostMaintenancePolicyManager hostMaintenancePolicyMgr;
-    @Autowired
-    @Qualifier("HostSingleFlight")
-    protected TaskSingleFlight<String, ConnectHostReply> singleFlight;
 
     public static class HostDisconnectedCanonicalEvent extends CanonicalEventEmitter {
         HostCanonicalEvents.HostDisconnectedData data;
@@ -1017,31 +1014,25 @@ public abstract class HostBase extends AbstractHost {
     }
 
     private void handle(final ConnectHostMsg msg) {
-        singleFlight.execute(
-                connectHostSignature(),
-                (comp) -> this.connect(msg, comp),
-                new ReturnValueCompletion<ConnectHostReply>(msg) {
-                    @Override
-                    public void success(ConnectHostReply returnValue) {
-                        ConnectHostReply coped = new ConnectHostReply();
-                        bus.reply(msg, coped);
+        thdf.singleFlightSubmit(new SingleFlightTask(msg)
+                .setSyncSignature(String.format("connect-host-%s-single-flight", msg.getHostUuid()))
+                .run((completion) -> connect(msg, completion))
+                .done(((result) -> {
+                    ConnectHostReply reply = new ConnectHostReply();
+
+                    if (!result.isSuccess()) {
+                        reply.setError(result.getErrorCode());
                     }
 
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        ConnectHostReply coped = new ConnectHostReply();
-                        coped.setError(errorCode);
-                        bus.reply(msg, coped);
-                    }
-                }
-        );
+                    bus.reply(msg, reply);
+                })));
     }
 
     private String connectHostSignature() {
         return String.format("connect-host-%s", self.getUuid());
     }
 
-    private void connect(final ConnectHostMsg msg, ReturnValueCompletion<ConnectHostReply> completion) {
+    private void connect(final ConnectHostMsg msg, Completion completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
@@ -1051,7 +1042,6 @@ public abstract class HostBase extends AbstractHost {
             @Override
             public void run(SyncTaskChain chain) {
                 checkState();
-                final ConnectHostReply reply = new ConnectHostReply();
 
                 final FlowChain flowChain = FlowChainBuilder.newShareFlowChain();
                 flowChain.setName(String.format("connect-host-%s", self.getUuid()));
@@ -1164,7 +1154,7 @@ public abstract class HostBase extends AbstractHost {
 
                                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class),
                                         ext -> ext.afterHostConnected(getSelfInventory()));
-                                completion.success(reply);
+                                completion.success();
                             }
                         });
 
