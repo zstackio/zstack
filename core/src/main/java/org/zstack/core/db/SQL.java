@@ -1,22 +1,31 @@
 package org.zstack.core.db;
 
+import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.PaginateCompletion;
+import org.zstack.header.core.WhileCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
+import javax.persistence.criteria.CriteriaBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.IntBinaryOperator;
 import java.util.function.Predicate;
 
 /**
@@ -24,31 +33,36 @@ import java.util.function.Predicate;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SQL {
+    private static final CLogger logger = Utils.getLogger(SQL.class);
     @Autowired
-    private DatabaseFacade dbf;
+    protected DatabaseFacade dbf;
 
-    private Do consumer;
+    protected Do consumer;
 
-    private String sql;
-    private Query query;
+    protected String sql;
+    protected Query query;
 
-    private Class entityClass;
-    private Map<String, Object> params = new HashMap<>();
-    private Integer first;
-    private Integer max;
-    private LockModeType lockMode;
-    private Boolean skipIncreaseOffset = false;
+    protected Class entityClass;
+    protected Map<String, Object> params = new HashMap<>();
+    protected Integer first;
+    protected Integer max;
+    protected LockModeType lockMode;
+    protected Boolean skipIncreaseOffset = false;
+
+    public SQL() {
+    }
+
 
     public interface Do<T> {
         void accept(List<T> items, PaginateCompletion completion);
     }
 
-    private SQL(String sql) {
+    protected SQL(String sql) {
         this.sql = sql;
         query = dbf.getEntityManager().createQuery(this.sql);
     }
 
-    private SQL(String sql, Class returnClass) {
+    protected SQL(String sql, Class returnClass) {
         this.sql = sql;
         entityClass = returnClass;
         query = dbf.getEntityManager().createQuery(this.sql, returnClass);
@@ -100,7 +114,7 @@ public class SQL {
         return lst.isEmpty() ? null : (K) lst.get(0);
     }
 
-    private void rebuildQueryInTransaction() {
+    private void  rebuildQueryInTransaction() {
         query = entityClass == null ? dbf.getEntityManager().createQuery(sql) : dbf.getEntityManager().createQuery(sql, entityClass);
         if (first != null) {
             query.setFirstResult(first);
@@ -115,6 +129,23 @@ public class SQL {
             query.setParameter(e.getKey(), e.getValue());
         }
     }
+
+    private void  rebuildQueryInTransaction(Integer cunnert) {
+        query = entityClass == null ? dbf.getEntityManager().createQuery(sql) : dbf.getEntityManager().createQuery(sql, entityClass);
+        if (cunnert != null) {
+            query.setFirstResult(cunnert);
+        }
+        if (lockMode != null) {
+            query.setLockMode(lockMode);
+        }
+        if (max != null) {
+            query.setMaxResults(max);
+        }
+        for (Map.Entry<String, Object> e : params.entrySet()) {
+            query.setParameter(e.getKey(), e.getValue());
+        }
+    }
+
 
     public <K> K find() {
         return transactionalFind();
@@ -165,6 +196,7 @@ public class SQL {
             first += max;
         }
     }
+
 
     public <T> void paginate(long total, Do<T> consumer, NoErrorCompletion completion) {
         this.consumer = consumer;
