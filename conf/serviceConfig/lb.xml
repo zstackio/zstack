@@ -44,6 +44,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.lb.APIGetCandidateL3NetworksForServerGroupMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.lb.APIUpdateLoadBalancerMsg</name>
     </message>
 
