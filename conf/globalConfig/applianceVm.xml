@@ -39,4 +39,12 @@
         <defaultValue>3600</defaultValue>
         <type>java.lang.Long</type>
     </config>
+
+    <config>
+        <category>applianceVm</category>
+        <name>applianceVmNuma</name>
+        <description>whether appliance vm uses numa structure</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>true</defaultValue>
+    </config>
 </globalConfig>
