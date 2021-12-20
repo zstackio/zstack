@@ -16,17 +16,21 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
+import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagValidator;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
@@ -38,6 +42,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 
@@ -293,17 +298,49 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
     }
 
     private void installValidatorToSystemTag() {
-        BackupStorageSystemTags.BACKUP_STORAGE_DATA_NETWORK.installValidator(new SystemTagValidator() {
+        class BackupStorageDataNetworkValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                if (msg instanceof APIAddBackupStorageMsg) {
+                    check((APIAddBackupStorageMsg) msg);
+                }
+            }
+
+            private void check(APIAddBackupStorageMsg msg) {
+                List<String> backupStorageDataNetworkTags = msg.getSystemTags()
+                        .stream()
+                        .filter(sysTag -> BackupStorageSystemTags.BACKUP_STORAGE_DATA_NETWORK.isMatch(sysTag))
+                        .collect(Collectors.toList());
+
+                if (backupStorageDataNetworkTags.isEmpty()) {
+                    return;
+                }
+
+                if (backupStorageDataNetworkTags.size() > 1) {
+                    throw new ApiMessageInterceptionException(argerr("only one backup storage data network system tag is allowed, but %s got", backupStorageDataNetworkTags.size()));
+                }
+
+                validateDataNetworkSystemTag(backupStorageDataNetworkTags.get(0));
+            }
+
             @Override
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                validateDataNetworkSystemTag(systemTag);
+            }
+
+            private void validateDataNetworkSystemTag(String systemTag) {
                 String cidr = BackupStorageSystemTags.BACKUP_STORAGE_DATA_NETWORK.getTokenByTag(systemTag,
                         BackupStorageSystemTags.BACKUP_STORAGE_DATA_NETWORK_TOKEN);
                 String fmtCidr = NetworkUtils.fmtCidr(cidr);
                 if (!fmtCidr.equals(cidr)) {
-                    throw new OperationFailureException(argerr("[%s] is not a standard cidr, do you mean [%s]?", cidr, fmtCidr));
+                    throw new ApiMessageInterceptionException(argerr("[%s] is not a standard cidr, do you mean [%s]?", cidr, fmtCidr));
                 }
             }
-        });
+        }
+
+        BackupStorageDataNetworkValidator backupStorageDataNetworkValidator = new BackupStorageDataNetworkValidator();
+        tagMgr.installCreateMessageValidator(BackupStorageVO.class.getSimpleName(), backupStorageDataNetworkValidator);
+        BackupStorageSystemTags.BACKUP_STORAGE_DATA_NETWORK.installValidator(backupStorageDataNetworkValidator);
     }
 
     private void installValidatorToGlobalConfig() {
