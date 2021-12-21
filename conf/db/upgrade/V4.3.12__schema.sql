@@ -36,3 +36,42 @@ ALTER TABLE `zstack`.`SlbVmInstanceVO` DROP KEY `fkSlbVmInstanceVOSlbGroupVO`;
 ALTER TABLE `zstack`.`SlbVmInstanceVO` MODIFY COLUMN `slbGroupUuid` varchar(32) DEFAULT NULL;
 ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD CONSTRAINT `fkSlbVmInstanceVOVmInstanceEO` FOREIGN KEY (`uuid`) REFERENCES `VmInstanceEO` (`uuid`) ON DELETE CASCADE;
 ALTER TABLE `zstack`.`SlbVmInstanceVO` ADD CONSTRAINT `fkSlbVmInstanceVOSlbGroupVO` FOREIGN KEY (`slbGroupUuid`) REFERENCES `SlbGroupVO` (`uuid`) ON DELETE SET NULL;
+
+create table if not exists `zstack`.`HostAllocatedCpuVO` (
+    `id` bigint not null auto_increment,
+    `hostUuid` varchar(32) not null,
+    `allocatedCPU` smallint not null,
+    constraint HostAllocatedCpuVO_pk
+    primary key (`id`),
+    constraint HostAllocatedCpuVO_UniqueIndex_HostUuid_CPUID
+    unique (hostUuid, allocatedCPU),
+    constraint HostAllocatedCpuVO_HostEO_uuid_fk
+    foreign key (`hostUuid`) references `zstack`.`HostEO` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+create table if not exists `zstack`.`VmInstanceNumaNodeVO` (
+    `id` bigint not null auto_increment,
+    `vmUuid` varchar(32) not null,
+    `vNodeID` int not null,
+    `vNodeCPUs` varchar(512) not null,
+    `vNodeMemSize` bigint not null,
+    `vNodeDistance` varchar(512) not null,
+    `pNodeID` int not null,
+    constraint VmInstanceNumaNodeVO_pk
+    primary key (`id`),
+    constraint VmInstanceNumaNodeVO_VmInstanceEO_uuid_fk
+    foreign key (`vmUuid`) references `zstack`.`VmInstanceEO` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+create table if not exists `zstack`.`HostNumaNodeVO` (
+    `id` bigint not null auto_increment,
+    `hostUuid` varchar(32) not null,
+    `nodeID` int not null,
+    `nodeCPUs` varchar(512) not null,
+    `nodeMemSize` bigint not null,
+    `nodeDistance` varchar(512) not null,
+    constraint HostNumaNodeVO_pk
+    primary key (`id`),
+    constraint HostNumaNodeVO_HostEO_uuid_fk
+    foreign key (`hostUuid`) references `zstack`.`HostEO` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

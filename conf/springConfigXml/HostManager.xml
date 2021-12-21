@@ -57,4 +57,22 @@
 			<zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="PostHostExtensionPointForNuma" class="org.zstack.compute.host.PostHostExtensionPointForNuma">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.compute.host.PostHostConnectExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="HostNumaNodeCascadeExtension" class="org.zstack.compute.host.HostNumaNodeCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="HostAllocatedCpuCascadeExtension" class="org.zstack.compute.host.HostAllocatedCpuCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>

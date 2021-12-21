@@ -17162,6 +17162,33 @@ abstract class ApiHelper {
     }
 
 
+    def getHostNUMATopology(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetHostNUMATopologyAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetHostNUMATopologyAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getHostNetworkFacts(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetHostNetworkFactsAction.class) Closure c) {
         def a = new org.zstack.sdk.GetHostNetworkFactsAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -17191,6 +17218,33 @@ abstract class ApiHelper {
 
     def getHostPhysicalMemoryFacts(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetHostPhysicalMemoryFactsAction.class) Closure c) {
         def a = new org.zstack.sdk.GetHostPhysicalMemoryFactsAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getHostResourceAllocation(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetHostResourceAllocationAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetHostResourceAllocationAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -19565,6 +19619,33 @@ abstract class ApiHelper {
     }
 
 
+    def getVmEmulatorPinning(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmEmulatorPinningAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetVmEmulatorPinningAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getVmGuestToolsInfo(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmGuestToolsInfoAction.class) Closure c) {
         def a = new org.zstack.sdk.GetVmGuestToolsInfoAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -19808,6 +19889,33 @@ abstract class ApiHelper {
     }
 
 
+    def getVmNuma(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmNumaAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetVmNumaAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getVmQga(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmQgaAction.class) Closure c) {
         def a = new org.zstack.sdk.GetVmQgaAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -19999,6 +20107,33 @@ abstract class ApiHelper {
 
     def getVmsCapabilities(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmsCapabilitiesAction.class) Closure c) {
         def a = new org.zstack.sdk.GetVmsCapabilitiesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getVmvNUMATopology(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmvNUMATopologyAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetVmvNUMATopologyAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -30429,6 +30564,33 @@ abstract class ApiHelper {
     }
 
 
+    def setVmEmulatorPinning(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVmEmulatorPinningAction.class) Closure c) {
+        def a = new org.zstack.sdk.SetVmEmulatorPinningAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def setVmHostname(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVmHostnameAction.class) Closure c) {
         def a = new org.zstack.sdk.SetVmHostnameAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -30512,6 +30674,33 @@ abstract class ApiHelper {
 
     def setVmMonitorNumber(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVmMonitorNumberAction.class) Closure c) {
         def a = new org.zstack.sdk.SetVmMonitorNumberAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def setVmNuma(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVmNumaAction.class) Closure c) {
+        def a = new org.zstack.sdk.SetVmNumaAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
