@@ -75,3 +75,5 @@ create table if not exists `zstack`.`HostNumaNodeVO` (
     constraint HostNumaNodeVO_HostEO_uuid_fk
     foreign key (`hostUuid`) references `zstack`.`HostEO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`PrimaryStorageHostRefVO` ADD UNIQUE INDEX(`primaryStorageUuid`, `hostUuid`);

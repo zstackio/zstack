@@ -1,5 +1,7 @@
 package org.zstack.storage.primary;
 
+import com.google.common.collect.Interner;
+import com.google.common.collect.Interners;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -15,10 +17,7 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.JobQueueFacade;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.MergeQueue;
-import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.*;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -69,6 +68,8 @@ import static org.zstack.core.Platform.operr;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
 public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     private final static CLogger logger = Utils.getLogger(PrimaryStorageBase.class);
+
+    private static final Interner<String> primaryStorageHostRefKeys = Interners.newWeakInterner();
 
     protected PrimaryStorageVO self;
 
@@ -448,18 +449,17 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         bus.reply(msg, reply);
     }
 
-    protected void handle(UpdatePrimaryStorageHostStatusMsg msg){
-        updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuids(), msg.getHostUuid(), msg.getStatus(), msg.getReason());
-
+    protected void handle(UpdatePrimaryStorageHostStatusMsg msg) {
+        updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuid(), msg.getHostUuid(), msg.getStatus(), msg.getReason());
     }
-    
-    protected void updatePrimaryStorageHostStatus(List<String> psUuids, String hostUuid, PrimaryStorageHostStatus newStatus, ErrorCode reason){
-        List<PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData> datas = new ArrayList<>();
 
-        new SQLBatch(){
-            @Override
-            protected void scripts() {
-                for(String psUuid : psUuids){
+    protected void updatePrimaryStorageHostStatus(String psUuid, String hostUuid, PrimaryStorageHostStatus newStatus, ErrorCode reason){
+        synchronized (primaryStorageHostRefKeys.intern(String.format("%s-%s", psUuid, hostUuid))) {
+            List<PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData> datas = new ArrayList<>();
+
+            new SQLBatch(){
+                @Override
+                protected void scripts() {
                     PrimaryStorageHostStatus oldStatus = Q.New(PrimaryStorageHostRefVO.class)
                             .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
                             .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psUuid)
@@ -478,10 +478,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         persist(ref);
                     } else {
                         sql(PrimaryStorageHostRefVO.class)
-                           .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psUuid)
-                           .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
-                           .set(PrimaryStorageHostRefVO_.status, newStatus)
-                           .update();
+                                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psUuid)
+                                .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
+                                .set(PrimaryStorageHostRefVO_.status, newStatus)
+                                .update();
                     }
 
                     logger.debug(String.format("change status between primary storage[uuid:%s]" +
@@ -497,10 +497,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     data.setReason(reason);
                     datas.add(data);
                 }
-            }
-        }.execute();
+            }.execute();
 
-        datas.forEach(it -> evtf.fire(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_HOST_STATUS_CHANGED_PATH, it));
+            datas.forEach(it -> evtf.fire(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_HOST_STATUS_CHANGED_PATH, it));
+        }
     }
 
     protected void handle(RecalculatePrimaryStorageCapacityMsg msg) {
