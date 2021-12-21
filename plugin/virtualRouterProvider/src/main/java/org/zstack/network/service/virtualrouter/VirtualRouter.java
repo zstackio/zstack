@@ -188,9 +188,11 @@ public class VirtualRouter extends ApplianceVmBase {
 
             @Override
             public void success(PingRsp ret) {
-                PingVirtualRouterVmReply reply = new PingVirtualRouterVmReply();
+                PingVirtualRouterVmReply reply = new PingVirtualRouterVmReply(self.getUuid());
+
                 refreshVO();
-                if (getSelf().getStatus() == ApplianceVmStatus.Connecting) {
+                if (getSelf().getStatus() == ApplianceVmStatus.Connecting
+                        || getSelf().getState() == VmInstanceState.Rebooting) {
                     reply.setDoReconnect(false);
                 } else {
                     reply.setDoReconnect(true);
@@ -341,7 +343,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                final PingVirtualRouterVmReply reply = new PingVirtualRouterVmReply();
+                final PingVirtualRouterVmReply reply = new PingVirtualRouterVmReply(self.getUuid());
                 if ((VmInstanceState.Running != self.getState() && VmInstanceState.Unknown != self.getState())
                         || ApplianceVmStatus.Connecting == getSelf().getStatus()) {
                     reply.setDoReconnect(false);
@@ -368,7 +370,8 @@ public class VirtualRouter extends ApplianceVmBase {
                         @Override
                         public void fail(ErrorCode errorCode) {
                             logger.warn(String.format("failed to ping the virtual router vm[uuid:%s], %s. We will try again", self.getUuid(), reply.getError()));
-                            PingVirtualRouterVmReply reply1 = new PingVirtualRouterVmReply();
+                            PingVirtualRouterVmReply reply1 = new PingVirtualRouterVmReply(self.getUuid());
+
                             reply1.setDoReconnect(true);
                             reply1.setConnected(false);
                             reply1.setError(errorCode);
@@ -389,7 +392,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     public void done(ErrorCodeList errorCodeList) {
                         if (replies.isEmpty()) {
                             /* this happen in UT case */
-                            PingVirtualRouterVmReply reply1 = new PingVirtualRouterVmReply();
+                            PingVirtualRouterVmReply reply1 = new PingVirtualRouterVmReply(self.getUuid());
                             reply1.setConnected(true);
                             replies.add(reply1);
                         }
