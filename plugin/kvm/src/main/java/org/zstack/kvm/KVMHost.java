@@ -3750,6 +3750,7 @@ public class KVMHost extends HostBase implements Host {
                                     return;
                                 }
                                 String hostOutput = hostRet.getStdout().replaceAll("\r|\n","");
+                                logger.debug(String.format("Uuid in the host take over flag file is %s ", hostOutput));
                                 if (hostOutput.contains("No such file or directory")) {
                                     trigger.next();
                                     return;
@@ -3757,6 +3758,7 @@ public class KVMHost extends HostBase implements Host {
 
                                 ssh.command(String.format("date +%%s -r %s", hostTakeOverFlagPath));
                                 SshResult timeRet = ssh.run();
+                                logger.debug(String.format("Timestamp of the flag is %s ", timeRet.getStdout()));
                                 if (timeRet.isSshFailure() || timeRet.getReturnCode() != 0) {
                                     trigger.fail(operr("Unable to get the timestamp of the flag,  because %s", timeRet.getExitErrorMessage()));
                                     return;
