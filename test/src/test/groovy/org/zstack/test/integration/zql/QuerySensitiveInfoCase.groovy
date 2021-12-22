@@ -35,6 +35,7 @@ class QuerySensitiveInfoCase extends SubCase {
             setConsolePassword()
             testQuerySensitiveTag()
             testQuerySensitiveField()
+            testQueryVOState()
         }
     }
 
@@ -78,5 +79,16 @@ class QuerySensitiveInfoCase extends SubCase {
             }
         }
         assert flag
+    }
+
+    void testQueryVOState() {
+        ZQLQueryResult result = zQLQuery {
+            delegate.sessionId = adminSession()
+            delegate.zql = "query vmInstance.state where uuid = '${vmInstanceInventory.uuid}'"
+        } as ZQLQueryResult
+        List list = result.results[0].inventories
+        list.each {
+            logger.debug(String.format("state:: %s", it))
+        }
     }
 }

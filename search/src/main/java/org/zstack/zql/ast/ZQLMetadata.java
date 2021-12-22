@@ -95,7 +95,7 @@ public class ZQLMetadata {
             }
 
             if (Enum.class.isAssignableFrom(mapping.voFieldType)) {
-                return value.toString();
+                return Enum.valueOf(mapping.voFieldType, value.toString());
             }
 
             throw new CloudRuntimeException(String.format("For the field[%s], fail to convert a vo to a inventory", fieldName));
