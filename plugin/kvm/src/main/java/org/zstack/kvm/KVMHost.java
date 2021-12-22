@@ -3585,9 +3585,11 @@ public class KVMHost extends HostBase implements Host {
 
     @Override
     public void connectHook(final ConnectHostInfo info, final Completion complete) {
-        String skipPackages = KVMGlobalProperty.SKIP_PACKAGES + " " + StringUtils.trimToEmpty(info.getSkipPackages());
-        logger.info("connecting to KVM host and skipping these packages: " + skipPackages);
-        info.setSkipPackages(skipPackages);
+        if (!info.isNewAdded()) {
+            String skipPackages = KVMGlobalProperty.SKIP_PACKAGES + " " + StringUtils.trimToEmpty(info.getSkipPackages());
+            logger.info("connecting to KVM host and skipping these packages: " + skipPackages);
+            info.setSkipPackages(skipPackages);
+        }
 
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             if (info.isNewAdded()) {
