@@ -554,7 +554,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                changeApplianceVmStatus(ApplianceVmStatus.Connecting);
                 if (originStatus.equals(ApplianceVmStatus.Connected)) {
                     fireDisconnectedCanonicalEvent(operr("appliance vm %s reboot",
                             getSelf().getUuid()));
