@@ -11,6 +11,7 @@ public class CreateTemporaryVolumeFromSnapshotMsg extends NeedReplyMessage imple
     private VolumeSnapshotInventory snapshot;
     private String primaryStorageUuid;
     private String imageUuid;
+    private String temporaryInstallPath;
 
     public String getImageUuid() {
         return imageUuid;
@@ -35,5 +36,13 @@ public class CreateTemporaryVolumeFromSnapshotMsg extends NeedReplyMessage imple
 
     public void setSnapshot(VolumeSnapshotInventory snapshot) {
         this.snapshot = snapshot;
+    }
+
+    public String getTemporaryInstallPath() {
+        return temporaryInstallPath;
+    }
+
+    public void setTemporaryInstallPath(String temporaryInstallPath) {
+        this.temporaryInstallPath = temporaryInstallPath;
     }
 }

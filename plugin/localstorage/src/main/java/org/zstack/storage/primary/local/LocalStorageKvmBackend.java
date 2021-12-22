@@ -862,14 +862,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         return PathUtil.join(volDir, "snapshots", String.format("%s.qcow2", snapshotUuid));
     }
 
-    public String makeSnapshotWorkspacePath(String imageUuid) {
-        return PathUtil.join(
-                self.getUrl(),
-                PrimaryStoragePathMaker.makeImageFromSnapshotWorkspacePath(imageUuid),
-                String.format("%s.qcow2", imageUuid)
-        );
-    }
-
     public static String buildQcow2Options() {
         StringBuilder options = new StringBuilder();
 
@@ -2157,7 +2149,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void handle(CreateTemporaryVolumeFromSnapshotMsg msg, final String hostUuid, final ReturnValueCompletion<CreateTemporaryVolumeFromSnapshotReply> completion) {
-        final String workSpaceInstallPath = makeSnapshotWorkspacePath(msg.getImageUuid());
+        String workSpaceInstallPath = msg.getTemporaryInstallPath();
 
         VolumeSnapshotInventory sp = msg.getSnapshot();
         MergeSnapshotCmd cmd = new MergeSnapshotCmd();
