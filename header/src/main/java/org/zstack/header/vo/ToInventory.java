@@ -103,7 +103,9 @@ public interface ToInventory {
             LogSafeGson.maskInventory(invoke);
             return invoke;
         } catch (Exception e) {
+            e.printStackTrace();
             logger.warn(String.format("unable to convert class[%s] to inventory[%s]", vo.getClass(), m.inventoryClass));
+            logger.warn("the reason for this exception: %s", e.getCause());
             throw new CloudRuntimeException(e);
         }
     }
