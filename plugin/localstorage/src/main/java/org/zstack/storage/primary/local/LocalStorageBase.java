@@ -972,6 +972,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             public void fail(ErrorCode errorCode) {
                 CreateTemporaryVolumeFromSnapshotReply reply = new CreateTemporaryVolumeFromSnapshotReply();
                 reply.setError(errorCode);
+                reply.setHostUuid(hostUuid);
                 bus.reply(msg, reply);
             }
         });

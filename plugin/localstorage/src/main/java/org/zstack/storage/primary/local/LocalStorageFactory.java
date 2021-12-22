@@ -45,12 +45,14 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
+import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -106,11 +108,13 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             String temporaryInstallPath;
             String hostUuid;
         }
-
+        String temporaryInstallPath = makeSnapshotWorkspacePath(paramIn.getImage().getUuid(), paramIn.getPrimaryStorageUuid());
         final Context ctx = new Context();
 
         template.setCreateTemporaryTemplate(new Flow() {
             String __name__ = "create-temporary-template";
+            String hostUuid;
+            boolean susses;
 
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
@@ -123,6 +127,9 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                     @Override
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
+                            CreateTemporaryVolumeFromSnapshotReply r = reply.castReply();
+                            hostUuid = r.getHostUuid();
+                            susses = false;
                             trigger.fail(reply.getError());
                         } else {
                             ParamOut out = (ParamOut) data.get(ParamOut.class);
@@ -131,6 +138,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                             out.setSize(r.getSize());
                             ctx.temporaryInstallPath = r.getInstallPath();
                             ctx.hostUuid = r.getHostUuid();
+                            susses = true;
                             trigger.next();
                         }
                     }
@@ -139,15 +147,16 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
-                if (ctx.temporaryInstallPath != null) {
-                    LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
-                    msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                LocalStorageDirectlyDeleteBitsMsg msg = new LocalStorageDirectlyDeleteBitsMsg();
+                msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
+                msg.setHostUuid(hostUuid);
+                msg.setPath(temporaryInstallPath);
+                if (susses) {
                     msg.setHostUuid(ctx.hostUuid);
                     msg.setPath(ctx.temporaryInstallPath);
-                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
-                    bus.send(msg);
                 }
-
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
+                bus.send(msg);
                 trigger.rollback();
             }
         });
@@ -225,6 +234,15 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         });
 
         return template;
+    }
+
+    public String makeSnapshotWorkspacePath(String imageUuid,String psUuid) {
+        String psUrl = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.url).eq(PrimaryStorageVO_.uuid,psUuid).findValue();
+        return PathUtil.join(
+                psUrl,
+                PrimaryStoragePathMaker.makeImageFromSnapshotWorkspacePath(imageUuid),
+                String.format("%s.qcow2", imageUuid)
+        );
     }
 
     @Override

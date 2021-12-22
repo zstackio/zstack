@@ -2164,7 +2164,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.setVolumeUuid(sp.getVolumeUuid());
         cmd.setSnapshotInstallPath(sp.getPrimaryStorageInstallPath());
         cmd.setWorkspaceInstallPath(workSpaceInstallPath);
-
         httpCall(MERGE_SNAPSHOT_PATH, hostUuid, cmd, MergeSnapshotRsp.class, new ReturnValueCompletion<MergeSnapshotRsp>(completion) {
             @Override
             public void success(MergeSnapshotRsp rsp) {
