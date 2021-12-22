@@ -42,7 +42,7 @@ public class CentralizedDnsExtension extends AbstractNetworkServiceExtension imp
 
 
     private void doForwardDns(final Iterator<Map.Entry<NetworkServiceCentralizedDnsBackend, List<ForwardDnsStruct>>> it, final VmInstanceSpec spec, final Completion complete) {
-        if (!it.hasNext()) {
+        if (!it.hasNext() || new CentralizedDnsValidator().validate(spec.getVmInventory().getUuid())) {
             complete.success();
             return;
         }
@@ -119,7 +119,7 @@ public class CentralizedDnsExtension extends AbstractNetworkServiceExtension imp
     }
 
     private void releaseForwardDns(final Iterator<Map.Entry<NetworkServiceCentralizedDnsBackend, List<ForwardDnsStruct>>> it, final VmInstanceSpec spec, final NoErrorCompletion complete) {
-        if (!it.hasNext()) {
+        if (!it.hasNext() || new CentralizedDnsValidator().validate(spec.getVmInventory().getUuid())) {
             complete.done();
             return;
         }
