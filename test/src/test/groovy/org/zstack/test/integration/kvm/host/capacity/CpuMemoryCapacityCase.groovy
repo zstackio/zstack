@@ -3,14 +3,12 @@ package org.zstack.test.integration.kvm.host.capacity
 import org.springframework.http.HttpEntity
 import org.zstack.compute.host.HostGlobalConfig
 import org.zstack.core.db.Q
-import org.zstack.header.host.HostStateEvent
 import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
-import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.GetCpuMemoryCapacityAction
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ReconnectHostAction
@@ -27,8 +25,6 @@ import org.zstack.utils.gson.JSONObjectUtil
  */
 class CpuMemoryCapacityCase extends SubCase {
     EnvSpec env
-    HostInventory hostInventory
-    ClusterInventory clusterInventory
 
     @Override
     void clean() {
@@ -53,28 +49,7 @@ class CpuMemoryCapacityCase extends SubCase {
             HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(false)
             HostGlobalConfig.PING_HOST_INTERVAL.updateValue(5)
             setHostDisconnecedAndGetCorrectlyCpuMemoryCapacity()
-            setHostMaintainAndGetCorrectlyCpuMemoryCapacity()
         }
-    }
-
-    void setHostMaintainAndGetCorrectlyCpuMemoryCapacity() {
-        hostInventory = env.inventoryByName("kvm3") as HostInventory
-        clusterInventory = env.inventoryByName("cluster") as ClusterInventory
-        changeHostState {
-            uuid = hostInventory.uuid
-            stateEvent = HostStateEvent.maintain.toString()
-        }
-        GetCpuMemoryCapacityAction action = new GetCpuMemoryCapacityAction()
-        action.sessionId = adminSession()
-        List list = new ArrayList()
-        list.add(clusterInventory.uuid)
-        action.clusterUuids = list
-        GetCpuMemoryCapacityAction.Result res = action.call()
-        assert res.error == null
-        long totalMemory = res.value.totalMemory
-        long managedCpuNum = res.value.managedCpuNum
-        assert totalMemory == SizeUtils.sizeStringToBytes("10G")
-        assert managedCpuNum == 8
     }
 
     void setHostDisconnecedAndGetCorrectlyCpuMemoryCapacity() {

@@ -676,11 +676,13 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                             " from HostCapacityVO hc, HostVO host" +
                             " where hc.uuid = host.uuid" +
                             " and host.clusterUuid in (:clusterUuids)" +
+                            " and host.state = :hstate" +
                             " and host.status = :hstatus" +
                             addHypervisorSqlString +
                             " group by host.clusterUuid";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("clusterUuids", msg.getClusterUuids());
+                    q.setParameter("hstate", HostState.Enabled);
                     q.setParameter("hstatus", HostStatus.Connected);
                     if (checkHypervisor) {
                         q.setParameter("hhtype", msg.getHypervisorType());
