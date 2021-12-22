@@ -1,0 +1,8 @@
+<error>
+    <prefix>VOLUME</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>Unable to deactivate a volume in use</description>
+    </code>
+</error>
