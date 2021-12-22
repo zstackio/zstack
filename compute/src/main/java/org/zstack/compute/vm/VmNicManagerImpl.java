@@ -212,6 +212,15 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
     }
 
     @Override
+    public void setNicDriverType(VmNicInventory nic, boolean isImageSupportVirtIo, boolean isParaVirtualization) {
+        if (isImageSupportVirtIo || isParaVirtualization || VmSystemTags.VIRTIO.hasTag(nic.getVmInstanceUuid())) {
+            nic.setDriverType(getDefaultPVNicDriver());
+        } else {
+            nic.setDriverType(getDefaultNicDriver());
+        }
+    }
+
+    @Override
     public boolean start() {
         VmSystemTags.VIRTIO.installLifeCycleListener(new SystemTagLifeCycleListener() {
             @Override
