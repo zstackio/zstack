@@ -5,7 +5,7 @@ import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.db.SQL;
 import org.zstack.header.core.Completion;
-import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmDeletionStruct;
 import org.zstack.header.vm.VmInstanceNumaNodeVO;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.CollectionUtils;
@@ -47,11 +47,11 @@ public class VmInstanceNumaCascadeExtension extends AbstractAsyncCascadeExtensio
     private List<String> vmFromAction(CascadeAction action) {
         List<String> vmUuid = new ArrayList<>();
         if (VmInstanceVO.class.getSimpleName().equals(action.getParentIssuer())) {
-            List<VmInstanceInventory> vms = action.getParentIssuerContext();
-            vmUuid = CollectionUtils.transformToList(vms, new Function<String, VmInstanceInventory>() {
+            List<VmDeletionStruct> vms = action.getParentIssuerContext();
+            vmUuid = CollectionUtils.transformToList(vms, new Function<String, VmDeletionStruct>() {
                 @Override
-                public String call(VmInstanceInventory arg) {
-                    return arg.getUuid();
+                public String call(VmDeletionStruct arg) {
+                    return arg.getInventory().getUuid();
                 }
             });
         }
