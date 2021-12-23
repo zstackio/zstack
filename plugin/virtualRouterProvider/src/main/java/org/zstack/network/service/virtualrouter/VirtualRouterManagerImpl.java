@@ -2578,13 +2578,16 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         String vrUuid = null;
         if (ipv4RangeVOS.isEmpty()) {
-            vrUuid = Q.New(VmNicVO.class).eq(VmNicVO_.l3NetworkUuid, privateL3.getUuid())
+            vrUuid = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
+                    .eq(VmNicVO_.l3NetworkUuid, privateL3.getUuid())
                     .in(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST)
                     .eq(VmNicVO_.ip, ipv6RangeVOS.get(0).getGateway()).findValue();
         } else {
-            List<String> gateways = Q.New(NormalIpRangeVO.class).in(NormalIpRangeVO_.uuid,
-                    ipv4RangeVOS.stream().map(IpRangeVO::getUuid).collect(Collectors.toList())).listValues();
-            vrUuid = Q.New(VmNicVO.class).eq(VmNicVO_.l3NetworkUuid, privateL3.getUuid())
+            List<String> ipv4RangeUuids = ipv4RangeVOS.stream().map(IpRangeVO::getUuid).collect(Collectors.toList());
+            List<String> gateways = Q.New(NormalIpRangeVO.class).select(NormalIpRangeVO_.gateway)
+                    .in(NormalIpRangeVO_.uuid, ipv4RangeUuids).listValues();
+            vrUuid = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
+                    .eq(VmNicVO_.l3NetworkUuid, privateL3.getUuid())
                     .in(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST)
                     .eq(VmNicVO_.ip, gateways.get(0)).findValue();
         }
@@ -2594,8 +2597,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             return new ArrayList<>();
         }
 
-        List<String> l3Uuid = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).eq(VmNicVO_.vmInstanceUuid, vrUuid)
+        List<String> l3Uuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).eq(VmNicVO_.vmInstanceUuid, vrUuid)
                 .in(VmNicVO_.metaData, VirtualRouterNicMetaData.ALL_PUBLIC_NIC_MASK_STRING_LIST).listValues();
-        return l3Uuid;
+        return l3Uuids;
     }
 }

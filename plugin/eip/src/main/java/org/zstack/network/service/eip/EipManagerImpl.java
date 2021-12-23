@@ -193,13 +193,12 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             }
         }
 
-        List<EipInventory> eips = new ArrayList<>();
-        List<EipVO> eipVOS = Q.New(EipVO.class)
-                .in(EipVO_.uuid, ret).list();
-        for(EipVO eipVO : eipVOS){
-            eips.add(EipInventory.valueOf(eipVO));
+        if (ret.isEmpty()) {
+            return new ArrayList<>();
         }
-        return eips;
+
+        List<EipVO> eipVOS = Q.New(EipVO.class).in(EipVO_.uuid, ret).list();
+        return EipInventory.valueOf(eipVOS);
     }
 
     private List<String> getL3NetworkForVmNicAttachableEip(VmNicInventory vmNicInv) {
