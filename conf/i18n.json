@@ -4778,7 +4778,7 @@
   {
     "raw": "unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
     "en_US": "unable to detach a L3 network. The vm[uuid: {0}] is not Running or Stopped; the current state is {1}",
-    "zh_CN": "不能挂载L3网络，云主机[uuid: {0}]不是运行状态或者暂停状态，状态为{1}",
+    "zh_CN": "不能卸载L3网络，云主机[uuid: {0}]不是运行状态或者暂停状态，状态为{1}",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "state"
@@ -22737,7 +22737,7 @@
   {
     "raw": "vpc l3 network[uuid:%s] can not detach from vpc vrouter[uuid:%s] since vm nics[%s] still used in l3",
     "en_US": "vpc l3 network[uuid:{0}] can not detach from vpc vrouter[uuid:{1}] since vm nics[{2}] still used in l3",
-    "zh_CN": "",
+    "zh_CN": "vpc三层网络[uuid:{0}]无法从vpc路由器[uuid:{1}]卸载, l3网络还在使用以下云主机网卡[{2}]",
     "arguments": [
       "l3NetworkVO.getUuid()",
       "vmInstanceVO.getUuid()",
