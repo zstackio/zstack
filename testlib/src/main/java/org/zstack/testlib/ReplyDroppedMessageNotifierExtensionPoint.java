@@ -32,15 +32,35 @@ public class ReplyDroppedMessageNotifierExtensionPoint implements MarshalReplyMe
 
     }
 
+    private void handleMessageWithoutReply(NeedReplyMessage msg) {
+        Test.getCurrentEnvSpec().messagesWithoutReplies.forEach((msgClz, cs) -> {
+            if (msg.getClass() == msgClz) {
+                logger.debug("class matched, execute closure " + cs.size());
+                synchronized (cs) {
+                    for (Closure c : cs) {
+                        c.call(msg);
+                    }
+                }
+            }
+        });
+    }
+
     @Override
     public void marshalReplyMessageBeforeDropping(Message replyOrEvent, NeedReplyMessage msg) {
         if (Test.getCurrentEnvSpec().notifiersOfReceivedMessages == null) {
             return;
         }
 
+        if (replyOrEvent == null) {
+            handleMessageWithoutReply(msg);
+        } else {
+            handleReplyMessage(replyOrEvent, msg);
+        }
+    }
+
+    private void handleReplyMessage(Message replyOrEvent, NeedReplyMessage msg) {
         logger.debug(String.format("reply class is %s", replyOrEvent.getClass().toString()));
         Test.getCurrentEnvSpec().notifiersOfReceivedMessages.forEach((msgClz, cs) -> {
-            logger.debug(String.format("hook class is %s", msgClz));
             if (replyOrEvent.getClass() == msgClz) {
                 logger.debug("class matched, execute closure " + cs.size());
                 synchronized (cs) {

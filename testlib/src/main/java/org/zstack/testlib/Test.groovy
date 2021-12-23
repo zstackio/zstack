@@ -431,6 +431,21 @@ abstract class Test extends ApiHelper implements Retry {
         environment()
     }
 
+    protected Closure notifyWithReceiveNoReplyMessage(Class msgClz, Closure c) {
+        assert currentEnvSpec != null
+
+        List<Closure> cs = currentEnvSpec.messagesWithoutReplies.computeIfAbsent(msgClz, { Collections.synchronizedList([]) })
+        synchronized (cs) {
+            cs.add(c)
+        }
+
+        return {
+            synchronized (cs) {
+                cs.remove(c)
+            }
+        }
+    }
+
     protected Closure notifyWhenReceivedMessage(Class msgClz, Closure c) {
         assert currentEnvSpec != null
 

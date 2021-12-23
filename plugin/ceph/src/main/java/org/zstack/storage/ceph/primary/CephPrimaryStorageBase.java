@@ -36,10 +36,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostConstant;
-import org.zstack.header.host.HostStatus;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.*;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.log.NoLogging;
@@ -4487,17 +4484,34 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(final CheckHostStorageConnectionMsg msg) {
-        CheckHostStorageConnectionReply reply = new CheckHostStorageConnectionReply();
-        checkHostStorageConnection(msg.getHostUuids(), new Completion(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success() {
-                bus.reply(msg, reply);
+            public String getSyncSignature() {
+                return String.format("check-storage-%s-host-connection", msg.getPrimaryStorageUuid());
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void run(SyncTaskChain chain) {
+                CheckHostStorageConnectionReply reply = new CheckHostStorageConnectionReply();
+                checkHostStorageConnection(msg.getHostUuids(), new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
             }
         });
     }
@@ -4583,10 +4597,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 CheckHostStorageConnectionRsp rsp = kr.toResponse(CheckHostStorageConnectionRsp.class);
                 if (!rsp.isSuccess()) {
                     wc.addError(operr("operation error, because:%s", rsp.getError()));
-                } else {
-                    updatePrimaryStorageHostStatus(Collections.singletonList(self.getUuid()), msg.getHostUuid(), PrimaryStorageHostStatus.Connected, null);
+                    wc.done();
+                    return;
                 }
 
+                UpdatePrimaryStorageHostStatusMsg umsg = new UpdatePrimaryStorageHostStatusMsg();
+                umsg.setHostUuid(msg.getHostUuid());
+                umsg.setPrimaryStorageUuid(self.getUuid());
+                umsg.setStatus(PrimaryStorageHostStatus.Connected);
+                bus.makeTargetServiceIdByResourceUuid(umsg, PrimaryStorageConstant.SERVICE_ID, umsg.getPrimaryStorageUuid());
+                bus.send(umsg);
                 wc.done();
             }
         })).run(new WhileDoneCompletion(completion) {
@@ -5091,11 +5111,61 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         q.select(ClusterVO_.hypervisorType);
         q.add(ClusterVO_.uuid, Op.EQ, clusterUuid);
         String hvType = q.findValue();
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         if (KVMConstant.KVM_HYPERVISOR_TYPE.equals(hvType)) {
-            attachToKvmCluster(clusterUuid, completion);
-        } else {
-            completion.success();
+            chain.then(attachToKvmCluster(clusterUuid));
         }
+
+        chain.then(new NoRollbackFlow() {
+            String __name__ = String.format("create-primary-storage-%s-host-in-cluster-%s-refs", self.getUuid(), clusterUuid);
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                long total = Q.New(HostVO.class)
+                        .eq(HostVO_.clusterUuid, clusterUuid)
+                        .eq(HostVO_.status, HostStatus.Connected)
+                        .notIn(HostVO_.state, list(HostState.PreMaintenance, HostState.Maintenance))
+                        .count();
+
+                if (total == 0) {
+                    logger.debug(String.format("no hosts in cluster[uuid: %s] need to create PrimaryStorageHostRef", clusterUuid));
+                    trigger.next();
+                    return;
+                }
+
+                SQL.New("select host.uuid from HostVO host where host.clusterUuid = :clusterUuid and" +
+                        " host.status = :status and host.state not in (:hostStates)")
+                        .param("clusterUuid", clusterUuid)
+                        .param("status", HostStatus.Connected)
+                        .param("hostStates", list(HostState.PreMaintenance, HostState.Maintenance))
+                        .limit(500)
+                        .paginate(total, (List<String> hostUuids, PaginateCompletion paginateCompletion) -> {
+                            for (String hostUuid : hostUuids) {
+                                updatePrimaryStorageHostStatus(self.getUuid(), hostUuid, PrimaryStorageHostStatus.Connected, null);
+                            }
+
+                            paginateCompletion.done();
+                        }, new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                logger.debug(String.format("succeed add PrimaryStorageHostRef record to primary storage[uuid: %s]" +
+                                        " and hosts in cluster[uuid: %s]", self.getUuid(), clusterUuid));
+                                trigger.next();
+                            }
+                        });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     private void createSecretOnKvmHosts(List<String> hostUuids, final Completion completion) {
@@ -5140,17 +5210,35 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void attachToKvmCluster(String clusterUuid, Completion completion) {
-        SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
-        q.select(HostVO_.uuid);
-        q.add(HostVO_.clusterUuid, Op.EQ, clusterUuid);
-        q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
-        List<String> hostUuids = q.listValue();
-        if (hostUuids.isEmpty()) {
-            completion.success();
-        } else {
-            createSecretOnKvmHosts(hostUuids, completion);
-        }
+    private Flow attachToKvmCluster(String clusterUuid) {
+        return new NoRollbackFlow() {
+            String __name__ = String.format("create-secret-on-kvm-hosts-in-cluster-%s", clusterUuid);
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
+                q.select(HostVO_.uuid);
+                q.add(HostVO_.clusterUuid, Op.EQ, clusterUuid);
+                q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
+                List<String> hostUuids = q.listValue();
+                if (hostUuids.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                createSecretOnKvmHosts(hostUuids, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        };
     }
 
     @Override

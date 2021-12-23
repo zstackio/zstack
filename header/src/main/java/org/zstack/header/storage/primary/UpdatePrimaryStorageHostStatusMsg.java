@@ -9,10 +9,19 @@ import java.util.List;
  * Created by Administrator on 2017-05-12.
  */
 public class UpdatePrimaryStorageHostStatusMsg extends NeedReplyMessage implements PrimaryStorageMessage{
-    private List<String> primaryStorageUuids;
+    private String primaryStorageUuid;
     private String hostUuid;
     private PrimaryStorageHostStatus status;
     private ErrorCode reason;
+
+    @Override
+    public String getPrimaryStorageUuid() {
+        return primaryStorageUuid;
+    }
+
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
+    }
 
     public void setStatus(PrimaryStorageHostStatus status) {
         this.status = status;
@@ -22,25 +31,12 @@ public class UpdatePrimaryStorageHostStatusMsg extends NeedReplyMessage implemen
         this.hostUuid = hostUuid;
     }
 
-    public void setPrimaryStorageUuids(List<String> primaryStorageUuids) {
-        this.primaryStorageUuids = primaryStorageUuids;
-    }
-
     public String getHostUuid() {
         return hostUuid;
     }
 
-    public List<String> getPrimaryStorageUuids() {
-        return primaryStorageUuids;
-    }
-
     public PrimaryStorageHostStatus getStatus() {
         return status;
-    }
-
-    @Override
-    public String getPrimaryStorageUuid() {
-        return primaryStorageUuids.get(0);
     }
 
     public ErrorCode getReason() {
