@@ -23,6 +23,8 @@ import org.zstack.network.service.virtualrouter.VirtualRouterManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterStruct;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipBackend;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +34,8 @@ import java.util.stream.Collectors;
  * Created by xing5 on 2016/10/31.
  */
 public class VyosEipBackend extends VirtualRouterEipBackend implements GetEipAttachableL3UuidsForVmNicExtensionPoint {
+    private static final CLogger logger = Utils.getLogger(VyosEipBackend.class);
+
     @Autowired
     protected NetworkServiceManager nsMgr;
     @Autowired
@@ -57,8 +61,12 @@ public class VyosEipBackend extends VirtualRouterEipBackend implements GetEipAtt
             return new ArrayList<>();
         }
 
-        NetworkServiceProviderType providerType = nsMgr.getTypeOfNetworkServiceProviderForService(
-                l3Network.getUuid(), EipConstant.EIP_TYPE);
+        NetworkServiceProviderType providerType = null;
+        try {
+            providerType = nsMgr.getTypeOfNetworkServiceProviderForService(l3Network.getUuid(), EipConstant.EIP_TYPE);
+        } catch (Throwable e){
+            logger.warn(e.getMessage(), e);
+        }
         if (providerType != VyosConstants.PROVIDER_TYPE) {
             /* only vrouter l3 handled here */
             return new ArrayList<>();

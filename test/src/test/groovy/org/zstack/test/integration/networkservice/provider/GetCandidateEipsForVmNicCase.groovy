@@ -16,6 +16,8 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
+import static java.util.Arrays.asList
+
 class GetCandidateEipsForVmNicCase extends SubCase{
 
     def DOC = """
@@ -64,23 +66,6 @@ class GetCandidateEipsForVmNicCase extends SubCase{
                     url = "http://zstack.org/download/vr.qcow2"
                 }
             }
-            sftpBackupStorage {
-                name = "sftp"
-                url = "/sftp"
-                username = "root"
-                password = "password"
-                hostname = "127.0.0.2"
-
-                image {
-                    name = "image"
-                    url = "http://zstack.org/download/test.qcow2"
-                }
-
-                image {
-                    name = "vr"
-                    url = "http://zstack.org/download/vr.qcow2"
-                }
-            }
 
             zone {
                 name = "zone"
@@ -91,10 +76,12 @@ class GetCandidateEipsForVmNicCase extends SubCase{
                     hypervisorType = "KVM"
 
                     kvm {
-                        name = "kvm"
+                        name = "kvm-1"
                         managementIp = "localhost"
                         username = "root"
                         password = "password"
+                        totalMem = SizeUnit.GIGABYTE.toByte(1000)
+                        totalCpu = 1000
                     }
 
                     attachPrimaryStorage("local")
@@ -107,10 +94,12 @@ class GetCandidateEipsForVmNicCase extends SubCase{
                     hypervisorType = "KVM"
 
                     kvm {
-                        name = "kvm"
+                        name = "kvm-2"
                         managementIp = "127.0.0.2"
                         username = "root"
                         password = "password"
+                        totalMem = SizeUnit.GIGABYTE.toByte(1000)
+                        totalCpu = 1000
                     }
 
                     attachPrimaryStorage("local")
@@ -127,7 +116,7 @@ class GetCandidateEipsForVmNicCase extends SubCase{
                     physicalInterface = "eth0"
 
                     l3Network {
-                        name = "flat-eth0"
+                        name = "vr-eth0"
 
                         service {
                             provider = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE
@@ -163,6 +152,22 @@ class GetCandidateEipsForVmNicCase extends SubCase{
                             gateway = "11.168.100.1"
                         }
                     }
+
+                    l3Network {
+                        name = "pubL3-eth0-ipv6"
+                        category = "Public"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
+                        }
+
+                        ipv6 {
+                            name = "ipv6-Statefull-DHCP"
+                            networkCidr = "2001:2001::/64"
+                            addressMode = "Stateful-DHCP"
+                        }
+                    }
                 }
 
                 l2VlanNetwork {
@@ -187,21 +192,52 @@ class GetCandidateEipsForVmNicCase extends SubCase{
                     }
 
                     l3Network {
+                        name = "flatL3-vlan-100-1-ipv6"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
+                        }
+
+                        ipv6 {
+                            name = "ipv6-Statefull-DHCP"
+                            networkCidr = "2001:2004::/64"
+                            addressMode = "Stateful-DHCP"
+                        }
+                    }
+
+                    l3Network {
                         name = "flatL3-vlan-100-2"
 
                         service {
                             provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
                             types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
                         }
-//                        service {
-//                            provider = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE
-//                            types = [LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING]
-//                        }
+                        service {
+                            provider = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE
+                            types = [LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING]
+                        }
                         ip {
                             startIp = "192.168.101.10"
                             endIp = "192.168.101.100"
                             netmask = "255.255.255.0"
                             gateway = "192.168.101.1"
+                        }
+                    }
+
+                    l3Network {
+                        name = "flatL3-vlan-100-2-ipv6"
+                        category = "Public"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
+                        }
+
+                        ipv6 {
+                            name = "ipv6-Statefull-DHCP"
+                            networkCidr = "2001:2003::/64"
+                            addressMode = "Stateful-DHCP"
                         }
                     }
                 }
@@ -243,6 +279,22 @@ class GetCandidateEipsForVmNicCase extends SubCase{
                             gateway = "11.168.200.1"
                         }
                     }
+
+                    l3Network {
+                        name = "flatL3-vlan-101-ipv6"
+                        category = "Public"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
+                        }
+
+                        ipv6 {
+                            name = "ipv6-Statefull-DHCP"
+                            networkCidr = "2001:2002::/64"
+                            addressMode = "Stateful-DHCP"
+                        }
+                    }
                 }
 
                 attachBackupStorage("sftp")
@@ -262,6 +314,21 @@ class GetCandidateEipsForVmNicCase extends SubCase{
                     useVip("flatL3-vlan-100-2")
                 }
 
+                eip {
+                    name = "eip4-pubL3-eth0-ipv6"
+                    useVip("pubL3-eth0-ipv6")
+                }
+
+                eip {
+                    name = "eip5"
+                    useVip("flatL3-vlan-101-ipv6")
+                }
+
+                eip {
+                    name = "eip6"
+                    useVip("flatL3-vlan-100-2-ipv6")
+                }
+
                 virtualRouterOffering {
                     name = "vro"
                     memory = SizeUnit.MEGABYTE.toByte(512)
@@ -275,7 +342,7 @@ class GetCandidateEipsForVmNicCase extends SubCase{
             vm {
                 name = "vmInVirtualRouter"
                 useImage("image")
-                useL3Networks("flat-eth0")
+                useL3Networks("vr-eth0")
                 useInstanceOffering("instanceOffering")
             }
 
@@ -287,9 +354,9 @@ class GetCandidateEipsForVmNicCase extends SubCase{
             }
 
             vm {
-                name = "vmInFlat-1"
+                name = "vmInFlat-ipv6"
                 useImage("image")
-                useL3Networks("flatL3-vlan-100-1")
+                useL3Networks("flatL3-vlan-100-1-ipv6")
                 useInstanceOffering("instanceOffering")
             }
 
@@ -313,30 +380,30 @@ class GetCandidateEipsForVmNicCase extends SubCase{
     void test() {
         env.create {
             testGetCandidateEipsForFlatVmNic()
-            testGetCandidateEipsForPubVmNic()
             testGetCandidateEipsForVirtualRouterVmNic()
+            testGetCandidateEipsForPubVmNic()
             testGetCandidateEipsForIpv6VmNic()
             testGetCandidateEipsForDualStackVmNic()
         }
     }
 
     void testGetCandidateEipsForFlatVmNic() {
-        //cluster: l2: pubL3-eth0,flat-eth0  l2-vlan-100:flatL3,flatL3-vlan-100-2
+        //cluster: l2: pubL3-eth0,vr-eth0  l2-vlan-100:flatL3-vlan-100-1,flatL3-vlan-100-2
         //cluster-1: l2-vlan-101:pub-vlan-101,flat-vlan-101
         def eip1_pubL3_eth0 = env.inventoryByName("eip1-pubL3-eth0") as EipInventory   //pubL3-eth0
-        def eip2 = env.inventoryByName("eip2") as EipInventory   //pub-vlan-101
-        def eip3 = env.inventoryByName("eip3") as EipInventory   //flatL3-vlan-100-2
-        def pubL3 = env.inventoryByName("pubL3-eth0") as L3NetworkInventory
+        def eip2 = env.inventoryByName("eip2") as EipInventory                         //pub-vlan-101
+        def eip3 = env.inventoryByName("eip3") as EipInventory                         //flatL3-vlan-100-2
 
-        //1.1: ipv4 flat VmNic attachable eips
-        def vm1 = env.inventoryByName("vmInFlat")
-        VmNicInventory nic1 = vm1.vmNics.get(0)
-        List<VmNicInventory> eipCandidateNics = getVmNicAttachableEips {
-            vmNicUuid = nic1.uuid
-        }
-        assert eipCandidateNics.size() == 2
+        def pubL3 = env.inventoryByName("pubL3-eth0") as L3NetworkInventory            //pubL3-eth0
 
-        //1.2: ipv4 exclude l3Network's eips which has attached to the vmInstance
+        // 1: ipv4 flat VmNic attachable eips
+        def vm1 = env.inventoryByName("vmInFlat")                //flatL3-vlan-100-1
+        def eips = getVmNicAttachableEips {
+            vmNicUuid = vm1.vmNics.get(0).uuid
+        } as List<EipInventory>
+        assert eips.size() ==  2                                 //pub-eip: eip1   flat-eip: eip3
+
+        // 2: ipv4 exclude l3Network's eips which has attached to the vmInstance
         VmNicInventory nic = createVmNic {
             l3NetworkUuid = pubL3.uuid
         }
@@ -346,215 +413,85 @@ class GetCandidateEipsForVmNicCase extends SubCase{
             requestIp = nic.ip
         }
         def eips1 = getVmNicAttachableEips {
-            vmNicUuid = nic1.uuid
+            vmNicUuid = vm1.vmNics.get(0).uuid
         } as List<EipInventory>
-        assert eips1.size() == 1                    //pub-eip: null   flat-eip: eip3
+        assert eips1.size() == 1                                  //pub-eip: null   flat-eip: eip3
         assert eips1.get(0).uuid == eip3.uuid
         deleteVmNic {
             uuid = nic.uuid
         }
 
-        //1.3: ipv4 exclude l3Network's eips which has attached to the vmNic
+        // 3: ipv4 exclude l3Network's eips which has attached to the vmNic
         attachEip {
             eipUuid = eip3.uuid
             vmNicUuid = vm1.vmNics.get(0).uuid
         }
         def eips2 = getVmNicAttachableEips {
-            vmNicUuid = nic1.uuid
+            vmNicUuid = vm1.vmNics.get(0).uuid
         } as List<EipInventory>
-        assert eips2.size() == 1                   //pub-eip: eip1-pubL3-eth0   flat-eip: null
+        assert eips2.size() == 1                                  //pub-eip: eip1   flat-eip: null
+        assert eips1.get(0).uuid == eip3.uuid
         detachEip {
             uuid = eip3.uuid
         }
     }
 
-    void testGetCandidateEipsForFlatVmNic1(){
-        //l2:pubL3-eth0,flat-eth0  l2-vlan-100:flatL3,  flat6,flat46  l2-vlan-101:pub-vlan-101,flat-vlan-101, pub6,pub46,vpc-l3,vpc6,vpc46
-        def eip1_pubL3_eth0 = env.inventoryByName("eip1-pubL3-eth0") as EipInventory     //pubL3-eth0      11.168.100.10
-        def eip2 = env.inventoryByName("eip6") as EipInventory     //pubL3-eth0         192.168.100.10
-        def eip3 = env.inventoryByName("eip3") as EipInventory     //pub-vlan-101    11.168.200.10
-        def eip4 = env.inventoryByName("eip4") as EipInventory     //flatL3     192.168.100.10
-        def eip5 = env.inventoryByName("eip5") as EipInventory     //pubL3-2      192.168.200.10
-        def eip7 = env.inventoryByName("eip7") as EipInventory     //pub6         2001:2003::/64
-//        def eip8 = env.inventoryByName("eip8") as EipInventory        //pub46        192.168.223.10
-//        def eip8_8 = env.inventoryByName("eip8_8") as EipInventory    //pub46        2001:2004::/64
-        def eip12 = env.inventoryByName("eip12") as EipInventory    //flat6       2001:2007::/64
-//        def eip13 = env.inventoryByName("eip13") as EipInventory  //flat46     192.168.221.1
-        def eip14 = env.inventoryByName("eip14") as EipInventory    //flatL3-vlan-100-2   192.168.222.1
-
-        def flatL3 = env.inventoryByName("flatL3-vlan-100-1") as L3NetworkInventory
-        def flat6 = env.inventoryByName("flat6") as L3NetworkInventory
-        def flat46 = env.inventoryByName("flat46") as L3NetworkInventory
-
-        VipInventory vip1 = createVip {
-            name = "vip-for-eip46"
-            l3NetworkUuid = pub46.uuid
-            requiredIp = "11.168.223.12"
-        }
-
-        EipInventory eip8 = createEip{
-            name = "eip8"
-            useVip = vip1.uuid
-        }
-
-        def pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
-
-        // pub VmNic attachable eips
-        def vm1 = env.inventoryByName("vmInPub")
-        GetVmNicAttachableEipsAction action1 = new GetVmNicAttachableEipsAction()
-        action1.vmNicUuid = vm1.vmNics.get(0).uuid
-        GetVmNicAttachableEipsAction.Result res1 = action1.call()
-        assert res1.error == null
-        assert res1.value.inventories.size() == 0
-    }
-
     void testGetCandidateEipsForVirtualRouterVmNic(){
-        //cluster: l2:pubL3,l3  l2-flat:flatL3,flatL3-2
-        //cluster-1: l2-vlan-100:pubL3-1,l3-2
-        def eip1 = env.inventoryByName("eip1") as EipInventory   //pubL3
-        def eip2 = env.inventoryByName("eip2") as EipInventory   //pubL3-1
-        def eip3 = env.inventoryByName("eip3") as EipInventory   //flatL3-2
+        //cluster: l2: pubL3-eth0,vr-eth0    l2-vlan-100: flatL3-vlan-100-1,flatL3-vlan-100-2
+        //cluster-1: l2-vlan-101:pub-vlan-101,flat-vlan-101
+        def eip1_pubL3_eth0 = env.inventoryByName("eip1-pubL3-eth0") as EipInventory   //pubL3-eth0
+        def eip2 = env.inventoryByName("eip2") as EipInventory                         //pub-vlan-101
+        def eip3 = env.inventoryByName("eip3") as EipInventory                         //flatL3-vlan-100-2
 
-        def pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory  //pubL3
+        def pubL3 = env.inventoryByName("pubL3-eth0") as L3NetworkInventory            //pubL3-eth0
+
 
         //1.1: ipv4 flat VmNic attachable eips
-        def vm1 = env.inventoryByName("vmInVirtualRouter")
-        GetVmNicAttachableEipsAction action1 = new GetVmNicAttachableEipsAction()
-        action1.vmNicUuid = vm1.vmNics.get(0).uuid
-        GetVmNicAttachableEipsAction.Result res1 = action1.call()
-        assert res1.error == null
-        assert res1.value.inventories.size() == 1   //pub-eip: eip1
+        def vm1 = env.inventoryByName("vmInVirtualRouter")     //vr-eth0
+        VmNicInventory nic1 = vm1.vmNics.get(0)
+        def eips = getVmNicAttachableEips {
+            vmNicUuid = nic1.uuid
+        } as List<EipInventory>
+        assert eips.size() == 1                                //pub-eip: eip1-pubL3-eth0
 
         //1.2: ipv4 exclude l3Network's eips which has attached to the vmInstance
         VmNicInventory nic = createVmNic {
-            l3NetworkUuid = pub-vlan-101.uuid
+            l3NetworkUuid = pubL3.uuid
         }
         attachVmNicToVm {
             vmInstanceUuid = vm1.uuid
             vmNicUuid = nic.uuid
         }
         def eips1 = getVmNicAttachableEips {
-            vmNicUuid = vm1.vmNics.get(0).uuid
+            vmNicUuid = nic1.uuid
         } as List<EipInventory>
-        assert eips1.size() == 0                    //pub-eip: null
+        assert eips1.size() == 0                               //pub-eip: null
         deleteVmNic {
             uuid = nic.uuid
         }
 
         //1.3: ipv4 exclude l3Network's eips which has attached to the vmNic
         attachEip {
-            eipUuid = eip1.uuid
+            eipUuid = eip1_pubL3_eth0.uuid
             vmNicUuid = vm1.vmNics.get(0).uuid
         }
         def eips2 = getVmNicAttachableEips {
-            vmNicUuid = vm1.vmNics.get(0).uuid
-        } as List<EipInventory>
-        assert eips2.size() == 0                   //pub-eip: eip1   flat-eip: null
-        detachEip(eip1.uuid)
-    }
-
-    void testGetCandidateEipsForIpv6VmNic(){
-        //cluster: l2:pubL3,l3  l2-flat:flatL3,flatL3-2
-        //cluster-1: l2-vlan-100:pubL3-1,l3-2
-        def eip1 = env.inventoryByName("eip1") as EipInventory   //pubL3
-        def eip2 = env.inventoryByName("eip2") as EipInventory   //pubL3-1
-        def eip3 = env.inventoryByName("eip3") as EipInventory   //flatL3-2
-
-        def eip4 = env.inventoryByName("eip4") as EipInventory   //pubL3Ipv6
-        def eip5 = env.inventoryByName("eip5") as EipInventory   //pubL3-1Ipv6
-        def eip6 = env.inventoryByName("eip6") as EipInventory   //flatL3-2Ipv6
-
-        //2.1: ipv6 flat VmNic attachable eips
-        def vm2 = env.inventoryByName("vmInFlat_ipv6")
-        GetVmNicAttachableEipsAction action2 = new GetVmNicAttachableEipsAction()
-        action2.vmNicUuid = vm2.vmNics.get(0).uuid
-        GetVmNicAttachableEipsAction.Result res2 = action2.call()
-        assert res2.error == null
-        assert res2.value.inventories.size() == 3      //pub-eip: eip4  flat-eip: eip6
-
-        //2.2: ipv6 exclude l3Network's eips which has attached to the vmInstance
-        VmNicInventory nic1 = createVmNic {
-            l3NetworkUuid = pubL3Ipv6.uuid
-        }
-        attachVmNicToVm {
-            vmInstanceUuid = vm2.uuid
             vmNicUuid = nic1.uuid
-        }
-        def eips3 = getVmNicAttachableEips {
-            vmNicUuid = vm2.vmNics.get(0).uuid
         } as List<EipInventory>
-        assert eips1.size() == 1                      //pub-eip: null  flat-eip: eip6
-        deleteVmNic {
-            uuid = nic1.uuid
+        assert eips2.size() == 0                              //pub-eip: null
+        detachEip {
+            uuid = eip1_pubL3_eth0.uuid
         }
-
-        //2.3: ipv6 exclude l3Network's eips which has attached to the vmNic
-        attachEip {
-            eipUuid = eip6.uuid
-            vmNicUuid = vm2.vmNics.get(0).uuid
-        }
-        def eips4 = getVmNicAttachableEips {
-            vmNicUuid = vm2.vmNics.get(0).uuid
-        } as List<EipInventory>
-        assert eips4.size() == 1                  //pub-eip: eip7    flat-eip: eip12
-        detachEip(eip6.uuid)
-    }
-
-    void testGetCandidateEipsForDualStackVmNic(){
-        //cluster: l2:pubL3,l3  l2-flat:flatL3,flatL3-2
-        //cluster-1: l2-vlan-100:pubL3-1,l3-2
-        def eip1 = env.inventoryByName("eip1") as EipInventory   //pubL3
-        def eip2 = env.inventoryByName("eip2") as EipInventory   //pubL3-1
-        def eip3 = env.inventoryByName("eip3") as EipInventory   //flatL3-2
-
-        def eip4 = env.inventoryByName("eip4") as EipInventory   //pubL3Ipv6
-        def eip5 = env.inventoryByName("eip5") as EipInventory   //pubL3-1Ipv6
-        def eip6 = env.inventoryByName("eip6") as EipInventory   //flatL3-2Ipv6
-
-        //3.1: ipv46 vpcVmNic attachable eips
-        def vm3= env.inventoryByName("vmInFlat_ipv46")
-        GetVmNicAttachableEipsAction action3 = new GetVmNicAttachableEipsAction()
-        action3.vmNicUuid = vm3.vmNics.get(0).uuid
-        GetVmNicAttachableEipsAction.Result res3 = action.call()
-        assert res3.error == null
-        assert res3.value.inventories.size() == 4     //pub-eip: eip1/eip3  flat-eip: eip4/eip6
-
-        //3.2: ipv46 vpcVmNic attachable eips when has attached to a pub network
-        VmNicInventory nic2 = createVmNic {
-            l3NetworkUuid = pubL3.uuid
-        }
-        attachVmNicToVm {
-            vmInstanceUuid = vm2.uuid
-            vmNicUuid = nic2.uuid
-        }
-        def eips5 = getVmNicAttachableEips {
-            vmNicUuid = vm3.vmNics.get(0).uuid
-        } as List<EipInventory>
-        assert eips1.size() == 3                     //pub-eip: eip3  flat-eip: eip4/eip6
-        deleteVmNic {
-            uuid = nic2.uuid
-        }
-
-        //3.3: ipv6 exclude l3Network's eips which has attached to the vmNic
-        attachEip {
-            eipUuid = eip8.uuid
-            vmNicUuid = vm1.vmNics.get(0).uuid
-        }
-        def eips6 = getVmNicAttachableEips {
-            vmNicUuid = vm1.uuid
-        } as List<EipInventory>
-        assert eips4.size() == 7                  //pub-eip: eip3/eip5/eip7/eip8_8  flat-eip: eip13/eip14
-        detachEip(eip8.uuid)
     }
 
     void testGetCandidateEipsForPubVmNic() {
-        //cluster: l2:pubL3-eth0,flat-eth0  l2-vlan-100:flatL3,flatL3-vlan-100-2
+        //cluster: l2:pubL3-eth0,vr-eth0  l2-vlan-100:flatL3,flatL3-vlan-100-2
         //cluster-1: l2-vlan-101:pub-vlan-101,flat-vlan-101
         def eip1_pubL3_eth0 = env.inventoryByName("eip1-pubL3-eth0") as EipInventory   //pubL3-eth0
-        def eip2 = env.inventoryByName("eip2") as EipInventory   //pub-vlan-101
-        def eip3 = env.inventoryByName("eip3") as EipInventory   //flatL3-vlan-100-2
+        def eip2 = env.inventoryByName("eip2") as EipInventory                         //pub-vlan-101
+        def eip3 = env.inventoryByName("eip3") as EipInventory                         //flatL3-vlan-100-2
 
-        def pubL3 = env.inventoryByName("pubL3-eth0") as L3NetworkInventory
+        def pubL3 = env.inventoryByName("pubL3-eth0") as L3NetworkInventory             //pubL3-eth0
 
         // pub VmNic attachable eips
         def vm1 = env.inventoryByName("vmPubL3-eth0")
@@ -565,113 +502,152 @@ class GetCandidateEipsForVmNicCase extends SubCase{
         assert eips.size() == 0
     }
 
-    void testGetCandidateEipsForVirtualRouterVmNic(){
-        //cluster: l2:pubL3-eth0,flat-eth0  l2-vlan-100:flatL3,flatL3-vlan-100-2
-        //cluster-1: l2-vlan-101:pub-vlan-101,flat-vlan-101
+    void testGetCandidateEipsForIpv6VmNic(){
+        //cluster: l2:pubL3-eth0-ipv6  l2-vlan-100:flatL3-vlan-100-1-ipv6,flatL3-vlan-100-2-ipv6
+        //cluster-1: l2-vlan-101:flatL3-vlan-101-ipv6
         def eip1_pubL3_eth0 = env.inventoryByName("eip1-pubL3-eth0") as EipInventory   //pubL3-eth0
-        def eip2 = env.inventoryByName("eip2") as EipInventory   //pub-vlan-101
-        def eip3 = env.inventoryByName("eip3") as EipInventory   //flatL3-vlan-100-2
-        def pubL3 = env.inventoryByName("pubL3-eth0") as L3NetworkInventory   //flatL3-vlan-100-2
+        def eip2 = env.inventoryByName("eip2") as EipInventory                         //pub-vlan-101
+        def eip3 = env.inventoryByName("eip3") as EipInventory                         //flatL3-vlan-100-2
+        def eip4_pubL3_eth0_ipv6 = env.inventoryByName("eip4-pubL3-eth0-ipv6") as EipInventory   //pubL3-eth0-ipv6
+        def eip5 = env.inventoryByName("eip5") as EipInventory                                   //pub-vlan-101-ipv6
+        def eip6 = env.inventoryByName("eip6") as EipInventory                                   //flatL3-vlan-100-2-ipv6
 
+        def pubL3_ipv6 = env.inventoryByName("pubL3-eth0-ipv6") as L3NetworkInventory            //pubL3-eth0-ipv6
 
-        //1.1: ipv4 flat VmNic attachable eips
-        def vm1 = env.inventoryByName("vmInVirtualRouter")
-        VmNicInventory nic1 = vm1.vmNics.get(0)
+        // 1: ipv6 flat VmNic attachable eips
+        def vm2 = env.inventoryByName("vmInFlat-ipv6")        //flatL3-vlan-100-1-ipv6
         def eips = getVmNicAttachableEips {
-            vmNicUuid = nic1.uuid
+            vmNicUuid = vm2.vmNics.get(0).uuid
         } as List<EipInventory>
-        assert eips.size() == 1   //pub-eip: eip1-pubL3-eth0
+        assert eips.size() == 2                               //pub-eip: eip4  flat-eip: eip6
 
-        //1.2: ipv4 exclude l3Network's eips which has attached to the vmInstance
-        VmNicInventory nic = createVmNic {
-            l3NetworkUuid = pubL3.uuid
+        // 2: ipv6 exclude l3Network's eips which has attached to the vmInstance
+        VmNicInventory nic1 = createVmNic {
+            l3NetworkUuid = pubL3_ipv6.uuid
         }
         attachVmNicToVm {
-            vmInstanceUuid = vm1.uuid
-            vmNicUuid = nic.uuid
+            vmInstanceUuid = vm2.uuid
+            vmNicUuid = nic1.uuid
         }
         def eips1 = getVmNicAttachableEips {
-            vmNicUuid = nic1.uuid
+            vmNicUuid = vm2.vmNics.get(0).uuid
         } as List<EipInventory>
-        assert eips1.size() == 0                    //pub-eip: null
+        assert eips1.size() == 1                              //pub-eip: null  flat-eip: eip6
         deleteVmNic {
-            uuid = nic.uuid
+            uuid = nic1.uuid
         }
 
-        //1.3: ipv4 exclude l3Network's eips which has attached to the vmNic
+        // 3: ipv6 exclude l3Network's eips which has attached to the vmNic
         attachEip {
-            eipUuid = eip1_pubL3_eth0.uuid
-            vmNicUuid = vm1.vmNics.get(0).uuid
+            eipUuid = eip6.uuid
+            vmNicUuid = vm2.vmNics.get(0).uuid
         }
         def eips2 = getVmNicAttachableEips {
-            vmNicUuid = nic1.uuid
+            vmNicUuid = vm2.vmNics.get(0).uuid
         } as List<EipInventory>
-        assert eips2.size() == 0                   //pub-eip: eip1_pubL3_eth0   flat-eip: null
+        assert eips2.size() == 1                              //pub-eip: eip7    flat-eip: eip12
+        detachEip {
+            uuid = eip6.uuid
+        }
     }
 
-    void testGetCandidateEipsForVpcVmNic1() {
-        //l2:flat-eth0  pubL3-eth0    l2-vlan-100:flatL3,flat6,flat46  l2-vlan-101:flat-vlan-101,pub-vlan-101,pub6,pub46,vpc-l3,vpc6,vpc46
-        def eip1_pubL3_eth0 = env.inventoryByName("eip1-pubL3-eth0") as EipInventory     //pubL3-eth0      11.168.100.10
-        def eip1_1 = env.inventoryByName("eip1-pubL3-eth0") as EipInventory   //pubL3-eth0      11.168.100.10
-        def eip3 = env.inventoryByName("eip3") as EipInventory    //pub-vlan-101    11.168.200.10
-        def eip4 = env.inventoryByName("eip4") as EipInventory    //flatL3     192.168.100.10
-        def eip5 = env.inventoryByName("eip5") as EipInventory    //flat-vlan-101       192.168.200.10
-        def eip6 = env.inventoryByName("eip6") as EipInventory    //flat-eth0         192.168.100.10
-        def eip7 = env.inventoryByName("eip7") as EipInventory    //pub6         2001:2003::/64
-        def eip8 = env.inventoryByName("eip8") as EipInventory    //pub46        2001:2004::/64   192.168.223.10
-        //vpc network's vip cannot be eip
-        //def eip9 = env.inventoryByName("eip9") as EipInventory    //vpc-l3     192.168.11.10
-        //def eip10 = env.inventoryByName("eip10") as EipInventory   //vpc6        2001:2005::/64
-        //def eip11 = env.inventoryByName("eip11") as EipInventory   //vpc46       2001:2006::/64  192.168.12.10
-        def eip12 = env.inventoryByName("eip12") as EipInventory   //flat6       2001:2007::/64
-        def eip13 = env.inventoryByName("eip13") as EipInventory   //flat46      2001:2008::/64  192.168.221.1
-        def eip14 = env.inventoryByName("eip14") as EipInventory   //flatL3-vlan-100-2   192.168.222.1
+    void testGetCandidateEipsForDualStackVmNic(){
+        //cluster: l2: pubL3-eth0,vr-eth0  l2-vlan-100:flatL3-vlan-100-1,flatL3-vlan-100-2
+        //cluster-1: l2-vlan-101:pub-vlan-101,flat-vlan-101
+        //cluster: l2:pubL3-eth0-ipv6  l2-vlan-100:flatL3-vlan-100-1-ipv6,flatL3-vlan-100-2-ipv6
+        //cluster-1: l2-vlan-101:flatL3-vlan-101-ipv6
+        def image = env.inventoryByName("image")
+        def instanceOffering = env.inventoryByName("instanceOffering")
 
-        def vpcL3 = env.inventoryByName("vpc-l3") as L3NetworkInventory
-        def vpc6 = env.inventoryByName("vpc6") as L3NetworkInventory
-        def vpc46 = env.inventoryByName("vpc46") as L3NetworkInventory
+        def eip1_pubL3_eth0 = env.inventoryByName("eip1-pubL3-eth0") as EipInventory   //pubL3-eth0
+        def eip2 = env.inventoryByName("eip2") as EipInventory                         //pub-vlan-101
+        def eip3 = env.inventoryByName("eip3") as EipInventory                         //flatL3-vlan-100-2
+        def eip4_pubL3_eth0_ipv6 = env.inventoryByName("eip4-pubL3-eth0-ipv6") as EipInventory   //pubL3-eth0-ipv6
+        def eip5 = env.inventoryByName("eip5") as EipInventory                                   //pub-vlan-101-ipv6
+        def eip6 = env.inventoryByName("eip6") as EipInventory                                   //flatL3-vlan-100-2-ipv6
 
-        //1.1: ipv4 vpc VmNic attachable eips
-        def vm1 = env.inventoryByName("vmInVpc")
-        GetVmNicAttachableEipsAction action1 = new GetVmNicAttachableEipsAction()
-        action1.vmNicUuid = vm1.uuid
-        GetVmNicAttachableEipsAction.Result res1 = action1.call()
-        assert res1.error == null
-        assert res1.value.inventories.size() == 8     //all pub-eip: eip1-pubL3-eth0/eip1_1/eip2/eip3/eip5/eip6/eip7/eip8
-//        assert eips.get(0).uuid != eip4.uuid || eips.get(0).uuid != eip9.uuid
-//        assert eips.get(1).uuid == vm.getVmNics().get(0).uuid || eips.get(1).uuid == vm_flat.getVmNics().get(0).uuid
-//        assert eips.get(0).uuid != eips.get(1).uuid
+        def flatL3_vlan_100_2 = env.inventoryByName("flatL3-vlan-100-2") as L3NetworkInventory            //flatL3-vlan-100-2
+        def flatL3_vlan_100_1 = env.inventoryByName("flatL3-vlan-100-1") as L3NetworkInventory            //flatL3-vlan-100-1
 
-        //1.2: ipv4 exclude l3Network's eips which has attached to the vmInstance
-        VmNicInventory nic = createVmNic {
-            l3NetworkUuid = pubL3.uuid
+        // add ipr6 to ipv4 network -> dual stack network
+        IpRangeInventory ipr6 = addIpv6Range {
+            name = "ipr-6"
+            l3NetworkUuid = flatL3_vlan_100_2.uuid
+            startIp = "2003:2001::0010"
+            endIp = "2003:2001::0020"
+            gateway = "2003:2001::2"
+            prefixLen = 64
+            addressMode = "Stateful-DHCP"
         }
-        attachVmNicToVm {
-            vmInstanceUuid = vm1.uuid
-            vmNicUuid = nic.uuid
+
+        VipInventory vip = createVip {
+            name = "vip"
+            l3NetworkUuid = flatL3_vlan_100_2.uuid
         }
+
+        createEip {
+            name = "eip-46"
+            vipUuid = vip.getUuid()
+        }
+
+        def vm3 = env.inventoryByName("vmInFlat")                    //flatL3-vlan-100-1
+        def eips = getVmNicAttachableEips {
+            vmNicUuid = vm3.vmNics.get(0).uuid
+        } as List<EipInventory>
+        assert eips.size() == 3                                       //pub-eip: eip1,eip-46   flat-eip: eip3
+
+        deleteVip {
+            uuid = vip.uuid
+        }
+
+        // add ipr6 to ipv4 network which has vmNic -> dual stack vmNic
+        IpRangeInventory ipr6_1 = addIpv6Range {
+            name = "ipr-6-1"
+            l3NetworkUuid = flatL3_vlan_100_1.uuid
+            startIp = "2003:2002::0010"
+            endIp = "2003:2002::0020"
+            gateway = "2003:2002::2"
+            prefixLen = 64
+            addressMode = "Stateful-DHCP"
+        }
+
+        VmInstanceInventory vm4 = createVmInstance {
+            name = "vmInFlat_dual_stack"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = asList(flatL3_vlan_100_1.uuid)
+        } as VmInstanceInventory
+
         def eips1 = getVmNicAttachableEips {
-            vmNicUuid = vm1.uuid
+            vmNicUuid = vm4.vmNics.get(0).uuid
         } as List<EipInventory>
-        assert eips1.size() == 7                    //pub-eip: eip1-pubL3-eth0/eip1_1/eip2/eip5/eip6/eip7/eip8
-        deleteVmNic {
-            uuid = nic.uuid
-        }
+        assert eips1.size() == 4                                      //eip1/eip3/eip4/eip6
 
-        //1.3: ipv4 exclude l3Network's eips which has attached to the vmNic
-        attachEip {
-            eipUuid = eip1_pubL3_eth0.uuid
-            vmNicUuid = vm1.vmNics.get(0).uuid
-        }
+        VmInstanceInventory vm5 = createVmInstance {
+            name = "vmInFlat_dual_stack"
+            instanceOfferingUuid = instanceOffering.uuid
+            l3NetworkUuids = [flatL3_vlan_100_1.uuid]
+            imageUuid = image.uuid
+        } as VmInstanceInventory
+
         def eips2 = getVmNicAttachableEips {
-            vmNicUuid = vm1.uuid
+            vmNicUuid = vm5.vmNics.get(0).uuid
+            ipVersion = 4
         } as List<EipInventory>
-        assert eips2.size() == 7                 //pub-eip: eip1_1/eip2/eip3/eip5/eip6/eip7/eip8
-        detachEip(eip1_pubL3_eth0.uuid)
+        assert eips2.size() == 2                                      //eip1/eip3
 
+        VmInstanceInventory vm6 = createVmInstance {
+            name = "vmInFlat_dual_stack"
+            instanceOfferingUuid = instanceOffering.uuid
+            l3NetworkUuids = [flatL3_vlan_100_1.uuid]
+            imageUuid = image.uuid
+        } as VmInstanceInventory
+        def eips3 = getVmNicAttachableEips {
+            vmNicUuid = vm6.vmNics.get(0).uuid
+            ipVersion = 6
+        } as List<EipInventory>
+        assert eips3.size() == 2                                      //eip4/eip6
     }
-
-
 
     @Override
     void clean() {

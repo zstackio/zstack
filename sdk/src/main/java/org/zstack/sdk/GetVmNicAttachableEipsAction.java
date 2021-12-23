@@ -28,6 +28,9 @@ public class GetVmNicAttachableEipsAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vmNicUuid;
 
+    @Param(required = false, validValues = {"4","6"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer ipVersion;
+
     @Param(required = false)
     public java.lang.Integer limit = 1000;
 

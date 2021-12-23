@@ -789,8 +789,12 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             return new ArrayList<>();
         }
 
-        NetworkServiceProviderType providerType = nsMgr.getTypeOfNetworkServiceProviderForService(
-                l3Network.getUuid(), EipConstant.EIP_TYPE);
+        NetworkServiceProviderType providerType = null;
+        try {
+            providerType = nsMgr.getTypeOfNetworkServiceProviderForService(l3Network.getUuid(), EipConstant.EIP_TYPE);
+        } catch (Throwable e){
+            logger.warn(e.getMessage(), e);
+        }
         if (providerType != FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE) {
             /* only handle flat l3 eip attachable l3 */
             return new ArrayList<>();
@@ -822,8 +826,11 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
         List<String> ret = new ArrayList<>(pubL3Uuids);
         for (String uuid : priL3Uuids) {
-            providerType = nsMgr.getTypeOfNetworkServiceProviderForService(
-                    uuid, EipConstant.EIP_TYPE);
+            try {
+                providerType = nsMgr.getTypeOfNetworkServiceProviderForService(uuid, EipConstant.EIP_TYPE);
+            } catch (Throwable e){
+                logger.warn(e.getMessage(), e);
+            }
             if (providerType == FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE) {
                 ret.add(uuid);
             }

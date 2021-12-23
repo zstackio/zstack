@@ -177,6 +177,13 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         // 3. filter according to l3Network's ipVersion
         boolean isIpv4Only = vmNicInv.isIpv4OnlyNic();
         boolean isIpv6Only = vmNicInv.isIpv6OnlyNic();
+        if(msg.getIpVersion() !=null ){
+            if(msg.getIpVersion() == 4){
+                isIpv4Only = true;
+            }else{
+                isIpv6Only = true;
+            }
+        }
         List<String> ret = new ArrayList<>();
         for (Tuple t : tuples) {
             String uuid = (String)t.get(0);
