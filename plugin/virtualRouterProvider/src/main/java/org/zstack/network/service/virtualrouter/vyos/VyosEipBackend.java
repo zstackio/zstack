@@ -53,7 +53,7 @@ public class VyosEipBackend extends VirtualRouterEipBackend implements GetEipAtt
 
     @Override
     public List<String> getEipAttachableL3UuidsForVmNic(VmNicInventory vmNicInv, L3NetworkVO l3Network) {
-        if (l3Network.getCategory().toString().equals(L3NetworkCategory.Public.toString()) || l3Network.getCategory().toString().equals(L3NetworkCategory.System.toString())){
+        if (l3Network.getCategory() == L3NetworkCategory.Public || l3Network.getCategory() == L3NetworkCategory.System){
             return new ArrayList<>();
         }
 
@@ -82,9 +82,7 @@ public class VyosEipBackend extends VirtualRouterEipBackend implements GetEipAtt
         List<String> l3Uuids = Q.New(L3NetworkVO.class).in(L3NetworkVO_.l2NetworkUuid, l2NetworkUuids)
                 .notIn(L3NetworkVO_.uuid, vmL3NetworkUuids).select(L3NetworkVO_.uuid).listValues();
 
-        List<String> finalL3Uuids = vrMgr.getPublicL3UuidsOfPrivateL3(l3Network).stream()
-                .filter(uuid -> l3Uuids.contains(uuid)).collect(Collectors.toList());
-
-        return finalL3Uuids;
+        return vrMgr.getPublicL3UuidsOfPrivateL3(l3Network).stream()
+                .filter(l3Uuids::contains).collect(Collectors.toList());
     }
 }

@@ -785,7 +785,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
     @Override
     public List<String> getEipAttachableL3UuidsForVmNic(VmNicInventory vmNicInv, L3NetworkVO l3Network) {
-        if (l3Network.getCategory().toString().equals(L3NetworkCategory.Public.toString()) || l3Network.getCategory().toString().equals(L3NetworkCategory.System.toString())){
+        if (l3Network.getCategory() == L3NetworkCategory.Public || l3Network.getCategory() == L3NetworkCategory.System){
             return new ArrayList<>();
         }
 
@@ -811,11 +811,17 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, hostUuid).findValue();
         List<String> l2NetworkUuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.l2NetworkUuid)
                 .eq(L2NetworkClusterRefVO_.clusterUuid, clusterUuid).listValues();
-        List<String> l3Uuids = Q.New(L3NetworkVO.class).in(L3NetworkVO_.l2NetworkUuid, l2NetworkUuids)
+        List<String> pubL3Uuids = Q.New(L3NetworkVO.class).in(L3NetworkVO_.l2NetworkUuid, l2NetworkUuids)
+                .eq(L3NetworkVO_.category, L3NetworkCategory.Public)
                 .notIn(L3NetworkVO_.uuid, vmL3NetworkUuids).select(L3NetworkVO_.uuid).listValues();
 
-        List<String> ret = new ArrayList<>();
-        for (String uuid : l3Uuids) {
+        List<String> priL3Uuids = Q.New(L3NetworkVO.class).in(L3NetworkVO_.l2NetworkUuid, l2NetworkUuids)
+                .eq(L3NetworkVO_.category, L3NetworkCategory.Private)
+                .eq(L3NetworkVO_.type, L3NetworkConstant.L3_BASIC_NETWORK_TYPE)
+                .notIn(L3NetworkVO_.uuid, vmL3NetworkUuids).select(L3NetworkVO_.uuid).listValues();
+
+        List<String> ret = new ArrayList<>(pubL3Uuids);
+        for (String uuid : priL3Uuids) {
             providerType = nsMgr.getTypeOfNetworkServiceProviderForService(
                     uuid, EipConstant.EIP_TYPE);
             if (providerType == FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE) {
