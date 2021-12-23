@@ -417,15 +417,7 @@ public class AccountBase extends AbstractAccount {
     }
 
     private void handle(APIUpdateQuotaMsg msg) {
-        SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
-        q.add(QuotaVO_.identityUuid, Op.EQ, msg.getIdentityUuid());
-        q.add(QuotaVO_.name, Op.EQ, msg.getName());
-        QuotaVO quota = q.find();
-
-        if (quota == null) {
-            throw new OperationFailureException(argerr("cannot find Quota[name: %s] for the account[uuid: %s]", msg.getName(), msg.getIdentityUuid()));
-        }
-
+        QuotaVO quota = msg.getQuotaVO();
         quota.setValue(msg.getValue());
         quota = dbf.updateAndRefresh(quota);
 
