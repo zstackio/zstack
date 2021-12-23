@@ -161,8 +161,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     private void migrateOrStopVmOnClusterDetach(final List<VmInstanceVO> toMigrate,
                                                 List<String> clusterUuids,
-                                                final Completion completion,
-                                                List<VmNicInventory> toDeleteNics) {
+                                                final Completion completion) {
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.uuid);
         q.add(HostVO_.clusterUuid, Op.IN, clusterUuids);
@@ -185,53 +184,6 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                                 return msg;
                             }
                         });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "delete-vmnic";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        if(toDeleteNics.isEmpty()) {
-                            logger.debug(String.format("no nic need for delete"));
-                            trigger.next();
-                            return;
-                        }
-
-                        List<DetachNicFromVmMsg> dmsgs = new ArrayList<>();
-                        for (VmNicInventory nic : toDeleteNics) {
-                            DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
-                            msg.setVmNicUuid(nic.getUuid());
-                            msg.setVmInstanceUuid(nic.getVmInstanceUuid());
-                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
-                            dmsgs.add(msg);
-                        }
-
-                        List<ErrorCode> errorCodes = Collections.synchronizedList(new LinkedList<ErrorCode>());
-                        new While<>(dmsgs).step((deleteMsg, whileCompletion) -> {
-                            bus.send(deleteMsg, new CloudBusCallBack(whileCompletion) {
-                                @Override
-                                public void run(MessageReply reply) {
-                                    if (!reply.isSuccess()) {
-                                        errorCodes.add(reply.getError());
-                                    }
-                                    whileCompletion.done();
-                                }
-                            });
-                        }, 10).run(new WhileDoneCompletion(completion) {
-                            @Override
-                            public void done(ErrorCodeList errorCodeList) {
-                                if (errorCodes.isEmpty()) {
-                                    logger.debug(String.format("detach nic for " +
-                                            "delete l3 success"));
-                                    trigger.next();
-                                    return;
-                                }
-                                trigger.fail(errorCodes.get(0));
-                                return;
-                            }
-                        });
-                    }
-                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "migrate-appliance-vm";
@@ -330,11 +282,9 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
         List<ApplianceVmVO> applianceVmVOS = Q.New(ApplianceVmVO.class).in(ApplianceVmVO_.uuid, apvms.stream()
                 .map(VmInstanceVO::getUuid).collect(Collectors.toList())).list();
 
-
-        List<VmNicInventory> toDeleteNics = new ArrayList<>();
         if (!applianceVmVOS.isEmpty()) {
             for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
-                applianceVmVOS = ext.filterApplianceVmCascade(applianceVmVOS, action, action.getParentIssuer(), l3uuids, toDeleteNics);
+                applianceVmVOS = ext.filterApplianceVmCascade(applianceVmVOS, action, action.getParentIssuer(), l3uuids, new ArrayList<>());
             }
         }
 
@@ -353,7 +303,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             }
         });
 
-        migrateOrStopVmOnClusterDetach(apvms, clusterUuids, completion, toDeleteNics);
+        migrateOrStopVmOnClusterDetach(apvms, clusterUuids, completion);
     }
 
     @Transactional(readOnly = true)
@@ -399,7 +349,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             }
         });
 
-        migrateOrStopVmOnClusterDetach(vmInstanceVOs, clusterUuids, completion, new ArrayList<>());
+        migrateOrStopVmOnClusterDetach(vmInstanceVOs, clusterUuids, completion);
     }
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {

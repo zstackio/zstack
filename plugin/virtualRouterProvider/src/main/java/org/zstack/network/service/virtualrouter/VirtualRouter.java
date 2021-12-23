@@ -172,6 +172,8 @@ public class VirtualRouter extends ApplianceVmBase {
             handle((ProvisionVirtualRouterConfigMsg) msg);
         } else if (msg instanceof VirtualRouterOverlayInnerMsg) {
             handle((VirtualRouterOverlayInnerMsg) msg);
+        } else if (msg instanceof DetachNicFromVmMsg) {
+            handle((DetachNicFromVmMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -233,6 +235,8 @@ public class VirtualRouter extends ApplianceVmBase {
             handle(msg, (APIAttachL3NetworkToVmMsg)originMsg);
         } else if (originMsg instanceof APIDetachL3NetworkFromVmMsg){
             handle(msg, (APIDetachL3NetworkFromVmMsg)originMsg);
+        } else if (originMsg instanceof DetachNicFromVmMsg){
+            handle(msg, (DetachNicFromVmMsg)originMsg);
         } else {
             super.handleMessage(msg);
         }
@@ -260,6 +264,22 @@ public class VirtualRouter extends ApplianceVmBase {
         detachNicInQueue(originMsg, originMsg.getVmNicUuid(), new ReturnValueCompletion<VmInstanceInventory>(msg) {
             @Override
             public void success(VmInstanceInventory returnValue) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final VirtualRouterOverlayInnerMsg msg, final DetachNicFromVmMsg originMsg) {
+        MessageReply reply = new MessageReply();
+        detachNicInQueueForNoApi(originMsg, new Completion(msg) {
+            @Override
+            public void success() {
                 bus.reply(msg, reply);
             }
 
@@ -330,6 +350,36 @@ public class VirtualRouter extends ApplianceVmBase {
             public void fail(ErrorCode errorCode) {
                 evt.setError(errorCode);
                 bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(final DetachNicFromVmMsg msg) {
+        if (vr.getHaStatus().equals(ApplianceVmHaStatus.NoHa.toString()) || msg.isHaPeer() ) {
+            super.handleLocalMessage(msg);
+            return;
+        }
+
+        VirtualRouterOverlayInnerMsg innerMsg = new VirtualRouterOverlayInnerMsg();
+        innerMsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        innerMsg.setMessage(msg);
+        bus.makeTargetServiceIdByResourceUuid(innerMsg, VmInstanceConstant.SERVICE_ID, msg.getVmInstanceUuid());
+
+        VirtualRouterOverlayMsg omsg = new VirtualRouterOverlayMsg();
+        omsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        omsg.setMessage(innerMsg);
+
+        final DetachNicFromVmReply reply = new DetachNicFromVmReply();
+        haBackend.virtualRouterOverlayMsgHandle(omsg, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }
