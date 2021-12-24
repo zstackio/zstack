@@ -3,6 +3,7 @@ package org.zstack.header.identity;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -19,8 +20,10 @@ public class APIUpdateQuotaMsg extends APIMessage implements AccountMessage {
     private String identityUuid;
     @APIParam
     private String name;
-    @APIParam
+    @APIParam(numberRange = {0, Long.MAX_VALUE})
     private long value;
+    @APINoSee
+    private QuotaVO quotaVO;
 
     @Override
     public String getAccountUuid() {
@@ -50,7 +53,15 @@ public class APIUpdateQuotaMsg extends APIMessage implements AccountMessage {
     public void setValue(long value) {
         this.value = value;
     }
- 
+
+    public QuotaVO getQuotaVO() {
+        return quotaVO;
+    }
+
+    public void setQuotaVO(QuotaVO quotaVO) {
+        this.quotaVO = quotaVO;
+    }
+
     public static APIUpdateQuotaMsg __example__() {
         APIUpdateQuotaMsg msg = new APIUpdateQuotaMsg();
         msg.setName("quotaname");

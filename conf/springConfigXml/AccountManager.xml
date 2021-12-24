@@ -103,5 +103,7 @@
         </zstack:plugin>
     </bean>
     <bean id = "RoleUtils" class="org.zstack.identity.rbac.RoleUtils"/>
+
+    <bean id="AccountQuotaUpdateChecker" class="org.zstack.identity.AccountQuotaUpdateChecker"/>
 </beans>
 
