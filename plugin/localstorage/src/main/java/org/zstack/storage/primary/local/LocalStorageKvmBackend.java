@@ -2178,6 +2178,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                deleteBits(workSpaceInstallPath, hostUuid, new NopeCompletion());
                 completion.fail(errorCode);
             }
         });

@@ -16,10 +16,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.cluster.ClusterConnectionStatus;
-import org.zstack.header.core.AsyncLatch;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
@@ -2019,6 +2016,7 @@ public class KvmBackend extends HypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                deleteBits(installPath, new NopeCompletion());
                 completion.fail(errorCode);
             }
         });
