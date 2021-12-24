@@ -15,6 +15,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.zone.ZoneVO;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -337,7 +338,9 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         msg.setDataDiskOfferingUuids(asList(uuid(), uuid()));
         msg.setImageUuid(uuid());
         msg.setInstanceOfferingUuid(uuid());
-        msg.setL3NetworkUuids(asList(uuid()));
+        msg.setL3NetworkUuids(Collections.singletonList(uuid()));
+        msg.setRootVolumeSystemTags(Collections.singletonList("volumeProvisioningStrategy::ThickProvisioning"));
+        msg.setDataVolumeSystemTags(null);
         return msg;
     }
 
