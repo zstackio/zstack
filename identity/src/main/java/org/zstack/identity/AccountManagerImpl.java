@@ -52,7 +52,6 @@ import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.header.identity.AccountConstant.ACCOUNT_REST_AUTHENTICATION_TYPE;
@@ -71,6 +70,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private PluginRegistry pluginRgty;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private List<QuotaUpdateChecker> quotaChangeCheckers = Collections.emptyList();
 
     private final List<String> resourceTypeForAccountRef = new ArrayList<>();
     private final List<Class> resourceTypes = new ArrayList<>();
@@ -1415,6 +1416,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APILogInByUserMsg) msg);
         } else if (msg instanceof APIGetAccountQuotaUsageMsg) {
             validate((APIGetAccountQuotaUsageMsg) msg);
+        } else if (msg instanceof APIUpdateQuotaMsg) {
+            validate((APIUpdateQuotaMsg) msg);
         }
 
         setServiceId(msg);
@@ -1657,6 +1660,33 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (!account.getUuid().equals(a.getUuid())) {
             throw new OperationFailureException(operr("account[uuid: %s, name: %s] is a normal account, it cannot reset the password of another account[uuid: %s]",
                             account.getUuid(), account.getName(), msg.getUuid()));
+        }
+    }
+
+    private void validate(APIUpdateQuotaMsg msg) {
+        QuotaVO quota = Q.New(QuotaVO.class)
+                .eq(QuotaVO_.identityUuid, msg.getIdentityUuid())
+                .eq(QuotaVO_.name, msg.getName())
+                .find();
+        if (quota == null) {
+            throw new OperationFailureException(argerr("cannot find Quota[name: %s] for the account[uuid: %s]", msg.getName(), msg.getIdentityUuid()));
+        }
+
+        List<QuotaUpdateChecker> checkers = quotaChangeCheckers.stream()
+                .filter(checker -> checker.type().contains(quota.getIdentityType())).collect(Collectors.toList());
+        if (checkers.isEmpty()) {
+            throw new ApiMessageInterceptionException(
+                    argerr("can not find quota update checker for quota[uuid:%s, type:%s]", quota.getIdentityUuid(), quota.getIdentityType()));
+        }
+
+        for (QuotaUpdateChecker checker : checkers) {
+            logger.debug(String.format("check quota[uuid:%s, type:%s] updated by %s",
+                    quota.getIdentityUuid(), quota.getIdentityType(), checker.getClass().getSimpleName()));
+            ErrorCode errorCode = checker.check(quota, msg.getValue());
+            if (errorCode != null) {
+                throw new ApiMessageInterceptionException(
+                        operr(errorCode, "cannot update Quota[name: %s] for the account[uuid: %s]", msg.getName(), msg.getIdentityUuid()));
+            }
         }
     }
 
