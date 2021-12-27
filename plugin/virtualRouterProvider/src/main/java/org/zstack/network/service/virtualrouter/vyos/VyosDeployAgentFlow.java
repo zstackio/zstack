@@ -132,7 +132,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                             "/home/vyos/zvrboot.bin"
                     ).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
-                            "/home/vyos/zvr/version"
+                            "/home/vyos/zvr/mn_zvr_version"
                     ).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
 
                 } catch (SshException  e ) {
@@ -148,7 +148,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                             "/home/vyos/zvrboot.bin"
                     ).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
-                            "/home/vyos/zvr/version"
+                            "/home/vyos/zvr/mn_zvr_version"
                     ).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
                 }
             }
