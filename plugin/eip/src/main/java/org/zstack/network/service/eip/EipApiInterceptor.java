@@ -72,20 +72,11 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
             validate((APIAttachEipMsg) msg);
         } else if (msg instanceof APIGetEipAttachableVmNicsMsg) {
             validate((APIGetEipAttachableVmNicsMsg) msg);
-        }else if (msg instanceof APIGetVmNicAttachableEipsMsg) {
-            validate((APIGetVmNicAttachableEipsMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
-    }
-
-    private void validate(APIGetVmNicAttachableEipsMsg msg){
-        String vmInstanceUuid = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid).eq(VmNicVO_.uuid,msg.getVmNicUuid()).findValue();
-        if (vmInstanceUuid == null) {
-            throw new ApiMessageInterceptionException(operr("vmNic[uuid:%s] is not attached to vmInstance, cannot get attachable eips", msg.getVmNicUuid()));
-        }
     }
 
     private void validate(APIGetEipAttachableVmNicsMsg msg) {

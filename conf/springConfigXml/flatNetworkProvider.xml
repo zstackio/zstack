@@ -60,7 +60,6 @@
             <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
             <zstack:extension interface="org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtensionPoint" />
             <zstack:extension interface="org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtensionPoint" />
-            <zstack:extension interface="org.zstack.network.service.eip.GetEipAttachableL3UuidsForVmNicExtensionPoint" />
         </zstack:plugin>
     </bean>
 
