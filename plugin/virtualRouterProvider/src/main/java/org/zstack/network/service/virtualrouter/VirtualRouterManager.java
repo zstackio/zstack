@@ -6,7 +6,6 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmNicInventory;
 
@@ -61,6 +60,4 @@ public interface VirtualRouterManager {
     void changeVirutalRouterDefaultL3Network(String vrUuid, String newL3Uuid, String oldL3Uuid, Completion completion);
 
     List<String> getVirtualRouterVips(String vrUuid, List<String> vipUuids);
-
-    List<String> getPublicL3UuidsOfPrivateL3(L3NetworkVO privateL3);
 }

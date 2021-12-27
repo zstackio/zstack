@@ -64,7 +64,9 @@ import org.zstack.kvm.KVMConstant;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.eip.*;
+import org.zstack.network.service.eip.EipConstant;
+import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtensionPoint;
+import org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtensionPoint;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
@@ -2563,42 +2565,5 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         return ret;
-    }
-
-    @Override
-    public List<String> getPublicL3UuidsOfPrivateL3(L3NetworkVO privateL3) {
-        List<IpRangeVO> ipv4RangeVOS = privateL3.getIpRanges().stream()
-                .filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
-        List<IpRangeVO> ipv6RangeVOS = privateL3.getIpRanges().stream()
-                .filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
-
-        if (ipv6RangeVOS.isEmpty() && ipv4RangeVOS.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        String vrUuid = null;
-        if (ipv4RangeVOS.isEmpty()) {
-            vrUuid = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
-                    .eq(VmNicVO_.l3NetworkUuid, privateL3.getUuid())
-                    .in(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST)
-                    .eq(VmNicVO_.ip, ipv6RangeVOS.get(0).getGateway()).findValue();
-        } else {
-            List<String> ipv4RangeUuids = ipv4RangeVOS.stream().map(IpRangeVO::getUuid).collect(Collectors.toList());
-            List<String> gateways = Q.New(NormalIpRangeVO.class).select(NormalIpRangeVO_.gateway)
-                    .in(NormalIpRangeVO_.uuid, ipv4RangeUuids).listValues();
-            vrUuid = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
-                    .eq(VmNicVO_.l3NetworkUuid, privateL3.getUuid())
-                    .in(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST)
-                    .eq(VmNicVO_.ip, gateways.get(0)).findValue();
-        }
-
-        if (vrUuid == null) {
-            /* vrouter is not created */
-            return new ArrayList<>();
-        }
-
-        List<String> l3Uuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).eq(VmNicVO_.vmInstanceUuid, vrUuid)
-                .in(VmNicVO_.metaData, VirtualRouterNicMetaData.ALL_PUBLIC_NIC_MASK_STRING_LIST).listValues();
-        return l3Uuids;
     }
 }
