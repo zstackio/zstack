@@ -32,6 +32,7 @@ import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.service.NetworkServiceConstants;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceProviderVO;
@@ -40,6 +41,7 @@ import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceFilter;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.userdata.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -73,6 +75,8 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     private FlatDhcpBackend dhcpBackend;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private NetworkServiceManager nsMgr;
 
     public static final String APPLY_USER_DATA = "/flatnetworkprovider/userdata/apply";
     public static final String BATCH_APPLY_USER_DATA = "/flatnetworkprovider/userdata/batchapply";
@@ -322,6 +326,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     }
 
     private UserdataStruct makeUserdataStructForMigratingVm(VmInstanceInventory inv, String hostUuid) {
+        if (!nsMgr.isVmNeedNetworkService(inv.getType(), UserdataConstant.USERDATA_TYPE)) {
+            return null;
+        }
+
         String providerType = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(inv.getDefaultL3NetworkUuid(), UserdataConstant.USERDATA_TYPE_STRING);
         if (!FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING.equals(providerType)) {
             return null;
