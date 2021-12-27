@@ -2,7 +2,6 @@ package org.zstack.utils.form;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.poifs.filesystem.DocumentFactoryHelper;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -14,6 +13,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
 import java.util.Optional;
+import org.apache.poi.poifs.storage.HeaderBlockConstants;
+import org.apache.poi.util.LongField;
 
 public class ExcelReader implements FormReader {
     private Sheet sheet;
@@ -32,7 +33,7 @@ public class ExcelReader implements FormReader {
 
             sheet = workbook.getSheetAt(0);
             header = sheet.getPhysicalNumberOfRows() == 0 ? null : readRow(0);
-        } catch (IOException | InvalidFormatException e) {
+        } catch (IOException  e) {
             throw new IllegalArgumentException(e);
         }
     }
@@ -40,8 +41,14 @@ public class ExcelReader implements FormReader {
     public static boolean checkType(String base64Content) throws IOException {
         byte[] decoded = Base64.getDecoder().decode(base64Content);
         InputStream inp = new ByteArrayInputStream(decoded);
-         return NPOIFSFileSystem.hasPOIFSHeader(IOUtils.peekFirst8Bytes(inp)) || DocumentFactoryHelper.hasOOXMLHeader(inp);
+        return hasPOIFSHeader(IOUtils.peekFirst8Bytes(inp)) || DocumentFactoryHelper.hasOOXMLHeader(inp);
     }
+
+    public static boolean hasPOIFSHeader(byte[] header8Bytes) {
+        LongField signature = new LongField(HeaderBlockConstants._signature_offset, header8Bytes);
+        return (signature.get() == HeaderBlockConstants._signature);
+    }
+
 
     @Override
     public String getType() {
