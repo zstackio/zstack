@@ -18,10 +18,9 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.configuration.DiskOfferingVO;
-import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -38,6 +37,8 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
@@ -53,14 +54,19 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.markTaskStage;
 
 public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint, VmStateChangedExtensionPoint, VmDetachVolumeExtensionPoint,
@@ -172,7 +178,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setDescription(msg.getDescription());
         vol.setFormat(template.getFormat());
         vol.setSize(template.getSize());
-        vol.setActualSize(template.getActualSize());
         vol.setRootImageUuid(template.getUuid());
         vol.setStatus(VolumeStatus.Creating);
         vol.setState(VolumeState.Enabled);
@@ -385,6 +390,31 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    final String __name__ = String.format("sync-volume-%s-size", vol.getUuid());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SyncVolumeSizeMsg msg = new SyncVolumeSizeMsg();
+                        msg.setVolumeUuid(vol.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
+                        bus.send(msg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                SyncVolumeSizeReply sr = reply.castReply();
+                                vol.setActualSize(sr.getActualSize());
+                                vol.setSize(sr.getSize());
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -400,6 +430,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         if (volumeFormat != null) {
                             vo.setFormat(volumeFormat);
                         }
+                        vo.setActualSize(vol.getActualSize());
                         vo = dbf.updateAndRefresh(vo);
 
                         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vo));
@@ -420,6 +451,29 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 });
             }
         }).start();
+    }
+
+    private long getTemplateActualSzie(ImageVO template) {
+        // 使用镜像创建云盘时，从镜像的url获取其是否来自于volume，如果来自于volume，判断其主存储类型，
+        // 如果是sblk查询systemtag,
+        // 若果是精简制备，不改变原来逻辑，使用镜像真实大小;
+        // 如果是厚置备，使用镜像规格大小;
+        String protocol;
+        try {
+            protocol = new URI(template.getUrl()).getScheme();
+        } catch (URISyntaxException e) {
+            throw new OperationFailureException(operr("protocol is null"));
+        }
+
+        if (!Objects.equals(protocol, "volume")) {
+            return template.getActualSize();
+        }
+        String volumeUuid = template.getUrl().replaceFirst("volume://", "");
+        String token = VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.getTokenByResourceUuid(volumeUuid, VolumeProvisioningStrategy.ThickProvisioning.toString());
+        if (token != null) {
+            return template.getSize();
+        }
+        return template.getActualSize();
     }
 
     @Transactional(readOnly = true)
