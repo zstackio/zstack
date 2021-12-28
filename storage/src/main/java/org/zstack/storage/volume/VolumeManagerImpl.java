@@ -402,10 +402,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
+                                    logger.warn(String.format("sync volume %s size failed", vol.getUuid()));
                                 }
-
                                 SyncVolumeSizeReply sr = reply.castReply();
                                 vol.setActualSize(sr.getActualSize());
                                 vol.setSize(sr.getSize());
