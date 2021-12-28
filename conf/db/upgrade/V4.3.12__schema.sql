@@ -6,6 +6,7 @@ BEGIN
     DECLARE vmInstanceUuid VARCHAR(32);
     DECLARE clockTrackTag VARCHAR(32);
     DECLARE clockTrack VARCHAR(32);
+    DECLARE ruuid VARCHAR(32);
     DECLARE done INT DEFAULT FALSE;
     DECLARE cur CURSOR FOR SELECT systemTag.tag, systemTag.resourceUuid FROM `zstack`.`SystemTagVO` systemTag
      where `tag` like 'clockTrack::%' and `resourceType`='VmInstanceVO';
@@ -17,6 +18,7 @@ BEGIN
             LEAVE read_loop;
         END IF;
 
+        SET ruuid = REPLACE(UUID(), '-', '');
         SET clockTrack = SUBSTRING_INDEX(clockTrackTag, '::', -1);
         INSERT INTO zstack.ResourceConfigVO (uuid, name, description, category, value, resourceUuid, resourceType, lastOpDate, createDate)
          values(ruuid, "vm.clock.track", "vm.clock.track", "vm", clockTrack, vmInstanceUuid, "VmInstanceVO", CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
@@ -77,3 +79,8 @@ create table if not exists `zstack`.`HostNumaNodeVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`PrimaryStorageHostRefVO` ADD UNIQUE INDEX(`primaryStorageUuid`, `hostUuid`);
+
+ALTER TABLE `BareMetal2ChassisVO` ADD COLUMN `provisionType` varchar(32) NOT NULL DEFAULT 'Remote';
+ALTER TABLE `BareMetal2InstanceVO` ADD COLUMN `provisionType` varchar(32) NOT NULL DEFAULT 'Remote';
+ALTER TABLE `BareMetal2ChassisOfferingVO` ADD COLUMN `provisionType` varchar(32) NOT NULL DEFAULT 'Remote';
+ALTER TABLE `BareMetal2ChassisDiskVO` ADD COLUMN `wwn` varchar(128) DEFAULT NULL;
