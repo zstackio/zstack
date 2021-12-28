@@ -3163,6 +3163,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 new ReturnValueCompletion<CreateTemplateFromVolumeRsp>(trigger) {
                                     @Override
                                     public void success(CreateTemplateFromVolumeRsp rsp) {
+                                        reply.setActualSize(rsp.getActualSize());
                                         reportProgress(stage.getEnd().toString());
                                         trigger.next();
                                     }
