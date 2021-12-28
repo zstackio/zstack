@@ -388,6 +388,21 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
+                        SyncVolumeSizeMsg msg = new SyncVolumeSizeMsg();
+                        msg.setVolumeUuid(vol.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
+                        bus.send(msg, new CloudBusCallBack(msg) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    logger.warn(String.format("sync volume %s size failed", vol.getUuid()));
+                                }
+                                SyncVolumeSizeReply sr = reply.castReply();
+                                vol.setActualSize(sr.getActualSize());
+                                vol.setSize(sr.getSize());
+                            }
+                        });
+
                         VolumeVO vo = dbf.reload(vol);
                         if (vo == null) {
                             reply.setError(operr("target volume is expunged during volume creation"));
