@@ -1038,6 +1038,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                         bkd.createTemplateFromVolume(pinv, volume, image, new ReturnValueCompletion<NfsPrimaryStorageBackend.BitsInfo>(trigger) {
                             @Override
                             public void success(NfsPrimaryStorageBackend.BitsInfo info) {
+                                reply.setActualSize(info.getActualSize());
                                 templatePrimaryStorageInstallPath = info.getInstallPath();
                                 reportProgress(stage.getEnd().toString());
                                 trigger.next();

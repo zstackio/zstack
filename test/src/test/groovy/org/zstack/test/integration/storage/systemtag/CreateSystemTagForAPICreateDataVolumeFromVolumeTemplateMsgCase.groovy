@@ -169,8 +169,8 @@ class CreateSystemTagForAPICreateDataVolumeFromVolumeTemplateMsgCase extends Sub
             delegate.conditions = ["resourceUuid=${dataVolume.getUuid()}".toString()]
         } as List<SystemTagInventory>
 
-        assert tags.size() == 1
-        assert tags.get(0).getTag() == "capability::virtio-scsi".toString()
+        assert tags.size() == 2
+        assert tags.collect{it.getTag()}.containsAll(["capability::virtio-scsi".toString(), "notSupportActualSize::true".toString()])
 
         changeVolumeState {
             uuid = dataVolume.uuid
