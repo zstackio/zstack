@@ -385,6 +385,41 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("sync volume %s size", vol.getUuid());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VolumeVO vo = dbf.reload(vol);
+                        if (vo == null) {
+                            trigger.fail(operr("target volume is expunged during volume creation"));
+                            return;
+                        }
+                        vo.setInstallPath(primaryStorageInstallPath);
+                        vo.setStatus(VolumeStatus.Ready);
+                        if (volumeFormat != null) {
+                            vo.setFormat(volumeFormat);
+                        }
+                        dbf.updateAndRefresh(vo);
+
+                        SyncVolumeSizeMsg msg = new SyncVolumeSizeMsg();
+                        msg.setVolumeUuid(vol.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
+                        bus.send(msg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    logger.warn(String.format("sync volume %s size failed", vol.getUuid()));
+                                }
+                                SyncVolumeSizeReply sr = reply.castReply();
+                                vol.setActualSize(sr.getActualSize());
+                                vol.setSize(sr.getSize());
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -394,12 +429,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                             bus.reply(msg, reply);
                             return;
                         }
-
-                        vo.setInstallPath(primaryStorageInstallPath);
-                        vo.setStatus(VolumeStatus.Ready);
-                        if (volumeFormat != null) {
-                            vo.setFormat(volumeFormat);
-                        }
+                        vo.setActualSize(vol.getActualSize());
                         vo = dbf.updateAndRefresh(vo);
 
                         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vo));
