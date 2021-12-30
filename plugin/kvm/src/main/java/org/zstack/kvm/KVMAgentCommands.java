@@ -3179,7 +3179,7 @@ public class KVMAgentCommands {
     }
 
     public static class CancelCmd extends AgentCommand implements CancelCommand {
-        public String cancellationApiId;
+        private String cancellationApiId;
 
         @Override
         public void setCancellationApiId(String cancellationApiId) {
