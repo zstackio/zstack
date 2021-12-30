@@ -41,6 +41,7 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.ThreadContextUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
