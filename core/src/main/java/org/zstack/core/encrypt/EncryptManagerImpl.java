@@ -4,24 +4,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.convert.PasswordConverter;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.*;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.DisableEncryptMsg;
 import org.zstack.header.core.encrypt.*;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Convert;
-import javax.persistence.Query;
-import java.lang.reflect.Field;
+import javax.persistence.*;
 import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * Created by mingjian.deng on 16/12/28.
@@ -32,8 +25,6 @@ public class EncryptManagerImpl extends AbstractService {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
-
-
 
     @Override
     public boolean start() {
@@ -47,6 +38,18 @@ public class EncryptManagerImpl extends AbstractService {
 
     @Override
     public void handleMessage(Message msg) {
+        if (msg instanceof APIMessage) {
+            handleApiMessage((APIMessage) msg);
+        } else {
+            handleLocalMessage(msg);
+        }
+    }
+
+    private void handleLocalMessage(Message msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
+    private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIUpdateEncryptKeyMsg) {
             handle((APIUpdateEncryptKeyMsg) msg);
         } else {

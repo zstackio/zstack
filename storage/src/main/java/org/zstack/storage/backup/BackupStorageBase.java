@@ -110,6 +110,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     abstract protected void handle(GetLocalFileSizeOnBackupStorageMsg msg);
 
+    abstract protected void handle(GetImageEncryptedOnBackupStorageMsg msg);
+
     abstract protected void connectHook(boolean newAdd, Completion completion);
 
     abstract protected void pingHook(Completion completion);
@@ -243,6 +245,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             handle((GetLocalFileSizeOnBackupStorageMsg) msg);
         } else if (msg instanceof CheckInstallPathOnBSMsg) {
             handle((CheckInstallPathOnBSMsg) msg);
+        } else if (msg instanceof GetImageEncryptedOnBackupStorageMsg) {
+            handle((GetImageEncryptedOnBackupStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
