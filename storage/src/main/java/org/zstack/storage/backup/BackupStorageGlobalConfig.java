@@ -18,4 +18,10 @@ public class BackupStorageGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig RESERVED_CAPACITY = new GlobalConfig(CATEGORY, "reservedCapacity");
+
+    @GlobalConfigValidation
+    public static GlobalConfig AUTO_RECONNECT_ON_ERROR = new GlobalConfig(CATEGORY, "connection.autoReconnectOnError");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig AUTO_RECONNECT_ON_ERROR_MAX_ATTEMPT_NUM = new GlobalConfig(CATEGORY, "connection.autoReconnectOnError.maxAttemptsNum");
 }
