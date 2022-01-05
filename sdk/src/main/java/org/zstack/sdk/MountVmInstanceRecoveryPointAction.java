@@ -31,6 +31,9 @@ public class MountVmInstanceRecoveryPointAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
     public long groupId = 0L;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean https = true;
+
     @Param(required = false)
     public java.util.List systemTags;
 
