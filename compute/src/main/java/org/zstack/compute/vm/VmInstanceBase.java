@@ -65,6 +65,7 @@ import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
@@ -76,6 +77,7 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
+import javax.persistence.PersistenceException;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -348,7 +350,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         };
         try {
             sql.execute();
-        } catch (DataIntegrityViolationException | ConstraintViolationException e) {
+        } catch (DataIntegrityViolationException | PersistenceException e) {
+            if (!ExceptionDSL.isCausedBy(e, ConstraintViolationException.class) && !ExceptionDSL.isCausedBy(e, DataIntegrityViolationException.class)) {
+                throw e;
+            }
             sql.execute();
         }
 
