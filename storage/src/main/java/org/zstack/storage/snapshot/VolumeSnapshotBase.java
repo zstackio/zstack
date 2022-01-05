@@ -26,10 +26,12 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.PersistenceException;
 import java.util.Map;
 
 /**
@@ -237,7 +239,10 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                         VolumeSnapshotPrimaryStorageDeletionReply dreply = new VolumeSnapshotPrimaryStorageDeletionReply();
                         try {
                             updateDb();
-                        } catch (DataIntegrityViolationException | ConstraintViolationException e) {
+                        } catch (DataIntegrityViolationException | PersistenceException e) {
+                            if (!ExceptionDSL.isCausedBy(e, ConstraintViolationException.class) && !ExceptionDSL.isCausedBy(e, DataIntegrityViolationException.class)) {
+                                throw e;
+                            }
                             // volume snapshot group may has been removed, try again.
                             updateDb();
                         }
