@@ -28,6 +28,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.eip.APIGetVmNicAttachableEipsMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.eip.APIQueryEipMsg</name>
         <serviceId>query</serviceId>
     </message>

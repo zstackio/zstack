@@ -21,10 +21,12 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.NormalIpRangeVO;
-import org.zstack.header.network.l3.NormalIpRangeVO_;
-import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.AfterApplyFlatEipExtensionPoint;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.vm.*;
@@ -40,6 +42,7 @@ import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentRsp;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -63,7 +66,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * Created by xing5 on 2016/4/4.
  */
 public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
-        VmAbnormalLifeCycleExtensionPoint, VmInstanceMigrateExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint {
+        VmAbnormalLifeCycleExtensionPoint, VmInstanceMigrateExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint, GetEipAttachableL3UuidsForVmNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FlatEipBackend.class);
 
     @Autowired
@@ -775,6 +778,62 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             }
 
             ret.add(nic);
+        }
+
+        return ret;
+    }
+
+    @Override
+    public List<String> getEipAttachableL3UuidsForVmNic(VmNicInventory vmNicInv, L3NetworkVO l3Network) {
+        if (l3Network.getCategory() == L3NetworkCategory.Public || l3Network.getCategory() == L3NetworkCategory.System){
+            return new ArrayList<>();
+        }
+
+        NetworkServiceProviderType providerType = null;
+        try {
+            providerType = nsMgr.getTypeOfNetworkServiceProviderForService(l3Network.getUuid(), EipConstant.EIP_TYPE);
+        } catch (Throwable e){
+            logger.warn(e.getMessage(), e);
+        }
+        if (providerType != FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE) {
+            /* only handle flat l3 eip attachable l3 */
+            return new ArrayList<>();
+        }
+
+        /* get candidate l3 networks:
+         * 1. not l3 attached to vm
+         * 2. must attached same clusters as vm
+         * 3. pubL3 and flatL3 */
+        VmInstanceVO vm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmNicInv.getVmInstanceUuid()).find();
+
+        String hostUuid = vm.getHostUuid() != null ? vm.getHostUuid() : vm.getLastHostUuid();
+        if (hostUuid == null) {
+            return new ArrayList<>();
+        }
+
+        List<String> vmL3NetworkUuids = vm.getVmNics().stream().map(VmNicVO::getL3NetworkUuid).collect(Collectors.toList());
+        String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, hostUuid).findValue();
+        List<String> l2NetworkUuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.l2NetworkUuid)
+                .eq(L2NetworkClusterRefVO_.clusterUuid, clusterUuid).listValues();
+        List<String> pubL3Uuids = Q.New(L3NetworkVO.class).in(L3NetworkVO_.l2NetworkUuid, l2NetworkUuids)
+                .eq(L3NetworkVO_.category, L3NetworkCategory.Public)
+                .notIn(L3NetworkVO_.uuid, vmL3NetworkUuids).select(L3NetworkVO_.uuid).listValues();
+
+        List<String> priL3Uuids = Q.New(L3NetworkVO.class).in(L3NetworkVO_.l2NetworkUuid, l2NetworkUuids)
+                .eq(L3NetworkVO_.category, L3NetworkCategory.Private)
+                .eq(L3NetworkVO_.type, L3NetworkConstant.L3_BASIC_NETWORK_TYPE)
+                .notIn(L3NetworkVO_.uuid, vmL3NetworkUuids).select(L3NetworkVO_.uuid).listValues();
+
+        List<String> ret = new ArrayList<>(pubL3Uuids);
+        for (String uuid : priL3Uuids) {
+            try {
+                providerType = nsMgr.getTypeOfNetworkServiceProviderForService(uuid, EipConstant.EIP_TYPE);
+            } catch (Throwable e){
+                logger.warn(e.getMessage(), e);
+            }
+            if (providerType == FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE) {
+                ret.add(uuid);
+            }
         }
 
         return ret;

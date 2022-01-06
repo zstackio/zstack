@@ -49,6 +49,7 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Query;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -138,9 +139,84 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             handle((APIGetEipAttachableVmNicsMsg) msg);
         } else if (msg instanceof APIUpdateEipMsg) {
             handle((APIUpdateEipMsg) msg);
-        } else {
+        } else if (msg instanceof APIGetVmNicAttachableEipsMsg) {
+            handle((APIGetVmNicAttachableEipsMsg) msg);
+        }else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetVmNicAttachableEipsMsg msg){
+        APIGetVmNicAttachableEipsReply reply = new APIGetVmNicAttachableEipsReply();
+        reply.setInventories(getVmNicAttachableEips(msg));
+        bus.reply(msg, reply);
+    }
+
+    /* filter eips which are attachable for the vmNic
+    1. according to l3Network's networkServiceProviderType (ps:VPC network not support Ipv6 yet);
+    2. according to vmNic's and vmInstance's attached condition
+    3. according to l3Network's ipVersion
+    */
+    @Transactional(readOnly = true)
+    private List<EipInventory> getVmNicAttachableEips(APIGetVmNicAttachableEipsMsg msg){
+        VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+        VmNicInventory vmNicInv = VmNicInventory.valueOf(vmNicVO);
+
+        // 1. get candidate l3Uuids
+        List<String> l3Uuids = getL3NetworkForVmNicAttachableEip(vmNicInv);
+        if (l3Uuids.isEmpty()) {
+            logger.debug(String.format("there is no eip candidate l3 for vm nicUuids: %s ", msg.getVmNicUuid()));
+            return new ArrayList<>();
+        }
+
+        // 2. get candidate eips
+        List<Tuple> tuples = SQL.New("select eip.uuid, eip.vipIp from EipVO eip, VipVO vip where " +
+                "eip.vipUuid=vip.uuid and vip.l3NetworkUuid in (:l3Uuids) and eip.vmNicUuid is NULL", Tuple.class)
+                .param("l3Uuids", l3Uuids).list();
+
+        // 3. filter according to l3Network's ipVersion
+        boolean isIpv4Only = vmNicInv.isIpv4OnlyNic();
+        boolean isIpv6Only = vmNicInv.isIpv6OnlyNic();
+        if(msg.getIpVersion() !=null ){
+            if(msg.getIpVersion() == 4){
+                isIpv4Only = true;
+            }else{
+                isIpv6Only = true;
+            }
+        }
+        List<String> ret = new ArrayList<>();
+        for (Tuple t : tuples) {
+            String uuid = (String)t.get(0);
+            String ip = (String)t.get(1);
+
+            if (NetworkUtils.isIpv4Address(ip)) {
+                if (!isIpv6Only) {
+                    ret.add(uuid);
+                }
+            } else {
+                if (!isIpv4Only) {
+                    ret.add(uuid);
+                }
+            }
+        }
+
+        if (ret.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<EipVO> eipVOS = Q.New(EipVO.class).in(EipVO_.uuid, ret).list();
+        return EipInventory.valueOf(eipVOS);
+    }
+
+    private List<String> getL3NetworkForVmNicAttachableEip(VmNicInventory vmNicInv) {
+        L3NetworkVO l3Network = Q.New(L3NetworkVO.class)
+                .eq(L3NetworkVO_.uuid, vmNicInv.getL3NetworkUuid()).find();
+
+        List<String> ret = new ArrayList<>();
+        for (GetEipAttachableL3UuidsForVmNicExtensionPoint extp : pluginRgty.getExtensionList(GetEipAttachableL3UuidsForVmNicExtensionPoint.class)) {
+            ret.addAll(extp.getEipAttachableL3UuidsForVmNic(vmNicInv, l3Network));
+        }
+        return ret;
     }
 
     private void handle(APIUpdateEipMsg msg) {
