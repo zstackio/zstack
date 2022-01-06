@@ -337,13 +337,17 @@ public class L3BasicNetwork implements L3Network {
         rq.add(IpRangeVO_.ipVersion, Op.EQ, ipversion);
         List<Tuple> ts = rq.listTuple();
 
+        List<String> addressPoolGateways = Q.New(AddressPoolVO.class)
+                .select(AddressPoolVO_.gateway)
+                .eq(AddressPoolVO_.l3NetworkUuid,self.getUuid()).listValues();
+
         boolean inRange = false;
         boolean isGateway = false;
         for (Tuple t : ts) {
             String sip = t.get(0, String.class);
             String eip = t.get(1, String.class);
             String gw = t.get(2, String.class);
-            if (ip.equals(gw)) {
+            if (ip.equals(gw) && !addressPoolGateways.contains(gw)) {
                 isGateway = true;
                 break;
             }
