@@ -18,6 +18,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.persistence.Query;
@@ -67,6 +68,10 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
 
     @Override
     public void releaseNetworkService(final VmInstanceSpec servedVm, Map<String, Object> data, final NoErrorCompletion completion) {
+        if (!Optional.ofNullable(servedVm.getDestHost()).isPresent()){
+            completion.done();
+            return;
+        }
         RefreshSecurityGroupRulesOnVmMsg msg = new RefreshSecurityGroupRulesOnVmMsg();
         msg.setVmInstanceUuid(servedVm.getVmInventory().getUuid());
         msg.setHostUuid(servedVm.getDestHost().getUuid());

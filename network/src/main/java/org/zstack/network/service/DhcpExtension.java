@@ -76,7 +76,10 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
             completion.done();
             return;
         }
-
+        if (!Optional.ofNullable(spec.getDestHost()).isPresent()){
+            completion.done();
+            return;
+        }
         Map.Entry<NetworkServiceDhcpBackend, List<DhcpStruct>> e = it.next();
         NetworkServiceDhcpBackend bkd = e.getKey();
         List<DhcpStruct> structs = e.getValue();

@@ -294,6 +294,10 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
             map = (Map<String, List<EipStruct>>) data.get(SUCCESS);
         } else {
             map = workOutEipStruct(spec);
+            if (!Optional.ofNullable(spec.getDestHost()).isPresent()){
+                completion.done();
+                return;
+            }
             for (Map.Entry<String, List<EipStruct>> e : map.entrySet()) {
                 for (EipStruct struct : e.getValue()) {
                     struct.setHostUuid(spec.getDestHost().getUuid());

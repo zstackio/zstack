@@ -28,10 +28,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -169,7 +166,10 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
                 return arg.getUuid().equals(servedVm.getVmInventory().getDefaultL3NetworkUuid()) ? arg : null;
             }
         });
-
+        if (!Optional.ofNullable(servedVm.getDestHost()).isPresent()){
+            completion.done();
+            return;
+        }
         if (defaultL3 == null) {
             // the L3 for operation is not the default L3
             completion.done();
