@@ -190,7 +190,10 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
         } else {
             structs = workoutPortForwarding(spec);
         }
-
+        if (!Optional.ofNullable(spec.getDestHost()).isPresent()){
+            completion.done();
+            return;
+        }
         releaseNetworkService(structs.entrySet().iterator(), completion);
     }
 

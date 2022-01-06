@@ -190,7 +190,10 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
             completion.done();
             return;
         }
-
+        if (!Optional.ofNullable(servedVm.getDestHost()).isPresent()){
+            completion.done();
+            return;
+        }
         class Triplet {
             String lbUuid;
             Set<String> serverGroupUuids;

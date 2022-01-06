@@ -123,7 +123,10 @@ public class CentralizedDnsExtension extends AbstractNetworkServiceExtension imp
             complete.done();
             return;
         }
-
+        if (!Optional.ofNullable(spec.getDestHost()).isPresent()){
+            complete.done();
+            return;
+        }
         Map.Entry<NetworkServiceCentralizedDnsBackend, List<ForwardDnsStruct>> e = it.next();
         NetworkServiceCentralizedDnsBackend bkd = e.getKey();
         List<ForwardDnsStruct> structs = e.getValue();
