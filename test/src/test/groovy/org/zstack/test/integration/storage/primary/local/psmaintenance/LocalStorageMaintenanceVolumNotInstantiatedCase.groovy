@@ -73,28 +73,37 @@ class LocalStorageMaintenanceVolumNotInstantiatedCase extends SubCase{
             uuid=primaryStorage.uuid
             stateEvent = "enable"
         }
-        List<VmInstanceInventory> list = getDataVolumeAttachableVm {
-            volumeUuid = volumeInventory.uuid
+
+        retryInSecs{
+            List<VmInstanceInventory> list = getDataVolumeAttachableVm {
+                volumeUuid = volumeInventory.uuid
+            }
+            assert list.isEmpty() == false
         }
-        assert list.isEmpty() == false
 
         primaryStorage = changePrimaryStorageState {
             uuid=primaryStorage.uuid
             stateEvent = PrimaryStorageStateEvent.disable.toString()
         }
-        list = getDataVolumeAttachableVm {
-            volumeUuid = volumeInventory.uuid
+
+        retryInSecs{
+            List<VmInstanceInventory> list = getDataVolumeAttachableVm {
+                volumeUuid = volumeInventory.uuid
+            }
+            assert list.isEmpty() == true
         }
-        assert list.isEmpty() == true
 
         primaryStorage = changePrimaryStorageState {
             uuid=primaryStorage.uuid
             stateEvent = "deleting"
         }
-        list = getDataVolumeAttachableVm {
-            volumeUuid = volumeInventory.uuid
+
+        retryInSecs{
+            List<VmInstanceInventory> list = getDataVolumeAttachableVm {
+                volumeUuid = volumeInventory.uuid
+            }
+            assert list.isEmpty() == true
         }
-        assert list.isEmpty() == true
     }
 
 

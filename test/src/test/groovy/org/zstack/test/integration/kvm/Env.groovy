@@ -46,11 +46,13 @@ use:
 
                 image {
                     name = "image1"
+                    architecture = "x86_64"
                     url = "http://zstack.org/download/test.qcow2"
                 }
 
                 image {
                     name = "vr"
+                    architecture = "x86_64"
                     url = "http://zstack.org/download/vr.qcow2"
                 }
             }
