@@ -33,6 +33,7 @@ import org.zstack.utils.ssh.SshException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
@@ -343,7 +344,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
         httpCall(path, cmd, AgentRsp.class, completion);
     }
 
-    private <T> void httpCall(String path, AgentCmd cmd, final Class<T> rspClass, final ReturnValueCompletion<T> completion) {
+    private <T extends AgentResponse> void httpCall(String path, AgentCmd cmd, final Class<T> rspClass, final ReturnValueCompletion<T> completion) {
         restf.asyncJsonPost(CephAgentUrl.primaryStorageUrl(self.getHostname(), path),
                 cmd, new JsonAsyncRESTCallback<T>(completion) {
                     @Override
@@ -353,6 +354,10 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
                     @Override
                     public void success(T ret) {
+                        if (!ret.isSuccess()) {
+                            completion.fail(Platform.operr("operation error, because:%s", ret.getError()));
+                            return;
+                        }
                         completion.success(ret);
                     }
 
@@ -361,26 +366,6 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                         return rspClass;
                     }
                 });
-    }
-
-    private <T> void httpCall(String path, AgentCmd cmd, final Class<T> rspClass, final ReturnValueCompletion<T> completion, TimeUnit unit, long timeout) {
-        restf.asyncJsonPost(CephAgentUrl.primaryStorageUrl(self.getHostname(), path),
-                cmd, new JsonAsyncRESTCallback<T>(completion) {
-                    @Override
-                    public void fail(ErrorCode err) {
-                        completion.fail(err);
-                    }
-
-                    @Override
-                    public void success(T ret) {
-                        completion.success(ret);
-                    }
-
-                    @Override
-                    public Class<T> getReturnClass() {
-                        return rspClass;
-                    }
-                }, unit, timeout);
     }
 
     @Override
@@ -497,39 +482,28 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
         cmd.primaryStorageUuid = getSelf().getPrimaryStorageUuid();
         cmd.monAddr = String.format("%s:%s", getSelf().getMonAddr(), getSelf().getMonPort());
 
-        httpCall(PING_PATH, cmd, PingRsp.class, new ReturnValueCompletion<PingRsp>(completion) {
-            @Override
-            public void success(PingRsp rsp) {
-                PingResult res = new PingResult();
-                if (rsp.success) {
-                    res.success = true;
-                } else {
-                    res.success = false;
-                    res.error = rsp.error;
-
-                    // if agent met unexpected error, no failure will be set
-                    if (rsp.failure != null) {
-                        res.failure = rsp.failure.toString();
+        restf.asyncJsonPost(CephAgentUrl.primaryStorageUrl(self.getHostname(), PING_PATH),
+                cmd, new JsonAsyncRESTCallback<PingRsp>(completion) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        completion.fail(err);
                     }
-                }
 
-                if (rsp.success && rsp.availableCapacity != null && rsp.totalCapacity != null) {
-                    String fsid = Q.New(CephPrimaryStorageVO.class)
-                            .select(CephPrimaryStorageVO_.fsid)
-                            .eq(CephPrimaryStorageVO_.uuid, primaryStorageUuid)
-                            .findValue();
-                    CephCapacity cephCapacity = new CephCapacity(fsid, rsp);
-                    new CephCapacityUpdater().update(cephCapacity);
-                }
+                    @Override
+                    public void success(PingRsp rsp) {
+                        PingResult res = new PingResult();
+                        res.success = rsp.isSuccess();
+                        res.error = rsp.getError();
+                        // if agent met unexpected error, no failure will be set
+                        res.failure = Objects.toString(rsp.failure, null);
+                        completion.success(res);
+                    }
 
-                completion.success(res);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        }, TimeUnit.SECONDS, 60);
+                    @Override
+                    public Class<PingRsp> getReturnClass() {
+                        return PingRsp.class;
+                    }
+                }, TimeUnit.SECONDS, 60);
     }
 
     public CephPrimaryStorageMonBase(CephMonAO self) {
