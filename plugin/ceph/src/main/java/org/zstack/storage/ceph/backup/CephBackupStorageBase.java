@@ -17,22 +17,18 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.HasThreadContext;
-import org.zstack.header.core.AsyncLatch;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.*;
 import org.zstack.header.log.NoLogging;
@@ -62,7 +58,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.*;
+import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -796,15 +792,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
             ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
                 @Override
                 public void success(T ret) {
-                    if (!ret.success) {
-                        if (tryNext) {
-                            doCall();
-                        } else {
-                            callback.fail(operr("operation error, because:%s", ret.error));
-                        }
-                        return;
-                    }
-
                     if (!(cmd instanceof InitCmd)) {
                         updateCapacityIfNeeded(ret);
                     }
@@ -815,6 +802,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
+                    if (errorCode.isError(SysErrors.OPERATION_ERROR) && tryNext) {
+                        doCall();
+                        return;
+                    } else if (errorCode.isError(SysErrors.OPERATION_ERROR)) {
+                        callback.fail(errorCode);
+                        return;
+                    }
                     String details = String.format("[mon:%s], %s", base.getSelf().getHostname(), errorCode.getDetails());
                     errorCode.setDetails(details);
                     errorCodes.add(errorCode);
@@ -894,19 +888,15 @@ public class CephBackupStorageBase extends BackupStorageBase {
         new CephBackupStorageMonBase(monvo).httpCall(GET_DOWNLOAD_PROGRESS_PATH, cmd, GetDownloadProgressRsp.class, new ReturnValueCompletion<GetDownloadProgressRsp>(msg) {
             @Override
             public void success(GetDownloadProgressRsp resp) {
-                if (resp.isSuccess()) {
-                    r.setCompleted(resp.isCompleted());
-                    r.setProgress(resp.getProgress());
-                    r.setActualSize(resp.getActualSize());
-                    r.setSize(resp.getSize());
-                    r.setInstallPath(resp.getInstallPath());
-                    r.setFormat(resp.getFormat());
-                    r.setDownloadSize(resp.getDownloadSize());
-                    r.setLastOpTime(resp.getLastOpTime());
-                    r.setSupportSuspend(true);
-                } else {
-                    r.setError(operr("operation error, because:%s", resp.getError()));
-                }
+                r.setCompleted(resp.isCompleted());
+                r.setProgress(resp.getProgress());
+                r.setActualSize(resp.getActualSize());
+                r.setSize(resp.getSize());
+                r.setInstallPath(resp.getInstallPath());
+                r.setFormat(resp.getFormat());
+                r.setDownloadSize(resp.getDownloadSize());
+                r.setLastOpTime(resp.getLastOpTime());
+                r.setSupportSuspend(true);
                 bus.reply(msg, r);
             }
 
@@ -1345,13 +1335,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             mon.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(coml) {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
-                                    if (!rsp.success) {
-                                        // one mon cannot get the facts, directly error out
-                                        errs.add(operr("operation error, because:%s", rsp.error));
-                                        coml.allDone();
-                                        return;
-                                    }
-
                                     CephBackupStorageMonVO monVO = mon.getSelf();
                                     fsids.put(monVO.getUuid(), rsp.fsid);
                                     monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
@@ -1961,14 +1944,10 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             base.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(latch) {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
-                                    if (!rsp.isSuccess()) {
-                                        errors.add(operr("operation error, because:%s", rsp.getError()));
-                                    } else {
-                                        String fsid = rsp.fsid;
-                                        if (!getSelf().getFsid().equals(fsid)) {
-                                            errors.add(operr("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
-                                                            "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid()));
-                                        }
+                                    String fsid = rsp.fsid;
+                                    if (!getSelf().getFsid().equals(fsid)) {
+                                        errors.add(operr("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
+                                                        "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid()));
                                     }
 
                                     CephBackupStorageMonVO monVO = base.getSelf();
@@ -1981,6 +1960,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 @Override
                                 public void fail(ErrorCode errorCode) {
                                     errors.add(errorCode);
+                                    GetFactsRsp rsp = (GetFactsRsp)errorCode.getFromOpaque(GetFactsRsp.class.getSimpleName());
+
+                                    if (rsp != null) {
+                                        CephBackupStorageMonVO monVO = base.getSelf();
+                                        monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
+                                        dbf.update(monVO);
+                                    }
                                     latch.ack();
                                 }
                             });

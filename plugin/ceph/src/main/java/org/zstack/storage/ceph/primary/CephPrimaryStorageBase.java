@@ -35,6 +35,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.*;
@@ -3213,15 +3214,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
                 @Override
                 public void success(T ret) {
-                    if (!ret.success) {
-                        if (tryNext) {
-                            doCall();
-                        } else {
-                            callback.fail(operr("operation error, because:%s", ret.error));
-                        }
-                        return;
-                    }
-
                     if (!(cmd instanceof InitCmd)) {
                         updateCapacityIfNeeded(ret);
                     }
@@ -3230,6 +3222,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
+                    if (errorCode.isError(SysErrors.OPERATION_ERROR) && tryNext) {
+                        doCall();
+                        return;
+                    } else if (errorCode.isError(SysErrors.OPERATION_ERROR)) {
+                        callback.fail(errorCode);
+                        return;
+                    }
                     logger.warn(String.format("mon[%s] failed to execute http call[%s], error is: %s",
                             base.getSelf().getHostname(), path, JSONObjectUtil.toJsonString(errorCode)));
                     errorCodes.getCauses().add(errorCode);
@@ -3350,13 +3349,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             mon.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(compl) {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
-                                    if (!rsp.success) {
-                                        // one mon cannot get the facts, directly error out
-                                        errors.add(Platform.operr("%s", rsp.getError()));
-                                        compl.allDone();
-                                        return;
-                                    }
-
                                     CephPrimaryStorageMonVO monVO = dbf.reload(mon.getSelf());
                                     if (monVO != null) {
                                         fsids.put(monVO.getUuid(), rsp.fsid);
@@ -3988,20 +3980,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             base.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(latch) {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
-                                    if (!rsp.isSuccess()) {
-                                        errors.add(operr("operation error, because:%s", rsp.getError()));
-                                    } else {
-                                        String fsid = rsp.fsid;
-                                        if (!getSelf().getFsid().equals(fsid)) {
-                                            errors.add(operr("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
-                                                    "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
-                                            );
-                                        }
-                                        CephPrimaryStorageMonVO monVO = dbf.reload(base.getSelf());
-                                        if (monVO != null) {
-                                            monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
-                                            dbf.update(monVO);
-                                        }
+                                    String fsid = rsp.fsid;
+                                    if (!getSelf().getFsid().equals(fsid)) {
+                                        errors.add(operr("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
+                                                "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
+                                        );
+                                    }
+                                    CephPrimaryStorageMonVO monVO = dbf.reload(base.getSelf());
+                                    if (monVO != null) {
+                                        monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
+                                        dbf.update(monVO);
                                     }
 
                                     latch.ack();

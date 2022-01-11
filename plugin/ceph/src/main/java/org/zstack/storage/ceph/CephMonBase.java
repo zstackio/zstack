@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
+import org.zstack.core.agent.AgentConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -14,6 +15,8 @@ import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
 import org.zstack.utils.ssh.SshResult;
 
+import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
@@ -90,6 +93,28 @@ public abstract class CephMonBase {
 
             @Override
             public void success(T ret) {
+                boolean success = false;
+                String error = "";
+                for (Field field : ret.getClass().getDeclaredFields()) {
+                    field.setAccessible(true);
+                    try {
+                        if (AgentConstant.SUCCESS.equals(field.getName())) {
+                            success = (Boolean) field.get(ret);
+                        } else if (AgentConstant.ERROR.equals(field.getName())) {
+                            error = (String) field.get(ret);
+                        }
+                    } catch (IllegalAccessException e) {
+                    }
+                }
+
+                if (!success) {
+                    LinkedHashMap<String, Object> rsp = new LinkedHashMap<>();
+                    rsp.put(ret.getClass().getSimpleName(), ret);
+                    ErrorCode e = operr("operation error, because:%s", error);
+                    e.setOpaque(rsp);
+                    completion.fail(e);
+                    return;
+                }
                 completion.success(ret);
             }
 

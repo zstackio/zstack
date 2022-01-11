@@ -21,4 +21,7 @@ public class AgentConstant {
 
     public static final String CANCEL_JOB = "/job/cancel";
 
+    public static final String SUCCESS = "success";
+    public static final String ERROR = "error";
+
 }
