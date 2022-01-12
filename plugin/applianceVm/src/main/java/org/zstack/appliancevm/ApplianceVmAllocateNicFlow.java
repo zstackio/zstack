@@ -4,12 +4,16 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmInstanceManager;
 import org.zstack.compute.vm.VmNicManager;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowException;
@@ -20,10 +24,11 @@ import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
-import org.zstack.identity.Account;
 import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -48,6 +53,8 @@ public class ApplianceVmAllocateNicFlow implements Flow {
     private L3NetworkManager l3nm;
     @Autowired
     private VmNicManager nicManager;
+    @Autowired
+    protected VmInstanceManager vmMgr;
 
     private UsedIpInventory acquireIp(String l3NetworkUuid, String mac, Integer version, String staticIp, String stratgey, boolean allowDuplicatedAddress) {
         AllocateIpMsg msg = new AllocateIpMsg();
@@ -85,13 +92,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                 nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
 
         L3NetworkVO l3NetworkVO = dbf.findByUuid(nicSpec.getL3NetworkUuid(), L3NetworkVO.class);
-        L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
-        if (l2NetworkVO.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
-            inv.setType("vDPA");
-        } else {
-            inv.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
-        }
-
+        inv.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
         inv.setUsedIps(new ArrayList<>());
 
         if (nicSpec.getIp() == null) {
@@ -147,40 +148,34 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
         int[] deviceId = {0};
+        List<VmNicInventory> nicList = new ArrayList<>();
 
         VmNicInventory mgmtNic = makeNicInventory(spec, aspec.getManagementNic(), deviceId);
-        spec.getDestNics().add(mgmtNic);
+        nicList.add(mgmtNic);
 
         for (ApplianceVmNicSpec nicSpec : aspec.getAdditionalNics()) {
-            spec.getDestNics().add(makeNicInventory(spec, nicSpec, deviceId));
+            nicList.add(makeNicInventory(spec, nicSpec, deviceId));
         }
 
         new SQLBatch() {
             @Override
             protected void scripts() {
-                String acntUuid = Account.getAccountUuidOfResource(spec.getVmInventory().getUuid());
-                spec.getDestNics().forEach(nic -> {
-                    VmNicVO nvo = new VmNicVO();
-                    nvo.setUuid(nic.getUuid());
-                    nvo.setDeviceId(nic.getDeviceId());
-                    nvo.setIp(nic.getIp());
-                    nvo.setL3NetworkUuid(nic.getL3NetworkUuid());
-                    nvo.setMac(nic.getMac());
-                    nvo.setHypervisorType(nic.getHypervisorType());
-                    nvo.setUsedIpUuid(nic.getUsedIpUuid());
-                    nvo.setGateway(nic.getGateway());
-                    nvo.setNetmask(nic.getNetmask());
-                    nvo.setVmInstanceUuid(nic.getVmInstanceUuid());
-                    nvo.setMetaData(nic.getMetaData());
-                    nvo.setInternalName(nic.getInternalName());
-                    nvo.setAccountUuid(acntUuid);
-                    nvo.setIpVersion(nic.getIpVersion());
-                    nvo.setDriverType(nic.getDriverType());
-                    nvo.setType(nic.getType());
-                    persist(nvo);
-                    for (UsedIpInventory ip : nic.getUsedIps()) {
-                        SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, ip.getUuid()).set(UsedIpVO_.vmNicUuid, nvo.getUuid()).update();
+                nicList.forEach(nic -> {
+                    VmInstanceNicFactory vnicFactory;
+                    L3NetworkVO l3NetworkVO = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+                    String switchType = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid())
+                            .select(L2NetworkVO_.vSwitchType).findValue();
+
+                    if (switchType.equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)
+                            && NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class)) {
+                        vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf(VmOvsNicConstant.ACCEL_TYPE_VHOST_USER_SPACE));
+                    } else if (switchType.equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+                        vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf(VmOvsNicConstant.ACCEL_TYPE_VDPA));
+                    } else {
+                        vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VNIC"));
                     }
+
+                    vnicFactory.createApplianceVmNic(nic, spec);
                 });
             }
         }.execute();
