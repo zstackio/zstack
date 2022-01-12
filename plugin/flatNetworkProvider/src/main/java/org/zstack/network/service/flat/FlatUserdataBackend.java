@@ -28,11 +28,8 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.NetworkServiceConstants;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceProviderVO;
@@ -372,6 +369,18 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     }
 
+    private static void filtVdpaNic(UserdataStruct struct) {
+        // TODO: vDPA do not support Userdata service yet;
+        List<VmNicInventory> tmp = new ArrayList<>();
+        for (VmNicInventory vNic : struct.getVmNics()) {
+            if (vNic.getType().equals("vDPA")) {
+                continue;
+            }
+            tmp.add(vNic);
+        }
+        struct.setVmNics(tmp);
+    }
+
     public static class UserdataReleseGC extends TimeBasedGarbageCollector {
         public static long INTERVAL = 300;
 
@@ -380,15 +389,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
         @Override
         protected void triggerNow(GCCompletion completion) {
-            // TODO: vDPA do not support Userdata service yet;
-            List<VmNicInventory> tmp = new ArrayList<>();
-            for (VmNicInventory vNic : struct.getVmNics()) {
-                if (vNic.getType().equals("vDPA")) {
-                    continue;
-                }
-                tmp.add(vNic);
-            }
-            struct.setVmNics(tmp);
+            filtVdpaNic(struct);
 
             HostStatus status = Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, struct.getHostUuid()).findValue();
             if (status == null) {
@@ -563,16 +564,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             completion.success();
             return;
         }
-
-        // TODO: vDPA do not support Userdata service yet;
-        List<VmNicInventory> tmp = new ArrayList<>();
-        for (VmNicInventory vNic : struct.getVmNics()) {
-            if (vNic.getType().equals("vDPA")) {
-                continue;
-            }
-            tmp.add(vNic);
-        }
-        struct.setVmNics(tmp);
+        filtVdpaNic(struct);
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("flat-network-userdata-set-for-vm-%s", struct.getVmUuid()));
@@ -689,22 +681,14 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }).start();
     }
 
+
     @Override
     public void releaseUserdata(final UserdataStruct struct, final Completion completion) {
         if (new FlatNetworkServiceValidator().validate(struct.getHostUuid())) {
             completion.success();
             return;
         }
-
-        // TODO: vDPA do not support Userdata service yet;
-        List<VmNicInventory> tmp = new ArrayList<>();
-        for (VmNicInventory vNic : struct.getVmNics()) {
-            if (vNic.getType().equals("vDPA")) {
-                continue;
-            }
-            tmp.add(vNic);
-        }
-        struct.setVmNics(tmp);
+        filtVdpaNic(struct);
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("flat-network-userdata-release-for-vm-%s", struct.getVmUuid()));
