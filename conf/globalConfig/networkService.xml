@@ -35,4 +35,11 @@
         <category>quota</category>
         <type>java.lang.Long</type>
     </config>
+    <config>
+        <name>enableVHostUser</name>
+        <description>use vHostUser instead of vDpa</description>
+        <defaultValue>true</defaultValue>
+        <category>networkService</category>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>

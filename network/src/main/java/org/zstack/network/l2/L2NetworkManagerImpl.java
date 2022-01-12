@@ -146,30 +146,38 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         return ret;
     }
 
+    private boolean ovsDpdkSupport(ClusterVO clusterVO) {
+        String memAccessMode = "private";
+
+        ResourceConfig memAccess = rcf.getResourceConfig("premiumCluster.memAccess.mode");
+        if (memAccess != null) {
+            memAccessMode = memAccess.getResourceConfigValue(clusterVO.getUuid(), String.class);
+        }
+
+        ResourceConfig numa = rcf.getResourceConfig("vm.numa");
+        boolean isNumaEnable = numa.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
+
+        ResourceConfig hugepage = rcf.getResourceConfig("premiumCluster.hugepage.enable");
+        boolean isHugepage = hugepage.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
+
+        boolean isOvsDpdkSup = false;
+        ResourceConfig ovsDpdkSup = rcf.getResourceConfig("premiumCluster.network.ovsdpdk");
+        if (ovsDpdkSup != null) {
+            isOvsDpdkSup = ovsDpdkSup.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
+        }
+
+        if (memAccessMode.equals("private") || !isNumaEnable || !isOvsDpdkSup || !isHugepage){
+            return false;
+        }
+
+        return true;
+    }
+
     private boolean canAttachL2ToThisCluster(L2NetworkVO l2NetworkVO, ClusterVO clusterVO) {
 
         String vSwitchType = l2NetworkVO.getvSwitchType();
-        if (vSwitchType.equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
-
-            String memAccessMode = "private";
-
-            ResourceConfig memAccess = rcf.getResourceConfig("premiumCluster.memAccess.mode");
-            if (memAccess != null) {
-                memAccessMode = memAccess.getResourceConfigValue(clusterVO.getUuid(), String.class);
-            }
-
-            ResourceConfig numa = rcf.getResourceConfig("vm.numa");
-            boolean isNumaEnable = numa.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
-
-            boolean isOvsDpdkSup = false;
-            ResourceConfig ovsDpdkSup = rcf.getResourceConfig("premiumCluster.network.ovsdpdk");
-            if (ovsDpdkSup != null) {
-                isOvsDpdkSup = ovsDpdkSup.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
-            }
-
-            if (memAccessMode.equals("private") || !isNumaEnable || !isOvsDpdkSup){
-                return false;
-            }
+        if (vSwitchType.equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK) && !ovsDpdkSupport(clusterVO)) {
+            return false;
         }
 
         StringBuilder sqlBuilder = new StringBuilder();
@@ -252,24 +260,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
                 .contains(l2.getUuid()))
                 .collect(Collectors.toList());
 
-        //if cluster set memeAccess to 'private', filter l2 with OVSDPDK vSwitch type
-        String memAccessMode = "private";
-
-        ResourceConfig memAccess = rcf.getResourceConfig("premiumCluster.memAccess.mode");
-        if (memAccess != null) {
-            memAccessMode = memAccess.getResourceConfigValue(clusterVO.getUuid(), String.class);
-        }
-
-        ResourceConfig numa = rcf.getResourceConfig("vm.numa");
-        boolean isNumaEnable = numa.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
-
-        boolean isOvsDpdkSup = false;
-        ResourceConfig ovsDpdkSup = rcf.getResourceConfig("premiumCluster.network.ovsdpdk");
-        if (ovsDpdkSup != null) {
-            isOvsDpdkSup = ovsDpdkSup.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
-        }
-
-        if (memAccessMode.equals("private") || !isNumaEnable || !isOvsDpdkSup) {
+        if (!ovsDpdkSupport(clusterVO)) {
             final List<L2NetworkVO> DpdkL2s =  SQL.New("select distinct l2 from L2NetworkVO l2 where" +
                     " l2.vSwitchType = :l2vSwitchType")
                     .param("l2vSwitchType", "OvsDpdk")

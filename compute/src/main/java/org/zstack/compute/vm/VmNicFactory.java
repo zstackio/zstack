@@ -1,16 +1,12 @@
 package org.zstack.compute.vm;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.jpa.JpaSystemException;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
 import org.zstack.header.core.workflow.FlowException;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.utils.ExceptionDSL;
@@ -36,11 +32,9 @@ public class VmNicFactory implements VmInstanceNicFactory {
         return type;
     }
 
-    @Override
-    public VmNicVO createVmNic(VmNicInventory nic, VmInstanceSpec spec, List<UsedIpInventory> ips) {
-        String acntUuid = Account.getAccountUuidOfResource(spec.getVmInventory().getUuid());
 
-        VmNicVO vnic = VmInstanceNicFactory.createVmNic(nic);
+    private VmNicVO createVmVnic(VmNicVO vnic, VmInstanceSpec spec, List<UsedIpInventory> ips) {
+        String acntUuid = Account.getAccountUuidOfResource(spec.getVmInventory().getUuid());
         vnic.setType(type.toString());
         vnic.setAccountUuid(acntUuid);
         vnic = persistAndRetryIfMacCollision(vnic);
@@ -60,6 +54,18 @@ public class VmNicFactory implements VmInstanceNicFactory {
         vnic = dbf.reload(vnic);
         spec.getDestNics().add(VmNicInventory.valueOf(vnic));
         return vnic;
+    }
+
+    @Override
+    public VmNicVO createVmNic(VmNicInventory nic, VmInstanceSpec spec, List<UsedIpInventory> ips) {
+        VmNicVO vnic = VmInstanceNicFactory.createVmNic(nic);
+        return createVmVnic(vnic, spec, ips);
+    }
+
+    @Override
+    public VmNicVO createApplianceVmNic(VmNicInventory nic, VmInstanceSpec spec) {
+        VmNicVO vnic = VmInstanceNicFactory.createApplianceVmNic(nic);
+        return createVmVnic(vnic, spec, nic.getUsedIps());
     }
 
     private VmNicVO persistAndRetryIfMacCollision(VmNicVO vo) {
