@@ -5,7 +5,7 @@ import org.zstack.header.message.MessageReply;
 public class CreateTemplateFromVolumeOnPrimaryStorageReply extends MessageReply {
     private String templateBackupStorageInstallPath;
     private String format;
-    private long size;
+    private long actualSize;
 
     public String getFormat() {
         return format;
@@ -23,11 +23,11 @@ public class CreateTemplateFromVolumeOnPrimaryStorageReply extends MessageReply 
         this.templateBackupStorageInstallPath = templateBackupStorageInstallPath;
     }
 
-    public long getSize() {
-        return size;
+    public long getActualSize() {
+        return actualSize;
     }
 
-    public void setSize(long size) {
-        this.size = size;
+    public void setActualSize(long actualSize) {
+        this.actualSize = actualSize;
     }
 }

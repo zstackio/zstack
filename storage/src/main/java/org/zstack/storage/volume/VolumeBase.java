@@ -959,7 +959,7 @@ public class VolumeBase implements Volume {
                     reply.setInstallPath(backupStorageInstallPath);
                     reply.setMd5sum(null);
                     reply.setBackupStorageUuid(msg.getBackupStorageUuid());
-                    reply.setSize(creply.getSize());
+                    reply.setActualSize(creply.getActualSize());
                 }
 
                 bus.reply(msg, reply);

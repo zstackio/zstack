@@ -4,7 +4,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
-import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -49,8 +48,6 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
@@ -59,7 +56,6 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
-import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
@@ -1872,7 +1868,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             ImageVO image;
             long imageEstimateSize;
             String volumePsUuid;
-            long imageSize;
+            long imageActualSize;
 
             @Override
             public void setup() {
@@ -2103,8 +2099,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     if (reply.getFormat() != null) {
                                         format = reply.getFormat();
                                     }
-                                    if (imageSize == 0) {
-                                        imageSize = reply.getSize();
+                                    if (imageActualSize == 0) {
+                                        imageActualSize = reply.getActualSize();
                                     }
                                 }
 
@@ -2122,7 +2118,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     }
                                     image.setMd5Sum(mdsum);
                                     image.setStatus(ImageStatus.Ready);
-                                    image.setActualSize(imageSize);
+                                    image.setActualSize(imageActualSize);
                                     image = dbf.updateAndRefresh(image);
 
                                     trigger.next();
@@ -2131,6 +2127,33 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         });
                     }
                 });
+
+                if (imageActualSize == 0) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "sync-image-size";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            new While<>(backupStorages).all((arg, compl) -> {
+                                SyncImageSizeMsg smsg = new SyncImageSizeMsg();
+                                smsg.setBackupStorageUuid(arg.getUuid());
+                                smsg.setImageUuid(image.getUuid());
+                                bus.makeTargetServiceIdByResourceUuid(smsg, ImageConstant.SERVICE_ID, image.getUuid());
+                                bus.send(smsg, new CloudBusCallBack(compl) {
+                                    @Override
+                                    public void run(MessageReply reply) {
+                                        compl.done();
+                                    }
+                                });
+                            }).run(new WhileDoneCompletion(trigger) {
+                                @Override
+                                public void done(ErrorCodeList errorCodeList) {
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
+                }
 
                 done(new FlowDoneHandler(completion) {
                     @Override

@@ -9,7 +9,7 @@ public class CreateDataVolumeTemplateFromDataVolumeReply extends MessageReply {
     private String installPath;
     private String md5sum;
     private String format;
-    private long size;
+    private long actualSize;
 
     public String getFormat() {
         return format;
@@ -43,11 +43,11 @@ public class CreateDataVolumeTemplateFromDataVolumeReply extends MessageReply {
         this.md5sum = md5sum;
     }
 
-    public long getSize() {
-        return size;
+    public long getActualSize() {
+        return actualSize;
     }
 
-    public void setSize(long size) {
-        this.size = size;
+    public void setActualSize(long actualSize) {
+        this.actualSize = actualSize;
     }
 }
