@@ -5,10 +5,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.job.Job;
 import org.zstack.core.job.JobContext;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -26,6 +28,7 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -49,6 +52,8 @@ public class NfsDownloadImageToCacheJob implements Job {
     private NfsPrimaryStorageManager nfsMgr;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     @Override
     public void run(final ReturnValueCompletion<Object> completion) {
@@ -62,6 +67,27 @@ public class NfsDownloadImageToCacheJob implements Job {
         }
 
         download(completion);
+    }
+
+    private void checkEncryptImageCache(ImageCacheVO cacheVO, final ReturnValueCompletion<Object> completion) {
+        List<AfterCreateImageCacheExtensionPoint> extensionList = pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class);
+
+        if (extensionList.isEmpty()) {
+            completion.success(ImageCacheInventory.valueOf(cacheVO));
+            return;
+        }
+
+        extensionList.forEach(ext -> ext.checkEncryptImageCache(null, ImageCacheInventory.valueOf(cacheVO), new Completion(completion) {
+            @Override
+            public void success() {
+                completion.success(ImageCacheInventory.valueOf(cacheVO));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        }));
     }
 
     private void download(final ReturnValueCompletion<Object> completion) {
@@ -180,6 +206,9 @@ public class NfsDownloadImageToCacheJob implements Job {
                         logger.debug(String.format("successfully downloaded image[uuid:%s] in image cache[id:%s, path:%s]",
                                 image.getInventory().getUuid(), cvo.getId(), cvo.getInstallUrl()));
 
+                        ImageCacheVO finalCvo = cvo;
+                        pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)
+                                .forEach(exp -> exp.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(finalCvo)));
                         completion.success(ImageCacheInventory.valueOf(cvo));
                     }
                 });
@@ -202,7 +231,7 @@ public class NfsDownloadImageToCacheJob implements Job {
                 if (returnValue) {
                     logger.debug(String.format("found image[uuid:%s] in image cache[id:%s, path:%s]",
                             image.getInventory().getUuid(), cvo.getId(), cvo.getInstallUrl()));
-                    completion.success(ImageCacheInventory.valueOf(cvo));
+                    checkEncryptImageCache(cvo, completion);
                     return;
                 }
 

@@ -1,0 +1,9 @@
+<error>
+    <prefix>SM</prefix>
+
+    <code>
+        <id>3001</id>
+        <description>No available security machine</description>
+    </code>
+</error>
+

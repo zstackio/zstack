@@ -2,12 +2,15 @@ package org.zstack.identity;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.IdentityByPassCheck;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.SessionInventory;
@@ -21,10 +24,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
@@ -136,5 +136,14 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
                 .collect(Collectors.toList());
 
         findAuthorizationBackend(session).validatePermission(targetApis, session);
+    }
+
+    public static ErrorCode createAdditionAuthErrorCode(String credentials, String... authentications) {
+        JsonObject o = new JsonObject();
+        JsonArray authArray = new JsonArray(authentications.length);
+        Arrays.asList(authentications).forEach(authArray::add);
+        o.add("authentications", authArray);
+        o.addProperty("credentials", credentials);
+        return err(IdentityErrors.NEED_ADDITION_AUTHENTICATION, "%s", o.toString());
     }
 }

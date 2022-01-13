@@ -8,6 +8,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.agent.AgentConstant;
 import org.zstack.core.ansible.*;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
@@ -589,6 +590,43 @@ public class SftpBackupStorage extends BackupStorageBase {
                         return GetLocalFileSizeRsp.class;
                     }
         });
+    }
+
+    @Override
+    protected void handle(GetImageEncryptedOnBackupStorageMsg msg) {
+        GetImageEncryptedOnBackupStorageReply reply = new GetImageEncryptedOnBackupStorageReply();
+        String  installPath = Q.New(ImageBackupStorageRefVO.class)
+                .select(ImageBackupStorageRefVO_.installPath)
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, self.getUuid())
+                .eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
+                .findValue();
+        GetImageHashCmd cmd = new GetImageHashCmd();
+        cmd.path = installPath;
+
+        restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.GET_IMAGE_HASH), cmd, new JsonAsyncRESTCallback<GetImageHashRsp>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(GetImageHashRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("operation error, because:%s", rsp.getError()));
+                } else {
+                    reply.setEncrypted(rsp.hash);
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<GetImageHashRsp> getReturnClass() {
+                return GetImageHashRsp.class;
+            }
+        });
+
     }
 
     private void handle(final GetSftpBackupStorageDownloadCredentialMsg msg) {
