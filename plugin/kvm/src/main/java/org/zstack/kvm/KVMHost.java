@@ -563,31 +563,24 @@ public class KVMHost extends HostBase implements Host {
         GetHostNUMATopologyCmd cmd = new GetHostNUMATopologyCmd();
         cmd.setHostUuid(msg.getHostUuid());
 
-        chain.setName(String.format("get-kvm-host-numa-%s", self.getUuid()));
-        chain.then(new NoRollbackFlow() {
+        new Http<>(getHostNumaPath, cmd, GetHostNUMATopologyResponse.class).call(msg.getHostUuid(), new ReturnValueCompletion<GetHostNUMATopologyResponse>(msg) {
             @Override
-            public void run(FlowTrigger trigger, Map data) {
-                new Http<>(getHostNumaPath, cmd, GetHostNUMATopologyResponse.class).call(msg.getHostUuid(), new ReturnValueCompletion<GetHostNUMATopologyResponse>(msg) {
-                    @Override
-                    public void success(GetHostNUMATopologyResponse ret) {
-                        if (!ret.isSuccess()) {
-                            trigger.fail(operr("%s", ret.getError()));
-                        } else {
-                            reply.setNuma(ret.getTopology());
-                            bus.reply(msg, reply);
-                            trigger.next();
-                        }
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        reply.setError(errorCode);
-                        bus.reply(msg, reply);
-                        trigger.fail(errorCode);
-                    }
-                });
+            public void success(GetHostNUMATopologyResponse ret) {
+                if (!ret.isSuccess()) {
+                    ErrorCode err = Platform.err(SysErrors.OPERATION_ERROR, ret.getError());
+                    reply.setError(err);
+                } else {
+                    reply.setNuma(ret.getTopology());
+                }
+                bus.reply(msg, reply);
             }
-        }).start();
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(AllocateHostPortMsg msg) {
