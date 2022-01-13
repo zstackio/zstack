@@ -89,7 +89,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Autowired
     private ApiTimeoutManager timeoutMgr;
     @Autowired
-    private CloudBus bus;
+    protected CloudBus bus;
     @Autowired
     private AccountManager acntMgr;
     @Autowired
@@ -132,6 +132,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/nfsprimarystorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/nfsprimarystorage/kvmhost/download/progress";
     public static final String CREATE_VOLUME_FROM_TEMPLATE_PATH = "/nfsprimarystorage/sftp/createvolumefromtemplate";
+    public static final String GET_QCOW2_HASH_VALUE_PATH = "/nfsprimarystorage/getqcow2hash";
 
 
     //////////////// For unit test //////////////////////////
@@ -1569,6 +1570,30 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
+    public void handle(PrimaryStorageInventory pinv, GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeSnapshotEncryptedOnPrimaryStorageReply> completion) {
+        GetVolumeSnapshotEncryptedOnPrimaryStorageReply reply = new GetVolumeSnapshotEncryptedOnPrimaryStorageReply();
+        HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
+        GetQcow2HashValueCmd cmd = new GetQcow2HashValueCmd();
+        cmd.setInstallPath(msg.getPrimaryStorageInstallPath());
+        cmd.setHostUuid(host.getUuid());
+        asyncHttpCall(GET_QCOW2_HASH_VALUE_PATH, host.getUuid(), cmd, GetQcow2HashValueRsp.class, pinv, new ReturnValueCompletion<GetQcow2HashValueRsp>(completion) {
+
+            @Override
+            public void success(GetQcow2HashValueRsp rsp) {
+                reply.setSnapshotUuid(msg.getSnapshotUuid());
+                reply.setEncrypt(rsp.getHashValue());
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
     public Flow createKvmHostConnectingFlow(final KVMHostConnectedContext context) {
         return new NoRollbackFlow() {
             String __name__ = "remount-nfs-primary-storage";
@@ -1628,7 +1653,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         asyncHttpCall(path, hostUuid, cmd, false, rspType, inv, completion);
     }
 
-    private <T extends NfsPrimaryStorageAgentResponse> void asyncHttpCall(String path, final String hostUuid, NfsPrimaryStorageAgentCommand cmd, boolean noCheckStatus, final Class<T> rspType, PrimaryStorageInventory inv, final ReturnValueCompletion<T> completion) {
+    protected <T extends NfsPrimaryStorageAgentResponse> void asyncHttpCall(String path, final String hostUuid, NfsPrimaryStorageAgentCommand cmd, boolean noCheckStatus, final Class<T> rspType, PrimaryStorageInventory inv, final ReturnValueCompletion<T> completion) {
         cmd.setUuid(inv.getUuid());
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();

@@ -801,4 +801,37 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class LinkVolumeNewDirRsp extends NfsPrimaryStorageAgentResponse {
     }
+
+    public static class GetQcow2HashValueCmd extends NfsPrimaryStorageAgentCommand {
+        private String hostUuid;
+        private String installPath;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+    }
+
+    public static class GetQcow2HashValueRsp extends NfsPrimaryStorageAgentResponse {
+        private String hashValue;
+
+        public String getHashValue() {
+            return hashValue;
+        }
+
+        public void setHashValue(String hashValue) {
+            this.hashValue = hashValue;
+        }
+    }
 }

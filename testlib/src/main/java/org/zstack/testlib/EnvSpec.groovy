@@ -174,7 +174,7 @@ class EnvSpec extends ApiHelper implements Node  {
             [CreateAliyunProxyVpcAction.metaClass, CreateAliyunProxyVpcAction.Result.metaClass, DeleteAliyunProxyVpcAction.class],
             [CreateAliyunProxyVSwitchAction.metaClass, CreateAliyunProxyVSwitchAction.Result.metaClass, DeleteAliyunProxyVSwitchAction.class],
             [CreateMonitorGroupAction.metaClass, CreateMonitorGroupAction.Result.metaClass, DeleteMonitorGroupAction.class],
-            [CreateMonitorTemplateAction.metaClass, CreateMonitorTemplateAction.Result.metaClass, DeleteMonitorTemplateAction.class]
+            [CreateMonitorTemplateAction.metaClass, CreateMonitorTemplateAction.Result.metaClass, DeleteMonitorTemplateAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK
@@ -672,7 +672,7 @@ class EnvSpec extends ApiHelper implements Node  {
                               "CaptchaVO", "LoginAttemptsVO", "SchedulerJobHistoryVO",
                               "HistoricalPasswordVO", "BuildAppExportHistoryVO", "InstallPathRecycleVO", 
                               "PortMirrorSessionSequenceNumberVO", "LicenseHistoryVO", "EventLogVO",
-                              "EventRecordsVO", "AuditsVO", "AlarmRecordsVO", "VmCrashHistoryVO"]) {
+                              "EventRecordsVO", "AuditsVO", "AlarmRecordsVO", "VmCrashHistoryVO", "EncryptionIntegrityVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
             }

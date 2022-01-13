@@ -91,6 +91,13 @@
                                     </includes>
                                 </resource>
                                 <resource>
+                                    <directory>../premium/crypto/ext-libs</directory>
+                                    <targetPath>WEB-INF/lib</targetPath>
+                                    <includes>
+                                        <include>*.jar</include>
+                                    </includes>
+                                </resource>
+                                <resource>
                                     <directory>../search/ext-libs</directory>
                                     <targetPath>WEB-INF/lib</targetPath>
                                     <includes>
@@ -382,6 +389,11 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>twoFactorAuthentication</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>crypto</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

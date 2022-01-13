@@ -1,6 +1,7 @@
 package org.zstack.core.db;
 
 import org.zstack.header.core.StaticInit;
+import org.zstack.header.core.encrypt.EncryptColumn;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.FieldUtils;
@@ -15,6 +16,7 @@ public class EntityMetadata {
         Class entityClass;
         List<Field> fieldPrimaryKeys = new ArrayList<>();
         Set<String> allFieldNames = new HashSet<>();
+        List<String> encryptColumns = new ArrayList<>();
     }
 
     private static Map<Class, Metadata> metadata = new HashMap<>();
@@ -28,6 +30,10 @@ public class EntityMetadata {
                 m.allFieldNames.add(f.getName());
                 if (f.isAnnotationPresent(Id.class)) {
                     m.fieldPrimaryKeys.add(f);
+                }
+
+                if (f.isAnnotationPresent(EncryptColumn.class)) {
+                    m.encryptColumns.add(f.getName());
                 }
             });
 
@@ -51,5 +57,13 @@ public class EntityMetadata {
         }
 
         return m.fieldPrimaryKeys.get(0);
+    }
+
+    public static List<String> getEncryptColumn(Class clz) {
+        Metadata m = getMetadata(clz);
+        if (m.encryptColumns.size() == 0) {
+            return new ArrayList<>();
+        }
+        return m.encryptColumns;
     }
 }
