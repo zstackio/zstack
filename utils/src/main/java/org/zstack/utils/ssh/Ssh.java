@@ -52,7 +52,7 @@ public class Ssh {
     private boolean closed = false;
     private boolean suppressException = false;
     private ScriptRunner script;
-    private String lang = "LANG=\"en_US.UTF-8\" ";
+    private String language = "LANG=\"en_US.UTF-8\"; ";
 
     private boolean init = false;
 
@@ -218,7 +218,7 @@ public class Ssh {
     }
 
     private SshRunner createCommand(final String cmdWithoutPrefix) {
-       final String cmd = lang + cmdWithoutPrefix;
+       final String cmd = language + cmdWithoutPrefix;
        return new SshRunner() {
            @Override
            public SshResult run() {
