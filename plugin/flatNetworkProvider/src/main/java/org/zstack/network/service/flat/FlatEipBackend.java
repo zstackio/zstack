@@ -42,7 +42,6 @@ import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentRsp;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.vip.VipVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -784,9 +783,9 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     }
 
     @Override
-    public List<String> getEipAttachableL3UuidsForVmNic(VmNicInventory vmNicInv, L3NetworkVO l3Network) {
+    public HashMap<NetworkServiceProviderType, List<String>>  getEipAttachableL3UuidsForVmNic(VmNicInventory vmNicInv, L3NetworkVO l3Network) {
         if (l3Network.getCategory() == L3NetworkCategory.Public || l3Network.getCategory() == L3NetworkCategory.System){
-            return new ArrayList<>();
+            return new HashMap<>();
         }
 
         NetworkServiceProviderType providerType = null;
@@ -797,7 +796,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         }
         if (providerType != FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE) {
             /* only handle flat l3 eip attachable l3 */
-            return new ArrayList<>();
+            return new HashMap<>();
         }
 
         /* get candidate l3 networks:
@@ -808,7 +807,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
         String hostUuid = vm.getHostUuid() != null ? vm.getHostUuid() : vm.getLastHostUuid();
         if (hostUuid == null) {
-            return new ArrayList<>();
+            return new HashMap<>();
         }
 
         List<String> vmL3NetworkUuids = vm.getVmNics().stream().map(VmNicVO::getL3NetworkUuid).collect(Collectors.toList());
@@ -836,7 +835,14 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             }
         }
 
-        return ret;
+        if(ret.isEmpty()){
+            return new HashMap<>();
+        }
+
+        HashMap<NetworkServiceProviderType, List<String>> map = new HashMap<>();
+        providerType = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE;
+        map.put(providerType,ret);
+        return map;
     }
 
     @Override

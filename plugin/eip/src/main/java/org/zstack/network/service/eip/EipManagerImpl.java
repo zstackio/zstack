@@ -163,8 +163,15 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         VmNicInventory vmNicInv = VmNicInventory.valueOf(vmNicVO);
 
         // 1. get candidate l3Uuids
-        List<String> l3Uuids = getL3NetworkForVmNicAttachableEip(vmNicInv);
-        if (l3Uuids.isEmpty()) {
+        HashMap<NetworkServiceProviderType, List<String>> map = new HashMap<>();
+        NetworkServiceProviderType providerType = null;
+        List<String> l3Uuids = null;
+        if(!getL3NetworkForVmNicAttachableEip(vmNicInv).isEmpty()) {
+            map = getL3NetworkForVmNicAttachableEip(vmNicInv);
+            providerType = map.entrySet().iterator().next().getKey();
+            l3Uuids = map.get(providerType);
+        }
+        if (l3Uuids == null) {
             logger.debug(String.format("there is no eip candidate l3 for vm nicUuids: %s ", msg.getVmNicUuid()));
             return new ArrayList<>();
         }
@@ -184,6 +191,23 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 isIpv6Only = true;
             }
         }
+
+        // check flat vmNic whether attach eip
+        if (Objects.equals(providerType, new NetworkServiceProviderType("Flat"))) {
+            List<String> AttachedIps = Q.New(EipVO.class).eq(EipVO_.vmNicUuid, msg.getVmNicUuid()).select(EipVO_.vipIp).listValues();
+            if (!AttachedIps.isEmpty()) {
+                for (String attachedIp : AttachedIps) {
+                    if (NetworkUtils.isIpv4Address(attachedIp)) {
+                        isIpv6Only = true;
+                    } else
+                        isIpv4Only = true;
+                }
+            }
+            if(isIpv4Only && isIpv6Only){
+                new ArrayList<>();
+            }
+        }
+
         List<String> ret = new ArrayList<>();
         for (Tuple t : tuples) {
             String uuid = (String)t.get(0);
@@ -208,13 +232,15 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         return EipInventory.valueOf(eipVOS);
     }
 
-    private List<String> getL3NetworkForVmNicAttachableEip(VmNicInventory vmNicInv) {
+    private HashMap<NetworkServiceProviderType, List<String>>  getL3NetworkForVmNicAttachableEip(VmNicInventory vmNicInv) {
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class)
                 .eq(L3NetworkVO_.uuid, vmNicInv.getL3NetworkUuid()).find();
 
-        List<String> ret = new ArrayList<>();
+        HashMap<NetworkServiceProviderType,List<String>> ret = new HashMap<>();
         for (GetEipAttachableL3UuidsForVmNicExtensionPoint extp : pluginRgty.getExtensionList(GetEipAttachableL3UuidsForVmNicExtensionPoint.class)) {
-            ret.addAll(extp.getEipAttachableL3UuidsForVmNic(vmNicInv, l3Network));
+            if(!extp.getEipAttachableL3UuidsForVmNic(vmNicInv, l3Network).isEmpty()){
+                ret.putAll(extp.getEipAttachableL3UuidsForVmNic(vmNicInv, l3Network));
+            }
         }
         return ret;
     }

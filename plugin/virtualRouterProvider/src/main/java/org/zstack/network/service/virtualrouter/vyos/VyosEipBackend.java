@@ -26,7 +26,7 @@ import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipBackend;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,9 +56,9 @@ public class VyosEipBackend extends VirtualRouterEipBackend implements GetEipAtt
     }
 
     @Override
-    public List<String> getEipAttachableL3UuidsForVmNic(VmNicInventory vmNicInv, L3NetworkVO l3Network) {
+    public HashMap<NetworkServiceProviderType, List<String>> getEipAttachableL3UuidsForVmNic(VmNicInventory vmNicInv, L3NetworkVO l3Network) {
         if (l3Network.getCategory() == L3NetworkCategory.Public || l3Network.getCategory() == L3NetworkCategory.System){
-            return new ArrayList<>();
+            return new HashMap<>();
         }
 
         NetworkServiceProviderType providerType = null;
@@ -69,7 +69,7 @@ public class VyosEipBackend extends VirtualRouterEipBackend implements GetEipAtt
         }
         if (providerType != VyosConstants.PROVIDER_TYPE) {
             /* only vrouter l3 handled here */
-            return new ArrayList<>();
+            return new HashMap<>();
         }
 
         /* get candidate l3 networks:
@@ -80,7 +80,7 @@ public class VyosEipBackend extends VirtualRouterEipBackend implements GetEipAtt
 
         String hostUuid = vm.getHostUuid() != null ? vm.getHostUuid() : vm.getLastHostUuid();
         if (hostUuid == null) {
-            return new ArrayList<>();
+            return new HashMap<>();
         }
 
         List<String> vmL3NetworkUuids = vm.getVmNics().stream().map(VmNicVO::getL3NetworkUuid).collect(Collectors.toList());
@@ -90,7 +90,17 @@ public class VyosEipBackend extends VirtualRouterEipBackend implements GetEipAtt
         List<String> l3Uuids = Q.New(L3NetworkVO.class).in(L3NetworkVO_.l2NetworkUuid, l2NetworkUuids)
                 .notIn(L3NetworkVO_.uuid, vmL3NetworkUuids).select(L3NetworkVO_.uuid).listValues();
 
-        return vrMgr.getPublicL3UuidsOfPrivateL3(l3Network).stream()
+        List<String> ret = vrMgr.getPublicL3UuidsOfPrivateL3(l3Network).stream()
                 .filter(l3Uuids::contains).collect(Collectors.toList());
+
+        if(ret.isEmpty()){
+            return new HashMap<>();
+        }
+
+        HashMap<NetworkServiceProviderType, List<String>> map = new HashMap<>();
+        providerType = VyosConstants.PROVIDER_TYPE;
+        map.put(providerType,ret);
+
+        return map;
     }
 }
