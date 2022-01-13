@@ -166,6 +166,7 @@
         <class>org.zstack.header.allocator.HostAllocatedCpuVO</class>
         <class>org.zstack.header.vm.VmInstanceNumaNodeVO</class>
         <class>org.zstack.header.host.HostNumaNodeVO</class>
+        <class>org.zstack.header.core.encrypt.EncryptionIntegrityVO</class>
 
     </persistence-unit>
 </persistence>

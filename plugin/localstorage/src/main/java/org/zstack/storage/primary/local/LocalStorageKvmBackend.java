@@ -6,6 +6,7 @@ import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
@@ -41,7 +42,6 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -85,6 +85,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     private LocalStorageFactory localStorageFactory;
     @Autowired
     private RESTFacade restf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public static class AgentCommand extends KVMAgentCommands.PrimaryStorageCommand {
         public String uuid;
@@ -761,6 +763,39 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static class LinkVolumeNewDirRsp extends AgentResponse {
     }
 
+    public static class GetQcow2HashValueCmd extends AgentCommand {
+        private String hostUuid;
+        private String installPath;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+    }
+
+    public static class GetQcow2HashValueRsp extends AgentResponse {
+        private String hashValue;
+
+        public String getHashValue() {
+            return hashValue;
+        }
+
+        public void setHashValue(String hashValue) {
+            this.hashValue = hashValue;
+        }
+    }
+
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
@@ -788,6 +823,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/localstorage/kvmhost/download/progress";
+    public static final String GET_QCOW2_HASH_VALUE_PATH = "/localstorage/getqcow2hash";
 
     public LocalStorageKvmBackend() {
     }
@@ -1371,6 +1407,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                     ImageCacheInventory inv = ImageCacheInventory.valueOf(vo);
                                     inv.setInstallUrl(primaryStorageInstallPath);
+
+                                    pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)
+                                            .forEach(exp -> exp.saveEncryptAfterCreateImageCache(hostUuid, inv));
+
                                     completion.success(inv);
                                     chain.next();
                                 }
@@ -1385,6 +1425,30 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             });
                         }
                     }).start();
+                }
+
+                private void checkEncryptImageCache(ImageCacheInventory inventory, final SyncTaskChain chain) {
+                    List<AfterCreateImageCacheExtensionPoint> extensionList = pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class);
+
+                    if (extensionList.isEmpty()) {
+                        completion.success(inventory);
+                        chain.next();
+                        return;
+                    }
+
+                    extensionList.forEach(ext -> ext.checkEncryptImageCache(hostUuid, inventory, new Completion(chain) {
+                        @Override
+                        public void success() {
+                            completion.success(inventory);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                            chain.next();
+                        }
+                    }));
                 }
 
                 @Override
@@ -1414,8 +1478,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                 ImageCacheInventory inv = ImageCacheInventory.valueOf(cache);
                                 inv.setInstallUrl(installPath);
-                                completion.success(inv);
-                                chain.next();
+
+                                checkEncryptImageCache(inv, chain);
                                 return;
                             }
 
@@ -3450,6 +3514,30 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void success(GetDownloadBitsFromKVMHostProgressRsp rsp) {
                 reply.setTotalSize(rsp.totalSize);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeSnapshotEncryptedOnPrimaryStorageReply> completion) {
+        GetVolumeSnapshotEncryptedOnPrimaryStorageReply reply = new GetVolumeSnapshotEncryptedOnPrimaryStorageReply();
+        GetQcow2HashValueCmd cmd = new GetQcow2HashValueCmd();
+
+        String hostUuid = getHostUuidByResourceUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class.getSimpleName());
+        cmd.setHostUuid(hostUuid);
+        cmd.setInstallPath(msg.getPrimaryStorageInstallPath());
+        httpCall(GET_QCOW2_HASH_VALUE_PATH, hostUuid, cmd, true, GetQcow2HashValueRsp.class, new ReturnValueCompletion<GetQcow2HashValueRsp>(completion) {
+
+            @Override
+            public void success(GetQcow2HashValueRsp returnValue) {
+                reply.setSnapshotUuid(msg.getSnapshotUuid());
+                reply.setEncrypt(returnValue.getHashValue());
                 completion.success(reply);
             }
 

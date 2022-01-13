@@ -7,4 +7,8 @@ public interface EncryptFacade {
     String encrypt(String decryptString);
 
     String decrypt(String encryptString);
+
+    EncryptFacadeResult<String> encrypt(String data, String algType);
+
+    EncryptFacadeResult<String> decrypt(String data, String algType);
 }
