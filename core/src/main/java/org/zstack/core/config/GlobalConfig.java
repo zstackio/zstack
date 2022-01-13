@@ -51,6 +51,7 @@ public class GlobalConfig {
     private transient List<GlobalConfigBeforeUpdateExtensionPoint> beforeUpdateExtensions = new ArrayList<>();
     private transient List<GlobalConfigBeforeResetExtensionPoint> beforeResetExtensions = new ArrayList<>();
     private transient List<GlobalConfigValidatorExtensionPoint> validators = new ArrayList<>();
+    private transient List<GlobalConfigQueryExtensionPoint> queryExtensions = new ArrayList<>();
     private transient List<GlobalConfigUpdateExtensionPoint> localUpdateExtensions = new ArrayList<>();
     private transient List<GlobalConfigBeforeUpdateExtensionPoint> localBeforeUpdateExtensions = new ArrayList<>();
     private GlobalConfigDef configDef;
@@ -126,6 +127,7 @@ public class GlobalConfig {
         setLinked(g.isLinked());
 
         validators = new ArrayList<>();
+        queryExtensions = new ArrayList<>();
         updateExtensions = new ArrayList<>();
         localUpdateExtensions = new ArrayList<>();
         beforeUpdateExtensions = new ArrayList<>();
@@ -135,6 +137,7 @@ public class GlobalConfig {
         localUpdateExtensions.addAll(g.getLocalUpdateExtensions());
         beforeResetExtensions.addAll(g.getBeforeResetExtensions());
         validators.addAll(g.getValidators());
+        queryExtensions.addAll(g.getQueryExtensions());
         configDef = g.getConfigDef();
         return this;
     }
@@ -176,6 +179,10 @@ public class GlobalConfig {
 
     public void installValidateExtension(GlobalConfigValidatorExtensionPoint ext) {
         validators.add(ext);
+    }
+
+    public void installQueryExtension(GlobalConfigQueryExtensionPoint ext) {
+        queryExtensions.add(ext);
     }
 
     public String getName() {
@@ -409,6 +416,13 @@ public class GlobalConfig {
         update(newValue, true);
     }
 
+    public GlobalConfigOptions getOptions() {
+        for  (GlobalConfigQueryExtensionPoint ext : queryExtensions) {
+            return ext.getConfigOptions();
+        }
+        return null;
+    }
+
     public void updateValueSkipValidation(Object val) {
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
             throw new OperationFailureException(operr("do not allow skip verification"));
@@ -462,6 +476,10 @@ public class GlobalConfig {
 
     public List<GlobalConfigValidatorExtensionPoint> getValidators() {
         return validators;
+    }
+
+    public List<GlobalConfigQueryExtensionPoint> getQueryExtensions() {
+        return queryExtensions;
     }
 
     public List<GlobalConfigUpdateExtensionPoint> getUpdateExtensions() {
