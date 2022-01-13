@@ -3,7 +3,6 @@ package org.zstack.network.l2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -12,8 +11,6 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
-import org.zstack.resourceconfig.ResourceConfig;
-import org.zstack.resourceconfig.ResourceConfigFacade;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -85,14 +82,9 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         if (!L2NetworkType.hasType(msg.getType())) {
             throw new ApiMessageInterceptionException(argerr("unsupported l2Network type[%s]", msg.getType()));
         }
-        // once we already created a linux bridge with a physical interface,
-        // we can not use it to create a OvsDpdk bridge
-        boolean isConflict = Q.New(L2NetworkVO.class)
-                .eq(L2NetworkVO_.physicalInterface, msg.getPhysicalInterface())
-                .notEq(L2NetworkVO_.vSwitchType, msg.getvSwitchType())
-                .isExists();
-        if (isConflict) {
-            throw new ApiMessageInterceptionException(argerr("can not create %s L2Network with physicalInterface:[%s] which was already been used by another vSwitchType.", msg.getvSwitchType(), msg.getPhysicalInterface()));
+
+        if (!VSwitchType.hasType(msg.getvSwitchType())) {
+            throw new ApiMessageInterceptionException(argerr("unsupported vSwitch type[%s]", msg.getvSwitchType()));
         }
     }
 }
