@@ -29,6 +29,8 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
@@ -174,6 +176,10 @@ public class CreateApplianceVmJob implements Job {
                 }
 
                 ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
+
+                // set VPC router's CPU mode to default NONE
+                ResourceConfig rc = rcf.getResourceConfig(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
+                rc.updateValue(avo.getUuid(), KVMConstant.CPU_MODE_NONE);
 
                 trigger.next();
             }

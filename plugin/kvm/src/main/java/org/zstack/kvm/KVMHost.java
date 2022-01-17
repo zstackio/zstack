@@ -2846,7 +2846,14 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setWwn(computeWwnIfAbsent(spec.getDestRootVolume().getUuid()));
         rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
 
-        cmd.setNestedVirtualization( rcf.getResourceConfigValue(KVMGlobalConfig.NESTED_VIRTUALIZATION, spec.getVmInventory().getUuid(), String.class) );
+        String vmCpuMode = rcf.getResourceConfigValue(KVMGlobalConfig.NESTED_VIRTUALIZATION, spec.getVmInventory().getUuid(), String.class);
+        if (vmCpuMode.equals(KVMConstant.CPU_MODE_NONE) || vmCpuMode.equals(KVMConstant.CPU_MODE_HOST_MODEL) || vmCpuMode.equals(KVMConstant.CPU_MODE_HOST_PASSTHROUGH)) {
+            cmd.setNestedVirtualization(vmCpuMode);
+        } else {
+            cmd.setNestedVirtualization(KVMConstant.CPU_MODE_CUSTOM);
+            cmd.setVmCpuModel(vmCpuMode);
+        }
+
         cmd.setRootVolume(rootVolume);
         cmd.setUseBootMenu(VmGlobalConfig.VM_BOOT_MENU.value(Boolean.class));
 

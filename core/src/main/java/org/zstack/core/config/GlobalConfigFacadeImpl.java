@@ -16,6 +16,7 @@ import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.Pair;
 import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -24,6 +25,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -57,7 +59,9 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     public void handleMessage(Message msg) {
         if (msg instanceof APIUpdateGlobalConfigMsg) {
             handle((APIUpdateGlobalConfigMsg) msg);
-        }else if (msg instanceof APIResetGlobalConfigMsg) {
+        } else if (msg instanceof APIGetGlobalConfigOptionsMsg) {
+            handle((APIGetGlobalConfigOptionsMsg) msg);
+        } else if (msg instanceof APIResetGlobalConfigMsg) {
             handle((APIResetGlobalConfigMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
@@ -104,6 +108,26 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         }
         
         bus.publish(evt);
+    }
+
+    private void handle(APIGetGlobalConfigOptionsMsg msg) {
+        APIGetGlobalConfigOptionsReply reply = new APIGetGlobalConfigOptionsReply();
+        GlobalConfig globalConfig = allConfig.get(msg.getIdentity());
+        if (globalConfig == null) {
+            ErrorCode err = argerr("Unable to find GlobalConfig[category: %s, name: %s]", msg.getCategory(), msg.getName());
+            reply.setError(err);
+            bus.reply(msg, reply);
+            return;
+        }
+
+        try {
+            reply.setOptions(globalConfig.getOptions());
+        } catch (GlobalConfigException e) {
+            reply.setError(argerr(e.getMessage()));
+            logger.warn(e.getMessage(), e);
+        }
+
+        bus.reply(msg, reply);
     }
 
     @Override
@@ -635,6 +659,32 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         });
                     }
                 }
+
+                config.installQueryExtension(new GlobalConfigQueryExtensionPoint() {
+                    @Override
+                    public GlobalConfigOptions getConfigOptions() {
+                        GlobalConfigOptions options = new GlobalConfigOptions();
+
+                        if (at.validValues().length > 0) {
+                            options.setValidValue(Arrays.asList(at.validValues()));
+                        } else if (at.inNumberRange().length == 2){
+                            options.setNumberLessThan(at.inNumberRange()[1] + 1);
+                            options.setNumberGreaterThan(at.inNumberRange()[0] - 1);
+                        } else if (at.numberLessThan() != Long.MAX_VALUE || at.numberGreaterThan() != Long.MIN_VALUE) {
+                            options.setNumberLessThan(Long.MAX_VALUE);
+                            options.setNumberGreaterThan(Long.MIN_VALUE);
+                        }
+
+                        if (at.numberLessThan() != Long.MAX_VALUE) {
+                            options.setNumberLessThan(at.numberLessThan());
+                        }
+                        if (at.numberGreaterThan() != Long.MIN_VALUE) {
+                            options.setNumberGreaterThan(at.numberGreaterThan());
+                        }
+
+                        return options;
+                    }
+                });
 
                 config.setConfigDef(field.getAnnotation(GlobalConfigDef.class));
                 config.setLinked(true);
