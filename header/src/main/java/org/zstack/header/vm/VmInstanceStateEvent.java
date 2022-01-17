@@ -14,6 +14,8 @@ public enum VmInstanceStateEvent {
     resuming,
     volumeMigrating,
     volumeMigrated,
+    volumeRecovering,
+    volumeRecovered,
 
     /* Below events are from zstack internal logic */
     unknown,

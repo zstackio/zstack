@@ -14,7 +14,6 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -35,7 +34,10 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
@@ -46,7 +48,6 @@ import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
-import org.zstack.storage.snapshot.VolumeSnapshot;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupCreationValidator;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -58,11 +59,13 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created with IntelliJ IDEA.
@@ -81,8 +84,6 @@ public class VolumeBase implements Volume {
     private DatabaseFacade dbf;
     @Autowired
     private ThreadFacade thdf;
-    @Autowired
-    private ErrorFacade errf;
     @Autowired
     private CascadeFacade casf;
     @Autowired
@@ -1489,6 +1490,37 @@ public class VolumeBase implements Volume {
         });
     }
 
+    private ErrorCode doSwitchExistingRootVolume(VolumeVO volume, String vmUuid) {
+        if (volume.getVmInstanceUuid() != null) {
+            return operr("volume[uuid: %s] has been attached to VM[uuid: %s]",
+                    volume.getUuid(), volume.getVmInstanceUuid());
+        }
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                final String rootVolumeUuid = q(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.uuid, vmUuid)
+                        .eq(VmInstanceVO_.state, VmInstanceState.Stopped)
+                        .select(VmInstanceVO_.rootVolumeUuid)
+                        .findValue();
+                sql(VolumeVO.class)
+                        .eq(VolumeVO_.uuid, rootVolumeUuid)
+                        .set(VolumeVO_.vmInstanceUuid, null)
+                        .set(VolumeVO_.lastVmInstanceUuid, vmUuid)
+                        .set(VolumeVO_.lastDetachDate, Timestamp.valueOf(LocalDateTime.now()))
+                        .update();
+                sql(VolumeVO.class)
+                        .eq(VolumeVO_.uuid, volume.getUuid())
+                        .set(VolumeVO_.vmInstanceUuid, vmUuid)
+                        .update();
+                flush();
+            }
+        }.execute();
+
+        return null;
+    }
+
     private void setBootVolume(SetVmBootVolumeMsg msg, NoErrorCompletion completion) {
         SetVmBootVolumeReply reply = new SetVmBootVolumeReply();
 
@@ -1499,6 +1531,14 @@ public class VolumeBase implements Volume {
             return;
         }
 
+        // There are two scenarios:
+        // 1. change an already attached data volume to root volume;
+        // 2. switch root volume to another previously `detached' root volume.
+        if (self.getType() == VolumeType.Root) {
+            reply.setError(doSwitchExistingRootVolume(self, msg.getVolumeUuid()));
+            completion.done();
+            return;
+        }
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("set-boot-volume");
