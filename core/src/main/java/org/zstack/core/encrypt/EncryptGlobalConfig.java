@@ -20,7 +20,7 @@ public class EncryptGlobalConfig {
     public static GlobalConfig ENCRYPT_ALGORITHM = new GlobalConfig(CATEGORY, "encrypt.algorithm");
 
 
-    @GlobalConfigValidation(validValues = { "None", "LocalEncryption", "ScurityResoueceEncryption"})
+    @GlobalConfigValidation(validValues = { "None", "LocalEncryption", "SecurityResourceEncryption"})
     @GlobalConfigDef(defaultValue = "None", type = String.class, description = "enable encrypt host " +
             "password to database")
     public static GlobalConfig ENABLE_PASSWORD_ENCRYPT = new GlobalConfig(CATEGORY, "enable.password.encrypt");
