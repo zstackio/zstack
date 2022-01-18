@@ -7,5 +7,5 @@ package org.zstack.header.core.encrypt;
 public enum PasswordEncryptType {
     None,
     LocalEncryption,
-    ScurityResoueceEncryption
+    SecurityResourceEncryption
 }
