@@ -555,7 +555,7 @@ class EnvSpec extends ApiHelper implements Node  {
         }
 
         assert ret: "global configs not all updated after 1 minutes timeout"
-        assert errors.isEmpty(): "some global configs fail to update, see ${errors.collect {it.toString()}}"
+        assert errors.isEmpty(): "some global configs fail to update, see ${errors.collect {JSONObjectUtil.toJsonString(it)}}"
 
         logger.debug("Reset all global config finished")
     }
