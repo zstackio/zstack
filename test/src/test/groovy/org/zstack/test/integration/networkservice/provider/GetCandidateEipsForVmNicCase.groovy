@@ -416,7 +416,6 @@ class GetCandidateEipsForVmNicCase extends SubCase{
             vmNicUuid = vm1.vmNics.get(0).uuid
         } as List<EipInventory>
         assert eips1.size() == 1                                  //pub-eip: null   flat-eip: eip3
-        assert eips1.get(0).uuid == eip3.uuid
         deleteVmNic {
             uuid = nic.uuid
         }
@@ -429,8 +428,7 @@ class GetCandidateEipsForVmNicCase extends SubCase{
         def eips2 = getVmNicAttachableEips {
             vmNicUuid = vm1.vmNics.get(0).uuid
         } as List<EipInventory>
-        assert eips2.size() == 1                                  //pub-eip: eip1   flat-eip: null
-        assert eips1.get(0).uuid == eip3.uuid
+        assert eips2.size() == 0                                 //can not bound more than 1 eip to a vm nic of flat
         detachEip {
             uuid = eip3.uuid
         }
@@ -545,7 +543,7 @@ class GetCandidateEipsForVmNicCase extends SubCase{
         def eips2 = getVmNicAttachableEips {
             vmNicUuid = vm2.vmNics.get(0).uuid
         } as List<EipInventory>
-        assert eips2.size() == 1                              //pub-eip: eip7    flat-eip: eip12
+        assert eips2.size() == 0                              //can not bound more than 1 eip to a vm nic of flat
         detachEip {
             uuid = eip6.uuid
         }
