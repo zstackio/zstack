@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -13,7 +12,10 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.AllocateHostMsg;
+import org.zstack.header.allocator.DesignatedAllocateHostMsg;
+import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.DiskOfferingInventory;
@@ -27,7 +29,6 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -69,7 +70,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             allocate(trigger, spec);
             return;
         }
-        
+
         psAndcluster pc = getClusterGroup(trigger, data, spec);
         //获得已经排好序的集群组
         Iterator<ArrayList<String>> newpsIte = pc.newps.iterator();
@@ -670,21 +671,21 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
         }
 
-        AllocateHostMsg amsg = prepareMsg(spec);
-        bus.send(amsg, new CloudBusCallBack(trigger) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    trigger.fail(reply.getError());
-                    return;
-                }
-                AllocateHostDryRunReply r = reply.castReply();
-                data.put("hostInventoriess", r.getHosts());
-                data.put("clusterss", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
-            }
-        });
-        List<HostInventory> hostInventoriess = (List<HostInventory>) data.get("hostInventoriess");
-        List<String> clusterInventoriess = (List<String>) data.get("clusterss");
+//        AllocateHostMsg amsg = prepareMsg(spec);
+//        bus.send(amsg, new CloudBusCallBack(trigger) {
+//            @Override
+//            public void run(MessageReply reply) {
+//                if (!reply.isSuccess()) {
+//                    trigger.fail(reply.getError());
+//                    return;
+//                }
+//                AllocateHostDryRunReply r = reply.castReply();
+//                data.put("hostInventoriess", r.getHosts());
+//                data.put("clusterss", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
+//            }
+//        });
+//        List<HostInventory> hostInventoriess = (List<HostInventory>) data.get("hostInventoriess");
+//        List<String> clusterInventoriess = (List<String>) data.get("clusterss");
 
         List<String> clusterInventories = (List<String>) data.get("clusters");
 
