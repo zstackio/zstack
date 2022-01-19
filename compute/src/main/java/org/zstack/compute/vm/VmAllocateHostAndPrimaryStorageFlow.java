@@ -262,6 +262,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             if (rootordata[0]) {
                 break;
             }
+
 //            if (isMixPS(possiblePsUuids)) {
 //                String pass;
 //            } else {
@@ -282,11 +283,12 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 //            }
         }
 
-        if (suscess[0]) {
-            trigger.next();
+        if (!suscess[0]) {
+            trigger.fail(errorCodes.get(0));
+            return;
         }
 
-        trigger.fail(errorCodes.get(0));
+        trigger.next();
     }
 
     @Override
