@@ -113,13 +113,15 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
 
         List<ErrorCode> errorCodes = new ArrayList<>();
-        final boolean[] elseif = new boolean[1];
-        final boolean[] shifenpie = new boolean[1];
+        final boolean[] rootdata = new boolean[1];
+        final boolean[] rootordata = new boolean[1];
+        final boolean[] nomix = new boolean[1];
+        final boolean[] suscess = new boolean[1];
 
         // 遍历集群组，尝试不同的主存储组合
-        while (newpsIte.hasNext() && newclusterIte.hasNext()){
-            possibleClusterUuids = newpsIte.next();
-            possiblePsUuids = newclusterIte.next();
+        while (newclusterIte.hasNext() && newpsIte.hasNext()) {
+            possibleClusterUuids = newclusterIte.next();
+            possiblePsUuids = newpsIte.next();
 
             if (isMixPS(possiblePsUuids)) {
                 List<Tuple> availablePsTuples = Q.New(PrimaryStorageVO.class)
@@ -183,6 +185,8 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                         chain.done(new FlowDoneHandler(whileCompletion) {
                             @Override
                             public void handle(Map data) {
+                                suscess[0] = true;
+                                rootdata[0] = true;
                                 whileCompletion.allDone();
                             }
                         }).error(new FlowErrorHandler(whileCompletion) {
@@ -192,18 +196,19 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                                 whileCompletion.done();
                             }
                         }).start();
+
                     }).run(new WhileDoneCompletion(trigger) {
                         @Override
                         public void done(ErrorCodeList errorCodeList) {
                             if (errorCodes.size() == availablePsUuids.size()) {
-                                shifenpie[0] = true;
+                                rootdata[0] = false;
                             }
                         }
                     });
-                }
 
-                if (shifenpie[0]) {
-                    continue;
+                    if (rootdata[0]) {
+                        break;
+                    }
                 }
 
                 availablePsUuids.clear();//根云盘和数据云盘只指定了一个盘主存储（目前，从UI传来的信息，不会出现此类情形，创建带数据云盘的vm,需要同时指定data和root的ps）
@@ -225,6 +230,8 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     chain.done(new FlowDoneHandler(whileCompletion) {
                         @Override
                         public void handle(Map data) {
+                            suscess[0] = true;
+                            rootordata[0] = true;
                             whileCompletion.allDone();
                         }
                     }).error(new FlowErrorHandler(whileCompletion) {
@@ -234,37 +241,43 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                             whileCompletion.done();
                         }
                     }).start();
+
                 }).run(new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (errorCodes.size() == availablePsUuids.size()) {
-                            trigger.fail(errorCodes.get(0));
-                            return;
+                            rootordata[0] = false;
                         }
                     }
                 });
 
-                if (elseif[0]) {
+                if (rootordata[0]) {
                     break;
                 }
+
             } else {
                 FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
                 chain.done(new FlowDoneHandler(trigger) {
                     @Override
                     public void handle(Map data) {
-                        elseif[0] = true;
+                        suscess[0] = true;
+                        nomix[0] = true;
                     }
                 }).error(new FlowErrorHandler(trigger) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        elseif[0] = false;
+                        nomix[0] = false;
                     }
                 });
                 chain.start();
             }
         }
 
-        trigger.next();
+        if (suscess[0]) {
+            trigger.next();
+        }
+
+        trigger.fail(errorCodes.get(0));
     }
 
     @Override
