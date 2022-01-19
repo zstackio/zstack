@@ -84,20 +84,31 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         //返回的排好顺序的物理机和集群list，并且下坐标一一对应
         List<HostInventory> hostInventories = (List<HostInventory>) data.get("hostInventories");
         List<String> clusterInventories = (List<String>) data.get("clusters");
+        Iterator<HostInventory> hostInventoriesIte = hostInventories.iterator();
+        Iterator<String> clusterInventoriesIte = clusterInventories.iterator();
 
         //从map中分别提取出，主存储和集群list
         List<ArrayList<String>> ps = new ArrayList(psClusterGroup.keySet());
         List<ArrayList<String>> cluster = new ArrayList(psClusterGroup.values());
+        Iterator<ArrayList<String>> psIte = ps.iterator();
+        Iterator<ArrayList<String>> clusterIte = cluster.iterator();
 
-        Iterator<HostInventory> hit = hostInventories.iterator();
-        Iterator<String> cit = clusterInventories.iterator();
+        List<ArrayList<String>> newps = new ArrayList();
+        List<ArrayList<String>> newcluster = new ArrayList();
 
-
-        while (hit.hasNext() && cit.hasNext()) {
-            HostInventory host = hit.next();
-            String clu = cit.next();
-
-
+        while (hostInventoriesIte.hasNext() && clusterInventoriesIte.hasNext()) {
+            String clu = clusterInventoriesIte.next();
+            
+            while (psIte.hasNext() && clusterIte.hasNext()){
+                ArrayList<String> pt = psIte.next();
+                ArrayList<String> ct = clusterIte.next();
+                if (pt.contains(clu)) {
+                    if(!newcluster.contains(ct)){
+                        newcluster.add(ct);
+                        newps.add(pt);
+                    }
+                }
+            }
         }
 //        // 创建以一个list，记录集群组的顺序，记录长度和集群组相同
 //        ArrayList<Integer> clushunxu = new ArrayList<>();
