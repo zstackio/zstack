@@ -12,10 +12,14 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.allocator.AllocateHostMsg;
+import org.zstack.header.allocator.DesignatedAllocateHostMsg;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
+import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -23,13 +27,18 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
+import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
+import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.*;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -606,5 +615,76 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         return Q.New(PrimaryStorageClusterRefVO.class)
                 .select(PrimaryStorageClusterRefVO_.primaryStorageUuid)
                 .eq(PrimaryStorageClusterRefVO_.clusterUuid, clusterUuid).listValues();
+    }
+
+    private long getTotalDataDiskSize(VmInstanceSpec spec) {
+        long size = 0;
+        for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
+            size += dinv.getDiskSize();
+        }
+        return size;
+    }
+
+    private AllocateHostMsg prepareMsg(VmInstanceSpec spec) {
+        DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
+
+        List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
+        ImageInventory image = spec.getImageSpec().getInventory();
+        long diskSize;
+        if (image.getMediaType() != null && image.getMediaType().equals(ImageConstant.ImageMediaType.ISO.toString())) {
+            DiskOfferingVO dvo = dbf.findByUuid(spec.getRootDiskOffering().getUuid(), DiskOfferingVO.class);
+            diskSize = dvo.getDiskSize();
+            diskOfferings.add(DiskOfferingInventory.valueOf(dvo));
+        } else {
+            diskSize = image.getSize();
+        }
+        diskSize += getTotalDataDiskSize(spec);
+        diskOfferings.addAll(spec.getDataDiskOfferings());
+        msg.setSoftAvoidHostUuids(spec.getSoftAvoidHostUuids());
+        msg.setAvoidHostUuids(spec.getAvoidHostUuids());
+        msg.setDiskOfferings(diskOfferings);
+        msg.setDiskSize(diskSize);
+        msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
+        msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
+        List<L3NetworkInventory> l3Invs = VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks());
+        msg.setL3NetworkUuids(CollectionUtils.transformToList(l3Invs,
+                new Function<String, L3NetworkInventory>() {
+                    @Override
+                    public String call(L3NetworkInventory arg) {
+                        return arg.getUuid();
+                    }
+                }));
+        msg.setImage(image);
+        msg.setVmOperation(spec.getCurrentVmOperation().toString());
+
+        if (spec.getVmInventory().getZoneUuid() != null) {
+            msg.setZoneUuid(spec.getVmInventory().getZoneUuid());
+        }
+        if (spec.getVmInventory().getClusterUuid() != null) {
+            msg.setClusterUuid(spec.getVmInventory().getClusterUuid());
+        }
+        msg.setHostUuid(spec.getRequiredHostUuid());
+        if (spec.getHostAllocatorStrategy() != null) {
+            msg.setAllocatorStrategy(spec.getHostAllocatorStrategy());
+        } else {
+            msg.setAllocatorStrategy(spec.getVmInventory().getAllocatorStrategy());
+        }
+        if (spec.getRequiredPrimaryStorageUuidForRootVolume() != null) {
+            msg.addRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
+        }
+        if (spec.getRequiredPrimaryStorageUuidForDataVolume() != null) {
+            msg.addRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
+        }
+        msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+        msg.setVmInstance(spec.getVmInventory());
+
+        if (spec.getImageSpec() != null && spec.getImageSpec().getSelectedBackupStorage() != null) {
+            msg.setRequiredBackupStorageUuid(spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
+        }
+
+        msg.setListAllHosts(true);
+        msg.setDryRun(true);
+        msg.setListAllHostsGroupByCluster(true);
+        return msg;
     }
 }
