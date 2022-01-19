@@ -17,6 +17,7 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.resourceconfig.ClusterResourceConfigInitializer;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -41,7 +42,8 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
 	private DbEntityLister dl;
 	@Autowired
 	private TagManager tagMgr;
-
+	@Autowired
+	private ClusterResourceConfigInitializer crci;
 
 	private Map<String, ClusterFactory> clusterFactories = Collections.synchronizedMap(new HashMap<String, ClusterFactory>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
@@ -109,6 +111,8 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
 		}
 
 		ClusterInventory inv = ClusterInventory.valueOf(vo);
+
+		crci.initClusterResourceConfigValue(inv);
 		logger.debug(String.format("Created new cluster: %s", printer.print(inv)));
 		completion.success(inv);
 	}
