@@ -57,7 +57,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         // The creation parameter specifies the primary storage, no need to automatically allocate the primary storage
-        if (!needAutoAllocatePS(spec)) {
+        if (!needAutoAllocatePS(spec)) { //过滤掉，同时指定root和data ps和只指定root ps（仅创建物理机）
             allocate(trigger, spec);
             return;
         }
@@ -90,8 +90,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         //从map中分别提取出，主存储和集群list
         List<ArrayList<String>> ps = new ArrayList(psClusterGroup.keySet());
         List<ArrayList<String>> cluster = new ArrayList(psClusterGroup.values());
-        Iterator<ArrayList<String>> psIte = ps.iterator();
-        Iterator<ArrayList<String>> clusterIte = cluster.iterator();
 
         List<ArrayList<String>> newps = new ArrayList();
         List<ArrayList<String>> newcluster = new ArrayList();
@@ -109,103 +107,119 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 }
             }
         }
+        //获得已经排好序的集群组
+        Iterator<ArrayList<String>> newpsIte = newps.iterator();
+        Iterator<ArrayList<String>> newclusterIte = newcluster.iterator();
 
-        for (Map.Entry<List<String>, List<String>> entry : psClusterGroup.entrySet()) {
-            possibleClusterUuids = entry.getValue();
-            possiblePsUuids = entry.getKey();
 
-            // Multiple clusters, and each cluster has a different primary storage
-            // Do not automatically allocate the primary storage, specifying primary storage impacts cluster selection
-            if (possibleClusterUuids.size() > 1) {
-                boolean clusterWithSamePs = true;
-                for (String clusterUuid : possibleClusterUuids) {
-                    List<String> psUuids = Q.New(PrimaryStorageClusterRefVO.class)
-                            .select(PrimaryStorageClusterRefVO_.primaryStorageUuid)
-                            .eq(PrimaryStorageClusterRefVO_.clusterUuid, clusterUuid)
-                            .listValues();
-                    if (!psUuids.containsAll(possiblePsUuids)) {
-                        clusterWithSamePs = false;
-                        break;
-                    }
-                }
+        List<ErrorCode> errorCodes = new ArrayList<>();
+        final boolean[] elseif = new boolean[1];
+        final boolean[] shifenpie = new boolean[1];
 
-                if (!clusterWithSamePs) {
-                    if (tryAllocate(trigger, spec, data)) {
-                        return;
-                    }
+        // 遍历集群组，尝试不同的主存储组合
+        while (newpsIte.hasNext() && newclusterIte.hasNext()){
+            possibleClusterUuids = newpsIte.next();
+            possiblePsUuids = newclusterIte.next();
+
+            if (isMixPS(possiblePsUuids)) {
+                List<Tuple> availablePsTuples = Q.New(PrimaryStorageVO.class)
+                        .select(PrimaryStorageVO_.uuid, PrimaryStorageVO_.type)
+                        .in(PrimaryStorageVO_.uuid, possiblePsUuids)
+                        .eq(PrimaryStorageVO_.state, PrimaryStorageState.Enabled)
+                        .eq(PrimaryStorageVO_.status, PrimaryStorageStatus.Connected)
+                        .listTuple();
+
+                if (availablePsTuples.isEmpty()) {//该集群下的主存储都不可用
                     continue;
                 }
-            }
 
-            // Not local + non-local，no need to automatically allocate the primary storage
-            if (!isMixPrimaryStorage(spec)) {
-                if (tryAllocate(trigger, spec, data)) {
-                    return;
-                }
-                continue;
-            }
+                List<String> availablePsUuids = new ArrayList<>();
+                List<String> localPsUuids = new ArrayList<>();
+                List<String> nonLocalPsUuids = new ArrayList<>();
+                for (Tuple tuple : availablePsTuples) {
+                    String psUuid = (String) tuple.get(0);
+                    String psType = (String) tuple.get(1);
+                    availablePsUuids.add((String) tuple.get(0));
 
-            List<Tuple> availablePsTuples = Q.New(PrimaryStorageVO.class)
-                    .select(PrimaryStorageVO_.uuid, PrimaryStorageVO_.type)
-                    .in(PrimaryStorageVO_.uuid, possiblePsUuids)
-                    .eq(PrimaryStorageVO_.state, PrimaryStorageState.Enabled)
-                    .eq(PrimaryStorageVO_.status, PrimaryStorageStatus.Connected)
-                    .listTuple();
-
-            List<String> availablePsUuids = new ArrayList<>();
-            List<String> localPsUuids = new ArrayList<>();
-            List<String> nonLocalPsUuids = new ArrayList<>();
-            for (Tuple tuple : availablePsTuples) {
-                String psUuid = (String) tuple.get(0);
-                String psType = (String) tuple.get(1);
-                availablePsUuids.add((String) tuple.get(0));
-
-                if (psType.equals(PrimaryStorageConstants.LOCAL_STORAGE_TYPE)) {
-                    localPsUuids.add(psUuid);
-                } else {
-                    nonLocalPsUuids.add(psUuid);
-                }
-            }
-
-            if (availablePsUuids.isEmpty()) {
-                allocate(trigger, spec);
-                return;
-            }
-
-            boolean autoAllocateRootVolumePs = needAutoAllocateRootVolumePS(spec);
-            boolean autoAllocateDataVolumePs = needAutoAllocateDataVolumePS(spec);
-            List<ErrorCode> errorCodes = new ArrayList<>();
-
-            if (autoAllocateRootVolumePs && autoAllocateDataVolumePs) {
-                // First priority：root local, data non-local
-                // Second priority：root local, data local / root non-local, data non-local
-                // Third priority：root non-local, data local
-                List<String[]> psCombos1 = new ArrayList<>();
-                List<String[]> psCombos2 = new ArrayList<>();
-                List<String[]> psCombos3 = new ArrayList<>();
-
-                for (String rootVolumePsUuid : availablePsUuids) {
-                    for (String dataVolumePsUuid : availablePsUuids) {
-                        String[] combo = {rootVolumePsUuid, dataVolumePsUuid};
-
-                        if (localPsUuids.contains(rootVolumePsUuid) && nonLocalPsUuids.contains(dataVolumePsUuid)) {
-                            psCombos1.add(combo);
-                        } else if (nonLocalPsUuids.contains(rootVolumePsUuid) && localPsUuids.contains(dataVolumePsUuid)) {
-                            psCombos3.add(combo);
-                        } else {
-                            psCombos2.add(combo);
-                        }
+                    if (psType.equals(PrimaryStorageConstants.LOCAL_STORAGE_TYPE)) {
+                        localPsUuids.add(psUuid);
+                    } else {
+                        nonLocalPsUuids.add(psUuid);
                     }
                 }
 
-                List<String[]> psCombos = new ArrayList<>();
-                psCombos.addAll(psCombos1);
-                psCombos.addAll(psCombos2);
-                psCombos.addAll(psCombos3);
+                boolean autoAllocateRootVolumePs = needAutoAllocateRootVolumePS(spec);
+                boolean autoAllocateDataVolumePs = needAutoAllocateDataVolumePS(spec);
 
-                new While<>(psCombos).each((psCombo, whileCompletion) -> {
-                    spec.setRequiredPrimaryStorageUuidForRootVolume(psCombo[0]);
-                    spec.setRequiredPrimaryStorageUuidForDataVolume(psCombo[1]);
+                if (autoAllocateRootVolumePs && autoAllocateDataVolumePs) {  //根云盘和数据云盘都未指定ps
+                    List<String[]> psCombos1 = new ArrayList<>();
+                    List<String[]> psCombos2 = new ArrayList<>();
+                    List<String[]> psCombos3 = new ArrayList<>();
+
+                    for (String rootVolumePsUuid : availablePsUuids) {
+                        for (String dataVolumePsUuid : availablePsUuids) {
+                            String[] combo = {rootVolumePsUuid, dataVolumePsUuid};
+
+                            if (localPsUuids.contains(rootVolumePsUuid) && nonLocalPsUuids.contains(dataVolumePsUuid)) {
+                                psCombos1.add(combo);
+                            } else if (nonLocalPsUuids.contains(rootVolumePsUuid) && localPsUuids.contains(dataVolumePsUuid)) {
+                                psCombos3.add(combo);
+                            } else {
+                                psCombos2.add(combo);
+                            }
+                        }
+                    }
+
+                    List<String[]> psCombos = new ArrayList<>();
+                    psCombos.addAll(psCombos1);
+                    psCombos.addAll(psCombos2);
+                    psCombos.addAll(psCombos3);
+
+                    new While<>(psCombos).each((psCombo, whileCompletion) -> {
+                        spec.setRequiredPrimaryStorageUuidForRootVolume(psCombo[0]);
+                        spec.setRequiredPrimaryStorageUuidForDataVolume(psCombo[1]);
+
+                        FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
+                        chain.done(new FlowDoneHandler(whileCompletion) {
+                            @Override
+                            public void handle(Map data) {
+                                whileCompletion.allDone();
+                            }
+                        }).error(new FlowErrorHandler(whileCompletion) {
+                            @Override
+                            public void handle(ErrorCode errCode, Map data) {
+                                errorCodes.add(errCode);
+                                whileCompletion.done();
+                            }
+                        }).start();
+                    }).run(new WhileDoneCompletion(trigger) {
+                        @Override
+                        public void done(ErrorCodeList errorCodeList) {
+                            if (errorCodes.size() == availablePsUuids.size()) {
+                                shifenpie[0] = true;
+                            }
+                        }
+                    });
+                }
+
+                if (shifenpie[0]) {
+                    continue;
+                }
+
+                availablePsUuids.clear();//根云盘和数据云盘只指定了一个盘主存储（目前，从UI传来的信息，不会出现此类情形，创建带数据云盘的vm,需要同时指定data和root的ps）
+                if (autoAllocateRootVolumePs) {
+                    availablePsUuids.addAll(localPsUuids);
+                    availablePsUuids.addAll(nonLocalPsUuids);
+                } else if (autoAllocateDataVolumePs) {
+                    availablePsUuids.addAll(nonLocalPsUuids);
+                    availablePsUuids.addAll(localPsUuids);
+                }
+                new While<>(availablePsUuids).each((psUuid, whileCompletion) -> {
+                    if (autoAllocateRootVolumePs) {
+                        spec.setRequiredPrimaryStorageUuidForRootVolume(psUuid);
+                    } else if (autoAllocateDataVolumePs) {
+                        spec.setRequiredPrimaryStorageUuidForDataVolume(psUuid);
+                    }
 
                     FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
                     chain.done(new FlowDoneHandler(whileCompletion) {
@@ -227,54 +241,30 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                             trigger.fail(errorCodes.get(0));
                             return;
                         }
-
-                        trigger.next();
                     }
                 });
-                return;
-            }
 
-            availablePsUuids.clear();
-            if (autoAllocateRootVolumePs) {
-                availablePsUuids.addAll(localPsUuids);
-                availablePsUuids.addAll(nonLocalPsUuids);
-            } else {
-                availablePsUuids.addAll(nonLocalPsUuids);
-                availablePsUuids.addAll(localPsUuids);
-            }
-
-            new While<>(availablePsUuids).each((psUuid, whileCompletion) -> {
-                if (autoAllocateRootVolumePs) {
-                    spec.setRequiredPrimaryStorageUuidForRootVolume(psUuid);
-                } else {
-                    spec.setRequiredPrimaryStorageUuidForDataVolume(psUuid);
+                if (elseif[0]) {
+                    break;
                 }
-
+            } else {
                 FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
-                chain.done(new FlowDoneHandler(whileCompletion) {
+                chain.done(new FlowDoneHandler(trigger) {
                     @Override
                     public void handle(Map data) {
-                        whileCompletion.allDone();
+                        elseif[0] = true;
                     }
-                }).error(new FlowErrorHandler(whileCompletion) {
+                }).error(new FlowErrorHandler(trigger) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        errorCodes.add(errCode);
-                        whileCompletion.done();
+                        elseif[0] = false;
                     }
-                }).start();
-            }).run(new WhileDoneCompletion(trigger) {
-                @Override
-                public void done(ErrorCodeList errorCodeList) {
-                    if (errorCodes.size() == availablePsUuids.size()) {
-                        trigger.fail(errorCodes.get(0));
-                        return;
-                    }
-
-                    trigger.next();
-                }
-            });
+                });
+                chain.start();
+            }
         }
+
+        trigger.next();
     }
 
     @Override
@@ -369,6 +359,19 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 return nflow;
             }
         });
+    }
+
+    private boolean isMixPS(List<String> possiblePsUuids) {
+        if (possiblePsUuids.size() < 2) {
+            return false;
+        }
+
+        List<String> psTypes = Q.New(PrimaryStorageVO.class)
+                .select(PrimaryStorageVO_.type)
+                .in(PrimaryStorageVO_.uuid, possiblePsUuids)
+                .groupBy(PrimaryStorageVO_.type)
+                .listValues();
+        return !(!psTypes.contains(PrimaryStorageConstants.LOCAL_STORAGE_TYPE) || psTypes.size() <= 1);
     }
 
     // local + non-local
@@ -526,14 +529,14 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
     }
 
     private boolean needAutoAllocateDataVolumePS(VmInstanceSpec spec) {
-        if (spec.getRequiredPrimaryStorageUuidForDataVolume() == null) {
+        if (spec.getRequiredPrimaryStorageUuidForDataVolume() == null) {//未指定data ps 同时 设置有数据云盘规格
             if (spec.getDataDiskOfferings() != null &&
-                    spec.getDataDiskOfferings().size() > 0) {
+                    spec.getDataDiskOfferings().size() > 0) { //指定了数据云盘规格（创建带云盘的vm）
                 return true;
             }
         }
 
-        return false;
+        return false; //指定了data ps（那么，同时也指定了数据云盘规格）  未指定data ps，同时也未指定数据云盘规格（仅仅创建vm）
     }
 
     private FlowChain buildAllocateHostAndPrimaryStorageFlowChain(final FlowTrigger trigger, VmInstanceSpec spec) {
