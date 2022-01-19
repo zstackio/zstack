@@ -225,25 +225,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             if (rootordata[0]) {
                 break;
             }
-
-//            if (isMixPS(possiblePsUuids)) {
-//                String pass;
-//            } else {
-//                FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
-//                chain.done(new FlowDoneHandler(trigger) {
-//                    @Override
-//                    public void handle(Map data) {
-//                        suscess[0] = true;
-//                        nomix[0] = true;
-//                    }
-//                }).error(new FlowErrorHandler(trigger) {
-//                    @Override
-//                    public void handle(ErrorCode errCode, Map data) {
-//                        nomix[0] = false;
-//                    }
-//                });
-//                chain.start();
-//            }
         }
 
         if (!suscess[0]) {
