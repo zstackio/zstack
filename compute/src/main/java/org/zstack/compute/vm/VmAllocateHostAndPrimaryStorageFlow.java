@@ -69,10 +69,11 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             allocate(trigger, spec);
             return;
         }
-
+        
+        psAndcluster pc = getClusterGroup(trigger, data, spec);
         //获得已经排好序的集群组
-        Iterator<ArrayList<String>> newpsIte = getClusterGroup(trigger, data, spec).newps.iterator();
-        Iterator<ArrayList<String>> newclusterIte = getClusterGroup(trigger, data, spec).newcluster.iterator();
+        Iterator<ArrayList<String>> newpsIte = pc.newps.iterator();
+        Iterator<ArrayList<String>> newclusterIte = pc.newcluster.iterator();
 
         List<ErrorCode> errorCodes = new ArrayList<>();
         final boolean[] rootdata = new boolean[1];
