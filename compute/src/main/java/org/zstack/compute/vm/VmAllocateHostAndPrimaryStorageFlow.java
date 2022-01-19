@@ -70,71 +70,9 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             return;
         }
 
-        List<String> possibleClusterUuids = getPossibleClusterUuids(spec);
-        List<String> possiblePsUuids = getPossiblePrimaryStorageUuids(spec);
-
-        // 从创建参数中，获取可能的集群，然后查询出每个集群加载的主存储。放入map中，<String集群，list<主存储>>
-        Map<String, List<String>> clusterPS = new HashMap<>();
-        for (String clusterUuid : possibleClusterUuids) {
-            clusterPS.put(clusterUuid, getPrimaryStorageUuidsFromCluster(clusterUuid));
-        }
-
-        // 根据主存储将集群分组，相同的主存储为一组。放入map中，<List<主存储>,List<集群>>
-        Map<List<String>, List<String>> psClusterGroup = new HashMap<>();
-        for (Map.Entry<String, List<String>> entry : clusterPS.entrySet()) {
-            if (psClusterGroup.get(entry.getValue()) != null) {
-                psClusterGroup.get(entry.getValue()).add(entry.getKey());
-            } else {
-                psClusterGroup.put(entry.getValue(), new ArrayList<String>(Arrays.asList(entry.getKey())));
-            }
-        }
-
-        AllocateHostMsg amsg = prepareMsg(spec);
-        bus.send(amsg, new CloudBusCallBack(trigger) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    trigger.fail(reply.getError());
-                    return;
-                }
-                AllocateHostDryRunReply r = reply.castReply();
-                data.put("hostInventoriess", r.getHosts());
-                data.put("clusterss", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
-            }
-        });
-        List<HostInventory> hostInventoriess = (List<HostInventory>) data.get("hostInventoriess");
-        List<String> clusterInventoriess = (List<String>) data.get("clusterss");
-
-        //返回的排好顺序的物理机和集群list，并且下坐标一一对应
-        List<HostInventory> hostInventories = (List<HostInventory>) data.get("hostInventories");
-        List<String> clusterInventories = (List<String>) data.get("clusters");
-        Iterator<HostInventory> hostInventoriesIte = hostInventories.iterator();
-        Iterator<String> clusterInventoriesIte = clusterInventories.iterator();
-
-        //从map中分别提取出，主存储和集群list
-        List<ArrayList<String>> ps = new ArrayList(psClusterGroup.keySet());
-        List<ArrayList<String>> cluster = new ArrayList(psClusterGroup.values());
-
-        List<ArrayList<String>> newps = new ArrayList();
-        List<ArrayList<String>> newcluster = new ArrayList();
-
-        while (hostInventoriesIte.hasNext() && clusterInventoriesIte.hasNext()) {
-            String clu = clusterInventoriesIte.next();
-
-            for (ArrayList<String> ct:cluster){
-                if (ct.contains(clu)){
-                    if(!newcluster.contains(ct)){
-                        newcluster.add(ct);
-                        newps.add(ps.get(cluster.indexOf(ct)));
-                    }
-                    break;
-                }
-            }
-        }
         //获得已经排好序的集群组
-        Iterator<ArrayList<String>> newpsIte = newps.iterator();
-        Iterator<ArrayList<String>> newclusterIte = newcluster.iterator();
-
+        Iterator<ArrayList<String>> newpsIte = getClusterGroup(trigger, data, spec).newps.iterator();
+        Iterator<ArrayList<String>> newclusterIte = getClusterGroup(trigger, data, spec).newcluster.iterator();
 
         List<ErrorCode> errorCodes = new ArrayList<>();
         final boolean[] rootdata = new boolean[1];
@@ -144,8 +82,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
         // 遍历集群组，尝试不同的主存储组合
         while (newclusterIte.hasNext() && newpsIte.hasNext()) {
-            possibleClusterUuids = newclusterIte.next();
-            possiblePsUuids = newpsIte.next();
+            ArrayList<String> possiblePsUuids = newpsIte.next();
 
             List<Tuple> availablePsTuples = Q.New(PrimaryStorageVO.class)
                     .select(PrimaryStorageVO_.uuid, PrimaryStorageVO_.type)
@@ -711,5 +648,76 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         msg.setDryRun(true);
         msg.setListAllHostsGroupByCluster(true);
         return msg;
+    }
+
+    private psAndcluster getClusterGroup(final FlowTrigger trigger, final Map data, VmInstanceSpec spec) {
+        List<String> possibleClusterUuids = getPossibleClusterUuids(spec);
+
+        // 从创建参数中，获取可能的集群，然后查询出每个集群加载的主存储。放入map中，<String集群，list<主存储>>
+        Map<String, List<String>> clusterPS = new HashMap<>();
+        for (String clusterUuid : possibleClusterUuids) {
+            clusterPS.put(clusterUuid, getPrimaryStorageUuidsFromCluster(clusterUuid));
+        }
+
+        // 根据主存储将集群分组，相同的主存储为一组。放入map中，<List<主存储>,List<集群>>
+        Map<List<String>, List<String>> psClusterGroup = new HashMap<>();
+        for (Map.Entry<String, List<String>> entry : clusterPS.entrySet()) {
+            if (psClusterGroup.get(entry.getValue()) != null) {
+                psClusterGroup.get(entry.getValue()).add(entry.getKey());
+            } else {
+                psClusterGroup.put(entry.getValue(), new ArrayList<String>(Arrays.asList(entry.getKey())));
+            }
+        }
+
+        AllocateHostMsg amsg = prepareMsg(spec);
+        bus.send(amsg, new CloudBusCallBack(trigger) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    trigger.fail(reply.getError());
+                    return;
+                }
+                AllocateHostDryRunReply r = reply.castReply();
+                data.put("hostInventoriess", r.getHosts());
+                data.put("clusterss", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
+            }
+        });
+        List<HostInventory> hostInventoriess = (List<HostInventory>) data.get("hostInventoriess");
+        List<String> clusterInventoriess = (List<String>) data.get("clusterss");
+
+        List<String> clusterInventories = (List<String>) data.get("clusters");
+
+        Iterator<String> clusterInventoriesIte = clusterInventories.iterator();
+
+        //从map中分别提取出，主存储和集群list
+        List<ArrayList<String>> ps = new ArrayList(psClusterGroup.keySet());
+        List<ArrayList<String>> cluster = new ArrayList(psClusterGroup.values());
+
+        List<ArrayList<String>> newps = new ArrayList();
+        List<ArrayList<String>> newcluster = new ArrayList();
+
+        while (clusterInventoriesIte.hasNext()) {
+            String clu = clusterInventoriesIte.next();
+            for (ArrayList<String> ct : cluster) {
+                if (ct.contains(clu)) {
+                    if (!newcluster.contains(ct)) {
+                        newcluster.add(ct);
+                        newps.add(ps.get(cluster.indexOf(ct)));
+                    }
+                    break;
+                }
+            }
+        }
+        return new psAndcluster(newps, newcluster);
+    }
+
+    class psAndcluster {
+        psAndcluster(List<ArrayList<String>> newps, List<ArrayList<String>> newcluster) {
+            this.newps = newps;
+            this.newcluster = newcluster;
+        }
+
+        List<ArrayList<String>> newps;
+        List<ArrayList<String>> newcluster;
     }
 }
