@@ -71,19 +71,17 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             return;
         }
 
+        //获得已经排好序的集群组,生成迭代对象
         psAndcluster pc = getClusterGroup(trigger, data, spec);
-        //获得已经排好序的集群组
         Iterator<ArrayList<String>> newpsIte = pc.newps.iterator();
-        Iterator<ArrayList<String>> newclusterIte = pc.newcluster.iterator();
 
         List<ErrorCode> errorCodes = new ArrayList<>();
         final boolean[] rootdata = new boolean[1];
         final boolean[] rootordata = new boolean[1];
-        final boolean[] nomix = new boolean[1];
         final boolean[] suscess = new boolean[1];
 
         // 遍历集群组，尝试不同的主存储组合
-        while (newclusterIte.hasNext() && newpsIte.hasNext()) {
+        while (newpsIte.hasNext()) {
             ArrayList<String> possiblePsUuids = newpsIte.next();
 
             List<Tuple> availablePsTuples = Q.New(PrimaryStorageVO.class)
@@ -656,18 +654,18 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         List<String> possibleClusterUuids = getPossibleClusterUuids(spec);
 
         // 从创建参数中，获取可能的集群，然后查询出每个集群加载的主存储。放入map中，<String集群，list<主存储>>
-        Map<String, List<String>> clusterPS = new HashMap<>();
+        Map<String, List<String>> clusterAccessiblePS = new HashMap<>();
         for (String clusterUuid : possibleClusterUuids) {
-            clusterPS.put(clusterUuid, getPrimaryStorageUuidsFromCluster(clusterUuid));
+            clusterAccessiblePS.put(clusterUuid, getPrimaryStorageUuidsFromCluster(clusterUuid));
         }
 
         // 根据主存储将集群分组，相同的主存储为一组。放入map中，<List<主存储>,List<集群>>
-        Map<List<String>, List<String>> psClusterGroup = new HashMap<>();
-        for (Map.Entry<String, List<String>> entry : clusterPS.entrySet()) {
-            if (psClusterGroup.get(entry.getValue()) != null) {
-                psClusterGroup.get(entry.getValue()).add(entry.getKey());
+        Map<List<String>, List<String>> psAndClusterGroup = new HashMap<>();
+        for (Map.Entry<String, List<String>> entry : clusterAccessiblePS.entrySet()) {
+            if (psAndClusterGroup.get(entry.getValue()) != null) {
+                psAndClusterGroup.get(entry.getValue()).add(entry.getKey());
             } else {
-                psClusterGroup.put(entry.getValue(), new ArrayList<String>(Arrays.asList(entry.getKey())));
+                psAndClusterGroup.put(entry.getValue(), new ArrayList<String>(Arrays.asList(entry.getKey())));
             }
         }
 
@@ -688,12 +686,11 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 //        List<String> clusterInventoriess = (List<String>) data.get("clusterss");
 
         List<String> clusterInventories = (List<String>) data.get("clusters");
-
         Iterator<String> clusterInventoriesIte = clusterInventories.iterator();
 
         //从map中分别提取出，主存储和集群list
-        List<ArrayList<String>> ps = new ArrayList(psClusterGroup.keySet());
-        List<ArrayList<String>> cluster = new ArrayList(psClusterGroup.values());
+        List<ArrayList<String>> ps = new ArrayList(psAndClusterGroup.keySet());
+        List<ArrayList<String>> cluster = new ArrayList(psAndClusterGroup.values());
 
         List<ArrayList<String>> newps = new ArrayList();
         List<ArrayList<String>> newcluster = new ArrayList();
@@ -710,6 +707,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 }
             }
         }
+
         return new psAndcluster(newps, newcluster);
     }
 
