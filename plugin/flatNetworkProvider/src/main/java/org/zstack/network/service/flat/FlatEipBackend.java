@@ -794,7 +794,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         } catch (Throwable e){
             logger.warn(e.getMessage(), e);
         }
-        if (!providerType.equals(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE)) {
+        if (!FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE.equals(providerType)){
             /* only handle flat l3 eip attachable l3 */
             return new HashMap<>();
         }
@@ -830,7 +830,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             } catch (Throwable e){
                 logger.warn(e.getMessage(), e);
             }
-            if (providerType.equals(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE)) {
+            if (FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE.equals(providerType)) {
                 ret.add(uuid);
             }
         }
