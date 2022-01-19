@@ -72,12 +72,12 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         }
 
         // 根据主存储将集群分组，相同的主存储为一组。放入map中，<List<主存储>,List<集群>>
-        Map<List<String>, List<String>> clusterGroup = new HashMap<>();
+        Map<List<String>, List<String>> psClusterGroup = new HashMap<>();
         for (Map.Entry<String, List<String>> entry : clusterPS.entrySet()) {
-            if (clusterGroup.get(entry.getValue()) != null) {
-                clusterGroup.get(entry.getValue()).add(entry.getKey());
+            if (psClusterGroup.get(entry.getValue()) != null) {
+                psClusterGroup.get(entry.getValue()).add(entry.getKey());
             } else {
-                clusterGroup.put(entry.getValue(), new ArrayList<String>(Arrays.asList(entry.getKey())));
+                psClusterGroup.put(entry.getValue(), new ArrayList<String>(Arrays.asList(entry.getKey())));
             }
         }
 
@@ -86,9 +86,19 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         List<String> clusterInventories = (List<String>) data.get("clusters");
 
         //从map中分别提取出，主存储和集群list
-        List<ArrayList<String>> ps = new ArrayList(clusterGroup.keySet());
-        List<ArrayList<String>> cluster = new ArrayList(clusterGroup.values());
+        List<ArrayList<String>> ps = new ArrayList(psClusterGroup.keySet());
+        List<ArrayList<String>> cluster = new ArrayList(psClusterGroup.values());
 
+        Iterator<HostInventory> hit = hostInventories.iterator();
+        Iterator<String> cit = clusterInventories.iterator();
+
+
+        while (hit.hasNext() && cit.hasNext()) {
+            HostInventory host = hit.next();
+            String clu = cit.next();
+
+
+        }
 //        // 创建以一个list，记录集群组的顺序，记录长度和集群组相同
 //        ArrayList<Integer> clushunxu = new ArrayList<>();
 //        for (int i = 0; i < cluster.size(); i++) {
@@ -165,7 +175,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
         // 限制可能的主存储和可能的集群。使用分组中的集群和主存储进行分配。
 
-        for (Map.Entry<List<String>, List<String>> entry : clusterGroup.entrySet()) {
+        for (Map.Entry<List<String>, List<String>> entry : psClusterGroup.entrySet()) {
             possibleClusterUuids = entry.getValue();
             possiblePsUuids = entry.getKey();
 
