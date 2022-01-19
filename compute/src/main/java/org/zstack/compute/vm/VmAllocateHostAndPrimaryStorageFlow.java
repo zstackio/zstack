@@ -169,23 +169,26 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 if (rootdata[0]) {
                     break;
                 }
+                continue;
             }
 
             //根云盘和数据云盘只指定了一个盘主存储（目前，从UI传来的信息，不会出现此类情形，创建带数据云盘的vm,需要同时指定data和root的ps）
             //根云盘和数据云盘指定其中一个
             availablePsUuids.clear();
             if (autoAllocateRootVolumePs) {
-                if (!possiblePsUuids.contains(spec.getRequiredPrimaryStorageUuidForRootVolume())){
+                if (!possiblePsUuids.contains(spec.getRequiredPrimaryStorageUuidForRootVolume())) {
                     continue;
                 }
                 availablePsUuids.addAll(localPsUuids);
                 availablePsUuids.addAll(nonLocalPsUuids);
             } else if (autoAllocateDataVolumePs) {
-                if (!possiblePsUuids.contains(spec.getRequiredPrimaryStorageUuidForDataVolume())){
-                    continue;
+                if (spec.getRequiredPrimaryStorageUuidForDataVolume() != null) {
+                    if (!possiblePsUuids.contains(spec.getRequiredPrimaryStorageUuidForDataVolume())) {
+                        continue;
+                    }
+                    availablePsUuids.addAll(nonLocalPsUuids);
+                    availablePsUuids.addAll(localPsUuids);
                 }
-                availablePsUuids.addAll(nonLocalPsUuids);
-                availablePsUuids.addAll(localPsUuids);
             }
             new While<>(availablePsUuids).each((psUuid, whileCompletion) -> {
                 if (autoAllocateRootVolumePs) {
