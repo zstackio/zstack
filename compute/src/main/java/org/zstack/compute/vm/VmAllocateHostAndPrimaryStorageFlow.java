@@ -653,21 +653,21 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
         }
 
-//        AllocateHostMsg amsg = prepareMsg(spec);
-//        bus.send(amsg, new CloudBusCallBack(trigger) {
-//            @Override
-//            public void run(MessageReply reply) {
-//                if (!reply.isSuccess()) {
-//                    trigger.fail(reply.getError());
-//                    return;
-//                }
-//                AllocateHostDryRunReply r = reply.castReply();
-//                data.put("hostInventoriess", r.getHosts());
-//                data.put("clusterss", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
-//            }
-//        });
-//        List<HostInventory> hostInventoriess = (List<HostInventory>) data.get("hostInventoriess");
-//        List<String> clusterInventoriess = (List<String>) data.get("clusterss");
+        AllocateHostMsg amsg = prepareMsg(spec);
+        bus.send(amsg, new CloudBusCallBack(trigger) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    trigger.fail(reply.getError());
+                    return;
+                }
+                AllocateHostDryRunReply r = reply.castReply();
+                data.put("hostInventoriess", r.getHosts());
+                data.put("clusterss", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
+            }
+        });
+        List<HostInventory> hostInventoriess = (List<HostInventory>) data.get("hostInventoriess");
+        List<String> clusterInventoriess = (List<String>) data.get("clusterss");
 
         List<String> clusterInventories = (List<String>) data.get("clusters");
         Iterator<String> clusterInventoriesIte = clusterInventories.iterator();
