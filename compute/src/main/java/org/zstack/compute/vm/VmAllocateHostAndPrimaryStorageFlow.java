@@ -223,9 +223,15 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             //根云盘和数据云盘指定其中一个
             availablePsUuids.clear();
             if (autoAllocateRootVolumePs) {
+                if (!possiblePsUuids.contains(spec.getRequiredPrimaryStorageUuidForRootVolume())){
+                    continue;
+                }
                 availablePsUuids.addAll(localPsUuids);
                 availablePsUuids.addAll(nonLocalPsUuids);
             } else if (autoAllocateDataVolumePs) {
+                if (!possiblePsUuids.contains(spec.getRequiredPrimaryStorageUuidForDataVolume())){
+                    continue;
+                }
                 availablePsUuids.addAll(nonLocalPsUuids);
                 availablePsUuids.addAll(localPsUuids);
             }
