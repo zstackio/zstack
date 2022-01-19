@@ -219,7 +219,9 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 }
             }
 
-            availablePsUuids.clear();//根云盘和数据云盘只指定了一个盘主存储（目前，从UI传来的信息，不会出现此类情形，创建带数据云盘的vm,需要同时指定data和root的ps）
+            //根云盘和数据云盘只指定了一个盘主存储（目前，从UI传来的信息，不会出现此类情形，创建带数据云盘的vm,需要同时指定data和root的ps）
+            //根云盘和数据云盘指定其中一个
+            availablePsUuids.clear();
             if (autoAllocateRootVolumePs) {
                 availablePsUuids.addAll(localPsUuids);
                 availablePsUuids.addAll(nonLocalPsUuids);
