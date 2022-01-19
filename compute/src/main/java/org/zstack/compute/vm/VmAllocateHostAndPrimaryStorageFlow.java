@@ -71,7 +71,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             return;
         }
 
-        //获得已经排好序的集群组,生成迭代对象
+        //获得已经排好序的主存储组和集群组
         psAndcluster pc = getClusterGroup(trigger, data, spec);
         Iterator<ArrayList<String>> newpsIte = pc.newps.iterator();
 
@@ -691,10 +691,10 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         //从map中分别提取出，主存储和集群list
         List<ArrayList<String>> ps = new ArrayList(psAndClusterGroup.keySet());
         List<ArrayList<String>> cluster = new ArrayList(psAndClusterGroup.values());
-
+        //新的排序主存储和集群
         List<ArrayList<String>> newps = new ArrayList();
         List<ArrayList<String>> newcluster = new ArrayList();
-
+        //依据返回的集群，排序主存储和集群
         while (clusterInventoriesIte.hasNext()) {
             String clu = clusterInventoriesIte.next();
             for (ArrayList<String> ct : cluster) {
