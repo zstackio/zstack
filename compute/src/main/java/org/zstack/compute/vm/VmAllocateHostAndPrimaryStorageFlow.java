@@ -99,15 +99,13 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         while (hostInventoriesIte.hasNext() && clusterInventoriesIte.hasNext()) {
             String clu = clusterInventoriesIte.next();
 
-            while (psIte.hasNext() && clusterIte.hasNext()) {
-                ArrayList<String> pt = psIte.next();
-                ArrayList<String> ct = clusterIte.next();
-                if (pt.contains(clu)) {
-                    if (!newcluster.contains(ct)) {
+            for (ArrayList<String> ct:cluster){
+                if (ct.contains(clu)){
+                    if(!newcluster.contains(ct)){
                         newcluster.add(ct);
-                        newps.add(pt);
-                        break;
+                        newps.add(ps.get(cluster.indexOf(ct)));
                     }
+                    break;
                 }
             }
         }
