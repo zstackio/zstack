@@ -14,6 +14,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.TransactionalCallback;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -36,6 +37,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.host.*;
 import org.zstack.header.image.CancelDownloadImageMsg;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.message.APIDeleteMessage;
@@ -57,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -267,15 +270,13 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     private void handle(final PingBackupStorageMsg msg) {
         final PingBackupStorageReply reply = new PingBackupStorageReply();
 
-        pingHook(new Completion(msg) {
-            private void reconnect() {
-                ConnectBackupStorageMsg cmsg = new ConnectBackupStorageMsg();
-                cmsg.setBackupStorageUuid(self.getUuid());
-                cmsg.setNewAdd(false);
-                bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, self.getUuid());
-                bus.send(cmsg);
-            }
-
+        final Integer MAX_PING_CNT = BackupStorageGlobalConfig.MAXIMUM_PING_FAILURE.value(Integer.class);
+        final List<Integer> stepCount = new ArrayList<>();
+        for (int i = 1; i <= MAX_PING_CNT; i++) {
+            stepCount.add(i);
+        }
+        final List<ErrorCode> errs = new ArrayList<>();
+        new While<>(stepCount).each((currentStep, compl) -> pingHook(new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -283,17 +284,51 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                if (changeStatus(BackupStorageStatus.Disconnected)) {
-                    fireDisconnectedCanonicalEvent(errorCode);
-                }
+                logger.warn(String.format("ping host failed (%d/%d): %s", currentStep, MAX_PING_CNT, errorCode.toString()));
+                errs.add(errorCode);
 
-                Boolean doReconnect = (Boolean) errorCode.getFromOpaque(Opaque.RECONNECT_AGENT.toString());
-                if (doReconnect != null && doReconnect) {
-                    reconnect();
+                if (errs.size() != stepCount.size()) {
+                    int sleep = BackupStorageGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.value(Integer.class);
+                    if (sleep > 0) {
+                        try {
+                            TimeUnit.SECONDS.sleep(sleep);
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
                 }
+                compl.done();
+            }
+        })).run(new WhileDoneCompletion(msg) {
+            private void reconnect() {
+                ConnectBackupStorageMsg cmsg = new ConnectBackupStorageMsg();
+                cmsg.setBackupStorageUuid(self.getUuid());
+                cmsg.setNewAdd(false);
+                bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, self.getUuid());
+                bus.send(cmsg);
+            }
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errs.size() == stepCount.size()) {
+                    final ErrorCode errorCode = errs.get(0);
+                    reply.setConnected(false);
+                    reply.setError(errorCode);
+                    reply.setSuccess(true);
 
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+                    if (changeStatus(BackupStorageStatus.Disconnected)) {
+                        fireDisconnectedCanonicalEvent(errorCode);
+                    }
+
+                    Boolean doReconnect = (Boolean) errorCode.getFromOpaque(Opaque.RECONNECT_AGENT.toString());
+                    if (doReconnect != null && doReconnect) {
+                        reconnect();
+                    }
+
+                    bus.reply(msg, reply);
+                } else {
+                    reply.setConnected(true);
+                    reply.setSuccess(true);
+                    bus.reply(msg, reply);
+                }
             }
         });
     }

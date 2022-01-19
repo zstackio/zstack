@@ -129,7 +129,7 @@ class BackupStoragePingCase extends SubCase {
         backupStorageManager.managementNodeReady()
 
         retryInSecs {
-            assert connectCount == 2
+            assert connectCount >= 2
             assert Q.New(BackupStorageVO.class).eq(BackupStorageVO_.status, BackupStorageStatus.Connected).count() == 2
         }
 
