@@ -39,4 +39,19 @@
         <type>java.lang.Integer</type>
     </config>
 
+    <config>
+        <category>backupStorage</category>
+        <name>ping.maxFailure</name>
+        <description>The maximum count of ping failure before reconnecting backup storage</description>
+        <defaultValue>3</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <category>backupStorage</category>
+        <name>ping.sleepPeriodAfterFailure</name>
+        <description>The sleep period before retrying the next backup storage ping after a ping failure</description>
+        <defaultValue>1</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>
