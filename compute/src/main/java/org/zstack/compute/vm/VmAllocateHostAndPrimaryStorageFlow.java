@@ -106,6 +106,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     if (!newcluster.contains(ct)) {
                         newcluster.add(ct);
                         newps.add(pt);
+                        break;
                     }
                 }
             }
