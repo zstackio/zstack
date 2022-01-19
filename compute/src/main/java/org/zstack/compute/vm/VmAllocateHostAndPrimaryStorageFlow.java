@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -12,10 +13,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.allocator.AllocateHostMsg;
-import org.zstack.header.allocator.DesignatedAllocateHostMsg;
-import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.allocator.ReturnHostCapacityMsg;
+import org.zstack.header.allocator.*;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.DiskOfferingInventory;
@@ -29,6 +27,7 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -89,6 +88,22 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 psClusterGroup.put(entry.getValue(), new ArrayList<String>(Arrays.asList(entry.getKey())));
             }
         }
+
+        AllocateHostMsg amsg = prepareMsg(spec);
+        bus.send(amsg, new CloudBusCallBack(trigger) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    trigger.fail(reply.getError());
+                    return;
+                }
+                AllocateHostDryRunReply r = reply.castReply();
+                data.put("hostInventoriess", r.getHosts());
+                data.put("clusterss", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
+            }
+        });
+        List<HostInventory> hostInventoriess = (List<HostInventory>) data.get("hostInventoriess");
+        List<String> clusterInventoriess = (List<String>) data.get("clusterss");
 
         //返回的排好顺序的物理机和集群list，并且下坐标一一对应
         List<HostInventory> hostInventories = (List<HostInventory>) data.get("hostInventories");
