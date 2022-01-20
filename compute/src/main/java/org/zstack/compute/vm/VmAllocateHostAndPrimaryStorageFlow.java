@@ -674,9 +674,9 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                                 AllocateHostDryRunReply r = reply.castReply();
                                 data.put("hostInventoriess", r.getHosts());
                                 data.put("clusterss", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
+                                trigger.next();
                             }
                         });
-                        trigger.next();
                     }
                 });
             }
