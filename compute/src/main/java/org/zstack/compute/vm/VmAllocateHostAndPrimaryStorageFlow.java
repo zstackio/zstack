@@ -72,15 +72,185 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         }
 
         //获得已经排好序的主存储组和集群组
-        // 遍历集群组，尝试不同的主存储组合
+        //遍历集群组，尝试不同的主存储组合
         psAndcluster pc = getClusterGroup(trigger, data, spec);
-        new While<>(pc.newps).each((newps, whileCompletion) -> {
-            boolean sus = fenpei(newps, spec, trigger);
-            if (sus) {
-                whileCompletion.allDone();
-            } else {
-                whileCompletion.done();
-            }
+
+        new While<>(pc.newps).each((possiblePsUuids, whileCompletion) -> {
+
+            FlowChain chain = FlowChainBuilder.newShareFlowChain();
+            chain.setName(String.format("dryrun-allocate-host-%s", spec.getVmInventory().getUuid()));
+            chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+            chain.then(new ShareFlow() {
+                @Override
+                public void setup() {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "dryrun-allocate-host";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            List<ErrorCode> errorCodes = new ArrayList<>();
+                            final boolean[] rootdata = new boolean[1];
+                            final boolean[] rootordata = new boolean[1];
+                            final boolean[] suscess = new boolean[1];
+
+                            List<Tuple> availablePsTuples = Q.New(PrimaryStorageVO.class)
+                                    .select(PrimaryStorageVO_.uuid, PrimaryStorageVO_.type)
+                                    .in(PrimaryStorageVO_.uuid, possiblePsUuids)
+                                    .eq(PrimaryStorageVO_.state, PrimaryStorageState.Enabled)
+                                    .eq(PrimaryStorageVO_.status, PrimaryStorageStatus.Connected)
+                                    .listTuple();
+
+                            //该集群下的主存储都不可用
+                            if (availablePsTuples.isEmpty()) {
+                                return;
+                            }
+
+                            List<String> availablePsUuids = new ArrayList<>();
+                            List<String> localPsUuids = new ArrayList<>();
+                            List<String> nonLocalPsUuids = new ArrayList<>();
+                            for (Tuple tuple : availablePsTuples) {
+                                String psUuid = (String) tuple.get(0);
+                                String psType = (String) tuple.get(1);
+                                availablePsUuids.add((String) tuple.get(0));
+
+                                if (psType.equals(PrimaryStorageConstants.LOCAL_STORAGE_TYPE)) {
+                                    localPsUuids.add(psUuid);
+                                } else {
+                                    nonLocalPsUuids.add(psUuid);
+                                }
+                            }
+
+                            boolean autoAllocateRootVolumePs = needAutoAllocateRootVolumePS(spec);
+                            boolean autoAllocateDataVolumePs = needAutoAllocateDataVolumePS(spec);
+
+                            //根云盘和数据云盘都未指定ps
+                            if (autoAllocateRootVolumePs && autoAllocateDataVolumePs) {
+                                List<String[]> psCombos1 = new ArrayList<>();
+                                List<String[]> psCombos2 = new ArrayList<>();
+                                List<String[]> psCombos3 = new ArrayList<>();
+
+                                for (String rootVolumePsUuid : availablePsUuids) {
+                                    for (String dataVolumePsUuid : availablePsUuids) {
+                                        String[] combo = {rootVolumePsUuid, dataVolumePsUuid};
+
+                                        if (localPsUuids.contains(rootVolumePsUuid) && nonLocalPsUuids.contains(dataVolumePsUuid)) {
+                                            psCombos1.add(combo);
+                                        } else if (nonLocalPsUuids.contains(rootVolumePsUuid) && localPsUuids.contains(dataVolumePsUuid)) {
+                                            psCombos3.add(combo);
+                                        } else {
+                                            psCombos2.add(combo);
+                                        }
+                                    }
+                                }
+
+                                List<String[]> psCombos = new ArrayList<>();
+                                if (!psCombos1.isEmpty()){
+                                    psCombos.addAll(psCombos1);
+                                }
+                                if (!psCombos2.isEmpty()){
+                                    psCombos.addAll(psCombos2);
+                                }
+                                if (!psCombos3.isEmpty()){
+                                    psCombos.addAll(psCombos3);
+                                }
+
+                                new While<>(psCombos).each((psCombo, whileCompletion2) -> {
+                                    spec.setRequiredPrimaryStorageUuidForRootVolume(psCombo[0]);
+                                    spec.setRequiredPrimaryStorageUuidForDataVolume(psCombo[1]);
+
+                                    FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
+                                    chain.done(new FlowDoneHandler(whileCompletion2) {
+                                        @Override
+                                        public void handle(Map data) {
+                                            whileCompletion2.allDone();
+                                        }
+                                    }).error(new FlowErrorHandler(whileCompletion2) {
+                                        @Override
+                                        public void handle(ErrorCode errCode, Map data) {
+                                            spec.setRequiredPrimaryStorageUuidForRootVolume(null);
+                                            spec.setRequiredPrimaryStorageUuidForDataVolume(null);
+                                            errorCodes.add(errCode);
+                                            whileCompletion2.done();
+                                        }
+                                    }).start();
+                                }).run(new WhileDoneCompletion(trigger) {
+                                    @Override
+                                    public void done(ErrorCodeList errorCodeList) {
+                                        if (errorCodes.size() == availablePsUuids.size()) {
+                                            whileCompletion.done();
+                                        }
+                                        trigger.next();
+                                    }
+                                });
+                            }
+
+                            availablePsUuids.clear();
+                            String noAssginps = null;
+                            if (autoAllocateRootVolumePs) {
+                                if (!possiblePsUuids.contains(spec.getRequiredPrimaryStorageUuidForRootVolume())) {
+                                    return;
+                                }
+                                availablePsUuids.addAll(localPsUuids);
+                                availablePsUuids.addAll(nonLocalPsUuids);
+                                noAssginps = "root";
+                            } else if (autoAllocateDataVolumePs) {
+                                if (spec.getRequiredPrimaryStorageUuidForDataVolume() != null) {
+                                    if (!possiblePsUuids.contains(spec.getRequiredPrimaryStorageUuidForDataVolume())) {
+                                        return;
+                                    }
+                                    availablePsUuids.addAll(nonLocalPsUuids);
+                                    availablePsUuids.addAll(localPsUuids);
+                                    noAssginps = "data";
+                                }
+                            }
+                            String finalNoAssginps = noAssginps;
+                            new While<>(availablePsUuids).each((psUuid, whileCompletion3) -> {
+                                if (autoAllocateRootVolumePs) {
+                                    spec.setRequiredPrimaryStorageUuidForRootVolume(psUuid);
+                                } else if (autoAllocateDataVolumePs) {
+                                    spec.setRequiredPrimaryStorageUuidForDataVolume(psUuid);
+                                }
+
+                                FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
+                                chain.done(new FlowDoneHandler(3) {
+                                    @Override
+                                    public void handle(Map data) {
+                                        suscess[0] = true;
+                                        rootordata[0] = true;
+                                        whileCompletion3.allDone();
+                                    }
+                                }).error(new FlowErrorHandler(whileCompletion3) {
+                                    @Override
+                                    public void handle(ErrorCode errCode, Map data) {
+                                        if (finalNoAssginps == "root") {
+                                            spec.setRequiredPrimaryStorageUuidForRootVolume(null);
+                                        } else if (finalNoAssginps == "data") {
+                                            spec.setRequiredPrimaryStorageUuidForDataVolume(null);
+                                        }
+                                        errorCodes.add(errCode);
+                                        whileCompletion3.done();
+                                    }
+                                }).start();
+                            }).run(new WhileDoneCompletion(trigger) {
+                                @Override
+                                public void done(ErrorCodeList errorCodeList) {
+                                    if (errorCodes.size() == availablePsUuids.size()) {
+                                        whileCompletion.done();
+                                    }
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+//            boolean sus = fenpei(possiblePsUuids, spec, trigger);
+//            if (sus) {
+//                whileCompletion.allDone();
+//            } else {
+//                whileCompletion.done();
+//            }
         }).run(new WhileDoneCompletion(trigger) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
