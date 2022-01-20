@@ -171,6 +171,8 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 if (rootdata[0]) {
                     break;
                 }
+                spec.setRequiredPrimaryStorageUuidForRootVolume(null);
+                spec.setRequiredPrimaryStorageUuidForDataVolume(null);
                 continue;
             }
 
@@ -214,16 +216,10 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 }).error(new FlowErrorHandler(whileCompletion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        if (finalNoAssginps == "root") {
-                            spec.setRequiredPrimaryStorageUuidForRootVolume(null);
-                        } else if (finalNoAssginps == "data") {
-                            spec.setRequiredPrimaryStorageUuidForDataVolume(null);
-                        }
                         errorCodes.add(errCode);
                         whileCompletion.done();
                     }
                 }).start();
-
             }).run(new WhileDoneCompletion(trigger) {
                 @Override
                 public void done(ErrorCodeList errorCodeList) {
@@ -237,6 +233,12 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             if (rootordata[0]) {
                 break;
             }
+            if (finalNoAssginps == "root") {
+                spec.setRequiredPrimaryStorageUuidForRootVolume(null);
+            } else if (finalNoAssginps == "data") {
+                spec.setRequiredPrimaryStorageUuidForDataVolume(null);
+            }
+            continue;
         }
 
         if (!suscess[0]) {
