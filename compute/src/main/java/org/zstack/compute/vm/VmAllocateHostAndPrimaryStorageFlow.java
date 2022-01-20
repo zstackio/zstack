@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -13,7 +12,10 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.AllocateHostMsg;
+import org.zstack.header.allocator.DesignatedAllocateHostMsg;
+import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.DiskOfferingInventory;
@@ -27,7 +29,6 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -151,6 +152,8 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     }).error(new FlowErrorHandler(whileCompletion) {
                         @Override
                         public void handle(ErrorCode errCode, Map data) {
+                            spec.setRequiredPrimaryStorageUuidForRootVolume(null);
+                            spec.setRequiredPrimaryStorageUuidForDataVolume(null);
                             errorCodes.add(errCode);
                             whileCompletion.done();
                         }
@@ -174,12 +177,14 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             //根云盘和数据云盘只指定了一个盘主存储（目前，从UI传来的信息，不会出现此类情形，创建带数据云盘的vm,需要同时指定data和root的ps）
             //根云盘和数据云盘指定其中一个
             availablePsUuids.clear();
+            String noAssginps = null;
             if (autoAllocateRootVolumePs) {
                 if (!possiblePsUuids.contains(spec.getRequiredPrimaryStorageUuidForRootVolume())) {
                     continue;
                 }
                 availablePsUuids.addAll(localPsUuids);
                 availablePsUuids.addAll(nonLocalPsUuids);
+                noAssginps = "root";
             } else if (autoAllocateDataVolumePs) {
                 if (spec.getRequiredPrimaryStorageUuidForDataVolume() != null) {
                     if (!possiblePsUuids.contains(spec.getRequiredPrimaryStorageUuidForDataVolume())) {
@@ -187,8 +192,10 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     }
                     availablePsUuids.addAll(nonLocalPsUuids);
                     availablePsUuids.addAll(localPsUuids);
+                    noAssginps = "data";
                 }
             }
+            String finalNoAssginps = noAssginps;
             new While<>(availablePsUuids).each((psUuid, whileCompletion) -> {
                 if (autoAllocateRootVolumePs) {
                     spec.setRequiredPrimaryStorageUuidForRootVolume(psUuid);
@@ -207,6 +214,11 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 }).error(new FlowErrorHandler(whileCompletion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        if (finalNoAssginps == "root") {
+                            spec.setRequiredPrimaryStorageUuidForRootVolume(null);
+                        } else if (finalNoAssginps == "data") {
+                            spec.setRequiredPrimaryStorageUuidForDataVolume(null);
+                        }
                         errorCodes.add(errCode);
                         whileCompletion.done();
                     }
@@ -652,38 +664,38 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
         }
 
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("dryrun-allocate-host-%s", spec.getVmInventory().getUuid()));
-        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
-        chain.then(new ShareFlow() {
-            @Override
-            public void setup() {
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "dryrun-allocate-host";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        AllocateHostMsg amsg = prepareMsg(spec);
-                        bus.send(amsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
-                                AllocateHostDryRunReply r = reply.castReply();
-                                data.put("hostInventoriess", r.getHosts());
-                                data.put("clusterss", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
-            }
-        });
-        setFlowMarshaller(chain);
-        chain.start();
+//        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+//        chain.setName(String.format("dryrun-allocate-host-%s", spec.getVmInventory().getUuid()));
+//        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+//        chain.then(new ShareFlow() {
+//            @Override
+//            public void setup() {
+//
+//                flow(new NoRollbackFlow() {
+//                    String __name__ = "dryrun-allocate-host";
+//
+//                    @Override
+//                    public void run(FlowTrigger trigger, Map data) {
+//                        AllocateHostMsg amsg = prepareMsg(spec);
+//                        bus.send(amsg, new CloudBusCallBack(trigger) {
+//                            @Override
+//                            public void run(MessageReply reply) {
+//                                if (!reply.isSuccess()) {
+//                                    trigger.fail(reply.getError());
+//                                    return;
+//                                }
+//                                AllocateHostDryRunReply r = reply.castReply();
+//                                data.put("hostInventoriess", r.getHosts());
+//                                data.put("clusterss", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
+//                                trigger.next();
+//                            }
+//                        });
+//                    }
+//                });
+//            }
+//        });
+//        setFlowMarshaller(chain);
+//        chain.start();
 
         List<HostInventory> hostInventoriess = (List<HostInventory>) data.get("hostInventoriess");
         List<String> clusterInventoriess = (List<String>) data.get("clusterss");
