@@ -144,9 +144,15 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
 
             List<String[]> psCombos = new ArrayList<>();
-            psCombos.addAll(psCombos1);
-            psCombos.addAll(psCombos2);
-            psCombos.addAll(psCombos3);
+            if (!psCombos1.isEmpty()){
+                psCombos.addAll(psCombos1);
+            }
+            if (!psCombos2.isEmpty()){
+                psCombos.addAll(psCombos2);
+            }
+            if (!psCombos3.isEmpty()){
+                psCombos.addAll(psCombos3);
+            }
 
             new While<>(psCombos).each((psCombo, whileCompletion) -> {
                 spec.setRequiredPrimaryStorageUuidForRootVolume(psCombo[0]);
@@ -175,6 +181,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     if (errorCodes.size() == availablePsUuids.size()) {
                         rootdata[0] = false;
                     }
+                    trigger.next();
                 }
             });
 
