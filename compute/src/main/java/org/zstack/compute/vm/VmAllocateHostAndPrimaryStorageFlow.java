@@ -75,23 +75,23 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         //遍历集群组，尝试不同的主存储组合
         psAndcluster pc = getClusterGroup(trigger, data, spec);
 
-        new While<>(pc.newps).each((possiblePsUuids, whileCompletion) -> {
+        List<ErrorCode> errorCodesOut = new ArrayList<>();
 
+        new While<>(pc.newps).each((possiblePsUuids, whileCompletion) -> {
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
+            setFlowMarshaller(chain);
             chain.setName(String.format("dryrun-allocate-host-%s", spec.getVmInventory().getUuid()));
             chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
             chain.then(new ShareFlow() {
                 @Override
                 public void setup() {
+
                     flow(new NoRollbackFlow() {
                         String __name__ = "dryrun-allocate-host";
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             List<ErrorCode> errorCodes = new ArrayList<>();
-                            final boolean[] rootdata = new boolean[1];
-                            final boolean[] rootordata = new boolean[1];
-                            final boolean[] suscess = new boolean[1];
 
                             List<Tuple> availablePsTuples = Q.New(PrimaryStorageVO.class)
                                     .select(PrimaryStorageVO_.uuid, PrimaryStorageVO_.type)
@@ -203,7 +203,9 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                                     noAssginps = "data";
                                 }
                             }
+
                             String finalNoAssginps = noAssginps;
+
                             new While<>(availablePsUuids).each((psUuid, whileCompletion3) -> {
                                 if (autoAllocateRootVolumePs) {
                                     spec.setRequiredPrimaryStorageUuidForRootVolume(psUuid);
@@ -215,8 +217,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                                 chain.done(new FlowDoneHandler(whileCompletion3) {
                                     @Override
                                     public void handle(Map data) {
-                                        suscess[0] = true;
-                                        rootordata[0] = true;
                                         whileCompletion3.allDone();
                                     }
                                 }).error(new FlowErrorHandler(whileCompletion3) {
@@ -242,15 +242,21 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                             });
                         }
                     });
-                }
-            });
 
-//            boolean sus = fenpei(possiblePsUuids, spec, trigger);
-//            if (sus) {
-//                whileCompletion.allDone();
-//            } else {
-//                whileCompletion.done();
-//            }
+                }
+            }).done(new FlowDoneHandler(whileCompletion) {
+                @Override
+                public void handle(Map data) {
+                    whileCompletion.allDone();
+                }
+            }).error(new FlowErrorHandler(whileCompletion) {
+                @Override
+                public void handle(ErrorCode errCode, Map data) {
+                    errorCodesOut.add(errCode);
+                    whileCompletion.done();
+                }
+            }).start();
+
         }).run(new WhileDoneCompletion(trigger) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
