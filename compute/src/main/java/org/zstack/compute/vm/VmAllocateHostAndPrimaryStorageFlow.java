@@ -80,6 +80,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         List<ErrorCode> errorCodesOut = new ArrayList<>();
 
         new While<>(pc.newps).each((possiblePsUuids, whileCompletion) -> {
+
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
             setFlowMarshaller(chain);
             chain.setName(String.format("dryrun-allocate-host-%s", spec.getVmInventory().getUuid()));
@@ -182,9 +183,10 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                                     @Override
                                     public void done(ErrorCodeList errorCodeList) {
                                         if (errorCodes.size() == availablePsUuids.size()) {
-                                            whileCompletion.done();
+                                            errorCodesOut.add(errorCodes.get(0));
                                         }
-                                        trigger.next();
+                                        whileCompletion.done();
+                                        //trigger.next();
                                     }
                                 });
                                 return;
@@ -242,14 +244,16 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                                 @Override
                                 public void done(ErrorCodeList errorCodeList) {
                                     if (errorCodes.size() == availablePsUuids.size()) {
-                                        whileCompletion.done();
+                                        errorCodesOut.add(errorCodes.get(0));
                                     }
-                                    trigger.next();
+                                    whileCompletion.done();
+                                    //trigger.next();
                                 }
                             });
 
                         }
                     });
+
                 }
 
             }).done(new FlowDoneHandler(whileCompletion) {
