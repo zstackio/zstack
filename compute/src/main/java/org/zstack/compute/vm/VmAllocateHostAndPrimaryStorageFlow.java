@@ -44,6 +44,8 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import java.util.*;
 
+import static org.zstack.core.Platform.operr;
+
 /**
  * Create by lining at 2020/08/17
  */
@@ -102,6 +104,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
                             //该集群下的主存储都不可用
                             if (availablePsTuples.isEmpty()) {
+                                errorCodes.add(operr("no available ps"));
                                 return;
                             }
 
@@ -154,25 +157,27 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                                     psCombos.addAll(psCombos3);
                                 }
 
-                                new While<>(psCombos).each((psCombo, whileCompletion2) -> {
+                                new While<>(psCombos).each((psCombo, whileCompletionInn1) -> {
+
                                     spec.setRequiredPrimaryStorageUuidForRootVolume(psCombo[0]);
                                     spec.setRequiredPrimaryStorageUuidForDataVolume(psCombo[1]);
 
                                     FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
-                                    chain.done(new FlowDoneHandler(whileCompletion2) {
+                                    chain.done(new FlowDoneHandler(whileCompletionInn1) {
                                         @Override
                                         public void handle(Map data) {
-                                            whileCompletion2.allDone();
+                                            whileCompletionInn1.allDone();
                                         }
-                                    }).error(new FlowErrorHandler(whileCompletion2) {
+                                    }).error(new FlowErrorHandler(whileCompletionInn1) {
                                         @Override
                                         public void handle(ErrorCode errCode, Map data) {
                                             spec.setRequiredPrimaryStorageUuidForRootVolume(null);
                                             spec.setRequiredPrimaryStorageUuidForDataVolume(null);
                                             errorCodes.add(errCode);
-                                            whileCompletion2.done();
+                                            whileCompletionInn1.done();
                                         }
                                     }).start();
+
                                 }).run(new WhileDoneCompletion(trigger) {
                                     @Override
                                     public void done(ErrorCodeList errorCodeList) {
@@ -182,6 +187,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                                         trigger.next();
                                     }
                                 });
+                                return;
                             }
 
                             availablePsUuids.clear();
@@ -206,7 +212,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
                             String finalNoAssginps = noAssginps;
 
-                            new While<>(availablePsUuids).each((psUuid, whileCompletion3) -> {
+                            new While<>(availablePsUuids).each((psUuid, whileCompletionInn2) -> {
                                 if (autoAllocateRootVolumePs) {
                                     spec.setRequiredPrimaryStorageUuidForRootVolume(psUuid);
                                 } else if (autoAllocateDataVolumePs) {
@@ -214,23 +220,24 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                                 }
 
                                 FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
-                                chain.done(new FlowDoneHandler(whileCompletion3) {
+                                chain.done(new FlowDoneHandler(whileCompletionInn2) {
                                     @Override
                                     public void handle(Map data) {
-                                        whileCompletion3.allDone();
+                                        whileCompletionInn2.allDone();
                                     }
-                                }).error(new FlowErrorHandler(whileCompletion3) {
+                                }).error(new FlowErrorHandler(whileCompletionInn2) {
                                     @Override
                                     public void handle(ErrorCode errCode, Map data) {
-                                        if (finalNoAssginps == "root") {
+                                        if (Objects.equals(finalNoAssginps, "root")) {
                                             spec.setRequiredPrimaryStorageUuidForRootVolume(null);
-                                        } else if (finalNoAssginps == "data") {
+                                        } else if (Objects.equals(finalNoAssginps, "data")) {
                                             spec.setRequiredPrimaryStorageUuidForDataVolume(null);
                                         }
                                         errorCodes.add(errCode);
-                                        whileCompletion3.done();
+                                        whileCompletionInn2.done();
                                     }
                                 }).start();
+
                             }).run(new WhileDoneCompletion(trigger) {
                                 @Override
                                 public void done(ErrorCodeList errorCodeList) {
@@ -240,10 +247,11 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                                     trigger.next();
                                 }
                             });
+
                         }
                     });
-
                 }
+
             }).done(new FlowDoneHandler(whileCompletion) {
                 @Override
                 public void handle(Map data) {
@@ -260,6 +268,10 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         }).run(new WhileDoneCompletion(trigger) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
+                if (errorCodesOut.size() == pc.newps.size()) {
+                    trigger.fail(errorCodesOut.get(0));
+                    return;
+                }
                 trigger.next();
             }
         });
