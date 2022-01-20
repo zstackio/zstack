@@ -658,6 +658,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "dryrun-allocate-host";
 
