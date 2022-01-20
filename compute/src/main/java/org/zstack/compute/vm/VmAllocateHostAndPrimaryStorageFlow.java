@@ -72,11 +72,8 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         }
 
         //获得已经排好序的主存储组和集群组
-        psAndcluster pc = getClusterGroup(trigger, data, spec);
-        Iterator<ArrayList<String>> newpsIte = pc.newps.iterator();
-
         // 遍历集群组，尝试不同的主存储组合
-
+        psAndcluster pc = getClusterGroup(trigger, data, spec);
         new While<>(pc.newps).each((newps, whileCompletion) -> {
             boolean sus = fenpei(newps, spec, trigger);
             if (sus) {
@@ -87,6 +84,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         }).run(new WhileDoneCompletion(trigger) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
+                trigger.next();
             }
         });
     }
@@ -250,9 +248,9 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         if (rootordata[0]) {
             return true;
         }
-        if (finalNoAssginps == "root") {
+        if (Objects.equals(finalNoAssginps, "root")) {
             spec.setRequiredPrimaryStorageUuidForRootVolume(null);
-        } else if (finalNoAssginps == "data") {
+        } else if (Objects.equals(finalNoAssginps, "data")) {
             spec.setRequiredPrimaryStorageUuidForDataVolume(null);
         }
         return false;
