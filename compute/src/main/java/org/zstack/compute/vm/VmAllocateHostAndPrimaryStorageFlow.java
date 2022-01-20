@@ -653,7 +653,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         }
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        setFlowMarshaller(chain);
         chain.setName(String.format("dryrun-allocate-host-%s", spec.getVmInventory().getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.then(new ShareFlow() {
@@ -682,7 +681,9 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     }
                 });
             }
-        }).start();
+        });
+        setFlowMarshaller(chain);
+        chain.start();
 
         List<HostInventory> hostInventoriess = (List<HostInventory>) data.get("hostInventoriess");
         List<String> clusterInventoriess = (List<String>) data.get("clusterss");
