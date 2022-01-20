@@ -212,7 +212,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                                 }
 
                                 FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
-                                chain.done(new FlowDoneHandler(3) {
+                                chain.done(new FlowDoneHandler(whileCompletion3) {
                                     @Override
                                     public void handle(Map data) {
                                         suscess[0] = true;
