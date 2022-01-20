@@ -652,19 +652,36 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
         }
 
-        AllocateHostMsg amsg = prepareMsg(spec);
-        bus.send(amsg, new CloudBusCallBack(trigger) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("dryrun-allocate-host-%s", spec.getVmInventory().getUuid()));
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.then(new ShareFlow() {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    trigger.fail(reply.getError());
-                    return;
-                }
-                AllocateHostDryRunReply r = reply.castReply();
-                data.put("hostInventoriess", r.getHosts());
-                data.put("clusterss", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "dryrun-allocate-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        AllocateHostMsg amsg = prepareMsg(spec);
+                        bus.send(amsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+                                AllocateHostDryRunReply r = reply.castReply();
+                                data.put("hostInventoriess", r.getHosts());
+                                data.put("clusterss", CollectionUtils.transformToList(r.getHosts(), HostInventory::getClusterUuid));
+                            }
+                        });
+                        trigger.next();
+                    }
+                });
             }
-        });
+        }).start();
+
         List<HostInventory> hostInventoriess = (List<HostInventory>) data.get("hostInventoriess");
         List<String> clusterInventoriess = (List<String>) data.get("clusterss");
 
@@ -690,7 +707,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 }
             }
         }
-
         return new psAndcluster(newps, newcluster);
     }
 
