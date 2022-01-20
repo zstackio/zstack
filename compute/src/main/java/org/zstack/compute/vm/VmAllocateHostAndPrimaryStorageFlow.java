@@ -158,13 +158,13 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                             whileCompletion.done();
                         }
                     }).start();
-
                 }).run(new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errorCodeList) {
                         if (errorCodes.size() == availablePsUuids.size()) {
                             rootdata[0] = false;
                         }
+                        trigger.next();
                     }
                 });
 
@@ -230,6 +230,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     if (errorCodes.size() == availablePsUuids.size()) {
                         rootordata[0] = false;
                     }
+                    trigger.next();
                 }
             });
 
