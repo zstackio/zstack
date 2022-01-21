@@ -8,7 +8,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -34,6 +33,9 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.zstack.header.host.HostConstant.SORTED_CLUSTERS;
 
 /**
  * Create by lining at 2020/08/17
@@ -62,74 +64,55 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             return;
         }
 
-        List<String> possibleClusterUuids = getPossibleClusterUuids(spec);
-        List<String> possiblePsUuids = getPossiblePrimaryStorageUuids(spec);
-
-        // Multiple clusters, and each cluster has a different primary storage
-        // Do not automatically allocate the primary storage, specifying primary storage impacts cluster selection
-        if (possibleClusterUuids.size() > 1) {
-            boolean clusterWithSamePs = true;
-            for (String clusterUuid : possibleClusterUuids) {
-                List<String> psUuids = Q.New(PrimaryStorageClusterRefVO.class)
-                        .select(PrimaryStorageClusterRefVO_.primaryStorageUuid)
-                        .eq(PrimaryStorageClusterRefVO_.clusterUuid, clusterUuid)
-                        .listValues();
-                if (!psUuids.containsAll(possiblePsUuids)) {
-                    clusterWithSamePs = false;
-                    break;
-                }
-            }
-
-            if (!clusterWithSamePs) {
-                allocate(trigger, spec);
-                return;
-            }
-        }
-
-        // Not local + non-local，no need to automatically allocate the primary storage
-        if (!isMixPrimaryStorage(spec)) {
+        List<List<String>> sortedPsGroup = getSortedPrimaryStorageGroup(data, spec);
+        if (sortedPsGroup.isEmpty()) {
             allocate(trigger, spec);
             return;
         }
 
-        List<Tuple> availablePsTuples = Q.New(PrimaryStorageVO.class)
-                .select(PrimaryStorageVO_.uuid, PrimaryStorageVO_.type)
-                .in(PrimaryStorageVO_.uuid, possiblePsUuids)
-                .eq(PrimaryStorageVO_.state, PrimaryStorageState.Enabled)
-                .eq(PrimaryStorageVO_.status, PrimaryStorageStatus.Connected)
-                .listTuple();
-
-        List<String> availablePsUuids = new ArrayList<>();
         List<String> localPsUuids = new ArrayList<>();
         List<String> nonLocalPsUuids = new ArrayList<>();
-        for (Tuple tuple : availablePsTuples) {
-            String psUuid = (String)tuple.get(0);
-            String psType = (String)tuple.get(1);
-            availablePsUuids.add((String)tuple.get(0));
+        List<String[]> psCombos = new ArrayList<>();
 
-            if (psType.equals(PrimaryStorageConstants.LOCAL_STORAGE_TYPE)) {
-                localPsUuids.add(psUuid);
-            } else {
-                nonLocalPsUuids.add(psUuid);
-            }
-        }
-
-        if (availablePsUuids.isEmpty()) {
-            allocate(trigger, spec);
-            return;
-        }
-
-        boolean autoAllocateRootVolumePs = needAutoAllocateRootVolumePS(spec);
-        boolean autoAllocateDataVolumePs = needAutoAllocateDataVolumePS(spec);
-        List<ErrorCode> errorCodes = new ArrayList<>();
-
-        if (autoAllocateRootVolumePs && autoAllocateDataVolumePs) {
+        for (List<String> possiblePsUuids : sortedPsGroup) {
             // First priority：root local, data non-local
             // Second priority：root local, data local / root non-local, data non-local
             // Third priority：root non-local, data local
             List<String[]> psCombos1 = new ArrayList<>();
             List<String[]> psCombos2 = new ArrayList<>();
             List<String[]> psCombos3 = new ArrayList<>();
+            List<String> availablePsUuids = new ArrayList<>();
+            List<String> temporaryLocalPsUuids = new ArrayList<>();
+            List<String> temporaryNonLocalPsUuids = new ArrayList<>();
+
+            List<Tuple> availablePsTuples = Q.New(PrimaryStorageVO.class)
+                    .select(PrimaryStorageVO_.uuid, PrimaryStorageVO_.type)
+                    .in(PrimaryStorageVO_.uuid, possiblePsUuids)
+                    .eq(PrimaryStorageVO_.state, PrimaryStorageState.Enabled)
+                    .eq(PrimaryStorageVO_.status, PrimaryStorageStatus.Connected)
+                    .listTuple();
+
+            for (Tuple tuple : availablePsTuples) {
+                String psUuid = (String) tuple.get(0);
+                String psType = (String) tuple.get(1);
+                if (psType.equals(PrimaryStorageConstants.LOCAL_STORAGE_TYPE)) {
+                    temporaryLocalPsUuids.add(psUuid);
+                } else {
+                    temporaryNonLocalPsUuids.add(psUuid);
+                }
+            }
+
+            List<String> sortedLocalPsUuids = sortPrimaryStorageByAvailableCapacity(temporaryLocalPsUuids);
+            List<String> sortedNonLocalPsUuids = sortPrimaryStorageByAvailableCapacity(temporaryNonLocalPsUuids);
+
+            localPsUuids.addAll(sortedLocalPsUuids);
+            nonLocalPsUuids.addAll(sortedNonLocalPsUuids);
+
+            availablePsUuids.addAll(sortedLocalPsUuids);
+            availablePsUuids.addAll(sortedNonLocalPsUuids);
+            if (availablePsUuids.isEmpty()) {
+                continue;
+            }
 
             for (String rootVolumePsUuid : availablePsUuids) {
                 for (String dataVolumePsUuid : availablePsUuids) {
@@ -145,11 +128,16 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 }
             }
 
-            List<String[]> psCombos = new ArrayList<>();
             psCombos.addAll(psCombos1);
             psCombos.addAll(psCombos2);
             psCombos.addAll(psCombos3);
+        }
 
+        boolean autoAllocateRootVolumePs = needAutoAllocateRootVolumePS(spec);
+        boolean autoAllocateDataVolumePs = needAutoAllocateDataVolumePS(spec);
+        List<ErrorCode> errorCodes = new ArrayList<>();
+
+        if (autoAllocateRootVolumePs && autoAllocateDataVolumePs) {
             new While<>(psCombos).each((psCombo, whileCompletion) -> {
                 spec.setRequiredPrimaryStorageUuidForRootVolume(psCombo[0]);
                 spec.setRequiredPrimaryStorageUuidForDataVolume(psCombo[1]);
@@ -181,7 +169,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             return;
         }
 
-        availablePsUuids.clear();
+        List<String> availablePsUuids = new ArrayList<>();
         if (autoAllocateRootVolumePs) {
             availablePsUuids.addAll(localPsUuids);
             availablePsUuids.addAll(nonLocalPsUuids);
@@ -189,7 +177,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             availablePsUuids.addAll(nonLocalPsUuids);
             availablePsUuids.addAll(localPsUuids);
         }
-
         new While<>(availablePsUuids).each((psUuid, whileCompletion) -> {
             if (autoAllocateRootVolumePs) {
                 spec.setRequiredPrimaryStorageUuidForRootVolume(psUuid);
@@ -221,6 +208,16 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 trigger.next();
             }
         });
+    }
+
+    private List<String> sortPrimaryStorageByAvailableCapacity(List<String> psUuids) {
+        if (psUuids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<PrimaryStorageCapacityVO> primaryStorageCapacityVO = Q.New(PrimaryStorageCapacityVO.class).in(PrimaryStorageVO_.uuid, psUuids).list();
+        return primaryStorageCapacityVO.stream()
+                .sorted(Comparator.comparing(PrimaryStorageCapacityVO::getAvailableCapacity).reversed())
+                .map(PrimaryStorageCapacityVO::getUuid).collect(Collectors.toList());
     }
 
     @Override
@@ -317,21 +314,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         });
     }
 
-    // local + non-local
-    private boolean isMixPrimaryStorage(VmInstanceSpec spec) {
-        List<String> psUuids = getPossiblePrimaryStorageUuids(spec);
-        if (psUuids.size() < 2) {
-            return false;
-        }
-
-        List<String> psTypes = Q.New(PrimaryStorageVO.class)
-                .select(PrimaryStorageVO_.type)
-                .in(PrimaryStorageVO_.uuid, psUuids)
-                .groupBy(PrimaryStorageVO_.type)
-                .listValues();
-        return !(!psTypes.contains(PrimaryStorageConstants.LOCAL_STORAGE_TYPE) || psTypes.size() <= 1);
-    }
-
     private String getTargetCluster(VmInstanceSpec spec) {
         VmInstanceInventory vm = spec.getVmInventory();
 
@@ -401,66 +383,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         return null;
     }
 
-    private List<String> getPossibleClusterUuids(VmInstanceSpec spec) {
-        String clusterUuid = getTargetCluster(spec);
-        if (clusterUuid != null) {
-            return Collections.singletonList(clusterUuid);
-        }
-
-        VmInstanceInventory vm = spec.getVmInventory();
-        String l3Uuid = vm.getDefaultL3NetworkUuid();
-        String zoneUuid = vm.getZoneUuid();
-        String rootVolumePsUuid = spec.getRequiredPrimaryStorageUuidForRootVolume();
-        String dataVolumePsUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
-
-        if (rootVolumePsUuid != null) {
-            return Q.New(PrimaryStorageClusterRefVO.class)
-                    .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, rootVolumePsUuid)
-                    .listValues();
-        }
-
-        if (dataVolumePsUuid != null) {
-            return Q.New(PrimaryStorageClusterRefVO.class)
-                    .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, dataVolumePsUuid)
-                    .listValues();
-        }
-
-        if (l3Uuid != null) {
-            String l2Uuid = Q.New(L3NetworkVO.class)
-                    .select(L3NetworkVO_.l2NetworkUuid)
-                    .eq(L3NetworkVO_.uuid, l3Uuid)
-                    .findValue();
-            return Q.New(L2NetworkClusterRefVO.class)
-                    .select(L2NetworkClusterRefVO_.clusterUuid)
-                    .eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2Uuid)
-                    .listValues();
-        }
-
-        if (zoneUuid != null) {
-            return Q.New(ClusterVO.class)
-                    .select(ClusterVO_.uuid)
-                    .eq(ClusterVO_.zoneUuid, zoneUuid)
-                    .listValues();
-        }
-
-        return Collections.emptyList();
-    }
-
-    private List<String> getPossiblePrimaryStorageUuids(VmInstanceSpec spec) {
-        List<String> clusterUuids = getPossibleClusterUuids(spec);
-        if (clusterUuids.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        return SQL.New("select distinct(t0.uuid) from PrimaryStorageVO t0, PrimaryStorageClusterRefVO t1" +
-                " where t0.uuid = t1.primaryStorageUuid" +
-                " and t1.clusterUuid in (:clusterUuids)", String.class)
-                .param("clusterUuids", clusterUuids)
-                .list();
-    }
-
     private boolean needAutoAllocatePS(VmInstanceSpec spec) {
         boolean autoAllocateRootVolumePs = needAutoAllocateRootVolumePS(spec);
         boolean autoAllocateDataVolumePs = needAutoAllocateDataVolumePS(spec);
@@ -513,5 +435,85 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
         });
         chain.start();
+    }
+
+    private List<List<String>> getSortedPrimaryStorageGroup(final Map data, VmInstanceSpec spec) {
+        List<String> sortedClusters = (List<String>) data.get(SORTED_CLUSTERS);
+
+        if (sortedClusters.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<List<String>, List<String>> psGroupMapToClusterGroup = getPsGroupMapToClusterGroup(sortedClusters, spec);
+
+        List<List<String>> psGroup = new ArrayList<>();
+        List<List<String>> clusterGroup = new ArrayList<>();
+        for (Map.Entry<List<String>, List<String>> entry : psGroupMapToClusterGroup.entrySet()) {
+            psGroup.add(entry.getKey());
+            clusterGroup.add(entry.getValue());
+        }
+
+        if (!isNeedAutoAllocatePrimaryStorage(psGroup)) {
+            return Collections.emptyList();
+        }
+
+        List<List<String>> sortedPsGroup = new ArrayList<>();
+        sortedClusters.forEach(cluster -> clusterGroup.forEach(clusterList -> {
+            if (clusterList.contains(cluster)) {
+                List<String> psList = psGroup.get(clusterGroup.indexOf(clusterList));
+                if (!sortedPsGroup.contains(psList)) {
+                    sortedPsGroup.add(psList);
+                }
+            }
+        }));
+
+        return sortedPsGroup;
+    }
+
+    private Map<List<String>, List<String>> getPsGroupMapToClusterGroup(List<String> sortedClusters, VmInstanceSpec spec) {
+        String targetClusterUuid = getTargetCluster(spec);
+        if (targetClusterUuid != null) {
+            sortedClusters = Collections.singletonList(targetClusterUuid);
+        }
+
+        Map<String, List<String>> clusterAccessiblePS = new HashMap<>();
+        sortedClusters.forEach(clusterUuid -> {
+            List<String> psList = getPrimaryStorageUuidsFromCluster(clusterUuid);
+            if (psList.size() != 0) {
+                clusterAccessiblePS.put(clusterUuid, psList);
+            }
+        });
+
+        Map<List<String>, List<String>> psGroupMapToClusterGroup = new HashMap<>();
+        clusterAccessiblePS.forEach((key, value) -> {
+            if (psGroupMapToClusterGroup.get(value) == null) {
+                psGroupMapToClusterGroup.put(value, new ArrayList<>(Collections.singleton(key)));
+            } else {
+                psGroupMapToClusterGroup.get(value).add(key);
+            }
+        });
+
+        return psGroupMapToClusterGroup;
+    }
+
+    private List<String> getPrimaryStorageUuidsFromCluster(String clusterUuid) {
+        return Q.New(PrimaryStorageClusterRefVO.class)
+                .select(PrimaryStorageClusterRefVO_.primaryStorageUuid)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, clusterUuid)
+                .listValues();
+    }
+
+    private boolean isNeedAutoAllocatePrimaryStorage(List<List<String>> psGroup) {
+        List<List<String>> psTypeGroup = psGroup.stream().map(this::getPrimaryStorageTypes).filter(this::filterRules)
+                .collect(Collectors.toList());
+        return psTypeGroup.size() == psGroup.size();
+    }
+
+    private List<String> getPrimaryStorageTypes(List<String> psUuids) {
+        return Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).in(PrimaryStorageVO_.uuid, psUuids).listValues();
+    }
+
+    private boolean filterRules(List<String> psTypes) {
+        return psTypes.contains(PrimaryStorageConstants.LOCAL_STORAGE_TYPE);
     }
 }
