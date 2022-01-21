@@ -262,11 +262,13 @@ class LocalStorageHostRefVOCase extends SubCase{
         def beforePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
                 .select(PrimaryStorageCapacityVO_.availableCapacity)
                 .eq(PrimaryStorageCapacityVO_.uuid, local.uuid)
+                .findValue()
 
         def beforeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
-                .select(LocalStorageHostRefVO_.availableCapacity).eq(LocalStorageHostRefVO_.hostUuid, host.uuid)
+                .select(LocalStorageHostRefVO_.availableCapacity)
+                .eq(LocalStorageHostRefVO_.hostUuid, host.uuid)
+                .findValue()
 
-        // 批量创建volume
         def volumes = []
         for (int i = 0; i < 24; i++) {
             def volume = createDataVolume {
@@ -277,15 +279,17 @@ class LocalStorageHostRefVOCase extends SubCase{
             volumes.add(volume.uuid)
         }
 
-        // 批量删除volume
         volumes.each({ it -> expungeVolume(it as String) })
 
         def afterPSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
                 .select(PrimaryStorageCapacityVO_.availableCapacity)
                 .eq(PrimaryStorageCapacityVO_.uuid, local.uuid)
+                .findValue()
 
         def afterHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
-                .select(LocalStorageHostRefVO_.availableCapacity).eq(LocalStorageHostRefVO_.hostUuid, host.uuid)
+                .select(LocalStorageHostRefVO_.availableCapacity)
+                .eq(LocalStorageHostRefVO_.hostUuid, host.uuid)
+                .findValue()
 
         assert afterPSAvailableCapacity == beforePSAvailableCapacity
         assert afterHostAvailableCapacity == beforeHostAvailableCapacity
