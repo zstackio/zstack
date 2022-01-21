@@ -180,26 +180,18 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                             }
 
                             availablePsUuids.clear();
-                            String noAssginps = null;
+                            String noAssignPs = null;
                             if (autoAllocateRootVolumePs) {
-                                if (!possiblePsUuids.contains(spec.getRequiredPrimaryStorageUuidForRootVolume())) {
-                                    return;
-                                }
                                 availablePsUuids.addAll(localPsUuids);
                                 availablePsUuids.addAll(nonLocalPsUuids);
-                                noAssginps = "root";
+                                noAssignPs = "root";
                             } else if (autoAllocateDataVolumePs) {
-                                if (spec.getRequiredPrimaryStorageUuidForDataVolume() != null) {
-                                    if (!possiblePsUuids.contains(spec.getRequiredPrimaryStorageUuidForDataVolume())) {
-                                        return;
-                                    }
-                                    availablePsUuids.addAll(nonLocalPsUuids);
-                                    availablePsUuids.addAll(localPsUuids);
-                                    noAssginps = "data";
-                                }
+                                availablePsUuids.addAll(nonLocalPsUuids);
+                                availablePsUuids.addAll(localPsUuids);
+                                noAssignPs = "data";
                             }
 
-                            String finalNoAssginps = noAssginps;
+                            String finalNoAssginps = noAssignPs;
 
                             new While<>(availablePsUuids).each((psUuid, whileCompletionInn2) -> {
                                 if (autoAllocateRootVolumePs) {
