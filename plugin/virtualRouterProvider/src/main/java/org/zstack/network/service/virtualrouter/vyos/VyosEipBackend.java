@@ -67,7 +67,7 @@ public class VyosEipBackend extends VirtualRouterEipBackend implements GetEipAtt
         } catch (Throwable e){
             logger.warn(e.getMessage(), e);
         }
-        if (!VyosConstants.PROVIDER_TYPE.equals(providerType)) {
+        if (VyosConstants.PROVIDER_TYPE == providerType) {
             /* only vrouter l3 handled here */
             return new HashMap<>();
         }
