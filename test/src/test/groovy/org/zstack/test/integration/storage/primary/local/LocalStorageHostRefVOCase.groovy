@@ -3,10 +3,12 @@ package org.zstack.test.integration.storage.primary.local
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.core.db.SimpleQuery
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
+import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.volume.VolumeStatus
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
@@ -255,6 +257,7 @@ class LocalStorageHostRefVOCase extends SubCase{
     }
 
     void testBatchDeleteVolume() {
+        def volCount = Q.New(VolumeVO.class).count()
         def local = env.inventoryByName("local") as PrimaryStorageInventory
         def diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         def host = env.inventoryByName("kvm") as HostInventory
@@ -269,18 +272,27 @@ class LocalStorageHostRefVOCase extends SubCase{
                 .eq(LocalStorageHostRefVO_.hostUuid, host.uuid)
                 .findValue()
 
-        def volumes = []
+        def addThreads = []
         for (int i = 0; i < 24; i++) {
-            def volume = createDataVolume {
-                name = String.format("volume_%s", i)
-                diskOfferingUuid = diskOffering.uuid
-                primaryStorageUuid = local.uuid
-            } as VolumeInventory
-            volumes.add(volume.uuid)
+            def thread = Thread.start {
+                createDataVolume {
+                    name = String.format("volume_%s", i)
+                    diskOfferingUuid = diskOffering.uuid
+                    primaryStorageUuid = local.uuid
+                } as VolumeInventory
+            }
+            addThreads.add(thread)
         }
+        addThreads.each{it.join()}
 
-        volumes.each({ it -> expungeVolume(it as String) })
+        assert Q.New(VolumeVO.class).count() == 24 + volCount
 
+        def expThreads = []
+        volumes.each({ it -> expThreads.add(Thread.start { expungeVolume(it as String) })})
+        expThreads.each {it.join()}
+
+        assert Q.New(VolumeVO.class).count() == volCount
+        
         def afterPSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
                 .select(PrimaryStorageCapacityVO_.availableCapacity)
                 .eq(PrimaryStorageCapacityVO_.uuid, local.uuid)
