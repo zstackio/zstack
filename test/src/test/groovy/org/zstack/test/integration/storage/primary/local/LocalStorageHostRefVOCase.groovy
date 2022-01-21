@@ -2,12 +2,21 @@ package org.zstack.test.integration.storage.primary.local
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
 import org.zstack.core.db.SimpleQuery
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
+import org.zstack.header.volume.VolumeStatus
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.CreateDataVolumeAction
+import org.zstack.sdk.DiskOfferingInventory
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
 import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
@@ -168,6 +177,7 @@ class LocalStorageHostRefVOCase extends SubCase{
     void test() {
         env.create {
             checkLocalStorageHostRefWhenCreateDiskFail()
+            testBatchDeleteVolume()
         }
     }
 
@@ -242,6 +252,56 @@ class LocalStorageHostRefVOCase extends SubCase{
         LocalStorageHostRefVO localStorageHostRefVO = hq.find()
 
         assert localStorageHostRefVO.availableCapacity == localStorageHostRefVO.totalCapacity
+    }
+
+    void testBatchDeleteVolume() {
+        def local = env.inventoryByName("local") as PrimaryStorageInventory
+        def diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        def host = env.inventoryByName("kvm") as HostInventory
+
+        def beforePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
+                .select(PrimaryStorageCapacityVO_.availableCapacity)
+                .eq(PrimaryStorageCapacityVO_.uuid, local.uuid)
+
+        def beforeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
+                .select(LocalStorageHostRefVO_.availableCapacity).eq(LocalStorageHostRefVO_.hostUuid, host.uuid)
+
+        // 批量创建volume
+        def volumes = []
+        for (int i = 0; i < 24; i++) {
+            def volume = createDataVolume {
+                name = String.format("volume_%s", i)
+                diskOfferingUuid = diskOffering.uuid
+                primaryStorageUuid = local.uuid
+            } as VolumeInventory
+            volumes.add(volume.uuid)
+        }
+
+        // 批量删除volume
+        volumes.each({ it -> expungeVolume(it as String) })
+
+        def afterPSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
+                .select(PrimaryStorageCapacityVO_.availableCapacity)
+                .eq(PrimaryStorageCapacityVO_.uuid, local.uuid)
+
+        def afterHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
+                .select(LocalStorageHostRefVO_.availableCapacity).eq(LocalStorageHostRefVO_.hostUuid, host.uuid)
+
+        assert afterPSAvailableCapacity == beforePSAvailableCapacity
+        assert afterHostAvailableCapacity == beforeHostAvailableCapacity
+    }
+
+    private void expungeVolume(String volUuid) {
+        VolumeStatus status = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volUuid).select(VolumeVO_.status).findValue()
+        if (status != VolumeStatus.Deleted) {
+            deleteDataVolume {
+                uuid = volUuid
+            }
+        }
+
+        expungeDataVolume {
+            uuid = volUuid
+        }
     }
 
     @Override
