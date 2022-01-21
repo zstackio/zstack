@@ -63,7 +63,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             allocate(trigger, spec);
             return;
         }
-        
+
         psAndcluster pc = getClusterGroup(trigger, data, spec);
         List<ErrorCode> errorCodesOut = new ArrayList<>();
         new While<>(pc.newps).each((possiblePsUuids, whileCompletion) -> {
