@@ -41,6 +41,9 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
     public java.util.List attributes;
 
     @Param(required = false)
+    public java.lang.String srcType;
+
+    @Param(required = false)
     public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
