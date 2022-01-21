@@ -272,7 +272,7 @@ class LocalStorageHostRefVOCase extends SubCase{
                 .eq(LocalStorageHostRefVO_.hostUuid, host.uuid)
                 .findValue()
 
-        def addThreads = []
+        def createThreads = []
         for (int i = 0; i < 24; i++) {
             def thread = Thread.start {
                 createDataVolume {
@@ -281,18 +281,16 @@ class LocalStorageHostRefVOCase extends SubCase{
                     primaryStorageUuid = local.uuid
                 } as VolumeInventory
             }
-            addThreads.add(thread)
+            createThreads.add(thread)
         }
-        addThreads.each{it.join()}
-
+        createThreads.each{it.join()}
         assert Q.New(VolumeVO.class).count() == 24 + volCount
 
-        def expThreads = []
-        volumes.each({ it -> expThreads.add(Thread.start { expungeVolume(it as String) })})
-        expThreads.each {it.join()}
-
+        def expungeThreads = []
+        volumes.each({ it -> expungeThreads.add(Thread.start { expungeVolume(it as String) })})
+        expungeThreads.each {it.join()}
         assert Q.New(VolumeVO.class).count() == volCount
-        
+
         def afterPSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
                 .select(PrimaryStorageCapacityVO_.availableCapacity)
                 .eq(PrimaryStorageCapacityVO_.uuid, local.uuid)
