@@ -4,6 +4,7 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.HttpClients;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
@@ -26,13 +27,21 @@ public interface RESTFacade {
 
     void asyncJsonPost(String url, String body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout);
 
+    void asyncJsonPost(String url, String body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout, MediaType mediaType);
+
     void asyncJsonPost(String url, Object body, Map<String, String> headers, AsyncRESTCallback callback);
 
     void asyncJsonPost(String url, Object body, AsyncRESTCallback callback);
 
     void asyncJsonPost(String url, String body, AsyncRESTCallback callback);
+
     void asyncJsonDelete(String url, String body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout);
+
+    void asyncJsonDelete(String url, String body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout, MediaType mediaType);
+
     void asyncJsonGet(String url, String body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout);
+
+    void asyncJsonGet(String url, String body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout, MediaType mediaType);
 
     <T> T syncJsonPost(String url, Object body, Class<T> returnClass);
 
@@ -43,6 +52,8 @@ public interface RESTFacade {
     <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass);
 
     <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout);
+    
+    <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout, MediaType mediaType);
 
     /**
      * ZStack's agents only use sync/async post method
@@ -52,9 +63,13 @@ public interface RESTFacade {
 
     <T> T syncJsonDelete(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout);
 
+    <T> T syncJsonDelete(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout, MediaType mediaType);
+
     <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass);
 
     <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout);
+
+    <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout, MediaType mediaType);
 
     HttpHeaders syncHead(String url);
 
