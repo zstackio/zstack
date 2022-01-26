@@ -1530,9 +1530,13 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         final Map<String, List<DhcpInfo>> l3DhcpMap = new HashMap<>();
         for (DhcpInfo d : dhcpInfo) {
             // TODO: vDPA do not support flat dhcp service yet;
-            if (d.nicType.equals("vDPA")) {
+            Boolean isVdpaNicType = false;
+            for(GetNicTypeExtensionPoint ext : pluginRgty.getExtensionList(GetNicTypeExtensionPoint.class))
+                isVdpaNicType = ext.isVdpaNicType(d.mac);
+            if(isVdpaNicType){
                 continue;
             }
+
             List<DhcpInfo> lst = l3DhcpMap.get(d.l3NetworkUuid);
             if (lst == null) {
                 lst = new ArrayList<>();
