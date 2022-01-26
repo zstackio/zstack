@@ -177,20 +177,17 @@ class CreateDataVolumeAssignPsCase extends SubCase {
         assert beforeCreateVolumePSAvailableCapacity == beforeCreateVolumeHostAvailableCapacity.sum()
 
         List<VolumeInventory> volumes = []
-        List<Thread> createVolumeThreads = []
+
         for (int i = 0; i < 10; i++) {
-            def thread = Thread.start {
-                VolumeInventory volume = createDataVolume {
-                    name = String.format("host1_volume_%s", i)
-                    diskOfferingUuid = diskOffering.uuid
-                    primaryStorageUuid = local.uuid
-                    systemTags = ["localStorage::hostUuid::${host1.uuid}".toString()]
-                } as VolumeInventory
-                volumes.add(volume)
-            }
-            createVolumeThreads.add(thread)
+            VolumeInventory volume = createDataVolume {
+                name = String.format("host1_volume_%s", i)
+                diskOfferingUuid = diskOffering.uuid
+                primaryStorageUuid = local.uuid
+                systemTags = ["localStorage::hostUuid::${host1.uuid}".toString()]
+            } as VolumeInventory
+            volumes.add(volume)
         }
-        createVolumeThreads.each { it.join() }
+
         assert Q.New(VolumeVO.class).count() == 10 + volCount
 
         def afterCreateVolumePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
@@ -203,13 +200,17 @@ class CreateDataVolumeAssignPsCase extends SubCase {
         assert beforeCreateVolumePSAvailableCapacity == afterCreateVolumePSAvailableCapacity + 10 * SizeUnit.TERABYTE.toByte(1)
         assert beforeCreateVolumeHostAvailableCapacity.sum() == afterCreateVolumeHostAvailableCapacity.sum() + 10 * SizeUnit.TERABYTE.toByte(1)
 
+        volumes.each { it ->
+            def volUuid = it.uuid
+            deleteDataVolume {
+                uuid = volUuid
+            }
+        }
+
         List<Thread> expungeVolumeThreads = []
         volumes.each {it ->
             def volUuid = it.uuid
             def thread = Thread.start {
-                deleteDataVolume {
-                    uuid = volUuid
-                }
                 expungeDataVolume {
                     uuid = volUuid
                 }
