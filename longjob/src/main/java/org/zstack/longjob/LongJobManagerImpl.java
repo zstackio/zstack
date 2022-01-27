@@ -829,6 +829,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             if (longJobFactory.supportResume(vo.getJobName())) {
                 doResumeJob(vo.getUuid(), new NopeCompletion());
             } else if (longJobFactory.supportClean(vo.getJobName())) {
+                cancelLongJob(vo.getUuid(), new NopeCompletion());
                 doCleanJob(vo, new NopeCompletion());
             } else {
                 changeState(vo.getUuid(), LongJobStateEvent.fail);
