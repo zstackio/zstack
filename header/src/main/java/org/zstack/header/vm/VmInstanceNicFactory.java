@@ -25,4 +25,12 @@ public interface VmInstanceNicFactory {
         vnic.setDriverType(nic.getDriverType());
         return vnic;
     }
+
+    default boolean addFdbForEipNameSpace(VmNicInventory nic) {
+        return false;
+    }
+
+    default String  getPhysicalNicName(VmNicInventory nic) {
+        return null;
+    }
 }
