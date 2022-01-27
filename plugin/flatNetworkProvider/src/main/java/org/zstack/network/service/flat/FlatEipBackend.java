@@ -2,6 +2,7 @@ package org.zstack.network.service.flat;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmInstanceManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -78,6 +79,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     private PluginRegistry pluginRgty;
     @Autowired
     protected NetworkServiceManager nsMgr;
+    @Autowired
+    protected VmInstanceManager vmMgr;
 
     public static class EipTO {
         public String eipUuid;
@@ -98,6 +101,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         public String vmBridgeName;
         public String publicBridgeName;
         public boolean skipArpCheck;
+        public boolean addfdb;
+        public String physicalNic;
     }
 
     public static class ApplyEipCmd extends AgentCmd {
@@ -449,6 +454,10 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                         .eq(NormalIpRangeVO_.ipVersion, to.ipVersion).list();
                 to.vipPrefixLen = vipIprs.get(0).getPrefixLen();
                 to.publicBridgeName = pubBridgeNames.get(eip.getVipUuid());
+
+                VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf(nic.getType()));
+                to.addfdb = vnicFactory.addFdbForEipNameSpace(VmNicInventory.valueOf(nic));
+                to.physicalNic = vnicFactory.getPhysicalNicName(VmNicInventory.valueOf(nic));
                 return to;
             }
         });
@@ -637,6 +646,10 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 .eq(NormalIpRangeVO_.ipVersion, to.ipVersion).list();
         to.vipPrefixLen = iprs.get(0).getPrefixLen();
         to.publicBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getVip().getL3NetworkUuid());
+
+        VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf(struct.getNic().getType()));
+        to.addfdb = vnicFactory.addFdbForEipNameSpace(struct.getNic());
+        to.physicalNic = vnicFactory.getPhysicalNicName(struct.getNic());
         return to;
     }
 
