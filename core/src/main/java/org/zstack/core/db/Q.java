@@ -1,6 +1,7 @@
 package org.zstack.core.db;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.utils.DebugUtils;
 
@@ -56,13 +57,13 @@ public class Q {
         return q._count();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     @SuppressWarnings("unchecked")
     public <T> T find() {
         return (T) q._find();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     @SuppressWarnings("unchecked")
     public <T> List<T> list() {
         List<T> res = q._list();
@@ -71,13 +72,13 @@ public class Q {
         return Collections.emptyList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     @SuppressWarnings("unchecked")
     public <K> K findValue() {
         return (K) q._findValue();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     @SuppressWarnings("unchecked")
     public <K> List<K> listValues() {
         List<K> res = q._listValue();
