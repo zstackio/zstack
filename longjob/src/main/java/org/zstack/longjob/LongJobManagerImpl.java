@@ -603,6 +603,55 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         return vo;
     }
 
+    @Deferred
+    private void doCancelJob(LongJobVO vo, Completion completion) {
+        Tuple t = Q.New(LongJobVO.class).eq(LongJobVO_.uuid, vo.getUuid()).select(LongJobVO_.state, LongJobVO_.jobName).findTuple();
+        LongJobState originState = t.get(0, LongJobState.class);
+        if (originState == LongJobState.Canceled) {
+            logger.info(String.format("longjob [uuid:%s] has been canceled before", vo.getUuid()));
+            return;
+        }
+
+        if (!longJobFactory.supportCancel(t.get(1, String.class))) {
+            completion.fail(err(LongJobErrors.NOT_SUPPORTED, "not supported"));
+            return;
+        }
+
+        changeState(vo.getUuid(), LongJobStateEvent.canceling);
+        LongJob job = longJobFactory.getLongJob(vo.getJobName());
+        logger.info(String.format("longjob [uuid:%s, name:%s] has been marked canceling", vo.getUuid(), vo.getName()));
+
+        Runnable cleanup = ThreadContextUtils.saveThreadContext();
+        Defer.defer(cleanup);
+        ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
+        ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
+
+        job.cancel(vo, new ReturnValueCompletion<Boolean>(completion) {
+            @Override
+            public void success(Boolean cancelled) {
+                boolean needClean = !cancelled && originState != LongJobState.Running && longJobFactory.supportClean(vo.getJobName());
+                if (needClean) {
+                    doCleanJob(vo, completion);
+                    return;
+                }
+
+                if (cancelled || originState != LongJobState.Running) {
+                    changeState(vo.getUuid(), LongJobStateEvent.canceled);
+                    logger.info(String.format("longjob [uuid:%s, name:%s] has been canceled", vo.getUuid(), vo.getName()));
+                } else {
+                    logger.debug(String.format("wait for canceling longjob [uuid:%s, name:%s] rollback", vo.getUuid(), vo.getName()));
+                }
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.error(String.format("failed to cancel longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
+                completion.fail(errorCode);
+            }
+        });
+    }
+
     private ReturnValueCompletion<APIEvent> buildJobOverCompletion(LongJob job, LongJobVO vo, AsyncBackup async) {
         String longJobUuid = vo.getUuid();
         return new ReturnValueCompletion<APIEvent>(async) {
@@ -829,7 +878,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             if (longJobFactory.supportResume(vo.getJobName())) {
                 doResumeJob(vo.getUuid(), new NopeCompletion());
             } else if (longJobFactory.supportClean(vo.getJobName())) {
-                cancelLongJob(vo.getUuid(), new NopeCompletion());
+                doCancelJob(vo, new NopeCompletion());
                 doCleanJob(vo, new NopeCompletion());
             } else {
                 changeState(vo.getUuid(), LongJobStateEvent.fail);
