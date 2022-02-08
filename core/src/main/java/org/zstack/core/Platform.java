@@ -422,7 +422,16 @@ public class Platform {
         }
 
         if (ZSha2Helper.isMNHaEnvironment()) {
+            // jgroup configuration is required in multi node environment
+            // if failed to get zsha2 info, this method thrown exception to stop management node from startup
+            // so there is no need to handle exceptions
             ZSha2Info info = ZSha2Helper.getInfo(false);
+            if (info.getNodeip() == null) {
+                throw new RuntimeException("the ip of this node was null, please check the config of zsha2");
+            }
+            if (info.getPeerip() == null) {
+                throw new RuntimeException("the ip of peer node was null, please check the config of zsha2");
+            }
             SearchGlobalProperty.JGroupInfinispanInitialHosts = String.format("%s[%s],%s[%s]",
                     info.getNodeip(), SearchGlobalProperty.JGroupInfinispanPort,
                     info.getPeerip(), SearchGlobalProperty.JGroupInfinispanPort);
