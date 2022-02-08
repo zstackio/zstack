@@ -16,6 +16,7 @@ import java.util.List;
 public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage, NeedQuotaCheckMessage {
     private String vmInstanceUuid;
     private String accountUuid;
+    private String hostUuid;
     private List<String> softAvoidHostUuids;
     private AllocationScene allocationScene;
     private boolean startPaused;
@@ -53,6 +54,14 @@ public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMe
 
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 
     public List<String> getSoftAvoidHostUuids() {
