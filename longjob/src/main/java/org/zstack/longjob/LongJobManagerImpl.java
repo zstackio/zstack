@@ -629,18 +629,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         job.cancel(vo, new ReturnValueCompletion<Boolean>(completion) {
             @Override
             public void success(Boolean cancelled) {
-                boolean needClean = !cancelled && originState != LongJobState.Running && longJobFactory.supportClean(vo.getJobName());
-                if (needClean) {
-                    doCleanJob(vo, completion);
-                    return;
-                }
-
-                if (cancelled || originState != LongJobState.Running) {
-                    changeState(vo.getUuid(), LongJobStateEvent.canceled);
-                    logger.info(String.format("longjob [uuid:%s, name:%s] has been canceled", vo.getUuid(), vo.getName()));
-                } else {
-                    logger.debug(String.format("wait for canceling longjob [uuid:%s, name:%s] rollback", vo.getUuid(), vo.getName()));
-                }
                 completion.success();
             }
 
