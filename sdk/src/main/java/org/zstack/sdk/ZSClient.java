@@ -2,6 +2,8 @@ package org.zstack.sdk;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import okhttp3.*;
 import org.apache.commons.codec.binary.Base64;
 
@@ -97,6 +99,12 @@ public class ZSClient {
             ApiResult res = new ApiResult();
             if (!success) {
                 res = gson.fromJson(jb.toString(), ApiResult.class);
+                //if the error is ErrorCodeList, add the causes to ApiResult
+                JsonObject jsonObject = new JsonParser().parse(jb.toString()).getAsJsonObject();
+                ErrorCodeList errorCodeList = gson.fromJson(jsonObject.get("error"), ErrorCodeList.class);
+                if (! errorCodeList.causes.isEmpty()) {
+                    res.error = errorCodeList;
+                }
             } else {
                 res.setResultString(jb.toString());
             }
