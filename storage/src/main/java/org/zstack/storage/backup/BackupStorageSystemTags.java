@@ -14,4 +14,7 @@ public class BackupStorageSystemTags {
 
     public static String EXTRA_IPS_TOKEN = "extraips";
     public static PatternedSystemTag EXTRA_IPS = new PatternedSystemTag(String.format("extraips::{%s}", EXTRA_IPS_TOKEN), BackupStorageVO.class);
+
+    public static final String QEMU_IMG_VERSION_TOKEN = "version";
+    public static PatternedSystemTag QEMU_IMG_VERSION = new PatternedSystemTag(String.format("qemu-img::version::{%s}", QEMU_IMG_VERSION_TOKEN), BackupStorageVO.class);
 }
