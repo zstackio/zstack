@@ -178,7 +178,7 @@ class CreateDataVolumeAssignPsCase extends SubCase {
 
         List<VolumeInventory> volumes = []
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 100; i++) {
             VolumeInventory volume = createDataVolume {
                 name = String.format("host1_volume_%s", i)
                 diskOfferingUuid = diskOffering.uuid
@@ -188,7 +188,7 @@ class CreateDataVolumeAssignPsCase extends SubCase {
             volumes.add(volume)
         }
 
-        assert Q.New(VolumeVO.class).count() == 10 + volCount
+        assert Q.New(VolumeVO.class).count() == 100 + volCount
 
         def afterCreateVolumePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
                 .select(PrimaryStorageCapacityVO_.availableCapacity)
@@ -197,8 +197,8 @@ class CreateDataVolumeAssignPsCase extends SubCase {
         def afterCreateVolumeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
                 .select(LocalStorageHostRefVO_.availableCapacity)
                 .listValues()
-        assert beforeCreateVolumePSAvailableCapacity == afterCreateVolumePSAvailableCapacity + 10 * SizeUnit.TERABYTE.toByte(1)
-        assert beforeCreateVolumeHostAvailableCapacity.sum() == afterCreateVolumeHostAvailableCapacity.sum() + 10 * SizeUnit.TERABYTE.toByte(1)
+        assert beforeCreateVolumePSAvailableCapacity == afterCreateVolumePSAvailableCapacity + 100 * SizeUnit.TERABYTE.toByte(1)
+        assert beforeCreateVolumeHostAvailableCapacity.sum() == afterCreateVolumeHostAvailableCapacity.sum() + 100 * SizeUnit.TERABYTE.toByte(1)
 
         volumes.each { it ->
             def volUuid = it.uuid
