@@ -164,7 +164,7 @@ class CreateDataVolumeAssignPsCase extends SubCase {
         def host1 = env.inventoryByName("kvm") as HostInventory
         def diskOffering = createDiskOffering {
             name = "data"
-            diskSize = SizeUnit.TERABYTE.toByte(1)
+            diskSize = SizeUnit.GIGABYTE.toByte(10)
         } as DiskOfferingInventory
 
         def beforeCreateVolumePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
@@ -197,8 +197,8 @@ class CreateDataVolumeAssignPsCase extends SubCase {
         def afterCreateVolumeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
                 .select(LocalStorageHostRefVO_.availableCapacity)
                 .listValues()
-        assert beforeCreateVolumePSAvailableCapacity == afterCreateVolumePSAvailableCapacity + 100 * SizeUnit.TERABYTE.toByte(1)
-        assert beforeCreateVolumeHostAvailableCapacity.sum() == afterCreateVolumeHostAvailableCapacity.sum() + 100 * SizeUnit.TERABYTE.toByte(1)
+        assert beforeCreateVolumePSAvailableCapacity == afterCreateVolumePSAvailableCapacity + 100 * SizeUnit.TERABYTE.toByte(10)
+        assert beforeCreateVolumeHostAvailableCapacity.sum() == afterCreateVolumeHostAvailableCapacity.sum() + 100 * SizeUnit.TERABYTE.toByte(10)
 
         volumes.each { it ->
             def volUuid = it.uuid
