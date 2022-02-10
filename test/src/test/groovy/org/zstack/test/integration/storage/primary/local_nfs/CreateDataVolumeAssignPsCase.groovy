@@ -197,8 +197,8 @@ class CreateDataVolumeAssignPsCase extends SubCase {
         def afterCreateVolumeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
                 .select(LocalStorageHostRefVO_.availableCapacity)
                 .listValues()
-        assert beforeCreateVolumePSAvailableCapacity == afterCreateVolumePSAvailableCapacity + 100 * SizeUnit.TERABYTE.toByte(10)
-        assert beforeCreateVolumeHostAvailableCapacity.sum() == afterCreateVolumeHostAvailableCapacity.sum() + 100 * SizeUnit.TERABYTE.toByte(10)
+        assert beforeCreateVolumePSAvailableCapacity == afterCreateVolumePSAvailableCapacity + 100 * SizeUnit.GIGABYTE.toByte(10)
+        assert beforeCreateVolumeHostAvailableCapacity.sum() == afterCreateVolumeHostAvailableCapacity.sum() + 100 * SizeUnit.GIGABYTE.toByte(10)
 
         volumes.each { it ->
             def volUuid = it.uuid
