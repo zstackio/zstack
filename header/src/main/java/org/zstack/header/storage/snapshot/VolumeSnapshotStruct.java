@@ -1,11 +1,14 @@
 package org.zstack.header.storage.snapshot;
 
+import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
+
 /**
  */
 public class VolumeSnapshotStruct {
     private VolumeSnapshotInventory parent;
     private VolumeSnapshotInventory current;
     private boolean fullSnapshot;
+    private VolumeSnapshotArrangementType arrangementType;
 
     public boolean isFullSnapshot() {
         return fullSnapshot;
@@ -29,5 +32,13 @@ public class VolumeSnapshotStruct {
 
     public void setCurrent(VolumeSnapshotInventory current) {
         this.current = current;
+    }
+
+    public VolumeSnapshotArrangementType getArrangementType() {
+        return arrangementType;
+    }
+
+    public void setArrangementType(VolumeSnapshotArrangementType arrangementType) {
+        this.arrangementType = arrangementType;
     }
 }
