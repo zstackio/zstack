@@ -71,6 +71,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.Serializable;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -5473,6 +5475,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 .eq(VolumeVO_.uuid, msg.getVolumeUuid())
                 .select(VolumeVO_.installPath)
                 .findValue();
+
+        // volume might be recovering
+        try {
+            final String query = new URI(installPath).getQuery();
+            if (query != null) {
+                installPath = StringUtils.removeEnd(installPath, '?' + query);
+            }
+        } catch (URISyntaxException ignored) {
+        }
 
         GetVolumeWatchersCmd cmd = new GetVolumeWatchersCmd();
         cmd.volumePath = installPath;
