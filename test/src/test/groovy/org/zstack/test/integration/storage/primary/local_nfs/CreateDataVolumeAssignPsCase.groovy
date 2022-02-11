@@ -4,6 +4,7 @@ import org.zstack.core.db.Q
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
 import org.zstack.header.volume.VolumeVO
+import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.CreateDataVolumeAction
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.HostInventory
@@ -25,6 +26,7 @@ class CreateDataVolumeAssignPsCase extends SubCase {
     VmInstanceInventory vm
     PrimaryStorageInventory ls
     PrimaryStorageInventory nfs
+    ClusterInventory cluster
     DiskOfferingInventory disk
     HostInventory host
 
@@ -134,6 +136,7 @@ class CreateDataVolumeAssignPsCase extends SubCase {
             nfs = env.inventoryByName("nfs") as PrimaryStorageInventory
             disk = env.inventoryByName("diskOffering") as DiskOfferingInventory
             host = env.inventoryByName("kvm") as HostInventory
+            cluster = env.inventoryByName("cluster") as ClusterInventory
             testCreateDataVolumeWithPsUuid()
             testBatchDeleteVolume()
         }
@@ -159,6 +162,11 @@ class CreateDataVolumeAssignPsCase extends SubCase {
     }
 
     void testBatchDeleteVolume() {
+        detachPrimaryStorageFromCluster {
+            clusterUuid = cluster.uuid
+            primaryStorageUuid = nfs.uuid
+        }
+
         def volCount = Q.New(VolumeVO.class).count()
         def local = env.inventoryByName("local") as PrimaryStorageInventory
         def host1 = env.inventoryByName("kvm") as HostInventory
