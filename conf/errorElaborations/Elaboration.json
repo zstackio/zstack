@@ -960,6 +960,15 @@
     "message_en": "Unable to connect the shared block group primary storage to the cluster, because device is not empty, please check the checkbox of \"Clear SharedBlock\" and try again."
   },
   {
+    "category": "PS",
+    "code": "1020",
+    "method": "regex",
+    "regex": ".*after subtracting reserved capacity\\[.*], primary storage\\[.*] don't have required size\\[.* bytes].*",
+    "message_cn": "减去保留容量 [%1$s] 后，主存储 [%2$s] 没有所需的容量大小 [%3$s bytes]，可能是主存储使用阈值设置较低。",
+    "message_en": "primary storage [%1$s] don't have required size [%2$s] after subtracting reserved capacity. Possible reason: threshold of the primary storage usage is relatively low."
+  },
+
+  {
     "category": "QUOTA",
     "code": "1000",
     "method": "regex",
