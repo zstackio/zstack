@@ -164,21 +164,21 @@ class CreateDataVolumeAssignPsCase extends SubCase {
         def host1 = env.inventoryByName("kvm") as HostInventory
         def diskOffering = createDiskOffering {
             name = "data"
-            diskSize = SizeUnit.GIGABYTE.toByte(10)
+            diskSize = SizeUnit.GIGABYTE.toByte(20)
         } as DiskOfferingInventory
 
         def beforeCreateVolumePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
                 .select(PrimaryStorageCapacityVO_.availableCapacity)
                 .eq(PrimaryStorageCapacityVO_.uuid, local.uuid)
                 .findValue()
-        def beforeCreateVolumeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
+        def beforeCreateVolumeHostAvailableCapacityList = Q.New(LocalStorageHostRefVO.class)
                 .select(LocalStorageHostRefVO_.availableCapacity)
                 .listValues()
-        assert beforeCreateVolumePSAvailableCapacity == beforeCreateVolumeHostAvailableCapacity.sum()
+        assert beforeCreateVolumePSAvailableCapacity == beforeCreateVolumeHostAvailableCapacityList.sum()
 
         List<VolumeInventory> volumes = []
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 200; i++) {
             VolumeInventory volume = createDataVolume {
                 name = String.format("host1_volume_%s", i)
                 diskOfferingUuid = diskOffering.uuid
@@ -188,7 +188,7 @@ class CreateDataVolumeAssignPsCase extends SubCase {
             volumes.add(volume)
         }
 
-        assert Q.New(VolumeVO.class).count() == 100 + volCount
+        assert Q.New(VolumeVO.class).count() == 200 + volCount
 
         def afterCreateVolumePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
                 .select(PrimaryStorageCapacityVO_.availableCapacity)
@@ -197,8 +197,8 @@ class CreateDataVolumeAssignPsCase extends SubCase {
         def afterCreateVolumeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
                 .select(LocalStorageHostRefVO_.availableCapacity)
                 .listValues()
-        assert beforeCreateVolumePSAvailableCapacity == afterCreateVolumePSAvailableCapacity + 100 * SizeUnit.GIGABYTE.toByte(10)
-        assert beforeCreateVolumeHostAvailableCapacity.sum() == afterCreateVolumeHostAvailableCapacity.sum() + 100 * SizeUnit.GIGABYTE.toByte(10)
+        assert beforeCreateVolumePSAvailableCapacity == afterCreateVolumePSAvailableCapacity + 200 * SizeUnit.GIGABYTE.toByte(20)
+        assert beforeCreateVolumeHostAvailableCapacityList.sum() == afterCreateVolumeHostAvailableCapacity.sum() + 200 * SizeUnit.GIGABYTE.toByte(20)
 
         volumes.each { it ->
             def volUuid = it.uuid
@@ -224,12 +224,12 @@ class CreateDataVolumeAssignPsCase extends SubCase {
                 .select(PrimaryStorageCapacityVO_.availableCapacity)
                 .eq(PrimaryStorageCapacityVO_.uuid, local.uuid)
                 .findValue()
-        def afterExpungeVolumeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
+        def afterExpungeVolumeHostAvailableCapacityList = Q.New(LocalStorageHostRefVO.class)
                 .select(LocalStorageHostRefVO_.availableCapacity)
                 .listValues()
-        assert afterExpungeVolumePSAvailableCapacity == afterExpungeVolumeHostAvailableCapacity.sum()
+        assert afterExpungeVolumePSAvailableCapacity == afterExpungeVolumeHostAvailableCapacityList.sum()
 
         assert afterExpungeVolumePSAvailableCapacity == beforeCreateVolumePSAvailableCapacity
-        assert afterExpungeVolumeHostAvailableCapacity.sum() == beforeCreateVolumeHostAvailableCapacity.sum()
+        assert afterExpungeVolumeHostAvailableCapacityList.sum() == beforeCreateVolumeHostAvailableCapacityList.sum()
     }
 }
