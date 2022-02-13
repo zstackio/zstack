@@ -1,0 +1,5 @@
+= 测试框架
+
+* 参考： xref:integration-test/index.adoc[]
+
+* 参考： xref:junit-test[Junit 测试框架]
