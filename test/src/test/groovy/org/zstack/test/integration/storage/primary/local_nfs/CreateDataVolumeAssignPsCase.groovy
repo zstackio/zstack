@@ -1,10 +1,20 @@
 package org.zstack.test.integration.storage.primary.local_nfs
 
+import org.zstack.core.db.Q
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
+import org.zstack.header.volume.VolumeStatus
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
+import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.CreateDataVolumeAction
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VolumeInventory
+import org.zstack.storage.primary.local.LocalStorageHostRefVO
+import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -20,6 +30,7 @@ class CreateDataVolumeAssignPsCase extends SubCase {
     PrimaryStorageInventory nfs
     DiskOfferingInventory disk
     HostInventory host
+    ClusterInventory cluster
 
     @Override
     void clean() {
@@ -127,7 +138,9 @@ class CreateDataVolumeAssignPsCase extends SubCase {
             nfs = env.inventoryByName("nfs") as PrimaryStorageInventory
             disk = env.inventoryByName("diskOffering") as DiskOfferingInventory
             host = env.inventoryByName("kvm") as HostInventory
+            cluster = env.inventoryByName("cluster") as ClusterInventory
             testCreateDataVolumeWithPsUuid()
+            testBatchDeleteVolume()
         }
     }
 
@@ -148,5 +161,85 @@ class CreateDataVolumeAssignPsCase extends SubCase {
             primaryStorageUuid = nfs.uuid
             systemTags = [tag]
         }
+    }
+
+    void testBatchDeleteVolume() {
+        def volCount = Q.New(VolumeVO.class).count()
+        DiskOfferingInventory diskOffering = createDiskOffering {
+            name = "data"
+            diskSize = SizeUnit.GIGABYTE.toByte(500)
+        } as DiskOfferingInventory
+
+        def beforeCreateVolumePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
+                .select(PrimaryStorageCapacityVO_.availableCapacity)
+                .eq(PrimaryStorageCapacityVO_.uuid, ls.uuid)
+                .findValue()
+        def beforeCreateVolumeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
+                .select(LocalStorageHostRefVO_.availableCapacity)
+                .eq(LocalStorageHostRefVO_.hostUuid, host.uuid)
+                .findValue()
+
+        assert beforeCreateVolumePSAvailableCapacity == beforeCreateVolumeHostAvailableCapacity
+
+        List<VolumeInventory> volumes = []
+        for (int i = 0; i < 20; i++) {
+            VolumeInventory volume = createDataVolume {
+                name = String.format("host1_volume_%s", i)
+                diskOfferingUuid = diskOffering.uuid
+                primaryStorageUuid = ls.uuid
+                systemTags = ["localStorage::hostUuid::${host.uuid}".toString()]
+            } as VolumeInventory
+            volumes.add(volume)
+        }
+
+        retryInSecs {
+            assert Q.New(VolumeVO.class).count() == 20 + volCount
+        }
+
+        def afterCreateVolumePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class).select(PrimaryStorageCapacityVO_.availableCapacity)
+                .eq(PrimaryStorageCapacityVO_.uuid, ls.uuid).findValue()
+        def afterCreateVolumeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class).select(LocalStorageHostRefVO_.availableCapacity)
+                .eq(LocalStorageHostRefVO_.hostUuid, host.uuid).findValue()
+
+        retryInSecs {
+            assert beforeCreateVolumePSAvailableCapacity == afterCreateVolumePSAvailableCapacity + 20 * SizeUnit.GIGABYTE.toByte(500)
+            assert beforeCreateVolumeHostAvailableCapacity == afterCreateVolumeHostAvailableCapacity + 20 * SizeUnit.GIGABYTE.toByte(500)
+        }
+
+        volumes.each { it ->
+            def volUuid = it.uuid
+            deleteDataVolume {
+                uuid = volUuid
+            }
+        }
+
+        retryInSecs {
+            assert Q.New(VolumeVO.class).eq(VolumeVO_.status, VolumeStatus.Deleted).count() == 20
+        }
+
+        List<Thread> expungeVolumeThreads = []
+        volumes.each { it ->
+            def volUuid = it.uuid
+            def thread = Thread.start {
+                expungeDataVolume {
+                    uuid = volUuid
+                }
+            }
+            expungeVolumeThreads.add(thread)
+        }
+        expungeVolumeThreads.each { it.join() }
+
+        retryInSecs {
+            assert Q.New(VolumeVO.class).count() == volCount
+        }
+
+        def afterExpungeVolumePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class).select(PrimaryStorageCapacityVO_.availableCapacity)
+                .eq(PrimaryStorageCapacityVO_.uuid, ls.uuid).findValue()
+        def afterExpungeVolumeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class).select(LocalStorageHostRefVO_.availableCapacity)
+                .eq(LocalStorageHostRefVO_.hostUuid, host.uuid).findValue()
+
+        assert afterExpungeVolumePSAvailableCapacity == beforeCreateVolumePSAvailableCapacity
+        assert afterExpungeVolumeHostAvailableCapacity == beforeCreateVolumeHostAvailableCapacity
+        assert afterExpungeVolumePSAvailableCapacity == afterExpungeVolumeHostAvailableCapacity
     }
 }
