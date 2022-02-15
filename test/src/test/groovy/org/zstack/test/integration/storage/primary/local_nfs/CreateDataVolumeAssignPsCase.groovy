@@ -172,7 +172,7 @@ class CreateDataVolumeAssignPsCase extends SubCase {
         def host1 = env.inventoryByName("kvm") as HostInventory
         def diskOffering = createDiskOffering {
             name = "data"
-            diskSize = SizeUnit.GIGABYTE.toByte(20)
+            diskSize = SizeUnit.GIGABYTE.toByte(500)
         } as DiskOfferingInventory
 
         def beforeCreateVolumePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
@@ -205,8 +205,8 @@ class CreateDataVolumeAssignPsCase extends SubCase {
         def afterCreateVolumeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
                 .select(LocalStorageHostRefVO_.availableCapacity)
                 .listValues()
-        assert beforeCreateVolumePSAvailableCapacity == afterCreateVolumePSAvailableCapacity + 100 * SizeUnit.GIGABYTE.toByte(20)
-        assert beforeCreateVolumeHostAvailableCapacityList.sum() == afterCreateVolumeHostAvailableCapacity.sum() + 100 * SizeUnit.GIGABYTE.toByte(20)
+        assert beforeCreateVolumePSAvailableCapacity == afterCreateVolumePSAvailableCapacity + 100 * SizeUnit.GIGABYTE.toByte(500)
+        assert beforeCreateVolumeHostAvailableCapacityList.sum() == afterCreateVolumeHostAvailableCapacity.sum() + 100 * SizeUnit.GIGABYTE.toByte(500)
 
         volumes.each { it ->
             def volUuid = it.uuid
@@ -239,5 +239,10 @@ class CreateDataVolumeAssignPsCase extends SubCase {
 
         assert afterExpungeVolumePSAvailableCapacity == beforeCreateVolumePSAvailableCapacity
         assert afterExpungeVolumeHostAvailableCapacityList.sum() == beforeCreateVolumeHostAvailableCapacityList.sum()
+
+        attachPrimaryStorageToCluster {
+            clusterUuid = cluster.uuid
+            primaryStorageUuid = nfs.uuid
+        }
     }
 }
