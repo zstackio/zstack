@@ -398,7 +398,6 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         CreateLoadBalancerAction createLoadBalancerAction1 = new CreateLoadBalancerAction()
         createLoadBalancerAction1.name = "lb-1"
         createLoadBalancerAction1.vipUuid = vipInventory1.uuid
-        createLoadBalancerAction1.systemTags = asList("separateVirtualRouterVm")
         createLoadBalancerAction1.sessionId = adminSession()
         CreateLoadBalancerAction.Result lbRes1 = createLoadBalancerAction1.call()
         assert lbRes1.error == null
@@ -418,7 +417,6 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         CreateLoadBalancerAction createLoadBalancerAction2 = new CreateLoadBalancerAction()
         createLoadBalancerAction2.name = "lb-2"
         createLoadBalancerAction2.vipUuid = vipInventory1.uuid
-        createLoadBalancerAction2.systemTags = asList("separateVirtualRouterVm")
         createLoadBalancerAction2.sessionId = adminSession()
         CreateLoadBalancerAction.Result lbRes2 = createLoadBalancerAction2.call()
         assert lbRes2.error == null
@@ -478,7 +476,6 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         CreateLoadBalancerAction createLoadBalancerAction3 = new CreateLoadBalancerAction()
         createLoadBalancerAction3.name = "lb-2"
         createLoadBalancerAction3.vipUuid = vipInventory1.uuid
-        createLoadBalancerAction3.systemTags = asList("separateVirtualRouterVm")
         createLoadBalancerAction3.sessionId = adminSession()
         CreateLoadBalancerAction.Result lbRes3 = createLoadBalancerAction3.call()
         assert lbRes3.error == null
