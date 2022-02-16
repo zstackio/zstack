@@ -41,6 +41,7 @@ public class MessageReply extends Message {
     public void setError(ErrorCode error) {
         this.error = error;
         this.setSuccess(false);
+        return null;
     }
 
     public boolean isCanceled() {
