@@ -1,10 +1,12 @@
 package org.zstack.identity;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -60,12 +62,16 @@ public class QuotaUtil {
     }
 
     public void CheckQuota(QuotaCompareInfo quotaCompareInfo) {
+        String accountName = Q.New(AccountVO.class)
+                .select(AccountVO_.name)
+                .eq(AccountVO_.uuid, quotaCompareInfo.resourceTargetOwnerAccountUuid)
+                .findValue();
         if (quotaCompareInfo.currentUsed + quotaCompareInfo.request > quotaCompareInfo.quotaValue) {
             throw new ApiMessageInterceptionException(err(IdentityErrors.QUOTA_EXCEEDING,
                     "quota exceeding." +
-                            "The resource owner(or target resource owner) account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
+                            "The resource owner(or target resource owner) account[uuid: %s name: %s] exceeds a quota[name: %s, value: %s], " +
                             "Current used:%s, Request:%s. Please contact the administrator.",
-                    quotaCompareInfo.resourceTargetOwnerAccountUuid,
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid, StringUtils.trimToEmpty(accountName),
                     quotaCompareInfo.quotaName, quotaCompareInfo.quotaValue,
                     quotaCompareInfo.currentUsed, quotaCompareInfo.request
             ));
