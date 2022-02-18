@@ -18,6 +18,8 @@ import org.zstack.image.ImageQuotaConstant
 import org.zstack.sdk.*
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
+import org.zstack.storage.primary.local.LocalStorageHostRefVO
+import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
@@ -312,6 +314,12 @@ class CreateDataVolumeTemplateCase extends SubCase {
         createVolumeTemplateFailAndCheckCapacity(originPsCapacity, ps.uuid, kvm.uuid, image.uuid)
         env.cleanMessageHandlers()
 
+        def originKvmCapacity = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, kvm.uuid)
+                .eq(LocalStorageHostRefVO_.primaryStorageUuid, ps.uuid)
+                .select(LocalStorageHostRefVO_.availableCapacity)
+                .findValue()
+
         // nothing wrong, we check that capacity has been reserved
         def volume = createDataVolumeFromVolumeTemplate {
             primaryStorageUuid = ps.uuid
@@ -327,8 +335,17 @@ class CreateDataVolumeTemplateCase extends SubCase {
             primaryStorageUuids = [ps.uuid]
         } as GetPrimaryStorageCapacityResult
 
+        def currentKvmCapacity = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, kvm.uuid)
+                .eq(LocalStorageHostRefVO_.primaryStorageUuid, ps.uuid)
+                .select(LocalStorageHostRefVO_.availableCapacity)
+                .findValue()
+
         assert originPsCapacity.availableCapacity > currentPsCapacity.availableCapacity
         assert originPsCapacity.availableCapacity - currentPsCapacity.availableCapacity == volume.size
+
+        assert originKvmCapacity > currentKvmCapacity
+        assert originKvmCapacity - currentKvmCapacity == volume.size
 
         // clean-up temporarily generated resources
         deleteDataVolume {
