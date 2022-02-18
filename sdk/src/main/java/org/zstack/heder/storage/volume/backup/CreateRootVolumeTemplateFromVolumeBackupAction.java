@@ -43,7 +43,7 @@ public class CreateRootVolumeTemplateFromVolumeBackupAction extends AbstractActi
     @Param(required = false, validValues = {"Linux","Windows","Other","Paravirtualization","WindowsVirtio"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String platform;
 
-    @Param(required = false, validValues = {"x86_64","aarch64","mips64el"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"x86_64","aarch64","mips64el","loongarch64"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String architecture;
 
     @Param(required = false)
