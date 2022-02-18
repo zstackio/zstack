@@ -38,7 +38,6 @@ public class PasswordConverter implements AttributeConverter<String, String> {
      * - entity query inside PasswordConvert will make PasswordConvert execute again, finally the thread ends up with infinite loop. so use new transcational to aoivd this issue.
      */
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String convertToDatabaseColumn(String attribute) {
         if (PasswordEncryptType.None.toString().equals(EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(String.class))) {
             return attribute;
@@ -50,7 +49,6 @@ public class PasswordConverter implements AttributeConverter<String, String> {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String convertToEntityAttribute(String dbData) {
         if (PasswordEncryptType.None.toString().equals(EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(String.class))) {
             return dbData;
