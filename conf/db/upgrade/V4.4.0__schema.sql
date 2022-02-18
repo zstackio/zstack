@@ -1,3 +1,11 @@
+ALTER TABLE `zstack`.`LicenseHistoryVO` MODIFY COLUMN `hash` char(32) NOT NULL DEFAULT 'unknown';
+ALTER TABLE `zstack`.`LicenseHistoryVO` ADD COLUMN `source` varchar(16) DEFAULT 'Legacy';
+ALTER TABLE `zstack`.`LicenseHistoryVO` MODIFY COLUMN `source` varchar(16) NOT NULL;
+ALTER TABLE `zstack`.`LicenseHistoryVO` ADD COLUMN `managementNodeUuid` varchar(32) NOT NULL DEFAULT 'none';
+UPDATE `zstack`.`LicenseHistoryVO` SET `prodInfo` = '' WHERE `prodInfo` IS NULL;
+ALTER TABLE `zstack`.`LicenseHistoryVO` MODIFY COLUMN `prodInfo` varchar(32) NOT NULL DEFAULT '';
+ALTER TABLE `zstack`.`LicenseHistoryVO` ADD COLUMN `mergedTo` bigint(20) unsigned NOT NULL DEFAULT 0;
+DROP INDEX idxLicenseHistoryVOHash ON LicenseHistoryVO;
 
 DELIMITER $$
 CREATE PROCEDURE setApplianceVmCpuModeToNone()
