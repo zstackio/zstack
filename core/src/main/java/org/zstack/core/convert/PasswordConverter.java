@@ -4,10 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.encrypt.EncryptFacade;
 import org.zstack.core.encrypt.EncryptGlobalConfig;
 import org.zstack.header.core.encrypt.PasswordEncryptType;
@@ -33,12 +30,7 @@ public class PasswordConverter implements AttributeConverter<String, String> {
         PasswordConverter.encryptFacade = encryptFacade;
     }
 
-    /*
-     * Why use Transactional?
-     * - entity query inside PasswordConvert will make PasswordConvert execute again, finally the thread ends up with infinite loop. so use new transcational to aoivd this issue.
-     */
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String convertToDatabaseColumn(String attribute) {
         if (PasswordEncryptType.None.toString().equals(EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(String.class))) {
             return attribute;
@@ -50,7 +42,6 @@ public class PasswordConverter implements AttributeConverter<String, String> {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String convertToEntityAttribute(String dbData) {
         if (PasswordEncryptType.None.toString().equals(EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value(String.class))) {
             return dbData;

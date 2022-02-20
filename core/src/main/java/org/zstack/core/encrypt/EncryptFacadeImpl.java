@@ -1,6 +1,8 @@
 package org.zstack.core.encrypt;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -47,12 +49,18 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
 
     public static Set<Field> encryptedFields = new HashSet<>();
 
+    /*
+     * Why use Transactional?
+     * - the encrypt execution entity query inside PasswordConvert will make PasswordConvert execute again, finally the thread ends up with infinite loop. so use new transcational to aoivd this issue.
+     */
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String encrypt(String decryptString) {
         return encryptDriver.encrypt(decryptString);
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String decrypt(String encryptString) {
         return encryptDriver.decrypt(encryptString);
     }
