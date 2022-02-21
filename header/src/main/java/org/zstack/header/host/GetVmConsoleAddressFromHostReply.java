@@ -9,6 +9,7 @@ import org.zstack.header.vm.VdiPortInfo;
 public class GetVmConsoleAddressFromHostReply extends MessageReply {
     private String hostIp;
     private String protocol;
+    private String path;
     private int port;
     private VdiPortInfo vdiPortInfo;
 
@@ -42,5 +43,13 @@ public class GetVmConsoleAddressFromHostReply extends MessageReply {
 
     public void setVdiPortInfo(VdiPortInfo vdiPortInfo) {
         this.vdiPortInfo = vdiPortInfo;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 }
