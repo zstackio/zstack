@@ -3,12 +3,14 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -36,6 +38,7 @@ import org.zstack.utils.function.Function;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
@@ -74,7 +77,10 @@ public class VmAllocateVolumeFlow implements Flow {
             DebugUtils.Assert(vspec.getType() != null, "VolumeType can not be null!");
 
             if (VolumeType.Root.toString().equals(vspec.getType())) {
-                msg.setResourceUuid((String) ctx.get("uuid"));
+                msg.setResourceUuid(Platform.getUuid());
+                if (ctx.get("uuid") != null) {
+                    msg.setResourceUuid((String) ctx.get("uuid"));
+                }
                 msg.setName("ROOT-for-" + spec.getVmInventory().getName());
                 msg.setDescription(String.format("Root volume for VM[uuid:%s]", spec.getVmInventory().getUuid()));
                 msg.setRootImageUuid(spec.getImageSpec().getInventory().getUuid());
@@ -90,6 +96,7 @@ public class VmAllocateVolumeFlow implements Flow {
                     msg.setFormat(ImageConstant.QCOW2_FORMAT_STRING);
                 }
             } else if (VolumeType.Data.toString().equals(vspec.getType())) {
+                msg.setResourceUuid(Platform.getUuid());
                 msg.setName(String.format("DATA-for-%s", spec.getVmInventory().getName()));
                 msg.setDescription(String.format("DataVolume-%s", spec.getVmInventory().getUuid()));
                 msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());
@@ -115,10 +122,14 @@ public class VmAllocateVolumeFlow implements Flow {
         return msgs;
     }
 
+    private final String VolumeUuidsList = "VolumeUuidsList";
+
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         List<CreateVolumeMsg> msgs = prepareMsg(data);
+        List<String> allVolumeUuids = msgs.stream().map(CreateVolumeMsg::getResourceUuid).collect(Collectors.toList());
+        data.put(VolumeUuidsList, allVolumeUuids);
         bus.send(msgs, 1, new CloudBusListCallBack(trigger) {
             @Override
             public void run(List<MessageReply> replies) {
@@ -159,21 +170,24 @@ public class VmAllocateVolumeFlow implements Flow {
     @Override
     public void rollback(final FlowRollback chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        List<VolumeInventory> destVolumes = new ArrayList<>(spec.getDestDataVolumes().size() + 1);
+        List<String> destVolumes = new ArrayList<>(spec.getDestDataVolumes().size() + 1);
         if (spec.getDestRootVolume() != null) {
-            destVolumes.add(spec.getDestRootVolume());
+            destVolumes.add(spec.getDestRootVolume().getUuid());
         }
-        destVolumes.addAll(spec.getDestDataVolumes());
+        destVolumes.addAll(spec.getDestDataVolumes().stream().map(VolumeInventory::getUuid).collect(Collectors.toList()));
 
-        final List<DeleteVolumeMsg> msgs = CollectionUtils.transformToList(destVolumes, new Function<DeleteVolumeMsg, VolumeInventory>() {
+        List<String> allVolumeUuids = (List<String>) data.get(VolumeUuidsList);
+        destVolumes.addAll(allVolumeUuids.stream().filter(it -> Q.New(VolumeVO.class).eq(VolumeVO_.uuid, it).find() != null).collect(Collectors.toList()));
+
+        final List<DeleteVolumeMsg> msgs = CollectionUtils.transformToList(destVolumes, new Function<DeleteVolumeMsg, String>() {
             @Override
-            public DeleteVolumeMsg call(VolumeInventory arg) {
+            public DeleteVolumeMsg call(String VolumeUuid) {
                 DeleteVolumeMsg msg = new DeleteVolumeMsg();
                 msg.setDeletionPolicy(VolumeDeletionPolicy.Direct.toString());
-                msg.setUuid(arg.getUuid());
+                msg.setUuid(VolumeUuid);
                 // don't do detach; because the VM is in state of Starting, it cannot do a detach operation.
                 msg.setDetachBeforeDeleting(false);
-                bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, arg.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, VolumeUuid);
                 return msg;
             }
         });
