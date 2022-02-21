@@ -737,8 +737,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 return finalVo1;
             }
         }.execute();
-    
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), VolumeVO.class.getSimpleName());
+
+        tagMgr.createTagsFromAPICreateMessage(msg, finalVo1.getUuid(), VolumeVO.class.getSimpleName());
         for (CreateDataVolumeExtensionPoint ext : exts) {
             ext.afterCreateVolume(vo);
         }
