@@ -19,6 +19,14 @@ public class GetVmConsoleAddressResult {
         return this.port;
     }
 
+    public java.lang.String path;
+    public void setPath(java.lang.String path) {
+        this.path = path;
+    }
+    public java.lang.String getPath() {
+        return this.path;
+    }
+
     public java.lang.String protocol;
     public void setProtocol(java.lang.String protocol) {
         this.protocol = protocol;

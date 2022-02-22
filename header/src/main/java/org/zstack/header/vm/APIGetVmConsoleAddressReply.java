@@ -10,6 +10,7 @@ import org.zstack.header.rest.RestResponse;
 public class APIGetVmConsoleAddressReply extends APIReply {
     private String hostIp;
     private int port;
+    private String path;
     private String protocol;
     private VdiPortInfo vdiPortInfo;
 
@@ -35,6 +36,14 @@ public class APIGetVmConsoleAddressReply extends APIReply {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 
     public VdiPortInfo getVdiPortInfo() {
