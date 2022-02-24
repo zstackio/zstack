@@ -385,6 +385,21 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             return null;
         });
 
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_HOST_NETLINK_ALARM_EVENT, KVMAgentCommands.NetlinkAlarmEventCmd.class, cmd -> {
+            HostCanonicalEvents.HostNetlinkStatusData cData = new HostCanonicalEvents.HostNetlinkStatusData();
+            cData.setHostUuid(cmd.host);
+            cData.setLinkName(cmd.nic);
+            cData.setFromBond(cmd.bond);
+            cData.setLinkAddr(cmd.ip);
+            cData.setLinkStatus(cmd.status);
+            if("up".equals(cmd.status)){
+                evf.fire(HostCanonicalEvents.HOST_NETLINK_STATUS_UP, cData);
+            } else {
+                evf.fire(HostCanonicalEvents.HOST_NETLINK_STATUS_DOWN, cData);
+            }
+            return null;
+        });
+
         KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.installValidator(((resourceUuid, resourceType, systemTag) -> {
             String check = KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.getTokenByTag(systemTag, KVMSystemTags.CHECK_CLUSTER_CPU_MODEL_TOKEN);
 
