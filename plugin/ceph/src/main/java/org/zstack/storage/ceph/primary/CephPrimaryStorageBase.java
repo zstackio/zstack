@@ -1182,6 +1182,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
+    public static class CheckLongJobCmd extends AgentCommand implements HasThreadContext {
+        private String checkApiId;
+    }
+
     public static class SnapInfo implements Comparable<SnapInfo> {
         long id;
         String name;
@@ -1251,7 +1255,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String CHECK_SNAPSHOT_COMPLETED = "/ceph/primarystorage/check/snapshot";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/ceph/primarystorage/kvmhost/download/progress";
     public static final String GET_IMAGE_WATCHERS_PATH = "/ceph/primarystorage/getvolumewatchers";
-
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
     List<PrimaryStorageLicenseInfoFactory> licenseExts;
@@ -2937,6 +2940,38 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 completion.done();
             }
         }).specifyOrder(msg.getCancellationApiId()).tryNext().call();
+    }
+
+    @Override
+    protected void handle(CheckJobOnPrimaryStorageMsg msg) {
+        inQueue().name(String.format("check-job-on-primarystorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> checkJobOnPrimaryStorage(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    protected void checkJobOnPrimaryStorage(CheckJobOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
+        final CancelJobOnPrimaryStorageReply reply = new CancelJobOnPrimaryStorageReply();
+        CheckLongJobCmd cmd = new CheckLongJobCmd();
+        cmd.checkApiId = msg.getCheckApiId();
+        new HttpCaller<>(AgentConstant.CHECK_JOB, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
+            @Override
+            public void success(AgentResponse rsp) {
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        }).specifyOrder(msg.getCheckApiId()).tryNext().call();
     }
 
     @Override

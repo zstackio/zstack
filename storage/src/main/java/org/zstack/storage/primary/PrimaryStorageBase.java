@@ -391,6 +391,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((ChangeVolumeTypeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) {
             handle((GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CheckJobOnPrimaryStorageMsg) {
+            handle((CheckJobOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -742,6 +744,23 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    protected void handle(CheckJobOnPrimaryStorageMsg msg) {
+//        CheckJobOnPrimaryStorageReply reply = new CheckJobOnPrimaryStorageReply();
+//        CancelHostTasksMsg cmsg = new CancelHostTasksMsg();
+//        cmsg.setCancellationApiId(msg.getCheckApiId());
+//        bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
+//        bus.send(cmsg, new CloudBusCallBack(msg) {
+//            @Override
+//            public void run(MessageReply r) {
+//                if (!r.isSuccess()) {
+//                    reply.setError(r.getError());
+//                }
+//
+//                bus.reply(msg, reply);
+//            }
+//        });
     }
 
     private void handle(final DetachPrimaryStorageFromClusterMsg msg) {

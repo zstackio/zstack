@@ -37,10 +37,15 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.primary.CancelJobOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.ThreadContextUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -603,6 +608,29 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         return vo;
     }
 
+    @Deferred
+    private LongJobVO doCheckJob(LongJobVO vo, Completion completion) {
+        LongJob job = longJobFactory.getLongJob(vo.getJobName());
+
+        Runnable cleanup = ThreadContextUtils.saveThreadContext();
+        Defer.defer(cleanup);
+        ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
+        ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
+        job.check(vo, new ReturnValueCompletion<Boolean>(completion) {
+            @Override
+            public void success(Boolean cancelled) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.error(String.format("the task is not running"));
+                completion.fail(errorCode);
+            }
+        });
+        return vo;
+    }
+
     private ReturnValueCompletion<APIEvent> buildJobOverCompletion(LongJob job, LongJobVO vo, AsyncBackup async) {
         String longJobUuid = vo.getUuid();
         return new ReturnValueCompletion<APIEvent>(async) {
@@ -829,6 +857,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             if (longJobFactory.supportResume(vo.getJobName())) {
                 doResumeJob(vo.getUuid(), new NopeCompletion());
             } else if (longJobFactory.supportClean(vo.getJobName())) {
+                doCheckJob(vo, new NopeCompletion());
                 doCleanJob(vo, new NopeCompletion());
             } else {
                 changeState(vo.getUuid(), LongJobStateEvent.fail);
