@@ -90,7 +90,7 @@ public class CreateApplianceVmJob implements Job {
                 if (spec.getUuid() != null) {
                     avo.setUuid(spec.getUuid());
                 } else {
-                    avo.setUuid(Platform.getUuid());
+                    avo.setUuid(Platform.getVmUuid());
                 }
                 avo.setZoneUuid(spec.getRequiredZoneUuid());
                 avo.setClusterUuid(spec.getRequiredClusterUuid());
