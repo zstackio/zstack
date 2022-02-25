@@ -6,6 +6,13 @@ import org.zstack.utils.CollectionDSL;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Allocate PrimaryStorage
+ * * @deprecated
+ * * This method is no longer acceptable to allocate PrimaryStorage.
+ * * <p> Use {@link AllocatePrimaryStorageSpaceMsg} instead.
+ */
+@Deprecated
 public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private String requiredZoneUuid;
     private List<String> requiredClusterUuids;

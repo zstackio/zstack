@@ -11,11 +11,9 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
-import org.zstack.header.storage.primary.PrimaryStorageVO_;
+import org.zstack.header.storage.primary.*;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -68,6 +66,21 @@ public class LocalStorageUtils {
         return ratioMgr.calculateByRatio(psUuid, capacity);
     }
 
+    /**
+     * reserve capacity on Host
+     * @deprecated
+     * <p> the AllocatePrimaryStorageSpaceMsg will reserve capacity on localPrimaryStorage and host in one transaction.
+     * <p> reference {@link AllocatePrimaryStorageSpaceMsg}
+     *
+     * For example, to create volume snapshot
+     * <p> reference {@link AllocatePrimaryStorageSpaceMsg#setForce(boolean)} ()}
+     * <p> boolean = ignoreError
+     *
+     * <p> For example, to reserve storage capacity to localPrimaryStorage and host
+     * <p> {@link AllocatePrimaryStorageSpaceMsg#setRequiredInstallUri(String)}}
+     * <p> String = file://$URL;hostUuid://$HOSTUUID
+     */
+    @Deprecated
     @Transactional
     public void reserveCapacityOnHost(String hostUuid, long size, String psUuid, PrimaryStorageVO self, boolean ignoreError) {
         String sql = "select ref" +
@@ -127,6 +140,17 @@ public class LocalStorageUtils {
         dbf.getEntityManager().merge(ref);
     }
 
+    /**
+     * return capacity on Host
+     * @deprecated
+     * <p> the ReleasePrimaryStorageSpaceMsg will return capacity on localPrimaryStorage and host in one transaction.
+     * <p> reference {@link ReleasePrimaryStorageSpaceMsg}
+     *
+     * <p> For example, to return storage capacity to localPrimaryStorage and host
+     * <p> {@link ReleasePrimaryStorageSpaceMsg#setAllocatedInstallUrl(String)}
+     * <p> String = file://$URL;hostUuid://$HOSTUUID
+     */
+    @Deprecated
     @Transactional
     public void returnStorageCapacityToHost(String hostUuid, long size, PrimaryStorageVO self) {
         String sql = "select ref from LocalStorageHostRefVO ref where ref.hostUuid = :huuid and ref.primaryStorageUuid = :primaryStorageUuid";
@@ -199,6 +223,28 @@ public class LocalStorageUtils {
                             "available: %s --> %s\n",
                     caller.getFileName(), caller.getMethodName(), caller.getLineNumber(), psUuid, hostUuid,
                     before, after));
+        }
+    }
+
+    public static class InstallPath {
+        public String fullPath;
+        public String hostUuid;
+        public String installPath;
+
+        public InstallPath disassemble() {
+            DebugUtils.Assert(fullPath != null, "fullPath cannot be null");
+            String[] pair = fullPath.split(";");
+            DebugUtils.Assert(pair.length == 2, String.format("invalid cache path %s", fullPath));
+            installPath = pair[0].replaceFirst("file://", "");
+            hostUuid = pair[1].replaceFirst("hostUuid://", "");
+            return this;
+        }
+
+        public String makeFullPath() {
+            DebugUtils.Assert(installPath != null, "installPath cannot be null");
+            DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
+            fullPath = String.format("file://%s;hostUuid://%s", installPath, hostUuid);
+            return fullPath;
         }
     }
 }

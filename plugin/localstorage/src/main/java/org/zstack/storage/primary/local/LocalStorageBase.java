@@ -1270,30 +1270,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 });
 
-                flow(new Flow() {
-                    String __name__ = "reserve-capacity-on-host";
-
-                    Long size;
-                    boolean success = false;
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        size = reply.getSize();
-                        reserveCapacityOnHost(hostUuid, size, self.getUuid());
-                        success = true;
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (success) {
-                            returnStorageCapacityToHost(hostUuid, size);
-                        }
-
-                        trigger.rollback();
-                    }
-                });
-
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -1905,20 +1881,68 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }).start();
     }
 
+    /**
+     * reserve capacity on Host
+     * @deprecated
+     * <p> the AllocatePrimaryStorageSpaceMsg will reserve capacity on localPrimaryStorage and host in one transaction.
+     * <p> reference {@link AllocatePrimaryStorageSpaceMsg}
+     *
+     * For example, to create volume snapshot
+     * <p> reference {@link AllocatePrimaryStorageSpaceMsg#setForce(boolean)} ()}
+     * <p> boolean = true
+     *
+     * <p> For example, to reserve storage capacity to localPrimaryStorage and host
+     * <p> {@link AllocatePrimaryStorageSpaceMsg#setRequiredInstallUri(String)}}
+     * <p> String = file://$URL;hostUuid://$HOSTUUID
+     */
+    @Deprecated
     @ExceptionSafe
     protected void reserveCapaciryOnHostIgnoreError(String hostUuid, long size, String psUuid) {
         new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, self, true);
     }
 
+    /**
+     * reserve capacity on Host
+     * @deprecated
+     * <p> the AllocatePrimaryStorageSpaceMsg will reserve capacity on localPrimaryStorage and host in one transaction.
+     * <p> reference {@link AllocatePrimaryStorageSpaceMsg}
+     *
+     * <p> For example, to reserve storage capacity to localPrimaryStorage and host
+     * <p> {@link AllocatePrimaryStorageSpaceMsg#setRequiredInstallUri(String)}}
+     * <p> String = file://$URL;hostUuid://$HOSTUUID
+     */
+    @Deprecated
     protected void reserveCapacityOnHost(String hostUuid, long size, String psUuid) {
         new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, self, false);
     }
 
+    /**
+     * return capacity on Host
+     * @deprecated
+     * <p> the ReleasePrimaryStorageSpaceMsg will return capacity on localPrimaryStorage and host in one transaction.
+     * <p> reference {@link ReleasePrimaryStorageSpaceMsg}
+     *
+     * <p> For example, to return storage capacity to localPrimaryStorage and host
+     * <p>{@link ReleasePrimaryStorageSpaceMsg#setAllocatedInstallUrl(String)}
+     * <p>String = file://$URL;hostUuid://$HOSTUUID
+     */
+    @Deprecated
     @Transactional
     protected void returnStorageCapacityToHost(String hostUuid, long size) {
         new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, self);
     }
 
+    /**
+     * return capacity on Host
+     * @deprecated
+     * <p> the ReleasePrimaryStorageSpaceMsg will return capacity on localPrimaryStorage and host in one transaction.
+     * <p> reference {@link ReleasePrimaryStorageSpaceMsg}
+     *
+     * <p> For example, to return storage capacity to localPrimaryStorage and host
+     * <p> {@link ReleasePrimaryStorageSpaceMsg#setAllocatedInstallUrl(String)}
+     * <p> String = volume://$VOLUMEUUID
+     */
+    @Deprecated
     @Transactional
     protected void returnStorageCapacityToHostByResourceUuid(String resUuid) {
         String sql = "select href, rref" +
@@ -1978,28 +2002,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
-                flow(new Flow() {
-                    String __name__ = "allocate-capacity-on-host";
-
-                    long requiredSize = ratioMgr.calculateByRatio(self.getUuid(), msg.getVolume().getSize());
-                    long reservedSize;
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(finalHostUuid, requiredSize, self.getUuid());
-                        reservedSize = requiredSize;
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (reservedSize != 0) {
-                            returnStorageCapacityToHost(finalHostUuid, reservedSize);
-                        }
-                        trigger.rollback();
-                    }
-                });
-
                 flow(new NoRollbackFlow() {
                     String __name__ = "instantiate-volume-on-host";
 
@@ -2215,22 +2217,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
-                flow(new Flow() {
-                    String __name__ = "allocate-capacity-on-host";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(msg.getHostUuid(), requiredSize, self.getUuid());
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        returnStorageCapacityToHost(msg.getHostUuid(), requiredSize);
-                        trigger.rollback();
-                    }
-                });
-
                 flow(new NoRollbackFlow() {
                     String __name__ = "download-the-data-volume-to-host";
 
@@ -2327,16 +2313,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                 trigger.fail(errorCode);
                             }
                         });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "return-capacity-to-host";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        returnStorageCapacityToHostByResourceUuid(msg.getBitsUuid());
-                        trigger.next();
                     }
                 });
 

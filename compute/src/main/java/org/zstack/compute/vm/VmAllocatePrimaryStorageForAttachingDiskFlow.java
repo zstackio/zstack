@@ -39,6 +39,8 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
     @Autowired
     protected ErrorFacade errf;
 
+    private String allocatedInstallUrl;
+
     @Override
     public void run(final FlowTrigger chain, final Map data) {
         final VolumeInventory volume = (VolumeInventory) data.get(VmInstanceConstant.Params.AttachingVolumeInventory.toString());
@@ -54,11 +56,11 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         HostInventory hinv = HostInventory.valueOf(hvo);
         spec.setDestHost(hinv);
 
-        AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
-        msg.setSize(volume.getSize());
-        msg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
-        msg.setDiskOfferingUuid(volume.getDiskOfferingUuid());
-        msg.setServiceId(bus.makeLocalServiceId(PrimaryStorageConstant.SERVICE_ID));
+        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+        amsg.setSize(volume.getSize());
+        amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
+        amsg.setDiskOfferingUuid(volume.getDiskOfferingUuid());
+        amsg.setServiceId(bus.makeLocalServiceId(PrimaryStorageConstant.SERVICE_ID));
 
         if (volume.isShareable()) {
             String clusterUuid = spec.getVmInventory().getClusterUuid();
@@ -74,22 +76,23 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
                     .list();
 
             if (CollectionUtils.isNotEmpty(vos)) {
-                msg.setPossiblePrimaryStorageTypes(vos.stream()
+                amsg.setPossiblePrimaryStorageTypes(vos.stream()
                         .filter(v -> PrimaryStorageType.valueOf(v.getType()).isSupportSharedVolume())
                         .map(PrimaryStorageVO::getType)
                         .collect(Collectors.toList()));
             }
 
-            msg.setRequiredClusterUuids(Arrays.asList(clusterUuid));
+            amsg.setRequiredClusterUuids(Arrays.asList(clusterUuid));
         } else {
-            msg.setRequiredHostUuid(hinv.getUuid());
+            amsg.setRequiredHostUuid(hinv.getUuid());
         }
 
-        bus.send(msg, new CloudBusCallBack(chain) {
+        bus.send(amsg, new CloudBusCallBack(chain) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply)reply;
+                    AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                    allocatedInstallUrl = ar.getAllocatedInstallUrl();
                     data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
                     data.put(VmAllocatePrimaryStorageForAttachingDiskFlow.class, ar.getSize());
                     chain.next();
@@ -105,11 +108,12 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         Long size = (Long) data.get(VmAllocatePrimaryStorageForAttachingDiskFlow.class);
         if (size != null) {
             PrimaryStorageInventory pri = (PrimaryStorageInventory) data.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
-            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
-            imsg.setPrimaryStorageUuid(pri.getUuid());
-            imsg.setDiskSize(size);
-            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());
-            bus.send(imsg);
+            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+            rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
+            rmsg.setPrimaryStorageUuid(pri.getUuid());
+            rmsg.setDiskSize(size);
+            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, pri.getUuid());
+            bus.send(rmsg);
         }
         chain.rollback();
     }

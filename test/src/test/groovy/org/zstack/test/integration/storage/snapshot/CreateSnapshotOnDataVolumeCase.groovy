@@ -1,19 +1,32 @@
 package org.zstack.test.integration.storage.snapshot
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
+import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.sdk.DiskOfferingInventory
+import org.zstack.sdk.KVMHostInventory
+import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VolumeInventory
 import org.zstack.sdk.VolumeSnapshotInventory
+import org.zstack.storage.primary.local.LocalStorageHostRefVO
+import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
+
 /**
  * Created by ads6 on 2018/1/2.
  */
@@ -48,7 +61,7 @@ class CreateSnapshotOnDataVolumeCase extends SubCase{
             testCreateSnapshotOnDataVolume()
             dataVolAttached = false
             testCreateSnapshotOnDataVolume()
-
+            testCreateVolumeSnapshotAndCheckPSCapacity()
         }
     }
 
@@ -155,4 +168,58 @@ class CreateSnapshotOnDataVolumeCase extends SubCase{
         return inv
     }
 
+    void testCreateVolumeSnapshotAndCheckPSCapacity() {
+        def local = env.inventoryByName("local") as PrimaryStorageInventory
+        def kvm = env.inventoryByName("kvm") as KVMHostInventory
+
+        long volumeSize = SizeUnit.TERABYTE.toByte(50)
+        DiskOfferingInventory diskOffering = createDiskOffering {
+            name = "data"
+            diskSize = volumeSize
+        } as DiskOfferingInventory
+
+        VolumeInventory dataVolume = createDataVolume {
+            name = "50T"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = local.uuid
+            systemTags = Arrays.asList("localStorage::hostUuid::" + kvm.uuid)
+        } as VolumeInventory
+
+        def beforeCreateVolumePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
+                .select(PrimaryStorageCapacityVO_.availableCapacity)
+                .eq(PrimaryStorageCapacityVO_.uuid, local.uuid)
+                .findValue()
+        def beforeCreateVolumeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, kvm.uuid)
+                .select(LocalStorageHostRefVO_.availableCapacity)
+                .findValue()
+
+        env.simulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            KVMAgentCommands.TakeSnapshotCmd cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.TakeSnapshotCmd.class)
+            def rsp = new KVMAgentCommands.TakeSnapshotResponse()
+            rsp.newVolumeInstallPath = cmd.installPath
+            rsp.snapshotInstallPath = cmd.volumeInstallPath
+            rsp.size = SizeUnit.TERABYTE.toByte(100)
+            return rsp
+        }
+
+        createVolumeSnapshot {
+            name = "vol-snapshot"
+            volumeUuid = dataVolume.uuid
+        }
+
+        def afterCreateVolumePSAvailableCapacity = Q.New(PrimaryStorageCapacityVO.class)
+                .select(PrimaryStorageCapacityVO_.availableCapacity)
+                .eq(PrimaryStorageCapacityVO_.uuid, local.uuid)
+                .findValue()
+        def afterCreateVolumeHostAvailableCapacity = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, kvm.uuid)
+                .select(LocalStorageHostRefVO_.availableCapacity)
+                .findValue()
+
+        retryInSecs {
+            assert afterCreateVolumePSAvailableCapacity == beforeCreateVolumePSAvailableCapacity - beforeCreateVolumeHostAvailableCapacity
+            assert afterCreateVolumeHostAvailableCapacity == 0
+        }
+    }
 }
