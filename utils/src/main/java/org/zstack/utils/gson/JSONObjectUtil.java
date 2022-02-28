@@ -13,7 +13,7 @@ import static org.zstack.utils.CollectionDSL.map;
 public class JSONObjectUtil {
     private static final Gson gson;
     private static final Gson prettyGson;
-
+    
     static {
         gson = new GsonBuilder().registerTypeAdapter(Integer.class, new JsonDeserializer<Integer>() {
             @Override
