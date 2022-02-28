@@ -163,22 +163,22 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                             builder.append(String.format(";sudo ipset add ZS-MN %s", net));
                         }
 
-                        builder.append(String.format(";sudo iptables-save | grep '%s' | while read LINE;do drule=${LINE//\\\"/};sudo iptables ${drule/-A/-D};done",
+                        builder.append(String.format(";sudo iptables-save | grep '%s' | while read LINE;do drule=${LINE//\\\"/};sudo iptables -w ${drule/-A/-D};done",
                                 ConsoleConstants.VNC_IPTABLES_COMMENTS));
                         for (String dport : ports) {
-                            builder.append(String.format(";sudo iptables -I INPUT -m set --match-set ZS-MN src -p tcp -m comment --comment %s -m tcp --dport %s -j ACCEPT",
+                            builder.append(String.format(";sudo iptables -w -I INPUT -m set --match-set ZS-MN src -p tcp -m comment --comment %s -m tcp --dport %s -j ACCEPT",
                                     ConsoleConstants.VNC_IPTABLES_COMMENTS, dport));
                         }
-                        builder.append(String.format(";sudo iptables -I INPUT -m set --match-set ZS-MN src -p tcp -m comment --comment %s -m tcp ! -s 127.0.0.1 --dport %s -j REJECT",
+                        builder.append(String.format(";sudo iptables -w -I INPUT -m set --match-set ZS-MN src -p tcp -m comment --comment %s -m tcp ! -s 127.0.0.1 --dport %s -j REJECT",
                                 ConsoleConstants.VNC_IPTABLES_COMMENTS, agentPort));
                     } else {
-                        builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE;do drule=${LINE//\\\"/};sudo iptables ${drule/-A/-D};done",
+                        builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE;do drule=${LINE//\\\"/};sudo iptables -w ${drule/-A/-D};done",
                                 ConsoleConstants.VNC_IPTABLES_COMMENTS));
                         for (String dport : ports) {
-                            builder.append(String.format(";sudo iptables -I INPUT -p tcp -m comment --comment %s -m tcp --dport %s -j ACCEPT",
+                            builder.append(String.format(";sudo iptables -w -I INPUT -p tcp -m comment --comment %s -m tcp --dport %s -j ACCEPT",
                                     ConsoleConstants.VNC_IPTABLES_COMMENTS, dport));
                         }
-                        builder.append(String.format(";sudo iptables -I INPUT -p tcp -m comment --comment %s -m tcp ! -s 127.0.0.1 --dport %s -j REJECT",
+                        builder.append(String.format(";sudo iptables -w -I INPUT -p tcp -m comment --comment %s -m tcp ! -s 127.0.0.1 --dport %s -j REJECT",
                                 ConsoleConstants.VNC_IPTABLES_COMMENTS, agentPort));
                     }
                     ShellUtils.run(builder.toString());
