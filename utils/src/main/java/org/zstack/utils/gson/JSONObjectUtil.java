@@ -13,7 +13,6 @@ import static org.zstack.utils.CollectionDSL.map;
 public class JSONObjectUtil {
     private static final Gson gson;
     private static final Gson prettyGson;
-    private static final Gson gsonSerializeNulls;
 
     static {
         gson = new GsonBuilder().registerTypeAdapter(Integer.class, new JsonDeserializer<Integer>() {
@@ -28,17 +27,6 @@ public class JSONObjectUtil {
             }
         }).disableHtmlEscaping().create();
         prettyGson = new GsonBuilder().setPrettyPrinting().create();
-        gsonSerializeNulls = new GsonBuilder().registerTypeAdapter(Integer.class, new JsonDeserializer<Integer>() {
-            @Override
-            public Integer deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-                Long l = jsonElement.getAsLong();
-                if (l > Integer.MAX_VALUE) {
-                    throw new NumberFormatException(String.format("%d is Integer overflow, Integer.MAX_VALUE is %d", l, Integer.MAX_VALUE));
-                } else {
-                    return l.intValue();
-                }
-            }
-        }).disableHtmlEscaping().serializeNulls().create();
     }
     
     public static <T, K extends Collection> K toCollection(String content, Class<K> collections, Class<T> clazz) {
@@ -92,9 +80,5 @@ public class JSONObjectUtil {
 
     public static String dumpPretty(Object obj) {
         return prettyGson.toJson(obj);
-    }
-
-    public static String toJsonStringSerializeNulls(Object obj) {
-        return gsonSerializeNulls.toJson(obj);
     }
 }
