@@ -16,6 +16,8 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.storage.primary.InstantiateRootVolumeForRecoveryMsg;
+import org.zstack.header.storage.primary.InstantiateRootVolumeForRecoveryReply;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
@@ -25,7 +27,10 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Iterator;
+import java.util.List;
 
 public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantiateResourceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(InstantiateVolumeForNewCreatedVmExtension.class);
@@ -40,7 +45,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
     protected AccountManager acntMgr;
 
     @Override
-    public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException{
+    public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException {
     }
 
     protected void doInstantiate(final Iterator<NeedReplyMessage> it, final VmInstanceSpec spec, final Completion completion) {
@@ -49,7 +54,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
             return;
         }
 
-        NeedReplyMessage msg  = it.next();
+        NeedReplyMessage msg = it.next();
         bus.send(msg, new CloudBusCallBack(completion) {
             private int getNextDeviceId() {
                 SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
@@ -63,7 +68,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                     e.beforeGetNextVolumeDeviceId(spec.getVmInventory().getUuid(), devIds);
                 }
 
-                BitSet full = new BitSet(devIds.size()+1);
+                BitSet full = new BitSet(devIds.size() + 1);
                 for (Integer id : devIds) {
                     full.set(id);
                 }
@@ -80,7 +85,9 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                 String volumeUuid;
                 if (reply instanceof InstantiateVolumeReply) {
                     volumeUuid = ((InstantiateVolumeReply) reply).getVolume().getUuid();
-                } else if (reply instanceof CreateDataVolumeFromVolumeTemplateReply){
+                } else if (reply instanceof InstantiateRootVolumeForRecoveryReply) {
+                    volumeUuid = ((InstantiateRootVolumeForRecoveryReply) reply).getVolume().getUuid();
+                } else if (reply instanceof CreateDataVolumeFromVolumeTemplateReply) {
                     volumeUuid = ((CreateDataVolumeFromVolumeTemplateReply) reply).getInventory().getUuid();
                 } else {
                     throw new CloudRuntimeException("can not be here");
@@ -108,7 +115,6 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                     spec.getDestCacheVolumes().add(vinv);
                 }
 
-                logger.debug(String.format("spec.getDestRootVolume is: %s", spec.getDestRootVolume().getInstallPath()));
                 logger.debug(String.format("successfully instantiated volume%s", JSONObjectUtil.toJsonString(vinv)));
 
                 doInstantiate(it, spec, completion);
@@ -133,9 +139,14 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
         }
 
         ImageSpec image = spec.getImageSpec();
-        if (image.getInventory() != null && ImageMediaType.RootVolumeTemplate.toString().equals(image.getInventory().getMediaType())) {
-            InstantiateVolumeMsg rmsg = fillMsg(new InstantiateRootVolumeMsg(), spec.getDestRootVolume(), spec) ;
-            ((InstantiateRootVolumeMsg)rmsg).setTemplateSpec(image);
+        final boolean recovering = image.getSelectedBackupStorage().getInstallPath().startsWith("nbd://");
+        if (recovering) {
+            InstantiateVolumeMsg cmsg = fillMsg(new InstantiateRootVolumeForRecoveryMsg(), spec.getDestRootVolume(), spec);
+            ((InstantiateRootVolumeForRecoveryMsg) cmsg).setSelectedBackupStorage(image.getSelectedBackupStorage());
+            msgs.add(cmsg);
+        } else if (image.getInventory() != null && ImageMediaType.RootVolumeTemplate.toString().equals(image.getInventory().getMediaType())) {
+            InstantiateVolumeMsg rmsg = fillMsg(new InstantiateRootVolumeMsg(), spec.getDestRootVolume(), spec);
+            ((InstantiateRootVolumeMsg) rmsg).setTemplateSpec(image);
             msgs.add(rmsg);
         } else {
             msgs.add(fillMsg(new InstantiateVolumeMsg(), spec.getDestRootVolume(), spec));
@@ -147,15 +158,16 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                 throw new CloudRuntimeException(String.format("accountUuid for vm[uuid:%s] is null", spec.getVmInventory().getUuid()));
             }
 
+            String psUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
+            if (psUuid == null) {
+                psUuid = spec.getDestRootVolume().getPrimaryStorageUuid();
+            }
+
             for (String imageUuid : spec.getDataVolumeTemplateUuids()) {
                 CreateDataVolumeFromVolumeTemplateMsg cmsg = new CreateDataVolumeFromVolumeTemplateMsg();
                 cmsg.setHostUuid(spec.getDestHost().getUuid());
                 cmsg.setImageUuid(imageUuid);
-                if (spec.getRequiredPrimaryStorageUuidForDataVolume() != null) {
-                    cmsg.setPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
-                } else {
-                    cmsg.setPrimaryStorageUuid(spec.getDestRootVolume().getPrimaryStorageUuid());
-                }
+                cmsg.setPrimaryStorageUuid(psUuid);
 
                 Tuple t = Q.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).select(ImageVO_.name, ImageVO_.description).findTuple();
 
@@ -166,11 +178,6 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                 bus.makeLocalServiceId(cmsg, VolumeConstant.SERVICE_ID);
                 msgs.add(cmsg);
             }
-        }
-
-        if (msgs.isEmpty()) {
-            completion.success();
-            return;
         }
 
         doInstantiate(msgs.iterator(), spec, completion);

@@ -17,17 +17,16 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.JobQueueFacade;
-import org.zstack.core.thread.*;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.MergeQueue;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.trash.CleanTrashResult;
 import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.workflow.*;
@@ -35,9 +34,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.host.CancelHostTasksMsg;
-import org.zstack.header.host.DetachIsoOnPrimaryStorageMsg;
-import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.*;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -46,13 +43,13 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.*;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
-import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
+import org.zstack.header.vm.StopVmInstanceMsg;
+import org.zstack.header.vm.VmAttachVolumeValidatorMethod;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.volume.*;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -668,7 +665,40 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     private void handleBase(DownloadDataVolumeToPrimaryStorageMsg msg) {
         checkIfBackupStorageAttachedToMyZone(msg.getBackupStorageRef().getBackupStorageUuid());
-        handle(msg);
+        if (!msg.getBackupStorageRef().getInstallPath().startsWith("nbd://")) {
+            handle(msg);
+            return;
+        }
+
+        InstantiateVolumeOnPrimaryStorageMsg imsg = new InstantiateVolumeOnPrimaryStorageMsg();
+        imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        if (msg.getHostUuid() != null) {
+            imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
+        }
+        imsg.setVolume(VolumeInventory.valueOf(dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class)));
+        imsg.setSkipIfExisting(false);
+        bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);
+        bus.send(imsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                DownloadDataVolumeToPrimaryStorageReply r = new DownloadDataVolumeToPrimaryStorageReply();
+                if (!reply.isSuccess()) {
+                    r.setError(reply.getError());
+                } else {
+                    InstantiateVolumeOnPrimaryStorageReply r2 = reply.castReply();
+                    r.setFormat(r2.getVolume().getFormat());
+                    r.setInstallPath(String.format("%s?r=%s",
+                            r2.getVolume().getInstallPath(),
+                            msg.getBackupStorageRef().getInstallPath())
+                    );
+                    logger.info(String.format("XXX: volume: %s, installPath: %s",
+                            msg.getVolumeUuid(),
+                            r.getInstallPath()
+                    ));
+                }
+                bus.reply(msg, r);
+            }
+        });
     }
 
     @Transactional(readOnly = true)
