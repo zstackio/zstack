@@ -290,9 +290,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
         CreateTemporaryRootVolumeTemplateFromVolumeReply reply = new CreateTemporaryRootVolumeTemplateFromVolumeReply();
 
+        //tag::flow_check[]
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-temporary-volume-template-from-volume-%s", msg.getVolumeUuid()));
         chain.preCheck(data -> buildErrIfCanceled());
+        //end::flow_check[]
         chain.then(new ShareFlow() {
             ImageVO image;
             long imageEstimateSize;
