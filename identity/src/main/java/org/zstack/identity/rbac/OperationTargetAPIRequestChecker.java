@@ -38,7 +38,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
         return policyMatcher.match(ap, rbacEntity.getApiMessage().getClass().getName());
     }
 
-    private RBAC.Permission getRBACInfo() {
+    protected RBAC.Permission getRBACInfo() {
         return rbacInfos.computeIfAbsent(rbacEntity.getApiMessage().getClass(), x-> {
             for (RBAC.Permission permission : RBAC.permissions) {
                 for (String s : permission.getNormalAPIs()) {
@@ -87,6 +87,27 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
         return m.values();
     }
 
+    protected List<String> getResourceUuids(APIMessage.FieldParam param) throws IllegalAccessException {
+        List<String> uuids = new ArrayList<>();
+        if (param.param.noOwnerCheck()) {
+            // do nothing
+        } else if (String.class.isAssignableFrom(param.field.getType())) {
+            String uuid = (String) param.field.get(rbacEntity.getApiMessage());
+            if (uuid != null) {
+                uuids.add(uuid);
+            }
+        } else if (Collection.class.isAssignableFrom(param.field.getType())) {
+            Collection u = (Collection<? extends String>) param.field.get(rbacEntity.getApiMessage());
+            if (u != null) {
+                uuids.addAll(u);
+            }
+        } else {
+            throw new CloudRuntimeException(String.format("not supported field type[%s] for %s#%s", param.field.getType(), rbacEntity.getApiMessage().getClass(), param.field.getName()));
+        }
+
+        return uuids;
+    }
+
     private void check() {
         if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(rbacEntity.getApiMessage().getSession().getAccountUuid())) {
             return;
@@ -130,27 +151,6 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 } catch (Exception e) {
                     throw new CloudRuntimeException(e);
                 }
-            }
-
-            private List<String> getResourceUuids(APIMessage.FieldParam param) throws IllegalAccessException {
-                List<String> uuids = new ArrayList<>();
-                if (param.param.noOwnerCheck()) {
-                    // do nothing
-                } else if (String.class.isAssignableFrom(param.field.getType())) {
-                    String uuid = (String) param.field.get(rbacEntity.getApiMessage());
-                    if (uuid != null) {
-                        uuids.add(uuid);
-                    }
-                } else if (Collection.class.isAssignableFrom(param.field.getType())) {
-                    Collection u = (Collection<? extends String>) param.field.get(rbacEntity.getApiMessage());
-                    if (u != null) {
-                        uuids.addAll(u);
-                    }
-                } else {
-                    throw new CloudRuntimeException(String.format("not supported field type[%s] for %s#%s", param.field.getType(), rbacEntity.getApiMessage().getClass(), param.field.getName()));
-                }
-
-                return uuids;
             }
 
             private void checkIfTheAccountOperationItSelf(APIMessage.FieldParam param) throws IllegalAccessException {
