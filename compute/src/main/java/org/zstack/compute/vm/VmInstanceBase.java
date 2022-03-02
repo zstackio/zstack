@@ -77,6 +77,8 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -5831,6 +5833,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 @Override
                 public void success() {
                     bus.reply(msg, reply);
+                    vvo.setLastDetachDate(Timestamp.valueOf(LocalDateTime.now()));
+                    vvo.setLastVmInstanceUuid(msg.getVmInstanceUuid());
+                    dbf.update(vvo);
                     completion.done();
                 }
 
@@ -5860,6 +5865,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                     bus.reply(msg, reply);
                     completion.done();
                 } else {
+                    vvo.setLastDetachDate(Timestamp.valueOf(LocalDateTime.now()));
+                    vvo.setLastVmInstanceUuid(msg.getVmInstanceUuid());
+                    dbf.update(vvo);
+
                     extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(completion) {
                         @Override
                         public void success() {

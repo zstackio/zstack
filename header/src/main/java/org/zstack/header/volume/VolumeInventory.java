@@ -148,6 +148,10 @@ public class VolumeInventory implements Serializable {
 
     private String volumeQos;
 
+    private Timestamp lastDetachDate;
+
+    private String lastVmInstanceUuid;
+
     public VolumeInventory() {
     }
 
@@ -171,6 +175,8 @@ public class VolumeInventory implements Serializable {
         this.lastOpDate = other.lastOpDate;
         this.isShareable = other.isShareable;
         this.volumeQos = other.volumeQos;
+        this.lastDetachDate = other.lastDetachDate;
+        this.lastVmInstanceUuid = other.lastVmInstanceUuid;
     }
 
 
@@ -196,6 +202,8 @@ public class VolumeInventory implements Serializable {
         inv.setFormat(vo.getFormat());
         inv.setShareable(vo.isShareable());
         inv.setVolumeQos(vo.getVolumeQos());
+        inv.setLastDetachDate(vo.getLastDetachDate());
+        inv.setLastVmInstanceUuid(vo.getLastVmInstanceUuid());
         return inv;
     }
 
@@ -379,6 +387,22 @@ public class VolumeInventory implements Serializable {
 
     public void setVolumeQos(String volumeQos) {
         this.volumeQos = volumeQos;
+    }
+
+    public Timestamp getLastDetachDate() {
+        return lastDetachDate;
+    }
+
+    public void setLastDetachDate(Timestamp lastDetachDate) {
+        this.lastDetachDate = lastDetachDate;
+    }
+
+    public String getLastVmInstanceUuid() {
+        return lastVmInstanceUuid;
+    }
+
+    public void setLastVmInstanceUuid(String lastVmInstanceUuid) {
+        this.lastVmInstanceUuid = lastVmInstanceUuid;
     }
 
     public static void setAttachedJudgers(List<VolumeAttachedJudger> attachedJudgers) {
