@@ -2,8 +2,11 @@ package org.zstack.network.securitygroup;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.message.MessageReply;
@@ -15,11 +18,7 @@ import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
+import java.util.*;
 import javax.persistence.Query;
 
 /**
@@ -40,8 +39,44 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
         return SecurityGroupProviderFactory.networkServiceType;
     }
 
+    private void syncSystemTagToVmNicSecurityGroup(String vmUuid) {
+        List<String> tags = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vmUuid);
+        List<VmNicSecurityGroupRefVO> refVOS = new ArrayList<>();
+        for (String tag : tags) {
+            Map<String, String> tokens = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTokensByTag(tag);
+            String l3Uuid = tokens.get(VmSystemTags.L3_UUID_TOKEN);
+            List<String> securityGroupUuids = Arrays.asList(tokens.get(VmSystemTags.SECURITY_GROUP_UUIDS_TOKEN).split(","));
+
+            String vmNicUuid = Q.New(VmNicVO.class)
+                    .eq(VmNicVO_.l3NetworkUuid, l3Uuid)
+                    .eq(VmNicVO_.vmInstanceUuid, vmUuid)
+                    .select(VmNicVO_.uuid)
+                    .findValue();
+            for (String securityGroupUuid : securityGroupUuids) {
+                if (!Q.New(VmNicSecurityGroupRefVO.class)
+                        .eq(VmNicSecurityGroupRefVO_.vmNicUuid, vmNicUuid)
+                        .eq(VmNicSecurityGroupRefVO_.securityGroupUuid, securityGroupUuid)
+                        .eq(VmNicSecurityGroupRefVO_.vmNicUuid, vmUuid)
+                        .isExists()) {
+                    VmNicSecurityGroupRefVO refVO = new VmNicSecurityGroupRefVO();
+                    refVO.setUuid(Platform.getUuid());
+                    refVO.setSecurityGroupUuid(securityGroupUuid);
+                    refVO.setVmInstanceUuid(vmUuid);
+                    refVO.setVmNicUuid(vmNicUuid);
+                    refVOS.add(refVO);
+                }
+            }
+        }
+
+        dbf.persistCollection(refVOS);
+        VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.delete(vmUuid);
+    }
+
+
     @Override
     public void applyNetworkService(VmInstanceSpec servedVm, Map<String, Object> data, final Completion completion) {
+        syncSystemTagToVmNicSecurityGroup(servedVm.getVmInventory().getUuid());
+
         Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(SecurityGroupProviderFactory.networkServiceType,
                 VmNicSpec.getL3NetworkInventoryOfSpec(servedVm.getL3Networks()));
         if (map.isEmpty()) {

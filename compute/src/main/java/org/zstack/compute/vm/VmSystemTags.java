@@ -1,11 +1,8 @@
 package org.zstack.compute.vm;
 
 import org.zstack.header.tag.TagDefinition;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.PatternedSystemTag;
-import org.zstack.tag.ResourceConfigSystemTag;
 import org.zstack.tag.SensitiveTag;
 import org.zstack.tag.SystemTag;
 
@@ -163,4 +160,10 @@ public class VmSystemTags {
     public static String VM_IP_CHANGED_TOKEN = "ipChanged";
     public static PatternedSystemTag VM_IP_CHANGED =
             new PatternedSystemTag(String.format("ipChanged::{%s}", VM_IP_CHANGED_TOKEN), VmInstanceVO.class);
+
+    public static String L3_UUID_TOKEN = "l3Uuid";
+    public static String SECURITY_GROUP_UUIDS_TOKEN = "securityGroupUuids";
+    public static PatternedSystemTag L3_NETWORK_SECURITY_GROUP_UUIDS_REF =
+            new PatternedSystemTag(String.format("l3::{%s}::SecurityGroupUuids::{%s}", L3_UUID_TOKEN, SECURITY_GROUP_UUIDS_TOKEN),
+                    VmInstanceVO.class);
 }
