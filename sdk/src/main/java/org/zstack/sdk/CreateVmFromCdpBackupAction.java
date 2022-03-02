@@ -37,6 +37,9 @@ public class CreateVmFromCdpBackupAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String instanceOfferingUuid;
 
+    @Param(required = false)
+    public java.lang.String defaultL3NetworkUuid;
+
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List l3NetworkUuids;
 
@@ -58,6 +61,9 @@ public class CreateVmFromCdpBackupAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String primaryStorageUuidForDataVolume;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public long recoverBandwidth = 0L;
+
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
@@ -66,9 +72,6 @@ public class CreateVmFromCdpBackupAction extends AbstractAction {
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataVolumeSystemTags;
-
-    @Param(required = false)
-    public java.lang.String defaultL3NetworkUuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
