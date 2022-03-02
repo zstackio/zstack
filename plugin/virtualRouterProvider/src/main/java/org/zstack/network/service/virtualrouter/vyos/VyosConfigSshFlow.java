@@ -111,10 +111,10 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
                 String script;
                 if (!passwordAuth) {
                     script = "sudo sed -i \"/PasswordAuthentication /c PasswordAuthentication no\" /etc/ssh/sshd_config\n"+
-                            "sudo service ssh restart\n";
+                            "sudo service ssh restart || sudo systemctl restart sshd\n";
                 } else {
                     script = " sudo sed -i \"/PasswordAuthentication /c PasswordAuthentication yes\" /etc/ssh/sshd_config\n"+
-                            "sudo service ssh restart\n";
+                            "sudo service ssh restart || sudo systemctl restart sshd\n";
                 }
                 script = String.format("echo \"%s\" > .ssh/authorized_keys\n %s", asf.getPublicKey(), script);
 
