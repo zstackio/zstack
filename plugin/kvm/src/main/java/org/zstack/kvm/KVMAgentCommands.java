@@ -3239,4 +3239,51 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class NetlinkAlarmEventCmd {
+        public String host;
+        public String nic;
+        public String ip;
+        public String bond;
+        public String status;
+
+        public String getHost() {
+            return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        public String getNic() {
+            return nic;
+        }
+
+        public void setNic(String nic) {
+            this.nic = nic;
+        }
+
+        public String getIp() {
+            return ip;
+        }
+
+        public void setIp(String ip) {
+            this.ip = ip;
+        }
+
+        public String getBond() {
+            return bond;
+        }
+
+        public void setBond(String bond) {
+            this.bond = bond;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
 }

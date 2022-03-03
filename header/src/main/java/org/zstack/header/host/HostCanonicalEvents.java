@@ -12,6 +12,8 @@ public class HostCanonicalEvents {
     public static final String HOST_DISCONNECTED_PATH = "/host/disconnected";
     public static final String HOST_CHECK_MOUNT_FAULT = "/host/mount/path/fault";
     public static final String HOST_CHECK_INITIALIZED_FAILED = "/host/check/initialized/failed";
+    public static final String HOST_NETLINK_STATUS_UP = "/host/netlink/status/up";
+    public static final String HOST_NETLINK_STATUS_DOWN = "/host/netlink/status/down";
 
     public static class HostDisconnectedData {
         public String hostUuid;
@@ -102,5 +104,65 @@ public class HostCanonicalEvents {
         public String psUuid;
         public String details;
         public Long eventTime = System.currentTimeMillis();
+    }
+
+    @NeedJsonSchema
+    public static class HostNetlinkStatusData {
+        public String hostUuid;
+        public String hostAddr;
+        public String fromBond;
+        public String interfaceName;
+        public String ipAddress;
+        public String interfaceStatus;
+        public Long eventTime = System.currentTimeMillis();
+
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getHostAddr() {
+            return hostAddr;
+        }
+
+        public void setHostAddr(String hostAddr) {
+            this.hostAddr = hostAddr;
+        }
+
+        public String getFromBond() {
+            return fromBond;
+        }
+
+        public void setFromBond(String fromBond) {
+            this.fromBond = fromBond;
+        }
+
+        public String getInterfaceName() {
+            return interfaceName;
+        }
+
+        public void setInterfaceName(String interfaceName) {
+            this.interfaceName = interfaceName;
+        }
+
+        public String getIpAddress() {
+            return ipAddress;
+        }
+
+        public void setIpAddress(String ipAddress) {
+            this.ipAddress = ipAddress;
+        }
+
+        public String getInterfaceStatus() {
+            return interfaceStatus;
+        }
+
+        public void setInterfaceStatus(String interfaceStatus) {
+            this.interfaceStatus = interfaceStatus;
+        }
     }
 }
