@@ -1093,6 +1093,12 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                             return;
                         }
 
+                        CephPrimaryStorageCanonicalEvents.ImageInnerSnapshotCreated data = new CephPrimaryStorageCanonicalEvents.ImageInnerSnapshotCreated();
+                        data.imageUuid = vol.getRootImageUuid();
+                        data.primaryStorageUuid = vol.getPrimaryStorageUuid();
+                        data.snapshot = ((CreateVolumeSnapshotReply)reply).getInventory();
+                        data.fire();
+
                         CreateVolumeSnapshotReply r = (CreateVolumeSnapshotReply)reply;
                         vo.setUuid(r.getInventory().getUuid());
                         vo.setType(VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString());

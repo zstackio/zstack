@@ -106,7 +106,7 @@ class MigrateVolumeCase extends SubCase {
 
         coldOrLiveMigrateVmToHost(dstHostUuid)
 
-        assertImageCacheVOIsExistedOnHost(dstHostUuid, false)
+        assertImageCacheVOIsExistedOnHost(dstHostUuid, true)
     }
 
     void testMigrateRootVolumeWhenImageDeletedAndBaseImageIsNotImageCacheRollback(){
@@ -117,7 +117,7 @@ class MigrateVolumeCase extends SubCase {
 
         def context = new Context(dstHostUuid)
 
-        simulatorMigrateVolumeFail(context, {assertImageCacheVOIsExistedOnHost(dstHostUuid, false)})
+        simulatorMigrateVolumeFail(context, {assertImageCacheVOIsExistedOnHost(dstHostUuid, true)})
 
         expect(AssertionError.class){
             coldOrLiveMigrateVmToHost(dstHostUuid)
@@ -211,7 +211,7 @@ class MigrateVolumeCase extends SubCase {
         coldOrLiveMigrateVmToHost(dstHostUuid)
 
         assert called
-        assert !Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, vm.imageUuid).isExists()
+        assert Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, vm.imageUuid).isExists()
         env.cleanSimulatorHandlers()
         env.cleanMessageHandlers()
     }
@@ -224,7 +224,7 @@ class MigrateVolumeCase extends SubCase {
 
         def context = new Context(dstHostUuid)
 
-        simulatorMigrateVolumeFail(context, {assertImageCacheVOIsExistedOnHost(dstHostUuid, false)})
+        simulatorMigrateVolumeFail(context, {assertImageCacheVOIsExistedOnHost(dstHostUuid, true)})
 
         assertImageCacheVOIsExistedOnHost(dstHostUuid, false)
         expect(AssertionError.class){
@@ -334,8 +334,8 @@ class MigrateVolumeCase extends SubCase {
                 def rsp = new LocalStorageKvmBackend.AgentResponse()
                 if (cmd.stage == PrimaryStorageConstant.MIGRATE_VOLUME_AFTER_BACKING_FILE_COPY_STAGE) {
                     run.run()
-                    rsp.setError("on purpose")
                     context.called = true
+                    throw new HttpError(404, "on purpose")
                 }
                 return rsp
             }

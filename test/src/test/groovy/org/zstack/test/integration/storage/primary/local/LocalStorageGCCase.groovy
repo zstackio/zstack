@@ -52,7 +52,7 @@ class LocalStorageGCCase extends SubCase {
             systemTags = ["localStorage::hostUuid::${host.uuid}".toString()]
         }
 
-        env.afterSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH) {
+        env.preSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH) {
             throw new HttpError(403, "on purpose")
         }
 
@@ -69,9 +69,8 @@ class LocalStorageGCCase extends SubCase {
         }
 
         boolean called = false
-        env.afterSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH) { rsp ->
+        env.preSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH) {
             called = true
-            return rsp
         }
 
         // reconnect host to trigger the GC

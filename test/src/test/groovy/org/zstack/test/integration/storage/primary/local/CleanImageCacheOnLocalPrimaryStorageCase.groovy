@@ -180,7 +180,7 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
 
         def checked = false
         def cmdTemp
-        env.afterSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH){rsp,HttpEntity<String> e ->
+        env.hijackSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH){rsp,HttpEntity<String> e ->
             LocalStorageKvmBackend.DeleteBitsCmd cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.DeleteBitsCmd.class)
             cmdTemp = cmd
             assert PathUtil.parentFolder(c.installUrl) != cmd.path

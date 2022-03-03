@@ -11,6 +11,8 @@ import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.storage.ceph.backup.CephBackupStorageMonBase
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO_
+import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
+import org.zstack.testlib.vfs.VFS
 import org.zstack.utils.gson.JSONObjectUtil
 
 /**
@@ -30,7 +32,15 @@ class CephBackupStorageSpec extends BackupStorageSpec {
         super(envSpec)
     }
 
-    class Simulators implements Simulator {
+    static VFS vfs(CephBackupStorageBase.AgentCommand cmd, EnvSpec env, boolean errorOnNotExisting=false) {
+        return CephPrimaryStorageSpec.vfs1(cmd.fsid, env, errorOnNotExisting)
+    }
+
+    static String cephPathToVFSPath(String str) {
+        return CephPrimaryStorageSpec.cephPathToVFSPath(str)
+    }
+
+    static class Simulators implements Simulator {
         @Override
         void registerSimulators(EnvSpec espec) {
             def simulator = { arg1, arg2 ->
@@ -52,10 +62,58 @@ class CephBackupStorageSpec extends BackupStorageSpec {
                 return rsp
             }
 
-            simulator(CephBackupStorageBase.GET_IMAGE_SIZE_PATH) {
+            VFS.vfsHook(CephBackupStorageBase.GET_IMAGE_SIZE_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                CephBackupStorageBase.GetImageSizeCmd cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.GetImageSizeCmd.class)
+                VFS vfs = vfs(cmd, spec)
+                vfs.Assert(vfs.exists(cephPathToVFSPath(cmd.installPath)), "cannot find file[${cmd.installPath}]")
+            }
+
+            simulator(CephBackupStorageBase.GET_IMAGE_SIZE_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 def rsp = new CephBackupStorageBase.GetImageSizeRsp()
                 rsp.size = 0
                 rsp.actualSize = 0
+                return rsp
+            }
+
+            VFS.vfsHook(CephBackupStorageBase.INIT_PATH, espec) { CephBackupStorageBase.InitRsp rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.InitCmd.class)
+                CephBackupStorageSpec bspec = spec.specByUuid(cmd.uuid)
+
+                if (bspec == null) {
+                    cmd.fsid = rsp.fsid
+                } else {
+                    cmd.fsid = bspec.fsid
+                }
+
+                VFS vfs = vfs(cmd, spec)
+
+                // if spec has those pool names defined, it means those pools are pre-created
+                // in ceph, here we simulate the pre-created logic
+                if (bspec == null) {
+                    rsp.poolCapacities.forEach({ pool ->
+                        if (pool.name != null) {
+                            String dir = cephPathToVFSPath(pool.name)
+                            if (!vfs.exists(dir)) {
+                                vfs.createDirectories(dir)
+                            }
+                        }
+                    })
+                } else if (bspec.poolName != null) {
+                    String dir = cephPathToVFSPath(bspec.poolName)
+                    if (!vfs.exists(dir)) {
+                        vfs.createDirectories(dir)
+                    }
+                }
+
+                cmd.pools.each { CephBackupStorageBase.Pool pool ->
+                    String dir = cephPathToVFSPath(pool.name)
+                    if (pool.predefined) {
+                        vfs.Assert(vfs.isDir(dir), "cannot find ceph pool[${pool.name}]")
+                    } else {
+                        vfs.createDirectories(dir)
+                    }
+                }
+
                 return rsp
             }
 
@@ -85,23 +143,33 @@ class CephBackupStorageSpec extends BackupStorageSpec {
             }
 
             simulator(CephBackupStorageBase.CHECK_POOL_PATH) { HttpEntity<String> e, EnvSpec spec ->
-                def cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.CheckCmd.class)
-                CephBackupStorageSpec bspec = spec.specByUuid(cmd.uuid)
-                assert bspec != null: "cannot find the backup storage[uuid:${cmd.uuid}}, check your environment()"
-
                 def rsp = new CephBackupStorageBase.CheckRsp()
                 rsp.success = true
                 return rsp
             }
 
-            simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) {
+            VFS.vfsHook(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.DownloadCmd.class)
+
+                VFS vfs = vfs(cmd, spec)
+                vfs.createCephRaw(cephPathToVFSPath(cmd.installPath), 0L)
+                return rsp
+            }
+
+            simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 def rsp = new CephBackupStorageBase.DownloadRsp()
                 rsp.size = 0
                 rsp.actualSize = 0
                 return rsp
             }
 
-            simulator(CephBackupStorageBase.DELETE_IMAGE_PATH) {
+            VFS.vfsHook(CephBackupStorageBase.DELETE_IMAGE_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.DeleteCmd.class)
+                VFS vfs = vfs(cmd, spec)
+                vfs.delete(cephPathToVFSPath(cmd.installPath))
+            }
+
+            simulator(CephBackupStorageBase.DELETE_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 return new CephBackupStorageBase.DeleteRsp()
             }
 

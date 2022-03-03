@@ -133,7 +133,7 @@ class CreateDataVolumeSnapshotCase extends SubCase {
             }
 
             // for data safe, over capacity should success too.
-            env.simulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) {
+            env.afterSimulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) {
                 def rsp = new KVMAgentCommands.TakeSnapshotResponse()
                 rsp.newVolumeInstallPath = "/new/volume/install/path1"
                 rsp.snapshotInstallPath = "/snapshot/install/path1"

@@ -2,19 +2,34 @@ package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.Constants
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
+import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
+import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.core.db.SQLBatch
+import org.zstack.header.Constants
+import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.header.storage.primary.PrimaryStorageVO_
+import org.zstack.header.vm.VmInstanceState
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.header.volume.VolumeInventory
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.VolumeTO
+import org.zstack.testlib.vfs.VFS
+import org.zstack.testlib.vfs.extensions.VFSPrimaryStorageTakeSnapshotBackend
+import org.zstack.testlib.vfs.extensions.VFSSnapshot
+import org.zstack.utils.BeanUtils
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -26,6 +41,49 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class KVMSimulator implements Simulator {
     static ConcurrentHashMap<String, KVMAgentCommands.ConnectCmd> connectCmdConcurrentHashMap = new ConcurrentHashMap<>()
+    private static Map<String, VFSPrimaryStorageTakeSnapshotBackend> takeSnapshotBackends = [:]
+
+    static {
+        BeanUtils.reflections.getSubTypesOf(VFSPrimaryStorageTakeSnapshotBackend.class).each { clz ->
+            VFSPrimaryStorageTakeSnapshotBackend backend = clz.getConstructor().newInstance()
+            VFSPrimaryStorageTakeSnapshotBackend old = takeSnapshotBackends[backend.primaryStorageType]
+            assert old == null : "duplicated VFSPrimaryStorageTakeSnapshotBackend[type: ${backend.primaryStorageType}]," +
+                    " ${backend} and ${old}"
+            takeSnapshotBackends[backend.primaryStorageType] = backend
+        }
+    }
+
+    static List<TakeSnapshotsOnKvmResultStruct> takeSnapshotByPrimaryStorage(HttpEntity<String> e, EnvSpec spec, List<TakeSnapshotsOnKvmJobStruct> snapshotJobs) {
+        Map<String, List<TakeSnapshotsOnKvmJobStruct>> jobMap = new HashMap<>()
+        Map<String, String> primaryStorageTypeMap = new HashMap<>()
+        snapshotJobs.each { job ->
+            Tuple tuple = SQL.New("select pri.uuid, pri.type from PrimaryStorageVO pri, VolumeVO vol where" +
+                    " pri.uuid = vol.primaryStorageUuid and vol.uuid = :volUuid", Tuple.class).param("volUuid", job.volumeUuid)
+                    .find()
+            assert tuple.get(1) : "cannot find primary storage of volume[uuid: ${job.volumeUuid}]"
+
+            jobMap.putIfAbsent((String) tuple.get(0), new ArrayList<>())
+            jobMap.get((String) tuple.get(0)).add(job)
+            primaryStorageTypeMap.putIfAbsent((String) tuple.get(0), (String) tuple.get(1))
+        }
+
+        List<TakeSnapshotsOnKvmResultStruct> results = new ArrayList<>()
+        jobMap.entrySet().each { entry ->
+            String psUuid = entry.key
+            List<TakeSnapshotsOnKvmJobStruct> jobs = entry.value
+            VFSPrimaryStorageTakeSnapshotBackend bkd = getVFSPrimaryStorageTakeSnapshotBackend(primaryStorageTypeMap.get(psUuid))
+            results.addAll(bkd.takeSnapshotsOnVolumes(psUuid, e, spec, jobs))
+        }
+
+
+        return results
+    }
+
+    static VFSPrimaryStorageTakeSnapshotBackend getVFSPrimaryStorageTakeSnapshotBackend(String primaryStorageType) {
+        VFSPrimaryStorageTakeSnapshotBackend bkd = takeSnapshotBackends[primaryStorageType]
+        assert bkd != null : "cannot find VFSPrimaryStorageTakeSnapshotBackend[type: ${primaryStorageType}]"
+        return bkd
+    }
 
     @Override
     void registerSimulators(EnvSpec spec) {
@@ -122,24 +180,55 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.DetachIsoRsp()
         }
 
-        spec.simulator(KVMConstant.KVM_MERGE_SNAPSHOT_PATH) {
+        spec.simulator(KVMConstant.KVM_MERGE_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec espec ->
             return new KVMAgentCommands.MergeSnapshotRsp()
         }
 
+        VFS.vfsHook(KVMConstant.KVM_MERGE_SNAPSHOT_PATH, spec) { rsp, HttpEntity<String> e, EnvSpec espec ->
+            KVMAgentCommands.MergeSnapshotCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.MergeSnapshotCmd.class)
+            VolumeInventory volume = null
+            String primaryStorageType = null
+
+            new SQLBatch() {
+                @Override
+                protected void scripts() {
+                    VolumeVO vol = sql("select vol from VolumeVO vol where vol.vmInstanceUuid = :vmUuid " +
+                            " and vol.deviceId = :deviceId", VolumeVO.class)
+                            .param("vmUuid", cmd.vmUuid)
+                            .param("deviceId", cmd.volume.getDeviceId())
+                            .find()
+
+                    assert vol : "cannot find dest volume[path: ${cmd.destPath}, deviceId: ${cmd.volume.getDeviceId()}] of VM[uuid: ${cmd.vmUuid}] in database"
+                    volume = vol.toInventory()
+
+                    primaryStorageType = q(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).eq(PrimaryStorageVO_.uuid, vol.primaryStorageUuid).findValue()
+                    assert primaryStorageType : "cannot find primary storage[uuid: ${vol.primaryStorageUuid}]"
+                }
+            }.execute()
+
+            VFSPrimaryStorageTakeSnapshotBackend bkd = getVFSPrimaryStorageTakeSnapshotBackend(primaryStorageType)
+            bkd.mergeSnapshots(e, espec, cmd, volume)
+        }
+
         spec.simulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            return new KVMAgentCommands.TakeSnapshotResponse()
+        }
+
+        VFS.vfsHook(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH, spec) { rsp, HttpEntity<String> e, EnvSpec espec ->
             KVMAgentCommands.TakeSnapshotCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.TakeSnapshotCmd.class)
-            def rsp = new KVMAgentCommands.TakeSnapshotResponse()
-            rsp.newVolumeInstallPath = cmd.installPath
+
+            VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, cmd.volumeUuid).find()
+            assert volume : "cannot find volume[uuid: ${cmd.volumeUuid}]"
+            String primaryStorageType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
+                    .eq(PrimaryStorageVO_.uuid, volume.primaryStorageUuid).findValue()
+            assert primaryStorageType : "cannot find primary storage[uuid: ${volume.primaryStorageUuid}] from volume[uuid: ${volume.uuid}, name: ${volume.name}]"
+            VFSPrimaryStorageTakeSnapshotBackend bkd = getVFSPrimaryStorageTakeSnapshotBackend(primaryStorageType)
+
+            VFSSnapshot snapshot = bkd.takeSnapshot(e, espec, cmd, volume.toInventory() as VolumeInventory)
+            rsp.newVolumeInstallPath = snapshot.installPath
             rsp.snapshotInstallPath = cmd.volumeInstallPath
-            long num = Q.New(VolumeSnapshotVO.class)
-                    .eq(VolumeSnapshotVO_.volumeUuid, cmd.volumeUuid)
-                    .count()
-            if (num == 1) {
-                Long actualSize = Q.New(VolumeVO.class).select(VolumeVO_.actualSize).eq(VolumeVO_.uuid, cmd.volumeUuid).findValue()
-                rsp.size = actualSize == 0 ? 1 : actualSize
-            } else {
-                rsp.size = 1
-            }
+            // size required greater than 0, if no mock value set keep size return 1
+            rsp.size = snapshot.size == null || snapshot.size == 0 ? 1 : snapshot.size
             return rsp
         }
 

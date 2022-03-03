@@ -143,15 +143,6 @@ public class LocalStorageSimulator {
         reply(entity, rsp);
         return null;}
 
-    @RequestMapping(value=LocalStorageKvmMigrateVmFlow.REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH, method= RequestMethod.POST)
-    public @ResponseBody
-    String rebaseRootVolumeToBackingFile(HttpEntity<String> entity) {
-        RebaseRootVolumeToBackingFileCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RebaseRootVolumeToBackingFileCmd.class);
-        config.rebaseRootVolumeToBackingFileCmds.add(cmd);
-        reply(entity, new RebaseRootVolumeToBackingFileRsp());
-        return null;
-    }
-
     @RequestMapping(value=LocalStorageKvmMigrateVmFlow.REBASE_SNAPSHOT_BACKING_FILES_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String rebaseSnapshotBackingFiles(HttpEntity<String> entity) {
@@ -307,20 +298,6 @@ public class LocalStorageSimulator {
         return null;
     }
 
-    @RequestMapping(value=LocalStorageKvmBackend.MERGE_AND_REBASE_SNAPSHOT_PATH, method= RequestMethod.POST)
-    public @ResponseBody
-    String rebaseAndMergeSnapshot(HttpEntity<String> entity) {
-        RebaseAndMergeSnapshotsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RebaseAndMergeSnapshotsCmd.class);
-        config.rebaseAndMergeSnapshotsCmds.add(cmd);
-        RebaseAndMergeSnapshotsRsp rsp = new RebaseAndMergeSnapshotsRsp();
-
-        Long size = config.snapshotToVolumeSize.get(cmd.getVolumeUuid());
-        rsp.setSize(size == null ? 0 : size);
-        Long asize = config.snapshotToVolumeActualSize.get(cmd.getVolumeUuid());
-        rsp.setActualSize(asize == null ? 0 : asize);
-        reply(entity, rsp);
-        return null;
-    }
 
     @RequestMapping(value=LocalStorageKvmBackend.MERGE_SNAPSHOT_PATH, method= RequestMethod.POST)
     public @ResponseBody

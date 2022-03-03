@@ -31,11 +31,7 @@ class DeleteCephCapacityVOCase extends SubCase{
     @Override
     void test() {
         env.create {
-            testOnlyDeleteBackupStorage()
-        }
-        env.delete()
-        env.create {
-            testDeleteAllStorage()
+            testCephDeleteAllStorageWillDeleteCapacity()
         }
     }
 
@@ -44,8 +40,9 @@ class DeleteCephCapacityVOCase extends SubCase{
         env.delete()
     }
 
-    void testOnlyDeleteBackupStorage(){
-
+    void testCephDeleteAllStorageWillDeleteCapacity(){
+        ClusterInventory cluInv = env.inventoryByName("test-cluster") as ClusterInventory
+        CephPrimaryStorageInventory psInv = env.inventoryByName("ceph-pri") as CephPrimaryStorageInventory
         CephBackupStorageInventory bkInv = env.inventoryByName("ceph-bk") as CephBackupStorageInventory
         DatabaseFacade dbf = bean(DatabaseFacade.class)
         assert dbf.findByUuid(bkInv.getFsid(),CephCapacityVO.class)
@@ -55,15 +52,6 @@ class DeleteCephCapacityVOCase extends SubCase{
             sessionId = currentEnvSpec.session.uuid
         }
 
-        assert dbf.findByUuid(bkInv.getFsid(),CephCapacityVO.class)
-
-
-    }
-    void testDeleteAllStorage(){
-        ClusterInventory cluInv = env.inventoryByName("test-cluster") as ClusterInventory
-        CephPrimaryStorageInventory psInv = env.inventoryByName("ceph-pri") as CephPrimaryStorageInventory
-        CephBackupStorageInventory bkInv = env.inventoryByName("ceph-bk") as CephBackupStorageInventory
-        DatabaseFacade dbf = bean(DatabaseFacade.class)
         assert dbf.findByUuid(bkInv.getFsid(),CephCapacityVO.class)
 
         detachPrimaryStorageFromCluster {
@@ -74,12 +62,12 @@ class DeleteCephCapacityVOCase extends SubCase{
             uuid = psInv.uuid
             sessionId = currentEnvSpec.session.uuid
         }
+
         deleteBackupStorage {
             uuid = bkInv.uuid
             sessionId = currentEnvSpec.session.uuid
         }
 
         assert !dbf.isExist(bkInv.getFsid(), CephCapacityVO.class)
-
     }
 }

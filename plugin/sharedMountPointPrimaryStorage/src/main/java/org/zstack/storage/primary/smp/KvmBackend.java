@@ -2052,6 +2052,7 @@ public class KvmBackend extends HypervisorBackend {
         cmd.installPath = msg.getInstallPath();
         cmd.volumeUuid = msg.getVolumeUuid();
         cmd.mountPoint = self.getMountPath();
+        cmd.primaryStorageUuid = msg.getPrimaryStorageUuid();
         new KvmCommandSender(hostUuid).send(cmd, GET_VOLUME_SIZE_PATH, new KvmCommandFailureChecker() {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {

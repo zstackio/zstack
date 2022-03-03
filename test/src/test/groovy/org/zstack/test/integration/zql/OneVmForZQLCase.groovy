@@ -186,7 +186,6 @@ test a VM's start/stop/reboot/destroy/recover operations
                 start = System.currentTimeMillis()
                 ZQL.fromString("query l3network where category = 'Private' and type = 'L3VpcNetwork' and vmNic.uuid != 'null' and vmNic.vmInstance.state = 'Running' and vmNic.vmInstance.type = 'ApplianceVm' and zoneUuid = 'dd2c85dcdb2e4bfcbad1d626174d5424' and system = 'false' and l2Network.cluster.type = 'zstack' and uuid not in ('') and uuid in ('2db791a4ceb54c02b6dde024479468b7','8cbf93a975bd4435ad8483b625fec6b1','a44c255d746142ea9b9140dfc23be379') restrict by (zone.uuid = 'abcd') return with (total) order by createDate desc limit 20")
                         .getSingleResult()
-                logger.debug("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ${System.currentTimeMillis() - start}ms")
             }
 
             ZQL.fromString("count vip where l3Network.zoneUuid = '0f0ff43535164fe4bf1a09b245389c91' limit 1000")

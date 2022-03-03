@@ -1,6 +1,5 @@
 package org.zstack.header.volume;
 
-import org.springframework.security.access.method.P;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.image.ImageVO;
@@ -10,6 +9,7 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.EntityGraph;
+import org.zstack.header.vo.ToInventory;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -32,7 +32,7 @@ import java.util.List;
         }
 )
 @AutoDeleteTag
-public class VolumeVO extends VolumeAO implements OwnedByAccount {
+public class VolumeVO extends VolumeAO implements OwnedByAccount, ToInventory {
     @Transient
     private String accountUuid;
 

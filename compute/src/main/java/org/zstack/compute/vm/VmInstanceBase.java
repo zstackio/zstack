@@ -2460,7 +2460,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         destroy(deletionPolicy, msg, new Completion(completion) {
             @Override
             public void success() {
-                extEmitter.afterDestroyVm(inv);
                 logger.debug(String.format("successfully deleted vm instance[name:%s, uuid:%s]", self.getName(), self.getUuid()));
                 if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
                     if (self.getState() != VmInstanceState.Destroyed) {
@@ -2493,6 +2492,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                             " the root volume is not deleted on the primary storage", self.getUuid()));
                     changeVmStateInDb(VmInstanceStateEvent.destroyed);
                 }
+
+                extEmitter.afterDestroyVm(inv);
 
                 completion.success();
             }

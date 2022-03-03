@@ -76,7 +76,6 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
     public static final String VERIFY_SNAPSHOT_CHAIN_PATH = "/localstorage/snapshot/verifychain";
     public static final String REBASE_SNAPSHOT_BACKING_FILES_PATH = "/localstorage/snapshot/rebasebackingfiles";
-    public static final String REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH = "/localstorage/volume/rebaserootvolumetobackingfile";
     public static final String COPY_TO_REMOTE_BITS_PATH = "/localstorage/copytoremote";
 
     public static class SnapshotTO {

@@ -627,14 +627,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public boolean existing;
     }
 
-    public static class RebaseRootVolumeToBackingFileCmd extends AgentCommand {
-        public String backingFilePath;
-        public String rootVolumePath;
-    }
-
-    public static class RebaseRootVolumeToBackingFileRsp extends AgentResponse {
-    }
-
     public static class GetMd5TO {
         public String resourceUuid;
         public String path;
@@ -809,7 +801,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String REVERT_SNAPSHOT_PATH = "/localstorage/snapshot/revert";
     public static final String REINIT_IMAGE_PATH = "/localstorage/reinit/image";
     public static final String MERGE_SNAPSHOT_PATH = "/localstorage/snapshot/merge";
-    public static final String MERGE_AND_REBASE_SNAPSHOT_PATH = "/localstorage/snapshot/mergeandrebase";
     public static final String OFFLINE_MERGE_PATH = "/localstorage/snapshot/offlinemerge";
     public static final String GET_MD5_PATH = "/localstorage/getmd5";
     public static final String CHECK_MD5_PATH = "/localstorage/checkmd5";

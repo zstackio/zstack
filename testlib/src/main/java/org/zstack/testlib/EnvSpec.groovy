@@ -2,12 +2,7 @@ package org.zstack.testlib
 
 import groovy.transform.AutoClone
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
+import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate
 import org.zstack.compute.vm.VmGlobalConfig
@@ -21,10 +16,9 @@ import org.zstack.core.db.SQL
 import org.zstack.core.eventlog.EventLogVO
 import org.zstack.core.retry.Retry
 import org.zstack.core.retry.RetryCondition
+import org.zstack.header.core.WhileCompletion
 import org.zstack.header.core.WhileDoneCompletion
 import org.zstack.header.core.progress.TaskProgressVO
-import org.zstack.header.core.WhileCompletion
-
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.SessionVO
 import org.zstack.header.image.GuestOsCategoryVO
@@ -61,6 +55,7 @@ import org.zstack.sdk.zwatch.monitorgroup.api.DeleteMonitorTemplateAction
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.testlib.identity.AccountSpec
 import org.zstack.testlib.identity.IdentitySpec
+import org.zstack.testlib.vfs.VFS
 import org.zstack.utils.BeanUtils
 import org.zstack.utils.DebugUtils
 import org.zstack.utils.data.Pair
@@ -76,6 +71,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 import java.util.stream.Collectors
+
 /**
  * Created by xing5 on 2017/2/12.
  */
@@ -89,7 +85,10 @@ class EnvSpec extends ApiHelper implements Node  {
     Map specsByName = [:]
     Map specsByUuid = [:]
 
+    private ConcurrentHashMap<String, Long> storageObjectSizeMocks = [:]
+
     private boolean hasCreated
+    private ConcurrentHashMap<String, Closure> httpPreHandlers = [:]
     private ConcurrentHashMap<String, Closure> httpHandlers = [:]
     private ConcurrentHashMap<String, Closure> httpPostHandlers = [:]
     private ConcurrentHashMap<String, Closure> httpFinalHandlers = [:]
@@ -108,6 +107,7 @@ class EnvSpec extends ApiHelper implements Node  {
     protected static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
     static Set<Closure> cleanupClosures = []
+    private Map<String, VFS> virtualFilesSystems = [:]
 
     static Set<Closure> mockedResources = []
 
@@ -243,6 +243,7 @@ class EnvSpec extends ApiHelper implements Node  {
     }
 
     void cleanSimulatorHandlers() {
+        httpPreHandlers.clear()
         httpHandlers.clear()
         httpHandlerCounters.clear()
         httpHandlers.putAll(defaultHttpHandlers)
@@ -274,6 +275,11 @@ class EnvSpec extends ApiHelper implements Node  {
         cleanAfterSimulatorHandlers()
         cleanMessageHandlers()
         cleanHttpConditionHandlers()
+        cleanFinalSimulatorHandlers()
+    }
+
+    void cleanStorageObjectMocks() {
+        storageObjectSizeMocks.clear()
     }
 
     void identities(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = IdentitySpec.class) Closure c) {
@@ -613,6 +619,19 @@ class EnvSpec extends ApiHelper implements Node  {
         logger.debug("Install simulator handlers finished")
     }
 
+    synchronized VFS getVirtualFileSystem(String identity, boolean errorOnNotExisting = false) {
+        VFS vfs = virtualFilesSystems[identity]
+        if (errorOnNotExisting && vfs == null) {
+            throw new Exception("VFS[id:${identity}] not existing")
+        } else if (vfs == null) {
+            vfs = new VFS(identity)
+            virtualFilesSystems[identity] = vfs
+            logger.debug("new VFS[id: ${vfs.id}] created")
+        }
+
+        return vfs
+    }
+
     EnvSpec create(Closure cl = null) {
         assert Test.currentEnvSpec == null: "There is another EnvSpec created but not deleted. There can be only one EnvSpec" +
                 " in used, you must delete the previous one"
@@ -809,6 +828,7 @@ class EnvSpec extends ApiHelper implements Node  {
 
             cleanupClosures.each { it() }
             cleanSimulatorAndMessageHandlers()
+            cleanStorageObjectMocks()
 
             if (session != null) {
                 destroy(session.uuid)
@@ -829,6 +849,7 @@ class EnvSpec extends ApiHelper implements Node  {
             makeSureAllEntitiesDeleted()
 
             testter.clearAll()
+            virtualFilesSystems.values().each { it.destroy() }
         } catch (StopTestSuiteException e) {
             throw e
         } catch (Throwable t) {
@@ -874,6 +895,18 @@ class EnvSpec extends ApiHelper implements Node  {
                 restTemplate.exchange(callbackUrl, HttpMethod.POST, rreq, String.class)
             }
         }.run();
+    }
+
+    void sizeMock(String installPath, Long size) {
+        storageObjectSizeMocks.put(installPath, size)
+    }
+
+    Long getMockSize(String installPath) {
+        return storageObjectSizeMocks.get(installPath, 0L)
+    }
+
+    void preSimulator(String path, Closure c) {
+        httpPreHandlers[path] = c
     }
 
     void simulator(String path, Closure c) {
@@ -977,6 +1010,26 @@ class EnvSpec extends ApiHelper implements Node  {
 
         try {
             def ret
+            Closure preHandler = httpPreHandlers[url]
+            if (preHandler == null) {
+                for (String httpUrl : httpPreHandlers.keys()) {
+                    if (Pattern.matches(httpUrl, url)) {
+                        preHandler = httpPreHandlers.get(httpUrl)
+                        break
+                    }
+                }
+            }
+
+            if (preHandler != null) {
+                if (preHandler.maximumNumberOfParameters == 0) {
+                    preHandler()
+                } else if (preHandler.maximumNumberOfParameters == 1) {
+                    preHandler(entity)
+                } else {
+                    preHandler(entity, this)
+                }
+            }
+
             if (handler.maximumNumberOfParameters == 0) {
                 ret = handler()
             } else if (handler.maximumNumberOfParameters == 1) {

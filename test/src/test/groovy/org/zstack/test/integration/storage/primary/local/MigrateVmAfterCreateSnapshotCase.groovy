@@ -135,6 +135,7 @@ class MigrateVmAfterCreateSnapshotCase extends SubCase {
             hostUuid = dstHost.uuid
         }
 
+
         migrateVm {
             vmInstanceUuid = vm.getUuid()
             hostUuid = srcHost.uuid
@@ -171,15 +172,10 @@ class MigrateVmAfterCreateSnapshotCase extends SubCase {
             uuid = vm.uuid
         }
 
-        env.afterSimulator(LocalStorageKvmBackend.REINIT_IMAGE_PATH) {
-            LocalStorageKvmBackend.ReinitImageRsp rsp = new LocalStorageKvmBackend.ReinitImageRsp()
-            rsp.newVolumeInstallPath = vm.allVolumes[0].installPath
-            return rsp
-        }
-
         reimageVmInstance {
             vmInstanceUuid = vm.uuid
         }
+
 
         startVmInstance {
             uuid = vm.uuid

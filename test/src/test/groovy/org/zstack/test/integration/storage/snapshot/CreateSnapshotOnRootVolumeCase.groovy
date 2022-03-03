@@ -71,7 +71,7 @@ Step:
         } as VolumeSnapshotInventory
         retryInSecs {
             long afterActualSize = Q.New(VolumeVO.class).select(VolumeVO_.actualSize).eq(VolumeVO_.uuid, vm.getRootVolumeUuid()).findValue()
-            assert afterActualSize > originActualSize
+            assert afterActualSize < originActualSize
         }
         deleteVolumeSnapshot {
             uuid = snapshotInv.uuid
@@ -80,11 +80,6 @@ Step:
 
     void testCreateSnapshotOnRootVolume(){
         def snapshotNum = 5
-        def createSnapshotPathInvokedCount = 0
-        env.afterSimulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH){ rsp ->
-            createSnapshotPathInvokedCount++
-            return rsp
-        }
 
         List<VolumeSnapshotInventory> snapshotInvList = new ArrayList<>()
         for (int i=0; i<snapshotNum; i++){
@@ -95,7 +90,7 @@ Step:
             snapshotInvList.add(snapshotInv)
         }
 
-        assert createSnapshotPathInvokedCount == snapshotNum
+        env.verifySimulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH, snapshotNum)
         assert Q.New(VolumeSnapshotVO.class).count() == snapshotNum
 
 
@@ -121,6 +116,8 @@ Step:
             assert Q.New(VolumeSnapshotVO.class).count() == 3
             assert Q.New(VolumeSnapshotTreeVO.class).count() == 1
         }
+
+        env.resetAllSimulatorSize()
     }
 
     void firstSnapshot(VolumeSnapshotInventory snapshotInv){

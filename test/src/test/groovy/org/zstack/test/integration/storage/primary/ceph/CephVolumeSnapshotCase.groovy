@@ -133,7 +133,7 @@ class CephVolumeSnapshotCase extends SubCase {
         def size = data.size
 
         def volumeDeleted = false
-        env.afterSimulator(CephPrimaryStorageBase.DELETE_PATH) { rsp, HttpEntity<String> e ->
+        env.preSimulator(CephPrimaryStorageBase.DELETE_PATH) { rsp, HttpEntity<String> e ->
             volumeDeleted = true
             return rsp
         }
@@ -171,7 +171,7 @@ class CephVolumeSnapshotCase extends SubCase {
 
         assert root1.uuid == root.uuid
         assert root1.installPath.contains("/reset-image-${root.uuid}")
-        assert trash.getTrashList(ps.uuid).size() == 0
+        assert trash.getTrashList(ps.uuid).size() == 1
 
         def snapshot = queryVolumeSnapshot {
             conditions = ["name~=reimage-vm-point-${vm1.uuid}-%"]
@@ -194,7 +194,7 @@ class CephVolumeSnapshotCase extends SubCase {
         assert root.installPath != snapshotInstallPath
 
         def volumeDeleted = false
-        env.afterSimulator(CephPrimaryStorageBase.DELETE_PATH) { rsp, HttpEntity<String> e ->
+        env.preSimulator(CephPrimaryStorageBase.DELETE_PATH) { rsp, HttpEntity<String> e ->
             volumeDeleted = true
             return rsp
         }

@@ -5,6 +5,7 @@ import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.ShadowEntity;
+import org.zstack.header.vo.ToInventory;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -12,7 +13,7 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @BaseResource
-public class ImageCacheVO implements ShadowEntity {
+public class ImageCacheVO implements ShadowEntity, ToInventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column

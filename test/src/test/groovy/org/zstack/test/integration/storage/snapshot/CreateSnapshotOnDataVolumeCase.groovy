@@ -69,11 +69,6 @@ class CreateSnapshotOnDataVolumeCase extends SubCase{
         if (!dataVolAttached){ detachDataVolumeFromVm { uuid = dataVolUuid }}
 
         def snapshotNum = 5
-        def createSnapshotPathInvokedCount = 0
-        env.afterSimulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH){ rsp ->
-            createSnapshotPathInvokedCount++
-            return rsp
-        }
 
         List<VolumeSnapshotInventory> snapshotInvList = new ArrayList<>()
         for (int i=0; i<snapshotNum; i++){
@@ -81,7 +76,7 @@ class CreateSnapshotOnDataVolumeCase extends SubCase{
             snapshotInvList.add(snapshotInv)
         }
 
-        assert createSnapshotPathInvokedCount == snapshotNum
+        assert env.verifySimulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH, snapshotNum)
         assert Q.New(VolumeSnapshotVO.class).count() == snapshotNum
 
         firstSnapshot(snapshotInvList[0])
@@ -121,6 +116,8 @@ class CreateSnapshotOnDataVolumeCase extends SubCase{
                 volumeUuid = dataVolUuid
             }
         }
+
+        env.resetAllSimulatorSize()
     }
 
 

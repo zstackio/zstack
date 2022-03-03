@@ -76,9 +76,8 @@ class LocalStorageDisablePrimaryStorageDeleteSnapshotCase extends SubCase{
 
 
         Map cmd2 = null
-        env.afterSimulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) { rsp, HttpEntity<String> e ->
+        env.preSimulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) { HttpEntity<String> e ->
             cmd2 = json(e.body, LinkedHashMap.class)
-            return rsp
         }
         VolumeSnapshotInventory sp = createVolumeSnapshot {
             volumeUuid = dataVolume.uuid
@@ -94,9 +93,8 @@ class LocalStorageDisablePrimaryStorageDeleteSnapshotCase extends SubCase{
         assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Disabled
 
         Map cmd3 = null
-        env.afterSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH) { rsp, HttpEntity<String> e ->
+        env.preSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH) { HttpEntity<String> e ->
             cmd3 = json(e.body, LinkedHashMap.class)
-            return rsp
         }
         */
 

@@ -3,15 +3,31 @@ package org.zstack.testlib
 import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
+import org.zstack.compute.host.HostSystemTags
+import org.zstack.core.Platform
+import org.zstack.core.db.Q
+import org.zstack.header.Constants
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
+import org.zstack.header.tag.SystemTagVO
+import org.zstack.header.tag.SystemTagVO_
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl
+import org.zstack.testlib.vfs.Qcow2
+import org.zstack.testlib.vfs.VFS
+import org.zstack.testlib.vfs.VFSFile
+import org.zstack.testlib.vfs.Volume
 import org.zstack.utils.gson.JSONObjectUtil
+
+import java.nio.file.Files
+import java.nio.file.Path
+
 /**
  * Created by xing5 on 2017/2/20.
  */
@@ -21,6 +37,18 @@ class LocalStorageSpec extends PrimaryStorageSpec {
         super(envSpec)
     }
 
+    static String hostUuidFromHTTPHeaders(HttpEntity<String> e) {
+        return e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+    }
+
+    static VFS vfs(HttpEntity<String> e, LocalStorageKvmBackend.AgentCommand cmd, EnvSpec spec) {
+        return vfs(hostUuidFromHTTPHeaders(e), cmd.storagePath, spec)
+    }
+
+    static VFS vfs(String hostUuid, String storagePath, EnvSpec spec, boolean errorOnNotExisting=false) {
+        return spec.getVirtualFileSystem("${hostUuid}${storagePath}", errorOnNotExisting)
+    }
+
     static class Simulators implements Simulator {
         @Override
         void registerSimulators(EnvSpec espec) {
@@ -28,8 +56,24 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 espec.simulator(arg1, arg2)
             }
             
-            simulator(LocalStorageKvmBackend.GET_QCOW2_REFERENCE) {
-                return new LocalStorageKvmBackend.GetQCOW2ReferenceRsp()
+            simulator(LocalStorageKvmBackend.GET_QCOW2_REFERENCE) { HttpEntity<String> e, EnvSpec spec ->
+                return new LocalStorageKvmBackend.GetQCOW2ReferenceRsp(referencePaths: [])
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.GET_QCOW2_REFERENCE, espec) {rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.GetQCOW2ReferenceCmd.class)
+
+                vfs(e, cmd, spec).walkFileSystem { f ->
+                    if (!(f instanceof Qcow2)) {
+                        return
+                    }
+
+                    if (f.backingFile != null && f.backingFile.toAbsolutePath().toString() == cmd.path) {
+                        rsp.referencePaths.add(f.pathString())
+                    }
+                }
+
+                return rsp
             }
 
             simulator(LocalStorageKvmBackend.GET_BASE_IMAGE_PATH) {
@@ -38,9 +82,42 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(LocalStorageKvmBackend.GET_BACKING_FILE_PATH) {
-                def rsp = new LocalStorageKvmBackend.GetBackingFileRsp()
-                rsp.backingFilePath = "/some/path"
+            VFS.vfsHook(LocalStorageKvmBackend.GET_BASE_IMAGE_PATH, espec) { LocalStorageKvmBackend.GetVolumeBaseImagePathRsp rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.GetVolumeBaseImagePathCmd.class)
+
+                Qcow2 file = vfs(e, cmd, spec).findFile { it.pathString().contains(cmd.volumeInstallDir) }
+
+                if (file == null) {
+                    rsp.path = null
+                    rsp.size = 0
+                } else {
+                    Qcow2 baseImage = file.getBaseImage(file)
+
+                    if (baseImage == null) {
+                        rsp.path = null
+                        rsp.size = 0
+                    } else {
+                        assert baseImage.pathString().contains(cmd.imageCacheDir)
+                        rsp.path = baseImage.pathString()
+                        rsp.size = baseImage.actualSize
+                    }
+                }
+
+                return rsp
+            }
+
+            simulator(LocalStorageKvmBackend.GET_BACKING_FILE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new LocalStorageKvmBackend.GetBackingFileRsp()
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.GET_BACKING_FILE_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.GetBackingFileCmd.class)
+
+                Qcow2 file = vfs(e, cmd, spec).findFile { it.pathString() == cmd.path }
+                assert file : "cannot find file[${cmd.path}]"
+                assert file.backingFile != null : "qcow2[${cmd.path}] has no backing file, ${file}"
+
+                rsp.backingFilePath = file.backingFile.toAbsolutePath().toString()
                 rsp.size = 0
                 return rsp
             }
@@ -63,32 +140,79 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return new LocalStorageKvmBackend.AgentResponse()
             }
 
-            simulator(LocalStorageKvmBackend.GET_BASE_IMAGE_PATH) {
-                def rsp = new LocalStorageKvmBackend.GetVolumeBaseImagePathRsp()
-                rsp.path = "/some/patch"
-                rsp.size = 0
-                return rsp
+            simulator(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new LocalStorageKvmBackend.AgentResponse()
             }
 
-            simulator(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH) { HttpEntity<String> e ->
+            VFS.vfsHook(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd.class)
-                def rsp = new LocalStorageKvmBackend.AgentResponse()
-                if (cmd.volumeUuid == null || cmd.uuid == cmd.volumeUuid) {
-                    rsp.success = false
+                String srcHostUuid = hostUuidFromHTTPHeaders(e)
+                String storagePath = cmd.storagePath
+                String dstHostUuid = Q.New(HostVO.class).select(HostVO_.uuid).eq(HostVO_.managementIp, cmd.dstIp).findValue()
+                if (dstHostUuid == null) {
+                    // try finding in HostSystemTags.EXTRA_IPS_TOKEN, this happens if migration network used
+                    String tag = HostSystemTags.EXTRA_IPS.instantiateTag([(HostSystemTags.EXTRA_IPS_TOKEN) : cmd.dstIp])
+                    SystemTagVO tvo = Q.New(SystemTagVO.class).eq(SystemTagVO_.tag, tag).find()
+                    if (tvo != null) {
+                        dstHostUuid = tvo.resourceUuid
+                    }
                 }
+
+                assert dstHostUuid : "cannot find host[ip:${cmd.dstIp}]"
+
+                VFS srcVFS = vfs(srcHostUuid, storagePath, spec)
+                List<VFSFile> files = []
+                cmd.paths.each {
+                    VFSFile f = srcVFS.getFile(it, true)
+                    files.add(f)
+                }
+
+                VFS dstVFS = vfs(dstHostUuid, storagePath, spec)
+                files.each {
+                    dstVFS.createFileFrom(it)
+                }
+
                 return rsp
             }
 
-            simulator(LocalStorageKvmMigrateVmFlow.REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH) {
-                return new LocalStorageKvmBackend.RebaseRootVolumeToBackingFileRsp()
-            }
-
-            simulator(LocalStorageKvmMigrateVmFlow.REBASE_SNAPSHOT_BACKING_FILES_PATH) {
+            simulator(LocalStorageKvmMigrateVmFlow.REBASE_SNAPSHOT_BACKING_FILES_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 return new LocalStorageKvmBackend.AgentResponse()
             }
 
-            simulator(LocalStorageKvmMigrateVmFlow.VERIFY_SNAPSHOT_CHAIN_PATH) {
+            VFS.vfsHook(LocalStorageKvmMigrateVmFlow.REBASE_SNAPSHOT_BACKING_FILES_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmMigrateVmFlow.RebaseSnapshotBackingFilesCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                cmd.snapshots.each {
+                    Qcow2 f = vfs.getFile(it.path)
+                    assert f : "cannot find file[${it.path}]"
+                    if (it.parentPath != null) {
+                        // the python localstorage agent does this, if parentPath is null, no rebase
+                        f.rebase(it.parentPath)
+                    }
+                }
+
+                return rsp
+            }
+
+            simulator(LocalStorageKvmMigrateVmFlow.VERIFY_SNAPSHOT_CHAIN_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 return new LocalStorageKvmBackend.AgentResponse()
+            }
+
+            VFS.vfsHook(LocalStorageKvmMigrateVmFlow.VERIFY_SNAPSHOT_CHAIN_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmMigrateVmFlow.VerifySnapshotChainCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                cmd.snapshots.each {
+                    Qcow2 f = vfs.getFile(it.path)
+                    assert f : "cannot find file[${f.pathString()}]"
+
+                    if (it.parentPath != null) {
+                        Qcow2 p = vfs.getFile(it.parentPath)
+                        assert p : "cannot find backing file[${it.parentPath}]"
+                        assert f.backingFile == p.path : "epxect qcow2[${it.path}]'s backign file is ${it.parentPath}, but got ${f.backingFile.toAbsolutePath().toString()}"
+                    }
+                }
+
+                return rsp
             }
 
             simulator(LocalStorageKvmBackend.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
@@ -106,9 +230,24 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(LocalStorageKvmBackend.CHECK_BITS_PATH) {
-                def rsp = new LocalStorageKvmBackend.CheckBitsRsp()
-                rsp.existing = true
+            VFS.vfsHook(LocalStorageKvmBackend.INIT_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.InitCmd.class)
+
+                // init operation should use path to initialize vfs
+                VFS vfs = vfs(hostUuidFromHTTPHeaders(e), cmd.path, spec)
+                vfs.createDirectories(cmd.path)
+
+                return rsp
+            }
+
+            simulator(LocalStorageKvmBackend.CHECK_BITS_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new LocalStorageKvmBackend.CheckBitsRsp()
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.CHECK_BITS_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.CheckBitsCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                rsp.existing = vfs.getFile(cmd.path) != null
                 return rsp
             }
 
@@ -127,7 +266,7 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return new LocalStorageKvmBackend.CreateVolumeWithBackingRsp()
             }
 
-            simulator(LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH) {
+            simulator(LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 return new LocalStorageKvmBackend.CreateEmptyVolumeRsp()
             }
 
@@ -135,33 +274,98 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return new LocalStorageKvmBackend.AgentResponse()
             }
 
-            simulator(LocalStorageKvmBackend.CREATE_VOLUME_FROM_CACHE_PATH) {
+            VFS.vfsHook(LocalStorageKvmBackend.CREATE_FOLDER_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.CreateFolderCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                vfs.createDirectories(cmd.installUrl)
+                return rsp
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.CreateEmptyVolumeCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                vfs.createQcow2(cmd.installUrl, cmd.size, cmd.size, cmd.backingFile)
+                return rsp
+            }
+
+            simulator(LocalStorageKvmBackend.CREATE_VOLUME_FROM_CACHE_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 return new LocalStorageKvmBackend.CreateVolumeFromCacheRsp()
             }
 
-            simulator(LocalStorageKvmBackend.DELETE_BITS_PATH) {
+
+            VFS.vfsHook(LocalStorageKvmBackend.CREATE_VOLUME_FROM_CACHE_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.CreateVolumeFromCacheCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                Volume image = vfs.getFile(cmd.templatePathInCache, true)
+                vfs.createQcow2(cmd.installUrl, image.actualSize, image.virtualSize, image.pathString())
+                return rsp
+            }
+
+            simulator(LocalStorageKvmBackend.DELETE_BITS_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 return new LocalStorageKvmBackend.DeleteBitsRsp()
             }
 
-            simulator(LocalStorageKvmBackend.DELETE_DIR_PATH) {
+            VFS.vfsHook(LocalStorageKvmBackend.DELETE_BITS_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.DeleteBitsCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                VFSFile file = vfs.getFile(cmd.path)
+                assert file != null : "cannot find file[${cmd.path}]"
+                file.delete()
+                return rsp
+            }
+
+            simulator(LocalStorageKvmBackend.DELETE_DIR_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 return new LocalStorageKvmBackend.DeleteBitsRsp()
             }
 
-            simulator(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH) {
+            VFS.vfsHook(LocalStorageKvmBackend.DELETE_DIR_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.DeleteBitsCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                assert vfs.isDir(cmd.path) : "${cmd.path} is not a directory"
+                vfs.delete(cmd.path)
+                return rsp
+            }
+
+//            simulator(LocalStorageKvmBackend.GET_LIST_PATH) { HttpEntity<String> e, EnvSpec spec ->
+//                return new LocalStorageKvmBackend.ListPathRsp(paths: [])
+//            }
+//
+//            VFS.vfsHook(LocalStorageKvmBackend.GET_LIST_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+//                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.ListPathCmd.class)
+//                VFS vfs = vfs(e, cmd, spec)
+//                Path path = vfs.getPath(cmd.path)
+//                Files.list(path).forEach {
+//                    rsp.paths.add(it.toAbsolutePath().toString())
+//                }
+//
+//                return rsp
+//            }
+
+            simulator(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 return new LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsRsp()
+            }
+
+            VFS.vfsHook(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                vfs.createQcow2(cmd.primaryStorageInstallPath, 0L, 0L, null)
+                return rsp
             }
 
             simulator(LocalStorageKvmSftpBackupStorageMediatorImpl.UPLOAD_BIT_PATH) {
                 return new LocalStorageKvmSftpBackupStorageMediatorImpl.SftpUploadBitsRsp()
             }
 
-            simulator(LocalStorageKvmBackend.CREATE_TEMPLATE_FROM_VOLUME) {
+            simulator(LocalStorageKvmBackend.CREATE_TEMPLATE_FROM_VOLUME) { HttpEntity<String> e, EnvSpec spec ->
                 return new LocalStorageKvmBackend.CreateTemplateFromVolumeRsp()
             }
 
-            simulator(LocalStorageKvmBackend.REINIT_IMAGE_PATH) {
-                def rsp = new LocalStorageKvmBackend.ReinitImageRsp()
-                rsp.newVolumeInstallPath = "/new/snapshot/install/path"
+            VFS.vfsHook(LocalStorageKvmBackend.CREATE_TEMPLATE_FROM_VOLUME, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.CreateTemplateFromVolumeCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                Qcow2 volume = vfs.getFile(cmd.volumePath)
+                assert volume : "cannot find volume[${cmd.volumePath}]"
+                volume.copyWithoutBackingFile(cmd.installPath)
                 return rsp
             }
 
@@ -169,21 +373,58 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.RevertVolumeFromSnapshotCmd.class)
                 def rsp = new LocalStorageKvmBackend.RevertVolumeFromSnapshotRsp()
                 rsp.newVolumeInstallPath = cmd.snapshotInstallPath + "/${Platform.uuid}".toString()
+                rsp.newVolumeInstallPath = cmd.snapshotInstallPath + "/newpath"
+            }
+
+            simulator(LocalStorageKvmBackend.REINIT_IMAGE_PATH) {  HttpEntity<String> e, EnvSpec spec ->
+                return new LocalStorageKvmBackend.ReinitImageRsp()
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.REINIT_IMAGE_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.ReinitImageCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                Qcow2 image = vfs.getFile(cmd.imagePath)
+                assert image : "cannot find image[${cmd.imagePath}]"
+                Path newVolumePath = vfs.getPath(cmd.volumePath).getParent().resolve("${Platform.uuid}.qcow2")
+                vfs.createQcow2(newVolumePath.toAbsolutePath().toString(), image.actualSize, image.virtualSize, image.pathString())
+
+                rsp.newVolumeInstallPath = newVolumePath.toAbsolutePath().toString()
                 return rsp
             }
 
-            simulator(LocalStorageKvmBackend.MERGE_AND_REBASE_SNAPSHOT_PATH) {
-                return new LocalStorageKvmBackend.RebaseAndMergeSnapshotsRsp()
+            simulator(LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new LocalStorageKvmBackend.RevertVolumeFromSnapshotRsp()
             }
 
-            simulator(LocalStorageKvmBackend.MERGE_SNAPSHOT_PATH) {
+            VFS.vfsHook(LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.RevertVolumeFromSnapshotCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                Qcow2 snapshot = vfs.getFile(cmd.snapshotInstallPath)
+                assert snapshot : "cannot find snapshot[${cmd.snapshotInstallPath}]"
+                Path newPath = snapshot.path.getParent().resolve("${Platform.uuid}.qcow2")
+                vfs.createQcow2(newPath.toAbsolutePath().toString(), 0L, 0L, snapshot.pathString())
+
+                rsp.newVolumeInstallPath = newPath.toAbsolutePath().toString()
+                return rsp
+            }
+
+            simulator(LocalStorageKvmBackend.MERGE_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 return new LocalStorageKvmBackend.MergeSnapshotRsp()
             }
 
             simulator(LocalStorageKvmBackend.GET_VOLUME_SIZE) { HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.GetVolumeSizeCmd.class)
                 LocalStorageKvmBackend.GetVolumeSizeRsp rsp = new LocalStorageKvmBackend.GetVolumeSizeRsp()
-                Long size = Q.New(VolumeVO.class).select(VolumeVO_.size).eq(VolumeVO_.uuid, cmd.volumeUuid).findValue()
+                return rsp
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.GET_VOLUME_SIZE, espec) { LocalStorageKvmBackend.GetVolumeSizeRsp rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.GetVolumeSizeCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                Qcow2 volume = vfs.getFile(cmd.installPath)
+                rsp.size = volume.virtualSize
+                rsp.actualSize = volume.actualSize
+
                 boolean isSnapshotExist = Q.New(VolumeSnapshotVO.class)
                         .eq(VolumeSnapshotVO_.volumeUuid, cmd.volumeUuid)
                         .exists
@@ -192,11 +433,20 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 } else {
                     rsp.actualSize = 1L
                 }
-                rsp.size = size
+
                 return rsp
             }
 
-            simulator(LocalStorageKvmBackend.OFFLINE_MERGE_PATH) {
+            VFS.vfsHook(LocalStorageKvmBackend.MERGE_SNAPSHOT_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.MergeSnapshotCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                Qcow2 snapshot = vfs.getFile(cmd.snapshotInstallPath)
+                assert snapshot : "cannot find snapshot[${cmd.snapshotInstallPath}]"
+                vfs.createQcow2(cmd.workspaceInstallPath, 0L, 0L, null)
+                return rsp
+            }
+
+            simulator(LocalStorageKvmBackend.OFFLINE_MERGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 return new LocalStorageKvmBackend.OfflineMergeSnapshotRsp()
             }
 
@@ -233,6 +483,23 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.GetQcow2HashValueCmd.class)
                 LocalStorageKvmBackend.GetQcow2HashValueRsp rsp = new LocalStorageKvmBackend.GetQcow2HashValueRsp()
                 rsp.hashValue = cmd.installPath
+                return rsp
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.OFFLINE_MERGE_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.OfflineMergeSnapshotCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+
+                Qcow2 src = vfs.getFile(cmd.srcPath)
+                assert src : "cannot find source file[${cmd.srcPath}]"
+
+                Qcow2 dst = vfs.getFile(cmd.destPath)
+                assert dst : "cannot find destination file[${cmd.destPath}]"
+                if (cmd.fullRebase) {
+                    dst.rebase((String) null)
+                } else {
+                    dst.rebase(cmd.srcPath)
+                }
                 return rsp
             }
         }

@@ -147,7 +147,6 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                 }
             }
         }.execute();
-
     }
 
     private void encryptAllPasswordWithNewKey(String key) {

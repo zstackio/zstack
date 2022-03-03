@@ -17,6 +17,13 @@ import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
+import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.core.trash.TrashType;
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -2842,6 +2849,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 CreateVolumeSnapshotReply createVolumeSnapshotReply = (CreateVolumeSnapshotReply)r;
                                 snapshot = createVolumeSnapshotReply.getInventory();
                                 reportProgress(stage.getEnd().toString());
+
+                                CephPrimaryStorageCanonicalEvents.ImageInnerSnapshotCreated data = new CephPrimaryStorageCanonicalEvents.ImageInnerSnapshotCreated();
+                                data.imageUuid = imageUuid;
+                                data.primaryStorageUuid = self.getUuid();
+                                data.snapshot = snapshot;
+                                data.fire();
+
                                 trigger.next();
                             }
                         });
@@ -4996,6 +5010,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                             originalVolumePath, errorCode));
                                 }
                             });
+                        } else {
+                            trash.createTrash(TrashType.ReimageVolume, false, msg.getVolume());
                         }
                         trigger.next();
                     }

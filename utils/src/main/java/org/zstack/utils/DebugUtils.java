@@ -150,4 +150,12 @@ public class DebugUtils {
 
         logger.debug(dump.toString());
     }
+
+    public static void shouldNotBeHere(String msg) {
+        if (msg == null) {
+            msg = "code should not reach here";
+        }
+
+        throw new RuntimeException(msg);
+    }
 }
