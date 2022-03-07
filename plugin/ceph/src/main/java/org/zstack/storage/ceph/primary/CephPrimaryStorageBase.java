@@ -40,6 +40,7 @@ import org.zstack.header.host.*;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.log.NoLogging;
+import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -48,6 +49,7 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
@@ -80,6 +82,8 @@ import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.longjob.LongJobUtils.buildErrIfCanceled;
+import static org.zstack.storage.volume.VolumeSystemTags.INSTALLPATH_TOKEN;
+import static org.zstack.storage.volume.VolumeSystemTags.INSTANTIATING_VOLUME;
 import static org.zstack.utils.CollectionDSL.*;
 
 /**
@@ -4121,6 +4125,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else if (msg instanceof GetVolumeWatchersMsg) {
             handle((GetVolumeWatchersMsg) msg);
+        } else if (msg instanceof CleanPrimaryStorageMigrateResourceMsg) {
+            handle((CleanPrimaryStorageMigrateResourceMsg) msg);
         }else {
             super.handleLocalMessage(msg);
         }
@@ -5490,5 +5496,117 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         }).setAvoidMonUuids(msg.getAvoidCephMonUuids()).tryNext().call();
+    }
+
+    private void handle(CleanPrimaryStorageMigrateResourceMsg msg) {
+        List<String> volumeUuids = msg.getVolumeUuids();
+        String primaryStorageUuid = msg.getPrimaryStorageUuid();
+
+        recoverVolumeStatus(volumeUuids);
+        deletePrimaryStorageMigrateResource(volumeUuids, primaryStorageUuid, msg);
+        volumeUuids.forEach(it -> INSTANTIATING_VOLUME.delete(it));
+    }
+
+    private void recoverVolumeStatus(List<String> volumeUuids) {
+        List<VolumeVO> volumes = Q.New(VolumeVO.class).in(VolumeVO_.uuid, volumeUuids).list();
+        volumes.stream().filter(it -> it.getStatus() == VolumeStatus.Migrating).forEach(vo -> {
+            vo.setStatus(VolumeStatus.Ready);
+            dbf.update(vo);
+        });
+    }
+
+    private void deletePrimaryStorageMigrateResource(List<String> volumeUuids, String primaryStorageUuid, CleanPrimaryStorageMigrateResourceMsg msg) {
+        CleanPrimaryStorageMigrateResourceReply reply = new CleanPrimaryStorageMigrateResourceReply();
+
+        List<SystemTagInventory> tags = INSTANTIATING_VOLUME.getTagInventories(volumeUuids);
+        List<String> dstVolumeInstallPaths = tags.stream()
+                .map(it -> INSTANTIATING_VOLUME.getTokenByResourceUuid(it.getResourceUuid(), INSTALLPATH_TOKEN))
+                .collect(Collectors.toList());
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName("clean-primary-storage-migrate-resource");
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                CancelJobOnPrimaryStorageMsg cmsg = new CancelJobOnPrimaryStorageMsg();
+                cmsg.setCancellationApiId(msg.getApiUuid());
+                cmsg.setPrimaryStorageUuid(msg.getSrcPsUuid());
+                bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, msg.getSrcPsUuid());
+                bus.send(cmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(dstVolumeInstallPaths).each((dstInstallPath, completion) -> {
+                    PurgeSnapshotOnPrimaryStorageMsg msg = new PurgeSnapshotOnPrimaryStorageMsg();
+                    msg.setPrimaryStorageUuid(primaryStorageUuid);
+                    msg.setVolumePath(dstInstallPath);
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+                    bus.send(msg, new CloudBusCallBack(completion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                logger.info(String.format("purged the migrated snapshots of volume %s", dstInstallPath));
+                            } else {
+                                logger.error(String.format("failed to purge the migrated snapshots of volume. delete it manually if needed. " +
+                                        "the primary storage is: %s and the volume installPath is: %s", primaryStorageUuid, dstInstallPath));
+                            }
+                            completion.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(dstVolumeInstallPaths).each((dstInstallPath, completion) -> {
+                    DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+                    msg.setPrimaryStorageUuid(primaryStorageUuid);
+                    msg.setInstallPath(dstInstallPath);
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+                    bus.send(msg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                logger.info(String.format("purged the migrated snapshots of volume %s", dstInstallPath));
+                            } else {
+                                logger.error(String.format("failed to purge the migrated snapshots of volume. delete it manually if needed. " +
+                                        "the primary storage is: %s and the volume installPath is: %s", primaryStorageUuid, dstInstallPath));
+                            }
+                            completion.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                });
+            }
+        });
+
+        chain.done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, reply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                reply.setSuccess(false);
+                reply.setError(errCode);
+                bus.reply(msg, reply);
+            }
+        }).start();
     }
 }
