@@ -207,7 +207,6 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
             dest.getParentFile().mkdirs();
         }
         Files.copy(source.toPath(), dest.toPath(), REPLACE_EXISTING);
-
     }
 
     private String getLocalFileDigest(FileVerification fv){
@@ -242,7 +241,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
                     logger.info(String.format("Will restore local file from [%s] to [%s]", PathUtil.join(LOCAL_BACKUP_DIR, fv.getUuid()), fv.getPath()));
                     backupRestoreLocalFile(PathUtil.join(LOCAL_BACKUP_DIR, fv.getUuid()), fv.getPath());
                 } catch (Exception e) {
-                    logger.warn(String.format("The file[%s.%s] was modified and restore failed.", fv.getNode(), fv.getPath()));
+                    logger.warn(String.format("The file[%s.%s] was modified and restore failed，because %s", fv.getNode(), fv.getPath(), e));
                     sendChanged(fv.getNode(), fv.getPath(), fv.getCategory(), FileRestoreState.False.toString());
                 } finally {
                     logger.info(String.format("The file[%s.%s] was modified but successfully restored.", fv.getNode(), fv.getPath()));
