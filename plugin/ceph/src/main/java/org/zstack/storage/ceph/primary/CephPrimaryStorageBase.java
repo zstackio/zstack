@@ -50,6 +50,7 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
@@ -84,6 +85,8 @@ import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.longjob.LongJobUtils.buildErrIfCanceled;
+import static org.zstack.storage.volume.VolumeSystemTags.INSTALLPATH_TOKEN;
+import static org.zstack.storage.volume.VolumeSystemTags.INSTANTIATING_VOLUME;
 import static org.zstack.utils.CollectionDSL.*;
 
 /**
@@ -4156,6 +4159,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else if (msg instanceof GetVolumeWatchersMsg) {
             handle((GetVolumeWatchersMsg) msg);
+        } else if (msg instanceof CleanVolumeTemporaryResourceMsg) {
+            handle((CleanVolumeTemporaryResourceMsg) msg);
+        } else if (msg instanceof CleanVolumeTemporaryResourceOnPrimaryStorageMsg) {
+            handle((CleanVolumeTemporaryResourceOnPrimaryStorageMsg) msg);
         }else {
             super.handleLocalMessage(msg);
         }
@@ -5536,5 +5543,211 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         }).setAvoidMonUuids(msg.getAvoidCephMonUuids()).tryNext().call();
+    }
+
+    private void handle(CleanVolumeTemporaryResourceMsg msg) {
+        List<String> volumeUuids = msg.getVolumeUuids();
+        String primaryStorageUuid = msg.getPrimaryStorageUuid();
+
+        cleanVolumeTemporaryResource(volumeUuids, primaryStorageUuid, msg);
+        volumeUuids.forEach(it -> INSTANTIATING_VOLUME.delete(it));
+    }
+
+    private void cleanVolumeTemporaryResource(List<String> volumeUuids, String primaryStorageUuid, CleanVolumeTemporaryResourceMsg msg) {
+        CleanVolumeTemporaryResourceMsgReply reply = new CleanVolumeTemporaryResourceMsgReply();
+
+        List<TemporaryVolume> temporaryVolumes = getTemporaryVolumesFromTags(volumeUuids);
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName("clean-primary-storage-migrate-resource");
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(volumeUuids).each((volumeUuid, completion) -> {
+                    ChangeVolumeStatusMsg msg = new ChangeVolumeStatusMsg();
+                    msg.setVolumeUuid(volumeUuid);
+                    msg.setStatus(VolumeStatus.Ready);
+                    bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, volumeUuid);
+                    bus.send(msg, new CloudBusCallBack(completion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.error(String.format("failed to change volume[%s] status from migrating to ready. " +
+                                        "change it manually if needed.", volumeUuid));
+                            }
+                            completion.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                CancelJobOnPrimaryStorageMsg cmsg = new CancelJobOnPrimaryStorageMsg();
+                cmsg.setCancellationApiId(msg.getApiUuid());
+                cmsg.setPrimaryStorageUuid(msg.getSrcPsUuid());
+                bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, msg.getSrcPsUuid());
+                bus.send(cmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(temporaryVolumes).each((temporaryVolume, completion) -> {
+                    CleanVolumeTemporaryResourceOnPrimaryStorageMsg msg = new CleanVolumeTemporaryResourceOnPrimaryStorageMsg();
+                    msg.setPrimaryStorageUuid(primaryStorageUuid);
+                    msg.setVolumePath(temporaryVolume.getInstallPath());
+                    msg.setVolumeUuid(temporaryVolume.getVolumeUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+                    bus.send(msg, new CloudBusCallBack(completion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            completion.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                });
+            }
+        });
+        chain.done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, reply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                reply.setSuccess(false);
+                reply.setError(errCode);
+                bus.reply(msg, reply);
+            }
+        }).start();
+    }
+
+    private List<TemporaryVolume> getTemporaryVolumesFromTags(List<String> volumeUuids) {
+        List<SystemTagInventory> tags = INSTANTIATING_VOLUME.getTagInventories(volumeUuids);
+        return tags.stream().map(this::filterTemporaryVolumes).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    private TemporaryVolume filterTemporaryVolumes(SystemTagInventory tag) {
+        String volumeUuid = tag.getResourceUuid();
+        String installPath = INSTANTIATING_VOLUME.getTokenByResourceUuid(tag.getResourceUuid(), INSTALLPATH_TOKEN);
+
+        VolumeVO vo = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volumeUuid).find();
+        if (vo.getInstallPath() != null && !Objects.equals(vo.getInstallPath(), installPath)) {
+            TemporaryVolume temporaryVolume = new TemporaryVolume();
+            temporaryVolume.setVolumeUuid(volumeUuid);
+            temporaryVolume.setInstallPath(installPath);
+            return temporaryVolume;
+        }
+        return null;
+    }
+
+    static class TemporaryVolume {
+        private String volumeUuid;
+        private String installPath;
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+    }
+
+    private void handle(CleanVolumeTemporaryResourceOnPrimaryStorageMsg msg) {
+        CleanVolumeTemporaryResourceOnPrimaryStorageReply reply = new CleanVolumeTemporaryResourceOnPrimaryStorageReply();
+        String primaryStorageUuid = msg.getPrimaryStorageUuid();
+        String volumePath = msg.getVolumePath();
+        String volumeUuid = msg.getVolumeUuid();
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName("clean-primary-storage-temporary-resource");
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                PurgeSnapshotOnPrimaryStorageMsg pmsg = new PurgeSnapshotOnPrimaryStorageMsg();
+                pmsg.setPrimaryStorageUuid(primaryStorageUuid);
+                pmsg.setVolumePath(volumePath);
+                bus.makeTargetServiceIdByResourceUuid(pmsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+
+                CleanVolumeTemporaryResourceOverlayMsg cmsg = new CleanVolumeTemporaryResourceOverlayMsg();
+                cmsg.setVolumeUuid(volumeUuid);
+                cmsg.setMessage(pmsg);
+                bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, volumeUuid);
+                bus.send(cmsg, new CloudBusCallBack(pmsg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            logger.info(String.format("purged the temporary snapshots of volume %s", volumePath));
+                        } else {
+                            logger.error(String.format("failed to purge the temporary snapshots of volume. delete it manually if needed. " +
+                                    "the primary storage is: %s and the volume installPath is: %s", primaryStorageUuid, volumePath));
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+                dmsg.setPrimaryStorageUuid(primaryStorageUuid);
+                dmsg.setInstallPath(volumePath);
+                bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+
+                CleanVolumeTemporaryResourceOverlayMsg cmsg = new CleanVolumeTemporaryResourceOverlayMsg();
+                cmsg.setVolumeUuid(volumeUuid);
+                cmsg.setMessage(dmsg);
+                bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, volumeUuid);
+                bus.send(cmsg, new CloudBusCallBack(dmsg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            logger.info(String.format("delete temporary volume %s", volumePath));
+                        } else {
+                            logger.error(String.format("failed to delete temporary volume. delete it manually if needed. " +
+                                    "the primary storage is: %s and the volume installPath is: %s", primaryStorageUuid, volumePath));
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        });
+        chain.done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, reply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                reply.setSuccess(false);
+                reply.setError(errCode);
+                bus.reply(msg, reply);
+            }
+        }).start();
     }
 }
