@@ -3,7 +3,6 @@ package org.zstack.storage.volume;
 import org.zstack.header.core.NonCloneable;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagDefinition;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.EphemeralSystemTag;
 import org.zstack.tag.PatternedSystemTag;
@@ -39,4 +38,8 @@ public class VolumeSystemTags {
 
     @NonCloneable
     public static EphemeralSystemTag FAST_CREATE = new EphemeralSystemTag("volume::fastCreate");
+
+    public static String INSTALLPATH_TOKEN = "installPath";
+    public static String APIUUID_TOKEN = "apiUuid";
+    public static PatternedSystemTag INSTANTIATING_VOLUME = new PatternedSystemTag(String.format("volume::instantiating::installPath::{%s}::apiUuid::{%s}", INSTALLPATH_TOKEN, APIUUID_TOKEN), VolumeVO.class);
 }
