@@ -88,7 +88,7 @@ import static java.util.Arrays.asList;
         responseClass = APIAddSecurityGroupRuleEvent.class,
         parameterName = "params"
 )
-public class APIAddSecurityGroupRuleMsg extends APIMessage {
+public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurityGroupRuleMessage {
     /**
      * @inventory
      * inventory for SecurityGroupRuleAO
