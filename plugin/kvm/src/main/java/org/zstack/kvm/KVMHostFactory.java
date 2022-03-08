@@ -385,17 +385,17 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             return null;
         });
 
-        restf.registerSyncHttpCallHandler(KVMConstant.KVM_HOST_NETLINK_ALARM_EVENT, KVMAgentCommands.NetlinkAlarmEventCmd.class, cmd -> {
-            HostCanonicalEvents.HostNetlinkStatusData cData = new HostCanonicalEvents.HostNetlinkStatusData();
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_HOST_PHYSICAL_NIC_ALARM_EVENT, KVMAgentCommands.PhysicalNicAlarmEventCmd.class, cmd -> {
+            HostCanonicalEvents.HostPhysicalNicStatusData cData = new HostCanonicalEvents.HostPhysicalNicStatusData();
             cData.setHostUuid(cmd.host);
             cData.setInterfaceName(cmd.nic);
             cData.setFromBond(cmd.bond);
             cData.setIpAddress(cmd.ip);
             cData.setInterfaceStatus(cmd.status);
             if("up".equalsIgnoreCase(cmd.status.replaceAll("\\s*", ""))){
-                evf.fire(HostCanonicalEvents.HOST_NETLINK_STATUS_UP, cData);
+                evf.fire(HostCanonicalEvents.HOST_PHYSICAL_NIC_STATUS_UP, cData);
             } else {
-                evf.fire(HostCanonicalEvents.HOST_NETLINK_STATUS_DOWN, cData);
+                evf.fire(HostCanonicalEvents.HOST_PHYSICAL_NIC_STATUS_DOWN, cData);
             }
             return null;
         });
