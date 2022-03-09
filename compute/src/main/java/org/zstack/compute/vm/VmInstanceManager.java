@@ -2,6 +2,8 @@ package org.zstack.compute.vm;
 
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.message.Message;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.vm.*;
 
 public interface VmInstanceManager {
@@ -32,6 +34,8 @@ public interface VmInstanceManager {
     VmInstanceFactory getVmInstanceFactory(VmInstanceType vmType);
 
     VmInstanceBaseExtensionFactory getVmInstanceBaseExtensionFactory(Message msg);
+
+    VmInstanceNicFactory getVmInstanceNicFactory(Boolean enableSriov, VSwitchType vSwitchType);
 
     VmInstanceNicFactory getVmInstanceNicFactory(VmNicType type);
 

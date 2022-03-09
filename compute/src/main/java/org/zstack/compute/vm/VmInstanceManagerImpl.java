@@ -55,6 +55,9 @@ import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -1748,6 +1751,19 @@ public class VmInstanceManagerImpl extends AbstractService implements
             throw new CloudRuntimeException(String.format("No VmInstanceNicFactory of type[%s] found", type));
         }
         return factory;
+    }
+
+    @Override
+    public VmInstanceNicFactory getVmInstanceNicFactory(Boolean enableSriov, VSwitchType vSwitchType) {
+        VmNicType type = new VmNicType(enableSriov, vSwitchType);
+        VmInstanceNicFactory factory = vmInstanceNicFactories.get(type.toString());
+//        VmNicType type = VmNicType.valueOf("VNIC");
+//        if (enableSriov) {
+//            type = VmNicType.valueOf("VF");
+//        } else if (l2nw.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+//            type = VmNicType.valueOf("vDPA");
+//        }
+        return getVmInstanceNicFactory(type);
     }
 
     @Override

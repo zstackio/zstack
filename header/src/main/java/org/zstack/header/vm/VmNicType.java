@@ -1,16 +1,39 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.VSwitchType;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 public class VmNicType {
     private static Map<String, VmNicType> types = Collections.synchronizedMap(new HashMap<>());
+//    private static Map<VSwitchType, VmNicType> typesByVSwitchType = Collections.synchronizedMap(new HashMap<>());
+//    private static Map<Boolean, VmNicType> typesByEnableSriov = Collections.synchronizedMap(new HashMap<>());
+
     private final String typeName;
+//    private final VSwitchType vSwitchType;
+//    private final Boolean enableSriov;
 
     public VmNicType(String typeName) {
         this.typeName = typeName;
         types.put(typeName, this);
+    }
+
+    public VmNicType(Boolean enableSriov, VSwitchType vSwitchType) {
+//        this.vSwitchType = vSwitchType;
+//        this.enableSriov = enableSriov;
+        String typeName = "VNIC";
+        if (enableSriov) {
+            typeName = "VF";
+        } else if (vSwitchType.equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+            typeName = "vDPA";
+        }
+        this.typeName = typeName;
+        types.put(typeName, this);
+//        typesByVSwitchType.put(vSwitchType, this);
+//        typesByVSwitchType.put(enableSriov, this);
     }
 
     public static VmNicType valueOf(String typeName) {
