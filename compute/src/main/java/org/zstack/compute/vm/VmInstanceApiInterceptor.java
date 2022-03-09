@@ -122,6 +122,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIStartVmInstanceMsg) msg);
         } else if (msg instanceof APIGetInterdependentL3NetworksImagesMsg) {
             validate((APIGetInterdependentL3NetworksImagesMsg) msg);
+        } else if (msg instanceof APIGetInterdependentL3NetworksBackupStoragesMsg) {
+            validate((APIGetInterdependentL3NetworksBackupStoragesMsg) msg);
         } else if (msg instanceof APIUpdateVmInstanceMsg) {
             validate((APIUpdateVmInstanceMsg) msg);
         } else if (msg instanceof APISetVmConsolePasswordMsg) {
@@ -150,6 +152,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIGetInterdependentL3NetworksBackupStoragesMsg msg) {
+        if (msg.getL3NetworkUuids() == null && msg.getBackupStorageUuid() == null) {
+            throw new ApiMessageInterceptionException(argerr("either l3NetworkUuids or backupStorageUuid must be set"));
+        }
     }
 
     private void validate(APIGetCandidateL3NetworksForChangeVmNicNetworkMsg msg) {

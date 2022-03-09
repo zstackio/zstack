@@ -5,6 +5,7 @@ import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
+import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.ZoneInventory
@@ -39,6 +40,8 @@ test the API ApiGetInterdependentL3NetworksImagesMsg
             testValidateParameter()
             testGetL3NetworkByImage()
             testGetImageByL3Network()
+            testGetL3NetworkByBS()
+            testGetBSsByL3Networks()
         }
     }
 
@@ -85,6 +88,7 @@ test the API ApiGetInterdependentL3NetworksImagesMsg
                     url  = "http://zstack.org/download/vr.qcow2"
                 }
             }
+
             zone {
                 name = "zone"
                 description = "test"
@@ -240,8 +244,6 @@ test the API ApiGetInterdependentL3NetworksImagesMsg
                 }
 
             }
-
-
         }
     }
 
@@ -339,5 +341,55 @@ test the API ApiGetInterdependentL3NetworksImagesMsg
             l3NetworkUuids = [l31.uuid, l32.uuid, l33.uuid, l34.uuid]
         }
         assert (0 == images.size())
+    }
+
+    void testGetL3NetworkByBS() {
+        BackupStorageInventory ceph = env.inventoryByName("bs") as BackupStorageInventory
+        BackupStorageInventory sftp = env.inventoryByName("sftp") as BackupStorageInventory
+        ZoneInventory zone = env.inventoryByName("zone") as ZoneInventory
+        L3NetworkInventory l31 = env.inventoryByName("l3-1") as L3NetworkInventory
+        L3NetworkInventory l32 = env.inventoryByName("l3-2") as L3NetworkInventory
+        L3NetworkInventory l33 = env.inventoryByName("l3-3") as L3NetworkInventory
+        L3NetworkInventory l34 = env.inventoryByName("l3-4") as L3NetworkInventory
+
+        def cephL3s = getInterdependentL3NetworksBackupStorages {
+            zoneUuid = zone.uuid
+            backupStorageUuid = ceph.uuid
+        } as List
+
+        assert cephL3s.size() == 1
+        assert cephL3s.stream().allMatch({ l3 -> l3.uuid == l34.uuid })
+
+        def sftpL3s = getInterdependentL3NetworksBackupStorages {
+            zoneUuid = zone.uuid
+            backupStorageUuid = sftp.uuid
+        } as List
+
+        assert sftpL3s.size() == 3
+        assert sftpL3s.stream().allMatch({l3 -> l3.uuid in [l31.uuid, l32.uuid, l33.uuid]})
+    }
+
+    void testGetBSsByL3Networks() {
+        BackupStorageInventory ceph = env.inventoryByName("bs") as BackupStorageInventory
+        BackupStorageInventory sftp = env.inventoryByName("sftp") as BackupStorageInventory
+        ZoneInventory zone = env.inventoryByName("zone") as ZoneInventory
+        L3NetworkInventory l31 = env.inventoryByName("l3-1") as L3NetworkInventory
+        L3NetworkInventory l34 = env.inventoryByName("l3-4") as L3NetworkInventory
+
+        def l31Bs = getInterdependentL3NetworksBackupStorages {
+            zoneUuid = zone.uuid
+            l3NetworkUuids = [l31.uuid]
+        } as List
+
+        assert l31Bs.size() == 1
+        assert l31Bs.first().uuid == sftp.uuid
+
+        def l34Bs = getInterdependentL3NetworksBackupStorages {
+            zoneUuid = zone.uuid
+            l3NetworkUuids = [l34.uuid]
+        } as List
+
+        assert l34Bs.size() == 1
+        assert l34Bs.first().uuid == ceph.uuid
     }
 }
