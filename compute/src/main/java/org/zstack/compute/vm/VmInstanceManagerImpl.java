@@ -55,8 +55,10 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagVO;
@@ -231,6 +233,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APIGetCandidatePrimaryStoragesForCreatingVmMsg) msg);
         } else if (msg instanceof APIGetInterdependentL3NetworksImagesMsg) {
             handle((APIGetInterdependentL3NetworksImagesMsg) msg);
+        } else if (msg instanceof APIGetInterdependentL3NetworksBackupStoragesMsg) {
+            handle((APIGetInterdependentL3NetworksBackupStoragesMsg) msg);
         } else if (msg instanceof APIGetCandidateVmForAttachingIsoMsg) {
             handle((APIGetCandidateVmForAttachingIsoMsg) msg);
         } else if (msg instanceof APIUpdatePriorityConfigMsg) {
@@ -244,6 +248,27 @@ public class VmInstanceManagerImpl extends AbstractService implements
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetInterdependentL3NetworksBackupStoragesMsg msg) {
+        final String accountUuid = msg.getSession().getAccountUuid();
+        APIGetInterdependentL3NetworksBackupStoragesReply reply =
+                new APIGetInterdependentL3NetworksBackupStoragesReply();
+        if (msg.getBackupStorageUuid() != null) {
+            BackupStorageVO bsvo = Q.New(BackupStorageVO.class)
+                    .eq(BackupStorageVO_.uuid, msg.getBackupStorageUuid())
+                    .find();
+            if (bsvo == null) {
+                reply.setInventories(new ArrayList<>());
+            } else {
+                reply.setInventories(getInterdependentL3NetworksByBackupStorageUuids(Collections.singletonList(bsvo),
+                        msg.getZoneUuid(), accountUuid));
+            }
+        } else {
+            reply.setInventories(getInterdependentBackupStoragesByL3NetworkUuids(msg.getL3NetworkUuids()));
+        }
+
+        bus.reply(msg, reply);
     }
 
     private void handle(final APIGetVmsCapabilitiesMsg msg) {
@@ -375,11 +400,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     @Transactional(readOnly = true)
-    private void getInterdependentImagesByL3NetworkUuids(APIGetInterdependentL3NetworksImagesMsg msg) {
-        APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
-
+    private List<BackupStorageInventory> getInterdependentBackupStoragesByL3NetworkUuids(List<String> l3s) {
         List<List<BackupStorageVO>> bss = new ArrayList<>();
-        for (String l3uuid : msg.getL3NetworkUuids()) {
+        for (String l3uuid : l3s) {
             String sql = "select ps" +
                     " from PrimaryStorageVO ps, L2NetworkClusterRefVO l2ref," +
                     " L3NetworkVO l3, PrimaryStorageClusterRefVO psref" +
@@ -420,13 +443,22 @@ public class VmInstanceManagerImpl extends AbstractService implements
             selectedBss = listIntersection(selectedBss, l);
         }
 
-        if (selectedBss.isEmpty()) {
-            reply.setInventories(new ArrayList());
+        return BackupStorageInventory.valueOf(selectedBss);
+    }
+
+    @Transactional(readOnly = true)
+    private void getInterdependentImagesByL3NetworkUuids(APIGetInterdependentL3NetworksImagesMsg msg) {
+        APIGetInterdependentL3NetworkImageReply reply = new APIGetInterdependentL3NetworkImageReply();
+
+        List<BackupStorageInventory> bss = getInterdependentBackupStoragesByL3NetworkUuids(msg.getL3NetworkUuids());
+
+        if (bss.isEmpty()) {
+            reply.setInventories(new ArrayList<>());
             bus.reply(msg, reply);
             return;
         }
 
-        List<String> bsUuids = selectedBss.stream().map(BackupStorageVO::getUuid).collect(Collectors.toList());
+        List<String> bsUuids = bss.stream().map(BackupStorageInventory::getUuid).collect(Collectors.toList());
         String sql = "select img" +
                 " from ImageVO img, ImageBackupStorageRefVO iref, BackupStorageZoneRefVO zref, BackupStorageVO bs" +
                 " where img.uuid = iref.imageUuid" +
@@ -462,6 +494,20 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             msg.getImageUuid(), msg.getZoneUuid()));
         }
 
+        List<L3NetworkInventory> l3s =
+                getInterdependentL3NetworksByBackupStorageUuids(bss, msg.getZoneUuid(), accountUuid);
+
+        List<String> bsUuids = bss.stream().map(BackupStorageVO::getUuid).collect(Collectors.toList());
+        for (GetInterdependentL3NetworksExtensionPoint ext : pluginRgty.getExtensionList(GetInterdependentL3NetworksExtensionPoint.class)) {
+            l3s = ext.afterFilterByImage(l3s, bsUuids, msg.getImageUuid());
+        }
+
+        reply.setInventories(l3s);
+        bus.reply(msg, reply);
+    }
+
+    @Transactional(readOnly = true)
+    private List<L3NetworkInventory> getInterdependentL3NetworksByBackupStorageUuids(List<BackupStorageVO> bss, String zoneUuid, String accountUuid) {
         List<L3NetworkVO> l3s = new ArrayList<>();
         for (BackupStorageVO bs : bss) {
             BackupStorageType bsType = BackupStorageType.valueOf(bs.getType());
@@ -469,7 +515,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             if (relatedPrimaryStorageUuids == null) {
                 // the backup storage has no strongly-bound primary storage
                 List<String> psTypes = hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics(bs.getType());
-                sql = "select l3" +
+                String sql = "select l3" +
                         " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
                         " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
                         " where l3.l2NetworkUuid = l2ref.l2NetworkUuid" +
@@ -481,11 +527,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         " group by l3.uuid";
                 TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
                 l3q.setParameter("psTypes", psTypes);
-                l3q.setParameter("zoneUuid", msg.getZoneUuid());
+                l3q.setParameter("zoneUuid", zoneUuid);
                 l3s.addAll(l3q.getResultList());
             } else if (!relatedPrimaryStorageUuids.isEmpty()) {
                 // the backup storage has strongly-bound primary storage, e.g. ceph
-                sql = "select l3" +
+                String sql = "select l3" +
                         " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
                         " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
                         " where l3.l2NetworkUuid = l2ref.l2NetworkUuid" +
@@ -497,7 +543,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         " group by l3.uuid";
                 TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
                 l3q.setParameter("psUuids", relatedPrimaryStorageUuids);
-                l3q.setParameter("zoneUuid", msg.getZoneUuid());
+                l3q.setParameter("zoneUuid", zoneUuid);
                 l3s.addAll(l3q.getResultList());
             } else {
                 logger.warn(String.format("the backup storage[uuid:%s, type: %s] needs a strongly-bound primary storage," +
@@ -505,20 +551,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
         }
 
-        List<String> bsUuids = bss.stream().map(BackupStorageVO::getUuid).collect(Collectors.toList());
-        for (GetInterdependentL3NetworksExtensionPoint ext : pluginRgty.getExtensionList(GetInterdependentL3NetworksExtensionPoint.class)) {
-            l3s = ext.afterFilterByImage(l3s, bsUuids, msg.getImageUuid());
-        }
-
         List<String> l3sFromAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
         if (l3sFromAccount == null) {
-            reply.setInventories(L3NetworkInventory.valueOf(l3s));
-        } else {
-            reply.setInventories(L3NetworkInventory.valueOf(l3s.stream()
-                    .filter(vo -> l3sFromAccount.contains(vo.getUuid()))
-                    .collect(Collectors.toList())));
+            return L3NetworkInventory.valueOf(l3s);
         }
-        bus.reply(msg, reply);
+        return L3NetworkInventory.valueOf(l3s.stream()
+                .filter(vo -> l3sFromAccount.contains(vo.getUuid()))
+                .collect(Collectors.toList()));
     }
 
     private void handle(APIGetCandidateZonesClustersHostsForCreatingVmMsg msg) {
