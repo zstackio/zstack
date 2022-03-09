@@ -23,6 +23,7 @@ import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
@@ -115,13 +116,10 @@ public class VmAllocateNicFlow implements Flow {
                     enableSriov ? "vf nic" : "vnic", nw.getUuid()));
 
             L2NetworkVO l2nw =  dbf.findByUuid(nw.getL2NetworkUuid(), L2NetworkVO.class);
-            if (enableSriov) {
-                vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VF"));
-            } else if (l2nw.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
-                vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("vDPA"));
-            } else {
-                vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VNIC"));
-            }
+            VSwitchType vSwitchType = new VSwitchType(l2nw.getvSwitchType());
+
+            VmNicType type = VmNicType.valueOf(vSwitchType, enableSriov);
+            vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 
             List<Integer> ipVersions = nw.getIpVersions();
             Map<Integer, String> nicStaticIpMap = new StaticIpOperator().getNicStaticIpMap(vmStaticIps.get(nw.getUuid()));
