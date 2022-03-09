@@ -12,8 +12,8 @@ public class HostCanonicalEvents {
     public static final String HOST_DISCONNECTED_PATH = "/host/disconnected";
     public static final String HOST_CHECK_MOUNT_FAULT = "/host/mount/path/fault";
     public static final String HOST_CHECK_INITIALIZED_FAILED = "/host/check/initialized/failed";
-    public static final String HOST_NETLINK_STATUS_UP = "/host/netlink/status/up";
-    public static final String HOST_NETLINK_STATUS_DOWN = "/host/netlink/status/down";
+    public static final String HOST_PHYSICAL_NIC_STATUS_UP = "/host/physicalNic/status/up";
+    public static final String HOST_PHYSICAL_NIC_STATUS_DOWN = "/host/physicalNic/status/down";
 
     public static class HostDisconnectedData {
         public String hostUuid;
@@ -107,7 +107,7 @@ public class HostCanonicalEvents {
     }
 
     @NeedJsonSchema
-    public static class HostNetlinkStatusData {
+    public static class HostPhysicalNicStatusData {
         public String hostUuid;
         public String hostAddr;
         public String fromBond;

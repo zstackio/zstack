@@ -3239,7 +3239,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class NetlinkAlarmEventCmd {
+    public static class PhysicalNicAlarmEventCmd {
         public String host;
         public String nic;
         public String ip;
