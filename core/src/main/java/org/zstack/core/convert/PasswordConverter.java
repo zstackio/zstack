@@ -4,7 +4,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.zstack.core.encrypt.EncryptFacade;
 import org.zstack.core.encrypt.EncryptGlobalConfig;
