@@ -48,6 +48,7 @@ import org.zstack.header.vm.VmAttachVolumeValidatorMethod;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.volume.*;
+import org.zstack.storage.volume.VolumeUtils;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -670,6 +671,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             return;
         }
 
+        VolumeUtils.SetVolumeProvisioningStrategy(msg.getVolumeUuid(), VolumeProvisioningStrategy.ThickProvisioning);
         InstantiateVolumeOnPrimaryStorageMsg imsg = new InstantiateVolumeOnPrimaryStorageMsg();
         imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         if (msg.getHostUuid() != null) {
