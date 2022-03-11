@@ -139,7 +139,11 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
         }
 
         ImageSpec image = spec.getImageSpec();
-        final boolean recovering = image.getSelectedBackupStorage().getInstallPath().startsWith("nbd://");
+        boolean recovering = false;
+        try {
+            recovering = image.getSelectedBackupStorage().getInstallPath().startsWith("nbd://");
+        } catch (NullPointerException ignored) {
+        }
         if (recovering) {
             InstantiateVolumeMsg cmsg = fillMsg(new InstantiateRootVolumeForRecoveryMsg(), spec.getDestRootVolume(), spec);
             ((InstantiateRootVolumeForRecoveryMsg) cmsg).setSelectedBackupStorage(image.getSelectedBackupStorage());
