@@ -403,6 +403,10 @@ public class KVMAgentCommands {
         private String cpuArchitecture;
         private String cpuModelName;
         private String cpuGHz;
+        private String cpuProcessorNum;
+        private String cpuL1Cache;
+        private String cpuL2Cache;
+        private String cpuL3Cache;
         private String hostCpuModelName;
         private String systemProductName;
         private String systemSerialNumber;
@@ -480,12 +484,56 @@ public class KVMAgentCommands {
             return cpuGHz;
         }
 
+        public void setCpuGHz(String cpuGHz) {
+            this.cpuGHz = cpuGHz;
+        }
+
+        public String getCpuProcessorNum() {
+            return cpuProcessorNum;
+        }
+
+        public void setCpuProcessorNum(String cpuProcessorNum) {
+            this.cpuProcessorNum = cpuProcessorNum;
+        }
+
+        public String getCpuL1Cache() {
+            return cpuL1Cache;
+        }
+
+        public void setCpuL1Cache(String cpuL1Cache) {
+            this.cpuL1Cache = cpuL1Cache;
+        }
+
+        public String getCpuL2Cache() {
+            return cpuL2Cache;
+        }
+
+        public void setCpuL2Cache(String cpuL2Cache) {
+            this.cpuL2Cache = cpuL2Cache;
+        }
+
+        public String getCpuL3Cache() {
+            return cpuL3Cache;
+        }
+
+        public void setCpuL3Cache(String cpuL3Cache) {
+            this.cpuL3Cache = cpuL3Cache;
+        }
+
         public String getCpuArchitecture() {
             return cpuArchitecture;
         }
 
+        public void setCpuArchitecture(String cpuArchitecture) {
+            this.cpuArchitecture = cpuArchitecture;
+        }
+
         public String getHostCpuModelName() {
             return hostCpuModelName;
+        }
+
+        public void setHostCpuModelName (String hostCpuModelName) {
+            this.hostCpuModelName = hostCpuModelName;
         }
 
         public String getSystemProductName() {

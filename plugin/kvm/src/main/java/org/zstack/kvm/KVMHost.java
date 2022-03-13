@@ -4156,6 +4156,11 @@ public class KVMHost extends HostBase implements Host {
                                     createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
                                     createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
                                     createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
+                                    createTagWithoutNonValue(HostSystemTags.CPU_ARCHITECTURE, HostSystemTags.CPU_ARCHITECTURE_TOKEN, ret.getCpuArchitecture(), true);
+                                    createTagWithoutNonValue(HostSystemTags.CPU_PROCESSOR_NUM, HostSystemTags.CPU_PROCESSOR_NUM_TOKEN, ret.getCpuProcessorNum(), true);
+                                    createTagWithoutNonValue(HostSystemTags.CPU_L1_CACHE, HostSystemTags.CPU_L1_CACHE_TOKEN, ret.getCpuL1Cache(), true);
+                                    createTagWithoutNonValue(HostSystemTags.CPU_L2_CACHE, HostSystemTags.CPU_L2_CACHE_TOKEN, ret.getCpuL2Cache(), true);
+                                    createTagWithoutNonValue(HostSystemTags.CPU_L3_CACHE, HostSystemTags.CPU_L3_CACHE_TOKEN, ret.getCpuL3Cache(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
 

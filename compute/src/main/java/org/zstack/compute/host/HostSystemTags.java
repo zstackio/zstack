@@ -41,6 +41,21 @@ public class HostSystemTags {
     public static final String CPU_GHZ_TOKEN = "cpuGHz";
     public static PatternedSystemTag CPU_GHZ = new PatternedSystemTag(String.format("cpuGHz::{%s}", CPU_GHZ_TOKEN), HostVO.class);
 
+    public static final String CPU_ARCHITECTURE_TOKEN = "cpuArchitecture";
+    public static PatternedSystemTag CPU_ARCHITECTURE = new PatternedSystemTag(String.format("cpuArchitecture::{%s}", CPU_ARCHITECTURE_TOKEN), HostVO.class);
+
+    public static final String CPU_PROCESSOR_NUM_TOKEN = "cpuProcessorNum";
+    public static PatternedSystemTag CPU_PROCESSOR_NUM = new PatternedSystemTag(String.format("cpuProcessorNum::{%s}", CPU_PROCESSOR_NUM_TOKEN), HostVO.class);
+
+    public static final String CPU_L1_CACHE_TOKEN = "cpuL1Cache";
+    public static PatternedSystemTag CPU_L1_CACHE = new PatternedSystemTag(String.format("cpuL1Cache::{%s}", CPU_L1_CACHE_TOKEN), HostVO.class);
+
+    public static final String CPU_L2_CACHE_TOKEN = "cpuL2Cache";
+    public static PatternedSystemTag CPU_L2_CACHE = new PatternedSystemTag(String.format("cpuL2Cache::{%s}", CPU_L2_CACHE_TOKEN), HostVO.class);
+
+    public static final String CPU_L3_CACHE_TOKEN = "cpuL3Cache";
+    public static PatternedSystemTag CPU_L3_CACHE = new PatternedSystemTag(String.format("cpuL3Cache::{%s}", CPU_L3_CACHE_TOKEN), HostVO.class);
+
     public static final String PAGE_TABLE_EXTENSION_DISABLED_TOKEN = "pageTableExtensionDisabled";
     public static PatternedSystemTag PAGE_TABLE_EXTENSION_DISABLED = new PatternedSystemTag(PAGE_TABLE_EXTENSION_DISABLED_TOKEN, HostVO.class);
 
