@@ -41,6 +41,21 @@ public class HostSystemTags {
     public static final String CPU_GHZ_TOKEN = "cpuGHz";
     public static PatternedSystemTag CPU_GHZ = new PatternedSystemTag(String.format("cpuGHz::{%s}", CPU_GHZ_TOKEN), HostVO.class);
 
+    public static final String CPU_PROCESSOR_NUM_TOKEN = "cpuProcessorNum";
+    public static PatternedSystemTag CPU_PROCESSOR_NUM = new PatternedSystemTag(String.format("cpuProcessorNum::{%s}", CPU_PROCESSOR_NUM_TOKEN), HostVO.class);
+
+    public static final String CPU_CACHE_TOKEN = "cpuCache";
+    public static PatternedSystemTag CPU_CACHE = new PatternedSystemTag(String.format("cpuCache::{%s}", CPU_CACHE_TOKEN), HostVO.class);
+
+    public static final String POWER_SUPPLY_MODEL_NAME_TOKEN = "powerSupplyModelName";
+    public static PatternedSystemTag POWER_SUPPLY_MODEL_NAME = new PatternedSystemTag(String.format("powerSupplyModelName::{%s}", POWER_SUPPLY_MODEL_NAME_TOKEN), HostVO.class);
+
+    public static final String POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN = "powerSupplyMaxPowerCapacity";
+    public static PatternedSystemTag POWER_SUPPLY_MAX_POWER_CAPACITY = new PatternedSystemTag(String.format("powerSupplyMaxPowerCapacity::{%s}", POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN), HostVO.class);
+
+    public static final String POWER_SUPPLY_MANUFACTURER_TOKEN = "powerSupplyManufacturer";
+    public static PatternedSystemTag POWER_SUPPLY_MANUFACTURER = new PatternedSystemTag(String.format("powerSupplyManufacturer::{%s}", POWER_SUPPLY_MANUFACTURER_TOKEN), HostVO.class);
+
     public static final String PAGE_TABLE_EXTENSION_DISABLED_TOKEN = "pageTableExtensionDisabled";
     public static PatternedSystemTag PAGE_TABLE_EXTENSION_DISABLED = new PatternedSystemTag(PAGE_TABLE_EXTENSION_DISABLED_TOKEN, HostVO.class);
 
