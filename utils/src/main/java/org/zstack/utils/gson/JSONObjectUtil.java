@@ -1,11 +1,13 @@
 package org.zstack.utils.gson;
 
 import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import org.json.JSONArray;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -52,6 +54,10 @@ public class JSONObjectUtil {
     
     public static <T> T toObject(String content, Class<T> clazz){
         return gson.fromJson(content, clazz);
+    }
+
+    public static <T> List<T> toList(String content, Type type){
+        return gson.fromJson(content, type);
     }
 
     public static String toJsonString(Object obj) {
