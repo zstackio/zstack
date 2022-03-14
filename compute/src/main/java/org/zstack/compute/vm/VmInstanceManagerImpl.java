@@ -1173,35 +1173,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
     }
 
-    private CreateVmInstanceMsg fromAPICreateVmInstanceMsg(APICreateVmInstanceMsg msg) {
-        CreateVmInstanceMsg cmsg = NewVmInstanceMsgBuilder.fromAPINewVmInstanceMsg(msg);
-        cmsg.setImageUuid(msg.getImageUuid());
-        cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
-        if (msg.getRootDiskSize() != null) {
-            cmsg.setRootDiskSize(msg.getRootDiskSize());
-        }
-        cmsg.setDataDiskSizes(msg.getDataDiskSizes());
-        cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
-        cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
-        cmsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
-
-        cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
-        if (CollectionUtils.isNotEmpty(msg.getDataDiskOfferingUuids()) || CollectionUtils.isNotEmpty(msg.getDataDiskSizes())) {
-            cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
-        }
-        return cmsg;
-    }
-
-    private String getPSUuidForDataVolume(List<String> systemTags){
-        if(systemTags == null || systemTags.isEmpty()){
-            return null;
-        }
-
-        return SystemTagUtils.findTagValue(systemTags, VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME, VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN);
-    }
-
     private void handle(final APICreateVmInstanceMsg msg) {
-        doCreateVmInstance(fromAPICreateVmInstanceMsg(msg), msg, new ReturnValueCompletion<VmInstanceInventory>(msg) {
+        doCreateVmInstance(VmInstanceUtils.fromAPICreateVmInstanceMsg(msg), msg, new ReturnValueCompletion<VmInstanceInventory>(msg) {
             APICreateVmInstanceEvent evt = new APICreateVmInstanceEvent(msg.getId());
 
             @Override
