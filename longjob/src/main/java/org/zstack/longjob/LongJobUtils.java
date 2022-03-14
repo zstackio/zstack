@@ -107,7 +107,7 @@ public class LongJobUtils {
         return updateByUuid(uuid, vo -> vo.setJobResult(JSONObjectUtil.toJsonString(result)));
     }
 
-    static boolean jobCompleted(LongJobVO vo) {
+    public static boolean jobCompleted(LongJobVO vo) {
         return completedStates.contains(vo.getState());
     }
 
