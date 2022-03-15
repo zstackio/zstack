@@ -32,7 +32,7 @@ public class ResourceConfigZQLExtension implements MarshalZQLASTTreeExtensionPoi
         return null;
     }
 
-    private String filterResourceOwner(ZQLExtensionContext context) {
+    protected String filterResourceOwner(ZQLExtensionContext context) {
         if (AccountConstant.isAdminPermission(context.getAPISession())) {
             throw new SkipThisRestrictExprException();
         }
