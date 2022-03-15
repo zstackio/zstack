@@ -1,0 +1,19 @@
+<error>
+    <prefix>OVF</prefix>
+
+    <code>
+        <id>1001</id>
+        <description>Failed to parse OVF template XML text</description>
+    </code>
+
+    <code>
+        <id>1003</id>
+        <description>Failed to parse image info JSON text</description>
+    </code>
+
+    <code>
+        <id>1004</id>
+        <description>Image info is not valid</description>
+    </code>
+</error>
+
