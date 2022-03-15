@@ -815,16 +815,39 @@ public class VipBase {
         bus.publish(evt);
     }
 
+    private Boolean checkNicInSameVmInstance(VmNicVO enic, VmNicVO nnic, String peerL3NetworkUuid) {
+        if (enic.getVmInstanceUuid().equals(nnic.getVmInstanceUuid())) {
+            return true;
+        }
+
+        Boolean sameHaGroup = false;
+        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            sameHaGroup = ext.isVirtualRouterInSameHaPair(asList(nnic.getVmInstanceUuid(), enic.getVmInstanceUuid()));
+            if (sameHaGroup) {
+                break;
+            }
+        }
+        if (sameHaGroup) {
+            return true;
+        }
+
+        throw new CloudRuntimeException(String.format("the request to add peer l3[uuid:%s] with vip[uuid:%s] has " +
+                        "attched vr[uuid:%s] and is not vr[uuid:%s] which exists peer l3 attached", peerL3NetworkUuid, self.getUuid(),
+                nnic.getVmInstanceUuid(), enic.getVmInstanceUuid()));
+    }
+
     public Boolean checkPeerL3Additive(String peerL3NetworkUuid) {
         if (peerL3NetworkUuid == null) {
             return false;
         }
 
+        VmNicVO vipNic = null;
         if (self.getPeerL3NetworkRefs() == null || self.getPeerL3NetworkRefs().isEmpty()) {
-            return true;
-        }
-
-        if (self.getPeerL3NetworkRefs().stream()
+            vipNic = Q.New(VmNicVO.class).eq(VmNicVO_.usedIpUuid, self.getUsedIpUuid()).limit(1).find();
+            if (vipNic == null) {
+                return true;
+            }
+        } else if (self.getPeerL3NetworkRefs().stream()
                 .anyMatch(ref -> ref.getL3NetworkUuid().equals(peerL3NetworkUuid))) {
             logger.debug(String.format("peer l3 [uuid:%s] has already add to vip[uuid:%s], skip to add",
                     peerL3NetworkUuid, self.getUuid()));
@@ -839,29 +862,21 @@ public class VipBase {
             return true;
         }
 
-        for (VipPeerL3NetworkRefVO ref : self.getPeerL3NetworkRefs()) {
-            VmNicVO enic = Q.New(VmNicVO.class).eq(VmNicVO_.l3NetworkUuid, ref.getL3NetworkUuid())
-                    .notNull(VmNicVO_.metaData).limit(1).find();
-            if (enic == null || enic.getVmInstanceUuid().equals(nnic.getVmInstanceUuid())) {
-                continue;
-            }
+        if (vipNic != null) {
+            return checkNicInSameVmInstance(vipNic, nnic, peerL3NetworkUuid);
+        } else {
+            for (VipPeerL3NetworkRefVO ref : self.getPeerL3NetworkRefs()) {
+                VmNicVO enic = Q.New(VmNicVO.class).eq(VmNicVO_.l3NetworkUuid, ref.getL3NetworkUuid())
+                        .notNull(VmNicVO_.metaData).limit(1).find();
+                if (enic == null) {
+                    continue;
+                }
 
-            Boolean sameHaGroup = false;
-            for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-                sameHaGroup = ext.isVirtualRouterInSameHaPair(asList(nnic.getVmInstanceUuid(), enic.getVmInstanceUuid()));
-                if (sameHaGroup) {
-                    break;
+                if (checkNicInSameVmInstance(enic, nnic, peerL3NetworkUuid)){
+                    continue;
                 }
             }
-            if (sameHaGroup) {
-                continue;
-            }
-
-            throw new CloudRuntimeException(String.format("the request to add peer l3[uuid:%s] with vip[uuid:%s] has " +
-                            "attched vr[uuid:%s] and is not vr[uuid:%s] which exists peer l3 attached", peerL3NetworkUuid, self.getUuid(),
-                    nnic.getVmInstanceUuid(), enic.getVmInstanceUuid()));
         }
-
         return true;
     }
 
