@@ -407,6 +407,9 @@ public class KVMAgentCommands {
         private String cpuL1Cache;
         private String cpuL2Cache;
         private String cpuL3Cache;
+        private String powerSupplyModelName;
+        private String powerSupplyManufacturer;
+        private String powerSupplyMaxPowerCapacity;
         private String hostCpuModelName;
         private String systemProductName;
         private String systemSerialNumber;
@@ -518,6 +521,31 @@ public class KVMAgentCommands {
 
         public void setCpuL3Cache(String cpuL3Cache) {
             this.cpuL3Cache = cpuL3Cache;
+        }
+
+        public String getPowerSupplyModelName() {
+            return powerSupplyModelName;
+        }
+
+        public void setPowerSupplyModelName(String powerSupplyModelName) {
+            this.powerSupplyModelName = powerSupplyModelName;
+        }
+
+
+        public String getPowerSupplyManufacturer() {
+            return powerSupplyManufacturer;
+        }
+
+        public void setPowerSupplyManufacturer(String powerSupplyManufacturer) {
+            this.powerSupplyManufacturer = powerSupplyManufacturer;
+        }
+
+        public String getPowerSupplyMaxPowerCapacity() {
+            return powerSupplyMaxPowerCapacity;
+        }
+
+        public void setPowerSupplyMaxPowerCapacity(String powerSupplyMaxPowerCapacity) {
+            this.powerSupplyMaxPowerCapacity = powerSupplyMaxPowerCapacity;
         }
 
         public String getCpuArchitecture() {

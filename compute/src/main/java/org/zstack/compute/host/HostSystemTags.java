@@ -56,6 +56,15 @@ public class HostSystemTags {
     public static final String CPU_L3_CACHE_TOKEN = "cpuL3Cache";
     public static PatternedSystemTag CPU_L3_CACHE = new PatternedSystemTag(String.format("cpuL3Cache::{%s}", CPU_L3_CACHE_TOKEN), HostVO.class);
 
+    public static final String POWER_SUPPLY_MODEL_NAME_TOKEN = "powerSupplyModelName";
+    public static PatternedSystemTag POWER_SUPPLY_MODEL_NAME = new PatternedSystemTag(String.format("powerSupplyModelName::{%s}", POWER_SUPPLY_MODEL_NAME_TOKEN), HostVO.class);
+
+    public static final String POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN = "powerSupplyMaxPowerCapacity";
+    public static PatternedSystemTag POWER_SUPPLY_MAX_POWER_CAPACITY = new PatternedSystemTag(String.format("powerSupplyMaxPowerCapacity::{%s}", POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN), HostVO.class);
+
+    public static final String POWER_SUPPLY_MANUFACTURER_TOKEN = "powerSupplyManufacturer";
+    public static PatternedSystemTag POWER_SUPPLY_MANUFACTURER = new PatternedSystemTag(String.format("powerSupplyManufacturer::{%s}", POWER_SUPPLY_MANUFACTURER_TOKEN), HostVO.class);
+
     public static final String PAGE_TABLE_EXTENSION_DISABLED_TOKEN = "pageTableExtensionDisabled";
     public static PatternedSystemTag PAGE_TABLE_EXTENSION_DISABLED = new PatternedSystemTag(PAGE_TABLE_EXTENSION_DISABLED_TOKEN, HostVO.class);
 
