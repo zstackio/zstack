@@ -1,0 +1,93 @@
+import org.springframework.http.HttpEntity
+
+class GetCpuInfoAndPowerSupplyInfoCase extends SubCase {
+
+    EnvSpec env
+
+    @Override
+    void setup() {
+        useSpring(KvmTest.springSpec)
+    }
+
+    @Override
+    void environment() {
+        env = Env.oneVmBasicEnv()
+    }
+
+    @Override
+    void test() {
+        env.create {
+            prepare()
+            testCpuInfoByReConnectHost()
+        }
+    }
+
+    @Override
+    void clean() {
+        env.delete()
+    }
+
+    void prepare() {
+        cluster = env.inventoryByName("cluster") as ClusterInventory
+        bus = bean(CloudBus.class)
+    }
+
+    void testCpuInfoByReConnectHostOrAddHost() {
+
+        AddKVMHostAction action = new AddKVMHostAction()
+        action.resourceUuid = Platform.getUuid()
+        action.sessionId = adminSession()
+        action.clusterUuid = cluster.uuid
+        action.name = "kvm13"
+        action.managementIp = "127.0.0.14"
+        action.username = "root"
+        action.password = "password"
+        def res = action.call()
+        assert res.error != null
+
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuArchitecture::%").isExists()
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "hostCpuModelName::%").isExists()
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuProcessorNum::%").isExists()
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuGHz::%").isExists()
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuL1Cache::%").isExists()
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuL2Cache::%").isExists()
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuL3Cache::%").isExists()
+
+        int sizeFlag = 0
+        env.message(BatchCheckNetworkPhysicalInterfaceMsg.class) { BatchCheckNetworkPhysicalInterfaceMsg msg, CloudBus bus ->
+
+            sizeFlag = msg.physicalInterfaces.size()
+
+            BatchCheckNetworkPhysicalInterfaceReply reply = new BatchCheckNetworkPhysicalInterfaceReply()
+            bus.reply(msg, reply)
+        }
+
+
+        HostInventory host = env.inventoryByName("kvm")
+
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, host.uuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuArchitecture::%").count() == 0
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, host.uuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "hostCpuModelName::%").count() == 0
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, host.uuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuProcessorNum::%").count() == 0
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, host.uuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuGHz::%").count() == 0
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, host.uuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuL1Cache::%").count() == 0
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, host.uuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuL2Cache::%").count() == 0
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, host.uuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuL3Cache::%").count() == 0
+
+        expect(AssertionError.class) {
+            reconnectHost {
+                uuid = host.uuid
+            }
+        }
+
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuArchitecture::%").isExists()
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "hostCpuModelName::%").isExists()
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuProcessorNum::%").isExists()
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuGHz::%").isExists()
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuL1Cache::%").isExists()
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuL2Cache::%").isExists()
+        assert Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, action.resourceUuid).eq(SystemTagVO_.resourceType, HostVO.getSimpleName()).like(SystemTagVO_.tag, "cpuL3Cache::%").isExists()
+        
+
+    }
+
+}
