@@ -18,6 +18,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostCpuOverProvisioningManager;
+import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
@@ -40,6 +41,7 @@ import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
 import org.zstack.header.vo.FindSameNodeExtensionPoint;
 import org.zstack.header.vo.ResourceInventory;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.resourceconfig.ClusterResourceConfigInitializer;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
@@ -90,6 +92,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private EventFacade evtf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private ClusterResourceConfigInitializer crci;
 
     private Map<Class, HostBaseExtensionFactory> hostBaseExtensionFactories = new HashMap<>();
     private List<HostExtensionManager> hostExtensionManagers = new ArrayList<>();
@@ -390,6 +394,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 if (cluster.getArchitecture() == null) {
                     cluster.setArchitecture(arch);
                     dbf.update(cluster);
+                    ClusterInventory clusterInventory = ClusterInventory.valueOf(cluster);
+                    crci.initClusterResourceConfigValue(clusterInventory);
                     trigger.next();
                     return;
                 }
