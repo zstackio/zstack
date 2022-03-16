@@ -85,6 +85,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public static final HypervisorType hypervisorType = new HypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE);
     public static final VolumeFormat QCOW2_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_QCOW2, hypervisorType);
     public static final VolumeFormat RAW_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_RAW, hypervisorType);
+    public static final VolumeFormat VMDK_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_VMDK, hypervisorType);
     private List<KVMHostConnectExtensionPoint> connectExtensions = new ArrayList<>();
     private final Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<>();
     private int maxDataVolumeNum;
@@ -97,6 +98,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
     static {
         RAW_FORMAT.newFormatInputOutputMapping(hypervisorType, QCOW2_FORMAT.toString());
+        VMDK_FORMAT.newFormatInputOutputMapping(hypervisorType, QCOW2_FORMAT.toString());
         QCOW2_FORMAT.setFirstChoice(hypervisorType);
     }
 
