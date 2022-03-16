@@ -53,6 +53,7 @@
                                         <exclude>springConfigXml/AccountManager.xml</exclude>
                                         <exclude>serviceConfig/metadata.xml</exclude>
                                         <exclude>searchConfig/indexConfig.xml</exclude>
+                                        <exclude>springConfigXml/resourceConfig.xml</exclude>
                                     </excludes>
                                 </resource>
                                 <resource>
