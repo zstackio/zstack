@@ -1872,6 +1872,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             ImageVO image;
             long imageEstimateSize;
             String volumePsUuid;
+            long imageActualSize;
 
             @Override
             public void setup() {
@@ -2103,6 +2104,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     if (reply.getFormat() != null) {
                                         format = reply.getFormat();
                                     }
+
+                                    imageActualSize = reply.getActualSize();
+                                    if (reply.getActualSize() == 0) {
+                                        imageActualSize = imageEstimateSize;
+                                    }
                                 }
 
                                 int backupStorageNum = msgData.getBackupStorageUuids() == null ? 1 : msgData.getBackupStorageUuids().size();
@@ -2119,6 +2125,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     }
                                     image.setMd5Sum(mdsum);
                                     image.setStatus(ImageStatus.Ready);
+                                    image.setActualSize(imageActualSize);
                                     image = dbf.updateAndRefresh(image);
 
                                     trigger.next();

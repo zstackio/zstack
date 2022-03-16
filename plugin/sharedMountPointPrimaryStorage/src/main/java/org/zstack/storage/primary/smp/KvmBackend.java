@@ -1683,9 +1683,11 @@ public class KvmBackend extends HypervisorBackend {
                         CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
                         cmd.volumePath = volume.getInstallPath();
                         cmd.installPath = temporaryTemplatePath;
-                        new Do().go(CREATE_TEMPLATE_FROM_VOLUME_PATH, cmd, new ReturnValueCompletion<AgentRsp>(trigger) {
+                        new Do().go(CREATE_TEMPLATE_FROM_VOLUME_PATH, cmd, CreateTemplateFromVolumeRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
                             @Override
-                            public void success(AgentRsp returnValue) {
+                            public void success(AgentRsp rsp) {
+                                CreateTemplateFromVolumeRsp crsp = (CreateTemplateFromVolumeRsp) rsp;
+                                reply.setActualSize(crsp.actualSize);
                                 reportProgress(stage.getEnd().toString());
                                 success = true;
                                 trigger.next();
