@@ -55,8 +55,8 @@ public class NewVmInstanceMsgBuilder {
             cmsg.setAllocatorStrategy(iovo.getAllocatorStrategy());
         }
 
-        cmsg.setCpuNum(msg.getCpuNum());
-        cmsg.setMemorySize(msg.getMemorySize());
+        cmsg.setCpuNum(msg.getCpuNum() == null ? 0 : msg.getCpuNum());
+        cmsg.setMemorySize(msg.getMemorySize() == null ? 0 : msg.getMemorySize());
 
         cmsg.setAccountUuid(api.getSession().getAccountUuid());
         cmsg.setName(msg.getName());
