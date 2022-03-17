@@ -154,6 +154,9 @@
         <Logger name="org.hibernate.stat" level="DEBUG"/>
 
         <Logger name="org.zstack.core.progress" level="TRACE" />
+
+        <Logger name="org.zstack.woodpecker" level="DEBUG"/>
+
         <!--
         <Logger name="com.datastax.driver.core" level="TRACE" />
         -->

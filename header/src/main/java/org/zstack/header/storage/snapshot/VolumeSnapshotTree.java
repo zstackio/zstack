@@ -4,6 +4,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  */
@@ -214,6 +215,15 @@ public class VolumeSnapshotTree {
                 inventory = new VolumeSnapshotInventory();
             }
             inventory.setUuid(uuid);
+        }
+
+        private void walkDown(SnapshotLeaf me, Consumer<SnapshotLeaf> consumer) {
+            consumer.accept(me);
+            me.children.forEach(c -> walkDown(c, consumer));
+
+        }
+        public void walkDown(Consumer<SnapshotLeaf> consumer) {
+            walkDown(this, consumer);
         }
 
         public VolumeSnapshotTree toSubTree() {

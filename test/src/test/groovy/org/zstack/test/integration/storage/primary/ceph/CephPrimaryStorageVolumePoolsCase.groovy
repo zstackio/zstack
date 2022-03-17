@@ -10,6 +10,7 @@ import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO
 import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO_
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.*
+import org.zstack.testlib.vfs.VFS
 import org.zstack.utils.EncodingConversion
 import org.zstack.utils.data.SizeUnit
 
@@ -125,10 +126,9 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
     void testCreateDataVolumeInPool() {
         CephPrimaryStorageBase.CreateEmptyVolumeCmd cmd = null
 
-        env.afterSimulator(CephPrimaryStorageBase.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+        env.preSimulator(CephPrimaryStorageBase.CREATE_VOLUME_PATH) { HttpEntity<String> e ->
             cmd = json(e.body, CephPrimaryStorageBase.CreateEmptyVolumeCmd.class)
             assert !cmd.skipIfExisting
-            return rsp
         }
 
         VolumeInventory vol = createDataVolume {
@@ -148,10 +148,9 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
 
         CephPrimaryStorageBase.CreateEmptyVolumeCmd cmd = null
 
-        env.afterSimulator(CephPrimaryStorageBase.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+        env.preSimulator(CephPrimaryStorageBase.CREATE_VOLUME_PATH) { HttpEntity<String> e ->
             cmd = json(e.body, CephPrimaryStorageBase.CreateEmptyVolumeCmd.class)
             assert !cmd.skipIfExisting
-            return rsp
         }
 
         VolumeInventory vol = createDataVolume {
@@ -192,27 +191,26 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
     void testAddAndDeletePool() {
         CephPrimaryStorageBase.AddPoolCmd acmd = null
 
-        env.afterSimulator(CephPrimaryStorageBase.ADD_POOL_PATH) { rsp, HttpEntity<String> e ->
+        env.preSimulator(CephPrimaryStorageBase.ADD_POOL_PATH) { HttpEntity<String> e ->
             acmd = json(e.body, CephPrimaryStorageBase.AddPoolCmd.class)
-            return rsp
         }
 
         CephPrimaryStoragePoolInventory inv = addCephPrimaryStoragePool {
             poolName = LOW_POOL_NAME
             primaryStorageUuid = primaryStorage.uuid
             type = DATA_POOL_TYPE
+            isCreate = true
         }
 
         assert inv.poolName == LOW_POOL_NAME
         assert acmd != null
-        assert !acmd.isCreate
+        assert acmd.isCreate
         assert acmd.poolName == LOW_POOL_NAME
 
         CephPrimaryStorageBase.DeletePoolCmd dcmd = null
 
-        env.afterSimulator(CephPrimaryStorageBase.DELETE_POOL_PATH) { rsp, HttpEntity<String> e ->
+        env.preSimulator(CephPrimaryStorageBase.DELETE_POOL_PATH) { HttpEntity<String> e ->
             dcmd = json(e.body, CephPrimaryStorageBase.DeletePoolCmd.class)
-            return rsp
         }
 
         deleteCephPrimaryStoragePool {
@@ -227,12 +225,12 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
     void testAddPoolWithCheckExistenceFailure() {
         CephPrimaryStorageBase.AddPoolCmd acmd = null
 
-        env.afterSimulator(CephPrimaryStorageBase.ADD_POOL_PATH) { _, HttpEntity<String> e ->
+        VFS vfs = CephPrimaryStorageSpec.vfs1("7ff218d9-f525-435f-8a40-3618d1772a64", env)
+        // fake the pool existence
+        vfs.createDirectories(LOW_POOL_NAME)
+
+        env.preSimulator(CephPrimaryStorageBase.ADD_POOL_PATH) { HttpEntity<String> e ->
             acmd = json(e.body, CephPrimaryStorageBase.AddPoolCmd.class)
-            def rsp = new CephPrimaryStorageBase.AddPoolRsp()
-            rsp.error = "pool exists"
-            rsp.success = false
-            return rsp
         }
 
         AddCephPrimaryStoragePoolAction a = new AddCephPrimaryStoragePoolAction()
@@ -247,6 +245,8 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         assert !Q.New(CephPrimaryStoragePoolVO.class).eq(CephPrimaryStoragePoolVO_.poolName, LOW_POOL_NAME).isExists()
         assert acmd != null
         assert acmd.isCreate
+
+        vfs.delete(LOW_POOL_NAME)
     }
 
     void testQueryPool() {

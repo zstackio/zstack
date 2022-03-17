@@ -122,7 +122,7 @@ class VmProgressCase extends SubCase {
         ub.path(RESTConstant.COMMAND_CHANNEL_PATH)
         String url = ub.build().toUriString()
 
-        env.afterSimulator(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH) { rsp, HttpEntity<String> e ->
+        env.hijackSimulator(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH) { rsp, HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.getBody(), LinkedHashMap.class)
             int i = 0
             while (i <= 5) {

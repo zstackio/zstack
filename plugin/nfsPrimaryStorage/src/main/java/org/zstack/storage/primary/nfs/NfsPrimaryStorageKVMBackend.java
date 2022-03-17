@@ -809,6 +809,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         }
 
         NfsToNfsMigrateBitsCmd cmd = new NfsToNfsMigrateBitsCmd();
+        cmd.setUuid(msg.getSrcPrimaryStorageUuid());
         cmd.srcFolderPath = msg.getSrcFolderPath();
         cmd.dstFolderPath = msg.getDstFolderPath();
         cmd.filtPaths = trash.findTrashInstallPath(msg.getSrcFolderPath(), msg.getSrcPrimaryStorageUuid());

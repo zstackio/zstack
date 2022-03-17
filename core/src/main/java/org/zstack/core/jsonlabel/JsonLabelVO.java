@@ -1,6 +1,7 @@
 package org.zstack.core.jsonlabel;
 
 import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.ToInventory;
 
 import javax.persistence.*;
 import java.sql.Timestamp;

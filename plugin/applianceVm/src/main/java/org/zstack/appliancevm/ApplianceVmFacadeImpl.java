@@ -3,6 +3,7 @@ package org.zstack.appliancevm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.appliancevm.ApplianceVmConstant.BootstrapParams;
+import org.zstack.compute.vm.VmInstanceHookManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
@@ -37,6 +38,10 @@ import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.service.MtuGetter;
+import org.zstack.header.vm.hooks.VmInstanceAfterCreateHook;
+import org.zstack.header.vm.hooks.VmInstanceAfterDestroyHook;
+import org.zstack.header.vm.hooks.VmInstanceBeforeCreateHook;
+import org.zstack.header.vm.hooks.VmInstanceBeforeDestroyHook;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -72,6 +77,8 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     private AnsibleFacade asf;
     @Autowired
     private L2NetworkManager l2Mgr;
+    @Autowired
+    private VmInstanceHookManager vmHookMgr;
 
     private List<String> createApplianceVmWorkFlow;
     private FlowChainBuilder createApplianceVmWorkFlowBuilder;
@@ -228,7 +235,48 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         createApplianceVmWorkFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(getCreateApplianceVmWorkFlow()).construct();
         populateExtensions();
         deployAnsible();
+        hookVmEvents();
         return true;
+    }
+
+    private void hookVmEvents() {
+        class VmCreateHook implements VmInstanceAfterCreateHook {
+            @Override
+            public void afterCreate(VmInstanceInventory vm) {
+                if (!vm.getType().equals(ApplianceVmConstant.APPLIANCE_VM_TYPE)) {
+                    return;
+                }
+
+                ApplianceVmCanonicalEvents.NewVmCreatedData data = new ApplianceVmCanonicalEvents.NewVmCreatedData();
+                data.vm  = ApplianceVmInventory.valueOf(dbf.findByUuid(vm.getUuid(), ApplianceVmVO.class));
+                data.fire();
+            }
+        }
+
+        class VmDestroyHook implements VmInstanceBeforeDestroyHook, VmInstanceAfterDestroyHook {
+            private ApplianceVmInventory applianceVm;
+
+            @Override
+            public void afterDestroy(VmInstanceInventory vm) {
+                if (applianceVm != null) {
+                    ApplianceVmCanonicalEvents.NewVmCreatedData data = new ApplianceVmCanonicalEvents.NewVmCreatedData();
+                    data.vm = applianceVm;
+                    data.fire();
+                }
+            }
+
+            @Override
+            public void beforeDestroy(VmInstanceInventory vm) {
+                if (!vm.getType().equals(ApplianceVmConstant.APPLIANCE_VM_TYPE)) {
+                    return;
+                }
+
+                applianceVm = ApplianceVmInventory.valueOf(dbf.findByUuid(vm.getUuid(), ApplianceVmVO.class));
+            }
+        }
+
+        vmHookMgr.hookCreateEvent(VmCreateHook::new);
+        vmHookMgr.hookDestroyEvent(VmDestroyHook::new);
     }
 
     @Override

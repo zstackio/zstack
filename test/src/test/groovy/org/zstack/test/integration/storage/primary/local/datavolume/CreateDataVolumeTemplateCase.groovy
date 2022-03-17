@@ -219,9 +219,8 @@ class CreateDataVolumeTemplateCase extends SubCase {
 
         // make sure create data volume is copy from image
         LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd cmd
-        env.simulator(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH) {HttpEntity<String> e ->
+        env.preSimulator(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH) { HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.getBody(), LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd.class)
-            return new LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsRsp()
         }
 
         def vol = createDataVolumeFromVolumeTemplate {
@@ -253,8 +252,7 @@ class CreateDataVolumeTemplateCase extends SubCase {
         def ps = env.inventoryByName("local") as PrimaryStorageInventory
         def kvm = env.inventoryByName("kvm") as KVMHostInventory
 
-        env.simulator(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            def rsp = new SftpBackupStorageCommands.DownloadResponse()
+        env.afterSimulator(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH) { SftpBackupStorageCommands.DownloadResponse rsp, HttpEntity<String> e ->
             rsp.size = 10240
             rsp.actualSize = 1024
             return rsp

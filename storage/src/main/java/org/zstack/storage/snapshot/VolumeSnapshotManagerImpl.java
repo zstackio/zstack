@@ -7,17 +7,15 @@ import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfigVO;
-import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.encrypt.EncryptGlobalConfig;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -25,7 +23,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.*;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
@@ -33,7 +30,10 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -42,11 +42,6 @@ import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
-import org.zstack.header.volume.VolumeJustBeforeDeleteFromDbExtensionPoint;
-import org.zstack.storage.volume.VolumeSystemTags;
-import org.zstack.tag.TagManager;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.ExceptionDSL;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
@@ -64,7 +59,6 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.snapshot.VolumeSnapshotTagHelper.getBackingVolumeTag;
-import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -900,10 +894,19 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         new FireSnapShotCanonicalEvent().
                                 fireSnapShotStatusChangedEvent(
                                         VolumeSnapshotStatus.valueOf(snapshot.getStatus()),
-                                        VolumeSnapshotInventory.valueOf(svo))
-                        ;
-                        ret.setInventory(VolumeSnapshotInventory.valueOf(svo));
+                                        VolumeSnapshotInventory.valueOf(svo));
+
+                        VolumeSnapshotInventory sp = svo.toInventory();
+                        callExtensionPoints(sp);
+
+                        ret.setInventory(sp);
                         bus.reply(msg, ret);
+                    }
+
+                    @ExceptionSafe
+                    private void callExtensionPoints(VolumeSnapshotInventory sp) {
+                        VolumeInventory volinv = vol.toInventory();
+                        pluginRgty.getExtensionList(VolumeSnapshotAfterCreateExtensionPoint.class).forEach(ext -> ext.volumeSnapshotAfterCreate(volinv, sp));
                     }
                 });
 
@@ -1089,12 +1092,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     @Override
     public boolean start() {
         pluginRgty.saveExtensionAsMap(CreateTemplateFromVolumeSnapshotExtensionPoint.class,
-                new Function<Object, CreateTemplateFromVolumeSnapshotExtensionPoint>() {
-                    @Override
-                    public Object call(CreateTemplateFromVolumeSnapshotExtensionPoint arg) {
-                        return arg.createTemplateFromVolumeSnapshotPrimaryStorageType();
-                    }
-                });
+                (Function<Object, CreateTemplateFromVolumeSnapshotExtensionPoint>) arg -> arg.createTemplateFromVolumeSnapshotPrimaryStorageType());
 
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
@@ -1117,7 +1115,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 }
             }
         }, VolumeCreateSnapshotMsg.class, CreateVolumeSnapshotMsg.class);
-
         handleVolumeDeletionEvent();
         return true;
     }

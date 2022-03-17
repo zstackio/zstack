@@ -1,16 +1,22 @@
 package org.zstack.test.integration.storage.primary.local.capacity
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.image.ImageConstant
+import org.zstack.header.volume.VolumeVO
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
 import org.zstack.storage.primary.local.LocalStorageHostRefVO_
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO_
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by lining on 2017/4/21.
@@ -164,6 +170,7 @@ class CreateSnapshotCase extends SubCase {
         currentPs = queryPrimaryStorage {
             conditions=["uuid=${ps.uuid}".toString()]
         }[0]
+
         currentRefVO = Q.New(LocalStorageHostRefVO.class)
                 .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
         assert ps.availableCapacity == currentPs.availableCapacity + snapshot.size

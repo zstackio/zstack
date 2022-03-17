@@ -15,6 +15,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -132,7 +133,14 @@ public class CloudBus3ManagementNodeLifeCycleTracker implements BeforeSendMessag
 
     @Override
     public void beforeSendMessage(Message msg) {
-        if (msg instanceof NeedReplyMessage && msg.getServiceId().contains(CloudBusImpl3.SERVICE_ID_SPLITTER)) {
+        boolean needReply = true;
+        if (Objects.equals(msg.getHeaderEntry(CloudBusImpl3.HEADER_NO_NEED_REPLY_MSG), Boolean.TRUE.toString())) {
+            needReply = false;
+        }
+
+        if (msg instanceof NeedReplyMessage &&
+                msg.getServiceId().contains(CloudBusImpl3.SERVICE_ID_SPLITTER)
+                && needReply) {
             messageTrackers.put(msg.getId(), new MessageTracker(msg));
         }
     }

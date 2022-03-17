@@ -1713,7 +1713,6 @@ public class KVMHost extends HostBase implements Host {
                 }
             }
 
-            cmd.setVolumeUuid(msg.getVolume().getUuid());
             cmd.setVmUuid(msg.getVmUuid());
             cmd.setVolume(VolumeTO.valueOf(msg.getVolume(), (KVMHostInventory) getSelfInventory()));
         }
@@ -1754,6 +1753,12 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void success(TakeSnapshotResponse ret) {
                         if (ret.isSuccess()) {
+                            if (Objects.equals(ret.getNewVolumeInstallPath(), ret.getSnapshotInstallPath())) {
+                                throw new OperationFailureException(Platform.inerr("SERIOUS BUG: the agent returns the " +
+                                        "same newVolumeInstallPath and snapshotInstallPath [%s], call for support immediately otherwise" +
+                                        " data corruption may happen", ret.getNewVolumeInstallPath()));
+                            }
+
                             extEmitter.afterTakeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd, ret);
                             reply.setNewVolumeInstallPath(ret.getNewVolumeInstallPath());
                             reply.setSnapshotInstallPath(ret.getSnapshotInstallPath());

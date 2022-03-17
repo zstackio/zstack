@@ -38,8 +38,7 @@ class SyncVolumeSizeCase extends SubCase{
         long size = 1
         long actualSize = 10
 
-        env.simulator(CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH) {
-            def rsp = new CephPrimaryStorageBase.GetVolumeSizeRsp()
+        env.hijackSimulator(CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH) { CephPrimaryStorageBase.GetVolumeSizeRsp rsp ->
             rsp.size = size
             rsp.actualSize = actualSize
             return rsp
@@ -51,8 +50,7 @@ class SyncVolumeSizeCase extends SubCase{
         assert volume.actualSize == actualSize
         assert !VolumeSystemTags.NOT_SUPPORT_ACTUAL_SIZE_FLAG.hasTag(vm.rootVolumeUuid)
 
-        env.simulator(CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH) {
-            def rsp = new CephPrimaryStorageBase.GetVolumeSizeRsp()
+        env.hijackSimulator(CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH) { CephPrimaryStorageBase.GetVolumeSizeRsp rsp ->
             rsp.size = size
             rsp.actualSize = null
             return rsp
@@ -65,8 +63,7 @@ class SyncVolumeSizeCase extends SubCase{
         assert VolumeSystemTags.NOT_SUPPORT_ACTUAL_SIZE_FLAG.hasTag(vm.rootVolumeUuid)
 
 
-        env.simulator(CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH) {
-            def rsp = new CephPrimaryStorageBase.GetVolumeSizeRsp()
+        env.hijackSimulator(CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH) { CephPrimaryStorageBase.GetVolumeSizeRsp rsp ->
             rsp.size = size
             rsp.actualSize = actualSize
             return rsp
@@ -77,6 +74,8 @@ class SyncVolumeSizeCase extends SubCase{
         }
 
         assert !VolumeSystemTags.NOT_SUPPORT_ACTUAL_SIZE_FLAG.hasTag(vm.rootVolumeUuid)
+
+        env.cleanFinalSimulatorHandlers()
     }
     
     @Override

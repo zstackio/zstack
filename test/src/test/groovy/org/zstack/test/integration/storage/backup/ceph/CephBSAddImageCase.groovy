@@ -106,18 +106,15 @@ class CephBSAddImageCase extends SubCase{
     }
 
     void simulatorEnv() {
-        List<CephBackupStorageMonVO> mons = Q.New(CephBackupStorageMonVO.class).list()
-        env.afterSimulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) { rsp, HttpEntity<String> e ->
+        env.preSimulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.DownloadCmd.class)
             if (cmd.url.startsWith("file:/")) {
                 if (++failCount < bsMonsCount) {
-                    rsp.setError("on purpose")
+                    throw new Exception("on purpose")
                 } else {
                     failCount = 0
                 }
             }
-
-            return rsp
         }
     }
 
@@ -198,8 +195,7 @@ class CephBSAddImageCase extends SubCase{
     void testUploadImage(){
         def originSize = 0
         def updatedSize = 2048
-        env.simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) {
-            def rsp = new CephBackupStorageBase.DownloadRsp()
+        env.afterSimulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) { rsp ->
             rsp.size = originSize
             rsp.uploadPath = "http://localhost:7071/ceph/image/upload"
             return rsp

@@ -1793,6 +1793,9 @@ public class VolumeSnapshotTreeBase {
                                     trigger.fail(r.getError());
                                 } else {
                                     newSnapshot = ((CreateVolumeSnapshotReply) r).getInventory();
+                                    new SnapshotCanonicalEvents
+                                            .InnerVolumeSnapshotCreated(volume.getUuid(), volume.getPrimaryStorageUuid(), newSnapshot)
+                                            .fire();
                                     trigger.next();
                                 }
                             }
@@ -1994,6 +1997,8 @@ public class VolumeSnapshotTreeBase {
 
                     @Override
                     public void handle(Map data) {
+                        String oldVolumeInstallPath = volume.getInstallPath();
+
                         volume.setInstallPath(newVolumeInstallPath);
 
                         // if resized capacity should be updated
@@ -2002,8 +2007,14 @@ public class VolumeSnapshotTreeBase {
                             volume.setSize(newSize);
                         }
 
-                        dbf.update(volume);
-                        updateLatest();
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                merge(volume);
+                                updateLatest();
+                            }
+                        }.execute();
+
                         completion.success();
                     }
                 });

@@ -3,11 +3,8 @@ package org.zstack.core.jsonlabel;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.GLock;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -61,9 +58,7 @@ public class JsonLabel {
     }
 
     public JsonLabelInventory get(String key) {
-        SimpleQuery<JsonLabelVO> q = dbf.createQuery(JsonLabelVO.class);
-        q.add(JsonLabelVO_.labelKey, Op.EQ, key);
-        JsonLabelVO vo = q.find();
+        JsonLabelVO vo = Q.New(JsonLabelVO.class).eq(JsonLabelVO_.labelKey, key).find();
         return vo == null ? null : JsonLabelInventory.valueOf(vo);
     }
 
@@ -90,15 +85,11 @@ public class JsonLabel {
     }
 
     public void delete(String key) {
-        UpdateQuery q = UpdateQuery.New(JsonLabelVO.class);
-        q.condAnd(JsonLabelVO_.labelKey, Op.EQ, key);
-        q.delete();
+        SQL.New(JsonLabelVO.class).eq(JsonLabelVO_.labelKey, key).hardDelete();
     }
 
     public boolean exists(String key) {
-        SimpleQuery<JsonLabelVO> q = dbf.createQuery(JsonLabelVO.class);
-        q.add(JsonLabelVO_.labelKey, Op.EQ, key);
-        return q.isExists();
+        return Q.New(JsonLabelVO.class).eq(JsonLabelVO_.labelKey, key).isExists();
     }
 
     @Deferred

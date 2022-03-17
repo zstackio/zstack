@@ -40,6 +40,7 @@ class CephPrimaryStoragePoolSpec extends Spec {
             delegate.resourceUuid = uuid
             delegate.sessionId = sessionId
             delegate.type = type
+            delegate.isCreate = true
         }
 
         return id(poolName, inventory.uuid)

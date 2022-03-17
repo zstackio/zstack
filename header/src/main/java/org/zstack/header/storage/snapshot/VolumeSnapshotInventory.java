@@ -125,6 +125,8 @@ public class VolumeSnapshotInventory {
      * @desc snapshot size in bytes
      */
     private Long size;
+
+    private int distance;
     /**
      * @desc - Enabled: ok for operations
      * - Disabled: volume cannot revert to this snapshot
@@ -189,6 +191,7 @@ public class VolumeSnapshotInventory {
         if (vo.getGroupRef() != null) {
             inv.setGroupUuid(vo.getGroupRef().getVolumeSnapshotGroupUuid());
         }
+        inv.setDistance(vo.getDistance());
         return inv;
     }
 
@@ -216,6 +219,14 @@ public class VolumeSnapshotInventory {
 
     public void setBackupStorageRefs(List<VolumeSnapshotBackupStorageRefInventory> backupStorageRefs) {
         this.backupStorageRefs = backupStorageRefs;
+    }
+
+    public int getDistance() {
+        return distance;
+    }
+
+    public void setDistance(int distance) {
+        this.distance = distance;
     }
 
     public String getFormat() {

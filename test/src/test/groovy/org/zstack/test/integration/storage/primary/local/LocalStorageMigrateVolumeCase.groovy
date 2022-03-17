@@ -12,16 +12,12 @@ import org.zstack.sdk.GetVmCapabilitiesResult
 import org.zstack.sdk.LocalStorageMigrateVolumeAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
+import org.zstack.sdk.*
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HostSpec
-import org.zstack.testlib.PrimaryStorageSpec
-import org.zstack.testlib.SubCase
-import org.zstack.testlib.Test
-import org.zstack.testlib.VmSpec
+import org.zstack.testlib.*
 
 /**
  * Created by zouye on 2017/2/28.
@@ -46,6 +42,7 @@ class LocalStorageMigrateVolumeCase extends SubCase{
             testLocalStorageMigrateVolumeWhenDisable()
             testLocalStorageMigrateVolume()
         }
+
     }
 
     void testLocalStorageMigrateVolumeCapabilities() {

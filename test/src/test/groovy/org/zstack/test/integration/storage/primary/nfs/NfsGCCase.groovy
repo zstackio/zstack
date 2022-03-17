@@ -54,7 +54,7 @@ class NfsGCCase extends SubCase {
             primaryStorageUuid = nfs.uuid
         }
 
-        env.afterSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) {
+        env.preSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) {
             throw new HttpError(403, "on purpose")
         }
 
@@ -73,9 +73,8 @@ class NfsGCCase extends SubCase {
         }
 
         boolean called = false
-        env.afterSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) { rsp ->
+        env.preSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) {
             called = true
-            return rsp
         }
 
         triggerGCJob {
@@ -105,7 +104,7 @@ class NfsGCCase extends SubCase {
             name = "sp"
         }
 
-        env.afterSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) {
+        env.preSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) {
             throw new HttpError(403, "on purpose")
         }
 
@@ -123,9 +122,8 @@ class NfsGCCase extends SubCase {
         }
 
         boolean called = false
-        env.afterSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) { rsp ->
+        env.preSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) {
             called = true
-            return rsp
         }
 
         triggerGCJob {
@@ -154,7 +152,7 @@ class NfsGCCase extends SubCase {
             name = "sp"
         }
 
-        env.afterSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) {
+        env.preSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) {
             throw new HttpError(403, "on purpose")
         }
 

@@ -36,7 +36,6 @@ public class LocalStorageSimulatorConfig {
     public List<RebaseAndMergeSnapshotsCmd> rebaseAndMergeSnapshotsCmds = new ArrayList<>();
     public List<OfflineMergeSnapshotCmd> offlineMergeSnapshotCmds = new ArrayList<>();
     public List<CheckBitsCmd> checkBitsCmds = new ArrayList<>();
-    public List<RebaseRootVolumeToBackingFileCmd> rebaseRootVolumeToBackingFileCmds = new ArrayList<>();
     public List<RebaseSnapshotBackingFilesCmd> rebaseSnapshotBackingFilesCmds = new ArrayList<>();
     public List<VerifySnapshotChainCmd> verifySnapshotChainCmds = new ArrayList<>();
     public List<CopyBitsFromRemoteCmd> copyBitsFromRemoteCmds = new ArrayList<>();

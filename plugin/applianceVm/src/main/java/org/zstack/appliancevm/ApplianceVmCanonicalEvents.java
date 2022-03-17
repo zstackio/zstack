@@ -1,5 +1,7 @@
 package org.zstack.appliancevm;
 
+import org.zstack.core.Platform;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.NeedJsonSchema;
 
@@ -11,6 +13,55 @@ public class ApplianceVmCanonicalEvents {
     public static final String SERVICE_HEALTHY_PATH = "/appliance-vm/sevice/healthy";
     public static final String APPLIANCEVM_HASTATUS_CHANGED_PATH = "/appliance-vm/hastatus/changed";
     public static final String APPLIANCEVM_ABNORMAL_FILE_REPORT_PATH = "/appliance-vm/abnormalfiles/report";
+
+    public static final String NEW_VM_CREATED = "/appliance-vm/created";
+    public static final String VM_STARTED = "/appliance-vm/started";
+    public static final String VM_STOPPED = "/appliance-vm/stopped";
+    public static final String VM_DESTROYED = "/appliance-vm/destroyed";
+
+    private interface FireEvent {
+        default void fire(String path) {
+            Platform.getComponentLoader().getComponent(EventFacade.class).fire(path, this);
+        }
+
+        void fire();
+    }
+
+    public static class NewVmCreatedData implements FireEvent {
+        public ApplianceVmInventory vm;
+
+        @Override
+        public void fire() {
+            fire(NEW_VM_CREATED);
+        }
+    }
+
+    public static class VmStartedData implements FireEvent {
+        public ApplianceVmInventory vm;
+
+        @Override
+        public void fire() {
+            fire(VM_STARTED);
+        }
+    }
+
+    public static class VmStoppedData implements FireEvent {
+        public ApplianceVmInventory vm;
+
+        @Override
+        public void fire() {
+            fire(VM_STOPPED);
+        }
+    }
+
+    public static class VmDestroyedData implements FireEvent {
+        public ApplianceVmInventory vm;
+
+        @Override
+        public void fire() {
+            fire(VM_DESTROYED);
+        }
+    }
 
     @NeedJsonSchema
     public static class ApplianceVmStatusChangedData {

@@ -50,18 +50,16 @@ class LocalStorageMigrateDataVolumeCase extends SubCase {
         }
 
         boolean calledCopyToRemote = false
-        env.afterSimulator(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH) { rsp ->
+        env.preSimulator(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH) {
             calledCopyToRemote = true
-            return rsp
         }
 
         CountDownLatch latch = new CountDownLatch(1)
 
         // pretend that taking snapshot is slow (1.5 second)
-        env.afterSimulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) { rsp ->
+        env.preSimulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) {
             latch.countDown()
             Thread.sleep(1000)
-            return rsp
         }
 
         VolumeSnapshotInventory inv = null

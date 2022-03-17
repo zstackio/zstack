@@ -3,10 +3,8 @@ package org.zstack.header.storage.snapshot;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
-import org.zstack.header.vo.BaseResource;
-import org.zstack.header.vo.EO;
 import org.zstack.header.vo.EntityGraph;
-import org.zstack.header.vo.NoView;
+import org.zstack.header.vo.*;
 import org.zstack.header.volume.VolumeVO;
 
 import javax.persistence.*;
@@ -26,7 +24,7 @@ import java.util.List;
                 @EntityGraph.Neighbour(type = PrimaryStorageVO.class, myField = "primaryStorageUuid", targetField = "uuid"),
         }
 )
-public class VolumeSnapshotVO extends VolumeSnapshotAO implements OwnedByAccount {
+public class VolumeSnapshotVO extends VolumeSnapshotAO implements OwnedByAccount, ToInventory {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "volumeSnapshotUuid", insertable = false, updatable = false)
     @NoView
