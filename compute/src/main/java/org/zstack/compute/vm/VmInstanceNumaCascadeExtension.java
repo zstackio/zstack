@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class VmInstanceNumaCascadeExtension extends AbstractAsyncCascadeExtensione {
+public class VmInstanceNumaCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final CLogger logger = Utils.getLogger(VmInstanceNumaCascadeExtension.class);
 
     @Autowired
