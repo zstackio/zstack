@@ -5,6 +5,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
@@ -14,9 +15,10 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
-public class PostHostExtensionPointForNuma implements PostHostConnectExtensionPoint {
+public class PostHostExtensionPointForNuma implements PostHostConnectExtensionPoint, FailToAddHostExtensionPoint {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -62,5 +64,16 @@ public class PostHostExtensionPointForNuma implements PostHostConnectExtensionPo
                 });
             }
         };
+    }
+
+    @Override
+    public void failedToAddHost(HostInventory host, AddHostMessage msg) {
+        SimpleQuery<HostNumaNodeVO> nodesQuery = dbf.createQuery(HostNumaNodeVO.class);
+        nodesQuery.add(HostNumaNodeVO_.hostUuid, SimpleQuery.Op.EQ, host.getUuid());
+        List<HostNumaNodeVO> nodes = nodesQuery.list();
+        if (!nodes.isEmpty()) {
+            dbf.removeCollection(nodes, HostNumaNodeVO.class);
+        }
+
     }
 }

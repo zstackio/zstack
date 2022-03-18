@@ -75,4 +75,10 @@
             <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="FailToAddHostExtensionPointForNuma" class="org.zstack.compute.host.PostHostExtensionPointForNuma">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.host.FailToAddHostExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>
