@@ -720,15 +720,6 @@ public class KVMSimulatorController {
     private void getHostNuma(HttpEntity<String> entity) {
         GetHostNUMATopologyCmd cmd = JSONObjectUtil.toObject(entity.getBody(), KVMAgentCommands.GetHostNUMATopologyCmd.class);
         GetHostNUMATopologyResponse rsp = new GetHostNUMATopologyResponse();
-        HostNUMANode node0 = new HostNUMANode();
-        node0.setNodeID("0");
-        node0.setSize(7989988L);
-        node0.setCpus(Arrays.asList("0","1","2","3","4","5","6","7"));
-        node0.setDistance(Arrays.asList("10"));
-        node0.setFree(939380L);
-        Map<String, HostNUMANode> topology = ImmutableMap.of("0", node0);
-        rsp.setTopology(topology);
-        logger.debug(String.format("get host[%s] numa success", cmd.getHostUuid()));
         replyer.reply(entity, rsp);
     }
 
