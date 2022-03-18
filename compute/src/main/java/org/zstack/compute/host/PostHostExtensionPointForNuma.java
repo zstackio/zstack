@@ -44,9 +44,14 @@ public class PostHostExtensionPointForNuma implements PostHostConnectExtensionPo
                             GetHostNumaTopologyReply rpy = (GetHostNumaTopologyReply) kreply;
                             Map<String, HostNUMANode> nodes = rpy.getNuma();
                             Iterator<Map.Entry<String, HostNUMANode>> nodeEntries = nodes.entrySet().iterator();
-                            SQL.New("delete from HostNumaNodeVO where hostUuid = :uuid")
-                                    .param("uuid", host.getUuid())
-                                    .execute();
+
+                            SimpleQuery<HostNumaNodeVO> nodesQuery = dbf.createQuery(HostNumaNodeVO.class);
+                            nodesQuery.add(HostNumaNodeVO_.hostUuid, SimpleQuery.Op.EQ, host.getUuid());
+                            List<HostNumaNodeVO> numaNodes = nodesQuery.list();
+                            if (!nodes.isEmpty()) {
+                                dbf.removeCollection(numaNodes, HostNumaNodeVO.class);
+                            }
+
                             while (nodeEntries.hasNext()) {
                                 Map.Entry<String, HostNUMANode> node = nodeEntries.next();
                                 HostNUMANode nodeInfo = node.getValue();
