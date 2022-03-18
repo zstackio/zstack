@@ -1,7 +1,9 @@
 package org.zstack.test.integration.storage.systemtag
 
+import org.springframework.http.HttpEntity
 import org.zstack.header.volume.VolumeConstant
 import org.zstack.sdk.*
+import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -155,6 +157,11 @@ class CreateSystemTagForAPICreateDataVolumeFromVolumeTemplateMsgCase extends Sub
         } as ImageInventory
 
         assert VolumeConstant.VOLUME_FORMAT_RAW == img.getFormat()
+
+        env.hijackSimulator(CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH) { rsp, HttpEntity<String> e ->
+            rsp.actualSize = null
+            return rsp
+        }
 
         // create volume from template with system tags
         VolumeInventory dataVolume = createDataVolumeFromVolumeTemplate {
