@@ -20,6 +20,7 @@ import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
 import org.zstack.storage.primary.local.LocalStorageHostRefVO_
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
@@ -317,6 +318,13 @@ class CreateDataVolumeTemplateCase extends SubCase {
                 .eq(LocalStorageHostRefVO_.primaryStorageUuid, ps.uuid)
                 .select(LocalStorageHostRefVO_.availableCapacity)
                 .findValue()
+
+
+        env.hijackSimulator(LocalStorageKvmBackend.GET_VOLUME_SIZE) { rsp, HttpEntity<String> e ->
+            rsp.size = image.size
+            rsp.actualSize = image.actualSize
+            return rsp
+        }
 
         // nothing wrong, we check that capacity has been reserved
         def volume = createDataVolumeFromVolumeTemplate {
