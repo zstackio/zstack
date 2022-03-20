@@ -40,18 +40,23 @@ public class PostHostExtensionPointForNuma implements PostHostConnectExtensionPo
                     public void run(MessageReply kreply) {
                         if (!kreply.isSuccess()) {
                             logger.error(String.format("Get Host[%s] NUMA Topology error: %s", host.getUuid(), kreply.getError().toString()));
+                            trigger.next();
                         } else {
                             GetHostNumaTopologyReply rpy = (GetHostNumaTopologyReply) kreply;
                             Map<String, HostNUMANode> nodes = rpy.getNuma();
-                            Iterator<Map.Entry<String, HostNUMANode>> nodeEntries = nodes.entrySet().iterator();
+                            if (nodes == null || nodes.isEmpty()) {
+                                trigger.next();
+                                return;
+                            }
 
                             SimpleQuery<HostNumaNodeVO> nodesQuery = dbf.createQuery(HostNumaNodeVO.class);
                             nodesQuery.add(HostNumaNodeVO_.hostUuid, SimpleQuery.Op.EQ, host.getUuid());
                             List<HostNumaNodeVO> numaNodes = nodesQuery.list();
-                            if (!nodes.isEmpty()) {
+                            if (!numaNodes.isEmpty()) {
                                 dbf.removeCollection(numaNodes, HostNumaNodeVO.class);
                             }
 
+                            Iterator<Map.Entry<String, HostNUMANode>> nodeEntries = nodes.entrySet().iterator();
                             while (nodeEntries.hasNext()) {
                                 Map.Entry<String, HostNUMANode> node = nodeEntries.next();
                                 HostNUMANode nodeInfo = node.getValue();
@@ -63,8 +68,8 @@ public class PostHostExtensionPointForNuma implements PostHostConnectExtensionPo
                                 dbf.persist(hntvo);
                             }
                             logger.info(String.format("Update Host[%s] NUMA Topology Successfully!", host.getUuid()));
+                            trigger.next();
                         }
-                        trigger.next();
                     }
                 });
             }
