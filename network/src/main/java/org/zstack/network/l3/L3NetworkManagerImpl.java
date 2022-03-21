@@ -1,9 +1,7 @@
 package org.zstack.network.l3;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -36,7 +34,7 @@ import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.BeforeResourceSharingExtensionPoint;
+import org.zstack.identity.ResourceSharingExtensionPoint;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceSystemTag;
@@ -62,7 +60,7 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
 
 public class L3NetworkManagerImpl extends AbstractService implements L3NetworkManager, ReportQuotaExtensionPoint,
-        ResourceOwnerPreChangeExtensionPoint, PrepareDbInitialValueExtensionPoint, BeforeResourceSharingExtensionPoint {
+        ResourceOwnerPreChangeExtensionPoint, PrepareDbInitialValueExtensionPoint, ResourceSharingExtensionPoint {
     private static final CLogger logger = Utils.getLogger(L3NetworkManagerImpl.class);
 
     @Autowired
@@ -788,5 +786,9 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             }
         }
         return additionUuids;
+    }
+
+    @Override
+    public void afterResourceSharingExtensionPoint(Map<String, String> uuidType, List<String> accountUuids, boolean isToPublic) {
     }
 }
