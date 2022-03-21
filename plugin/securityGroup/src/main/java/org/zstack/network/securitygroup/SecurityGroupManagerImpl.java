@@ -71,7 +71,7 @@ import static org.zstack.network.securitygroup.SecurityGroupMembersTO.ACTION_COD
 import static org.zstack.utils.CollectionDSL.list;
 
 public class SecurityGroupManagerImpl extends AbstractService implements SecurityGroupManager, ManagementNodeReadyExtensionPoint,
-        VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
+        VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, ValidateL3SecurityGroupExtensionPoint {
     private static CLogger logger = Utils.getLogger(SecurityGroupManagerImpl.class);
 
     @Autowired
@@ -162,6 +162,19 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     @AsyncThread
     public void managementNodeReady() {
         startFailureHostCopingThread();
+    }
+
+    @Override
+    public void validateSystemtagL3SecurityGroup(String l3Uuid, List<String> securityGroupUuids) {
+        for(String uuid : securityGroupUuids) {
+            if (!Q.New(SecurityGroupL3NetworkRefVO.class)
+                    .eq(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, l3Uuid)
+                    .eq(SecurityGroupL3NetworkRefVO_.securityGroupUuid, uuid)
+                    .isExists()) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "l3NetWorkVO[uuid:%s] is not attach SecurityGroupVO[uuid:%s]", l3Uuid, uuid));
+            }
+        }
     }
 
     private class RuleCalculator {
