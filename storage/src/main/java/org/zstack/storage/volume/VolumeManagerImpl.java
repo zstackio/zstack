@@ -18,8 +18,6 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.configuration.DiskOfferingVO;
-import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -458,6 +456,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }
         vo.setAccountUuid(msg.getAccountUuid());
 
+        List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
+        for (CreateDataVolumeExtensionPoint ext : exts) {
+            ext.beforeCreateVolume(VolumeInventory.valueOf(vo));
+        }
+
         VolumeVO finalVo = vo;
         vo = new SQLBatchWithReturn<VolumeVO>() {
             @Override
@@ -472,7 +475,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), VolumeVO.class.getSimpleName());
         }
 
-        List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
         for (CreateDataVolumeExtensionPoint ext : exts) {
             ext.afterCreateVolume(vo);
         }
