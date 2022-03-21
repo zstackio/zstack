@@ -18,8 +18,6 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.configuration.DiskOfferingVO;
-import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -472,8 +470,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), VolumeVO.class.getSimpleName());
         }
 
-        List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
-        for (CreateDataVolumeExtensionPoint ext : exts) {
+        List<CreateVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateVolumeExtensionPoint.class);
+        for (CreateVolumeExtensionPoint ext : exts) {
             ext.afterCreateVolume(vo);
         }
         vo = dbf.reload(vo);
@@ -700,7 +698,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     private void handle(APICreateDataVolumeMsg msg) {
         APICreateDataVolumeEvent evt = new APICreateDataVolumeEvent(msg.getId());
-        pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class).forEach(extensionPoint -> {
+        pluginRgty.getExtensionList(CreateVolumeExtensionPoint.class).forEach(extensionPoint -> {
             extensionPoint.preCreateVolume(msg);
         });
 
@@ -722,9 +720,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
             vo.setShareable(true);
         }
-        List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
-        for (CreateDataVolumeExtensionPoint ext : exts) {
-            ext.beforeCreateVolume(VolumeInventory.valueOf(vo));
+        List<CreateVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateVolumeExtensionPoint.class);
+        for (CreateVolumeExtensionPoint ext : exts) {
+            ext.beforeCreateVolume(vo);
         }
 
         VolumeVO finalVo1 = vo;
@@ -739,7 +737,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }.execute();
 
         tagMgr.createTagsFromAPICreateMessage(msg, finalVo1.getUuid(), VolumeVO.class.getSimpleName());
-        for (CreateDataVolumeExtensionPoint ext : exts) {
+        for (CreateVolumeExtensionPoint ext : exts) {
             ext.afterCreateVolume(vo);
         }
         dbf.reload(vo);

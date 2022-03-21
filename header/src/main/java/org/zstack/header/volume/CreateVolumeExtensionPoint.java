@@ -3,10 +3,10 @@ package org.zstack.header.volume;
 /**
  * Created by mingjian.deng on 2017/9/20.
  */
-public interface CreateDataVolumeExtensionPoint {
+public interface CreateVolumeExtensionPoint {
     void preCreateVolume(APICreateDataVolumeMsg msg);
 
-    void beforeCreateVolume(VolumeInventory volume);
+    void beforeCreateVolume(VolumeVO volume);
 
     void afterCreateVolume(VolumeVO volume);
 }
