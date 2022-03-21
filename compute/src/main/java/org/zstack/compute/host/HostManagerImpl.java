@@ -480,8 +480,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 // delete host totally through the database, so other tables
                 // refer to the host table will clean up themselves
                 HostVO nvo = dbf.reload(vo);
-                dbf.remove(nvo);
-                dbf.eoCleanup(HostVO.class, nvo.getUuid());
                 HostInventory inv = HostInventory.valueOf(nvo);
 
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(FailToAddHostExtensionPoint.class), new ForEachFunction<FailToAddHostExtensionPoint>() {
@@ -490,6 +488,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                         ext.failedToAddHost(inv, msg);
                     }
                 });
+
+                dbf.remove(nvo);
+                dbf.eoCleanup(HostVO.class, nvo.getUuid());
 
                 completion.fail(errCode);
             }
