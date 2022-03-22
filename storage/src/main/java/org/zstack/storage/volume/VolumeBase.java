@@ -1514,6 +1514,10 @@ public class VolumeBase implements Volume {
                         .eq(VolumeVO_.uuid, volume.getUuid())
                         .set(VolumeVO_.vmInstanceUuid, vmUuid)
                         .update();
+                sql(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.uuid, vmUuid)
+                        .set(VmInstanceVO_.rootVolumeUuid, volume.getUuid())
+                        .update();
                 flush();
             }
         }.execute();
@@ -1535,7 +1539,11 @@ public class VolumeBase implements Volume {
         // 1. change an already attached data volume to root volume;
         // 2. switch root volume to another previously `detached' root volume.
         if (self.getType() == VolumeType.Root) {
-            reply.setError(doSwitchExistingRootVolume(self, msg.getVolumeUuid()));
+            ErrorCode err = doSwitchExistingRootVolume(self, msg.getVolumeUuid());
+            if (err != null) {
+                reply.setError(err);
+            }
+            bus.reply(msg, reply);
             completion.done();
             return;
         }
@@ -1543,8 +1551,8 @@ public class VolumeBase implements Volume {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("set-boot-volume");
         chain.then(new ShareFlow() {
-            List<VolumeSnapshotInventory> newRootSnapshots = new ArrayList<>();
-            List<VolumeSnapshotInventory> oldRootSnapshots = new ArrayList<>();
+            final List<VolumeSnapshotInventory> newRootSnapshots = new ArrayList<>();
+            final List<VolumeSnapshotInventory> oldRootSnapshots = new ArrayList<>();
             VolumeInventory newRootVol;
             VolumeInventory oldRootVol;
 
