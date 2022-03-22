@@ -1,8 +1,10 @@
 package org.zstack.testlib
 
+import com.google.common.collect.ImmutableMap
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.Constants
+import org.zstack.header.host.HostNUMANode
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
@@ -367,6 +369,11 @@ class KVMSimulator implements Simulator {
             response.existPaths = new HashMap<>()
             cmd.paths.forEach({path -> response.existPaths.put(path, "")})
             return response
+        }
+
+        spec.simulator(KVMConstant.KVM_HOST_NUMA_PATH) {
+            def rsp = new  KVMAgentCommands.GetHostNUMATopologyResponse()
+            return rsp
         }
     }
 }
