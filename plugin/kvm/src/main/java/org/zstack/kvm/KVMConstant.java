@@ -92,6 +92,7 @@ public interface KVMConstant {
     String KVM_REPORT_VM_CRASH_EVENT = "/kvm/reportvmcrash";
 
     String KVM_TRANSMIT_VM_OPERATION_TO_MN = "/host/transmitvmoperation";
+    String KVM_HOST_PHYSICAL_NIC_ALARM_EVENT = "/host/physicalNic/alarm";
 
     String KVM_AGENT_OWNER = "kvm";
 

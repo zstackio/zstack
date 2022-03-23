@@ -385,6 +385,21 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             return null;
         });
 
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_HOST_PHYSICAL_NIC_ALARM_EVENT, KVMAgentCommands.PhysicalNicAlarmEventCmd.class, cmd -> {
+            HostCanonicalEvents.HostPhysicalNicStatusData cData = new HostCanonicalEvents.HostPhysicalNicStatusData();
+            cData.setHostUuid(cmd.host);
+            cData.setInterfaceName(cmd.nic);
+            cData.setFromBond(cmd.bond);
+            cData.setIpAddress(cmd.ip);
+            cData.setInterfaceStatus(cmd.status);
+            if("up".equalsIgnoreCase(cmd.status.replaceAll("\\s*", ""))){
+                evf.fire(HostCanonicalEvents.HOST_PHYSICAL_NIC_STATUS_UP, cData);
+            } else {
+                evf.fire(HostCanonicalEvents.HOST_PHYSICAL_NIC_STATUS_DOWN, cData);
+            }
+            return null;
+        });
+
         KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.installValidator(((resourceUuid, resourceType, systemTag) -> {
             String check = KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.getTokenByTag(systemTag, KVMSystemTags.CHECK_CLUSTER_CPU_MODEL_TOKEN);
 
