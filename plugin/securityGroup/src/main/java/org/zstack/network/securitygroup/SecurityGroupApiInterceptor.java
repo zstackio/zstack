@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -69,6 +70,18 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         if (!q.isExists()) {
             throw new ApiMessageInterceptionException(operr("security group[uuid:%s] has not attached to l3Network[uuid:%s], can't detach",
                             msg.getSecurityGroupUuid(), msg.getL3NetworkUuid()));
+        }
+
+        List<VmNicVO> nicVOS = SQL.New("select nic from VmNicSecurityGroupRefVO nicRef, VmNicVO nic " +
+                "where nic.uuid = nicRef.vmNicUuid and nic.l3NetworkUuid = :l3NetworkUuid " +
+                "and nicRef.securityGroupUuid = :securityGroupUuid")
+                .param("l3NetworkUuid", msg.getL3NetworkUuid())
+                .param("securityGroupUuid", msg.getSecurityGroupUuid())
+                .list();
+        if (!nicVOS.isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("nics on the l3Network[uuid:%s] are attached to the securityGroup. " +
+                            "before you can detach the l3Network from the securityGroup, you need to detach the nics from the securityGroup.",
+                    msg.getL3NetworkUuid(), msg.getSecurityGroupUuid()));
         }
     }
 
