@@ -59,8 +59,6 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -1490,59 +1488,11 @@ public class VolumeBase implements Volume {
         });
     }
 
-    private ErrorCode doSwitchExistingRootVolume(VolumeVO volume, String vmUuid) {
-        if (volume.getVmInstanceUuid() != null) {
-            return operr("volume[uuid: %s] has been attached to VM[uuid: %s]",
-                    volume.getUuid(), volume.getVmInstanceUuid());
-        }
-
-        new SQLBatch() {
-            @Override
-            protected void scripts() {
-                final String rootVolumeUuid = q(VmInstanceVO.class)
-                        .eq(VmInstanceVO_.uuid, vmUuid)
-                        .eq(VmInstanceVO_.state, VmInstanceState.Stopped)
-                        .select(VmInstanceVO_.rootVolumeUuid)
-                        .findValue();
-                sql(VolumeVO.class)
-                        .eq(VolumeVO_.uuid, rootVolumeUuid)
-                        .set(VolumeVO_.vmInstanceUuid, null)
-                        .set(VolumeVO_.lastVmInstanceUuid, vmUuid)
-                        .set(VolumeVO_.lastDetachDate, Timestamp.valueOf(LocalDateTime.now()))
-                        .update();
-                sql(VolumeVO.class)
-                        .eq(VolumeVO_.uuid, volume.getUuid())
-                        .set(VolumeVO_.vmInstanceUuid, vmUuid)
-                        .update();
-                sql(VmInstanceVO.class)
-                        .eq(VmInstanceVO_.uuid, vmUuid)
-                        .set(VmInstanceVO_.rootVolumeUuid, volume.getUuid())
-                        .update();
-                flush();
-            }
-        }.execute();
-
-        return null;
-    }
-
     private void setBootVolume(SetVmBootVolumeMsg msg, NoErrorCompletion completion) {
         SetVmBootVolumeReply reply = new SetVmBootVolumeReply();
 
         self = dbf.reload(self);
         if (self.getType() == VolumeType.Root && msg.getVmInstanceUuid().equals(self.getVmInstanceUuid())) {
-            bus.reply(msg, reply);
-            completion.done();
-            return;
-        }
-
-        // There are two scenarios:
-        // 1. change an already attached data volume to root volume;
-        // 2. switch root volume to another previously `detached' root volume.
-        if (self.getType() == VolumeType.Root) {
-            ErrorCode err = doSwitchExistingRootVolume(self, msg.getVolumeUuid());
-            if (err != null) {
-                reply.setError(err);
-            }
             bus.reply(msg, reply);
             completion.done();
             return;
