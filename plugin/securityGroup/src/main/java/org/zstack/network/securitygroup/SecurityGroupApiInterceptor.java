@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -69,6 +70,16 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         if (!q.isExists()) {
             throw new ApiMessageInterceptionException(operr("security group[uuid:%s] has not attached to l3Network[uuid:%s], can't detach",
                             msg.getSecurityGroupUuid(), msg.getL3NetworkUuid()));
+        }
+
+        List<VmNicVO> nicVOS = SQL.New("select nic from VmNicSecurityGroupRefVO nicRef, VmNicVO nic " +
+                "where nic.uuid = nicRef.vmNicUuid and nic.l3NetworkUuid = :l3NetworkUuid")
+                .param("l3NetworkUuid", msg.getL3NetworkUuid())
+                .list();
+        if (!nicVOS.isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("l3NetworkVO[uuid:%s] the corresponding vmNic is attach to the security group," +
+                    " and the relationship between the securityGroup[uuid:%s] and the vmNic needs to be detach",
+                    msg.getL3NetworkUuid(), msg.getSecurityGroupUuid()));
         }
     }
 
