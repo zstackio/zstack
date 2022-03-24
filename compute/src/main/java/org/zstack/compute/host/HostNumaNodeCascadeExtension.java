@@ -12,6 +12,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostNumaNodeVO;
 import org.zstack.header.host.HostNumaNodeVO_;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.vm.VmInstanceNumaNodeVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -30,7 +31,9 @@ public class HostNumaNodeCascadeExtension extends AbstractAsyncCascadeExtension 
 
     @Override
     public void asyncCascade(CascadeAction action, Completion completion) {
-        if (action.isActionCode(CascadeConstant.DELETION_DELETE_CODE)) {
+        if (action.isActionCode(CascadeConstant.DELETION_DELETE_CODE) ||
+                action.isActionCode(CascadeConstant.DELETION_CLEANUP_CODE) ||
+                action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
             handleDeletion(action, completion);
         } else {
             completion.success();
@@ -41,14 +44,23 @@ public class HostNumaNodeCascadeExtension extends AbstractAsyncCascadeExtension 
         try {
             final List<String> hostUuids = hostFromAction(action);
             if (hostUuids != null && !hostUuids.isEmpty()) {
-                hostUuids.forEach(h -> SQL.New("delete from HostNumaNodeVO where hostUuid = :uuid")
-                        .param("uuid", h)
-                        .execute());
+                hostUuids.forEach(this::deleteHostNumaNodes);
             }
         } catch (NullPointerException e) {
             logger.warn(e.getMessage());
         } finally {
             completion.success();
+        }
+    }
+
+    private void deleteHostNumaNodes(String hostUuid) {
+        SimpleQuery<HostNumaNodeVO> nodesQuery = dbf.createQuery(HostNumaNodeVO.class);
+        nodesQuery.add(HostNumaNodeVO_.hostUuid, SimpleQuery.Op.EQ, hostUuid);
+        List<HostNumaNodeVO> nodes = nodesQuery.list();
+        if (!nodes.isEmpty()) {
+            for (HostNumaNodeVO node: nodes) {
+                dbf.remove(node);
+            }
         }
     }
 
