@@ -1,11 +1,14 @@
 package org.zstack.storage.volume;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Od;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -27,10 +30,9 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Iterator;
-import java.util.List;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
 
 public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantiateResourceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(InstantiateVolumeForNewCreatedVmExtension.class);
@@ -48,6 +50,23 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
     public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException {
     }
 
+    private static Integer parseDeviceId(String url) {
+        if (url == null) {
+            return null;
+        }
+
+        try {
+            URI uri = new URI(url);
+            MultiValueMap<String, String> m = UriComponentsBuilder.fromUri(uri)
+                    .build()
+                    .getQueryParams();
+            List<String> vals = m.getOrDefault("deviceId", Collections.emptyList());
+            return vals.isEmpty() ? null : Integer.valueOf(vals.get(0));
+        } catch (URISyntaxException ignored) {
+            return null;
+        }
+    }
+
     protected void doInstantiate(final Iterator<NeedReplyMessage> it, final VmInstanceSpec spec, final Completion completion) {
         if (!it.hasNext()) {
             completion.success();
@@ -56,6 +75,32 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
 
         NeedReplyMessage msg = it.next();
         bus.send(msg, new CloudBusCallBack(completion) {
+            private int allocateDeviceId(String volumeUuid, String imageUuid) {
+                Integer deviceId = new SQLBatchWithReturn<Integer>() {
+                    @Override
+                    protected Integer scripts() {
+                        String url = q(ImageVO.class).eq(ImageVO_.uuid, imageUuid).select(ImageVO_.url).findValue();
+                        Integer devId = parseDeviceId(url);
+                        if (devId == null) {
+                            return null;
+                        }
+
+                        boolean allocated = q(VolumeVO.class)
+                                .eq(VolumeVO_.vmInstanceUuid, spec.getVmInventory().getUuid())
+                                .eq(VolumeVO_.deviceId, devId)
+                                .notEq(VolumeVO_.uuid, volumeUuid)
+                                .isExists();
+                        return allocated ? null : devId;
+                    }
+                }.execute();
+
+                return deviceId != null ? deviceId : getNextDeviceId();
+            }
+
+            private int getNextDeviceId(String volumeUuid, String imageUuid) {
+                return imageUuid == null ? getNextDeviceId() : allocateDeviceId(volumeUuid, imageUuid);
+            }
+
             private int getNextDeviceId() {
                 SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
                 q.select(VolumeVO_.deviceId);
@@ -83,12 +128,17 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                 }
 
                 String volumeUuid;
+                String imageUuid = null;
                 if (reply instanceof InstantiateVolumeReply) {
-                    volumeUuid = ((InstantiateVolumeReply) reply).getVolume().getUuid();
+                    VolumeInventory inv = ((InstantiateVolumeReply) reply).getVolume();
+                    volumeUuid = inv.getUuid();
+                    imageUuid = inv.getRootImageUuid();
                 } else if (reply instanceof InstantiateRootVolumeForRecoveryReply) {
                     volumeUuid = ((InstantiateRootVolumeForRecoveryReply) reply).getVolume().getUuid();
                 } else if (reply instanceof CreateDataVolumeFromVolumeTemplateReply) {
-                    volumeUuid = ((CreateDataVolumeFromVolumeTemplateReply) reply).getInventory().getUuid();
+                    VolumeInventory inv = ((CreateDataVolumeFromVolumeTemplateReply) reply).getInventory();
+                    volumeUuid = inv.getUuid();
+                    imageUuid = inv.getRootImageUuid();
                 } else {
                     throw new CloudRuntimeException("can not be here");
                 }
@@ -96,7 +146,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                 VolumeVO vo = dbf.findByUuid(volumeUuid, VolumeVO.class);
                 if (vo.getType() == VolumeType.Data) {
                     vo.setVmInstanceUuid(spec.getVmInventory().getUuid());
-                    vo.setDeviceId(getNextDeviceId());
+                    vo.setDeviceId(getNextDeviceId(volumeUuid, imageUuid));
                     vo.setActualSize(vo.getActualSize() == null ? 0L : vo.getActualSize());
                 } else if (spec.getImageSpec().getInventory() != null) {
                     vo.setActualSize(spec.getImageSpec().getInventory().getActualSize());
