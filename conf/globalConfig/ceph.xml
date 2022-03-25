@@ -95,4 +95,20 @@
         <category>ceph</category>
         <type>java.lang.String</type>
     </config>
+
+    <config>
+        <name>primaryStorage.mon.ping.maxFailure</name>
+        <description>The maximum count of ping failure before reconnecting primary storage ceph mon</description>
+        <category>ceph</category>
+        <defaultValue>3</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <name>ping.sleepPeriodAfterFailure</name>
+        <description>The sleep period in seconds before retrying the next ping after a ping failure</description>
+        <category>ceph</category>
+        <defaultValue>1</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>

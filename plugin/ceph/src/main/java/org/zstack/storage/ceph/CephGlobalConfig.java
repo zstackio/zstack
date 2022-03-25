@@ -43,4 +43,9 @@ public class CephGlobalConfig {
     // for ui use only
     @GlobalConfigValidation
     public static GlobalConfig SDS_ADMIN_PASSWORD = new GlobalConfig(CATEGORY, "sds.admin.password");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig PRIMARY_STORAGE_MON_MAXIMUM_PING_FAILURE = new GlobalConfig(CATEGORY, "primaryStorage.mon.ping.maxFailure");
+    @GlobalConfigValidation(numberGreaterThan = -1)
+    public static GlobalConfig SLEEP_TIME_AFTER_PING_FAILURE = new GlobalConfig(CATEGORY, "ping.sleepPeriodAfterFailure");
+
 }
