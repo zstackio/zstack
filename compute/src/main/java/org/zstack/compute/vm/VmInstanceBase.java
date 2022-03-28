@@ -5833,9 +5833,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 @Override
                 public void success() {
                     bus.reply(msg, reply);
-                    vvo.setLastDetachDate(Timestamp.valueOf(LocalDateTime.now()));
-                    vvo.setLastVmInstanceUuid(msg.getVmInstanceUuid());
-                    dbf.update(vvo);
+                    SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
+                            .set(VolumeVO_.lastDetachDate, Timestamp.valueOf(LocalDateTime.now()))
+                            .set(VolumeVO_.lastVmInstanceUuid, msg.getVmInstanceUuid())
+                            .update();
                     completion.done();
                 }
 
