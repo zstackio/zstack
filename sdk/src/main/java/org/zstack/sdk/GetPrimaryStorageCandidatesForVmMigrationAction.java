@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetPrimaryStorageCandidatesForVmMigrationAction extends AbstractAction {
 
@@ -30,6 +29,9 @@ public class GetPrimaryStorageCandidatesForVmMigrationAction extends AbstractAct
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean withDataVolumes = true;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean migrateStorageOnly = false;
 
     @Param(required = false)
     public java.util.List systemTags;
