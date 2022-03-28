@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -11,6 +12,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -23,6 +25,8 @@ import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.AddBackupStorageExtensionPoint;
 import org.zstack.header.storage.backup.AddBackupStorageStruct;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.RestoreImagesBackupStorageMetadataToDatabaseMsg;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
@@ -37,6 +41,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.storage.backup.BackupStorageConstant.IMPORT_IMAGES_FAKE_RESOURCE_UUID;
 
 /**
  * Created by Mei Lei <meilei007@gmail.com> on 11/3/16.
@@ -52,6 +57,8 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
     private ErrorFacade errf;
     @Autowired
     private SftpBackupStorageDumpMetadataInfo dumpInfo;
+    @Autowired
+    private CloudBus bus;
 
     private String buildUrl(String subPath, String hostName) {
         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
@@ -115,8 +122,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         imageInventories.forEach(img -> img.setSystemTags(listMap.get(img.getUuid())));
     }
 
-
-    private void restoreImagesBackupStorageMetadataToDatabase(String imagesMetadata, String backupStorageUuid) {
+    public void restoreImagesBackupStorageMetadataToDatabase(String imagesMetadata, String backupStorageUuid) {
         List<ImageVO> imageVOs = new ArrayList<ImageVO>();
         List<ImageBackupStorageRefVO> backupStorageRefVOs = new ArrayList<ImageBackupStorageRefVO>();
         List<SystemTagVO> systemTagVOs = new ArrayList<>();
@@ -481,7 +487,11 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                             logger.error(String.format("get images metadata: %s failed", rsp.getImagesMetaData()));
                         } else {
                             logger.info(String.format("get images metadata: %s success", rsp.getImagesMetaData()));
-                            restoreImagesBackupStorageMetadataToDatabase(rsp.getImagesMetaData(), backupStorage.getBackupStorageInventory().getUuid());
+                            RestoreImagesBackupStorageMetadataToDatabaseMsg rmsg = new RestoreImagesBackupStorageMetadataToDatabaseMsg();
+                            rmsg.setImagesMetadata(rsp.getImagesMetaData());
+                            rmsg.setBackupStorageUuid(backupStorage.getBackupStorageInventory().getUuid());
+                            bus.makeTargetServiceIdByResourceUuid(rmsg, BackupStorageConstant.SERVICE_ID, IMPORT_IMAGES_FAKE_RESOURCE_UUID);
+                            bus.send(rmsg);
                         }
                     }
 

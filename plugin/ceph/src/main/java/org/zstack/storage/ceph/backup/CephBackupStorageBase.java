@@ -18,6 +18,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.SyncThread;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
@@ -63,6 +64,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
+import static org.zstack.header.storage.backup.BackupStorageConstant.IMPORT_IMAGES_FAKE_RESOURCE_UUID;
+import static org.zstack.header.storage.backup.BackupStorageConstant.RESTORE_IMAGES_BACKUP_STORAGE_METADATA_TO_DATABASE;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -956,7 +959,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 public void success(GetImagesMetaDataRsp ret) {
                     logger.error(String.format("get images metadata: %s successfully", ret.getImagesMetadata()));
                     reply.setImagesMetadata(ret.getImagesMetadata());
-                    metaDataMaker.restoreImagesBackupStorageMetadataToDatabase(ret.getImagesMetadata(), msg.getBackupStorageUuid());
+
+                    RestoreImagesBackupStorageMetadataToDatabaseMsg rmsg = new RestoreImagesBackupStorageMetadataToDatabaseMsg();
+                    rmsg.setImagesMetadata(ret.getImagesMetadata());
+                    rmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
+                    bus.makeTargetServiceIdByResourceUuid(rmsg, BackupStorageConstant.SERVICE_ID, IMPORT_IMAGES_FAKE_RESOURCE_UUID);
+                    bus.send(rmsg);
+
                     bus.reply(msg, reply);
                     chain.next();
                 }
@@ -2057,5 +2066,17 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }.execute();
         dbf.removeCollection(getSelf().getMons(), CephBackupStorageMonVO.class);
 
+    }
+
+    @Override
+    protected void handle(RestoreImagesBackupStorageMetadataToDatabaseMsg msg) {
+        RestoreImagesBackupStorageMetadataToDatabaseReply reply = new RestoreImagesBackupStorageMetadataToDatabaseReply();
+        doRestoreImagesBackupStorageMetadataToDatabase(msg);
+        bus.reply(msg, reply);
+    }
+
+    @SyncThread(signature = RESTORE_IMAGES_BACKUP_STORAGE_METADATA_TO_DATABASE)
+    private void doRestoreImagesBackupStorageMetadataToDatabase(RestoreImagesBackupStorageMetadataToDatabaseMsg msg) {
+        metaDataMaker.restoreImagesBackupStorageMetadataToDatabase(msg.getImagesMetadata(), msg.getBackupStorageUuid());
     }
 }

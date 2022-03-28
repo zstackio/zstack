@@ -9,6 +9,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.image.*;
@@ -108,7 +109,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         return backupStorageUuid;
     }
 
-    protected  void restoreImagesBackupStorageMetadataToDatabase(String imagesMetadata, String backupStorageUuid) {
+    public void restoreImagesBackupStorageMetadataToDatabase(String imagesMetadata, String backupStorageUuid) {
         List<ImageVO>  imageVOs = new ArrayList<ImageVO>();
         List<ImageBackupStorageRefVO> backupStorageRefVOs = new ArrayList<ImageBackupStorageRefVO>();
         List<SystemTagVO> systemTagVOs = new ArrayList<>();

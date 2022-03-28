@@ -10,6 +10,9 @@ import org.zstack.core.ansible.*;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.SyncThread;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -42,6 +45,7 @@ import java.util.List;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.storage.backup.BackupStorageConstant.RESTORE_IMAGES_BACKUP_STORAGE_METADATA_TO_DATABASE;
 
 public class SftpBackupStorage extends BackupStorageBase {
     private static final CLogger logger = Utils.getLogger(SftpBackupStorage.class);
@@ -689,6 +693,15 @@ public class SftpBackupStorage extends BackupStorageBase {
         return vo;
     }
 
+    @Override
+    protected void handle(RestoreImagesBackupStorageMetadataToDatabaseMsg msg) {
+        RestoreImagesBackupStorageMetadataToDatabaseReply reply = new RestoreImagesBackupStorageMetadataToDatabaseReply();
+        doRestoreImagesBackupStorageMetadataToDatabase(msg);
+        bus.reply(msg, reply);
+    }
 
-
+    @SyncThread(signature = RESTORE_IMAGES_BACKUP_STORAGE_METADATA_TO_DATABASE)
+    private void doRestoreImagesBackupStorageMetadataToDatabase(RestoreImagesBackupStorageMetadataToDatabaseMsg msg) {
+        metaDataMaker.restoreImagesBackupStorageMetadataToDatabase(msg.getImagesMetadata(), msg.getBackupStorageUuid());
+    }
 }
