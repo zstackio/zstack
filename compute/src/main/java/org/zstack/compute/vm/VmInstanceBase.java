@@ -79,6 +79,8 @@ import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.PersistenceException;
 import javax.persistence.TypedQuery;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -5837,6 +5839,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 @Override
                 public void success() {
                     bus.reply(msg, reply);
+                    SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
+                            .set(VolumeVO_.lastDetachDate, Timestamp.valueOf(LocalDateTime.now()))
+                            .set(VolumeVO_.lastVmInstanceUuid, msg.getVmInstanceUuid())
+                            .update();
                     completion.done();
                 }
 
@@ -5866,6 +5872,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                     bus.reply(msg, reply);
                     completion.done();
                 } else {
+                    vvo.setLastDetachDate(Timestamp.valueOf(LocalDateTime.now()));
+                    vvo.setLastVmInstanceUuid(msg.getVmInstanceUuid());
+                    dbf.update(vvo);
+
                     extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(completion) {
                         @Override
                         public void success() {
@@ -6170,7 +6180,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             APIStartVmInstanceMsg amsg = (APIStartVmInstanceMsg) msg;
             spec.setRequiredClusterUuid(amsg.getClusterUuid());
             spec.setRequiredHostUuid(amsg.getHostUuid());
-            spec.setUsbRedirect(Boolean.valueOf(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN)));
+            spec.setUsbRedirect(Boolean.parseBoolean(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN)));
             spec.setEnableRDP(VmSystemTags.RDP_ENABLE.getTokenByResourceUuid(self.getUuid(), VmSystemTags.RDP_ENABLE_TOKEN));
             spec.setVDIMonitorNumber(VmSystemTags.VDI_MONITOR_NUMBER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.VDI_MONITOR_NUMBER_TOKEN));
         }
@@ -6179,6 +6189,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setSoftAvoidHostUuids(((HaStartVmInstanceMsg) msg).getSoftAvoidHostUuids());
             spec.setAllocationScene(AllocationScene.Auto);
         } else if (msg instanceof StartVmInstanceMsg) {
+            spec.setRequiredHostUuid(((StartVmInstanceMsg) msg).getHostUuid());
             spec.setSoftAvoidHostUuids(((StartVmInstanceMsg) msg).getSoftAvoidHostUuids());
             if (((StartVmInstanceMsg) msg).getAllocationScene() != null) {
                 spec.setAllocationScene(((StartVmInstanceMsg) msg).getAllocationScene());

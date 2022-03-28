@@ -90,7 +90,7 @@ public class VolumeTO {
 
         to.setUseVirtio(platform == null || (ImagePlatform.Windows.toString().equals(platform) ||
                 ImagePlatform.valueOf(platform).isParaVirtualization()));
-        to.setUseVirtioSCSI(ImagePlatform.Other.toString().equals(platform) ? false : KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
+        to.setUseVirtioSCSI(!ImagePlatform.Other.toString().equals(platform) && KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
         to.setWwn(KVMHost.computeWwnIfAbsent(vol.getUuid()));
         to.setShareable(vol.isShareable());
         to.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());

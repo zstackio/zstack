@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class OperationChecker {
-    private Map<String, Set<String>> states = new ConcurrentHashMap<String, Set<String>>();
+    private final Map<String, Set<String>> states = new ConcurrentHashMap<String, Set<String>>();
     private final boolean allowedWhenHavingState;
 
     public OperationChecker() {
@@ -23,12 +23,7 @@ public class OperationChecker {
 
     public OperationChecker addState(String stateName, String...opNames) {
         for (String opName : opNames) {
-            Set<String> ss = states.get(opName);
-            if (ss == null) {
-                ss = new HashSet<String>();
-                states.put(opName, ss);
-            }
-
+            Set<String> ss = states.computeIfAbsent(opName, k -> new HashSet<String>());
             ss.add(stateName);
         }
 
@@ -51,7 +46,7 @@ public class OperationChecker {
             }
         }
         
-        return allowedWhenHavingState ? ops.contains(state) : !ops.contains(state);
+        return allowedWhenHavingState == ops.contains(state);
     }
 
     public Set<String> getStatesForOperation(String operationName) {

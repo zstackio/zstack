@@ -571,7 +571,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
 
         ErrorCodeList err = new ErrorCodeList();
-        new While<>(msg.getHostUuids()).all((hostUuid, compl) -> {
+        new While<>(new HashSet<>(msg.getHostUuids())).step((hostUuid, compl) -> {
             CancelHostTaskMsg cmsg = new CancelHostTaskMsg();
             cmsg.setHostUuid(hostUuid);
             cmsg.setCancellationApiId(msg.getCancellationApiId());
@@ -585,7 +585,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     compl.done();
                 }
             });
-        }).run(new WhileDoneCompletion(msg) {
+        }, 3).run(new WhileDoneCompletion(msg) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (!err.getCauses().isEmpty()) {

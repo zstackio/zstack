@@ -164,4 +164,20 @@ public class VolumeInventory  {
         return this.volumeQos;
     }
 
+    public java.sql.Timestamp lastDetachDate;
+    public void setLastDetachDate(java.sql.Timestamp lastDetachDate) {
+        this.lastDetachDate = lastDetachDate;
+    }
+    public java.sql.Timestamp getLastDetachDate() {
+        return this.lastDetachDate;
+    }
+
+    public java.lang.String lastVmInstanceUuid;
+    public void setLastVmInstanceUuid(java.lang.String lastVmInstanceUuid) {
+        this.lastVmInstanceUuid = lastVmInstanceUuid;
+    }
+    public java.lang.String getLastVmInstanceUuid() {
+        return this.lastVmInstanceUuid;
+    }
+
 }
