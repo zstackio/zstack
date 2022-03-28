@@ -510,6 +510,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>iam2project-securitygroup-plugin</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>zbox</artifactId>
                     <version>${project.version}</version>
                 </dependency>
