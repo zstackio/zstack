@@ -483,7 +483,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
-    public static class MergeSnapshotCmd extends AgentCommand {
+    public static class MergeSnapshotCmd extends AgentCommand implements HasThreadContext {
         private String volumeUuid;
         private String snapshotInstallPath;
         private String workspaceInstallPath;
@@ -2174,6 +2174,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                deleteBits(workSpaceInstallPath, hostUuid, new NopeCompletion());
                 completion.fail(errorCode);
             }
         });

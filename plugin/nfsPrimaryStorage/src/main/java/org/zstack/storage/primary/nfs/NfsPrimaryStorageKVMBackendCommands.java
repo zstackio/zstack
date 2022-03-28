@@ -563,7 +563,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class UploadToSftpResponse extends NfsPrimaryStorageAgentResponse {
     }
 
-    public static class MergeSnapshotCmd extends NfsPrimaryStorageAgentCommand {
+    public static class MergeSnapshotCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
         private String volumeUuid;
         private String snapshotInstallPath;
         private String workspaceInstallPath;
