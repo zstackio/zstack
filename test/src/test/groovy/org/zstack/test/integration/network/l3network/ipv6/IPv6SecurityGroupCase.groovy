@@ -18,7 +18,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.network.IPv6Constants
-import org.zstack.core.db.SQL
+
 import java.util.stream.Collectors
 
 import static java.util.Arrays.asList
@@ -306,22 +306,10 @@ class IPv6SecurityGroupCase extends SubCase {
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
             return rsp
         }
-        expect(AssertionError.class) {
-            detachSecurityGroupFromL3Network {
-                l3NetworkUuid = l3_statefull.uuid
-                securityGroupUuid = sg4.uuid
-            }
-        }
-        List<String> vmNicUuids = SQL.New("select nic.uuid from VmNicSecurityGroupRefVO ref, VmNicVO nic " +
-                "where nic.uuid = ref.vmNicUuid and ref.securityGroupUuid = :securityGroupUuid " +
-                "and nic.l3NetworkUuid =:l3NetworkUuid")
-                .param("securityGroupUuid", sg4.uuid)
-                .param("l3NetworkUuid", l3_statefull.uuid)
-                .list()
 
-        deleteVmNicFromSecurityGroup {
-            delegate.securityGroupUuid = sg4.uuid
-            delegate.vmNicUuids = vmNicUuids
+        detachSecurityGroupFromL3Network {
+            l3NetworkUuid = l3_statefull.uuid
+            securityGroupUuid = sg4.uuid
         }
 
         retryInSecs {
@@ -335,19 +323,14 @@ class IPv6SecurityGroupCase extends SubCase {
             assert rule4.securityGroupBaseRules.size() == 2
         }
 
-        detachSecurityGroupFromL3Network {
-            l3NetworkUuid = l3_statefull.uuid
-            securityGroupUuid = sg4.uuid
-        }
-
         cmd == null
         attachSecurityGroupToL3Network {
             securityGroupUuid = sg4.uuid
             l3NetworkUuid = l3_statefull.uuid
         }
         addVmNicToSecurityGroup {
-            delegate.securityGroupUuid = sg4.uuid
-            delegate.vmNicUuids = [nic.uuid]
+            securityGroupUuid = sg4.uuid
+            vmNicUuids = [nic.uuid]
         }
         retryInSecs {
             assert cmd != null
@@ -360,25 +343,11 @@ class IPv6SecurityGroupCase extends SubCase {
             assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
         }
 
-
-        expect(AssertionError.class) {
-            detachSecurityGroupFromL3Network {
-                l3NetworkUuid = l3_statefull.uuid
-                securityGroupUuid = sg6.uuid
-            }
-        }
-        vmNicUuids = SQL.New("select nic.uuid from VmNicSecurityGroupRefVO ref, VmNicVO nic " +
-                "where nic.uuid = ref.vmNicUuid and ref.securityGroupUuid = :securityGroupUuid " +
-                "and nic.l3NetworkUuid =:l3NetworkUuid")
-                .param("securityGroupUuid", sg6.uuid)
-                .param("l3NetworkUuid", l3_statefull.uuid)
-                .list()
         cmd == null
-        deleteVmNicFromSecurityGroup {
-            delegate.securityGroupUuid = sg6.uuid
-            delegate.vmNicUuids = vmNicUuids
+        detachSecurityGroupFromL3Network {
+            l3NetworkUuid = l3_statefull.uuid
+            securityGroupUuid = sg6.uuid
         }
-
         retryInSecs {
             assert cmd != null
             assert cmd.ipv6RuleTOs.size() == 1
@@ -391,19 +360,14 @@ class IPv6SecurityGroupCase extends SubCase {
             assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
         }
 
-        detachSecurityGroupFromL3Network {
-            l3NetworkUuid = l3_statefull.uuid
-            securityGroupUuid = sg6.uuid
-        }
-
         cmd == null
         attachSecurityGroupToL3Network {
             securityGroupUuid = sg6.uuid
             l3NetworkUuid = l3_statefull.uuid
         }
         addVmNicToSecurityGroup {
-            delegate.securityGroupUuid = sg6.uuid
-            delegate.vmNicUuids = [nic.uuid]
+            securityGroupUuid = sg6.uuid
+            vmNicUuids = [nic.uuid]
         }
         retryInSecs {
             assert cmd != null
