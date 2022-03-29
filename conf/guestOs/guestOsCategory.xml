@@ -122,6 +122,12 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>UOS</name>
+        <version>20.1040</version>
+        <osRelease>UOS 20.1040</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>openEuler</name>
         <version>20.03</version>
         <osRelease>openEuler 20.03</osRelease>
