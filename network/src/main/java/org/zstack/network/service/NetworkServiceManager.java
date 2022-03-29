@@ -5,4 +5,5 @@ import org.zstack.header.network.service.NetworkServiceType;
 
 public interface NetworkServiceManager {
     NetworkServiceProviderType getTypeOfNetworkServiceProviderForService(String l3NetworkUuid, NetworkServiceType serviceType);
+    boolean isVmNeedNetworkService(String vmType, NetworkServiceType serviceType);
 }

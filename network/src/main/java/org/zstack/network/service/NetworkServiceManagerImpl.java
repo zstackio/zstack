@@ -476,4 +476,10 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             }
         });
     }
+
+    @Override
+    public boolean isVmNeedNetworkService(String vmType, NetworkServiceType serviceType) {
+	    /* serviceType is not used now, maybe used in future */
+        return supportedVmTypes.contains(vmType);
+    }
 }
