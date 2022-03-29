@@ -5,7 +5,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.console.APIRequestConsoleAccessMsg;
@@ -29,8 +28,6 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private ErrorFacade errf;
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
@@ -48,7 +45,7 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
         q.select(VmInstanceVO_.state);
         q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
-        if (VmInstanceState.Running != state && VmInstanceState.Crashed != state) {
+        if (VmInstanceState.Running != state && VmInstanceState.Crashed != state && VmInstanceState.VolumeRecovering != state) {
             throw new ApiMessageInterceptionException(operr("Console is only available when the VM[uuid:%s] is Running or Crashed, but the current state is %s", msg.getVmInstanceUuid(), state));
         }
         bus.makeTargetServiceIdByResourceUuid(msg, ConsoleConstants.SERVICE_ID, msg.getVmInstanceUuid());
