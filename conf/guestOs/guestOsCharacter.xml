@@ -13,6 +13,12 @@
         <osRelease>openEuler 20.03</osRelease>
         <acpi>true</acpi>
     </osInfo>
+    <osInfo>
+        <architecture>aarch64</architecture>
+        <platform>Linux</platform>
+        <osRelease>UOS 20.1040</osRelease>
+        <acpi>true</acpi>
+    </osInfo>
 
 
     <!-- x86_64 -->
