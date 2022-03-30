@@ -16,7 +16,7 @@
     <osInfo>
         <architecture>aarch64</architecture>
         <platform>Linux</platform>
-        <osRelease>UOS 20.1040</osRelease>
+        <osRelease>UOS 20</osRelease>
         <acpi>true</acpi>
     </osInfo>
 
