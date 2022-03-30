@@ -133,7 +133,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                 .find();
 
         if (vmvo == null) {
-            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is root volume", msg.getRootVolumeUuid()));
+            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is not root volume", msg.getRootVolumeUuid()));
         }
 
         if (msg.isWithMemory() && !(vmvo.getState().equals(VmInstanceState.Running) || (vmvo.getState().equals(VmInstanceState.Paused)))) {
