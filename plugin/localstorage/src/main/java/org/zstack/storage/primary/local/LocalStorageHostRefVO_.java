@@ -17,4 +17,5 @@ public class LocalStorageHostRefVO_ {
     public static volatile SingularAttribute<LocalStorageHostRefVO, Long> availableCapacity;
     public static volatile SingularAttribute<LocalStorageHostRefVO, Long> availablePhysicalCapacity;
     public static volatile SingularAttribute<LocalStorageHostRefVO, Long> totalPhysicalCapacity;
+    public static volatile SingularAttribute<LocalStorageHostRefVO, Long> systemUsedCapacity;
 }

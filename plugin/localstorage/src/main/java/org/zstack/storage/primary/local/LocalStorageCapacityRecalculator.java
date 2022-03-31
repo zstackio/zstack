@@ -138,6 +138,7 @@ public class LocalStorageCapacityRecalculator {
 
             long old = ref.getAvailableCapacity();
             long avail = ref.getTotalCapacity() - used - ref.getSystemUsedCapacity();
+            avail = avail > 0 ? avail : 0;
             ref.setAvailableCapacity(avail);
             dbf.getEntityManager().merge(ref);
             logger.debug(String.format("re-calculated available capacity[before:%s, now: %s] of host[uuid:%s]" +
