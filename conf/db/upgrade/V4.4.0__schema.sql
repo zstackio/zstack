@@ -6,6 +6,7 @@ UPDATE `zstack`.`LicenseHistoryVO` SET `prodInfo` = '' WHERE `prodInfo` IS NULL;
 ALTER TABLE `zstack`.`LicenseHistoryVO` MODIFY COLUMN `prodInfo` varchar(32) NOT NULL DEFAULT '';
 ALTER TABLE `zstack`.`LicenseHistoryVO` ADD COLUMN `mergedTo` bigint(20) unsigned NOT NULL DEFAULT 0;
 DROP INDEX idxLicenseHistoryVOHash ON LicenseHistoryVO;
+UPDATE `zstack`.`AlarmVO` set `comparisonOperator` = 'LessThan', `threshold` = 1 where `metricName` = 'LoadBalancerBackendStatus' and `namespace` = 'ZStack/LoadBalancer' and `comparisonOperator` = 'GreaterThan' and `threshold` = 0;
 
 DELIMITER $$
 CREATE PROCEDURE setApplianceVmCpuModeToNone()
