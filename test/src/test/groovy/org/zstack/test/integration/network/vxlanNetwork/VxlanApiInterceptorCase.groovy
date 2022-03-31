@@ -4,6 +4,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.sdk.AccountInventory
+import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L2VxlanNetworkInventory
 import org.zstack.sdk.L2VxlanNetworkPoolInventory
 import org.zstack.sdk.SessionInventory
@@ -126,6 +127,22 @@ class VxlanApiInterceptorCase extends SubCase {
         L2VxlanNetworkPoolInventory poolinv = createL2VxlanNetworkPool {
             delegate.name = "TestVxlanPool"
             delegate.zoneUuid = zone.inventory.getUuid()
+        }
+
+        def novlaninv = createL2NoVlanNetwork {
+            delegate.name = "novlan"
+            delegate.type = "L2NoVlanNetwork"
+            delegate.zoneUuid = zone.inventory.getUuid()
+            delegate.physicalInterface = "eth7"
+        } as L2NetworkInventory
+
+        expect(AssertionError.class){
+            createVniRange {
+                delegate.startVni = 100
+                delegate.endVni = 1000
+                delegate.l2NetworkUuid = novlaninv.getUuid()
+                delegate.name = "range1"
+            }
         }
 
         expect(AssertionError.class){

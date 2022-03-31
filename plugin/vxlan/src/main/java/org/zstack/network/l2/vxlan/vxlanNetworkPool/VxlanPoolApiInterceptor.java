@@ -90,6 +90,10 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
 
         VxlanNetworkPoolVO pool = dbf.findByUuid(msg.getL2NetworkUuid(), VxlanNetworkPoolVO.class);
 
+        if ( pool == null ) {
+            throw new ApiMessageInterceptionException(argerr("unable create vni range, because l2 uuid[%s] is not vxlan network pool",msg.getL2NetworkUuid()));
+        }
+
         List<Map<String, String>> tokenList = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensOfTagsByResourceUuid(msg.getL2NetworkUuid());
         Map<String, String> attachedClusters = new HashMap<>();
         for (Map<String, String> tokens : tokenList) {
