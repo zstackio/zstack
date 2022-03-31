@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateIAM2ProjectFromTemplateAction extends AbstractAction {
+public class AddResourceToIAM2ProjectAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateIAM2ProjectFromTemplateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.CreateIAM2ProjectFromTemplateResult value;
+        public org.zstack.sdk.iam2.api.AddResourceToIAM2ProjectResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,11 @@ public class CreateIAM2ProjectFromTemplateAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String projectUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String templateUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List roleUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String organizationUuid;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.util.List resourceTemplates;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +63,8 @@ public class CreateIAM2ProjectFromTemplateAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.CreateIAM2ProjectFromTemplateResult value = res.getResult(org.zstack.sdk.iam2.api.CreateIAM2ProjectFromTemplateResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.CreateIAM2ProjectFromTemplateResult() : value; 
+        org.zstack.sdk.iam2.api.AddResourceToIAM2ProjectResult value = res.getResult(org.zstack.sdk.iam2.api.AddResourceToIAM2ProjectResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.AddResourceToIAM2ProjectResult() : value; 
 
         return ret;
     }
@@ -109,7 +94,7 @@ public class CreateIAM2ProjectFromTemplateAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/iam2/projects/from/templates/{templateUuid}";
+        info.path = "/iam2/projects/add/resource/";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
