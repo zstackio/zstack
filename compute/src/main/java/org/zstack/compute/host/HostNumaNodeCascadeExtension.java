@@ -32,12 +32,23 @@ public class HostNumaNodeCascadeExtension extends AbstractAsyncCascadeExtension 
     @Override
     public void asyncCascade(CascadeAction action, Completion completion) {
         if (action.isActionCode(CascadeConstant.DELETION_DELETE_CODE) ||
-                action.isActionCode(CascadeConstant.DELETION_CLEANUP_CODE) ||
                 action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
             handleDeletion(action, completion);
+        } else if (action.isActionCode(CascadeConstant.DELETION_CLEANUP_CODE)) {
+            handleDeletionCleanUp(action, completion);
         } else {
             completion.success();
         }
+    }
+
+    private void handleDeletionCleanUp(CascadeAction action, Completion completion) {
+        cleanUpDeletedHostNumaNodes();
+        completion.success();
+    }
+
+    private void cleanUpDeletedHostNumaNodes() {
+        String sql = "select d.id from HostNumaNodeVO d where d.hostUuid not in (select v.uuid from HostVO v)";
+        dbf.hardDeleteCollectionSelectedBySQL(sql, HostNumaNodeVO.class);
     }
 
     private void handleDeletion(CascadeAction action, Completion completion) {
