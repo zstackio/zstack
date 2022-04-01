@@ -3604,7 +3604,6 @@ public class KVMHost extends HostBase implements Host {
                 }
                 if (null == KVMSystemTags.QEMU_IMG_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.QEMU_IMG_VERSION_TOKEN)) {
                     createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, tester.get(ZTester.KVM_QemuImageVersion, "2.0.0", String.class), true);
-
                 }
                 if (null == KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.CPU_MODEL_NAME_TOKEN)) {
                     createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, tester.get(ZTester.KVM_CpuModelName, "Broadwell", String.class), true);
@@ -3612,6 +3611,10 @@ public class KVMHost extends HostBase implements Host {
                 if (null == KVMSystemTags.EPT_CPU_FLAG.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.EPT_CPU_FLAG_TOKEN)) {
                     createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, "ept", false);
                 }
+                if (null == KVMSystemTags.LIBVIRT_CAPABILITIES.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN)) {
+                    createTagWithoutNonValue(KVMSystemTags.LIBVIRT_CAPABILITIES, KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN, "incrementaldrivemirror,blockcopynetworktarget", true);
+                }
+
                 if (null == self.getArchitecture()) {
                     ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
                     HostVO host = dbf.findByUuid(self.getUuid(), HostVO.class);
@@ -4190,6 +4193,11 @@ public class KVMHost extends HostBase implements Host {
                                         } else {
                                             HostSystemTags.EXTRA_IPS.delete(self.getUuid());
                                         }
+                                    }
+
+                                    List<String> libvirtCapabilities = ret.getLibvirtCapabilities();
+                                    if (libvirtCapabilities != null) {
+                                        createTagWithoutNonValue(KVMSystemTags.LIBVIRT_CAPABILITIES, KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN, StringUtils.join(libvirtCapabilities, ","), true);
                                     }
 
                                     trigger.next();
