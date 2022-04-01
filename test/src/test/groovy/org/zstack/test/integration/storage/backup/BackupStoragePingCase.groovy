@@ -9,6 +9,8 @@ import org.zstack.storage.backup.BackupStorageManagerImpl
 import org.zstack.storage.backup.BackupStoragePingTracker
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
+import org.zstack.storage.ceph.CephGlobalConfig
+import org.zstack.storage.ceph.backup.CephBackupStorageMonBase
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
@@ -17,7 +19,6 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.TimeUnit
-
 /**
  * Created by kayo on 2018/9/27.
  */
@@ -63,12 +64,28 @@ class BackupStoragePingCase extends SubCase {
                 }
             }
 
+            cephBackupStorage {
+                name = "ceph-bk"
+                description = "Test"
+                totalCapacity = SizeUnit.GIGABYTE.toByte(100)
+                availableCapacity = SizeUnit.GIGABYTE.toByte(100)
+                url = "/bk"
+                fsid = "7ff218d9-f525-435f-8a40-3618d1772a64"
+                monUrls = ["root:password@localhost/?monPort=7777"]
+
+                image {
+                    name = "ceph-image"
+                    url = "http://zstack.org/download/image.qcow2"
+                }
+            }
+
             zone {
                 name = "zone"
                 description = "test"
 
                 attachBackupStorage("sftp")
                 attachBackupStorage("sftp2")
+                attachBackupStorage("ceph-bk")
             }
         }
     }
@@ -83,6 +100,7 @@ class BackupStoragePingCase extends SubCase {
             testPingAfterRescan()
             testPingAfterManagementNodeReady()
             testPingSuccessBSReconnectCondition()
+            testPingCephMonRetry()
         }
     }
 
@@ -93,6 +111,30 @@ class BackupStoragePingCase extends SubCase {
             rsp.totalCapacity = SizeUnit.GIGABYTE.toByte(1000)
             return rsp
         }
+    }
+
+    void testPingCephMonRetry() {
+        def ceph = env.inventoryByName("ceph-bk") as BackupStorageInventory
+
+        def pingFailedCount = 0
+        env.simulator(CephBackupStorageMonBase.PING_PATH) { HttpEntity<String> e ->
+            CephBackupStorageMonBase.PingRsp rsp = new CephBackupStorageMonBase.PingRsp()
+            def cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageMonBase.PingCmd.class)
+            if (cmd.backupStorageUuid.equals(ceph.uuid)) {
+                pingFailedCount++
+                throw new HttpError(503, "on purpose")
+            }
+            return rsp
+        }
+
+        CephGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.updateValue(0)
+        BackupStorageGlobalConfig.PING_INTERVAL.updateValue(2)
+
+        retryInSecs(4) {
+            assert pingFailedCount == 3
+        }
+
+        env.cleanSimulatorAndMessageHandlers()
     }
 
     void testPingAfterManagementNodeReady() {
@@ -129,7 +171,7 @@ class BackupStoragePingCase extends SubCase {
         backupStorageManager.managementNodeReady()
 
         retryInSecs {
-            assert connectCount == 2
+            assert connectCount == 3
             assert Q.New(BackupStorageVO.class).eq(BackupStorageVO_.status, BackupStorageStatus.Connected).count() == 2
         }
 
