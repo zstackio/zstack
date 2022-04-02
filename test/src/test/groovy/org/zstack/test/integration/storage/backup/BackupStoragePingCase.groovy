@@ -127,7 +127,7 @@ class BackupStoragePingCase extends SubCase {
             return rsp
         }
 
-        CephGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.updateValue(0)
+        BackupStorageGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.updateValue(0)
         BackupStorageGlobalConfig.PING_INTERVAL.updateValue(2)
 
         retryInSecs(4) {
@@ -172,7 +172,7 @@ class BackupStoragePingCase extends SubCase {
 
         retryInSecs {
             assert connectCount == 3
-            assert Q.New(BackupStorageVO.class).eq(BackupStorageVO_.status, BackupStorageStatus.Connected).count() == 2
+            assert Q.New(BackupStorageVO.class).eq(BackupStorageVO_.status, BackupStorageStatus.Connected).count() == 3
         }
 
         cleanup()

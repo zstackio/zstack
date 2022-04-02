@@ -17,13 +17,13 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
+import org.zstack.storage.backup.BackupStorageGlobalConfig;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.backup.CephBackupStorageBase.PingOperationFailure;
 import org.zstack.utils.Utils;
@@ -406,13 +406,14 @@ public class CephBackupStorageMonBase extends CephMonBase {
     }
 
     private void pingMon(final ReturnValueCompletion<PingResult> completion) {
-        final Integer MAX_PING_CNT = CephGlobalConfig.BACKUP_STORAGE_MON_MAXIMUM_PING_FAILURE.value(Integer.class);
+        final Integer MAX_PING_CNT = BackupStorageGlobalConfig.MAXIMUM_PING_FAILURE.value(Integer.class);
         final List<Integer> stepCount = new ArrayList<>();
         for (int i = 1; i <= MAX_PING_CNT; i++) {
             stepCount.add(i);
         }
 
         PingResult pingResult = new PingResult();
+        final List<ErrorCode> errs = new ArrayList<>();
         new While<>(stepCount).each((step, compl) -> {
             doPing(new ReturnValueCompletion<PingResult>(completion) {
                 @Override
@@ -426,14 +427,14 @@ public class CephBackupStorageMonBase extends CephMonBase {
                 @Override
                 public void fail(ErrorCode errorCode) {
                     logger.warn(String.format("ping ceph bs mon[%s] failed (%d/%d): %s", self.getMonAddr(), step, MAX_PING_CNT, errorCode.toString()));
-                    compl.addError(errorCode);
+                    errs.add(errorCode);
 
                     if (step.equals(MAX_PING_CNT)) {
                         compl.allDone();
                         return;
                     }
 
-                    int sleep = CephGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.value(Integer.class);
+                    int sleep = BackupStorageGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.value(Integer.class);
                     if (sleep > 0) {
                         try {
                             TimeUnit.SECONDS.sleep(sleep);
@@ -443,11 +444,11 @@ public class CephBackupStorageMonBase extends CephMonBase {
                     compl.done();
                 }
             });
-        }).run(new WhileDoneCompletion(completion) {
+        }).run(new NoErrorCompletion(completion) {
             @Override
-            public void done(ErrorCodeList errorCodeList) {
-                if (errorCodeList.getCauses().size() == MAX_PING_CNT) {
-                    completion.fail(errorCodeList.getCauses().get(0));
+            public void done() {
+                if (errs.size() == MAX_PING_CNT) {
+                    completion.fail(errs.get(0));
                     return;
                 }
                 completion.success(pingResult);

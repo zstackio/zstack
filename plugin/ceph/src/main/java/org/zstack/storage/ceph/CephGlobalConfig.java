@@ -26,8 +26,6 @@ public class CephGlobalConfig {
     public static GlobalConfig BACKUP_STORAGE_MON_RECONNECT_DELAY = new GlobalConfig(CATEGORY, "backupStorage.mon.reconnectDelay");
     @GlobalConfigValidation
     public static GlobalConfig BACKUP_STORAGE_MON_AUTO_RECONNECT = new GlobalConfig(CATEGORY, "backupStorage.mon.autoReconnect");
-    @GlobalConfigValidation(numberGreaterThan = 0)
-    public static GlobalConfig BACKUP_STORAGE_MON_MAXIMUM_PING_FAILURE = new GlobalConfig(CATEGORY, "backupStorage.mon.ping.maxFailure");
     @GlobalConfigValidation
     public static GlobalConfig GC_INTERVAL = new GlobalConfig(CATEGORY, "deletion.gcInterval");
     @GlobalConfigValidation
