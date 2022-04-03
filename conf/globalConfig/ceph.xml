@@ -57,14 +57,6 @@
     </config>
 
     <config>
-        <name>backupStorage.mon.ping.maxFailure</name>
-        <description>The maximum count of ping failure before reconnecting ceph backup storage mon</description>
-        <category>ceph</category>
-        <defaultValue>3</defaultValue>
-        <type>java.lang.Integer</type>
-    </config>
-
-    <config>
         <name>deletion.gcInterval</name>
         <description>the interval to garbage collect stale volumes, in seconds</description>
         <defaultValue>3600</defaultValue>

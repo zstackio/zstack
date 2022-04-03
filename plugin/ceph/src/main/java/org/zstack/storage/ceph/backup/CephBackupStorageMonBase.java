@@ -24,6 +24,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
+import org.zstack.storage.backup.BackupStorageGlobalConfig;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.backup.CephBackupStorageBase.PingOperationFailure;
 import org.zstack.utils.Utils;
@@ -407,7 +408,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
     }
 
     private void pingMon(final ReturnValueCompletion<PingResult> completion) {
-        final Integer MAX_PING_CNT = CephGlobalConfig.BACKUP_STORAGE_MON_MAXIMUM_PING_FAILURE.value(Integer.class);
+        final Integer MAX_PING_CNT = BackupStorageGlobalConfig.MAXIMUM_PING_FAILURE.value(Integer.class);
         final List<Integer> stepCount = new ArrayList<>();
         for (int i = 1; i <= MAX_PING_CNT; i++) {
             stepCount.add(i);
@@ -434,7 +435,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
                         return;
                     }
 
-                    int sleep = CephGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.value(Integer.class);
+                    int sleep = BackupStorageGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.value(Integer.class);
                     if (sleep > 0) {
                         try {
                             TimeUnit.SECONDS.sleep(sleep);
