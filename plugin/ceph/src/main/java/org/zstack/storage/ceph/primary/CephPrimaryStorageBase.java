@@ -17,14 +17,8 @@ import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
-import org.zstack.core.thread.AsyncThread;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
-import org.zstack.core.trash.TrashType;
-import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.core.trash.StorageTrash;
+import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
@@ -2020,6 +2014,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 return name;
             }
         });
+    }
+
+    protected void handle(final CleanUpImageCacheOnPrimaryStorageMsg msg) {
+        CleanUpImageCacheOnPrimaryStorageReply reply = new CleanUpImageCacheOnPrimaryStorageReply();
+        imageCacheCleaner.cleanup(msg.getUuid(), false);
+        bus.reply(msg ,reply);
     }
 
     private PrimaryStorageLicenseInfoFactory getPrimaryStorageLicenseInfoFactory(String vendor) {
