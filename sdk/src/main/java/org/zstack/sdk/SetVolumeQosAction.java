@@ -29,10 +29,28 @@ public class SetVolumeQosAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = false, validValues = {"total","read","write"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String mode = "total";
+    public java.lang.String mode;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, noTrim = false)
     public java.lang.Long volumeBandwidth;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long readBandwidth;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long writeBandwidth;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long totalBandwidth;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long readIOPS;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long writeIOPS;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long totalIOPS;
 
     @Param(required = false)
     public java.util.List systemTags;
