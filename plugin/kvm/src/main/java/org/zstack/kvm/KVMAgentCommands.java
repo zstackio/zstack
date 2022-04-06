@@ -403,9 +403,14 @@ public class KVMAgentCommands {
         private String cpuArchitecture;
         private String cpuModelName;
         private String cpuGHz;
+        private String cpuProcessorNum;
+        private String powerSupplyModelName;
+        private String powerSupplyManufacturer;
+        private String powerSupplyMaxPowerCapacity;
         private String hostCpuModelName;
         private String systemProductName;
         private String systemSerialNumber;
+        private String cpuCache;
         private List<String> ipAddresses;
 
         public String getOsDistribution() {
@@ -480,12 +485,62 @@ public class KVMAgentCommands {
             return cpuGHz;
         }
 
+        public void setCpuGHz(String cpuGHz) {
+            this.cpuGHz = cpuGHz;
+        }
+
+        public String getCpuProcessorNum() {
+            return cpuProcessorNum;
+        }
+
+        public void setCpuProcessorNum(String cpuProcessorNum) {
+            this.cpuProcessorNum = cpuProcessorNum;
+        }
+
+        public String getCpuCache() {
+            return cpuCache;
+        }
+
+        public void setCpuCache (String cpuCache) {
+            this.cpuCache = cpuCache;
+        }
+
+
+        public String getPowerSupplyModelName() {
+            return powerSupplyModelName;
+        }
+
+        public void setPowerSupplyModelName(String powerSupplyModelName) {
+            this.powerSupplyModelName = powerSupplyModelName;
+        }
+
+
+        public String getPowerSupplyManufacturer() {
+            return powerSupplyManufacturer;
+        }
+
+        public void setPowerSupplyManufacturer(String powerSupplyManufacturer) {
+            this.powerSupplyManufacturer = powerSupplyManufacturer;
+        }
+
+        public String getPowerSupplyMaxPowerCapacity() {
+            return powerSupplyMaxPowerCapacity;
+        }
+
+        public void setPowerSupplyMaxPowerCapacity(String powerSupplyMaxPowerCapacity) {
+            this.powerSupplyMaxPowerCapacity = powerSupplyMaxPowerCapacity;
+        }
+
         public String getCpuArchitecture() {
             return cpuArchitecture;
         }
 
         public String getHostCpuModelName() {
             return hostCpuModelName;
+        }
+
+        public void setHostCpuModelName (String hostCpuModelName) {
+            this.hostCpuModelName = hostCpuModelName;
         }
 
         public String getSystemProductName() {
