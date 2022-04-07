@@ -51,7 +51,7 @@ public class RBACInfo implements RBACDescription {
         permissionBuilder()
                 .name("vxlan")
                 .normalAPIs("org.zstack.network.l2.vxlan.vxlanNetwork.**", DELETE_VXLAN_NETWORK_API_NAME)
-                .normalAPIs(APIQueryVniRangeMsg.class, APIQueryL2VxlanNetworkPoolMsg.class, APIDeleteL2NetworkMsg.class)
+                .normalAPIs(APIQueryVniRangeMsg.class, APIQueryL2VxlanNetworkPoolMsg.class)
                 .adminOnlyAPIs("org.zstack.network.l2.vxlan.vtep.**", "org.zstack.network.l2.vxlan.vxlanNetworkPool.**")
                 .targetResources(VxlanNetworkVO.class)
                 .build();

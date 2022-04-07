@@ -9,12 +9,16 @@ import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class RBAC {
+    private static CLogger logger = Utils.getLogger(RBAC.class);
+
     public static List<Permission> permissions = new ArrayList<>();
     public static List<Role> roles = new ArrayList<>();
     public static List<GlobalReadableResource> readableResources = new ArrayList<>();
@@ -31,6 +35,39 @@ public class RBAC {
     static class APIPermissionCheckerWrapper {
         boolean takeOver;
         APIPermissionChecker checker;
+    }
+
+    public static void checkDuplicateRBACInfo() {
+        List<String> duplicateAPIMsgList = new ArrayList<>();
+
+        APIMessage.apiMessageClasses.forEach(clz -> {
+            if (clz.isAnnotationPresent(Deprecated.class) || clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
+                return;
+            }
+
+            String clzName = clz.getName();
+            List<Permission> apiPermissionList = permissions.parallelStream()
+                    .filter(p -> !StringUtils.isEmpty(p.getName())
+                            && (p.normalAPIs.stream().anyMatch(s -> matcher.match(s, clzName))
+                            || p.adminOnlyAPIs.stream().anyMatch(s -> matcher.match(s, clzName))))
+                    .collect(Collectors.toList());
+            if (apiPermissionList.size() > 1) {
+                duplicateAPIMsgList.add(clzName);
+            }
+        });
+
+        if (duplicateAPIMsgList.isEmpty()) {
+            return;
+        }
+
+        Collections.sort(duplicateAPIMsgList);
+
+        StringBuilder errorString = new StringBuilder();
+        if (!duplicateAPIMsgList.isEmpty()) {
+            errorString.append(String.format("Below APIs:\n %s is defined by multiple RBACInfo\n", StringUtils.join(duplicateAPIMsgList, "\n")));
+        }
+
+        throw new CloudRuntimeException(errorString.toString());
     }
 
     public static void checkMissingRBACInfo() {
