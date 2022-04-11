@@ -6,7 +6,8 @@ public enum BackupStorageErrors {
     DOWNLOAD_ERROR(1000),
     ATTACH_ERROR(1001),
     DETACH_ERROR(1002),
-    ALLOCATE_ERROR(1003);
+    ALLOCATE_ERROR(1003),
+    OTHER_NODE_MANAGE_ERROR(1004);
 
     private String code;
 
