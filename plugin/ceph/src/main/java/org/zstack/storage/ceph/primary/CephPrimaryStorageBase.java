@@ -1661,13 +1661,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private String makeResetImageRootVolumeInstallPath(String volUuid, String volumePath) {
         return String.format("ceph://%s/%s",
-                getDefaultRootVolumePoolName(),
+                getRootVolumeTargetPoolName(volUuid),
                 volumePath);
     }
 
     private String makeResetImageRootVolumeInstallPath(String volUuid) {
         return String.format("ceph://%s/reset-image-%s-%s",
-                getDefaultRootVolumePoolName(),
+                getRootVolumeTargetPoolName(volUuid),
                 volUuid,
                 System.currentTimeMillis());
     }
