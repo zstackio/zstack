@@ -5520,7 +5520,51 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void afterAttachNic(VmNicInventory nicInventory, boolean applyToBackend, Completion completion) {
-        completion.success();
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain().setName(String.format("vm-after-attach-nic-%s", nicInventory.getUuid()));
+        chain.allowEmptyFlow();
+        for (final VmAfterAttachNicExtensionPoint ns : pluginRgty.getExtensionList(VmAfterAttachNicExtensionPoint.class)) {
+            Flow flow = new Flow() {
+                @Override
+                public void run(final FlowTrigger chain, Map data) {
+                    logger.debug(String.format("VmAfterAttachNicExtensionPoint[%s] starts executing", ns.getClass().getName()));
+                    ns.afterAttachNic(getSelfInventory(), new Completion(chain) {
+                        @Override
+                        public void success() {
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            chain.fail(errorCode);
+                        }
+                    });
+                }
+
+                @Override
+                public void rollback(final FlowRollback chain, Map data) {
+                    logger.debug(String.format("VmAfterAttachNicExtensionPoint[%s] started rolling back", ns.getClass().getName()));
+                    ns.afterAttachNicRollback(nicInventory.getUuid(), getSelfInventory(), new NoErrorCompletion(chain) {
+                        @Override
+                        public void done() {
+                            chain.rollback();
+                        }
+                    });
+                }
+            };
+
+            chain.then(flow);
+        }
+        chain.error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode err, Map data) {
+                completion.fail(err);
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).start();
     }
 
     protected void afterAttachNic(VmNicInventory nicInventory, Completion completion) {

@@ -1,5 +1,6 @@
 package org.zstack.network.securitygroup;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmSystemTags;
@@ -7,6 +8,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.message.MessageReply;
@@ -23,7 +25,7 @@ import javax.persistence.Query;
 
 /**
  */
-public class SecurityGroupNetworkServiceExtension extends AbstractNetworkServiceExtension {
+public class SecurityGroupNetworkServiceExtension extends AbstractNetworkServiceExtension implements VmAfterAttachNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SecurityGroupNetworkServiceExtension.class);
 
     @Autowired
@@ -141,5 +143,37 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
 	    Query query = dbf.getEntityManager().createQuery(sql);
 	    query.setParameter("id", vmNicUuid);
 	    query.executeUpdate();
+    }
+
+    @Override
+    public void afterAttachNic(VmInstanceInventory vmInstanceInventory, Completion completion) {
+        syncSystemTagToVmNicSecurityGroup(vmInstanceInventory.getUuid());
+        if (StringUtils.isEmpty(vmInstanceInventory.getHostUuid())) {
+            completion.success();
+            return;
+        }
+        RefreshSecurityGroupRulesOnVmMsg msg = new RefreshSecurityGroupRulesOnVmMsg();
+        msg.setVmInstanceUuid(vmInstanceInventory.getUuid());
+        msg.setHostUuid(vmInstanceInventory.getHostUuid());
+        bus.makeLocalServiceId(msg, SecurityGroupConstant.SERVICE_ID);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    completion.success();
+                } else {
+                    completion.fail(reply.getError());
+                }
+            }
+        });
+    }
+
+    @Override
+    public void afterAttachNicRollback(String nicUuid, VmInstanceInventory vmInstanceInventory, NoErrorCompletion completion) {
+        logger.debug(String.format("securityGroupNetworkServiceExtension after attach nic starting rollback, hardDelete VmNicSecurityGroupRefVO data"));
+        SQL.New(VmNicSecurityGroupRefVO.class)
+                .eq(VmNicSecurityGroupRefVO_.vmNicUuid, nicUuid)
+                .eq(VmNicSecurityGroupRefVO_.vmNicUuid, vmInstanceInventory.getUuid()).hardDelete();
+        completion.done();
     }
 }
