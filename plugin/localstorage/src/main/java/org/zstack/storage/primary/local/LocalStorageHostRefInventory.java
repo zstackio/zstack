@@ -1,5 +1,7 @@
 package org.zstack.storage.primary.local;
 
+import org.zstack.header.search.Inventory;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,6 +9,7 @@ import java.util.List;
 /**
  * Created by frank on 6/30/2015.
  */
+@Inventory(mappingVOClass = LocalStorageHostRefVO.class)
 public class LocalStorageHostRefInventory {
     private String uuid;
     private String hostUuid;
