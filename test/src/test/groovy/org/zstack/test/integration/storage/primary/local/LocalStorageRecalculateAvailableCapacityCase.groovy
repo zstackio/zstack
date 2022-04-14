@@ -5,6 +5,7 @@ import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.sdk.ExpungeDataVolumeAction
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VolumeInventory
+import org.zstack.sdk.ZQLQueryResult
 import org.zstack.storage.primary.local.LocalStorageSystemTags
 import org.zstack.test.integration.kvm.Env
 import org.zstack.testlib.DiskOfferingSpec
@@ -51,6 +52,7 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
     void test() {
         env.create {
             testPSAvailableCapacity()
+            t()
         }
     }
 
@@ -139,6 +141,15 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
                 conditions=["uuid=${primaryStorageSpec.inventory.uuid}".toString()]
         }[0]
         assert primaryStorageInventory.totalCapacity == primaryStorageInventory.availableCapacity
+    }
+
+    void t() {
+        ZQLQueryResult result = zQLQuery {
+            zql = "query LocalStorageHostRef"
+        } as ZQLQueryResult
+
+        def d = 1+2
+        assert d==3
     }
 
     @Override
