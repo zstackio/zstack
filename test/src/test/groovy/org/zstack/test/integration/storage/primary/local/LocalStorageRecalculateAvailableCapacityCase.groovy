@@ -5,6 +5,7 @@ import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.sdk.ExpungeDataVolumeAction
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VolumeInventory
+import org.zstack.sdk.ZQLQueryResult
 import org.zstack.storage.primary.local.LocalStorageSystemTags
 import org.zstack.test.integration.kvm.Env
 import org.zstack.testlib.DiskOfferingSpec
