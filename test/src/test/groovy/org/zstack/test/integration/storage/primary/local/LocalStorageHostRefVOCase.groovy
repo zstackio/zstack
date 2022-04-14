@@ -8,6 +8,7 @@ import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.CreateDataVolumeAction
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.ZQLQueryResult
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
 import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
@@ -168,6 +169,7 @@ class LocalStorageHostRefVOCase extends SubCase{
     void test() {
         env.create {
             checkLocalStorageHostRefWhenCreateDiskFail()
+            t()
         }
     }
 
@@ -242,6 +244,15 @@ class LocalStorageHostRefVOCase extends SubCase{
         LocalStorageHostRefVO localStorageHostRefVO = hq.find()
 
         assert localStorageHostRefVO.availableCapacity == localStorageHostRefVO.totalCapacity
+    }
+
+    void t() {
+        ZQLQueryResult result = zQLQuery {
+            zql = "query LocalStorageHostRef"
+        } as ZQLQueryResult
+
+        def d = 1+2
+        assert d==3
     }
 
     @Override
