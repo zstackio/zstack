@@ -1,9 +1,14 @@
 package org.zstack.test.integration.kvm.vm
 
+import org.zstack.compute.vm.VmNicManager
+import org.zstack.core.db.SQL
+import org.zstack.header.image.ImageVO
+import org.zstack.header.image.ImageVO_
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -11,6 +16,7 @@ import org.zstack.utils.data.SizeUnit
 
 class CreateVmInPubL3Case extends SubCase {
     EnvSpec env
+    VmNicManager nicMgr
 
     @Override
     void clean() {
@@ -122,6 +128,7 @@ class CreateVmInPubL3Case extends SubCase {
 
     @Override
     void test() {
+        nicMgr = bean(VmNicManager.class)
         env.create {
             createVmWithAL3NetworkWhichNotAttachedToTheCluster()
         }
@@ -135,12 +142,18 @@ class CreateVmInPubL3Case extends SubCase {
         ImageInventory image = env.inventoryByName("image1")
         L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
 
+        /* change image virtio flag */
+        SQL.New(ImageVO).eq(ImageVO_.uuid, image.uuid).set(ImageVO_.virtio, Boolean.TRUE).update()
         VmInstanceInventory vm = createVmInstance {
             name = "test"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = [pubL3.uuid]
         }
+
+        VmNicInventory nic = vm.vmNics.get(0)
+        assert nic.driverType == nicMgr.getDefaultPVNicDriver()
+        
         destroyVmInstance {
             uuid = vm.uuid
         }
