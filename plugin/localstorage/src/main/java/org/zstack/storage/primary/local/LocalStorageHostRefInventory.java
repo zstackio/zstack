@@ -1,5 +1,11 @@
 package org.zstack.storage.primary.local;
 
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.search.Inventory;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,8 +13,15 @@ import java.util.List;
 /**
  * Created by frank on 6/30/2015.
  */
+@Inventory(mappingVOClass = LocalStorageHostRefVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "host", inventoryClass = HostInventory.class,
+                foreignKey = "hostUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "primaryStorage", inventoryClass = PrimaryStorageInventory.class,
+                foreignKey = "primaryStorageUuid", expandedInventoryKey = "uuid")
+})
 public class LocalStorageHostRefInventory {
-    private String uuid;
+    private String primaryStorageUuid;
     private String hostUuid;
     private Long totalCapacity;
     private Long availableCapacity;
@@ -19,12 +32,12 @@ public class LocalStorageHostRefInventory {
 
     public static LocalStorageHostRefInventory valueOf(LocalStorageHostRefVO vo) {
         LocalStorageHostRefInventory inv = new LocalStorageHostRefInventory();
-        inv.setUuid(vo.getPrimaryStorageUuid());
+        inv.setPrimaryStorageUuid(vo.getPrimaryStorageUuid());
         inv.setHostUuid(vo.getHostUuid());
         inv.setAvailableCapacity(vo.getAvailableCapacity());
         inv.setAvailablePhysicalCapacity(vo.getAvailablePhysicalCapacity());
         inv.setTotalCapacity(vo.getTotalCapacity());
-        inv.setTotalPhysicalCapacity(inv.getTotalPhysicalCapacity());
+        inv.setTotalPhysicalCapacity(vo.getTotalPhysicalCapacity());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -39,12 +52,12 @@ public class LocalStorageHostRefInventory {
         return invs;
     }
 
-    public String getUuid() {
-        return uuid;
+    public String getPrimaryStorageUuid() {
+        return primaryStorageUuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
     }
 
     public String getHostUuid() {
