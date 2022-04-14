@@ -8,7 +8,6 @@ import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.CreateDataVolumeAction
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.ZQLQueryResult
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
 import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
