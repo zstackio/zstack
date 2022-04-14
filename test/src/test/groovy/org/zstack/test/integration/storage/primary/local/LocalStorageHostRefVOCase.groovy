@@ -169,7 +169,6 @@ class LocalStorageHostRefVOCase extends SubCase{
     void test() {
         env.create {
             checkLocalStorageHostRefWhenCreateDiskFail()
-            t()
         }
     }
 
@@ -244,15 +243,6 @@ class LocalStorageHostRefVOCase extends SubCase{
         LocalStorageHostRefVO localStorageHostRefVO = hq.find()
 
         assert localStorageHostRefVO.availableCapacity == localStorageHostRefVO.totalCapacity
-    }
-
-    void t() {
-        ZQLQueryResult result = zQLQuery {
-            zql = "query LocalStorageHostRef"
-        } as ZQLQueryResult
-
-        def d = 1+2
-        assert d==3
     }
 
     @Override
