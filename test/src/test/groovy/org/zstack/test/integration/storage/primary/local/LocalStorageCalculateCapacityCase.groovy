@@ -6,7 +6,6 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.GetLocalStorageHostDiskCapacityAction
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.ZQLQueryResult
 import org.zstack.test.integration.kvm.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -38,7 +37,6 @@ class LocalStorageCalculateCapacityCase extends SubCase {
     void test() {
         env.create {
             testCalculateCapacityWhenAddLocalStorage()
-            t()
         }
     }
 
@@ -73,14 +71,5 @@ class LocalStorageCalculateCapacityCase extends SubCase {
         }
 
         assert temp
-    }
-
-    void t() {
-        ZQLQueryResult result = zQLQuery {
-            zql = "query LocalStorageHostRef"
-        } as ZQLQueryResult
-
-        def d = 1+2
-        assert d==3
     }
 }
