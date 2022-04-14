@@ -2,9 +2,13 @@ package org.zstack.test.integration.storage.primary.local.capacity
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.header.host.Host
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.ZQLQueryResult
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
 import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
@@ -18,6 +22,8 @@ import org.zstack.testlib.SubCase
 
 class LocalStorageSystemUsedCapacityCase extends SubCase {
     EnvSpec env
+    HostInventory host
+    PrimaryStorageInventory localPs
 
     @Override
     void clean() {
@@ -56,7 +62,10 @@ class LocalStorageSystemUsedCapacityCase extends SubCase {
     @Override
     void test() {
         env.create {
+            localPs = env.inventoryByName("local") as PrimaryStorageInventory
+
             testAddHost()
+            testGetLocalStorageHostRefInfoByZQL()
         }
     }
 
@@ -73,7 +82,7 @@ class LocalStorageSystemUsedCapacityCase extends SubCase {
             return rsp
         }
 
-        HostInventory host = addKVMHost {
+        host = addKVMHost {
             name = "host1"
             managementIp = "127.0.0.3"
             username = "root"
@@ -122,5 +131,29 @@ class LocalStorageSystemUsedCapacityCase extends SubCase {
         }[0]
         assert ps.systemUsedCapacity == hostRefVO.systemUsedCapacity
 
+    }
+
+    void testGetLocalStorageHostRefInfoByZQL() {
+        ZQLQueryResult res = zQLQuery {
+//            zql = String.format("query LocalStorageHostRef where host.uuid='%s' and host.name='%s' and " +
+//                    "primaryStorage.name='%s'", host.uuid, host.name, localPs.name)
+
+//            zql = String.format("query LocalStorageHostRef")
+//            zql = String.format("query LocalStorageHostRef where host.uuid='%s' and host.name='%s'", host.uuid, host.name)
+            zql = String.format("query LocalStorageHostRef where primaryStorage.uuid='%s'", localPs.uuid)
+        } as ZQLQueryResult
+
+
+//        ZQLQueryResult res = zQLQuery {
+//            zql = String.format("query LocalStorageHostRef where host.uuid='%s' and host.name='%s' " +
+//                    "and primaryStorage.uuid='%s' and primaryStorage.name='%s'"
+//                    , host.uuid, host.name, localPs.uuid, localPs.name)
+//        } as ZQLQueryResult
+
+        def localStorageHostRefInventory = res.getResults()[0].getInventories()[0]
+        assert localStorageHostRefInventory.availableCapacity != 0
+        assert localStorageHostRefInventory.availablePhysicalCapacity != 0
+        assert localStorageHostRefInventory.totalCapacity != 0
+        assert localStorageHostRefInventory.totalPhysicalCapacity != 0
     }
 }
