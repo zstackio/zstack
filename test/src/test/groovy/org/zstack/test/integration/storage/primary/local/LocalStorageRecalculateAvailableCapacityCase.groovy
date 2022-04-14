@@ -51,6 +51,7 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
     void test() {
         env.create {
             testPSAvailableCapacity()
+            t()
         }
     }
 
@@ -139,6 +140,15 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
                 conditions=["uuid=${primaryStorageSpec.inventory.uuid}".toString()]
         }[0]
         assert primaryStorageInventory.totalCapacity == primaryStorageInventory.availableCapacity
+    }
+
+    void t() {
+        ZQLQueryResult result = zQLQuery {
+            zql = "query LocalStorageHostRef"
+        } as ZQLQueryResult
+
+        def d = 1 + 2
+        assert d == 3
     }
 
     @Override
