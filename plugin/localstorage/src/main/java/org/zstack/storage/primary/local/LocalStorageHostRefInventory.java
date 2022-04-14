@@ -1,6 +1,10 @@
 package org.zstack.storage.primary.local;
 
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -10,6 +14,12 @@ import java.util.List;
  * Created by frank on 6/30/2015.
  */
 @Inventory(mappingVOClass = LocalStorageHostRefVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "host", inventoryClass = HostInventory.class,
+                foreignKey = "hostUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "primaryStorage", inventoryClass = PrimaryStorageInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "uuid"),
+})
 public class LocalStorageHostRefInventory {
     private String uuid;
     private String hostUuid;
