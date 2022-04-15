@@ -1,17 +1,18 @@
 package org.zstack.test.integration.storage.snapshot
 
+import org.zstack.core.db.Q
+import org.zstack.header.core.trash.InstallPathRecycleVO
+import org.zstack.header.core.trash.InstallPathRecycleVO_
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
-import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO_
 import org.zstack.test.integration.ldap.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.storage.primary.local.LocalStorageResourceRefVO
-import org.zstack.storage.primary.local.LocalStorageResourceRefVO_
-import org.zstack.core.db.Q
-import org.zstack.header.core.trash.InstallPathRecycleVO
-import org.zstack.header.core.trash.InstallPathRecycleVO_
 
 class RevertVolumeFromSnapshot2Case extends SubCase{
     EnvSpec env
@@ -59,13 +60,14 @@ class RevertVolumeFromSnapshot2Case extends SubCase{
             uuid = vm.uuid
         }
 
-        assert !Q.New(InstallPathRecycleVO.class).eq(InstallPathRecycleVO_.resourceUuid, vm.getRootVolumeUuid()).isExists()
+        def currentInstallPath = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, vUuid).select(VolumeVO_.installPath).findValue()
+        assert !Q.New(InstallPathRecycleVO.class).eq(InstallPathRecycleVO_.installPath, currentInstallPath).isExists()
 
         revertVolumeFromSnapshot {
             uuid = snapshot.uuid
         }
 
-        assert Q.New(InstallPathRecycleVO.class).eq(InstallPathRecycleVO_.resourceUuid, vm.getRootVolumeUuid()).isExists()
+        assert Q.New(InstallPathRecycleVO.class).eq(InstallPathRecycleVO_.installPath, currentInstallPath).isExists()
 
         startVmInstance {
             uuid = vm.uuid

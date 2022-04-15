@@ -178,7 +178,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         return String.format("primaryStorage-%s", self.getUuid());
     }
 
-    protected static List<TrashType> trashLists = CollectionDSL.list(TrashType.MigrateVolume, TrashType.MigrateVolumeSnapshot, TrashType.RevertVolume, TrashType.VolumeSnapshot, TrashType.ReimageVolume);
+    protected static List<TrashType> trashLists = CollectionDSL.list(TrashType.MigrateVolume, TrashType.MigrateVolumeSnapshot, TrashType.RevertVolume, TrashType.VolumeSnapshot, TrashType.ReimageVolume, TrashType.FullSnapshotVolume);
 
     protected void fireDisconnectedCanonicalEvent(ErrorCode reason) {
         PrimaryStorageCanonicalEvent.DisconnectedData data = new PrimaryStorageCanonicalEvent.DisconnectedData();

@@ -24,6 +24,8 @@ import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.*;
+import org.zstack.header.core.trash.InstallPathRecycleVO;
+import org.zstack.header.core.trash.InstallPathRecycleVO_;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -392,6 +394,7 @@ public class VolumeSnapshotTreeBase {
         String primaryStorageType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
                 .eq(PrimaryStorageVO_.uuid, getSelfInventory().getPrimaryStorageUuid()).findValue();
 
+        List<String> deletedSnapshotUuids = new ArrayList<>();
         chain.then(new NoRollbackFlow() {
             String __name__ = String.format("run snapshot protector");
 
@@ -609,6 +612,7 @@ public class VolumeSnapshotTreeBase {
                         VolumeSnapshotPrimaryStorageDeletionMsg pmsg = new VolumeSnapshotPrimaryStorageDeletionMsg();
                         pmsg.setUuid(arg.getUuid());
                         pmsg.setVolumeDelete(msg.isVolumeDeletion());
+                        deletedSnapshotUuids.add(arg.getUuid());
                         bus.makeTargetServiceIdByResourceUuid(pmsg, VolumeSnapshotConstant.SERVICE_ID, arg.getPrimaryStorageUuid());
                         return pmsg;
                     }
@@ -639,6 +643,47 @@ public class VolumeSnapshotTreeBase {
                         } else {
                             trigger.next();
                         }
+                    }
+                });
+            }
+        });
+
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "clean-up-trash-of-revert-and-fullsnapshot";
+
+            @Override
+            public boolean skip(Map data) {
+                return deletedSnapshotUuids.isEmpty();
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<Long> trashVolumes = Q.New(InstallPathRecycleVO.class).in(InstallPathRecycleVO_.trashType, Arrays.asList(TrashType.RevertVolume.toString(), TrashType.FullSnapshotVolume.toString()))
+                        .in(InstallPathRecycleVO_.resourceUuid, deletedSnapshotUuids).select(InstallPathRecycleVO_.trashId).listValues();
+
+                if (trashVolumes.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                new While<>(trashVolumes).step((trashId, compl) -> {
+                    CleanUpTrashOnPrimaryStorageMsg msg = new CleanUpTrashOnPrimaryStorageMsg();
+                    msg.setTrashId(trashId);
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, currentRoot.getPrimaryStorageUuid());
+                    bus.send(msg, new CloudBusCallBack(compl) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.debug(String.format("cleanUp trash[trashId:%s] on primary storage[uuid:%s] failed:%s", msg.getTrashId(),
+                                        currentRoot.getPrimaryStorageUuid(), reply.getError().toString()));
+                            }
+                            compl.done();
+                        }
+                    });
+                }, trashVolumes.size()).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
                     }
                 });
             }
@@ -1926,6 +1971,7 @@ public class VolumeSnapshotTreeBase {
                     public void run(FlowTrigger trigger, Map data) {
                         if (!VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
                             VolumeInventory vol = VolumeInventory.valueOf(volume);
+                            vol.setUuid(currentRoot.getUuid());
                             vol.setSize(actualSize);
                             vol.setInstallPath(oldVolumeInstallPath);
                             vol.setPrimaryStorageUuid(getSelfInventory().getPrimaryStorageUuid());

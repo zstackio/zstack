@@ -153,8 +153,7 @@ class ReverCephVolumeWithoutSnapshotCase extends SubCase {
         def trashs = trash.getTrashList(ps.uuid) as List<InstallPathRecycleInventory>
         def trashed = false
         trashs.each { t ->
-            if (t.resourceUuid == root.uuid && t.trashType != TrashType.ReimageVolume.toString()) {
-                assert t.installPath == installPath
+            if (t.installPath == installPath && t.trashType != TrashType.ReimageVolume.toString()) {
                 assert t.size == size
                 assert t.trashType == TrashType.RevertVolume.toString()
                 trashed = true

@@ -2865,6 +2865,7 @@ public class KVMAgentCommands {
         private VolumeTO volume;
         private String installPath;
         private boolean fullSnapshot;
+        private boolean online;
         private String volumeInstallPath;
         private String newVolumeUuid;
         private String newVolumeInstallPath;
@@ -2873,6 +2874,14 @@ public class KVMAgentCommands {
         private boolean isBaremetal2InstanceOnlineSnapshot;
 
         private long timeout;
+
+        public boolean isOnline() {
+            return online;
+        }
+
+        public void setOnline(boolean online) {
+            this.online = online;
+        }
 
         public String getVolumeUuid() {
             return volumeUuid;

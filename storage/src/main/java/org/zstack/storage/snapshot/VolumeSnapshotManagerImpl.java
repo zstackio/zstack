@@ -14,6 +14,8 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.trash.StorageTrash;
+import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
@@ -99,6 +101,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private EventFacade evtf;
     @Autowired
     private CascadeFacade casf;
+    @Autowired
+    private StorageTrash trash;
 
     private void passThrough(VolumeSnapshotMessage msg) {
         VolumeSnapshotVO vo = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
@@ -682,7 +686,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         AskVolumeSnapshotCapabilityMsg askMsg = new AskVolumeSnapshotCapabilityMsg();
         askMsg.setPrimaryStorageUuid(primaryStorageUuid);
         askMsg.setVolume(VolumeInventory.valueOf(vol));
-        bus.makeTargetServiceIdByResourceUuid(askMsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+        bus.makeLocalServiceId(askMsg, PrimaryStorageConstant.SERVICE_ID);
         MessageReply reply = bus.call(askMsg);
         if (!reply.isSuccess()) {
             throw new OperationFailureException(operr("cannot ask primary storage[uuid:%s] for volume snapshot capability, see detail [%s]", vol.getUuid(),reply.getError()));
@@ -722,6 +726,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     DebugUtils.Assert(false, "should not be here");
                 }
 
+                s.setArrangementType(capability.getArrangementType());
                 return s;
             }
         }.execute();
@@ -739,12 +744,25 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         chain.setName(String.format("take-volume-snapshot-for-volume-%s", msg.getVolumeUuid()));
         chain.then(new ShareFlow() {
             VolumeSnapshotInventory snapshot;
+            String volumeOldInstallPath = vol.getInstallPath();
             String volumeNewInstallPath;
+            boolean trashOldTop = false;
             VolumeSnapshotStruct struct;
             long volumeSize;
 
             VolumeVO volumeVO = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
             PrimaryStorageVO storageVO = dbf.findByUuid(volumeVO.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+            String latestSnapshotUuid;
+            {
+                VolumeSnapshotTreeInventory currentTree = getCurrentTree(msg.getVolumeUuid());
+                if (currentTree != null) {
+                    latestSnapshotUuid = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, msg.getVolumeUuid())
+                            .eq(VolumeSnapshotVO_.latest, true)
+                            .eq(VolumeSnapshotVO_.treeUuid, currentTree.getUuid())
+                            .select(VolumeSnapshotVO_.uuid).findValue();
+                }
+            }
+
 
             @Override
             public void setup() {
@@ -833,6 +851,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                                 TakeSnapshotReply treply = (TakeSnapshotReply) reply;
                                 volumeNewInstallPath = treply.getNewVolumeInstallPath();
                                 snapshot = treply.getInventory();
+                                trashOldTop = VolumeSnapshotArrangementType.CHAIN == struct.getArrangementType() &&
+                                        !snapshot.getPrimaryStorageInstallPath().equals(volumeOldInstallPath);
                                 trigger.next();
                             }
                         });
@@ -915,9 +935,18 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     @Override
                     public void handle(Map data) {
                         markSnapshotTreeCompleted(snapshot);
+                        String oldVolumePath = vol.getInstallPath();
                         if (volumeNewInstallPath != null) {
                             vol.setInstallPath(volumeNewInstallPath);
                             dbf.update(vol);
+                        }
+                        if (trashOldTop && latestSnapshotUuid != null) {
+                            VolumeInventory oldVolume = VolumeInventory.valueOf(vol);
+                            oldVolume.setName("full-snapshot-trash-for-" + vol.getUuid());
+                            oldVolume.setInstallPath(oldVolumePath);
+                            // old volume depends on the current snapshot
+                            oldVolume.setUuid(latestSnapshotUuid);
+                            trash.createTrash(TrashType.FullSnapshotVolume, false, oldVolume);
                         }
 
                         VolumeSnapshotVO svo = dbf.findByUuid(snapshot.getUuid(), VolumeSnapshotVO.class);
