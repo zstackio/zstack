@@ -32,7 +32,7 @@ public class APIUpdateImageMsg extends APIMessage implements ImageMessage {
     private Boolean system;
     @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
-    @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64el"})
+    @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64el", "loongarch64"})
     private String architecture;
     @APIParam(required = false)
     private Boolean virtio;

@@ -27,6 +27,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.AsyncLatch;
@@ -64,6 +65,7 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
+import org.zstack.resourceconfig.ClusterResourceConfigInitializer;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTag;
@@ -118,6 +120,8 @@ public class KVMHost extends HostBase implements Host {
     private DeviceBootOrderOperator deviceBootOrderOperator;
     @Autowired
     private VmNicManager nicManager;
+    @Autowired
+    private ClusterResourceConfigInitializer crci;
 
     private KVMHostContext context;
 
@@ -3801,6 +3805,7 @@ public class KVMHost extends HostBase implements Host {
                                     return;
                                 }
                                 String hostOutput = hostRet.getStdout().replaceAll("\r|\n","");
+                                logger.debug(String.format("Uuid in the host take over flag file is %s ", hostOutput));
                                 if (hostOutput.contains("No such file or directory")) {
                                     trigger.next();
                                     return;
@@ -3808,6 +3813,7 @@ public class KVMHost extends HostBase implements Host {
 
                                 ssh.command(String.format("date +%%s -r %s", hostTakeOverFlagPath));
                                 SshResult timeRet = ssh.run();
+                                logger.debug(String.format("Timestamp of the flag is %s ", timeRet.getStdout()));
                                 if (timeRet.isSshFailure() || timeRet.getReturnCode() != 0) {
                                     trigger.fail(operr("Unable to get the timestamp of the flag,  because %s", timeRet.getExitErrorMessage()));
                                     return;
@@ -3870,6 +3876,8 @@ public class KVMHost extends HostBase implements Host {
                             if (cluster.getArchitecture() == null && !info.isNewAdded()) {
                                 cluster.setArchitecture(hostArchitecture);
                                 dbf.update(cluster);
+                                ClusterInventory clusterInventory = ClusterInventory.valueOf(cluster);
+                                crci.initClusterResourceConfigValue(clusterInventory);
                             }
 
                             trigger.next();

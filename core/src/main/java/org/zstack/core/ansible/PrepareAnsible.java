@@ -83,12 +83,12 @@ public class PrepareAnsible {
             if (AnsibleGlobalProperty.KEEP_HOSTS_FILE_IN_MEMORY) {
                 if (!hostIPs.contains(targetIp)) {
                     hostIPs.add(targetIp);
-                    FileUtils.writeStringToFile(hostsFile, StringUtils.join(hostIPs, "\n"), false);
+                    FileUtils.writeStringToFile(hostsFile, StringUtils.join(hostIPs, "ansible_python_interpreter=/usr/bin/python2\n"), false);
                     logger.debug(String.format("add target ip[%s] to %s", targetIp, AnsibleConstant.INVENTORY_FILE));
                 }
             } else {
                 if (!findIpInHostFile()) {
-                    FileUtils.writeStringToFile(hostsFile, String.format("%s\n", targetIp), true);
+                    FileUtils.writeStringToFile(hostsFile, String.format("%s ansible_python_interpreter=/usr/bin/python2\n", targetIp), true);
                     logger.debug(String.format("add target ip[%s] to %s", targetIp, AnsibleConstant.INVENTORY_FILE));
                 } else {
                     logger.debug(String.format("found target ip[%s] in %s", targetIp, AnsibleConstant.INVENTORY_FILE));
