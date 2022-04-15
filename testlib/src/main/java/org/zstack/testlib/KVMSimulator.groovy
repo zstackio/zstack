@@ -1,24 +1,14 @@
 package org.zstack.testlib
 
-import com.google.common.collect.ImmutableMap
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
-import org.zstack.header.Constants
-import org.zstack.header.host.HostNUMANode
-import org.zstack.header.storage.primary.PrimaryStorageVO
-import org.zstack.header.storage.primary.PrimaryStorageVO_
-import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
-import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
-import org.zstack.header.vm.VmInstanceState
-import org.zstack.header.vm.VmInstanceVO
-import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.core.db.SQLBatch
 import org.zstack.header.Constants
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
+import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
+import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
@@ -37,7 +27,6 @@ import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.persistence.Tuple
 import java.util.concurrent.ConcurrentHashMap
-
 /**
  * Created by xing5 on 2017/6/6.
  */
@@ -226,11 +215,14 @@ class KVMSimulator implements Simulator {
             assert primaryStorageType : "cannot find primary storage[uuid: ${volume.primaryStorageUuid}] from volume[uuid: ${volume.uuid}, name: ${volume.name}]"
             VFSPrimaryStorageTakeSnapshotBackend bkd = getVFSPrimaryStorageTakeSnapshotBackend(primaryStorageType)
 
+            def tempNewVolumeInstallPath = cmd.newVolumeInstallPath
             VFSSnapshot snapshot = bkd.takeSnapshot(e, espec, cmd, volume.toInventory() as VolumeInventory)
-            rsp.newVolumeInstallPath = snapshot.installPath
-            rsp.snapshotInstallPath = cmd.volumeInstallPath
+            rsp.newVolumeInstallPath = cmd.newVolumeInstallPath
+            rsp.snapshotInstallPath = snapshot.installPath
+
             // size required greater than 0, if no mock value set keep size return 1
             rsp.size = snapshot.size == null || snapshot.size == 0 ? 1 : snapshot.size
+            cmd.setNewVolumeInstallPath(tempNewVolumeInstallPath)
             return rsp
         }
 

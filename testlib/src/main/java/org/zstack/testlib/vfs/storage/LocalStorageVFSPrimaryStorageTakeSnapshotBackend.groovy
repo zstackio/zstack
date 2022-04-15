@@ -38,20 +38,29 @@ class LocalStorageVFSPrimaryStorageTakeSnapshotBackend implements AbstractFileSy
                 .findValue()
 
         VFS vfs = LocalStorageSpec.vfs(LocalStorageSpec.hostUuidFromHTTPHeaders(e), storagePath, spec)
+        String newVolumePath = cmd.newVolumeInstallPath != null ? cmd.newVolumeInstallPath :
+                vfs.getPath(cmd.installPath).getParent().resolve("${Platform.uuid}.qcow2").toAbsolutePath().toString()
+
+        Qcow2 previous = vfs.getFile(volume.installPath, true)
 
         VFSSnapshot snapshot = new VFSSnapshot()
-        if (cmd.fullSnapshot) {
-            Qcow2 vol = vfs.getFile(cmd.volumeInstallPath)
-            vol.rebase((String) null)
-            Qcow2 newVol = vfs.createQcow2(cmd.installPath, vol.virtualSize, vol.virtualSize, vol.pathString())
-            snapshot.installPath = newVol.pathString()
-            snapshot.size = vol.virtualSize
+        if (cmd.fullSnapshot && !cmd.isOnline()) {
+            Qcow2 newBase = previous.copyWithoutBackingFile(cmd.installPath)
+            vfs.createQcow2(newVolumePath, 0L, newBase.virtualSize, newBase.pathString())
+            snapshot.installPath = newBase.pathString()
+            snapshot.size = newBase.virtualSize
+            cmd.setNewVolumeInstallPath(newVolumePath)
+        } else if (cmd.fullSnapshot) {
+            previous.rebase((String) null)
+            vfs.createQcow2(cmd.installPath, previous.virtualSize, previous.virtualSize, previous.pathString())
+            snapshot.installPath = previous.pathString()
+            snapshot.size = previous.virtualSize
+            cmd.setNewVolumeInstallPath(cmd.installPath)
         } else {
-            Qcow2 vol = vfs.getFile(cmd.volumeInstallPath)
-            assert vol: "cannot find volume[${cmd.volumeInstallPath}] on VFS[id: ${vfs.id}]"
-            Qcow2 newVol = vfs.createQcow2(cmd.installPath, vol.virtualSize, vol.virtualSize, vol.pathString())
-            snapshot.installPath = newVol.pathString()
-            snapshot.size = vol.virtualSize
+            vfs.createQcow2(cmd.installPath, previous.virtualSize, previous.virtualSize, previous.pathString())
+            snapshot.installPath = previous.pathString()
+            snapshot.size = previous.virtualSize
+            cmd.setNewVolumeInstallPath(cmd.installPath)
         }
 
         return snapshot

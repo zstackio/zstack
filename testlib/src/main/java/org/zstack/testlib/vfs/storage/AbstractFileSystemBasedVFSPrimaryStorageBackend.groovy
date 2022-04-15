@@ -13,8 +13,6 @@ import org.zstack.testlib.vfs.VFS
 import org.zstack.testlib.vfs.extensions.VFSSnapshot
 import org.zstack.utils.path.PathUtil
 
-import java.nio.file.Path
-
 trait AbstractFileSystemBasedVFSPrimaryStorageBackend {
     VFSSnapshot doTakeSnapshot(VFS vfs, KVMAgentCommands.TakeSnapshotCmd cmd, VolumeInventory volume) {
         Qcow2 previous = vfs.getFile(volume.installPath, true)
@@ -22,16 +20,25 @@ trait AbstractFileSystemBasedVFSPrimaryStorageBackend {
                 vfs.getPath(cmd.installPath).getParent().resolve("${Platform.uuid}.qcow2").toAbsolutePath().toString()
 
         VFSSnapshot snapshot = new VFSSnapshot()
-        if (cmd.fullSnapshot) {
+        if (cmd.fullSnapshot && !cmd.isOnline()) {
             Qcow2 newBase = previous.copyWithoutBackingFile(cmd.installPath)
             vfs.createQcow2(newVolumePath, 0L, newBase.virtualSize, newBase.pathString())
+            snapshot.installPath = newBase.pathString()
             snapshot.size = newBase.virtualSize
-        } else {
-            vfs.createQcow2(newVolumePath, 0L, previous.virtualSize, previous.pathString())
+            cmd.setNewVolumeInstallPath(newVolumePath)
+        } else if (cmd.fullSnapshot) {
+            previous.rebase((String) null)
+            vfs.createQcow2(cmd.installPath, previous.virtualSize, previous.virtualSize, previous.pathString())
+            snapshot.installPath = previous.pathString()
             snapshot.size = previous.virtualSize
+            cmd.setNewVolumeInstallPath(cmd.installPath)
+        } else {
+            vfs.createQcow2(cmd.installPath, previous.virtualSize, previous.virtualSize, previous.pathString())
+            snapshot.installPath = previous.pathString()
+            snapshot.size = previous.virtualSize
+            cmd.setNewVolumeInstallPath(cmd.installPath)
         }
 
-        snapshot.installPath = newVolumePath
         return snapshot
     }
 
