@@ -51,4 +51,8 @@ public class HostSystemTags {
     public static String HOST_CONNECTED_TIME_TOKEN = "hostConnectedTime";
     public static PatternedSystemTag HOST_CONNECTED_TIME =
             new PatternedSystemTag(String.format("ConnectedTime::{%s}", HOST_CONNECTED_TIME_TOKEN), HostVO.class);
+
+    public static final String HOST_SSCARDID_TOKEN = "sscardId";
+    public static PatternedSystemTag HOST_SSCARDID = new PatternedSystemTag(String.format("sscardId::{%s}", HOST_SSCARDID_TOKEN), HostVO.class);
+
 }

@@ -22,6 +22,7 @@
                 <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
                 <value>org.zstack.appliancevm.ApplianceVmAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
+                <value>org.zstack.compute.vm.VmCreateVsocFileFlow</value>
                 <value>org.zstack.compute.vm.VmCreateOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
             </list>

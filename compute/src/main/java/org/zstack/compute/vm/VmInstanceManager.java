@@ -6,7 +6,9 @@ import org.zstack.header.vm.*;
 
 public interface VmInstanceManager {
     FlowChain getCreateVmWorkFlowChain(VmInstanceInventory inv);
-    
+
+    FlowChain getCreateVmFromCloneWorkFlowChain(VmInstanceInventory inv);
+
     FlowChain getStopVmWorkFlowChain(VmInstanceInventory inv);
     
     FlowChain getRebootVmWorkFlowChain(VmInstanceInventory inv);

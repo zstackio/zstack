@@ -108,7 +108,8 @@ public class RESTFacadeImpl implements RESTFacade {
 
         port = Platform.getManagementNodeServicePort();
 
-        IptablesUtils.insertRuleToFilterTable(String.format("-A INPUT -p tcp -m state --state NEW -m tcp --dport %s -j ACCEPT", port));
+        //tmpChange
+        //IptablesUtils.insertRuleToFilterTable(String.format("-A INPUT -p tcp -m state --state NEW -m tcp --dport %s -j ACCEPT", port));
 
         if ("AUTO".equals(hostname)) {
             callbackHostName = Platform.getManagementServerIp();

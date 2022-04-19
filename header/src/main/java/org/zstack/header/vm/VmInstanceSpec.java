@@ -322,6 +322,16 @@ public class VmInstanceSpec implements Serializable {
         this.skipIpAllocation = skipIpAllocation;
     }
 
+    public String getSrcVmUuid() {
+        return srcVmUuid;
+    }
+
+    public void setSrcVmUuid(String srcVmUuid) {
+        this.srcVmUuid = srcVmUuid;
+    }
+
+    private String srcVmUuid;
+
     public AllocationScene getAllocationScene() {
         return allocationScene;
     }
