@@ -20,6 +20,7 @@ public interface ImageConstant {
     String QCOW2_FORMAT_STRING = "qcow2";
     String RAW_FORMAT_STRING = "raw";
     String VMTX_FORMAT_STRING = "vmtx";
+    String VMDK_FORMAT_STRING = "vmdk";
 
     // image less than 1MB is useless
     long MINI_IMAGE_SIZE_IN_BYTE = 1048576L;
