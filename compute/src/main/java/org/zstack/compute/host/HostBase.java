@@ -878,12 +878,8 @@ public abstract class HostBase extends AbstractHost {
     }
 
     private void updateHostConnectedTime(HostStatus hostStatus) {
-        String tag = Q.New(SystemTagVO.class).select(SystemTagVO_.tag)
-                .eq(SystemTagVO_.resourceUuid, self.getUuid())
-                .eq(SystemTagVO_.resourceType, HostVO.class.getSimpleName())
-                .like(SystemTagVO_.tag, "ConnectedTime::%")
-                .findValue();
-        if (hostStatus == HostStatus.Connected && tag == null) {
+        boolean tagExists = HostSystemTags.HOST_CONNECTED_TIME.hasTag(self.getUuid());
+        if (hostStatus == HostStatus.Connected && !tagExists) {
             long connectedTime = System.currentTimeMillis();
             String token = HostSystemTags.HOST_CONNECTED_TIME_TOKEN;
             SystemTagCreator creator = HostSystemTags.HOST_CONNECTED_TIME.newSystemTagCreator(self.getUuid());
