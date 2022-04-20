@@ -1020,7 +1020,24 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
 
         smsg.setHostUuid(msg.getHostUuid());
-        smsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
+            smsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        } else if (msg.getDataDiskSizes() != null && !msg.getDataDiskSizes().isEmpty()) {
+            List<String> DiskOfferingUuids = new ArrayList<>();
+            msg.getDataDiskSizes().forEach(it -> {
+                DiskOfferingVO dvo = new DiskOfferingVO();
+                dvo.setUuid(Platform.getUuid());
+                dvo.setAccountUuid(msg.getAccountUuid());
+                dvo.setDiskSize(it);
+                dvo.setName("for-create-vm-" + finalVo.getUuid());
+                dvo.setType("DefaultDataDiskOfferingType");
+                dvo.setState(DiskOfferingState.Enabled);
+                dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+                dbf.persist(dvo);
+                DiskOfferingUuids.add(dvo.getUuid());
+            });
+            smsg.setDataDiskOfferingUuids(DiskOfferingUuids);
+        }
         smsg.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
         smsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         smsg.setL3NetworkUuids(msg.getL3NetworkSpecs());
@@ -1110,11 +1127,17 @@ public class VmInstanceManagerImpl extends AbstractService implements
             cmsg.setRootDiskSize(msg.getRootDiskSize());
         }
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        if (msg.getDataDiskSizes() != null) {
+            cmsg.setDataDiskSizes(msg.getDataDiskSizes());
+        }
         cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         cmsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
 
         cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
+            cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
+        }
+        if (msg.getDataDiskSizes()!=null && !msg.getDataDiskSizes().isEmpty()) {
             cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
         return cmsg;

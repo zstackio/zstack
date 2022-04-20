@@ -21,6 +21,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String rootDiskOfferingUuid;
     private long rootDiskSize;
     private List<String> dataDiskOfferingUuids;
+    private List<Long> dataDiskSizes;
     private List<String> dataVolumeTemplateUuids;
     private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
     private String zoneUuid;
@@ -121,6 +122,14 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setDataDiskOfferingUuids(List<String> dataDiskOfferingUuids) {
         this.dataDiskOfferingUuids = dataDiskOfferingUuids;
+    }
+
+    public List<Long> getDataDiskSizes() {
+        return dataDiskSizes;
+    }
+
+    public void setDataDiskSizes(List<Long> dataDiskSizes) {
+        this.dataDiskSizes = dataDiskSizes;
     }
 
     @Override

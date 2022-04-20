@@ -11,6 +11,7 @@ import java.util.Map;
  */
 public class InstantiateVmFromNewCreatedStruct {
     private List<String> dataDiskOfferingUuids;
+    private List<Long> dataDiskSizes;
     private List<String> dataVolumeTemplateUuids;
     private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
     private List<VmNicSpec> l3NetworkUuids;
@@ -50,6 +51,14 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setDataDiskOfferingUuids(List<String> dataDiskOfferingUuids) {
         this.dataDiskOfferingUuids = dataDiskOfferingUuids;
+    }
+
+    public List<Long> getDataDiskSizes() {
+        return dataDiskSizes;
+    }
+
+    public void setDataDiskSizes(List<Long> dataDiskSizes) {
+        this.dataDiskSizes = dataDiskSizes;
     }
 
     public List<String> getDataVolumeTemplateUuids() {
