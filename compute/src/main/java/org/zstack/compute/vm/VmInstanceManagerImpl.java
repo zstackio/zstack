@@ -1020,7 +1020,25 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
 
         smsg.setHostUuid(msg.getHostUuid());
-        smsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        List<String> diskOfferingUuids = new ArrayList<>();
+        if (msg.getDataDiskSizes() != null && !msg.getDataDiskSizes().isEmpty()) {
+            msg.getDataDiskSizes().forEach(dataDiskSize -> {
+                DiskOfferingVO dvo = new DiskOfferingVO();
+                dvo.setUuid(Platform.getUuid());
+                dvo.setAccountUuid(msg.getAccountUuid());
+                dvo.setDiskSize(dataDiskSize);
+                dvo.setName("for-create-vm-" + finalVo.getUuid());
+                dvo.setType("DefaultDataDiskOfferingType");
+                dvo.setState(DiskOfferingState.Enabled);
+                dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+                dbf.persist(dvo);
+                diskOfferingUuids.add(dvo.getUuid());
+            });
+        }
+        if (msg.getDataDiskOfferingUuids() != null) {
+            diskOfferingUuids.addAll(msg.getDataDiskOfferingUuids());
+        }
+        smsg.setDataDiskOfferingUuids(diskOfferingUuids);
         smsg.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
         smsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         smsg.setL3NetworkUuids(msg.getL3NetworkSpecs());
@@ -1108,6 +1126,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         if (msg.getRootDiskSize() != null) {
             cmsg.setRootDiskSize(msg.getRootDiskSize());
+        }
+        if (msg.getDataDiskSizes() != null && !msg.getDataDiskSizes().isEmpty()) {
+            cmsg.setDataDiskSizes(msg.getDataDiskSizes());
+            cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
