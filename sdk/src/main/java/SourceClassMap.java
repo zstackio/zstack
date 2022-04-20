@@ -360,6 +360,7 @@ public class SourceClassMap {
 			put("org.zstack.kvm.APIKvmRunShellEvent$ShellResult", "org.zstack.sdk.ShellResult");
 			put("org.zstack.kvm.KVMHostInventory", "org.zstack.sdk.KVMHostInventory");
 			put("org.zstack.kvm.KVMIsoTO", "org.zstack.sdk.KVMIsoTO");
+			put("org.zstack.l2gateway.L2GatewayInventory", "org.zstack.sdk.L2GatewayInventory");
 			put("org.zstack.ldap.LdapAccountRefInventory", "org.zstack.sdk.LdapAccountRefInventory");
 			put("org.zstack.ldap.LdapServerInventory", "org.zstack.sdk.LdapServerInventory");
 			put("org.zstack.license.AdditionalLicenseInfo", "org.zstack.sdk.AdditionalLicenseInfo");
@@ -838,6 +839,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.JsonLabelInventory", "org.zstack.core.jsonlabel.JsonLabelInventory");
 			put("org.zstack.sdk.KVMHostInventory", "org.zstack.kvm.KVMHostInventory");
 			put("org.zstack.sdk.KVMIsoTO", "org.zstack.kvm.KVMIsoTO");
+			put("org.zstack.sdk.L2GatewayInventory", "org.zstack.l2gateway.L2GatewayInventory");
 			put("org.zstack.sdk.L2NetworkData", "org.zstack.header.network.l2.L2NetworkData");
 			put("org.zstack.sdk.L2NetworkInventory", "org.zstack.header.network.l2.L2NetworkInventory");
 			put("org.zstack.sdk.L2VlanNetworkInventory", "org.zstack.header.network.l2.L2VlanNetworkInventory");

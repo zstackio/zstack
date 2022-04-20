@@ -71,6 +71,9 @@ public interface KVMConstant {
     String KVM_CONFIG_SECONDARY_VM_PATH = "/secondary/vm/config";
     String KVM_START_COLO_SYNC_PATH = "/start/colo/sync";
     String KVM_REGISTER_PRIMARY_VM_HEARTBEAT = "/register/primary/vm/heartbeat";
+    String KVM_REALIZE_L2GATEWAY_PATH = "/l2gateway/create";
+    String KVM_DELETE_L2GATEWAY_PATH = "/l2gateway/delete";
+
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";

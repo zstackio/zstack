@@ -1,8 +1,6 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.ActionType;
-import org.zstack.sdk.ProtocolType;
-import org.zstack.sdk.FirewallRuleState;
+
 
 public class VpcFirewallRuleInventory  {
 
@@ -22,19 +20,19 @@ public class VpcFirewallRuleInventory  {
         return this.ruleSetUuid;
     }
 
-    public ActionType action;
-    public void setAction(ActionType action) {
+    public java.lang.String action;
+    public void setAction(java.lang.String action) {
         this.action = action;
     }
-    public ActionType getAction() {
+    public java.lang.String getAction() {
         return this.action;
     }
 
-    public ProtocolType protocol;
-    public void setProtocol(ProtocolType protocol) {
+    public java.lang.String protocol;
+    public void setProtocol(java.lang.String protocol) {
         this.protocol = protocol;
     }
-    public ProtocolType getProtocol() {
+    public java.lang.String getProtocol() {
         return this.protocol;
     }
 
@@ -118,11 +116,11 @@ public class VpcFirewallRuleInventory  {
         return this.expired;
     }
 
-    public FirewallRuleState state;
-    public void setState(FirewallRuleState state) {
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
         this.state = state;
     }
-    public FirewallRuleState getState() {
+    public java.lang.String getState() {
         return this.state;
     }
 

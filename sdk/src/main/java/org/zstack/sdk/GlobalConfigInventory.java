@@ -4,6 +4,14 @@ package org.zstack.sdk;
 
 public class GlobalConfigInventory  {
 
+    public java.lang.Long id;
+    public void setId(java.lang.Long id) {
+        this.id = id;
+    }
+    public java.lang.Long getId() {
+        return this.id;
+    }
+
     public java.lang.String name;
     public void setName(java.lang.String name) {
         this.name = name;

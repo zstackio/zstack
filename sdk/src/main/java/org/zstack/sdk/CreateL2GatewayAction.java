@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetVpcVRouterNetworkServiceStateAction extends AbstractAction {
+public class CreateL2GatewayAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetVpcVRouterNetworkServiceStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetVpcVRouterNetworkServiceStateResult value;
+        public org.zstack.sdk.CreateL2GatewayResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,32 @@ public class SetVpcVRouterNetworkServiceStateAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false, validValues = {"none","stp"}, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String haType = "none";
+
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String l2NetworkAUuid;
 
-    @Param(required = true, validValues = {"SNAT"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String networkService;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String l2NetworkZUuid;
 
-    @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String state;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String clusterUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l3NetworkUuid;
+    public java.lang.String hostUuid;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -69,8 +84,8 @@ public class SetVpcVRouterNetworkServiceStateAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetVpcVRouterNetworkServiceStateResult value = res.getResult(org.zstack.sdk.SetVpcVRouterNetworkServiceStateResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVpcVRouterNetworkServiceStateResult() : value; 
+        org.zstack.sdk.CreateL2GatewayResult value = res.getResult(org.zstack.sdk.CreateL2GatewayResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateL2GatewayResult() : value; 
 
         return ret;
     }
@@ -100,7 +115,7 @@ public class SetVpcVRouterNetworkServiceStateAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/vpc/virtual-routers/{uuid}/networkservicestate";
+        info.path = "/l2gateway/createl2gateway";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

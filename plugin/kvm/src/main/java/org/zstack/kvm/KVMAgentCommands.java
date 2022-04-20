@@ -659,6 +659,103 @@ public class KVMAgentCommands {
     public static class CreateBridgeResponse extends AgentResponse {
     }
 
+    public static class L2GatewayL2Network {
+        private String l2NetworkUuid;
+        private boolean enableStp;
+        private int bridgePriority;
+
+        public String getL2NetworkUuid() {
+            return l2NetworkUuid;
+        }
+
+        public void setL2NetworkUuid(String l2NetworkUuid) {
+            this.l2NetworkUuid = l2NetworkUuid;
+        }
+
+        public boolean isEnableStp() {
+            return enableStp;
+        }
+
+        public void setEnableStp(boolean enableStp) {
+            this.enableStp = enableStp;
+        }
+
+        public int getBridgePriority() {
+            return bridgePriority;
+        }
+
+        public void setBridgePriority(int bridgePriority) {
+            this.bridgePriority = bridgePriority;
+        }
+    }
+
+    public static class CreateL2GatewayCmd extends AgentCommand {
+        private String l2GatewayUuid;
+        private L2GatewayL2Network l2NetworkA;
+        private L2GatewayL2Network l2NetworkZ;
+
+
+        public String getL2GatewayUuid() {
+            return l2GatewayUuid;
+        }
+
+        public void setL2GatewayUuid(String l2GatewayUuid) {
+            this.l2GatewayUuid = l2GatewayUuid;
+        }
+
+        public L2GatewayL2Network getL2NetworkA() {
+            return l2NetworkA;
+        }
+
+        public void setL2NetworkA(L2GatewayL2Network l2NetworkA) {
+            this.l2NetworkA = l2NetworkA;
+        }
+
+        public L2GatewayL2Network getL2NetworkZ() {
+            return l2NetworkZ;
+        }
+
+        public void setL2NetworkZ(L2GatewayL2Network l2NetworkZ) {
+            this.l2NetworkZ = l2NetworkZ;
+        }
+    }
+
+    public static class CreateL2GatewayResponse extends AgentResponse {
+    }
+
+    public static class DeleteL2GatewayCmd extends AgentCommand {
+        private String l2GatewayUuid;
+        private L2GatewayL2Network l2NetworkA;
+        private L2GatewayL2Network l2NetworkZ;
+
+        public String getL2GatewayUuid() {
+            return l2GatewayUuid;
+        }
+
+        public void setL2GatewayUuid(String l2GatewayUuid) {
+            this.l2GatewayUuid = l2GatewayUuid;
+        }
+
+        public L2GatewayL2Network getL2NetworkA() {
+            return l2NetworkA;
+        }
+
+        public void setL2NetworkA(L2GatewayL2Network l2NetworkA) {
+            this.l2NetworkA = l2NetworkA;
+        }
+
+        public L2GatewayL2Network getL2NetworkZ() {
+            return l2NetworkZ;
+        }
+
+        public void setL2NetworkZ(L2GatewayL2Network l2NetworkZ) {
+            this.l2NetworkZ = l2NetworkZ;
+        }
+    }
+
+    public static class DeleteL2GatewayResponse extends AgentResponse {
+    }
+
     public static class DeleteBridgeResponse extends AgentResponse {
     }
     public static class CheckBridgeCmd extends AgentCommand {
