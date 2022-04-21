@@ -27,10 +27,10 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.trash.CleanTrashResult;
-import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -269,11 +269,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
             @Override
             public void success() {
-                if (self.getStatus() == BackupStorageStatus.Disconnected) {
-                    logger.debug(String.format("Ping backup storage[uuid%s] success, but it is disconnected, reconnect it", self.getUuid()));
-                    reconnect();
-                }
-
+                reply.setConnected(true);
                 bus.reply(msg, reply);
             }
 
@@ -288,6 +284,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                     reconnect();
                 }
 
+                reply.setConnected(false);
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

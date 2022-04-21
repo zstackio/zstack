@@ -18,4 +18,16 @@ public class BackupStorageGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig RESERVED_CAPACITY = new GlobalConfig(CATEGORY, "reservedCapacity");
+
+    @GlobalConfigValidation
+    public static GlobalConfig AUTO_RECONNECT_ON_ERROR = new GlobalConfig(CATEGORY, "connection.autoReconnectOnError");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig AUTO_RECONNECT_ON_ERROR_MAX_ATTEMPT_NUM = new GlobalConfig(CATEGORY, "connection.autoReconnectOnError.maxAttemptsNum");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig MAXIMUM_PING_FAILURE = new GlobalConfig(CATEGORY, "ping.maxFailure");
+
+    @GlobalConfigValidation(numberGreaterThan = -1)
+    public static GlobalConfig SLEEP_TIME_AFTER_PING_FAILURE = new GlobalConfig(CATEGORY, "ping.sleepPeriodAfterFailure");
 }
