@@ -1027,7 +1027,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 dvo.setUuid(Platform.getUuid());
                 dvo.setAccountUuid(msg.getAccountUuid());
                 dvo.setDiskSize(dataDiskSize);
-                dvo.setName("for-create-vm-" + finalVo.getUuid());
+                dvo.setName("for-create-vm-data-volume" + finalVo.getUuid());
                 dvo.setType("DefaultDataDiskOfferingType");
                 dvo.setState(DiskOfferingState.Enabled);
                 dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
