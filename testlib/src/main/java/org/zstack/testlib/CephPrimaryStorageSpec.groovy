@@ -4,29 +4,21 @@ import org.apache.commons.lang.StringEscapeUtils
 import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
-import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.ceph.CephConstants
 import org.zstack.storage.ceph.CephPoolCapacity
+import org.zstack.storage.ceph.CephSystemTags
 import org.zstack.storage.ceph.DataSecurityPolicy
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
-import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
-import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
-import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO_
-import org.zstack.storage.ceph.primary.CephPrimaryStorageVO
-import org.zstack.storage.ceph.primary.CephPrimaryStorageVO_
+import org.zstack.storage.ceph.primary.*
 import org.zstack.testlib.vfs.CephRaw
 import org.zstack.testlib.vfs.VFS
 import org.zstack.testlib.vfs.VFSFile
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
-import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO
-import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO_
-import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolType
-import org.zstack.storage.ceph.CephSystemTags
+
 import java.nio.file.Path
 
 /**
@@ -609,12 +601,11 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 VFS dstVfs = vfs1(dstFsid, spec, true)
                 // confirm dst volume created
                 String dstInstallPath = cephPathToVFSPath(cmd.dstInstallPath)
+                vfs.Assert(dstVfs.exists(dstInstallPath), "dst volume not found")
 
                 if (srcInstallPath.contains("@")) {
                     dstInstallPath = String.format("%s@%s", dstInstallPath, cmd.resourceUuid)
-                }
-
-                if (dstVfs.exists(dstInstallPath)) {
+                } else {
                     dstVfs.delete(dstInstallPath)
                 }
 
