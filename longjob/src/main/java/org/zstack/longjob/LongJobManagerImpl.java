@@ -26,7 +26,6 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.Constants;
 import org.zstack.header.core.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.APIDeleteAccountEvent;
 import org.zstack.header.longjob.*;
@@ -52,7 +51,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.db.DBSourceUtils.isDBConnected;
 import static org.zstack.core.db.DBSourceUtils.waitDBConnected;
@@ -495,6 +493,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             Timestamp now = Timestamp.valueOf(LocalDateTime.now());
             vo.setCreateDate(now);
             vo.setLastOpDate(now);
+            vo.setJobResult(null);
             vo = dbf.updateAndRefresh(vo);
             logger.info(String.format("longjob [uuid:%s, name:%s] has been re-submitted", vo.getUuid(), vo.getName()));
         } else {
