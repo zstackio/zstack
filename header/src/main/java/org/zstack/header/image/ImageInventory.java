@@ -79,7 +79,7 @@ public class ImageInventory implements Serializable {
         inv.setCreateDate(vo.getCreateDate());
         inv.setDescription(vo.getDescription());
         inv.setMediaType(vo.getMediaType().toString());
-        inv.setPlatform(vo.getPlatform().toString());
+        inv.setPlatform(vo.getPlatform() == null ? null : vo.getPlatform().toString());
         inv.setArchitecture(vo.getArchitecture());
         inv.setFormat(vo.getFormat());
         inv.setGuestOsType(vo.getGuestOsType());
