@@ -2,6 +2,8 @@ package org.zstack.test.integration.storage.primary.ceph
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.*
 import org.zstack.storage.ceph.CephSystemTags
@@ -312,6 +314,30 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         } as VmInstanceInventory
     }
 
+    void testReimageVmAndAllocatePool() {
+        L3NetworkSpec l3Spec = env.specByName("l3") as L3NetworkSpec
+        VmInstanceInventory new_root_pool_vm = createVmInstance {
+            name = "new_root_pool_vm"
+            instanceOfferingUuid = vm.instanceOfferingUuid
+            imageUuid = vm.imageUuid
+            l3NetworkUuids = asList((l3Spec.inventory.uuid))
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            sessionId = adminSession()
+            rootVolumeSystemTags = [CephSystemTags.USE_CEPH_ROOT_POOL.instantiateTag([(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN): NEW_ROOT_POOL_NAME])]
+        } as VmInstanceInventory
+
+        stopVmInstance {
+            uuid = new_root_pool_vm.uuid
+        }
+
+        reimageVmInstance {
+            vmInstanceUuid = new_root_pool_vm.uuid
+        }
+
+        String VolumeInstallPath = Q.New(VolumeVO.class).select(VolumeVO_.installPath).eq(VolumeVO_.uuid, new_root_pool_vm.rootVolumeUuid).findValue()
+        assert VolumeInstallPath.contains(NEW_ROOT_POOL_NAME)
+    }
+
     @Override
     void test() {
         env.create {
@@ -329,6 +355,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             testQueryPool()
             testAddSameCephPool()
             testAddCephPoolWithChinese()
+            testReimageVmAndAllocatePool()
         }
     }
 
