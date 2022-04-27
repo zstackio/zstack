@@ -1379,6 +1379,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             UploadImageTracker tracker = new UploadImageTracker();
             ConcurrentHashMap<String, AtomicBoolean> resultMap = new ConcurrentHashMap<>();
 
+            {
+                if (msgData.getIdleTimeInSeconds() != null) {
+                    tracker.setMaxIdleSecond(msgData.getIdleTimeInSeconds());
+                }
+            }
+
             @Override
             protected Collection<DownloadImageMsg> collect() {
                 for (DownloadImageMsg dmsg : dmsgs) {

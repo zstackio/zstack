@@ -27,6 +27,7 @@ public class AddImageMsg extends NeedReplyMessage {
     private String architecture;
     private SessionInventory session;
     private String resourceUuid;
+    private Long idleTimeInSeconds;
 
     public boolean needTrack() {
         return url != null && url.startsWith("upload://");
@@ -145,5 +146,13 @@ public class AddImageMsg extends NeedReplyMessage {
 
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
+    }
+
+    public Long getIdleTimeInSeconds() {
+        return idleTimeInSeconds;
+    }
+
+    public void setIdleTimeInSeconds(Long idleTimeInSeconds) {
+        this.idleTimeInSeconds = idleTimeInSeconds;
     }
 }

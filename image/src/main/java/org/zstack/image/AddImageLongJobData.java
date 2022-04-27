@@ -29,6 +29,7 @@ public class AddImageLongJobData extends LongJobMessageData {
     private List<String> systemTags;
     private List<String> userTags;
     private boolean virtio;
+    private Long idleTimeInSeconds;
 
     public AddImageLongJobData(NeedReplyMessage msg) {
         super(msg);
@@ -161,5 +162,13 @@ public class AddImageLongJobData extends LongJobMessageData {
 
     public void setVirtio(boolean virtio) {
         this.virtio = virtio;
+    }
+
+    public Long getIdleTimeInSeconds() {
+        return idleTimeInSeconds;
+    }
+
+    public void setIdleTimeInSeconds(Long idleTimeInSeconds) {
+        this.idleTimeInSeconds = idleTimeInSeconds;
     }
 }

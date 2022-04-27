@@ -59,6 +59,7 @@ public class UploadImageTracker {
 
     private final String apiId = ThreadContext.get(THREAD_CONTEXT_API);
     private final boolean continuable = apiId != null && Q.New(LongJobVO.class).eq(LongJobVO_.apiId, apiId).isExists();
+    private Long maxIdleSecond;
 
     public static class TrackContext {
         String name;
@@ -102,7 +103,8 @@ public class UploadImageTracker {
 
     void trackUpload(String name, String imageUuid, String bsUuid, String hostname) {
         final int maxNumOfFailure = CoreGlobalProperty.UNIT_TEST_ON ? 1 : 3;
-        final int maxIdleSecond = CoreGlobalProperty.UNIT_TEST_ON ? 1 : 30;
+        final long maxIdleSecond = this.maxIdleSecond != null ? this.maxIdleSecond :
+                CoreGlobalProperty.UNIT_TEST_ON ? 1 : 30;
 
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             private long numError = 0;
@@ -281,5 +283,9 @@ public class UploadImageTracker {
             r.setError(reply.getError());
             return r;
         }
+    }
+
+    public void setMaxIdleSecond(Long maxIdleSecond) {
+        this.maxIdleSecond = maxIdleSecond;
     }
 }

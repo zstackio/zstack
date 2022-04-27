@@ -47,6 +47,8 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddI
     private String type;
     @APIParam(required = false)
     private boolean virtio = true;
+    @APIParam(required = false, numberRange = {1, 300})
+    private Long idleTimeInSeconds;
 
     public String getFormat() {
         return format;
@@ -146,7 +148,15 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, AddI
     public void setVirtio(boolean virtio) {
         this.virtio = virtio;
     }
- 
+
+    public Long getIdleTimeInSeconds() {
+        return idleTimeInSeconds;
+    }
+
+    public void setIdleTimeInSeconds(Long idleTimeInSeconds) {
+        this.idleTimeInSeconds = idleTimeInSeconds;
+    }
+
     public static APIAddImageMsg __example__() {
         APIAddImageMsg msg = new APIAddImageMsg();
 
