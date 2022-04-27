@@ -6,6 +6,7 @@ import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.network.service.lb.LoadBalancerVO;
 
 /**
  * Created by shixin.ruan on 18/03/09.
@@ -24,4 +25,8 @@ public class VyosGlobalConfig {
     @GlobalConfigValidation
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig AUTO_RESTART_IPSEC = new GlobalConfig(CATEGORY, "auto.restart.ipsec");
+
+    @GlobalConfigValidation
+    @BindResourceConfig({LoadBalancerVO.class})
+    public static GlobalConfig ENABLE_HAPROXY_LOG = new GlobalConfig(CATEGORY, "enable.haproxy.log");
 }
