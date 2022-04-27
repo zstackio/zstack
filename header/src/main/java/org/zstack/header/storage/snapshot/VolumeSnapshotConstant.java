@@ -11,6 +11,7 @@ public interface VolumeSnapshotConstant {
     VolumeSnapshotType STORAGE_SNAPSHOT_TYPE = new VolumeSnapshotType("Storage");
 
     String SNAPSHOT_MESSAGE_ROUTED = "SNAPSHOT_MESSAGE_ROUTED";
+    String SNAPSHOT_UUID = "SNAPSHOT_UUID";
 
     String VOLUME_SNAPSHOT_STRUCT = "VolumeSnapshotStruct";
     String NEED_TAKE_SNAPSHOTS_ON_HYPERVISOR = "needTakeSnapshotOnHypervisor";

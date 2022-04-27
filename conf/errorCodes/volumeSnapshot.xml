@@ -10,4 +10,9 @@
         <id>1001</id>
         <description>Delete error while full snapshot is creating.</description>
     </code>
+
+    <code>
+        <id>1002</id>
+        <description>Failed to delete volume snapshots in batch.</description>
+    </code>
 </error>

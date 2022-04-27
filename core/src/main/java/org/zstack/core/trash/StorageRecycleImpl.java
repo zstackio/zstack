@@ -2,7 +2,6 @@ package org.zstack.core.trash;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
-import static org.zstack.core.Platform.inerr;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -26,22 +25,13 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.storage.primary.CleanUpTrashOnPrimaryStroageMsg;
-import org.zstack.header.storage.primary.ImageCacheVO;
-import org.zstack.header.storage.primary.ImageCacheVO_;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vo.ResourceVO;
-import org.zstack.header.volume.VolumeBeforeExpungeExtensionPoint;
-import org.zstack.header.volume.VolumeFormat;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeJustBeforeDeleteFromDbExtensionPoint;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
+import org.zstack.header.volume.*;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -52,6 +42,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.inerr;
 
 /**
  * Created by mingjian.deng on 2019/9/19.
@@ -259,6 +251,18 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
     }
 
     @Override
+    public String makeSureInstallPathNotUsed(String installPath, String resourceType) {
+        if (VolumeVO.class.getSimpleName().equals(resourceType)) {
+            return makeSureInstallPathNotUsedByVolume(installPath);
+        } else if (ImageVO.class.getSimpleName().equals(resourceType)) {
+            return makeSureInstallPathNotUsedByImage(installPath);
+        } else if (VolumeSnapshotVO.class.getSimpleName().equals(resourceType)) {
+            return makeSureInstallPathNotUsedBySnapshot(installPath);
+        }
+        return null;
+    }
+
+    @Override
     public Long getTrashId(String storageUuid, String installPath) {
         DebugUtils.Assert(installPath != null, "installPath is not allowed null here");
         List<InstallPathRecycleVO> vos = Q.New(InstallPathRecycleVO.class).eq(InstallPathRecycleVO_.storageUuid, storageUuid).like(InstallPathRecycleVO_.installPath, String.format("%%%s%%", installPath)).list();
@@ -321,6 +325,10 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
     @Override
     public void volumeSnapshotAfterFailedDeleteExtensionPoint(VolumeSnapshotInventory snapshot) {
 
+    }
+
+    @Override
+    public void volumeSnapshotAfterCleanUpExtensionPoint(String volumeUuid, List<VolumeSnapshotInventory> snapshots) {
     }
 
     private void transfer(List<JsonLabelVO> trashs, String type) {

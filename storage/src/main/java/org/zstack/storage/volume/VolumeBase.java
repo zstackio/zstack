@@ -9,6 +9,7 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -33,11 +34,8 @@ import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.message.*;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
-import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
@@ -139,6 +137,8 @@ public class VolumeBase implements Volume {
             handle((InstantiateVolumeMsg) msg);
         } else if (msg instanceof OverlayMessage) {
             handle((OverlayMessage) msg);
+        } else if (msg instanceof MulitpleOverlayMsg) {
+            handle((MulitpleOverlayMsg) msg);
         } else if (msg instanceof ChangeVolumeStatusMsg) {
             handle((ChangeVolumeStatusMsg) msg);
         } else if (msg instanceof OverwriteVolumeMsg) {
@@ -648,6 +648,33 @@ public class VolumeBase implements Volume {
             public void run(MessageReply reply) {
                 bus.reply(msg, reply);
                 noErrorCompletion.done();
+            }
+        });
+    }
+
+    private void handle(final MulitpleOverlayMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                bus.send(msg.getMessages(), new CloudBusListCallBack(msg, chain) {
+                    @Override
+                    public void run(List<MessageReply> replies) {
+                        MulitpleOverlayReply reply = new MulitpleOverlayReply();
+                        reply.setInnerReplies(replies);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "multiple-overlay-message";
             }
         });
     }
@@ -1292,7 +1319,12 @@ public class VolumeBase implements Volume {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 DeleteVolumeMsg dmsg = new DeleteVolumeMsg();
-                dmsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
+                VolumeVO vo = dbf.findByUuid(transientVolume.getUuid(), VolumeVO.class);
+
+                VolumeDeletionPolicy volumeDeletionPolicy = pluginRgty.getExtensionList(ChangeVolumeProcessingMethodExtensionPoint.class)
+                        .stream().map(ext -> ext.getTransientVolumeDeletionPolicy(vo))
+                        .filter(Objects::nonNull).findFirst().orElse(VolumeDeletionPolicy.Direct);
+                dmsg.setDeletionPolicy(volumeDeletionPolicy.toString());
                 dmsg.setUuid(transientVolume.getUuid());
                 dmsg.setDetachBeforeDeleting(true);
                 bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeConstant.SERVICE_ID, transientVolume.getUuid());

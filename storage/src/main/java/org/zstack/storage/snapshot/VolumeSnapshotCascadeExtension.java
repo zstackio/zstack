@@ -1,16 +1,24 @@
 package org.zstack.storage.snapshot;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.errorcode.ErrorFacadeImpl;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.MulitpleOverlayReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
@@ -18,16 +26,14 @@ import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.header.volume.VolumeDeletionStruct;
 import org.zstack.header.volume.VolumeVO;
-import org.zstack.storage.snapshot.group.VolumeSnapshotGroup;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -37,6 +43,10 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private PluginRegistry pluginRgty;
+    @Autowired
+    private ErrorFacadeImpl errf;
 
     private static final String NAME = VolumeSnapshotVO.class.getSimpleName();
 
@@ -71,7 +81,7 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
         }
     }
 
-    private NeedReplyMessage makeMsg(final String suuid, boolean volumeDeletion) {
+    private VolumeSnapshotDeletionMsg makeMsg(final String suuid, boolean volumeDeletion) {
         SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
         sq.select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid);
         sq.add(VolumeSnapshotVO_.uuid, Op.EQ, suuid);
@@ -87,22 +97,11 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
         String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
         bus.makeTargetServiceIdByResourceUuid(msg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
 
-        if (volumeUuid == null) {
-            return msg;
-        }
-
-        // To delete a volume snapshot, we need first to be synchronized in the volume queue.
-        VolumeSnapshotOverlayMsg omsg = new VolumeSnapshotOverlayMsg();
-        omsg.setMessage(msg);
-        omsg.setVolumeUuid(volumeUuid);
-        bus.makeTargetServiceIdByResourceUuid(omsg, VolumeConstant.SERVICE_ID, volumeUuid);
-
-        return omsg;
+        return msg;
     }
 
-
     private void handleDeletion(final CascadeAction action, final Completion completion) {
-        final List<NeedReplyMessage> msgs = new ArrayList<>();
+        final List<VolumeSnapshotDeletionMsg> msgs = new ArrayList<>();
         if (VolumeVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<VolumeDeletionStruct> vols = action.getParentIssuerContext();
             for (VolumeDeletionStruct vol : vols) {
@@ -111,7 +110,7 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
         } else if (VolumeSnapshotVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<VolumeSnapshotInventory> sinvs = action.getParentIssuerContext();
             for (VolumeSnapshotInventory sinv : sinvs) {
-               msgs.add(handleSnapshotDeletion(sinv));
+                msgs.add(handleSnapshotDeletion(sinv));
             }
         }
 
@@ -120,33 +119,68 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
             return;
         }
 
-        bus.send(msgs, new CloudBusListCallBack(completion) {
-            @Override
-            public void run(List<MessageReply> replies) {
-                if (!action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
-                    for (MessageReply r : replies) {
-                        if (!r.isSuccess()) {
-                            completion.fail(r.getError());
-                            return;
+        // To delete volume snapshot, we need first to be synchronized in the volume queue.
+        Map<String, List<VolumeSnapshotDeletionMsg>> msgMap = msgs.stream().collect(Collectors.groupingBy(VolumeSnapshotDeletionMsg::getVolumeUuid));
+        Map<String, List<VolumeSnapshotInventory>> snapshotToDelete = msgMap.keySet().stream().filter(Objects::nonNull).collect(Collectors.toMap(volUuid -> volUuid, volUuid -> {
+            List<String> snapshotUuids = msgMap.get(volUuid).stream().map(VolumeSnapshotDeletionMsg::getSnapshotUuid).collect(Collectors.toList());
+            return VolumeSnapshotInventory.valueOf(Q.New(VolumeSnapshotVO.class).in(VolumeSnapshotVO_.uuid, snapshotUuids).list());
+        }));
+
+        new While<>(msgMap.entrySet()).step((e, compl) -> {
+            VolumeSnapshotOverlayMsg omsg = new VolumeSnapshotOverlayMsg();
+            omsg.setMessages(new ArrayList<>(e.getValue()));
+            omsg.setVolumeUuid(e.getKey());
+            bus.makeTargetServiceIdByResourceUuid(omsg, VolumeConstant.SERVICE_ID, e.getKey());
+
+            bus.send(omsg, new CloudBusCallBack(compl) {
+                private List<ErrorCode> buildErrorCodeFromReply(MulitpleOverlayReply reply) {
+                    List<ErrorCode> errorCodes = new ArrayList<>();
+                    Iterator<NeedReplyMessage> iterator = omsg.getMessages().iterator();
+                    reply.getInnerReplies().forEach(innerReply -> {
+                        VolumeSnapshotDeletionMsg innerMsg = (VolumeSnapshotDeletionMsg)iterator.next();
+                        if (!innerReply.isSuccess()) {
+                            ErrorCode err = innerReply.getError();
+                            err.putToOpaque(VolumeSnapshotConstant.SNAPSHOT_UUID, innerMsg.getSnapshotUuid());
+                            errorCodes.add(err);
                         }
-                    }
+                    });
+                    return errorCodes;
                 }
 
-                completion.success();
+                @Override
+                public void run(MessageReply reply) {
+                    String volumeUuid = omsg.getVolumeUuid();
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeSnapshotAfterDeleteExtensionPoint.class), ext -> {
+                        ext.volumeSnapshotAfterCleanUpExtensionPoint(volumeUuid, snapshotToDelete.get(volumeUuid));
+                    });
+
+                    buildErrorCodeFromReply((MulitpleOverlayReply)reply).forEach(compl::addError);
+                    compl.done();
+                }
+            });
+        }, msgMap.entrySet().size()).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE) || errorCodeList.getCauses().isEmpty()) {
+                    completion.success();
+                    return;
+                }
+                ErrorCodeList errorCode = errf.instantiateErrorCode(VolumeSnapshotErrors.BATCH_DELETE_ERROR, "batch delete volume snapshot error", errorCodeList.getCauses());
+                completion.fail(errorCode);
             }
         });
     }
 
-    private NeedReplyMessage handleSnapshotDeletion(VolumeSnapshotInventory sinv) {
+    private VolumeSnapshotDeletionMsg handleSnapshotDeletion(VolumeSnapshotInventory sinv) {
         return makeMsg(sinv.getUuid(), false);
     }
 
-    private List<NeedReplyMessage> handleVolumeDeletion(VolumeDeletionStruct vol) {
+    private List<VolumeSnapshotDeletionMsg> handleVolumeDeletion(VolumeDeletionStruct vol) {
         if (!VolumeDeletionPolicy.Direct.toString().equals(vol.getDeletionPolicy())) {
             return new ArrayList<>();
         }
 
-        List<NeedReplyMessage> ret = new ArrayList<>();
+        List<VolumeSnapshotDeletionMsg> ret = new ArrayList<>();
         SimpleQuery<VolumeSnapshotTreeVO> cq = dbf.createQuery(VolumeSnapshotTreeVO.class);
         cq.select(VolumeSnapshotTreeVO_.uuid);
         cq.add(VolumeSnapshotTreeVO_.volumeUuid, Op.EQ, vol.getInventory().getUuid());
