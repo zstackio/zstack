@@ -21,4 +21,11 @@
         <type>java.lang.Boolean</type>
         <defaultValue>false</defaultValue>
     </config>
+    <config>
+        <category>vyos</category>
+        <name>enable.haproxy.log</name>
+        <description>enable or disable haproxy log</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>true</defaultValue>
+    </config>
 </globalConfig>
