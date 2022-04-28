@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`IAM2ProjectResourceRefVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`SharedBlockCapacityVO` (
-    `uuid` varchar(32) NOT NULL UNIQUE,
+    `uuid` varchar(32) NOT NULL UNIQUE auto_increment,
     `totalCapacity` bigint unsigned NOT NULL,
     `availableCapacity` bigint unsigned NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
