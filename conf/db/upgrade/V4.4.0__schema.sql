@@ -142,9 +142,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SharedBlockCapacityVO` (
     `uuid` varchar(32) NOT NULL,
     `totalCapacity` bigint unsigned NOT NULL DEFAULT 0,
     `availableCapacity` bigint unsigned NOT NULL DEFAULT 0,
-    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
-    `createDate` timestamp,
-    PRIMARY KEY  (`uuid`)
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`),
+--    CONSTRAINT fkSharedBlockVO FOREIGN KEY (uuid) REFERENCES SharedBlockVO (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-ALTER TABLE SharedBlockCapacityVO ADD CONSTRAINT fkSharedBlockVO FOREIGN KEY (uuid) REFERENCES SharedBlockVO (uuid) ON DELETE CASCADE;
