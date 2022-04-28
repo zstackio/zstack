@@ -140,7 +140,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`IAM2ProjectResourceRefVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`SharedBlockCapacityVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
-    `diskUuid` varchar(32) NOT NULL,
     `totalCapacity` bigint unsigned NOT NULL DEFAULT 0,
     `availableCapacity` bigint unsigned NOT NULL DEFAULT 0,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
