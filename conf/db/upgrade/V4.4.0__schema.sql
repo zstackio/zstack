@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SharedBlockCapacityVO` (
     `uuid` varchar(32) NOT NULL,
     `totalCapacity` bigint unsigned NOT NULL DEFAULT 0,
     `availableCapacity` bigint unsigned NOT NULL DEFAULT 0,
-    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
