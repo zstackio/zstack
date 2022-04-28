@@ -138,3 +138,11 @@ CREATE TABLE IF NOT EXISTS `zstack`.`IAM2ProjectResourceRefVO` (
     CONSTRAINT `fkIAM2ProjectResourceRefVOIAM2ProjectVO` FOREIGN KEY (`projectUuid`) REFERENCES `IAM2ProjectVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`SharedBlockCapacityVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `totalCapacity` bigint unsigned NOT NULL,
+    `availableCapacity` bigint unsigned NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
