@@ -137,4 +137,3 @@ CREATE TABLE IF NOT EXISTS `zstack`.`IAM2ProjectResourceRefVO` (
     CONSTRAINT `fkIAM2ProjectResourceRefVOResourceVO` FOREIGN KEY (`resourceUuid`) REFERENCES `ResourceVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkIAM2ProjectResourceRefVOIAM2ProjectVO` FOREIGN KEY (`projectUuid`) REFERENCES `IAM2ProjectVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
