@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.*;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -17,10 +18,13 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
+import org.zstack.storage.backup.BackupStorageGlobalConfig;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.backup.CephBackupStorageBase.PingOperationFailure;
 import org.zstack.utils.Utils;
@@ -29,8 +33,10 @@ import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 
@@ -359,6 +365,26 @@ public class CephBackupStorageMonBase extends CephMonBase {
                 });
     }
 
+    private <T> void httpCall(String path, AgentCmd cmd, final Class<T> rspClass, final ReturnValueCompletion<T> completion, TimeUnit unit, Long timeout) {
+        restf.asyncJsonPost(CephAgentUrl.backupStorageUrl(self.getHostname(), path),
+                cmd, new JsonAsyncRESTCallback<T>(completion) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        completion.fail(err);
+                    }
+
+                    @Override
+                    public void success(T ret) {
+                        completion.success(ret);
+                    }
+
+                    @Override
+                    public Class<T> getReturnClass() {
+                        return rspClass;
+                    }
+                }, unit, timeout);
+    }
+
     @Override
     public void ping(final ReturnValueCompletion<PingResult> completion) {
         thdf.chainSubmit(new ChainTask(completion) {
@@ -369,7 +395,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                doPing(new ReturnValueCompletion<PingResult>(completion, chain) {
+                pingMon(new ReturnValueCompletion<PingResult>(completion, chain) {
                     @Override
                     public void success(PingResult ret) {
                         completion.success(ret);
@@ -399,6 +425,56 @@ public class CephBackupStorageMonBase extends CephMonBase {
     @Override
     protected String makeHttpPath(String ip, String path) {
         return CephAgentUrl.backupStorageUrl(ip, path);
+    }
+
+    private void pingMon(final ReturnValueCompletion<PingResult> completion) {
+        final Integer MAX_PING_CNT = BackupStorageGlobalConfig.MAXIMUM_PING_FAILURE.value(Integer.class);
+        final List<Integer> stepCount = new ArrayList<>();
+        for (int i = 1; i <= MAX_PING_CNT; i++) {
+            stepCount.add(i);
+        }
+
+        PingResult pingResult = new PingResult();
+        new While<>(stepCount).each((step, compl) -> {
+            doPing(new ReturnValueCompletion<PingResult>(completion) {
+                @Override
+                public void success(PingResult returnValue) {
+                    pingResult.success = returnValue.success;
+                    pingResult.error = returnValue.error;
+                    pingResult.failure = returnValue.failure;
+                    compl.allDone();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.warn(String.format("ping ceph bs mon[%s] failed (%d/%d): %s", self.getMonAddr(), step, MAX_PING_CNT, errorCode.toString()));
+                    compl.addError(errorCode);
+
+                    if (step.equals(MAX_PING_CNT)) {
+                        compl.allDone();
+                        return;
+                    }
+
+                    int sleep = BackupStorageGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.value(Integer.class);
+                    if (sleep > 0) {
+                        try {
+                            TimeUnit.SECONDS.sleep(sleep);
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().size() == MAX_PING_CNT) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+                completion.success(pingResult);
+            }
+        });
     }
 
     public void doPing(final ReturnValueCompletion<PingResult> completion) {
@@ -436,6 +512,6 @@ public class CephBackupStorageMonBase extends CephMonBase {
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
             }
-        });
+        }, TimeUnit.SECONDS, 60);
     }
 }

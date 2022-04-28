@@ -68,6 +68,12 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
     private Timestamp lastOpDate;
 
     @Column
+    private String lastVmInstanceUuid;
+
+    @Column
+    private Timestamp lastDetachDate;
+
+    @Column
     private boolean isShareable;
 
     @Column
@@ -220,6 +226,22 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getLastVmInstanceUuid() {
+        return lastVmInstanceUuid;
+    }
+
+    public void setLastVmInstanceUuid(String lastVmInstanceUuid) {
+        this.lastVmInstanceUuid = lastVmInstanceUuid;
+    }
+
+    public Timestamp getLastDetachDate() {
+        return lastDetachDate;
+    }
+
+    public void setLastDetachDate(Timestamp lastDetachDate) {
+        this.lastDetachDate = lastDetachDate;
     }
 
     public Integer getDeviceId() {

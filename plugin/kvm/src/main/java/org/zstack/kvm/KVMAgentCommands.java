@@ -407,6 +407,7 @@ public class KVMAgentCommands {
         private String systemProductName;
         private String systemSerialNumber;
         private List<String> ipAddresses;
+        private List<String> libvirtCapabilities;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -502,6 +503,14 @@ public class KVMAgentCommands {
 
         public void setSystemSerialNumber(String systemSerialNumber) {
             this.systemSerialNumber = systemSerialNumber;
+        }
+
+        public List<String> getLibvirtCapabilities() {
+            return libvirtCapabilities;
+        }
+
+        public void setLibvirtCapabilities(List<String> libvirtCapabilities) {
+            this.libvirtCapabilities = libvirtCapabilities;
         }
     }
 

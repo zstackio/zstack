@@ -56,4 +56,7 @@ public class KVMSystemTags {
     public static final String VMNIC_PCI_ADDRESS_TOKEN = "pci";
     public static PatternedSystemTag VMNIC_PCI_ADDRESS = new PatternedSystemTag(
             String.format("vmnic::{%s}", VMNIC_PCI_ADDRESS_TOKEN), VmNicVO.class);
+
+    public static final String LIBVIRT_CAPABILITIES_TOKEN = "libvirtCapabilities";
+    public static PatternedSystemTag LIBVIRT_CAPABILITIES = new PatternedSystemTag(String.format("libvirtCapabilities::{%s}", LIBVIRT_CAPABILITIES_TOKEN), HostVO.class);
 }

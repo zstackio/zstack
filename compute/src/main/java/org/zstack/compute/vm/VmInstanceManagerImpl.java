@@ -4,9 +4,7 @@ import com.google.common.collect.Maps;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.validator.routines.DomainValidator;
-import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.Platform;
@@ -88,6 +86,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -106,7 +105,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         AfterChangeHostStatusExtensionPoint,
         VmInstanceMigrateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
-    private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, VmInstanceFactory> vmInstanceFactories = new ConcurrentHashMap<>();
     private List<String> createVmWorkFlowElements;
     private List<String> stopVmWorkFlowElements;
     private List<String> rebootVmWorkFlowElements;
@@ -1693,6 +1692,48 @@ public class VmInstanceManagerImpl extends AbstractService implements
         VmSystemTags.MACHINE_TYPE.installValidator(validator);
     }
 
+    private void installL3NetworkSecurityGroupValidator() {
+        class L3NetworkSecurityGroupValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                if (msg.getSystemTags() == null || msg.getSystemTags().isEmpty()) {
+                    return;
+                }
+
+                for (String systemTag : msg.getSystemTags()) {
+                    validateL3NetworkSecurityGroup(systemTag);
+                }
+            }
+
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                validateL3NetworkSecurityGroup(systemTag);
+            }
+
+            private void validateL3NetworkSecurityGroup(String systemTag) {
+                if (!VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.isMatch(systemTag)) {
+                    return;
+                }
+
+                String l3Uuid = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTokenByTag(systemTag, VmSystemTags.L3_UUID_TOKEN);
+                List<String> securityGroupUuids = asList(VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF
+                        .getTokenByTag(systemTag, VmSystemTags.SECURITY_GROUP_UUIDS_TOKEN).split(","));
+
+                validateL3NetworkAttachSecurityGroup(l3Uuid, securityGroupUuids);
+            }
+
+            private void validateL3NetworkAttachSecurityGroup(String l3Uuid, List<String> securityGroupUuids) {
+                pluginRgty.getExtensionList(ValidateL3SecurityGroupExtensionPoint.class)
+                        .forEach(ext -> ext.validateSystemtagL3SecurityGroup(l3Uuid, securityGroupUuids));
+            }
+        }
+
+        L3NetworkSecurityGroupValidator validator = new L3NetworkSecurityGroupValidator();
+        tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), validator);
+        VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.installValidator(validator);
+    }
+
     private void installSystemTagValidator() {
         installHostnameValidator();
         installUserdataValidator();
@@ -1700,6 +1741,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         installCleanTrafficValidator();
         installMachineTypeValidator();
         installUsbRedirectValidator();
+        installL3NetworkSecurityGroupValidator();
     }
 
     private void installUsbRedirectValidator() {

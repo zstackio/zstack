@@ -153,6 +153,13 @@ class AttachVolumeToStoppedVmCase extends SubCase {
         detachDataVolumeFromVm {
             uuid = vol.uuid
         }
+
+        vol = queryVolume {
+            conditions = ["uuid=${vol.uuid}"]
+        }[0] as VolumeInventory
+
+        assert vol.lastDetachDate != null
+        assert vol.lastVmInstanceUuid == vm.uuid
     }
 
     void testAttachWhenVmLastHostUuidIsNull() {

@@ -53,7 +53,7 @@
             <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
-            <zstack:extension interface="org.zstack.identity.BeforeResourceSharingExtensionPoint" />
+            <zstack:extension interface="org.zstack.identity.ResourceSharingExtensionPoint" />
         </zstack:plugin>
     </bean>
 

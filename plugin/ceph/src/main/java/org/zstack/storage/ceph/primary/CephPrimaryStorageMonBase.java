@@ -363,6 +363,26 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                 });
     }
 
+    private <T> void httpCall(String path, AgentCmd cmd, final Class<T> rspClass, final ReturnValueCompletion<T> completion, TimeUnit unit, long timeout) {
+        restf.asyncJsonPost(CephAgentUrl.primaryStorageUrl(self.getHostname(), path),
+                cmd, new JsonAsyncRESTCallback<T>(completion) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        completion.fail(err);
+                    }
+
+                    @Override
+                    public void success(T ret) {
+                        completion.success(ret);
+                    }
+
+                    @Override
+                    public Class<T> getReturnClass() {
+                        return rspClass;
+                    }
+                }, unit, timeout);
+    }
+
     @Override
     public void ping(final ReturnValueCompletion<PingResult> completion) {
         thdf.chainSubmit(new ChainTask(completion) {
@@ -509,7 +529,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
             }
-        });
+        }, TimeUnit.SECONDS, 60);
     }
 
     public CephPrimaryStorageMonBase(CephMonAO self) {

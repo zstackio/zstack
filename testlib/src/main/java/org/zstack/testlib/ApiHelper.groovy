@@ -9116,6 +9116,33 @@ abstract class ApiHelper {
     }
 
 
+    def createVmFromCdpBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateVmFromCdpBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateVmFromCdpBackupAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createVmInstance(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateVmInstanceAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateVmInstanceAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -30570,6 +30597,33 @@ abstract class ApiHelper {
     }
 
 
+    def securityMachineDetectSync(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SecurityMachineDetectSyncAction.class) Closure c) {
+        def a = new org.zstack.sdk.SecurityMachineDetectSyncAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def securityMachineEncrypt(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SecurityMachineEncryptAction.class) Closure c) {
         def a = new org.zstack.sdk.SecurityMachineEncryptAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -37567,6 +37621,33 @@ abstract class ApiHelper {
 
     def addIAM2VirtualIDsToProjects(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.AddIAM2VirtualIDsToProjectsAction.class) Closure c) {
         def a = new org.zstack.sdk.iam2.api.AddIAM2VirtualIDsToProjectsAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def addResourceToIAM2Project(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.AddResourceToIAM2ProjectAction.class) Closure c) {
+        def a = new org.zstack.sdk.iam2.api.AddResourceToIAM2ProjectAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

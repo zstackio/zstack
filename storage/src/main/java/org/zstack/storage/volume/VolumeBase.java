@@ -14,7 +14,6 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -83,8 +82,6 @@ public class VolumeBase implements Volume {
     private DatabaseFacade dbf;
     @Autowired
     private ThreadFacade thdf;
-    @Autowired
-    private ErrorFacade errf;
     @Autowired
     private CascadeFacade casf;
     @Autowired
@@ -1511,12 +1508,11 @@ public class VolumeBase implements Volume {
             return;
         }
 
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("set-boot-volume");
         chain.then(new ShareFlow() {
-            List<VolumeSnapshotInventory> newRootSnapshots = new ArrayList<>();
-            List<VolumeSnapshotInventory> oldRootSnapshots = new ArrayList<>();
+            final List<VolumeSnapshotInventory> newRootSnapshots = new ArrayList<>();
+            final List<VolumeSnapshotInventory> oldRootSnapshots = new ArrayList<>();
             VolumeInventory newRootVol;
             VolumeInventory oldRootVol;
 
