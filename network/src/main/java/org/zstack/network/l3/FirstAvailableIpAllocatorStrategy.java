@@ -1,5 +1,6 @@
 package org.zstack.network.l3;
 
+import org.apache.commons.math3.analysis.function.Add;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -39,13 +40,19 @@ public class FirstAvailableIpAllocatorStrategy extends AbstractIpAllocatorStrate
 
         String excludeIp = msg.getExcludedIp();
         List<IpRangeVO> ranges;
-        /* when allocate ip address from address pool, ipRangeUuid is not null */
+        /* when allocate ip address from address pool, ipRangeUuid is not null  except for vip */
         if (msg.getIpRangeUuid() != null) {
             ranges = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
         } else {
             ranges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
                     .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
+            if (msg.isUseAddressPoolIfNotRequiredIpRange())/* for vip */
+            {
+                ranges.addAll(Q.New(AddressPoolVO.class).eq(AddressPoolVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .eq(AddressPoolVO_.ipVersion, IPv6Constants.IPv4).list());
+            }
         }
+
         do {
             String ip = null;
             IpRangeVO tr = null;

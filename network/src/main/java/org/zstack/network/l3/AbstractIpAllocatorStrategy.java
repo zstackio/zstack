@@ -36,12 +36,18 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
 
     protected UsedIpInventory allocateRequiredIp(IpAllocateMessage msg) {
         List<IpRangeVO> iprs;
-        /* when allocate ip address from address pool, ipRangeUuid is not null */
+        /* when allocate ip address from address pool, ipRangeUuid is not null  except for vip */
         if (msg.getIpRangeUuid() != null) {
             iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
         } else {
             iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
                     .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
+            boolean a = msg.isUseAddressPoolIfNotRequiredIpRange();
+            if (msg.isUseAddressPoolIfNotRequiredIpRange()) /* for vip */
+            {
+                iprs.addAll(Q.New(AddressPoolVO.class).eq(AddressPoolVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .eq(AddressPoolVO_.ipVersion, IPv6Constants.IPv4).list());
+            }
         }
         final long rip = NetworkUtils.ipv4StringToLong(msg.getRequiredIp());
 
@@ -74,12 +80,17 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
 
     protected UsedIpInventory allocateRequiredIpv6(IpAllocateMessage msg) {
         List<IpRangeVO> iprs;
-        /* when allocate ip address from address pool, ipRangeUuid is not null */
+        /* when allocate ip address from address pool, ipRangeUuid is not null  except for vip */
         if (msg.getIpRangeUuid() != null) {
             iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
         } else {
             iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
                     .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
+            if (msg.isUseAddressPoolIfNotRequiredIpRange()) /* for vip */
+            {
+                iprs.addAll(Q.New(AddressPoolVO.class).eq(AddressPoolVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .eq(AddressPoolVO_.ipVersion, IPv6Constants.IPv6).list());
+            }
         }
 
         IpRangeVO ipr = CollectionUtils.find(iprs, new Function<IpRangeVO, IpRangeVO>() {
