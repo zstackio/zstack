@@ -258,6 +258,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
                         amsg.setAllocateStrategy(strategyType);
                         amsg.setRequiredIp(msg.getRequiredIp());
+                        amsg.setUseAddressPoolIfNotRequiredIpRange(true);
                         if (msg.getIpRangeUuid() != null) {
                             amsg.setIpRangeUuid(msg.getIpRangeUuid());
                         }
