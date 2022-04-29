@@ -40,7 +40,7 @@ public class AddImageAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String guestOsType;
 
-    @Param(required = false, validValues = {"x86_64","aarch64","mips64el"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"x86_64","aarch64","mips64el","loongarch64"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String architecture;
 
     @Param(required = false)
