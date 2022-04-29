@@ -8,6 +8,7 @@ import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
+import org.zstack.network.service.virtualrouter.vyos.VyosGlobalConfig
 import org.zstack.sdk.CertificateInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.LoadBalancerInventory
@@ -171,6 +172,8 @@ class CreateLoadBalancerHttpsCase extends SubCase{
             vipUuid = vip.uuid
         }
 
+        VyosGlobalConfig.ENABLE_HAPROXY_LOG.updateValue(false)
+
         LoadBalancerListenerInventory listener = createLoadBalancerListener {
             protocol = "https"
             loadBalancerUuid = lb.uuid
@@ -199,6 +202,7 @@ class CreateLoadBalancerHttpsCase extends SubCase{
             vmNicUuids = [vm.getVmNics().get(0).getUuid()]
         }
         assert cmd.lbs.get(0).certificateUuid == cerInv.uuid
+        assert cmd.enableHaproxyLog == false
 
         cerInv = updateCertificate {
             uuid = cerInv.uuid
