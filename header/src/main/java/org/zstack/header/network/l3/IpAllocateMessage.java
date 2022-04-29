@@ -13,4 +13,5 @@ public interface IpAllocateMessage {
         return null;
     }
     default boolean isDuplicatedIpAllowed() {return false;}
+    default boolean isUseAddressPoolIfNotRequiredIpRange() { return false; }
 }

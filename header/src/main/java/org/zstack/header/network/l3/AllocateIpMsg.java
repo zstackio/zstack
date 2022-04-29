@@ -11,6 +11,7 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
     private boolean duplicatedIpAllowed = false;
     private String ipRangeUuid;
     private int ipVersion = IPv6Constants.IPv4;
+    private boolean useAddressPoolIfNotRequiredIpRange = false;
 
     public String getRequiredIp() {
         return requiredIp;
@@ -18,6 +19,14 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
 
     public void setRequiredIp(String requiredIp) {
         this.requiredIp = requiredIp;
+    }
+
+    public boolean isUseAddressPoolIfNotRequiredIpRange() {
+        return useAddressPoolIfNotRequiredIpRange;
+    }
+
+    public void setUseAddressPoolIfNotRequiredIpRange(boolean useAddressPoolIfNotRequiredIpRange) {
+        this.useAddressPoolIfNotRequiredIpRange = useAddressPoolIfNotRequiredIpRange;
     }
 
     @Override
