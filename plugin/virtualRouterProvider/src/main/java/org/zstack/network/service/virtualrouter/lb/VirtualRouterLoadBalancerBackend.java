@@ -41,11 +41,13 @@ import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.vyos.VyosGlobalConfig;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.utils.*;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -81,6 +83,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     private LbConfigProxy proxy;
     @Autowired
     private VirtualRouterHaBackend haBackend;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private final String REFRESH_CERTIFICATE_TASK = "refreshCertificate";
     private final String DELETE_CERTIFICATE_TASK = "deleteCertificate";
@@ -323,6 +327,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     public static class RefreshLbCmd extends AgentCommand {
         List<LbTO> lbs;
+        public Boolean  enableHaproxyLog;
 
         public List<LbTO> getLbs() {
             return lbs;
@@ -574,6 +579,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         RefreshLbCmd cmd = new RefreshLbCmd();
         cmd.lbs = makeLbTOs(struct, vr);
+        cmd.enableHaproxyLog = rcf.getResourceConfigValue(VyosGlobalConfig.ENABLE_HAPROXY_LOG, vr.getUuid(), Boolean.class);
 
         msg.setCommand(cmd);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
@@ -1624,6 +1630,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                         RefreshLbCmd cmd = new RefreshLbCmd();
                         cmd.lbs = tos;
+                        cmd.enableHaproxyLog = rcf.getResourceConfigValue(VyosGlobalConfig.ENABLE_HAPROXY_LOG, vr.getUuid(), Boolean.class);
 
                         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
                         msg.setCommand(cmd);
