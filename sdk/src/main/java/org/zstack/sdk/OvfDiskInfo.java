@@ -4,6 +4,14 @@ package org.zstack.sdk;
 
 public class OvfDiskInfo  {
 
+    public int index;
+    public void setIndex(int index) {
+        this.index = index;
+    }
+    public int getIndex() {
+        return this.index;
+    }
+
     public java.lang.String diskId;
     public void setDiskId(java.lang.String diskId) {
         this.diskId = diskId;

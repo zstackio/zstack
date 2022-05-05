@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ParseOvfAction extends AbstractAction {
+public class DeleteImagePackageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ParseOvfAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ParseOvfResult value;
+        public org.zstack.sdk.DeleteImagePackageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,10 @@ public class ParseOvfAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String xmlBase64;
+    public java.lang.String uuid;
+
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -46,6 +49,12 @@ public class ParseOvfAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -54,8 +63,8 @@ public class ParseOvfAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ParseOvfResult value = res.getResult(org.zstack.sdk.ParseOvfResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ParseOvfResult() : value; 
+        org.zstack.sdk.DeleteImagePackageResult value = res.getResult(org.zstack.sdk.DeleteImagePackageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteImagePackageResult() : value; 
 
         return ret;
     }
@@ -84,11 +93,11 @@ public class ParseOvfAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/ovf/parse";
+        info.httpMethod = "DELETE";
+        info.path = "/image-packages/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "params";
+        info.needPoll = true;
+        info.parameterName = "";
         return info;
     }
 

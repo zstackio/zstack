@@ -418,6 +418,8 @@ public class SourceClassMap {
 			put("org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory", "org.zstack.sdk.VipPortRangeInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory", "org.zstack.sdk.VirtualRouterOfferingInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterVmInventory", "org.zstack.sdk.VirtualRouterVmInventory");
+			put("org.zstack.ovf.datatype.ImagePackageInventory", "org.zstack.sdk.ImagePackageInventory");
+			put("org.zstack.ovf.datatype.ImagePackageState", "org.zstack.sdk.ImagePackageState");
 			put("org.zstack.ovf.datatype.OvfCdDriverInfo", "org.zstack.sdk.OvfCdDriverInfo");
 			put("org.zstack.ovf.datatype.OvfCpuInfo", "org.zstack.sdk.OvfCpuInfo");
 			put("org.zstack.ovf.datatype.OvfDiskInfo", "org.zstack.sdk.OvfDiskInfo");
@@ -811,6 +813,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ImageBackupStorageRefInventory", "org.zstack.header.image.ImageBackupStorageRefInventory");
 			put("org.zstack.sdk.ImageCacheInventory", "org.zstack.header.storage.primary.ImageCacheInventory");
 			put("org.zstack.sdk.ImageInventory", "org.zstack.header.image.ImageInventory");
+			put("org.zstack.sdk.ImagePackageInventory", "org.zstack.ovf.datatype.ImagePackageInventory");
+			put("org.zstack.sdk.ImagePackageState", "org.zstack.ovf.datatype.ImagePackageState");
 			put("org.zstack.sdk.ImageReplicationGroupBackupStorageRefInventory", "org.zstack.imagereplicator.ImageReplicationGroupBackupStorageRefInventory");
 			put("org.zstack.sdk.ImageReplicationGroupInventory", "org.zstack.imagereplicator.ImageReplicationGroupInventory");
 			put("org.zstack.sdk.ImageStoreBackupStorageInventory", "org.zstack.storage.backup.imagestore.ImageStoreBackupStorageInventory");

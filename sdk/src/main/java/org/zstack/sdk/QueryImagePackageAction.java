@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ParseOvfAction extends AbstractAction {
+public class QueryImagePackageAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ParseOvfAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ParseOvfResult value;
+        public org.zstack.sdk.QueryImagePackageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,6 @@ public class ParseOvfAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String xmlBase64;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -54,8 +34,8 @@ public class ParseOvfAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ParseOvfResult value = res.getResult(org.zstack.sdk.ParseOvfResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ParseOvfResult() : value; 
+        org.zstack.sdk.QueryImagePackageResult value = res.getResult(org.zstack.sdk.QueryImagePackageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryImagePackageResult() : value; 
 
         return ret;
     }
@@ -84,11 +64,11 @@ public class ParseOvfAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/ovf/parse";
+        info.httpMethod = "GET";
+        info.path = "/image-packages";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
