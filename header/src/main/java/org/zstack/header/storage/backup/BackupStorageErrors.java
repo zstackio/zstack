@@ -21,6 +21,6 @@ public enum BackupStorageErrors {
     }
 
     public enum Opaque {
-        RECONNECT_AGENT
+        NEED_RECONNECT_CHECKING
     }
 }
