@@ -992,6 +992,16 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         msg.setMemorySize(ivo.getMemorySize());
     }
 
+    private void validateDataDiskSizes(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
+        if (msg.getDataDiskSizes() == null || msg.getDataDiskSizes().isEmpty()) {
+            return;
+        }
+        List<Long> dataDiskSizes = msg.getDataDiskSizes().stream().filter(dataDiskSize -> dataDiskSize > 0).collect(Collectors.toList());
+        if (dataDiskSizes.size() != msg.getDataDiskSizes().size()) {
+            throw new ApiMessageInterceptionException(operr("Unexpected data disk settings. dataDiskSizes need to be greater than 0"));
+        }
+    }
+
     private void validate(APICreateVmInstanceMsg msg) {
         validate((NewVmInstanceMessage2) msg);
 
@@ -1020,6 +1030,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         validateRootDiskOffering(imgFormat, msg);
+        validateDataDiskSizes(msg);
 
         List<String> allDiskOfferingUuids = new ArrayList<String>();
         if (msg.getRootDiskOfferingUuid() != null) {

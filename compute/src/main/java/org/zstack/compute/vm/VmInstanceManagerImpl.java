@@ -90,6 +90,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
@@ -1020,7 +1021,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
 
         smsg.setHostUuid(msg.getHostUuid());
-        smsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
+            smsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        } else if (msg.getDataDiskSizes() != null && !msg.getDataDiskSizes().isEmpty()) {
+            List<String> diskOfferingUuids = getDiskOfferingUuidsFromDataDiskSizes(msg, finalVo.getUuid());
+            smsg.setDataDiskOfferingUuids(diskOfferingUuids);
+        }
         smsg.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
         smsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         smsg.setL3NetworkUuids(msg.getL3NetworkSpecs());
@@ -1056,6 +1062,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         dbf.removeByPrimaryKey(smsg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
                     }
 
+                    if (msg.getDataDiskOfferingUuids() == null && smsg.getDataDiskOfferingUuids() != null) {
+                        smsg.getDataDiskOfferingUuids().forEach(dataDiskOfferingUuid -> {
+                            dbf.removeByPrimaryKey(dataDiskOfferingUuid, DiskOfferingVO.class);
+                        });
+                    }
+
                     if (reply.isSuccess()) {
                         InstantiateNewCreatedVmInstanceReply r = (InstantiateNewCreatedVmInstanceReply) reply;
                         completion.success(r.getVmInventory());
@@ -1068,6 +1080,28 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
             }
         });
+    }
+
+    private List<String> getDiskOfferingUuidsFromDataDiskSizes(final CreateVmInstanceMsg msg, String vmUuid) {
+        List<String> diskOfferingUuids = new ArrayList<>();
+        List<DiskOfferingVO> diskOfferingVo = new ArrayList<>();
+
+        msg.getDataDiskSizes().forEach(dataDiskSize -> {
+            DiskOfferingVO dvo = new DiskOfferingVO();
+            dvo.setUuid(Platform.getUuid());
+            dvo.setAccountUuid(msg.getAccountUuid());
+            dvo.setDiskSize(dataDiskSize);
+            dvo.setName(String.format("create-data-volume-for-vm-%s", vmUuid));
+            dvo.setType("DefaultDataDiskOfferingType");
+            dvo.setState(DiskOfferingState.Enabled);
+            dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+
+            diskOfferingUuids.add(dvo.getUuid());
+            diskOfferingVo.add(dvo);
+        });
+
+        dbf.persistCollection(diskOfferingVo);
+        return diskOfferingUuids;
     }
 
     private void createVmButNotStart(CreateVmInstanceMsg msg, VmInstanceInventory inv) {
@@ -1108,6 +1142,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         if (msg.getRootDiskSize() != null) {
             cmsg.setRootDiskSize(msg.getRootDiskSize());
+        }
+        if (msg.getDataDiskSizes() != null && !msg.getDataDiskSizes().isEmpty()) {
+            cmsg.setDataDiskSizes(msg.getDataDiskSizes());
+            cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());

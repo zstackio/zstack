@@ -82,6 +82,16 @@ doc {
 					
 				}
 				column {
+					name "dataDiskSizes"
+					enclosedIn "params"
+					desc "自定义云盘大小列表。可以指定一个或多个云盘大小（大小可以重复）为云主机创建一个或多个数据云盘。"
+					location "body"
+					type "List"
+					optional true
+					since "4.4.6"
+
+				}
+				column {
 					name "dataDiskOfferingUuids"
 					enclosedIn "params"
 					desc "云盘规格UUID列表。可以指定一个或多个云盘规格UUID（UUID可以重复）为云主机创建一个或多个数据云盘。"
