@@ -130,4 +130,13 @@ public class CollectionUtils {
         }
         list.addAll(result);
     }
+
+    public static <T> List<T> merge(List<T> listA, List<T> listB) {
+        listA = org.apache.commons.collections.CollectionUtils.isNotEmpty(listA) ? listA : new ArrayList<T>();
+        listB = org.apache.commons.collections.CollectionUtils.isNotEmpty(listB) ? listB : new ArrayList<T>();
+        List<T> list = new ArrayList<T>();
+        list.addAll(listA);
+        list.addAll(listB);
+        return list;
+    }
 }

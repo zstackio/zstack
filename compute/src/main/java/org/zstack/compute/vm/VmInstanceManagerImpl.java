@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.collections.CollectionUtils;
 import com.google.common.collect.Maps;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.apache.commons.lang.StringUtils;
@@ -90,10 +91,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionUtils.merge;
+import static org.zstack.utils.CollectionUtils.transformToList;
 
 public class VmInstanceManagerImpl extends AbstractService implements
         VmInstanceManager,
@@ -1020,7 +1024,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
 
         smsg.setHostUuid(msg.getHostUuid());
-        smsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        List<String> temporaryDiskOfferingUuids = createDiskOfferingUuidsFromDataDiskSizes(msg, finalVo.getUuid());
+        smsg.setDataDiskOfferingUuids(merge(msg.getDataDiskOfferingUuids(), temporaryDiskOfferingUuids));
         smsg.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
         smsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         smsg.setL3NetworkUuids(msg.getL3NetworkSpecs());
@@ -1056,6 +1061,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         dbf.removeByPrimaryKey(smsg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
                     }
 
+                    if (!temporaryDiskOfferingUuids.isEmpty()) {
+                        dbf.removeByPrimaryKeys(temporaryDiskOfferingUuids, DiskOfferingVO.class);
+                    }
+
                     if (reply.isSuccess()) {
                         InstantiateNewCreatedVmInstanceReply r = (InstantiateNewCreatedVmInstanceReply) reply;
                         completion.success(r.getVmInventory());
@@ -1068,6 +1077,29 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
             }
         });
+    }
+
+    private List<String> createDiskOfferingUuidsFromDataDiskSizes(final CreateVmInstanceMsg msg, String vmUuid) {
+        if (CollectionUtils.isEmpty(msg.getDataDiskSizes())){
+            return new ArrayList<String>();
+        }
+        List<String> diskOfferingUuids = new ArrayList<>();
+        List<DiskOfferingVO> diskOfferingVos = new ArrayList<>();
+        Map<Long, Long> sizeAndCountsMap = msg.getDataDiskSizes().stream().collect(Collectors.groupingBy(lng -> lng, Collectors.counting()));
+        for (Map.Entry<Long, Long> sizeAndCounts: sizeAndCountsMap.entrySet()) {
+            DiskOfferingVO dvo = new DiskOfferingVO();
+            dvo.setUuid(Platform.getUuid());
+            dvo.setAccountUuid(msg.getAccountUuid());
+            dvo.setDiskSize(sizeAndCounts.getKey());
+            dvo.setName(String.format("create-data-volume-for-vm-%s", vmUuid));
+            dvo.setType("DefaultDataDiskOfferingType");
+            dvo.setState(DiskOfferingState.Enabled);
+            dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+            diskOfferingVos.add(dvo);
+            LongStream.range(0, sizeAndCounts.getValue()).forEach(i -> diskOfferingUuids.add(dvo.getUuid()));
+        }
+        dbf.persistCollection(diskOfferingVos);
+        return diskOfferingUuids;
     }
 
     private void createVmButNotStart(CreateVmInstanceMsg msg, VmInstanceInventory inv) {
@@ -1109,12 +1141,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
         if (msg.getRootDiskSize() != null) {
             cmsg.setRootDiskSize(msg.getRootDiskSize());
         }
+        cmsg.setDataDiskSizes(msg.getDataDiskSizes());
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         cmsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
 
         cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
-        if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
+        if (CollectionUtils.isNotEmpty(msg.getDataDiskOfferingUuids()) || CollectionUtils.isNotEmpty(msg.getDataDiskSizes())) {
             cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }
         return cmsg;
@@ -2002,7 +2035,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                 final Timestamp current = dbf.getCurrentSqlTime();
 
-                final List<ExpungeVmMsg> msgs = CollectionUtils.transformToList(vms, new Function<ExpungeVmMsg, Tuple>() {
+                final List<ExpungeVmMsg> msgs = transformToList(vms, new Function<ExpungeVmMsg, Tuple>() {
                     @Override
                     public ExpungeVmMsg call(Tuple t) {
                         String uuid = t.get(0, String.class);
