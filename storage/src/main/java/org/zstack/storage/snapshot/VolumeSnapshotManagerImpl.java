@@ -1,17 +1,17 @@
 package org.zstack.storage.snapshot;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cascade.CascadeConstant;
+import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfigVO;
-import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.encrypt.EncryptGlobalConfig;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -19,6 +19,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ExceptionSafe;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -26,7 +27,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.*;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
@@ -34,7 +34,10 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -43,11 +46,9 @@ import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
-import org.zstack.header.volume.VolumeJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -58,11 +59,12 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.storage.snapshot.VolumeSnapshotTagHelper.getBackingVolumeTag;
-import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -95,6 +97,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private TagManager tagMgr;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private CascadeFacade casf;
 
     private void passThrough(VolumeSnapshotMessage msg) {
         VolumeSnapshotVO vo = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
@@ -151,8 +155,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             handle((MarkRootVolumeAsSnapshotMsg) msg);
         } else if (msg instanceof AskVolumeSnapshotStructMsg) {
             handle((AskVolumeSnapshotStructMsg) msg);
-        } else if (msg instanceof BatchDeleteVolumeSnapshotMsg) {
-            handle((BatchDeleteVolumeSnapshotMsg) msg);
         } else if (msg instanceof GetVolumeSnapshotTreeRootNodeMsg) {
             handle((GetVolumeSnapshotTreeRootNodeMsg) msg);
         } else if (msg instanceof GetVolumeSnapshotEncryptedMsg) {
@@ -257,58 +259,120 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         bus.reply(msg, reply);
     }
 
-    //TODO(weiw): it's better to fire cascade for every snapshot rather than use underhood local msg,
-    //  but it needs refactor existing cascade code to avoid multiple overlay msg
-    private void handle(BatchDeleteVolumeSnapshotMsg msg) {
-        BatchDeleteVolumeSnapshotReply reply = new BatchDeleteVolumeSnapshotReply();
-        List<BatchDeleteVolumeSnapshotStruct> results = Collections.synchronizedList(new ArrayList());
+    private void handle(APIBatchDeleteVolumeSnapshotMsg msg) {
+        APIBatchDeleteVolumeSnapshotEvent event = new APIBatchDeleteVolumeSnapshotEvent(msg.getId());
         Map<String, List<String>> ancestorMap = getAncestorSnapshots(msg.getUuids());
-        new While<>(ancestorMap.keySet()).each((uuid, whileCompletion) -> {
-            VolumeSnapshotDeletionMsg vmsg = new VolumeSnapshotDeletionMsg();
-            vmsg.setSnapshotUuid(uuid);
-            vmsg.setVolumeUuid(msg.getVolumeUuid());
-            vmsg.setDbOnly(false);
-            vmsg.setVolumeDeletion(false);
 
-            String treeUuid = Q.New(VolumeSnapshotVO.class)
-                    .select(VolumeSnapshotVO_.treeUuid)
-                    .eq(VolumeSnapshotVO_.uuid, uuid).findValue();
-            vmsg.setTreeUuid(treeUuid);
-            bus.makeTargetServiceIdByResourceUuid(vmsg, VolumeSnapshotConstant.SERVICE_ID, vmsg.getSnapshotUuid());
-            bus.send(vmsg, new CloudBusCallBack(whileCompletion) {
+        final String issuer = VolumeSnapshotVO.class.getSimpleName();
+        List<VolumeSnapshotVO> vos = Q.New(VolumeSnapshotVO.class).in(VolumeSnapshotVO_.uuid, ancestorMap.keySet()).list();
+        final List<VolumeSnapshotInventory> ctx = VolumeSnapshotInventory.valueOf(vos);
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("batch-delete-snapshots-%s", msg.getUuids()));
+
+        reportProgress("20");
+        if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            chain.then(new NoRollbackFlow() {
                 @Override
-                public void run(MessageReply reply) {
-                    BatchDeleteVolumeSnapshotStruct result = new BatchDeleteVolumeSnapshotStruct();
-                    result.setSnapshotUuid(uuid);
-                    if (!reply.isSuccess()) {
-                        result.setSuccess(false);
-                        result.setError(reply.getError());
-                    } else {
-                        result.setSuccess(true);
-                    }
-                    results.add(result);
-                    if (ancestorMap.get(uuid) == null && ancestorMap.get(uuid).isEmpty()) {
-                        whileCompletion.done();
-                        return;
-                    }
+                public void run(final FlowTrigger trigger, Map data) {
+                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
 
-                    for (String uuid : ancestorMap.get(uuid)) {
-                        BatchDeleteVolumeSnapshotStruct r = new BatchDeleteVolumeSnapshotStruct();
-                        r.setSnapshotUuid(uuid);
-                        r.setSuccess(result.isSuccess());
-                        r.setError(result.getError());
-                        results.add(r);
-                    }
-                    whileCompletion.done();
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            }).then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
                 }
             });
-        }).run(new WhileDoneCompletion(msg) {
+        } else {
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        }
+
+        Map<String, BatchDeleteVolumeSnapshotStruct> results = Stream.concat(ancestorMap.keySet().stream(), ancestorMap.values().stream().flatMap(Collection::stream))
+                .collect(Collectors.toMap(uuid -> uuid, uuid -> {
+                    BatchDeleteVolumeSnapshotStruct r = new BatchDeleteVolumeSnapshotStruct();
+                    r.setSnapshotUuid(uuid);
+                    return r;
+                }));
+
+        chain.done(new FlowDoneHandler(msg) {
             @Override
-            public void done(ErrorCodeList errorCodeList) {
-                reply.setResults(results);
-                bus.reply(msg, reply);
+            public void handle(Map data) {
+                reportProgress("95");
+                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
+                ctx.stream().filter(inventory -> results.containsKey(inventory.getUuid()) && results.get(inventory.getUuid()).isSuccess())
+                        .forEach(inventory -> {
+                            new FireSnapShotCanonicalEvent()
+                                    .fireSnapShotStatusChangedEvent(VolumeSnapshotStatus.valueOf(inventory.getStatus()), inventory);
+                        });
+                event.setResults(new ArrayList<>(results.values()));
+                bus.publish(event);
             }
-        });
+        }).error(new FlowErrorHandler(msg) {
+            private void handleErrorCode(ErrorCodeList errorCodeList) {
+                errorCodeList.getCauses().forEach(err -> {
+                    String snapshotUuid = (String) err.getFromOpaque(VolumeSnapshotConstant.SNAPSHOT_UUID);
+                    List<String> spUuids = new ArrayList<>();
+                    spUuids.add(snapshotUuid);
+                    if (CollectionUtils.isNotEmpty(ancestorMap.get(snapshotUuid))) {
+                        spUuids.addAll(ancestorMap.get(snapshotUuid));
+                    }
+
+                    spUuids.forEach(spUuid -> results.get(spUuid).setError(err));
+                });
+            }
+
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                reportProgress("95");
+                if (!errCode.isError(VolumeSnapshotErrors.BATCH_DELETE_ERROR)) {
+                    event.setError(errCode);
+                    bus.publish(event);
+                    return;
+                }
+                handleErrorCode((ErrorCodeList) errCode);
+                event.setResults(new ArrayList<>(results.values()));
+                ctx.stream().filter(inventory -> results.containsKey(inventory.getUuid()) && results.get(inventory.getUuid()).isSuccess())
+                        .forEach(inventory -> {
+                            new FireSnapShotCanonicalEvent()
+                                    .fireSnapShotStatusChangedEvent(VolumeSnapshotStatus.valueOf(inventory.getStatus()), inventory);
+                        });
+                bus.publish(event);
+            }
+        }).start();
     }
 
     private class SnapshotAncestorStruct {
@@ -395,35 +459,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             }
         }
         bus.reply(msg, reply);
-    }
-
-    private void handle(APIBatchDeleteVolumeSnapshotMsg msg) {
-        APIBatchDeleteVolumeSnapshotEvent event = new APIBatchDeleteVolumeSnapshotEvent(msg.getId());
-        BatchDeleteVolumeSnapshotMsg bmsg = new BatchDeleteVolumeSnapshotMsg();
-        bmsg.setUuids(msg.getUuids());
-        bmsg.setVolumeUuid(msg.getVolumeUuid());
-        bus.makeTargetServiceIdByResourceUuid(bmsg, VolumeSnapshotConstant.SERVICE_ID, msg.getVolumeUuid());
-
-        VolumeSnapshotOverlayMsg omsg = new VolumeSnapshotOverlayMsg();
-        omsg.setMessage(bmsg);
-        omsg.setVolumeUuid(msg.getVolumeUuid());
-        bus.makeTargetServiceIdByResourceUuid(omsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
-
-        bus.send(omsg, new CloudBusCallBack(msg) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    event.setSuccess(false);
-                    event.setError(reply.getError());
-                    bus.publish(event);
-                    return;
-                }
-
-                BatchDeleteVolumeSnapshotReply r = reply.castReply();
-                event.setResults(r.getResults());
-                bus.publish(event);
-            }
-        });
     }
 
     private void handle(APICheckVolumeSnapshotGroupAvailabilityMsg msg) {

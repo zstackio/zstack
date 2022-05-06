@@ -85,6 +85,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ChangeVolumeDeletionPolicyOnCephExtension" class="org.zstack.storage.ceph.primary.CephChangeVolumeProcessingMethodExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.volume.ChangeVolumeProcessingMethodExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="CephSnapshotProtector" class="org.zstack.storage.ceph.primary.CephSnapshotProtector">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotDeletionProtector"/>
@@ -112,6 +118,12 @@
     <bean id="CephStorageAttachKvmClusterMetric" class="org.zstack.storage.ceph.primary.CephStorageAttachKvmClusterMetric">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.storage.primary.StorageAttachClusterMetric"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="CephVolumeSnapshotAfterDeleteExtension" class="org.zstack.storage.ceph.primary.CephVolumeSnapshotAfterDeleteExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint"/>
         </zstack:plugin>
     </bean>
 </beans>

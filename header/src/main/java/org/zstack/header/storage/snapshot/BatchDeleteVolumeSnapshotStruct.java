@@ -7,7 +7,7 @@ import org.zstack.header.errorcode.ErrorCode;
  */
 public class BatchDeleteVolumeSnapshotStruct {
     private String snapshotUuid;
-    private boolean success;
+    private boolean success = true;
     private ErrorCode error;
 
     public String getSnapshotUuid() {
@@ -31,6 +31,7 @@ public class BatchDeleteVolumeSnapshotStruct {
     }
 
     public void setError(ErrorCode error) {
+        this.success = false;
         this.error = error;
     }
 }
