@@ -3,6 +3,8 @@ package org.zstack.header.image;
 import org.apache.commons.lang.StringUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import static org.zstack.header.image.ImageHelper.setImageVirtio;
+
 /**
  * author:kaicai.hu
  * Date:2020/2/19
@@ -40,6 +42,9 @@ public class ImageStoreMetadataHelper {
         if (imageInventory.getArchitecture() == null) {
             imageInventory.setArchitecture(ImageArchitecture.defaultArch());
         }
+
+        setImageVirtio(imageInventory);
+
         return imageInventory;
     }
 }

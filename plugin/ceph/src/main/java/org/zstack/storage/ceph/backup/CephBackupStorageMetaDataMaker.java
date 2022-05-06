@@ -35,6 +35,8 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.header.image.ImageHelper.setImageVirtio;
+
 /**
  * Created by Mei Lei <meilei007@gmail.com> on 11/3/16.
  */
@@ -116,6 +118,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         for ( String metadata : metadatas) {
             if (metadata.contains("backupStorageRefs")) {
                 ImageInventory imageInventory = JSONObjectUtil.toObject(metadata, ImageInventory.class);
+                setImageVirtio(imageInventory);
 
                 if (!imageInventory.getStatus().equals(ImageStatus.Ready.toString())
                         || imageVOs.stream().anyMatch(image -> image.getUuid().equals(imageInventory.getUuid()))) {
