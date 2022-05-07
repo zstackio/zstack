@@ -48,6 +48,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private Flow currentFlow;
     private Flow currentRollbackFlow;
     private ErrorCode errorCode;
+    private FlowContextHandler contextHandler;
     private FlowErrorHandler errorHandler;
     private FlowDoneHandler doneHandler;
     private FlowFinallyHandler finallyHandler;
@@ -210,6 +211,12 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         return this;
     }
 
+    public SimpleFlowChain ctxHandler(FlowContextHandler handler) {
+        DebugUtils.Assert(errorHandler==null, "there has been an FlowContextHandler installed");
+        contextHandler = handler;
+        return this;
+    }
+
     public SimpleFlowChain error(FlowErrorHandler handler) {
         DebugUtils.Assert(errorHandler==null, "there has been an FlowErrorHandler installed");
         errorHandler = handler;
@@ -341,6 +348,13 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             if (isSkipFlow(toRun)) {
                 this.next();
             } else {
+                if (contextHandler != null) {
+                    contextHandler.saveContext();
+                    if (contextHandler.cancelled()) {
+                        this.fail(contextHandler.getCancelError());
+                        return;
+                    }
+                }
                 toRun.run(this, data);
             }
         } catch (OperationFailureException oe) {
@@ -363,6 +377,15 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         try {
             logger.debug(String.format("[FlowChain(%s): %s] start to rollback flow[%s]", id, name, getFlowName(flow)));
             currentLoop --;
+
+            if (contextHandler != null) {
+                if (contextHandler.skipRollback(this.getErrorCode())) {
+                    this.skipRestRollbacks();
+                    this.rollback();
+                    return;
+                }
+            }
+
             flow.rollback(this, data);
         } catch (Throwable t) {
             logger.warn(String.format("unhandled exception when rollback, call backtrace %s", DebugUtils.getStackTrace(t)));

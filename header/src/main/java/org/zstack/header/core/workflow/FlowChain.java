@@ -23,6 +23,8 @@ public interface FlowChain {
 
     FlowChain error(FlowErrorHandler handler);
 
+    FlowChain ctxHandler(FlowContextHandler handler);
+
     FlowChain Finally(FlowFinallyHandler handler);
 
     FlowChain setData(Map data);
