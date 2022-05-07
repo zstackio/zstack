@@ -23,6 +23,7 @@ public interface VmInstanceNicFactory {
         vnic.setIpVersion(nic.getIpVersion());
         vnic.setInternalName(nic.getInternalName());
         vnic.setDriverType(nic.getDriverType());
+        vnic.setMetaData(nic.getMetaData());
         return vnic;
     }
 

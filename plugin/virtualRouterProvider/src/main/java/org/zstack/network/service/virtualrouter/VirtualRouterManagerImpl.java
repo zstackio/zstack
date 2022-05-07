@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.appliancevm.*;
 import org.zstack.compute.vm.VmNicExtensionPoint;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
@@ -96,6 +97,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.compute.vm.VmSystemTags.MACHINE_TYPE_TOKEN;
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
 import static org.zstack.network.service.virtualrouter.VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
@@ -327,10 +329,18 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 aspec.setSshPort(VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class));
                 aspec.setAgentPort(msg.getApplianceVmAgentPort());
 
+                List<String> tags = new ArrayList<>();
+                if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
+                    tags.addAll(msg.getSystemTags());
+                }
                 String imgBootMode = ImageSystemTags.BOOT_MODE.getTokenByResourceUuid(imgvo.getUuid(), ImageSystemTags.BOOT_MODE_TOKEN);
                 if (ImageBootMode.UEFI.toString().equals(imgBootMode)) {
-                    aspec.getInherentSystemTags().addAll(Lists.newArrayList(ImageSystemTags.BOOT_MODE.getTag(imgvo.getUuid()), "vmMachineType::q35"));
+                    tags.addAll(Arrays.asList(ImageSystemTags.BOOT_MODE.getTag(imgvo.getUuid()), VmSystemTags.MACHINE_TYPE.instantiateTag(map(e(MACHINE_TYPE_TOKEN, VmMachineType.q35.toString())))));
                 }
+                if (!tags.isEmpty()) {
+                    aspec.setInherentSystemTags(tags);
+                }
+
                 L3NetworkInventory mgmtNw = L3NetworkInventory.valueOf(dbf.findByUuid(offering.getManagementNetworkUuid(), L3NetworkVO.class));
                 ApplianceVmNicSpec mgmtNicSpec = new ApplianceVmNicSpec();
                 mgmtNicSpec.setL3NetworkUuid(mgmtNw.getUuid());
