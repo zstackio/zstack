@@ -19,4 +19,7 @@ public interface BackupStorageConstant {
     }
 
     public static final String ACTION_CATEGORY = "backupStorage";
+
+    public static final String IMPORT_IMAGES_FAKE_RESOURCE_UUID = "0a1150d12623319995c9386bf55cb03c";
+    public static final String RESTORE_IMAGES_BACKUP_STORAGE_METADATA_TO_DATABASE = "restore_images_backup_storage_metadata_to_database";
 }

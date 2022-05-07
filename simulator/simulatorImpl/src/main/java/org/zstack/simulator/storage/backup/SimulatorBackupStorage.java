@@ -123,4 +123,10 @@ public class SimulatorBackupStorage extends BackupStorageBase {
     public List<ImageInventory> scanImages() {
         return null;
     }
+
+    @Override
+    protected void handle(RestoreImagesBackupStorageMetadataToDatabaseMsg msg) {
+        RestoreImagesBackupStorageMetadataToDatabaseReply reply = new RestoreImagesBackupStorageMetadataToDatabaseReply();
+        bus.reply(msg, reply);
+    }
 }
