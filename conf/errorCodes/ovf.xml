@@ -7,13 +7,18 @@
     </code>
 
     <code>
+        <id>1002</id>
+        <description>OVF template XML is invalid</description>
+    </code>
+
+    <code>
         <id>1003</id>
         <description>Failed to parse image info JSON text</description>
     </code>
 
     <code>
         <id>1004</id>
-        <description>Image info is not valid</description>
+        <description>Image info is invalid</description>
     </code>
 </error>
 
