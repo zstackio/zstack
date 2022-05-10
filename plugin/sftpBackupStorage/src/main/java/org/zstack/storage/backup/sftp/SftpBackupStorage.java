@@ -308,7 +308,6 @@ public class SftpBackupStorage extends BackupStorageBase {
                     ErrorCode err = operr("the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it's most likely" +
                             " the agent was manually restarted. Issue a reconnect to sync the status", self.getUuid(), ret.getUuid());
 
-                    err.putToOpaque(Opaque.RECONNECT_AGENT.toString(), true);
                     completion.fail(err);
                 } else if (ret.isSuccess()) {
                     completion.success();

@@ -179,8 +179,11 @@ public class BackupStoragePingTracker extends PingTracker implements ManagementN
 
     private ReconnectDecision makeReconnectDecision(String uuid, MessageReply reply) {
         PingBackupStorageReply r = reply.castReply();
-        if (!r.isSuccess()) {
-            return ReconnectDecision.DoNothing;
+        boolean autoReconnect = BackupStorageGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class);
+
+        if (!autoReconnect) {
+            logger.debug(String.format("[Backup storage Tracker]: stop pinging backup storage[uuid: %s] because it's disconnected and connection.autoReconnectOnError is false.", uuid));
+            return ReconnectDecision.StopReconnectTask;
         }
 
         AtomicInteger disconnectCount = backupStorageDisconnectCount.get(uuid);
@@ -190,24 +193,22 @@ public class BackupStoragePingTracker extends PingTracker implements ManagementN
             return ReconnectDecision.StopReconnectTask;
         }
 
-        boolean autoReconnect = BackupStorageGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class);
-        if (!r.isConnected() && autoReconnect) {
-            return ReconnectDecision.SubmitReconnectTask;
+        if (r.getError() != null) {
+            boolean checkReconnect = (boolean) r.getError().getOpaque().getOrDefault(BackupStorageErrors.Opaque.NEED_RECONNECT_CHECKING.toString(), false);
+            if (checkReconnect) {
+                return ReconnectDecision.SubmitReconnectTask;
+            }
         }
 
         boolean isDisconnected = Q.New(BackupStorageVO.class)
                 .eq(BackupStorageVO_.uuid, uuid)
                 .eq(BackupStorageVO_.status, BackupStorageStatus.Disconnected).isExists();
 
-        if (!isDisconnected) {
-            return ReconnectDecision.DoNothing;
-        }
-        if (!autoReconnect) {
-            logger.warn(String.format("[Backup storage Tracker]: stop pinging backup storage[uuid: %s] because it's disconnected and connection.autoReconnectOnError is false.", uuid));
-            return ReconnectDecision.StopReconnectTask;
+        if (r.isSuccess() && isDisconnected) {
+            return ReconnectDecision.SubmitReconnectTask;
         }
 
-        return ReconnectDecision.SubmitReconnectTask;
+        return ReconnectDecision.DoNothing;
     }
 
     private void submitReconnectTask(String uuid) {
@@ -229,7 +230,9 @@ public class BackupStoragePingTracker extends PingTracker implements ManagementN
     }
 
     public void cancel(String resUuid) {
-        untrackHook(resUuid);
+        BackupStorageReconnectTask reconnectTask = reconnectTaskMap.get(resUuid);
+        if (reconnectTask != null && !reconnectTask.taskIsCanceled()) {
+            untrackHook(resUuid);
+        }
     }
-
 }
