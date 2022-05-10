@@ -278,7 +278,6 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
             @Override
             public void success() {
-                reply.setConnected(true);
                 bus.reply(msg, reply);
             }
 
@@ -287,13 +286,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                 if (changeStatus(BackupStorageStatus.Disconnected)) {
                     fireDisconnectedCanonicalEvent(errorCode);
                 }
-
-                Boolean doReconnect = (Boolean) errorCode.getFromOpaque(Opaque.RECONNECT_AGENT.toString());
-                if (doReconnect != null && doReconnect) {
-                    reconnect();
-                }
-
-                reply.setConnected(false);
+                errorCode.putToOpaque(Opaque.NEED_RECONNECT_CHECKING.toString(), true);
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
