@@ -693,6 +693,8 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
 
                 logger.info("write test result of a sub case[${c.class}] of suite[${this.class}] to $fname")
                 logger.info(caseLogEndLine)
+
+                assert currentEnvSpec == null: "EnvSpec is not cleaned after execute ${this.class}."
             }
         }
 

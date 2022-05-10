@@ -107,6 +107,8 @@ abstract class StabilityTest extends Test implements Case{
                 }catch (Throwable t){
                     logger.error("stability test fails, a sub case [${subCase.class}] fails, current execution times is ${index}, ${t.message}" ,t)
                     throw t
+                } finally {
+                    assert currentEnvSpec == null: "EnvSpec is not cleaned after execute ${this.class}."
                 }
                 long spendTime = (new Date().getTime() - startTime) / 1000
                 logger.info("stability test, a sub case [${subCase.class}] test pass, current execution times is ${index}, spend time is ${spendTime} secs")
