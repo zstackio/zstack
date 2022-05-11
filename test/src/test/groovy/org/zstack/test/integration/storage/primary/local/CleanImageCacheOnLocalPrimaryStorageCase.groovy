@@ -4,6 +4,8 @@ import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.storage.primary.ImageCacheShadowVO
+import org.zstack.header.storage.primary.ImageCacheShadowVO_
 import org.zstack.header.storage.primary.ImageCacheVO
 import org.zstack.header.storage.primary.ImageCacheVO_
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
@@ -202,10 +204,9 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
         assert checked
 
         PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.updateValue(1)
-        TimeUnit.SECONDS.sleep(3)
-
-        c = Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid,image1.getUuid()).find()
-
-        assert null == c
+        retryInSecs {
+            Q.New(ImageCacheShadowVO.class).eq(ImageCacheShadowVO_.imageUuid, image1.getUuid()).find() == null
+            assert Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid,image1.getUuid()).find() == null
+        }
     }
 }
