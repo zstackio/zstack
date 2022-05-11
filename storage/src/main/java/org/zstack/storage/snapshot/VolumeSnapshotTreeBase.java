@@ -62,7 +62,6 @@ import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -1764,67 +1763,6 @@ public class VolumeSnapshotTreeBase {
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "create-snapshot-for-current-volume-first";
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        reportProgress("10");
-                        if (!VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
-                            logger.debug("skip create snapshot because of global config");
-                            trigger.next();
-                            return;
-                        }
-                        CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
-                        cmsg.setName(String.format("revert-volume-point-%s-%s", volume.getUuid(), TimeUtils.getCurrentTimeStamp("yyyyMMddHHmmss")));
-                        cmsg.setDescription(String.format("save snapshot for revert volume [uuid:%s]", volume.getUuid()));
-                        cmsg.setVolumeUuid(volume.getUuid());
-                        cmsg.setAccountUuid(msg.getSession().getAccountUuid());
-
-                        bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
-                        bus.send(cmsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply r) {
-                                if (!r.isSuccess()) {
-                                    trigger.fail(r.getError());
-                                } else {
-                                    newSnapshot = ((CreateVolumeSnapshotReply) r).getInventory();
-                                    new SnapshotCanonicalEvents
-                                            .InnerVolumeSnapshotCreated(volume.getUuid(), volume.getPrimaryStorageUuid(), newSnapshot)
-                                            .fire();
-                                    trigger.next();
-                                }
-                            }
-                        });
-                    }
-                });
-
-                if (msg instanceof RevertVolumeFromSnapshotGroupMsg) {
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "add-snapshot-to-group";
-                        String newGroupUuid = ((RevertVolumeFromSnapshotGroupMsg) msg).getNewSnapshotGroupUuid();
-
-                        @Override
-                        public boolean skip(Map data) {
-                            return newSnapshot == null || newGroupUuid == null;
-                        }
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            VolumeSnapshotGroupRefVO ref = new VolumeSnapshotGroupRefVO();
-                            ref.setVolumeSnapshotGroupUuid(newGroupUuid);
-                            ref.setVolumeSnapshotUuid(newSnapshot.getUuid());
-                            ref.setVolumeSnapshotInstallPath(newSnapshot.getPrimaryStorageInstallPath());
-                            ref.setVolumeSnapshotName(newSnapshot.getName());
-                            ref.setVolumeUuid(volumeInventory.getUuid());
-                            ref.setVolumeName(volumeInventory.getName());
-                            ref.setVolumeType(volumeInventory.getType());
-                            ref.setDeviceId(volumeInventory.getDeviceId());
-                            dbf.persist(ref);
-                            trigger.next();
-                        }
-                    });
-                }
-
-                flow(new NoRollbackFlow() {
                     String __name__ = "revert-volume-before-check-snap-integrity";
 
                     @Override
@@ -1875,6 +1813,71 @@ public class VolumeSnapshotTreeBase {
                         });
                     }
                 });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "mark-volume-as-snapshot";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        if (!VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
+                            logger.debug("skip create snapshot because of global config");
+                            return true;
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        reportProgress("85");
+                        MarkRootVolumeAsSnapshotMsg asSnapshotMsg = new MarkRootVolumeAsSnapshotMsg();
+                        asSnapshotMsg.setAccountUuid(msg.getSession().getAccountUuid());
+                        asSnapshotMsg.setVolume(volumeInventory);
+
+                        bus.makeLocalServiceId(asSnapshotMsg, VolumeSnapshotConstant.SERVICE_ID);
+                        bus.send(asSnapshotMsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply r) {
+                                if (!r.isSuccess()) {
+                                    trigger.fail(r.getError());
+                                    return;
+                                }
+                                newSnapshot = ((MarkRootVolumeAsSnapshotReply) r).getInventory();
+                                new SnapshotCanonicalEvents
+                                        .InnerVolumeSnapshotCreated(volume.getUuid(), volume.getPrimaryStorageUuid(), newSnapshot)
+                                        .fire();
+                                trigger.next();
+
+                            }
+                        });
+                    }
+                });
+
+                if (msg instanceof RevertVolumeFromSnapshotGroupMsg) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "add-snapshot-to-group";
+                        String newGroupUuid = ((RevertVolumeFromSnapshotGroupMsg) msg).getNewSnapshotGroupUuid();
+
+                        @Override
+                        public boolean skip(Map data) {
+                            return newSnapshot == null || newGroupUuid == null;
+                        }
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            VolumeSnapshotGroupRefVO ref = new VolumeSnapshotGroupRefVO();
+                            ref.setVolumeSnapshotGroupUuid(newGroupUuid);
+                            ref.setVolumeSnapshotUuid(newSnapshot.getUuid());
+                            ref.setVolumeSnapshotInstallPath(newSnapshot.getPrimaryStorageInstallPath());
+                            ref.setVolumeSnapshotName(newSnapshot.getName());
+                            ref.setVolumeUuid(volumeInventory.getUuid());
+                            ref.setVolumeName(volumeInventory.getName());
+                            ref.setVolumeType(volumeInventory.getType());
+                            ref.setDeviceId(volumeInventory.getDeviceId());
+                            dbf.persist(ref);
+                            trigger.next();
+                        }
+                    });
+                }
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "get-volume-old-install-path-size";
