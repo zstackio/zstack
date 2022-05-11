@@ -118,6 +118,7 @@ public class CreateApplianceVmJob implements Job {
                 ImageVO imageVO = Q.New(ImageVO.class).eq(ImageVO_.uuid, spec.getTemplate().getUuid()).find();
                 avo.setPlatform(imageVO.getPlatform().toString());
                 avo.setGuestOsType(imageVO.getGuestOsType());
+                avo.setArchitecture(imageVO.getArchitecture());
 
                 InstanceOfferingVO iovo = dbf.findByUuid(spec.getInstanceOffering().getUuid(), InstanceOfferingVO.class);
                 avo.setCpuNum(iovo.getCpuNum());
