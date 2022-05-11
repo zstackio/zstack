@@ -205,8 +205,8 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
 
         PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.updateValue(1)
         retryInSecs {
-            Q.New(ImageCacheShadowVO.class).eq(ImageCacheShadowVO_.imageUuid, image1.getUuid()).find() == null
-            assert Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid,image1.getUuid()).find() == null
+            assert Q.New(ImageCacheShadowVO.class).eq(ImageCacheShadowVO_.imageUuid, image1.getUuid()).find() == null
+            assert Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, image1.getUuid()).find() == null
         }
     }
 }
