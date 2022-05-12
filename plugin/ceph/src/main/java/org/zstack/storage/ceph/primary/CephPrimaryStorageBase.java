@@ -1656,7 +1656,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private String getRootVolumeTargetPoolName(String volUuid) {
         String poolName = CephSystemTags.USE_CEPH_ROOT_POOL.getTokenByResourceUuid(volUuid, CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN);
-        return getPoolName(poolName, getDefaultRootVolumePoolName());
+        return getPoolName(poolName, getDefaultRootVolumePoolName(), volUuid, CephPrimaryStoragePoolType.Root.toString());
     }
 
     private String makeResetImageRootVolumeInstallPath(String volUuid, String volumePath) {
@@ -1682,11 +1682,50 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private String getDataVolumeTargetPoolName(String volUuid) {
         String poolName = CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.getTokenByResourceUuid(volUuid, CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN);
-        return getPoolName(poolName, getDefaultDataVolumePoolName());
+        return getPoolName(poolName, getDefaultDataVolumePoolName(), volUuid, CephPrimaryStoragePoolType.Data.toString());
     }
 
-    private String getPoolName(String customPoolName, String defaultPoolName){
-        return  customPoolName != null ? customPoolName : defaultPoolName;
+    private String getPoolName(String customPoolName, String defaultPoolName, String volUuid, String poolType) {
+        if (customPoolName != null) {
+            return customPoolName;
+        }
+
+        CephPrimaryStoragePoolVO pool = getPoolFromPoolName(defaultPoolName);
+
+        Long volumeSize = Q.New(VolumeVO.class)
+                .select(VolumeVO_.size)
+                .eq(VolumeVO_.uuid, volUuid)
+                .findValue();
+
+        long poolVirtualAvailableSize = getPoolVirtualAvailableSize(defaultPoolName);
+        boolean capacityChecked = PrimaryStorageCapacityChecker.New(self.getUuid(),
+                        poolVirtualAvailableSize, pool.getTotalCapacity(), poolVirtualAvailableSize)
+                .checkRequiredSize(volumeSize);
+
+        if (!capacityChecked) {
+            //try to find other pool
+            List<CephPrimaryStoragePoolVO> pools = Q.New(CephPrimaryStoragePoolVO.class)
+                    .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
+                    .eq(CephPrimaryStoragePoolVO_.type, poolType)
+                    .notEq(CephPrimaryStoragePoolVO_.poolName, defaultPoolName)
+                    .list();
+
+            if (pools == null || pools.isEmpty()) {
+                return defaultPoolName;
+            }
+
+            return pools.stream()
+                    .filter(v -> {
+                        long pvs = getPoolVirtualAvailableSize(v.getPoolName());
+                        return PrimaryStorageCapacityChecker.New(self.getUuid(),
+                                        pvs, v.getTotalCapacity(), pvs)
+                                .checkRequiredSize(volumeSize);})
+                    .map(CephPrimaryStoragePoolVO::getPoolName)
+                    .findFirst()
+                    .orElse(defaultPoolName);
+        }
+
+        return defaultPoolName;
     }
 
     private String makeCacheInstallPath(String uuid) {
@@ -1719,7 +1758,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         return CephPrimaryStorageInventory.valueOf(getSelf());
     }
 
-    private void checkCephPoolCapacityForNewVolume(String poolName, long volumeSize) {
+    private long getPoolVirtualAvailableSize(String poolName) {
+        CephPrimaryStoragePoolVO poolVO = getPoolFromPoolName(poolName);
+        List<Long> sizes = Q.New(VolumeVO.class)
+                .select(VolumeAO_.size)
+                .eq(VolumeAO_.primaryStorageUuid, self.getUuid())
+                .like(VolumeAO_.installPath, String.format("ceph://%s%%", poolName))
+                .listValues();
+
+        return poolVO.getTotalCapacity() - sizes.stream().reduce(0L, Long::sum);
+    }
+
+    private CephPrimaryStoragePoolVO getPoolFromPoolName(String poolName) {
         List<CephPrimaryStoragePoolVO> poolVOS = Q.New(CephPrimaryStoragePoolVO.class)
                 .eq(CephPrimaryStoragePoolVO_.poolName, poolName)
                 .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
@@ -1729,7 +1779,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             throw new OperationFailureException(operr("cannot find cephPrimaryStorage pool[poolName=%s]", poolName));
         }
 
-        CephPrimaryStoragePoolVO poolVO = poolVOS.get(0);
+        return poolVOS.get(0);
+    }
+
+    private void checkCephPoolCapacityForNewVolume(String poolName, long volumeSize) {
+        CephPrimaryStoragePoolVO poolVO = getPoolFromPoolName(poolName);
         boolean capacityChecked = PrimaryStorageCapacityChecker.New(self.getUuid(),
                 poolVO.getAvailableCapacity(), poolVO.getTotalCapacity(), poolVO.getAvailableCapacity())
                 .checkRequiredSize(volumeSize);
