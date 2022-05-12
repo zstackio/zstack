@@ -195,7 +195,6 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
         destroyVmInstance {
             uuid = vm.uuid
         }
-
         cleanUpImageCacheOnPrimaryStorage {
                 delegate.uuid = localps.uuid
                 delegate.force = true
