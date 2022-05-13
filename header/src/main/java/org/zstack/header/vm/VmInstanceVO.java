@@ -8,6 +8,8 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
+import org.zstack.header.volume.Volume;
+import org.zstack.header.volume.VolumeAO;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.zone.ZoneVO;
@@ -113,6 +115,10 @@ public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount, ToInve
         }
 
         return allVolumes.stream().filter(v -> v.getUuid().equals(getRootVolumeUuid())).findAny().orElse(null);
+    }
+
+    public Set<VolumeVO> getAllDataVolumes() {
+        return getAllVolumes(VolumeAO::isDataVolume);
     }
 
     public Set<VmCdRomVO> getVmCdRoms() {
