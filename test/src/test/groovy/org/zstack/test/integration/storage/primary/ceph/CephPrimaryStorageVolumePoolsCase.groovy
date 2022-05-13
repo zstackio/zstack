@@ -363,14 +363,14 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             dataDiskSizes = [SizeUnit.GIGABYTE.toByte(1)]
             systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): primaryStorage.uuid])]
             rootVolumeSystemTags = ["ceph::rootPoolName::new_root_pool"]
-            dataVolumeSystemTags = ["ceph::pool::new_root_pool"]
+            dataVolumeSystemTags = ["ceph::pool::new_data_pool"]
         } as VmInstanceInventory
 
         String rootVolumeInstallPath = Q.New(VolumeVO.class).select(VolumeVO_.installPath).eq(VolumeVO_.uuid, vm1.rootVolumeUuid).findValue()
         assert rootVolumeInstallPath.contains("new_root_pool")
         String dataVolumeUuid = vm1.allVolumes.find { it.uuid != vm1.rootVolumeUuid }.uuid
         String dataVolumeInstallPath = Q.New(VolumeVO.class).select(VolumeVO_.installPath).eq(VolumeVO_.uuid, dataVolumeUuid).findValue()
-        assert dataVolumeInstallPath.contains("new_root_pool")
+        assert dataVolumeInstallPath.contains("new_data_pool")
         deleteVm(vm1.uuid)
         deleteVolume(dataVolumeUuid)
 
@@ -385,12 +385,12 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             dataDiskSizes = [SizeUnit.GIGABYTE.toByte(1), SizeUnit.GIGABYTE.toByte(1), SizeUnit.GIGABYTE.toByte(2)]
             systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): primaryStorage.uuid])]
             rootVolumeSystemTags = ["ceph::rootPoolName::new_root_pool"]
-            dataVolumeSystemTags = ["ceph::pool::new_root_pool"]
+            dataVolumeSystemTags = ["ceph::pool::new_data_pool"]
         } as VmInstanceInventory
         assert vm2.allVolumes.size() == 5
         List<String> dataVolumeUuids = vm2.allVolumes.stream().filter { uuid -> uuid != vm2.rootVolumeUuid }.map({ it -> it.uuid }).collect()
         List<String> dataVolumeInstallPaths = Q.New(VolumeVO.class).select(VolumeVO_.installPath).in(VolumeVO_.uuid, dataVolumeUuids).listValues()
-        dataVolumeInstallPaths.forEach({ path -> assert path.contains("new_root_pool") })
+        dataVolumeInstallPaths.forEach({ path -> assert path.contains("new_data_pool") })
         deleteVm(vm2.uuid)
         vm2.allVolumes.stream().filter { uuid -> uuid != vm2.rootVolumeUuid }.forEach { it -> deleteVolume(it.uuid) }
     }
