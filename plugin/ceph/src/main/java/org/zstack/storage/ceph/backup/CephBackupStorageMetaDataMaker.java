@@ -9,7 +9,6 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.image.*;
@@ -117,6 +116,9 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         for ( String metadata : metadatas) {
             if (metadata.contains("backupStorageRefs")) {
                 ImageInventory imageInventory = JSONObjectUtil.toObject(metadata, ImageInventory.class);
+                if (imageInventory.getVirtio() == null) {
+                    ImageHelper.updateImageIfVirtioIsNull(imageInventory);
+                }
 
                 if (!imageInventory.getStatus().equals(ImageStatus.Ready.toString())
                         || imageVOs.stream().anyMatch(image -> image.getUuid().equals(imageInventory.getUuid()))) {

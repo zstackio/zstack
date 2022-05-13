@@ -12,7 +12,6 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -130,6 +129,9 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         for (String metadata : metadatas) {
             if (metadata.contains("backupStorageRefs")) {
                 ImageInventory imageInventory = JSONObjectUtil.toObject(metadata, ImageInventory.class);
+                if (imageInventory.getVirtio() == null) {
+                    ImageHelper.updateImageIfVirtioIsNull(imageInventory);
+                }
 
                 if (!imageInventory.getStatus().equals(ImageStatus.Ready.toString())
                         || imageVOs.stream().anyMatch(image -> image.getUuid().equals(imageInventory.getUuid()))) {
