@@ -5,7 +5,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -19,8 +18,6 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.storage.ceph.backup.CephBackupStorageBase.*;
 import org.zstack.storage.ceph.backup.CephBackupStorageSimulatorConfig.CephBackupStorageConfig;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase;
-import org.zstack.storage.ceph.primary.CephPrimaryStorageSimulatorConfig;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -92,9 +89,9 @@ public class CephBackupStorageSimulator {
         CephBackupStorageMonBase.PingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CephBackupStorageMonBase.PingCmd.class);
         Boolean success = config.pingCmdSuccess.get(cmd.monUuid);
         CephBackupStorageMonBase.PingRsp rsp = new CephBackupStorageMonBase.PingRsp();
-        rsp.success = success == null ? true : success;
-        if (!rsp.success) {
-            rsp.error = "on purpose";
+        rsp.setSuccess(success == null ? true : success);
+        if (!rsp.isSuccess()) {
+            rsp.setError("on purpose");
         }
         rsp.failure = config.pingCmdOperationFailure.get(cmd.monUuid);
         reply(entity, rsp);
@@ -128,8 +125,8 @@ public class CephBackupStorageSimulator {
         InitRsp rsp = new InitRsp();
 
         if (!config.monInitSuccess) {
-            rsp.error = "on purpose";
-            rsp.success = false;
+            rsp.setError("on purpose");
+            rsp.setSuccess(false);
         } else {
             rsp.fsid = cbc.fsid;
             rsp.totalCapacity = cbc.totalCapacity;
@@ -148,10 +145,9 @@ public class CephBackupStorageSimulator {
 
         CheckRsp rsp = new CheckRsp();
         if (!config.monInitSuccess) {
-            rsp.error = "on purpose";
-            rsp.success = false;
+            rsp.setError("on purpose");
         } else {
-            rsp.success = true;
+            rsp.setSuccess(true);
         }
 
         reply(entity, rsp);

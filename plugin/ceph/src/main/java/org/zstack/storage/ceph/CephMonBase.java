@@ -77,11 +77,11 @@ public abstract class CephMonBase {
         }
     }
 
-    public <T> void httpCall(final String path, final Object cmd, final Class<T> retClass, final ReturnValueCompletion<T> completion) {
+    public <T extends AgentResponse> void httpCall(final String path, final Object cmd, final Class<T> retClass, final ReturnValueCompletion<T> completion) {
         httpCall(path, cmd, retClass, completion, null, 0);
     }
 
-    public <T> void httpCall(final String path, final Object cmd, final Class<T> retClass, final ReturnValueCompletion<T> completion, TimeUnit unit, long timeout) {
+    public <T extends AgentResponse> void httpCall(final String path, final Object cmd, final Class<T> retClass, final ReturnValueCompletion<T> completion, TimeUnit unit, long timeout) {
         JsonAsyncRESTCallback<T> callback = new JsonAsyncRESTCallback<T>(completion) {
             @Override
             public void fail(ErrorCode err) {
@@ -90,6 +90,10 @@ public abstract class CephMonBase {
 
             @Override
             public void success(T ret) {
+                if (!ret.isSuccess()) {
+                    completion.fail(Platform.operr("operation error, because:%s", ret.getError()));
+                    return;
+                }
                 completion.success(ret);
             }
 
@@ -106,18 +110,21 @@ public abstract class CephMonBase {
         }
     }
 
-    private static class AgentResponse {
-        String error;
-        boolean success = true;
+    public static class AgentResponse {
+        private String error;
+        @Deprecated
+        private boolean success = true;
 
         public String getError() {
             return error;
         }
 
         public void setError(String error) {
+            this.success = false;
             this.error = error;
         }
 
+        @Deprecated
         public boolean isSuccess() {
             return success;
         }

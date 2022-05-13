@@ -17,14 +17,8 @@ import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
-import org.zstack.core.thread.AsyncThread;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
-import org.zstack.core.trash.TrashType;
-import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.core.trash.StorageTrash;
+import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
@@ -42,6 +36,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.*;
@@ -194,9 +189,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    public static class AgentResponse {
-        String error;
-        boolean success = true;
+    public static class AgentResponse extends CephMonBase.AgentResponse {
         Long totalCapacity;
         Long availableCapacity;
         List<CephPoolCapacity> poolCapacities;
@@ -207,23 +200,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             if (unitTestOn && type == null) {
                 type = CephConstants.CEPH_MANUFACTURER_OPENSOURCE;
             }
-        }
-
-        public String getError() {
-            return error;
-        }
-
-        public void setError(String error) {
-            this.success = false;
-            this.error = error;
-        }
-
-        public boolean isSuccess() {
-            return success;
-        }
-
-        public void setSuccess(boolean success) {
-            this.success = success;
         }
 
         public Long getTotalCapacity() {
@@ -3312,15 +3288,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
                 @Override
                 public void success(T ret) {
-                    if (!ret.success) {
-                        if (tryNext) {
-                            doCall();
-                        } else {
-                            callback.fail(operr("operation error, because:%s", ret.error));
-                        }
-                        return;
-                    }
-
                     if (!(cmd instanceof InitCmd)) {
                         updateCapacityIfNeeded(ret);
                     }
@@ -3329,10 +3296,19 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    logger.warn(String.format("mon[%s] failed to execute http call[%s], error is: %s",
-                            base.getSelf().getHostname(), path, JSONObjectUtil.toJsonString(errorCode)));
-                    errorCodes.getCauses().add(errorCode);
-                    doCall();
+                    if (!errorCode.isError(SysErrors.OPERATION_ERROR)) {
+                        logger.warn(String.format("mon[%s] failed to execute http call[%s], error is: %s",
+                                base.getSelf().getHostname(), path, JSONObjectUtil.toJsonString(errorCode)));
+                        errorCodes.getCauses().add(errorCode);
+                        doCall();
+                        return;
+                    }
+
+                    if (tryNext) {
+                        doCall();
+                    } else {
+                        callback.fail(errorCode);
+                    }
                 }
             };
 
@@ -3449,13 +3425,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             mon.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(compl) {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
-                                    if (!rsp.success) {
-                                        // one mon cannot get the facts, directly error out
-                                        errors.add(Platform.operr("%s", rsp.getError()));
-                                        compl.allDone();
-                                        return;
-                                    }
-
                                     CephPrimaryStorageMonVO monVO = dbf.reload(mon.getSelf());
                                     if (monVO != null) {
                                         fsids.put(monVO.getUuid(), rsp.fsid);
@@ -4095,20 +4064,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             base.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(latch) {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
-                                    if (!rsp.isSuccess()) {
-                                        errors.add(operr("operation error, because:%s", rsp.getError()));
-                                    } else {
-                                        String fsid = rsp.fsid;
-                                        if (!getSelf().getFsid().equals(fsid)) {
-                                            errors.add(operr("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
-                                                    "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
-                                            );
-                                        }
-                                        CephPrimaryStorageMonVO monVO = dbf.reload(base.getSelf());
-                                        if (monVO != null) {
-                                            monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
-                                            dbf.update(monVO);
-                                        }
+                                    String fsid = rsp.fsid;
+                                    if (!getSelf().getFsid().equals(fsid)) {
+                                        errors.add(operr("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
+                                                "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
+                                        );
+                                    }
+                                    CephPrimaryStorageMonVO monVO = dbf.reload(base.getSelf());
+                                    if (monVO != null) {
+                                        monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
+                                        dbf.update(monVO);
                                     }
 
                                     latch.ack();

@@ -5,7 +5,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -107,8 +106,7 @@ public class CephPrimaryStorageSimulator {
 
         InitRsp rsp = new InitRsp();
         if (!config.monInitSuccess) {
-            rsp.error = "on purpose";
-            rsp.success = false;
+            rsp.setError("on purpose");
         } else {
             rsp.fsid = cpc.fsid;
             rsp.userKey = Platform.getUuid();
@@ -128,10 +126,9 @@ public class CephPrimaryStorageSimulator {
 
         CheckRsp rsp = new CheckRsp();
         if (!config.monInitSuccess) {
-            rsp.error = "on purpose";
-            rsp.success = false;
+            rsp.setError("on purpose");
         } else {
-            rsp.success = true;
+            rsp.setSuccess(true);
         }
 
         reply(entity, rsp);
@@ -151,9 +148,9 @@ public class CephPrimaryStorageSimulator {
         PingCmd cmd = JSONObjectUtil.toObject(entity.getBody(), PingCmd.class);
         Boolean success = config.pingCmdSuccess.get(cmd.monUuid);
         PingRsp rsp = new PingRsp();
-        rsp.success = success == null ? true : success;
-        if (!rsp.success) {
-            rsp.error = "on purpose";
+        rsp.setSuccess(success == null ? true : success);
+        if (!rsp.isSuccess()) {
+            rsp.setError("on purpose");
         }
         rsp.failure = config.pingCmdOperationFailure.get(cmd.monUuid);
         reply(entity, rsp);
@@ -183,8 +180,7 @@ public class CephPrimaryStorageSimulator {
             if (!path.equals(cmd.getInstallPath())) {
                 continue;
             }
-            rsp.error = String.format("File exists[%s]", cmd.getInstallPath());
-            rsp.setSuccess(false);
+            rsp.setError(String.format("File exists[%s]", cmd.getInstallPath()));
             reply(entity, rsp);
             return null;
         }
