@@ -34,6 +34,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
     String NEW_ROOT_POOL_NAME = "new_root_pool"
     String ROOT_POOL_TYPE = "Root"
     String DATA_POOL_TYPE = "Data"
+    String NEW_DATA_POOL_NAME = "new_data_pool"
 
     @Override
     void setup() {
@@ -87,6 +88,11 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
                     pool {
                         poolName = NEW_ROOT_POOL_NAME
                         type = ROOT_POOL_TYPE
+                    }
+
+                    pool {
+                        poolName = NEW_DATA_POOL_NAME
+                        type = DATA_POOL_TYPE
                     }
                 }
 
@@ -388,7 +394,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             dataVolumeSystemTags = ["ceph::pool::new_data_pool"]
         } as VmInstanceInventory
         assert vm2.allVolumes.size() == 5
-        List<String> dataVolumeUuids = vm2.allVolumes.stream().filter { uuid -> uuid != vm2.rootVolumeUuid }.map({ it -> it.uuid }).collect()
+        List<String> dataVolumeUuids = vm2.allVolumes.stream().map({ it -> it.uuid }).filter { uuid -> uuid != vm2.rootVolumeUuid }.collect()
         List<String> dataVolumeInstallPaths = Q.New(VolumeVO.class).select(VolumeVO_.installPath).in(VolumeVO_.uuid, dataVolumeUuids).listValues()
         dataVolumeInstallPaths.forEach({ path -> assert path.contains("new_data_pool") })
         deleteVm(vm2.uuid)
