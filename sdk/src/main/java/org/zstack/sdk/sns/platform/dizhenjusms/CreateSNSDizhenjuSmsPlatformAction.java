@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSNSDizhenjuSmsEndpointAction extends AbstractAction {
+public class CreateSNSDizhenjuSmsPlatformAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSNSDizhenjuSmsEndpointAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.dizhenjusms.CreateSNSDizhenjuSmsEndpointResult value;
+        public org.zstack.sdk.sns.CreateSNSApplicationPlatformResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,26 @@ public class CreateSNSDizhenjuSmsEndpointAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List receivers;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String serverIp;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String srcID = "106575007626";
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String username;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String downlinkChannelNumber;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String platformUuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -75,8 +84,8 @@ public class CreateSNSDizhenjuSmsEndpointAction extends AbstractAction {
             return ret;
         }
 
-        org.zstack.sdk.sns.platform.dizhenjusms.CreateSNSDizhenjuSmsEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.dizhenjusms.CreateSNSDizhenjuSmsEndpointResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.dizhenjusms.CreateSNSDizhenjuSmsEndpointResult() : value;
+        org.zstack.sdk.sns.CreateSNSApplicationPlatformResult value = res.getResult(org.zstack.sdk.sns.CreateSNSApplicationPlatformResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.CreateSNSApplicationPlatformResult() : value;
 
         return ret;
     }
@@ -106,7 +115,7 @@ public class CreateSNSDizhenjuSmsEndpointAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/sns/sms-endpoints/dizhenjusms";
+        info.path = "/sns/application-platforms/dizhenjusms";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
