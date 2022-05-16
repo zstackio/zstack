@@ -13,7 +13,7 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 @SkipVmTracer(replyClass = StartVmInstanceReply.class)
-public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage, NeedQuotaCheckMessage {
+public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage, NeedQuotaCheckMessage, CheckAttachedVolumesMessage {
     private String vmInstanceUuid;
     private String accountUuid;
     private String hostUuid;

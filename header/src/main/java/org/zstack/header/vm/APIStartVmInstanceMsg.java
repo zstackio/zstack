@@ -42,7 +42,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true
 )
 @SkipVmTracer(replyClass = APIStartVmInstanceEvent.class)
-public class APIStartVmInstanceMsg extends APIMessage implements VmInstanceMessage {
+public class APIStartVmInstanceMsg extends APIMessage implements VmInstanceMessage, CheckAttachedVolumesMessage {
     /**
      * @desc vm uuid
      */
