@@ -476,7 +476,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
         cmd.monUuid = getSelf().getUuid();
         cmd.backupStorageUuid = getSelf().getBackupStorageUuid();
 
-        restf.asyncJsonPost(CephAgentUrl.primaryStorageUrl(self.getHostname(), PING_PATH),
+        restf.asyncJsonPost(CephAgentUrl.backupStorageUrl(self.getHostname(), PING_PATH),
                 cmd, new JsonAsyncRESTCallback<CephPrimaryStorageMonBase.PingRsp>(completion) {
                     @Override
                     public void fail(ErrorCode err) {
