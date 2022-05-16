@@ -319,7 +319,17 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
      */
     @Override
     public void setMessageTimeout(Message msg) {
-        if (msg instanceof ConfigurableTimeoutMessage) {
+        if (msg instanceof OverlayMessage) {
+            NeedReplyMessage imsg = ((OverlayMessage) msg).getMessage();
+            setMessageTimeout(imsg);
+            ((OverlayMessage) msg).setTimeout(imsg.getTimeout());
+        } else if (msg instanceof MulitpleOverlayMsg) {
+            List<NeedReplyMessage> imsgs = ((MulitpleOverlayMsg) msg).getMessages();
+            imsgs.forEach(this::setMessageTimeout);
+            long timeout = imsgs.stream().mapToLong(NeedReplyMessage::getTimeout).max()
+                    .orElse(parseTimeout(ApiTimeoutGlobalProperty.INTERNAL_MESSAGE_TIMEOUT));
+            ((MulitpleOverlayMsg) msg).setTimeout(timeout);
+        } else if (msg instanceof ConfigurableTimeoutMessage) {
             ((ConfigurableTimeoutMessage) msg).setTimeout(evalTimeout(getMessageTimeout((ConfigurableTimeoutMessage) msg)));
         } else if (msg instanceof NeedReplyMessage) {
             NeedReplyMessage nmsg = (NeedReplyMessage) msg;
