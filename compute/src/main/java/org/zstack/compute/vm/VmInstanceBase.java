@@ -2,6 +2,7 @@ package org.zstack.compute.vm;
 
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -55,6 +56,7 @@ import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.vm.cdrom.*;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
@@ -391,11 +393,48 @@ public class VmInstanceBase extends AbstractVmInstance {
     @Override
     @MessageSafe
     public void handleMessage(final Message msg) {
+        if (msg instanceof CheckAttachedVolumesMessage) {
+            handle((CheckAttachedVolumesMessage) msg);
+        } else {
+            handleMsg(msg);
+        }
+    }
+
+    private void handleMsg(final Message msg) {
         if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {
             handleLocalMessage(msg);
         }
+    }
+
+    private void handle(CheckAttachedVolumesMessage msg) {
+        GetVolumeTaskMsg gmsg = new GetVolumeTaskMsg();
+        List<String> volUuids = self.getAllVolumes().stream().map(ResourceVO::getUuid).collect(Collectors.toList());
+        gmsg.setVolumeUuids(volUuids);
+        bus.makeLocalServiceId(gmsg, VolumeConstant.SERVICE_ID);
+        bus.send(gmsg, new CloudBusCallBack((NeedReplyMessage) msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    bus.replyErrorByMessageType((Message) msg, r.getError());
+                    return;
+                }
+
+                GetVolumeTaskReply gr = r.castReply();
+                List<String> hasTaskVols = gr.getResults().entrySet().stream()
+                        .filter(it -> !it.getValue().getRunningTask().isEmpty())
+                        .map(it -> String.format("attached volume[uuid:%s] has running task[name:%s]",
+                                it.getKey(), it.getValue().getRunningTask().get(0).getName()))
+                        .collect(Collectors.toList());
+                if (!hasTaskVols.isEmpty()) {
+                    bus.replyErrorByMessageType((Message) msg, operr(Strings.join(hasTaskVols, ';')));
+                    return;
+                }
+
+                handleMsg((Message) msg);
+            }
+        });
     }
 
     protected void handleLocalMessage(Message msg) {

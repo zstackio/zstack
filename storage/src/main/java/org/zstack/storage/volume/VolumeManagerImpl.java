@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -20,8 +21,10 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.AccountResourceRefInventory;
 import org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint;
@@ -57,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -117,6 +121,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     private void handleLocalMessage(Message msg) {
         if (msg instanceof CreateVolumeMsg) {
             handle((CreateVolumeMsg) msg);
+        } else if (msg instanceof GetVolumeTaskMsg) {
+            handle((GetVolumeTaskMsg) msg);
+        } else if (msg instanceof GetVolumeLocalTaskMsg) {
+            handle((GetVolumeLocalTaskMsg) msg);
         } else if (msg instanceof VolumeReportPrimaryStorageCapacityUsageMsg) {
             handle((VolumeReportPrimaryStorageCapacityUsageMsg) msg);
         } else if (msg instanceof CreateDataVolumeFromVolumeTemplateMsg) {
@@ -156,6 +164,46 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }
 
         return isShareable;
+    }
+
+    private void handle(GetVolumeTaskMsg msg) {
+        GetVolumeTaskReply reply = new GetVolumeTaskReply();
+        Map<String, List<String>> mnIds = msg.getVolumeUuids().stream().collect(
+                Collectors.groupingBy(huuid -> destMaker.makeDestination(huuid))
+        );
+
+        new While<>(mnIds.entrySet()).all((e, compl) -> {
+            GetVolumeLocalTaskMsg gmsg = new GetVolumeLocalTaskMsg();
+            gmsg.setVolumeUuids(e.getValue());
+            bus.makeServiceIdByManagementNodeId(gmsg, VolumeConstant.SERVICE_ID, e.getKey());
+            bus.send(gmsg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply r) {
+                    if (r.isSuccess()) {
+                        GetVolumeLocalTaskReply gr = r.castReply();
+                        reply.getResults().putAll(gr.getResults());
+                    } else {
+                        logger.error("get volume task fail, because " + r.getError().getDetails());
+                    }
+
+                    compl.done();
+                }
+            });
+
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                bus.reply(msg, reply);
+            }
+        });
+
+    }
+
+    private void handle(GetVolumeLocalTaskMsg msg) {
+        GetVolumeLocalTaskReply reply = new GetVolumeLocalTaskReply();
+        List<VolumeVO> vos = Q.New(VolumeVO.class).in(VolumeVO_.uuid, msg.getVolumeUuids()).list();
+        vos.forEach(vo -> reply.putResults(vo.getUuid(), thdf.getChainTaskInfo(new VolumeBase(vo).syncThreadId)));
+        bus.reply(msg, reply);
     }
 
     private void handle(CreateDataVolumeFromVolumeTemplateMsg msg) {

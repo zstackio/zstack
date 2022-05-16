@@ -8,7 +8,7 @@ import java.util.List;
  * Created by xing5 on 2016/3/29.
  */
 @SkipVmTracer(replyClass = HaStartVmInstanceReply.class)
-public class HaStartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
+public class HaStartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage, CheckAttachedVolumesMessage{
     private String vmInstanceUuid;
     private String judgerClassName;
     private List<String> softAvoidHostUuids;

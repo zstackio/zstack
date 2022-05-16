@@ -3,7 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.message.NeedReplyMessage;
 
 @SkipVmTracer(replyClass = StartVmInstanceReply.class)
-public class RestoreVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
+public class RestoreVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage, CheckAttachedVolumesMessage {
     private String vmInstanceUuid;
     private String memorySnapshotUuid;
 

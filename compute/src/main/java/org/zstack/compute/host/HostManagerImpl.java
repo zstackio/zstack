@@ -136,14 +136,14 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         );
         
         new While<>(mnIds.entrySet()).all((e, compl) -> {
-            GetHostTaskMsg gmsg = new GetHostTaskMsg();
+            GetHostLocalTaskMsg gmsg = new GetHostLocalTaskMsg();
             gmsg.setHostUuids(e.getValue());
             bus.makeServiceIdByManagementNodeId(gmsg, HostConstant.SERVICE_ID, e.getKey());
             bus.send(gmsg, new CloudBusCallBack(compl) {
                 @Override
                 public void run(MessageReply r) {
                     if (r.isSuccess()) {
-                        GetHostTaskReply gr = r.castReply();
+                        GetHostLocalTaskReply gr = r.castReply();
                         reply.getResults().putAll(gr.getResults());
                     } else {
                         logger.error("get host task fail, because " + r.getError().getDetails());
@@ -161,8 +161,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         });
     }
 
-    private void handle(GetHostTaskMsg msg) {
-        GetHostTaskReply reply = new GetHostTaskReply();
+    private void handle(GetHostLocalTaskMsg msg) {
+        GetHostLocalTaskReply reply = new GetHostLocalTaskReply();
         List<HostVO> vos = Q.New(HostVO.class).in(HostVO_.uuid, msg.getHostUuids()).list();
         vos.forEach(vo -> {
             HypervisorFactory factory = this.getHypervisorFactory(HypervisorType.valueOf(vo.getHypervisorType()));
@@ -208,8 +208,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             passThrough((HostMessage) msg);
         } else if (msg instanceof AddHostMsg){
             handle((AddHostMsg) msg);
-        } else if (msg instanceof GetHostTaskMsg) {
-            handle((GetHostTaskMsg) msg);
+        } else if (msg instanceof GetHostLocalTaskMsg) {
+            handle((GetHostLocalTaskMsg) msg);
         } else if (msg instanceof CancelHostTasksMsg) {
             handle((CancelHostTasksMsg) msg);
         } else {

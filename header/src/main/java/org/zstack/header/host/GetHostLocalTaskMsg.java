@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Created by MaJin on 2019/7/26.
  */
-public class GetHostTaskMsg extends NeedReplyMessage {
+public class GetHostLocalTaskMsg extends NeedReplyMessage {
     private List<String> hostUuids;
 
     public List<String> getHostUuids() {
