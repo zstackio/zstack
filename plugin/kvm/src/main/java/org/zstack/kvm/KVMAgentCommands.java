@@ -855,6 +855,9 @@ public class KVMAgentCommands {
         private String vlanId;
         private String pciDeviceAddress;
 
+        // for vDPA & dpdkvhostuserclient nic
+        private String srcPath;
+
         public List<String> getIps() {
             return ips;
         }
@@ -989,6 +992,14 @@ public class KVMAgentCommands {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public String getSrcPath() {
+            return srcPath;
+        }
+
+        public void setSrcPath(String srcPath) {
+            this.srcPath = srcPath;
         }
     }
 
@@ -1275,6 +1286,56 @@ public class KVMAgentCommands {
     }
 
     public static class DeleteVdpaRsp extends AgentResponse {
+    }
+
+    public static class GenerateVHostUserClientCmd extends AgentCommand {
+        public String vmUuid;
+        public List<NicTO> nics;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public List<NicTO> getNics() {
+            return nics;
+        }
+
+        public void setNics(List<NicTO> nics) {
+            this.nics = nics;
+        }
+    }
+
+    public static class GenerateVHostUserClientResponse extends AgentResponse {
+
+    }
+
+    public static class DeleteVHostUserClientCmd extends AgentCommand {
+        public String vmUuid;
+        public String nicInternalName;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getNicInternalName() {
+            return nicInternalName;
+        }
+
+        public void setNicInternalName(String nicInternalName) {
+            this.nicInternalName = nicInternalName;
+        }
+    }
+
+    public static class DeleteVHostUserClientRsp extends AgentResponse {
+
     }
 
     public static class HardenVmConsoleCmd extends AgentCommand {

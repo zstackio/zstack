@@ -1,16 +1,13 @@
 package org.zstack.compute.vm;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.jpa.JpaSystemException;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
 import org.zstack.header.core.workflow.FlowException;
 import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.utils.ExceptionDSL;
@@ -26,7 +23,8 @@ import static org.zstack.core.Platform.err;
 
 public class VmNicFactory implements VmInstanceNicFactory {
     private static final CLogger logger = Utils.getLogger(VmNicFactory.class);
-    private static final VmNicType type = new VmNicType(VmInstanceConstant.VIRTUAL_NIC_TYPE, L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
+    private static final VmNicType type = new VmNicType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
+    private static final VSwitchType vSwitchType = new VSwitchType(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE, type);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -34,6 +32,11 @@ public class VmNicFactory implements VmInstanceNicFactory {
     @Override
     public VmNicType getType() {
         return type;
+    }
+
+    @Override
+    public VSwitchType getVSwitchType() {
+        return vSwitchType;
     }
 
     @Override

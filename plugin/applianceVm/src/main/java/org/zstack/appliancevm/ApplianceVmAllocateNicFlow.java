@@ -10,24 +10,27 @@ import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowException;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
-import org.zstack.identity.Account;
 import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -93,14 +96,19 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         L3NetworkVO l3NetworkVO = dbf.findByUuid(nicSpec.getL3NetworkUuid(), L3NetworkVO.class);
         L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
 
-        // set vnic type based on enableSRIOV system tag and vSwitchType
-        VSwitchType vSwitchType = new VSwitchType(l2NetworkVO.getvSwitchType());
+        // set vnic type based on enableSRIOV system tag & enableVhostUser globalConfig
         boolean enableSriov = Q.New(SystemTagVO.class)
                 .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
                 .eq(SystemTagVO_.resourceUuid, vmSpec.getVmInventory().getUuid())
                 .eq(SystemTagVO_.tag, String.format("enableSRIOV::%s", nicSpec.getL3NetworkUuid()))
                 .isExists();
-        VmNicType vmNicType = VmNicType.valueOf(vSwitchType, enableSriov);
+        boolean enableVhostUser = NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class);
+
+        VSwitchType vSwitchType = VSwitchType.valueOf(l2NetworkVO.getvSwitchType());
+        VmNicType vmNicType = vSwitchType.getVmNicTypeWithCondition(enableSriov, enableVhostUser);
+        if (vmNicType == null) {
+            throw new OperationFailureException(Platform.operr("there is no available nicType on L2 network [%s]", l2NetworkVO.getUuid()));
+        }
         inv.setType(vmNicType.toString());
         inv.setUsedIps(new ArrayList<>());
 
