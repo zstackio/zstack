@@ -1,15 +1,25 @@
 package org.zstack.testlib
 
-
+import com.google.common.collect.ImmutableMap
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.core.db.SQLBatch
 import org.zstack.header.Constants
+import org.zstack.header.host.HostNUMANode
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
 import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
+import org.zstack.header.vm.VmInstanceState
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.core.db.SQLBatch
+import org.zstack.header.Constants
+import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
@@ -361,6 +371,14 @@ class KVMSimulator implements Simulator {
 
         spec.simulator(KVMConstant.KVM_DELETE_VDPA_PATH) {
             return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_GENERATE_VHOST_USER_CLIENT_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_DELETE_VHOST_USER_CLIENT_PATH) {
+             return new KVMAgentCommands.AgentResponse()
         }
 
         spec.simulator(KVMConstant.KVM_SYNC_VM_DEVICEINFO_PATH) { HttpEntity<String> e ->
