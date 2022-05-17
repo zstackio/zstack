@@ -1,6 +1,5 @@
 package org.zstack.image;
 
-import edu.emory.mathcs.backport.java.util.Collections;
 import org.zstack.compute.vm.VmExtraInfoGetter;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.config.schema.GuestOsCategory;
@@ -11,6 +10,8 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
+
+import java.util.Collections;
 
 /**
  * Created by MaJin on 2021/3/16.

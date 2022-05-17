@@ -1,6 +1,5 @@
 package org.zstack.compute.vm;
 
-import edu.emory.mathcs.backport.java.util.Collections;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.header.core.ExceptionSafe;
@@ -9,6 +8,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.hooks.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
