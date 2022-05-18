@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS `zstack`.`SNSSmsDizhenjuEndpointVO`
+CREATE TABLE IF NOT EXISTS `zstack`.`SNSSmsPlatformVO`
 (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `username` varchar(32) NOT NULL,
@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SNSSmsDizhenjuEndpointVO`
     `serverIp` varchar(32) NOT NULL,
     `srcID` varchar(32) NOT NULL,
     `downlinkChannelNumber` varchar(32) NOT NULL,
-    PRIMARY KEY (`uuid`),
-    CONSTRAINT fkSNSDizhenjuSmsEndpointVOSNSApplicationEndpointVO FOREIGN KEY (uuid) REFERENCES SNSApplicationEndpointVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
-    ) ENGINE = InnoDB
-    DEFAULT CHARSET = utf8;
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT fkSNSSmsPlatformVOSNSApplicationPlatformVO FOREIGN KEY (uuid) REFERENCES SNSApplicationPlatformVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
