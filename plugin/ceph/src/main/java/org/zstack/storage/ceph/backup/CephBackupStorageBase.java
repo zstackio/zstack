@@ -1350,9 +1350,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    // one mon cannot get the facts, directly error out
                                     errs.add(errorCode);
-                                    coml.allDone();
+                                    coml.done();
                                 }
                             });
                         }).run(new WhileDoneCompletion(trigger) {
