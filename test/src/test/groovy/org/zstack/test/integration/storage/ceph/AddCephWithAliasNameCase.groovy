@@ -1,10 +1,15 @@
 package org.zstack.test.integration.storage.ceph
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.sdk.AddCephPrimaryStorageAction
+import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.ZoneInventory
 import org.zstack.storage.ceph.CephSystemTags
+import org.zstack.storage.ceph.backup.CephBackupStorageMonVO
+import org.zstack.storage.ceph.backup.CephBackupStorageMonVO_
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO
@@ -127,10 +132,12 @@ class AddCephWithAliasNameCase extends SubCase {
         SQL.New(CephPrimaryStoragePoolVO.class).delete()
     }
 
+
     @Override
     void test() {
         env.create {
             testAddCephWithAliasPoolName()
+            testAddCephfiled()
         }
     }
 }
