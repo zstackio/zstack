@@ -455,6 +455,7 @@ public class SourceClassMap {
 			put("org.zstack.sns.platform.email.SNSEmailPlatformInventory", "org.zstack.sdk.sns.platform.email.SNSEmailPlatformInventory");
 			put("org.zstack.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory");
 			put("org.zstack.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory", "org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory");
+	        put("org.zstack.sns.SNSSmsPlatformInventory", "org.zstack.sdk.sns.SNSSmsPlatformInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreBackupStorageInventory", "org.zstack.sdk.ImageStoreBackupStorageInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreGcResult", "org.zstack.sdk.ImageStoreGcResult");
 			put("org.zstack.storage.backup.imagestore.ImageStoreImageStruct", "org.zstack.sdk.ImageStoreImageStruct");
@@ -1136,6 +1137,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.sns.platform.email.SNSEmailEndpointInventory", "org.zstack.sns.platform.email.SNSEmailEndpointInventory");
 			put("org.zstack.sdk.sns.platform.email.SNSEmailPlatformInventory", "org.zstack.sns.platform.email.SNSEmailPlatformInventory");
 			put("org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sns.platform.http.SNSHttpEndpointInventory");
+	        put("org.zstack.sdk.sns.SNSSmsPlatformInventory", "org.zstack.sns.SNSSmsPlatformInventory");
 			put("org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory", "org.zstack.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory");
 			put("org.zstack.sdk.ticket.entity.ArchiveTicketInventory", "org.zstack.ticket.entity.ArchiveTicketInventory");
 			put("org.zstack.sdk.ticket.entity.ArchiveTicketStatusHistoryInventory", "org.zstack.ticket.entity.ArchiveTicketStatusHistoryInventory");
