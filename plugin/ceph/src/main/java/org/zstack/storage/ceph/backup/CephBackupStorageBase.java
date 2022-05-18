@@ -38,6 +38,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.storage.backup.BackupStorageBase;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.CephMonBase.PingResult;
@@ -57,6 +58,7 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.getTaskStage;
@@ -1308,12 +1310,19 @@ public class CephBackupStorageBase extends BackupStorageBase {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                flow(new NoRollbackFlow() {
+                flow(new Flow() {
                     String __name__ = "connect-monitor";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         new Connector().connect(trigger);
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        List<String> monUuids = getSelf().getMons().stream().map(ResourceVO::getUuid).collect(Collectors.toList());
+                        dbf.removeByPrimaryKeys(monUuids, CephBackupStorageMonVO.class);
+                        trigger.rollback();
                     }
                 });
 
