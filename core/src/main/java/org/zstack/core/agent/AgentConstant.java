@@ -7,6 +7,7 @@ import org.zstack.utils.path.PathUtil;
  * Created by frank on 12/5/2015.
  */
 public class AgentConstant {
+
     public static final String SERVICE_ID = "agent";
 
     public static final String ANSIBLE_PLAYBOOK_NAME = "agent.yaml";
