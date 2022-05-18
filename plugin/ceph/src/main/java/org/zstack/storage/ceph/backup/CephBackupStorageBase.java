@@ -1334,6 +1334,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                         DebugUtils.Assert(!mons.isEmpty(), "how can be no connected MON!!! ???");
 
                         List<ErrorCode> errs = Collections.synchronizedList(new ArrayList<>());
+
                         new While<>(mons).all((mon, coml) ->{
                             GetFactsCmd cmd = new GetFactsCmd();
                             cmd.uuid = self.getUuid();
@@ -1341,6 +1342,12 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             mon.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(coml) {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
+                                    if (!rsp.success) {
+                                        errs.add(operr("operation error, because:%s", rsp.error));
+                                        coml.done();
+                                        return;
+                                    }
+
                                     CephBackupStorageMonVO monVO = mon.getSelf();
                                     fsids.put(monVO.getUuid(), rsp.fsid);
                                     monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
@@ -1350,9 +1357,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    // one mon cannot get the facts, directly error out
                                     errs.add(errorCode);
-                                    coml.allDone();
+                                    coml.done();
                                 }
                             });
                         }).run(new WhileDoneCompletion(trigger) {
