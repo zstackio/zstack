@@ -476,6 +476,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>sns-dizhenju-sms</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>guesttools</artifactId>
                     <version>${project.version}</version>
                 </dependency>
