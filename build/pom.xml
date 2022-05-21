@@ -86,6 +86,13 @@
                                     </includes>
                                 </resource>
                                 <resource>
+                                    <directory>../premium/plugin-premium/sns-dizhenju-sms/ext-libs</directory>
+                                    <targetPath>WEB-INF/lib</targetPath>
+                                    <includes>
+                                        <include>*.jar</include>
+                                    </includes>
+                                </resource>
+                                <resource>
                                     <directory>../premium/plugin-premium/cas-plugin/ext-libs</directory>
                                     <targetPath>WEB-INF/lib</targetPath>
                                     <includes>
