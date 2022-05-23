@@ -53,4 +53,6 @@ public class ImageSystemTags {
 
     public static String IMAGE_ID ="imageId";
     public static PatternedSystemTag UPLOAD_IMAGE_INFO = new PatternedSystemTag(String.format("uploadImage::{%s}", IMAGE_ID), LongJobVO.class);
+
+    public static PatternedSystemTag BACKUP_IMAGE = new PatternedSystemTag("backupImage", ImageVO.class);
 }
