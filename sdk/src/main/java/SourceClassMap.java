@@ -471,6 +471,7 @@ public class SourceClassMap {
 			put("org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdnController.header.SdnControllerInventory", "org.zstack.sdk.SdnControllerInventory");
 			put("org.zstack.sdnController.header.SdnVniRange", "org.zstack.sdk.SdnVniRange");
+			put("org.zstack.smzy.entity.SecurityLevelResourceRefInventory", "org.zstack.sdk.SecurityLevelResourceRefInventory");
 			put("org.zstack.sns.SNSApplicationEndpointInventory", "org.zstack.sdk.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sns.SNSApplicationPlatformInventory", "org.zstack.sdk.sns.SNSApplicationPlatformInventory");
 			put("org.zstack.sns.SNSSmsEndpointInventory", "org.zstack.sdk.sns.SNSSmsEndpointInventory");
@@ -1010,6 +1011,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SecurityGroupIngressRuleTO", "org.zstack.network.securitygroup.SecurityGroupIngressRuleTO");
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
+			put("org.zstack.sdk.SecurityLevelResourceRefInventory", "org.zstack.smzy.entity.SecurityLevelResourceRefInventory");
 			put("org.zstack.sdk.SecurityMachineInventory", "org.zstack.header.securitymachine.SecurityMachineInventory");
 			put("org.zstack.sdk.SessionInventory", "org.zstack.header.identity.SessionInventory");
 			put("org.zstack.sdk.SessionStatus", "org.zstack.header.portMirror.SessionStatus");
