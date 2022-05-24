@@ -1,10 +1,16 @@
 package org.zstack.test.integration.storage.ceph
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.sdk.AddCephPrimaryStorageAction
 import org.zstack.storage.ceph.CephSystemTags
+import org.zstack.storage.ceph.backup.CephBackupStorageBase
+import org.zstack.storage.ceph.backup.CephBackupStorageMonVO
+import org.zstack.storage.ceph.backup.CephBackupStorageMonVO_
+import org.zstack.storage.ceph.backup.CephBackupStorageVO
+import org.zstack.storage.ceph.backup.CephBackupStorageVO_
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO
@@ -13,6 +19,8 @@ import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
+
 /**
  * Created by AlanJager on 2017/9/1.
  */
@@ -127,10 +135,42 @@ class AddCephWithAliasNameCase extends SubCase {
         SQL.New(CephPrimaryStoragePoolVO.class).delete()
     }
 
+    void testFailedToAddCephBsAndCheckMonVo() {
+        env.cleanSimulatorHandlers()
+        String cephPsUuid = Platform.getUuid()
+
+        env.simulator(CephBackupStorageBase.GET_FACTS) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.GetFactsCmd.class)
+            def rsp = new CephPrimaryStorageBase.GetFactsRsp()
+            CephBackupStorageMonVO mon = dbFindByUuid(cmd.monUuid, CephBackupStorageMonVO.class)
+            if (mon != null && mon.getHostname() == "127.0.0.3") {
+                rsp.setSuccess(false)
+                rsp.setError("failed to GET_FACTS on purpose")
+            }
+            if (mon != null && mon.getHostname() == "127.0.0.1") {
+                sleep(1000)
+            }
+            return rsp
+        }
+
+        expectError {
+            addCephBackupStorage {
+                resourceUuid = cephPsUuid
+                name = "ceph-primary"
+                url = "/ceph"
+                monUrls = ["root:password@127.0.0.1", "root:password@127.0.0.2", "root:password@127.0.0.3"]
+                poolName = "pool-name"
+            }
+        }
+        assert !Q.New(CephBackupStorageMonVO.class).eq(CephBackupStorageMonVO_.backupStorageUuid, cephPsUuid).isExists()
+        env.cleanSimulatorHandlers()
+    }
+
     @Override
     void test() {
         env.create {
             testAddCephWithAliasPoolName()
+            testFailedToAddCephBsAndCheckMonVo()
         }
     }
 }
