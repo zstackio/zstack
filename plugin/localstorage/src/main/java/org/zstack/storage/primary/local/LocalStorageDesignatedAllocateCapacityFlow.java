@@ -185,12 +185,6 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
             return msgs;
         }
 
-        String bsType = Q.New(BackupStorageVO.class)
-                .select(BackupStorageVO_.type)
-                .eq(BackupStorageVO_.uuid,spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid())
-                .findValue();
-        List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
-
         for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
             AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
             amsg.setSize(dinv.getDiskSize());
@@ -205,7 +199,6 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
                 amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
             }
 
-            amsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
             amsg.setDiskOfferingUuid(dinv.getUuid());
             if (spec.getImageSpec() != null) {
                 amsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());

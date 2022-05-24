@@ -170,7 +170,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }).run(new WhileDoneCompletion(trigger) {
                 @Override
                 public void done(ErrorCodeList errorCodeList) {
-                    if (errorCodes.size() == availablePsUuids.size()) {
+                    if (errorCodes.size() == psCombos.size()) {
                         trigger.fail(errorCodes.get(0));
                         return;
                     }
