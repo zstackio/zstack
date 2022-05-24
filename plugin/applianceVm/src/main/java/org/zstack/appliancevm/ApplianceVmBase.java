@@ -693,6 +693,8 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             final VmInstanceSpec spec = new VmInstanceSpec();
             spec.setVmInventory(msg.getVmInstanceInventory());
+            spec.setRequiredPrimaryStorageUuidForRootVolume(smsg.getApplianceVmSpec().getPrimaryStorageUuidForRootVolume());
+            spec.setRootVolumeSystemTags(smsg.getApplianceVmSpec().getRootVolumeSystemTags());
             spec.setRequiredHostUuid(smsg.getApplianceVmSpec().getRequiredHostUuid());
             List<VmNicSpec> nicSpecs = new ArrayList<>();
             if (msg.getL3NetworkUuids() != null && !msg.getL3NetworkUuids().isEmpty()) {

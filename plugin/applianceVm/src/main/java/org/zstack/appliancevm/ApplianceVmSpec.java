@@ -45,6 +45,8 @@ public class ApplianceVmSpec implements Serializable {
     private String requiredZoneUuid;
     private String requiredClusterUuid;
     private String requiredHostUuid;
+    private String primaryStorageUuidForRootVolume;
+    private List<String> rootVolumeSystemTags;
     @NoJsonSchema
     private Map<String, JsonWrapper> applianceData = new HashMap<>();
 
@@ -238,6 +240,14 @@ public class ApplianceVmSpec implements Serializable {
     public String getRequiredHostUuid() { return requiredHostUuid; }
 
     public void setRequiredHostUuid(String requiredHostUuid) { this.requiredHostUuid = requiredHostUuid; }
+
+    public String getPrimaryStorageUuidForRootVolume() { return primaryStorageUuidForRootVolume; }
+
+    public void setPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) { this.primaryStorageUuidForRootVolume = primaryStorageUuidForRootVolume; }
+
+    public List<String> getRootVolumeSystemTags() { return rootVolumeSystemTags; }
+
+    public void setRootVolumeSystemTags(List<String> rootVolumeSystemTags) { this.rootVolumeSystemTags = rootVolumeSystemTags; }
 
     public <T> T getExtensionData(String key, Class<?> clazz) {
         JsonWrapper<T> wrapper = applianceData.get(key);

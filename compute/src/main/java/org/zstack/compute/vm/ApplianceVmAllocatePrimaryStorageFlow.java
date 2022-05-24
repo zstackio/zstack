@@ -127,6 +127,7 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
                         volumeSpec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
                         volumeSpec.setSize(ar.getSize());
                         volumeSpec.setType(msg.getImageUuid() != null ? VolumeType.Root.toString() : VolumeType.Data.toString());
+                        volumeSpec.setTags(spec.getRootVolumeSystemTags());
                         spec.getVolumeSpecs().add(volumeSpec);
 
                         completion.success();
