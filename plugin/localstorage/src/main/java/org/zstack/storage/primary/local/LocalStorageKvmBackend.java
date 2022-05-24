@@ -1321,7 +1321,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     LocalStorageBackupStorageMediator m = localStorageFactory.getBackupStorageMediator(KVMConstant.KVM_HYPERVISOR_TYPE, backupStorage.getType());
                                     m.downloadBits(getSelfInventory(), backupStorage,
                                             backupStorageInstallPath, primaryStorageInstallPath,
-                                            hostUuid, false, new Completion(trigger) {
+                                            hostUuid, false, image.getUuid(), new Completion(trigger) {
                                                 @Override
                                                 public void success() {
                                                     trigger.next();
@@ -1657,7 +1657,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         } else {
             installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
         }
-        m.downloadBits(getSelfInventory(), BackupStorageInventory.valueOf(bsvo), msg.getBackupStorageRef().getInstallPath(), installPath, msg.getHostUuid(), true, new Completion(completion) {
+        m.downloadBits(getSelfInventory(), BackupStorageInventory.valueOf(bsvo), msg.getBackupStorageRef().getInstallPath(), installPath, msg.getHostUuid(), true, msg.getImage().getUuid(), new Completion(completion) {
             @Override
             public void success() {
                 DownloadDataVolumeToPrimaryStorageReply reply = new DownloadDataVolumeToPrimaryStorageReply();

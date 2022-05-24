@@ -1342,6 +1342,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     tagMgr.createTags(msgData.getSystemTags(), msgData.getUserTags(), vo.getUuid(), ImageVO.class.getSimpleName());
                 }
 
+                tagMgr.createNonInherentSystemTag(vo.getUuid(), ImageSystemTags.BACKUP_IMAGE.getTagFormat(), ImageVO.class.getSimpleName());
                 return ivo;
             }
         }.execute();

@@ -10,7 +10,7 @@ import org.zstack.header.storage.primary.PrimaryToBackupStorageMediator;
  * Created by frank on 7/1/2015.
  */
 public interface LocalStorageBackupStorageMediator extends PrimaryToBackupStorageMediator {
-    void downloadBits(PrimaryStorageInventory pinv, BackupStorageInventory bsinv, String backupStorageInstallPath, String primaryStorageInstallPath, String hostUuid, boolean isData, Completion completion);
+    void downloadBits(PrimaryStorageInventory pinv, BackupStorageInventory bsinv, String backupStorageInstallPath, String primaryStorageInstallPath, String hostUuid, boolean isData, String ImageUuid, Completion completion);
 
     void uploadBits(String imageUuid, PrimaryStorageInventory pinv, BackupStorageInventory bsinv, String backupStorageInstallPath, String primaryStorageInstallPath, String hostUuid, ReturnValueCompletion<String> completion);
 }

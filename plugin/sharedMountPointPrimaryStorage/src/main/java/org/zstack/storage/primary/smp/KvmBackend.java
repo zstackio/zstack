@@ -633,7 +633,7 @@ public class KvmBackend extends HypervisorBackend {
 
                                 private void downloadFromBackupStorage(FlowTrigger trigger) {
                                     BackupStorageKvmDownloader downloader = getBackupStorageKvmDownloader(backupStorageUuid);
-                                    downloader.downloadBits(backupStorageInstallPath, primaryStorageInstallPath, false, new Completion(trigger) {
+                                    downloader.downloadBits(backupStorageInstallPath, primaryStorageInstallPath, false, image.getUuid(), new Completion(trigger) {
                                         @Override
                                         public void success() {
                                             trigger.next();
@@ -1009,7 +1009,7 @@ public class KvmBackend extends HypervisorBackend {
             installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
         }
         BackupStorageKvmDownloader downloader = getBackupStorageKvmDownloader(msg.getBackupStorageRef().getBackupStorageUuid());
-        downloader.downloadBits(msg.getBackupStorageRef().getInstallPath(), installPath, true, new Completion(completion) {
+        downloader.downloadBits(msg.getBackupStorageRef().getInstallPath(), installPath, true, msg.getImage().getUuid(), new Completion(completion) {
             @Override
             public void success() {
                 DownloadDataVolumeToPrimaryStorageReply reply = new DownloadDataVolumeToPrimaryStorageReply();
@@ -1822,7 +1822,7 @@ public class KvmBackend extends HypervisorBackend {
         }
 
         @Override
-        public void downloadBits(final String bsPath, final String psPath, boolean isData, final Completion completion) {
+        public void downloadBits(final String bsPath, final String psPath, boolean isData, String imageUuid, final Completion completion) {
             GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
             gmsg.setBackupStorageUuid(bsUuid);
             bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
