@@ -86,4 +86,19 @@ public class SharedBlockInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.Long totalCapacity;
+    public void setTotalCapacity(java.lang.Long totalCapacity) {
+        this.totalCapacity = totalCapacity;
+    }
+    public Long getTotalCapacity() {
+        return totalCapacity;
+    }
+
+    public java.lang.Long availableCapacity;
+    public void setAvailableCapacity(java.lang.Long availableCapacity) {
+        this.availableCapacity = availableCapacity;
+    }
+    public Long getAvailableCapacity() {
+        return availableCapacity;
+    }
 }
