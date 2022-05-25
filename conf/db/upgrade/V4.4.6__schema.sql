@@ -14,4 +14,4 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ImagePackageVO` (
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkImagePackageVOVmInstanceEO` FOREIGN KEY (`vmUuid`) REFERENCES VmInstanceEO(`uuid`) ON DELETE SET NULL,
     CONSTRAINT `fkImagePackageVOBackupStorageEO` FOREIGN KEY (`backupStorageUuid`) REFERENCES BackupStorageEO(`uuid`) ON DELETE CASCADE
-) ENGINE = InnoDB DEFAULT CHARSET = utf8
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
