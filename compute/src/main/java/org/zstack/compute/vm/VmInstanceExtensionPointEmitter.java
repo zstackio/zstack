@@ -6,7 +6,6 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
@@ -403,7 +402,9 @@ public class VmInstanceExtensionPointEmitter implements Component {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                                logger.debug(String.format("found a error when calling afterDetachVolume[volumeUuid:%s] extension point" +
+                                        ":%s, ignore it", volume.getUuid(), errorCode.getDetails()));
+                                trigger.next();
                             }
                         });
                     }
