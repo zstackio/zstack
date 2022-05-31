@@ -26,6 +26,7 @@ import org.zstack.header.image.ImageDeletionPolicyManager
 import org.zstack.header.message.Message
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
+import org.zstack.header.vm.VmSchedHistoryVO
 import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
@@ -690,7 +691,7 @@ class EnvSpec extends ApiHelper implements Node  {
                               "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO",
                               "CaptchaVO", "LoginAttemptsVO", "SchedulerJobHistoryVO",
                               "HistoricalPasswordVO", "BuildAppExportHistoryVO", "InstallPathRecycleVO", 
-                              "PortMirrorSessionSequenceNumberVO", "LicenseHistoryVO", "EventLogVO",
+                              "PortMirrorSessionSequenceNumberVO", "LicenseHistoryVO", "EventLogVO", "VmSchedHistoryVO",
                               "EventRecordsVO", "AuditsVO", "AlarmRecordsVO", "VmCrashHistoryVO", "EncryptionIntegrityVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
@@ -837,6 +838,7 @@ class EnvSpec extends ApiHelper implements Node  {
             callDeleteOnResourcesNeedDeletion()
 
             SQL.New(EventLogVO.class).hardDelete()
+            SQL.New(VmSchedHistoryVO).hardDelete()
             SQL.New(TaskProgressVO.class).hardDelete()
             SQL.New(SessionVO.class).hardDelete()
             SQL.New(GuestOsCategoryVO.class).hardDelete()
