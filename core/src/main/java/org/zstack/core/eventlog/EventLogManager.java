@@ -11,6 +11,8 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.vm.VmSchedHistoryVO;
+import org.zstack.header.vm.VmSchedHistoryVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -142,6 +144,9 @@ public class EventLogManager implements EventLogger, Component, ManagementNodeRe
                 Timestamp deadline = new Timestamp(getCurrentSqlTime().getTime() - milliseconds);
                 UpdateQuery.New(EventLogVO.class)
                         .lt(EventLogVO_.createDate, deadline)
+                        .hardDelete();
+                UpdateQuery.New(VmSchedHistoryVO.class)
+                        .lt(VmSchedHistoryVO_.createDate, deadline)
                         .hardDelete();
             }
         });

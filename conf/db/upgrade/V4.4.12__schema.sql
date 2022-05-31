@@ -22,3 +22,17 @@ DELIMITER ;
 
 CALL Alter_SCSI_Table();
 DROP PROCEDURE Alter_SCSI_Table;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`VmSchedHistoryVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `vmInstanceUuid` char(32) NOT NULL,
+    `accountUuid` char(32) NOT NULL,
+    `schedType` varchar(32) NOT NULL,
+    `success` tinyint(1),
+    `lastHostUuid` char(32) NOT NULL,
+    `destHostUuid` char(32),
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idxVmSchedHistoryVOVmInstanceUuid (vmInstanceUuid),
+    PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;

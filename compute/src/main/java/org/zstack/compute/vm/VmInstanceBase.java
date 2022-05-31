@@ -878,6 +878,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
+                // It is better to monitor HaStartVmInstanceMsg and HaStartVmInstanceReply,
+                // instead of intrusively recording the scheduling record here.
+                // The problem is, we have two early exits:
+                //   1. throwing exception;
+                //   2. judges no need to start VM.
+                // thus, with monitoring, there might be false records.
+                final VmSchedHistoryRecorder recorder = new VmSchedHistoryRecorder("VMHA", msg.getVmInstanceUuid()).begin();
                 ErrorCodeList errList = new ErrorCodeList();
                 new While<>(pluginRgty.getExtensionList(BeforeHaStartVmInstanceExtensionPoint.class)).each((ext, whileCompletion) -> {
                     ext.beforeHaStartVmInstance(msg.getVmInstanceUuid(), msg.getJudgerClassName(), msg.getSoftAvoidHostUuids(), new Completion(msg) {
@@ -898,6 +905,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         if (!errList.getCauses().isEmpty()) {
                             reply.setError(errList.getCauses().get(0));
                             bus.reply(msg, reply);
+                            recorder.end(null);
                             chain.next();
                             return;
                         }
@@ -920,6 +928,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             public void success() {
                                 reply.setInventory(getSelfInventory());
                                 bus.reply(msg, reply);
+                                recorder.end(reply.getInventory().getHostUuid());
                                 chain.next();
                             }
 
@@ -927,6 +936,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             public void fail(ErrorCode errorCode) {
                                 reply.setError(errorCode);
                                 bus.reply(msg, reply);
+                                recorder.end(null);
                                 chain.next();
                             }
                         });
