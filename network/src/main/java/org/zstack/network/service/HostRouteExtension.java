@@ -142,6 +142,6 @@ public class HostRouteExtension extends AbstractNetworkServiceExtension implemen
 
     @Override
     public List<String> getAliasIds() {
-        return null;
+        return Collections.emptyList();
     }
 }

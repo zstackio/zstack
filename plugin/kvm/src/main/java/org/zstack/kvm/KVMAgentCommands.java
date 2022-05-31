@@ -1496,6 +1496,9 @@ public class KVMAgentCommands {
         private String memorySnapshotPath;
         private boolean coloPrimary;
         private boolean coloSecondary;
+        private String imageUuid;
+        private String psUrl;
+        private String guestOsType;
 
         // TODO: only for test
         private boolean useColoBinary;
@@ -1578,6 +1581,14 @@ public class KVMAgentCommands {
 
         public void setApplianceVm(boolean applianceVm) {
             isApplianceVm = applianceVm;
+        }
+
+        public String getGuestOsType() {
+            return guestOsType;
+        }
+
+        public void setGuestOsType(String guestOsType) {
+            this.guestOsType = guestOsType;
         }
 
         public String getSystemSerialNumber() {
@@ -1788,6 +1799,22 @@ public class KVMAgentCommands {
 
         public void setRootVolume(VolumeTO rootVolume) {
             this.rootVolume = rootVolume;
+        }
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
+
+        public String getPsUrl() {
+            return psUrl;
+        }
+
+        public void setPsUrl(String psUrl) {
+            this.psUrl = psUrl;
         }
 
         public List<VolumeTO> getDataVolumes() {

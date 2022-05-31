@@ -51,13 +51,13 @@ public class ClusterCascadeExtension extends AbstractAsyncCascadeExtension {
         } else if (action.isActionCode(CascadeConstant.DELETION_DELETE_CODE, CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
             handleDeletion(action, completion);
         } else if (action.isActionCode(CascadeConstant.DELETION_CLEANUP_CODE)) {
-            handleDeletionCleanup(action, completion);
+            handleDeletionCleanup(completion);
         } else {
             completion.success();
         }
     }
 
-    private void handleDeletionCleanup(CascadeAction action, Completion completion) {
+    private void handleDeletionCleanup(Completion completion) {
         dbf.eoCleanup(ClusterVO.class);
         completion.success();
     }

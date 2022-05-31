@@ -1387,7 +1387,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         final ImageSpec ispec = msg.getTemplateSpec();
         final ImageInventory image = ispec.getInventory();
 
-        if (!ImageMediaType.RootVolumeTemplate.toString().equals(image.getMediaType())) {
+        if (!(ImageMediaType.RootVolumeTemplate.toString().equals(image.getMediaType()))) {
             createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<String>(completion) {
                 @Override
                 public void success(String returnValue) {

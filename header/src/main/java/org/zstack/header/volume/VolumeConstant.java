@@ -9,6 +9,8 @@ public interface VolumeConstant {
     String VOLUME_FORMAT_QCOW2 = "qcow2";
     String VOLUME_FORMAT_VMTX = "vmtx";
 
+    long DATA_VOLUME_LIMIT = 22;
+
     enum Capability {
         MigrationInCurrentPrimaryStorage,
         MigrationToOtherPrimaryStorage

@@ -220,6 +220,6 @@ public class DnsExtension extends AbstractNetworkServiceExtension implements Com
 
     @Override
     public List<String> getAliasIds() {
-        return null;
+        return Collections.emptyList();
     }
 }

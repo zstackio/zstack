@@ -5303,6 +5303,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         extEmitter.preAttachVolume(getSelfInventory(), volume);
         extEmitter.beforeAttachVolume(getSelfInventory(), volume, data);
 
+        long attachedDataVolumeNum = Q.New(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                .eq(VolumeVO_.type, VolumeType.Data)
+                .count();
+        if (attachedDataVolumeNum >= VolumeConstant.DATA_VOLUME_LIMIT){
+            throw new CloudRuntimeException(String.format("vm[uuid:%s] exceeds max dataVolume limit[%s]", msg.getVmInstanceUuid(), VolumeConstant.DATA_VOLUME_LIMIT));
+
+        }
+
         VmInstanceSpec spec = new VmInstanceSpec();
         spec.setMessage(msg);
         spec.setVmInventory(VmInstanceInventory.valueOf(self));

@@ -7,7 +7,8 @@ public enum ImagePlatform {
     Windows(false),
     WindowsVirtio(true),
     Other(false),
-    Paravirtualization(true);
+    Paravirtualization(true),
+    Embedded(false);
 
     public static boolean isType(String actual, ImagePlatform... expected) {
         for (ImagePlatform imagePlatform : expected) {

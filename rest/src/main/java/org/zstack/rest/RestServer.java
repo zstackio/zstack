@@ -58,6 +58,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -408,7 +409,7 @@ public class RestServer implements Component, CloudBusEventListener {
             MapField at = f.getAnnotation(MapField.class);
             DebugUtils.Assert(at!=null, String.format("%s::%s must be annotated by @MapField", apiClass, fname));
 
-            Map m = (Map) params.get(fname);
+            Map m = (Map) params.computeIfAbsent(fname, k -> new ArrayList<>());
             if (m == null) {
                 m = new HashMap();
                 params.put(fname, m);
@@ -852,8 +853,13 @@ public class RestServer implements Component, CloudBusEventListener {
                     continue;
                 }
                 String objectString = object.toString();
-
                 String result = TypeVerifier.verify(f, objectString);
+                if (fieldName == "diskSize"){
+                    BigDecimal bdval = new BigDecimal(objectString);
+                    if (bdval.compareTo(new BigDecimal(String.valueOf(Long.MAX_VALUE))) == 1){
+                        throw new APIMessage.InvalidApiMessageException("field[diskSize] must be in range of [1, 9223372036854775807]");
+                    }
+                }
                 if (result != null) {
                     throw new RestException(HttpStatus.BAD_REQUEST.value(), result);
                 }
@@ -1027,10 +1033,10 @@ public class RestServer implements Component, CloudBusEventListener {
                 for (String cond : conds) {
                     String OP = null;
                     String delimiter = null;
-                    for (String op : QUERY_OP_MAPPING.keySet()) {
-                        if (cond.contains(op)) {
-                            OP = QUERY_OP_MAPPING.get(op);
-                            delimiter = op;
+                    for (Map.Entry<String, String> entry : QUERY_OP_MAPPING.entrySet()) {
+                        if (cond.contains(entry.getKey())) {
+                            OP = entry.getValue();
+                            delimiter = entry.getKey();
                             break;
                         }
                     }
