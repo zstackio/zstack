@@ -64,7 +64,7 @@ public class CreateIPsecConnectionAction extends AbstractAction {
     @Param(required = false, validValues = {"3des","aes-128","aes-192","aes-256"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String policyEncryptionAlgorithm = "aes-128";
 
-    @Param(required = false, validValues = {"dh-group2","dh-group5","dh-group14","dh-group15","dh-group16","dh-group17","dh-group18","dh-group19","dh-group20","dh-group21","dh-group22","dh-group23","dh-group24","dh-group25","dh-group26"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"none","dh-group0","dh-group2","dh-group5","dh-group14","dh-group15","dh-group16","dh-group17","dh-group18","dh-group19","dh-group20","dh-group21","dh-group22","dh-group23","dh-group24","dh-group25","dh-group26"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String pfs;
 
     @Param(required = false, validValues = {"tunnel","transport"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
