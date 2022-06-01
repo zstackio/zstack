@@ -4,3 +4,6 @@ ALTER TABLE `zstack`.`CdpPolicyEO` ADD COLUMN `fullBackupInterval` int unsigned 
 
 DROP VIEW IF EXISTS `zstack`.`CdpPolicyVO`;
 CREATE VIEW `zstack`.`CdpPolicyVO` AS SELECT uuid, name, description, retentionTimePerDay, dailyRPSinceDay, expireTime, recoveryPointPerSecond, fullBackupInterval, state, lastOpDate, createDate FROM `zstack`.`CdpPolicyEO` WHERE deleted IS NULL;
+
+ALTER TABLE `zstack`.`CdpTaskVO` ADD COLUMN `maxLatency` bigint(20) unsigned DEFAULT 0;
+ALTER TABLE `zstack`.`CdpTaskVO` ADD COLUMN `currentLatency` bigint(20) unsigned DEFAULT 0;
