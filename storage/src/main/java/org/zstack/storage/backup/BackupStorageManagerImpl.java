@@ -147,6 +147,11 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
         BackupStorageFactory factory = getBackupStorageFactory(BackupStorageType.valueOf(vo.getType()));
         BackupStorageVO finalVo = vo;
         BackupStorage ss = New(()-> factory.getBackupStorage(finalVo));
+        if (ss == null) {
+            String err = String.format("Cannot find backup storage[uuid:%s],backup storage type is %s , it may have been deleted", pmsg.getBackupStorageUuid(), vo.getType());
+            bus.replyErrorByMessageType(msg, err);
+            return;
+        }
         ss.handleMessage(msg);
     }
 
