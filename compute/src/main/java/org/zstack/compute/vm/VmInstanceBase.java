@@ -3502,6 +3502,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     creply.setPort(hr.getPort());
                     creply.setProtocol(hr.getProtocol());
                     creply.setVdiPortInfo(hr.getVdiPortInfo());
+                    creply.setPath(hr.getPath());
                 }
 
                 bus.reply(msg, creply);

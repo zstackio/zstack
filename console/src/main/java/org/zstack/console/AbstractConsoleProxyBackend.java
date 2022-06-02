@@ -269,6 +269,15 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         q.add(ConsoleProxyVO_.status, SimpleQuery.Op.EQ, ConsoleProxyStatus.Active);
         final ConsoleProxyVO vo = q.find();
         if (vo != null) {
+            // wss do not request console proxy because it connect to vm's host directly
+            // so skip deleteProxy
+            // TODO: use ConsoleUrl returned needConsoleProxy as vo attribute for checking instead of schema
+            if (ConsoleConstants.WSS_SCHEMA.equals(vo.getScheme())) {
+                dbf.remove(vo);
+                completion.success();
+                return;
+            }
+
             ConsoleProxy proxy = getConsoleProxy(vm, vo);
             proxy.deleteProxy(vm, new Completion(completion) {
                 @Override
