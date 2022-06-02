@@ -39,7 +39,7 @@ if [ $tool = 'zstack-cli' ]; then
     CLI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackcli
     [ ! -z $force ] && rm -rf $CLI_VIRENV_PATH
     if [ ! -d "$CLI_VIRENV_PATH" ]; then
-        virtualenv $CLI_VIRENV_PATH
+        virtualenv $CLI_VIRENV_PATH --python=python2.7
         if [ $? -ne 0 ]; then
             rm -rf $CLI_VIRENV_PATH
             exit 1
@@ -74,7 +74,7 @@ if [ $tool = 'zstack-cli' ]; then
 
 elif [ $tool = 'zstack-ctl' ]; then
     CTL_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackctl
-    rm -rf $CTL_VIRENV_PATH && virtualenv $CTL_VIRENV_PATH || exit 1
+    rm -rf $CTL_VIRENV_PATH && virtualenv $CTL_VIRENV_PATH --python=python2.7 || exit 1
     . $CTL_VIRENV_PATH/bin/activate
     cd $cwd
     pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackctl-*.tar.gz || exit 1
@@ -85,7 +85,7 @@ elif [ $tool = 'zstack-dashboard' ]; then
     UI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstack-dashboard
     [ ! -z $force ] && rm -rf $UI_VIRENV_PATH
     if [ ! -d "$UI_VIRENV_PATH" ]; then
-        virtualenv $UI_VIRENV_PATH
+        virtualenv $UI_VIRENV_PATH --python=python2.7
         if [ $? -ne 0 ]; then
             rm -rf $UI_VIRENV_PATH
             exit 1
