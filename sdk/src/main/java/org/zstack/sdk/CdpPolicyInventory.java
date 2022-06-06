@@ -44,6 +44,38 @@ public class CdpPolicyInventory  {
         return this.retentionTimePerDay;
     }
 
+    public java.lang.Integer hourlyRpSinceDay;
+    public void setHourlyRpSinceDay(java.lang.Integer hourlyRpSinceDay) {
+        this.hourlyRpSinceDay = hourlyRpSinceDay;
+    }
+    public java.lang.Integer getHourlyRpSinceDay() {
+        return this.hourlyRpSinceDay;
+    }
+
+    public java.lang.Integer dailyRpSinceDay;
+    public void setDailyRpSinceDay(java.lang.Integer dailyRpSinceDay) {
+        this.dailyRpSinceDay = dailyRpSinceDay;
+    }
+    public java.lang.Integer getDailyRpSinceDay() {
+        return this.dailyRpSinceDay;
+    }
+
+    public java.lang.Integer expireTimeInDay;
+    public void setExpireTimeInDay(java.lang.Integer expireTimeInDay) {
+        this.expireTimeInDay = expireTimeInDay;
+    }
+    public java.lang.Integer getExpireTimeInDay() {
+        return this.expireTimeInDay;
+    }
+
+    public java.lang.Integer fullBackupIntervalInDay;
+    public void setFullBackupIntervalInDay(java.lang.Integer fullBackupIntervalInDay) {
+        this.fullBackupIntervalInDay = fullBackupIntervalInDay;
+    }
+    public java.lang.Integer getFullBackupIntervalInDay() {
+        return this.fullBackupIntervalInDay;
+    }
+
     public java.lang.Integer recoveryPointPerSecond;
     public void setRecoveryPointPerSecond(java.lang.Integer recoveryPointPerSecond) {
         this.recoveryPointPerSecond = recoveryPointPerSecond;

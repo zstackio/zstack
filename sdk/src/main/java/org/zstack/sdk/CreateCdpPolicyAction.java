@@ -31,8 +31,20 @@ public class CreateCdpPolicyAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,30L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,30L}, noTrim = false)
     public java.lang.Integer retentionTimePerDay;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,30L}, noTrim = false)
+    public java.lang.Integer hourlyRpSinceDay;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer dailyRpSinceDay = 0;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer expireTimeInDay = 0;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,10L}, noTrim = false)
+    public java.lang.Integer fullBackupIntervalInDay = 1;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,3600L}, noTrim = false)
     public java.lang.Integer recoveryPointPerSecond;
