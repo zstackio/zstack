@@ -2,6 +2,7 @@ package org.zstack.storage.snapshot;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -11,9 +12,11 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
+import org.zstack.header.storage.snapshot.group.MemorySnapshotValidatorExtensionPoint;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
@@ -42,6 +45,8 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    protected PluginRegistry pluginRgty;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof VolumeSnapshotMessage) {
@@ -77,10 +82,25 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
         return msg;
     }
 
+    private boolean isWithMemoryForSnapshotGroup(VolumeSnapshotGroupVO groupVO) {
+        return groupVO.getVolumeSnapshotRefs().stream().anyMatch(ref -> ref.getVolumeType().equals(VolumeType.Memory.toString()));
+    }
+
     private void validate(APIRevertVmFromSnapshotGroupMsg msg) {
         VolumeSnapshotGroupVO group = dbf.findByUuid(msg.getUuid(), VolumeSnapshotGroupVO.class);
 
-        if (group.getVolumeSnapshotRefs().stream().anyMatch(ref -> ref.getVolumeType().equals(VolumeType.Memory.toString()))
+        for (MemorySnapshotValidatorExtensionPoint ext : pluginRgty.getExtensionList(MemorySnapshotValidatorExtensionPoint.class)) {
+            if (!isWithMemoryForSnapshotGroup(group)) {
+                break;
+            }
+
+            ErrorCode errorCode = ext.checkVmWhereMemorySnapshotExistExternalDevices(group.getVmInstanceUuid());
+            if (errorCode != null) {
+                throw new ApiMessageInterceptionException(errorCode);
+            }
+        }
+
+        if (isWithMemoryForSnapshotGroup(group)
                 && Q.New(VmInstanceVO.class)
                 .eq(VmInstanceVO_.uuid, group.getVmInstanceUuid())
                 .in(VmInstanceVO_.state, Arrays.asList(VmInstanceState.Running, VmInstanceState.Paused))
