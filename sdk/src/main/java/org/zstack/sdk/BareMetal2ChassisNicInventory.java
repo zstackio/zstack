@@ -28,6 +28,14 @@ public class BareMetal2ChassisNicInventory  {
         return this.mac;
     }
 
+    public java.lang.String nicName;
+    public String getNicName() {
+        return nicName;
+    }
+    public void setNicName(String nicName) {
+        this.nicName = nicName;
+    }
+
     public java.lang.String speed;
     public void setSpeed(java.lang.String speed) {
         this.speed = speed;

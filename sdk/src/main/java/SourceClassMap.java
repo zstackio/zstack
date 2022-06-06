@@ -692,6 +692,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BackupStorageExternalBackupInfo", "org.zstack.externalbackup.BackupStorageExternalBackupInfo");
 			put("org.zstack.sdk.BackupStorageInventory", "org.zstack.header.storage.backup.BackupStorageInventory");
 			put("org.zstack.sdk.BareMetal2BillingInventory", "org.zstack.billing.generator.baremetal2.BareMetal2BillingInventory");
+			put("org.zstack.sdk.BareMetal2BondingInventory", "org.zstack.baremetal2.chassis.BareMetal2BondingInventory");
+			put("org.zstack.sdk.BareMetal2BondingNicRefInventory", "org.zstack.baremetal2.chassis.BareMetal2BondingNicRefInventory");
 			put("org.zstack.sdk.BareMetal2ChassisDiskInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisDiskInventory");
 			put("org.zstack.sdk.BareMetal2ChassisInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisInventory");
 			put("org.zstack.sdk.BareMetal2ChassisNicInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisNicInventory");
