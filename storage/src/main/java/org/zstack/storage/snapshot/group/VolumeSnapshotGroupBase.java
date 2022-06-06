@@ -8,6 +8,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -15,6 +16,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.SimpleFlowChain;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
@@ -55,6 +57,8 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
     private DatabaseFacade dbf;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public VolumeSnapshotGroupBase(VolumeSnapshotGroupVO self) {
         this.self = self;
@@ -276,6 +280,35 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                         trigger.next();
                     }
                 });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "revert-vm-devices-info-before-restore-VmInstance";
+
+            @Override
+            public boolean skip(Map data) {
+                return self.getVolumeSnapshotRefs().stream().filter(sp -> sp.getVolumeType().equals(VolumeType.Memory.toString())).findFirst() == null;
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<MemorySnapshotGroupExtensionPoint> extensionList = pluginRgty.getExtensionList(MemorySnapshotGroupExtensionPoint.class);
+
+                if (extensionList.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                extensionList.forEach(exp -> exp.beforeRestoreVmRevertVmDeviceInfo(getSelfInventory(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                }));
             }
         }).then(new NoRollbackFlow() {
             @Override
