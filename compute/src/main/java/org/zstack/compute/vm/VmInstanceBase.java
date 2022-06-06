@@ -2208,6 +2208,27 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
+        class SetCustomMacSystemTag {
+            private boolean isSet = false;
+
+            void set () {
+                if (msg instanceof VmAttachNicMsg) {
+                    VmAttachNicMsg amsg = (VmAttachNicMsg) msg;
+
+                    if (amsg.hasSystemTag(VmSystemTags.CUSTOM_MAC::isMatch)) {
+                        tagMgr.createInherentSystemTags(amsg.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
+                        isSet = true;
+                    }
+                }
+            }
+
+            void rollback() {
+                if (isSet) {
+                    VmSystemTags.CUSTOM_MAC.delete(self.getUuid());
+                }
+            }
+        }
+
         final SetDefaultL3Network setDefaultL3Network = new SetDefaultL3Network();
         setDefaultL3Network.set();
         Defer.guard(new Runnable() {
@@ -2229,6 +2250,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         final SetL3SecurityGroupSystemTag setSystemTag = new SetL3SecurityGroupSystemTag();
         setSystemTag.set();
         Defer.guard(setSystemTag::rollback);
+
+        final SetCustomMacSystemTag setCustomMacSystemTag = new SetCustomMacSystemTag();
+        setCustomMacSystemTag.set();
+        Defer.guard(setCustomMacSystemTag::rollback);
 
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
         final VmInstanceInventory vm = spec.getVmInventory();
