@@ -24,6 +24,8 @@ public interface PortForwardingConstant {
 
     public final List<VmInstanceConstant.VmOperation> vmOperationForDetachPortfordingRule = asList(
             VmInstanceConstant.VmOperation.Destroy,
-            VmInstanceConstant.VmOperation.DetachNic
+            VmInstanceConstant.VmOperation.DetachNic,
+            VmInstanceConstant.VmOperation.ChangeNicNetwork,
+            VmInstanceConstant.VmOperation.ChangeNicIp
     );
 }
