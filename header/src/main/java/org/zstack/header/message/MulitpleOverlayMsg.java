@@ -9,7 +9,7 @@ import java.util.List;
 
 public class MulitpleOverlayMsg extends NeedReplyMessage {
     @NoLogging(behavior = NoLogging.Behavior.Auto)
-    protected List<NeedReplyMessage> messages;
+    protected List<Object> messages;
     protected String messageClassName;
 
     public void setMessages(List<NeedReplyMessage> msgs) {
