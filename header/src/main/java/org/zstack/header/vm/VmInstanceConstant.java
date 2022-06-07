@@ -51,6 +51,7 @@ public interface VmInstanceConstant {
         AttachVolume,
         AttachNic,
         ChangeNicNetwork,
+        ChangeNicIp,
         DetachNic,
         AttachIso,
         DetachIso,
