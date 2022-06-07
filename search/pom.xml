@@ -37,8 +37,6 @@
             <groupId>org.kohsuke</groupId>
             <artifactId>groovy-sandbox</artifactId>
             <version>1.19</version>
-            <!--<scope>system</scope>
-            <systemPath>${project.basedir}/ext-libs/groovy-sandbox-1.27-SNAPSHOT.jar</systemPath>-->
         </dependency>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
