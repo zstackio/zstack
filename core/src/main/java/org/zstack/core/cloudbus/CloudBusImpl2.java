@@ -225,7 +225,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             for (Channel chan : pool) {
                 try {
                     chan.close();
-                } catch (IOException e) {
+                } catch (IOException | TimeoutException e) {
                     chan.abort();
                 }
             }
@@ -275,7 +275,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         public void destruct() {
             try {
                 nrouteChan.close();
-            } catch (IOException e) {
+            } catch (IOException | TimeoutException e) {
                 throw new CloudRuntimeException(e);
             }
         }
@@ -748,7 +748,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         public void destruct() {
             try {
                 eventChan.close();
-            } catch (IOException e) {
+            } catch (IOException | TimeoutException e) {
                 throw new CloudRuntimeException(e);
             }
         }
@@ -1219,6 +1219,11 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 @Override
                 public void handleRecovery(Recoverable recoverable) {
                     logger.info(String.format("rabbitmq connection is recovering on %s", conn.getAddress().toString()));
+                }
+
+                @Override
+                public void handleRecoveryStarted(Recoverable recoverable) {
+                    logger.info(String.format("start to recover rabbitmq connection on %s", conn.getAddress().toString()));
                 }
             });
 
@@ -2102,7 +2107,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                     }
                     echan.close();
                     echan = null;
-                } catch (IOException e1) {
+                } catch (IOException | TimeoutException e1) {
                     try {
                         if (echan != null) {
                             echan.abort();

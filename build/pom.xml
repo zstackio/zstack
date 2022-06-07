@@ -34,6 +34,7 @@
                                 WEB-INF/lib/groovy-2.4.7.jar,
                                 WEB-INF/lib/okhttp-2.7.5.jar,
                                 WEB-INF/lib/sisu-guava-0.9.9.jar,
+                                WEB-INF/lib/groovy-sandbox-1.19.jar,
                             </packagingExcludes>
                             <webResources>
                                 <resource>
@@ -93,13 +94,6 @@
                                 </resource>
                                 <resource>
                                     <directory>../premium/crypto/ext-libs</directory>
-                                    <targetPath>WEB-INF/lib</targetPath>
-                                    <includes>
-                                        <include>*.jar</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>../search/ext-libs</directory>
                                     <targetPath>WEB-INF/lib</targetPath>
                                     <includes>
                                         <include>*.jar</include>
