@@ -97,6 +97,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
             @Override
             public boolean run() {
                 try {
+                    boolean forceReboot = false;
                     long now = System.currentTimeMillis();
                     if (now > timeout) {
                         trigger.fail(err(ApplianceVmErrors.UNABLE_TO_START, "vyos deploy agent failed, because %s",
@@ -107,8 +108,9 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     if (NetworkUtils.isRemotePortOpen(mgmtNicIp, sshPort, 2000)) {
                         if(isZvrMd5Changed(mgmtNicIp,sshPort)){
                             deployAgent(sshPort);
+                            forceReboot = true;
                         }
-                        rebootAgent(sshPort);
+                        rebootAgent(sshPort, forceReboot);
                         trigger.next();
                         return true;
                     } else {
@@ -153,10 +155,10 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                 }
             }
 
-            private void rebootAgent(int port) {
-                String script = "sudo bash /home/vyos/zvrboot.bin\n" +
+            private void rebootAgent(int port, boolean forceReboot) {
+                String script = String.format("sudo bash /home/vyos/zvrboot.bin\n" +
                         "sudo bash /home/vyos/zvr.bin\n" +
-                        "sudo bash /home/vyos/zvr/ssh/zvr-reboot.sh\n";
+                        "sudo bash /home/vyos/zvr/ssh/zvr-reboot.sh %s\n", forceReboot);
 
                 try {
                     new Ssh().shell(script
