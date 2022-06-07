@@ -139,7 +139,10 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             handle((CancelLongJobMsg) msg);
         } else if (msg instanceof ResumeLongJobMsg) {
             handle((ResumeLongJobMsg) msg);
-        } else {
+        } else if (msg instanceof CleanLongJobMsg){
+            handle((CleanLongJobMsg) msg);
+        }
+        else {
             bus.dealWithUnknownMessage(msg);
         }
     }
@@ -447,6 +450,46 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             @Override
             public String getName() {
                 return String.format("resume-longjob-%s", msg.getUuid());
+            }
+        });
+    }
+
+    private void handle(CleanLongJobMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "longjob-" + msg.getUuid();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                final CleanLongJobReply reply = new CleanLongJobReply();
+                LongJobVO vo = dbf.findByUuid(msg.getUuid(), LongJobVO.class);
+                if (!longJobFactory.supportClean(vo.getJobName())) {
+                    reply.setError(err(LongJobErrors.NOT_SUPPORTED, "not supported"));
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+                doCleanJob(vo, new NopeCompletion(chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("clean-longjob-%s", msg.getUuid());
             }
         });
     }
