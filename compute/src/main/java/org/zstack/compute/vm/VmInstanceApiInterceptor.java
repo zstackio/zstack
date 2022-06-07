@@ -189,8 +189,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         String srcL3Uuid = t.get(3, String.class);
         msg.setVmInstanceUuid(vmUuid);
 
-        if (!VmInstanceState.Stopped.equals(state)) {
-            throw new ApiMessageInterceptionException(operr("unable to change to L3 network. The vm[uuid: %s] is not Stopped; the current state is %s",
+        if (!VmInstanceState.Stopped.equals(state) && !VmInstanceState.Running.equals(state)) {
+            throw new ApiMessageInterceptionException(operr("unable to change to L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
                     msg.getVmInstanceUuid(), state));
         }
 
