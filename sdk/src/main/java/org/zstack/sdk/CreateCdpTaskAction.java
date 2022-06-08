@@ -49,6 +49,9 @@ public class CreateCdpTaskAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public long maxCapacity = 0L;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public long maxLatency = 0L;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
