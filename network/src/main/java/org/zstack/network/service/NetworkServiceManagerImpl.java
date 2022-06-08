@@ -39,7 +39,7 @@ import static org.zstack.core.Platform.operr;
 
 public class NetworkServiceManagerImpl extends AbstractService implements NetworkServiceManager, PreVmInstantiateResourceExtensionPoint,
         VmReleaseResourceExtensionPoint, PostVmInstantiateResourceExtensionPoint, ReleaseNetworkServiceOnDetachingNicExtensionPoint,
-        InstantiateResourceOnAttachingNicExtensionPoint {
+        InstantiateResourceOnAttachingNicExtensionPoint, VmNetworkServiceOnChangeIPExtensionPoint {
 	private static final CLogger logger = Utils.getLogger(NetworkServiceManagerImpl.class);
 
 	@Autowired
@@ -444,6 +444,21 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
     @Override
     public void releaseResourceOnDetachingNic(VmInstanceSpec spec, VmNicInventory nic, NoErrorCompletion completion) {
         releaseNetworkServices(spec, null, completion);
+    }
+
+    @Override
+    public void releaseNetworkServiceOnChangeIP(VmInstanceSpec spec, NetworkServiceExtensionPosition position, Completion completion) {
+        releaseNetworkServices(spec, position, new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                completion.success();
+            }
+        });
+    }
+
+    @Override
+    public void applyNetworkServiceOnChangeIP(VmInstanceSpec spec, NetworkServiceExtensionPosition position, Completion completion) {
+        applyNetworkServices(spec, position, completion);
     }
 
     @Override
