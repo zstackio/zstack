@@ -138,3 +138,39 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmSchedHistoryVO` (
     CONSTRAINT fkVmSchedHistoryVOZoneEO FOREIGN KEY (zoneUuid) REFERENCES ZoneEO (uuid) ON DELETE SET NULL,
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceDeviceAddressVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `resourceUuid` char(32) NOT NULL,
+    `vmInstanceUuid` char(32) NOT NULL,
+    `pciAddress` varchar(64) NOT NULL,
+    `metadata` text DEFAULT NULL,
+    `metadataClass` varchar(128) DEFAULT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fkVmInstanceDeviceAddressVOVmInstanceEO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES VmInstanceEO(`uuid`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceDeviceAddressGroupVO` (
+    `uuid` char(32) NOT NULL UNIQUE,
+    `resourceUuid` char(32) NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceDeviceAddressArchiveVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `resourceUuid` char(32) NOT NULL,
+    `vmInstanceUuid` char(32) NOT NULL,
+    `addressGroupUuid` char(32) NOT NULL,
+    `pciAddress` varchar(64) NOT NULL,
+    `metadata` text DEFAULT NULL,
+    `metadataClass` varchar(128) DEFAULT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fkVmInstanceDeviceAddressArchiveVOVmInstanceEO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES VmInstanceEO(`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkVmInstanceDeviceAddressArchiveVOVmInstanceDeviceAddressGroupVO` FOREIGN KEY (`addressGroupUuid`) REFERENCES VmInstanceDeviceAddressGroupVO (uuid) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;

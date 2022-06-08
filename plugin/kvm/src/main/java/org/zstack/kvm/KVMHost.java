@@ -10,6 +10,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
+import org.zstack.compute.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
@@ -60,6 +61,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.devices.PciAddressConfig;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
@@ -123,6 +125,8 @@ public class KVMHost extends HostBase implements Host {
     private VmNicManager nicManager;
     @Autowired
     private ClusterResourceConfigInitializer crci;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
 
     private KVMHostContext context;
 
@@ -2251,12 +2255,10 @@ public class KVMHost extends HostBase implements Host {
 
                 bus.reply(msg, reply);
 
-                if (ret.getPciAddress() != null) {
-                    SystemTagCreator creator = KVMSystemTags.VMNIC_PCI_ADDRESS.newSystemTagCreator(msg.getNicInventory().getUuid());
-                    creator.inherent = true;
-                    creator.recreate = true;
-                    creator.setTagByTokens(map(e(KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN, ret.getPciAddress().toString())));
-                    creator.create();
+                if (ret.getVirtualDeviceInfoList() != null && !ret.getVirtualDeviceInfoList().isEmpty()) {
+                    ret.getVirtualDeviceInfoList().forEach(info -> vidm.createOrUpdateVmDeviceAddress(info.getResourceUuid(),
+                            info.getPciInfo(), msg.getNicInventory().getVmInstanceUuid(),
+                            JSONObjectUtil.toJsonString(msg.getNicInventory()), VmNicInventory.class.getCanonicalName()));
                 }
 
                 completion.done();
@@ -2393,6 +2395,7 @@ public class KVMHost extends HostBase implements Host {
                     extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError(), data);
                 } else {
                     extEmitter.afterAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
+                    reply.setVirtualDeviceInfoList(ret.getVirtualDeviceInfoList());
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -2737,10 +2740,12 @@ public class KVMHost extends HostBase implements Host {
 
         to.setvHostAddOn(vHostAddOn);
 
-        String pci = KVMSystemTags.VMNIC_PCI_ADDRESS.getTokenByResourceUuid(nic.getUuid(), KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN);
+        String pci = vidm.getVmDevicePciAddress(nic.getUuid(), nic.getVmInstanceUuid());
         if (pci != null) {
             to.setPci(PciAddressConfig.fromString(pci));
         }
+
+        to.setResourceUuid(nic.getUuid());
 
         return to;
     }
@@ -2969,6 +2974,8 @@ public class KVMHost extends HostBase implements Host {
             public void success(StartVmResponse ret) {
                 StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
                 if (ret.isSuccess()) {
+                    extEmitter.afterReceiveStartVmResponse(KVMHostInventory.valueOf(getSelf()), spec, ret);
+
                     String info = String.format("successfully start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s]",
                             spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
                             self.getUuid(), self.getManagementIp());

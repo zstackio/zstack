@@ -1,5 +1,7 @@
 package org.zstack.kvm;
 
+import org.zstack.header.vm.devices.PciAddressConfig;
+import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
@@ -12,7 +14,6 @@ import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.vm.VmPriorityConfigVO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
-import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.io.Serializable;
 import java.util.*;
@@ -136,31 +137,15 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class PciAddressConfig {
-        public String type;
-        public String domain;
-        public String bus;
-        public String slot;
-        public String function;
-
-        public static PciAddressConfig fromString(String address) {
-            return JSONObjectUtil.toObject(address, PciAddressConfig.class);
-        }
-
-        public String toString() {
-            return JSONObjectUtil.toJsonString(this);
-        }
-    }
-
     public static class AttachNicResponse extends AgentResponse {
-        private PciAddressConfig pciAddress;
+        List<VirtualDeviceInfo> virtualDeviceInfoList;
 
-        public PciAddressConfig getPciAddress() {
-            return pciAddress;
+        public List<VirtualDeviceInfo> getVirtualDeviceInfoList() {
+            return virtualDeviceInfoList;
         }
 
-        public void setPciAddress(PciAddressConfig pciAddress) {
-            this.pciAddress = pciAddress;
+        public void setVirtualDeviceInfoList(List<VirtualDeviceInfo> virtualDeviceInfoList) {
+            this.virtualDeviceInfoList = virtualDeviceInfoList;
         }
     }
 
@@ -841,7 +826,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class NicTO {
+    public static class NicTO extends BaseVirtualPciDeviceTO {
         private String mac;
         private List<String> ips;
         private String bridgeName;
@@ -1118,6 +1103,15 @@ public class KVMAgentCommands {
     }
 
     public static class AttachDataVolumeResponse extends AgentResponse {
+        List<VirtualDeviceInfo> virtualDeviceInfoList;
+
+        public List<VirtualDeviceInfo> getVirtualDeviceInfoList() {
+            return virtualDeviceInfoList;
+        }
+
+        public void setVirtualDeviceInfoList(List<VirtualDeviceInfo> virtualDeviceInfoList) {
+            this.virtualDeviceInfoList = virtualDeviceInfoList;
+        }
     }
 
     public static class IsoTO {
@@ -1133,7 +1127,6 @@ public class KVMAgentCommands {
             this.imageUuid = other.imageUuid;
             this.deviceId = other.deviceId;
         }
-
 
         public String getImageUuid() {
             return imageUuid;
@@ -1160,7 +1153,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class CdRomTO {
+    public static class CdRomTO extends BaseVirtualPciDeviceTO {
         private String path;
         private String imageUuid;
         private int deviceId;
@@ -1178,7 +1171,6 @@ public class KVMAgentCommands {
             this.deviceId = other.deviceId;
             this.bootOrder = other.bootOrder;
         }
-
 
         public String getImageUuid() {
             return imageUuid;
@@ -2129,6 +2121,7 @@ public class KVMAgentCommands {
 
     public static class StartVmResponse extends AgentResponse {
         private List<VmNicInfo> nicInfos;
+        private List<VirtualDeviceInfo> virtualDeviceInfoList;
 
         public List<VmNicInfo> getNicInfos() {
             return nicInfos;
@@ -2136,6 +2129,14 @@ public class KVMAgentCommands {
 
         public void setNicInfos(List<VmNicInfo> nicInfos) {
             this.nicInfos = nicInfos;
+        }
+
+        public List<VirtualDeviceInfo> getVirtualDeviceInfoList() {
+            return virtualDeviceInfoList;
+        }
+
+        public void setVirtualDeviceInfoList(List<VirtualDeviceInfo> virtualDeviceInfoList) {
+            this.virtualDeviceInfoList = virtualDeviceInfoList;
         }
     }
 
@@ -2159,7 +2160,6 @@ public class KVMAgentCommands {
             this.pciInfo = pciInfo;
         }
     }
-
 
     public static class ChangeCpuMemoryCmd extends AgentCommand {
         private String vmUuid;

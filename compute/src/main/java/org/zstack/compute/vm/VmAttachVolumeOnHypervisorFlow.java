@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.compute.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -12,10 +13,8 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.vm.AttachVolumeToVmOnHypervisorMsg;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.*;
+import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.volume.VolumeInventory;
 
 import java.util.List;
@@ -29,6 +28,8 @@ public class VmAttachVolumeOnHypervisorFlow implements Flow {
     protected CloudBus bus;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
     
     @Override
     public void run(final FlowTrigger chain, Map ctx) {
@@ -59,12 +60,24 @@ public class VmAttachVolumeOnHypervisorFlow implements Flow {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
+                    processDeviceAddressInfo(reply.castReply(), spec);
+
                     chain.next();
                 } else {
                     chain.fail(reply.getError());
                 }
             }
         });
+    }
+
+    private void processDeviceAddressInfo(AttachVolumeToVmOnHypervisorReply reply, final VmInstanceSpec spec) {
+        if (reply.getVirtualDeviceInfoList() == null || reply.getVirtualDeviceInfoList().isEmpty()) {
+            return;
+        }
+
+        for (VirtualDeviceInfo info : reply.getVirtualDeviceInfoList()) {
+            vidm.createOrUpdateVmDeviceAddress(info, spec.getVmInventory().getUuid());
+        }
     }
 
     @Override
