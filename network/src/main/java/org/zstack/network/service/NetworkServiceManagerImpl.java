@@ -230,6 +230,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 	public void preBeforeInstantiateVmResource(VmInstanceSpec spec) {
 	}
 
+    /* AFTER_VM_CREATED will apply security group, where BEFORE_VM_CREATED will apply other network service */
     private void applyNetworkServices(final VmInstanceSpec spec, NetworkServiceExtensionPosition position, final Completion completion) {
         if (!supportedVmTypes.contains(spec.getVmInventory().getType())) {
             completion.success();
@@ -258,7 +259,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
         FlowChain schain = FlowChainBuilder.newSimpleFlowChain().setName(String.format("apply-network-service-to-vm-%s", spec.getVmInventory().getUuid()));
         schain.allowEmptyFlow();
         for (final NetworkServiceExtensionPoint ns : nsExts) {
-            if (ns.getNetworkServiceExtensionPosition() != position) {
+            if (position != null && ns.getNetworkServiceExtensionPosition() != position) {
                 continue;
             }
 
@@ -444,6 +445,21 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
     @Override
     public void releaseResourceOnDetachingNic(VmInstanceSpec spec, VmNicInventory nic, NoErrorCompletion completion) {
         releaseNetworkServices(spec, null, completion);
+    }
+
+    @Override
+    public void releaseNetworkServiceOnChangeIP(VmInstanceSpec spec, NetworkServiceExtensionPosition position, Completion completion) {
+        releaseNetworkServices(spec, position, new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                completion.success();
+            }
+        });
+    }
+
+    @Override
+    public void applyNetworkServiceOnChangeIP(VmInstanceSpec spec, NetworkServiceExtensionPosition position, Completion completion) {
+        applyNetworkServices(spec, position, completion);
     }
 
     @Override

@@ -574,6 +574,18 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }
         struct.setVmNics(tmp);
 
+        VmNicInventory destNic = CollectionUtils.find(struct.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
+            @Override
+            public VmNicInventory call(VmNicInventory arg) {
+                return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg : null;
+            }
+        });
+
+        if (destNic == null) {
+            completion.success();
+            return;
+        }
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("flat-network-userdata-set-for-vm-%s", struct.getVmUuid()));
         chain.then(new ShareFlow() {
@@ -624,18 +636,8 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         uto.metadata = to;
                         uto.userdataList = struct.getUserdataList();
                         uto.dhcpServerIp = dhcpServerIp;
-                        uto.vmIp = CollectionUtils.find(struct.getVmNics(), new Function<String, VmNicInventory>() {
-                            @Override
-                            public String call(VmNicInventory arg) {
-                                return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null;
-                            }
-                        });
-                        uto.netmask = CollectionUtils.find(struct.getVmNics(), new Function<String, VmNicInventory>() {
-                            @Override
-                            public String call(VmNicInventory arg) {
-                                return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getNetmask() : null;
-                            }
-                        });
+                        uto.vmIp = destNic.getIp();
+                        uto.netmask = destNic.getNetmask();
                         uto.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
                         uto.namespaceName = FlatDhcpBackend.makeNamespaceName(uto.bridgeName, struct.getL3NetworkUuid());
                         uto.port = UserdataGlobalProperty.HOST_PORT;
@@ -706,6 +708,18 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         }
         struct.setVmNics(tmp);
 
+        VmNicInventory destNic = CollectionUtils.find(struct.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
+            @Override
+            public VmNicInventory call(VmNicInventory arg) {
+                return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg : null;
+            }
+        });
+
+        if (destNic == null) {
+            completion.success();
+            return;
+        }
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("flat-network-userdata-release-for-vm-%s", struct.getVmUuid()));
         chain.then(new ShareFlow() {
@@ -720,12 +734,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         cmd.hostUuid = struct.getHostUuid();
                         cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
                         cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
-                        cmd.vmIp = CollectionUtils.find(struct.getVmNics(), new Function<String, VmNicInventory>() {
-                            @Override
-                            public String call(VmNicInventory arg) {
-                                return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null;
-                            }
-                        });
+                        cmd.vmIp = destNic.getIp();
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setHostUuid(struct.getHostUuid());

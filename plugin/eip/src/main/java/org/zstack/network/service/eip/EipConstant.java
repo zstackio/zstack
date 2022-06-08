@@ -42,6 +42,7 @@ public interface EipConstant {
 
     public final List<VmInstanceConstant.VmOperation> vmOperationForDetachEip = asList(
             VmInstanceConstant.VmOperation.Destroy,
-            VmInstanceConstant.VmOperation.DetachNic
+            VmInstanceConstant.VmOperation.DetachNic,
+            VmInstanceConstant.VmOperation.ChangeNicIp
     );
 }
