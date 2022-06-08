@@ -178,6 +178,8 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="VmInstanceDeviceManager" class="org.zstack.compute.vm.devices.VmInstanceDeviceManagerImpl"/>
+
     <util:list id="SupportNicDriverTypes">
         <value>virtio</value>
         <value>e1000</value>
