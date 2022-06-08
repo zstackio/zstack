@@ -135,7 +135,7 @@ def check_commit_msg(file_path):
             header_contains_nonsense = True
         if "revert" in lines[0].lower():
             revert_commit = True
-        if "merge branch" in lines[0].lower():
+        if "merge branch" in lines[0].lower() or "merge remote" in lines[0].lower():
             merge_commit = True
         if full_lines > 1 and "" == lines[1].strip():
             second_line_is_blank = True
