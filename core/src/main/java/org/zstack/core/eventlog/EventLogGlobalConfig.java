@@ -10,6 +10,6 @@ public class EventLogGlobalConfig {
     public static final String CATEGORY = "eventlog";
 
     @GlobalConfigValidation(inNumberRange = {0, 180})
-    @GlobalConfigDef(defaultValue = "14", type = Integer.class, description = "How long a log entry can stay in database")
+    @GlobalConfigDef(defaultValue = "90", type = Integer.class, description = "How long a log entry can stay in database")
     public static GlobalConfig EXPIRE_TIME_IN_DAY = new GlobalConfig(CATEGORY, "expireTimeInDay");
 }
