@@ -66,6 +66,7 @@ public class ApplianceVmCanonicalEvents {
     @NeedJsonSchema
     public static class ApplianceVmStatusChangedData {
         private String applianceVmUuid;
+        private String applianceVmType;
         private String oldStatus;
         private String newStatus;
         private ApplianceVmInventory inv;
@@ -76,6 +77,14 @@ public class ApplianceVmCanonicalEvents {
 
         public void setApplianceVmUuid(String applianceVmUuid) {
             this.applianceVmUuid = applianceVmUuid;
+        }
+
+        public String getApplianceVmType() {
+            return applianceVmType;
+        }
+
+        public void setApplianceVmType(String applianceVmType) {
+            this.applianceVmType = applianceVmType;
         }
 
         public String getOldStatus() {
