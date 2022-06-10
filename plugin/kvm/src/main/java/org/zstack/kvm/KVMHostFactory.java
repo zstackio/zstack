@@ -87,7 +87,6 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public static final VolumeFormat RAW_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_RAW, hypervisorType);
     private List<KVMHostConnectExtensionPoint> connectExtensions = new ArrayList<>();
     private final Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<>();
-    private List<PrepareKVMHostExtensionPoint> prepareExtensions = new ArrayList<>();
     private int maxDataVolumeNum;
     private static final String GUEST_OS_CATEGORY_FILE = "guestOs/guestOsCategory.xml";
     private static final String GUEST_OS_CHARACTER_FILE = "guestOs/guestOsCharacter.xml";
@@ -245,7 +244,6 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
     protected void populateExtensions() {
         connectExtensions = pluginRgty.getExtensionList(KVMHostConnectExtensionPoint.class);
-        prepareExtensions = pluginRgty.getExtensionList(PrepareKVMHostExtensionPoint.class);
         for (KVMCompleteNicInformationExtensionPoint ext : pluginRgty.getExtensionList(KVMCompleteNicInformationExtensionPoint.class)) {
             KVMCompleteNicInformationExtensionPoint old = completeNicInfoExtensions.get(ext.getL2NetworkTypeVmNicOn());
             if (old != null) {
@@ -651,10 +649,6 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
     public List<KVMHostConnectExtensionPoint> getConnectExtensions() {
         return connectExtensions;
-    }
-
-    public List<PrepareKVMHostExtensionPoint> getPrepareExtensions() {
-        return prepareExtensions;
     }
 
     public KVMHostContext createHostContext(KVMHostVO vo) {

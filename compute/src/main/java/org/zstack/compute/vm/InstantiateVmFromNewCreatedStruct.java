@@ -23,8 +23,6 @@ public class InstantiateVmFromNewCreatedStruct {
     private String requiredHostUuid;
     private List<String> softAvoidHostUuids;
     private List<String> avoidHostUuids;
-    private boolean isFromClone;
-    private String srcVmUuid;
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -159,22 +157,6 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setAvoidHostUuids(List<String> avoidHostUuids) {
         this.avoidHostUuids = avoidHostUuids;
-    }
-
-    public boolean isFromClone() {
-        return isFromClone;
-    }
-
-    public void setFromClone(boolean fromClone) {
-        isFromClone = fromClone;
-    }
-
-    public String getSrcVmUuid() {
-        return srcVmUuid;
-    }
-
-    public void setSrcVmUuid(String srcVmUuid) {
-        this.srcVmUuid = srcVmUuid;
     }
 
     public Map<String, List<String>> getDataVolumeFromTemplateSystemTags() {

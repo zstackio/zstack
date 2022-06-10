@@ -3,7 +3,6 @@ package org.zstack.storage.primary.local;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -196,16 +195,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         private String name;
         private String volumeUuid;
         private String backingFile;
-
-        public boolean isDiskEncrytion() {
-            return diskEncrytion;
-        }
-
-        public void setDiskEncrytion(boolean diskEncrytion) {
-            this.diskEncrytion = diskEncrytion;
-        }
-
-        private boolean diskEncrytion;
 
         public String getBackingFile() {
             return backingFile;
@@ -1191,7 +1180,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.setSize(volume.getSize());
         cmd.setVolumeUuid(volume.getUuid());
         cmd.setBackingFile(backingFile);
-        cmd.setDiskEncrytion(CoreGlobalProperty.DISK_ENCRYPTION);
 
         httpCall(CREATE_EMPTY_VOLUME_PATH, hostUuid, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<CreateEmptyVolumeRsp>(completion) {
             @Override

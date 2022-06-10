@@ -130,7 +130,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
 
             placePip703();
             placeAnsible196();
-            //if (!Platform.isSelinuxEnbaled){
+
             ShellUtils.run(String.format("if ! sudo ansible --version | grep -q 1.9.6; then " +
                     "if grep -i -s centos /etc/system-release; then " +
                     "sudo yum remove -y ansible; " +
@@ -138,9 +138,9 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     "sudo apt-get --assume-yes remove ansible; " +
                     "else echo \"Warning: can't remove ansible from unknown platform\"; " +
                     "fi; " +
-                    "sudo pip install -i file://%s --trusted-host localhost ansible==1.9.6; " +
+                    "sudo pip install -i file://%s --trusted-host localhost -I ansible==1.9.6; " +
                     "fi", AnsibleConstant.PYPI_REPO), false);
-            //}
+
             deployModule("ansible/zstacklib", "zstacklib.py");
         } catch (IOException e) {
             throw new CloudRuntimeException(e);
@@ -491,20 +491,10 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         }
 
         try {
-            Boolean ZUIGAOJIAN;
-            String output = ShellUtils.run("getenforce", true);
-            if (output.contains("Disabled")) {
-                ZUIGAOJIAN = false;
-            } else {
-                ZUIGAOJIAN = true;
-            }
-            Boolean deploy = isNeedToDeploy(moduleName, src.getAbsolutePath());
-            if (!deploy || ZUIGAOJIAN) {
-                logger.debug(String.format("not need to deploy %s, isNeedToDeploy: %s, ZUIGAOJIAN: %s", playBookName, deploy.toString(), ZUIGAOJIAN.toString()));
+            if (!isNeedToDeploy(moduleName, src.getAbsolutePath())) {
                 return;
             }
 
-            logger.debug(String.format("need to deploy %s, isNeedToDeploy: %s, ZUIGAOJIAN: %s", playBookName, deploy.toString(), ZUIGAOJIAN.toString()));
             String destModulePath = PathUtil.join(filesRoot.getAbsolutePath(), moduleName);
             File dest = new File(destModulePath);
             if (dest.exists()) {
@@ -522,7 +512,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     if (lnFile.exists()) {
                         lnFile.delete();
                     }
-                    Files.copy(Paths.get(f.getAbsolutePath()), Paths.get(lnPath));
+                    Files.createSymbolicLink(Paths.get(lnPath), Paths.get(f.getAbsolutePath()));
                     isPlaybookLinked = true;
                 }
             }
@@ -534,7 +524,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
 
             logger.debug(String.format("successfully deployed ansible module[%s]", modulePath));
         } catch (Exception e) {
-            String err = String.format("Unable to deploy ansible module[%s] from %s, %s", moduleName, modulePath, e);
+            String err = String.format("Unable to deploy ansible module[%s] from %s", moduleName, modulePath);
             throw new CloudRuntimeException(err, e);
         }
     }

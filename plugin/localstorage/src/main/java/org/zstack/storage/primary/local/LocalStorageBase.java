@@ -2,9 +2,7 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.host.VolumeMigrationTargetHostFilter;
-import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
@@ -659,65 +657,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 for (Flow fl : flows) {
                     flow(fl);
                 }
-
-                flow(new Flow() {
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        VmVsocBootFromNewNodeMsg msg = new VmVsocBootFromNewNodeMsg();
-                        msg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
-                        String vmUuid = Q.New(VolumeVO.class).select(VolumeVO_.vmInstanceUuid).eq(VolumeVO_.uuid, struct.getVolume().getUuid()).find();
-                        msg.setVmUuid(vmUuid);
-                        msg.setPrvSocId(HostSystemTags.HOST_SSCARDID.getTokenByResourceUuid(struct.getSrcHostUuid(), HostSystemTags.HOST_SSCARDID_TOKEN));
-                        msg.setHostUuid(struct.getDestHostUuid());
-
-                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
-                        bus.send(msg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (reply.isSuccess()) {
-                                    trigger.next();
-                                } else {
-                                    logger.warn(String.format("Fail call: boot_from_new_node, because %s", reply.getError().getDetails()));
-                                }
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        DeleteVmVsocFileMsg deleteMsg = new DeleteVmVsocFileMsg();
-                        String vmUuid = Q.New(VolumeVO.class).select(VolumeVO_.vmInstanceUuid).eq(VolumeVO_.uuid, struct.getVolume().getUuid()).find();
-                        deleteMsg.setVmInstanceUuid(vmUuid);
-                        deleteMsg.setHostUuid(struct.getDestHostUuid());
-                        deleteMsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
-
-                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, deleteMsg.getHostUuid());
-                        bus.send(msg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    logger.warn(String.format("Fail: vsoc_delete, because :%s", reply.getError().getDetails()));
-                                }
-                            }
-                        });
-
-                        CreateVmVsocFileMsg createMsg = new CreateVmVsocFileMsg();
-                        createMsg.setVmInstanceUuid(vmUuid);
-                        createMsg.setHostUuid(struct.getSrcHostUuid());
-                        createMsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
-
-                        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, createMsg.getHostUuid());
-                        bus.send(msg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    logger.warn(String.format("Fail: vsoc_create, because :%s", reply.getError().getDetails()));
-                                }
-                            }
-                        });
-                        trigger.rollback();
-                    }
-                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "change-reference-to-dst-host";

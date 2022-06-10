@@ -1097,13 +1097,7 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     private void handleUniqueApi(Api api, HttpEntity<String> entity, HttpServletRequest req, HttpServletResponse rsp) throws RestException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, IOException {
-        String body = entity.getBody();
-        String Body = body;
-        if (((String) body).startsWith("request=")) {
-            Body = "{\"params\": {\"request\" : \"" + ((String) body).split("request=")[1] + "\"}}";
-        }
-        logger.debug("body is: " + Body);
-        handleApi(api, JSONObjectUtil.toObject(Body, LinkedHashMap.class),
+        handleApi(api, JSONObjectUtil.toObject(entity.getBody(), LinkedHashMap.class),
                api.requestAnnotation.isAction() ? api.actionName : api.requestAnnotation.parameterName(), entity, req, rsp);
     }
 

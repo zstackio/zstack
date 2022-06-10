@@ -13,7 +13,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.ComponentLoaderImpl;
 import org.zstack.core.config.GlobalConfigFacade;
-import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.core.encrypt.EncryptRSA;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -29,7 +28,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.vm.VmInstanceSequenceNumberVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
@@ -101,8 +99,6 @@ public class Platform {
     public static Locale getLocale() {
         return locale;
     }
-
-    public static boolean isSelinuxEnbaled;
 
     private static Map<String, String> linkGlobalPropertyMap(String prefix) {
         Map<String, String> ret = new HashMap<String, String>();
@@ -273,16 +269,6 @@ public class Platform {
             return "";
         }
         return ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
-    }
-
-    private static void initSelinuxConfig() {
-        try {
-            String output = ShellUtils.run("getenforce", true);
-            isSelinuxEnbaled = output.contains("Enforcing");
-        } catch (Exception e) {
-            logger.debug("failed to run getenforce %s", e);
-        }
-
     }
 
     private static void writePidFile() throws IOException {
@@ -501,7 +487,6 @@ public class Platform {
             callStaticInitMethods();
             encryptedMethodsMap = getAllEncryptPassword();
             writePidFile();
-            initSelinuxConfig();
         } catch (Throwable e) {
             logger.warn(String.format("unhandled exception when in Platform's static block, %s", e.getMessage()), e);
             new BootErrorLog().write(e.getMessage());
@@ -700,11 +685,6 @@ public class Platform {
 
     public static String getUuid() {
         return UUID.randomUUID().toString().replace("-", "");
-    }
-
-    public static String getVmUuid() {
-        DatabaseFacade dbf = getComponentLoader().getComponent(DatabaseFacade.class);
-        return String.format("%s%s", CoreGlobalProperty.PLATFORM_ID, String.format("%06d", dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class)));
     }
 
     public static String getUuidFromBytes(byte[] name) {
