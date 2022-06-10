@@ -254,6 +254,11 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
+                if(!getHypervisorTypeForReestablishExtensionPoint().equals(HypervisorType.valueOf(context.getInventory().getHypervisorType()))) {
+                    trigger.next();
+                    return;
+                }
+
                 List<L2NetworkInventory> l2s = getL2Networks(context.getInventory().getClusterUuid());
 
                 if (l2s.isEmpty()) {
