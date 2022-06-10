@@ -837,7 +837,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         self = dbf.updateAndRefresh(self);
         ApplianceVmCanonicalEvents.ApplianceVmStatusChangedData d = new ApplianceVmCanonicalEvents.ApplianceVmStatusChangedData();
         d.setApplianceVmUuid(self.getUuid());
-        d.setApplianceVmType(self.getType());
+        d.setApplianceVmType(getSelf().getApplianceVmType());
         d.setOldStatus(oldStatus.toString());
         d.setNewStatus(newStatus.toString());
         d.setInv(ApplianceVmInventory.valueOf(getSelf()));
