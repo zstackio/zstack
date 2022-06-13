@@ -139,8 +139,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             handle((CancelLongJobMsg) msg);
         } else if (msg instanceof ResumeLongJobMsg) {
             handle((ResumeLongJobMsg) msg);
-        } else if (msg instanceof CleanLongJobMsg){
-            handle((CleanLongJobMsg) msg);
+        } else if (msg instanceof RollBackLongJobMsg){
+            handle((RollBackLongJobMsg) msg);
         }
         else {
             bus.dealWithUnknownMessage(msg);
@@ -454,7 +454,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         });
     }
 
-    private void handle(CleanLongJobMsg msg) {
+    private void handle(RollBackLongJobMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -471,7 +471,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                     chain.next();
                     return;
                 }
-                doCleanJob(vo, new NopeCompletion(chain) {
+                doRollBackJob(vo, new NopeCompletion(chain) {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);
@@ -489,7 +489,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public String getName() {
-                return String.format("clean-longjob-%s", msg.getUuid());
+                return String.format("rollback-longjob-%s", msg.getUuid());
             }
         });
     }
@@ -594,6 +594,25 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             @Override
             public String getName() {
                 return String.format("submit-longjob-%s", msg.getJobUuid());
+            }
+        });
+    }
+
+    @Deferred
+    private void doRollBackJob(LongJobVO vo, Completion completion) {
+        LongJob job = longJobFactory.getLongJob(vo.getJobName());
+
+        Runnable cleanup = ThreadContextUtils.saveThreadContext();
+        Defer.defer(cleanup);
+        ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
+        ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
+
+        logger.info(String.format("start to clean longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
+        job.rollBack(vo, new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                changeState(vo.getUuid(), LongJobStateEvent.fail);
+                completion.success();
             }
         });
     }

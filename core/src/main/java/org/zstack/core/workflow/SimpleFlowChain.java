@@ -1,17 +1,22 @@
 package org.zstack.core.workflow;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.Constants;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.longjob.LongJobVO;
+import org.zstack.header.longjob.LongJobVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
@@ -26,6 +31,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -45,6 +51,20 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private Iterator<Flow> it;
     private boolean isStart = false;
     private boolean isRollbackStart = false;
+
+    private String flowChainContext;
+    private boolean isRollback = false;
+    private boolean isLongJob = false;
+    private String currentFlowName;
+
+    public String getCurrentFlowName() {
+        return currentFlowName;
+    }
+
+    public void setCurrentFlowName(String currentFlowName) {
+        this.currentFlowName = currentFlowName;
+    }
+
     private Flow currentFlow;
     private Flow currentRollbackFlow;
     private ErrorCode errorCode;
@@ -245,6 +265,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     @Override
     public FlowChain setName(String name) {
+        data.put("FlowChainName", name);
         this.name = name;
         return this;
     }
@@ -298,6 +319,11 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         }
     }
 
+    static class CurrentFlowNameAndCurrentLoop {
+        private String currentFlowName;
+        private int currentLoop;
+    }
+
     private void runFlow(Flow flow) {
         try {
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
@@ -343,6 +369,23 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                     this.fail(err);
                     return;
                 }
+            }
+
+            if ((boolean) data.get("isRollback")) {
+                // 执行前，检查当前flow是否是 flow 任务回滚的flow，用于判断是否需要跳过
+                // 变成一个json文件，这里仅仅需要判断是否是longjob flowchain
+                // 每一个任务的flow是固定的，那么仅仅需要知道 是哪一个flow和运行到flow哪一个位置，直接进行回滚。
+                // 每一个fowchain有一个 name 记录这个就对了，然后记录中断flow的序号
+                // 传值，在每一个flow开始的时候，将 flowchain name 和 中断的flow序号传入
+
+                CurrentFlowNameAndCurrentLoop nl = (CurrentFlowNameAndCurrentLoop) data.get("CurrentFlowNameAndCurrentLoop");
+                if (Objects.equals(nl.currentFlowName, getChainName()) && nl.currentLoop==currentLoop){
+                    this.fail(operr("after mn restart and restore flow rollback."));
+                    return;
+                }
+
+                this.next();
+                return;
             }
 
             if (isSkipFlow(toRun)) {
@@ -595,6 +638,12 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private void runFlowOrComplete() {
         if (it.hasNext()) {
             currentLoop ++;
+
+            CurrentFlowNameAndCurrentLoop nl = new CurrentFlowNameAndCurrentLoop();
+            nl.currentFlowName= getChainName();
+            nl.currentLoop = currentLoop;
+            data.put("CurrentFlowNameAndCurrentLoop", nl);
+
             runFlow(it.next());
         } else {
             if (getErrorCode() == null) {
@@ -688,5 +737,15 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     public static Map<String, WorkFlowStatistic> getStatistics() {
         return statistics;
+    }
+
+    private void a(){
+        String apiUuid = ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API);
+        String longJobUuid = Q.New(LongJobVO.class).select(LongJobVO_.uuid).eq(LongJobVO_.apiId, apiUuid).findValue();
+        if (longJobUuid == null) {
+            data.put("isLongJob", false);
+        } else {
+            data.put("isLongJob", true);
+        }
     }
 }
