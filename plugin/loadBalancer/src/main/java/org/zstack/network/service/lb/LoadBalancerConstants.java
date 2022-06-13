@@ -107,6 +107,8 @@ public class LoadBalancerConstants {
 
     public static final List<VmInstanceConstant.VmOperation> vmOperationForDetachListener = asList(
             VmInstanceConstant.VmOperation.Destroy,
-            VmInstanceConstant.VmOperation.DetachNic
+            VmInstanceConstant.VmOperation.DetachNic,
+            VmInstanceConstant.VmOperation.ChangeNicNetwork,
+            VmInstanceConstant.VmOperation.ChangeNicIp
     );
 }
