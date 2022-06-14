@@ -10,11 +10,8 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
-//import org.zstack.header.vm.*;
-import org.zstack.header.vm.VmNetworkServiceOnChangeIPExtensionPoint;
-import org.zstack.header.network.service.NetworkServiceExtensionPoint.NetworkServiceExtensionPosition;
+import org.zstack.header.network.service.NetworkServiceExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceConstant.Params;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -22,6 +19,7 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicSpec;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import static org.zstack.utils.CollectionDSL.*;
@@ -33,69 +31,8 @@ import java.util.Map;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmApplyNetworkServiceOnChangeIPFlow implements Flow {
     private static final CLogger logger = Utils.getLogger(VmApplyNetworkServiceOnChangeIPFlow.class);
-
     @Autowired
-    private PluginRegistry pluginRgty;
-
-    private static List<VmNetworkServiceOnChangeIPExtensionPoint> extensions = null;
-
-    public VmApplyNetworkServiceOnChangeIPFlow() {
-        if (extensions == null) {
-            extensions = pluginRgty.getExtensionList(VmNetworkServiceOnChangeIPExtensionPoint.class);
-        }
-    }
-
-    private void runExtensions(final Iterator<VmNetworkServiceOnChangeIPExtensionPoint> it, final VmInstanceSpec spec, final FlowTrigger trigger) {
-        if (!it.hasNext()) {
-            trigger.next();
-            return;
-        }
-
-        VmNetworkServiceOnChangeIPExtensionPoint ext = it.next();
-        logger.debug(String.format("run VmApplyNetworkServiceOnChangeIPFlow[%s]", ext.getClass()));
-        ext.applyNetworkServiceOnChangeIP(spec, NetworkServiceExtensionPosition.BEFORE_VM_CREATED, new Completion(trigger) {
-            @Override
-            public void success() {
-                ext.applyNetworkServiceOnChangeIP(spec, NetworkServiceExtensionPosition.AFTER_VM_CREATED, new Completion(trigger) {
-                    @Override
-                    public void success() {
-                        runExtensions(it, spec, trigger);
-                    }
-                    @Override
-                    public void fail(ErrorCode errCode) {
-                        trigger.fail(errCode);
-                    }
-                });
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                trigger.fail(errorCode);
-            }
-        });
-    }
-
-    private void rollbackExtensions(final Iterator<VmNetworkServiceOnChangeIPExtensionPoint> it, final VmInstanceSpec spec,final FlowRollback trigger) {
-        if (!it.hasNext()) {
-            trigger.rollback();
-            return;
-        }
-
-        VmNetworkServiceOnChangeIPExtensionPoint ext = it.next();
-        logger.debug(String.format("rollback VmApplyNetworkServiceOnChangeIPFlow[%s]", ext.getClass()));
-        ext.releaseNetworkServiceOnChangeIP(spec, null, new Completion(trigger) {
-            @Override
-            public void success() {
-                rollbackExtensions(it, spec, trigger);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.warn(errorCode.toString());
-                rollbackExtensions(it, spec, trigger);
-            }
-        });
-    }
+    private NetworkServiceManager nsMgr;
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -111,12 +48,33 @@ public class VmApplyNetworkServiceOnChangeIPFlow implements Flow {
         }
 
         spec.setDestNics(list(VmNicInventory.valueOf(vmNicVO)));
-        runExtensions(extensions.iterator(), spec, trigger);
+
+        nsMgr.applyNetworkServiceOnChangeIP(spec, null, new Completion(trigger) {
+            @Override
+            public void success() {
+                trigger.next();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                trigger.fail(errorCode);
+            }
+        });
     }
 
     @Override
     public void rollback(FlowRollback trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        rollbackExtensions(extensions.iterator(), spec, trigger);
+        nsMgr.releaseNetworkServiceOnChangeIP(spec, null, new Completion(trigger) {
+            @Override
+            public void success() {
+                trigger.rollback();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                trigger.rollback();
+            }
+        });
     }
 }
