@@ -39,7 +39,7 @@ import static org.zstack.core.Platform.operr;
 
 public class NetworkServiceManagerImpl extends AbstractService implements NetworkServiceManager, PreVmInstantiateResourceExtensionPoint,
         VmReleaseResourceExtensionPoint, PostVmInstantiateResourceExtensionPoint, ReleaseNetworkServiceOnDetachingNicExtensionPoint,
-        InstantiateResourceOnAttachingNicExtensionPoint, VmNetworkServiceOnChangeIPExtensionPoint {
+        InstantiateResourceOnAttachingNicExtensionPoint {
 	private static final CLogger logger = Utils.getLogger(NetworkServiceManagerImpl.class);
 
 	@Autowired
@@ -230,6 +230,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 	public void preBeforeInstantiateVmResource(VmInstanceSpec spec) {
 	}
 
+    /* AFTER_VM_CREATED will apply security group, where BEFORE_VM_CREATED will apply other network service */
     private void applyNetworkServices(final VmInstanceSpec spec, NetworkServiceExtensionPosition position, final Completion completion) {
         if (!supportedVmTypes.contains(spec.getVmInventory().getType())) {
             completion.success();
@@ -258,7 +259,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
         FlowChain schain = FlowChainBuilder.newSimpleFlowChain().setName(String.format("apply-network-service-to-vm-%s", spec.getVmInventory().getUuid()));
         schain.allowEmptyFlow();
         for (final NetworkServiceExtensionPoint ns : nsExts) {
-            if (ns.getNetworkServiceExtensionPosition() != position) {
+            if (position != null && ns.getNetworkServiceExtensionPosition() != position) {
                 continue;
             }
 
