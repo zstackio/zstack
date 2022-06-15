@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.compute.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -22,6 +23,8 @@ import java.util.Map;
 public class VmDetachNicOnHypervisorFlow extends NoRollbackFlow {
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
@@ -36,6 +39,7 @@ public class VmDetachNicOnHypervisorFlow extends NoRollbackFlow {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
+                    vidm.deleteVmDeviceAddress(spec.getDestNics().get(0).getUuid(), spec.getVmInventory().getUuid());
                     trigger.next();
                 } else {
                     trigger.fail(reply.getError());
