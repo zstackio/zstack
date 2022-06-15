@@ -19,6 +19,7 @@ import java.sql.Timestamp;
         @SoftDeletionCascade(parent = PrimaryStorageVO.class, joinColumn = "primaryStorageUuid"),
         @SoftDeletionCascade(parent = VolumeVO.class, joinColumn = "volumeUuid")
 })
+@Deprecated
 public class ImageCacheVolumeRefVO {
     @Id
     @Column

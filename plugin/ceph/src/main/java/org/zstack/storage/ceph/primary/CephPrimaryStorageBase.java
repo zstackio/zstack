@@ -2052,6 +2052,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
+    protected void handle(final CleanUpImageCacheOnPrimaryStorageMsg msg) {
+        CleanUpImageCacheOnPrimaryStorageReply reply = new CleanUpImageCacheOnPrimaryStorageReply();
+        imageCacheCleaner.cleanup(msg.getUuid(), false);
+        bus.reply(msg ,reply);
+    }
+
     private PrimaryStorageLicenseInfoFactory getPrimaryStorageLicenseInfoFactory(String vendor) {
         for(PrimaryStorageLicenseInfoFactory ext: licenseExts) {
             if (ext.getPrimaryStorageVendor().equals(vendor)) {

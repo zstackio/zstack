@@ -68,6 +68,7 @@
 
     <bean id="CephImageCacheCleaner" class="org.zstack.storage.ceph.primary.CephImageCacheCleaner">
         <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.image.ExpungeImageExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
     </bean>

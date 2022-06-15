@@ -294,6 +294,9 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
 
                 VFS vfs = vfs(cmd, spec)
                 String snapPath = cephPathToVFSPath(cmd.snapshotPath)
+                String volumePath  = snapPath.split("@")[0]
+                vfs.Assert(vfs.exists(volumePath), "cannot find file[${volumePath}]")
+
                 if (!(cmd.skipOnExisting && vfs.exists(snapPath))) {
                     vfs.createCephRaw(snapPath, 0L)
                 }
