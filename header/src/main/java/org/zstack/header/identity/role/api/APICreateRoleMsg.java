@@ -23,6 +23,8 @@ public class APICreateRoleMsg extends APICreateMessage {
     private List<String> policyUuids;
     @APIParam(required = false, maxLength = 255, emptyString = false)
     private String identity;
+    @APIParam(required = false, maxLength = 32, emptyString = false)
+    private String rootUuid;
 
     public List<String> getPolicyUuids() {
         return policyUuids;
@@ -62,6 +64,14 @@ public class APICreateRoleMsg extends APICreateMessage {
 
     public void setIdentity(String identity) {
         this.identity = identity;
+    }
+
+    public String getRootUuid() {
+        return rootUuid;
+    }
+
+    public void setRootUuid(String rootUuid) {
+        this.rootUuid = rootUuid;
     }
 
     public static APICreateRoleMsg __example__() {

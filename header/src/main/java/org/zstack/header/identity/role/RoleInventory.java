@@ -13,6 +13,7 @@ public class RoleInventory {
     private String name;
     private String description;
     private String identity;
+    private String rootUuid;
     private RoleType type;
     private RoleState state;
     private Timestamp createDate;
@@ -29,6 +30,7 @@ public class RoleInventory {
         this.setState(vo.getState());
         this.setUuid(vo.getUuid());
         this.setIdentity(vo.getIdentity());
+        this.setRootUuid(vo.getRootUuid());
         this.setStatements(RolePolicyStatementInventory.valueOf(vo.getStatements()));
         this.setPolicies(RolePolicyRefInventory.valueOf(vo.getPolicies()));
     }
@@ -44,6 +46,7 @@ public class RoleInventory {
         inv.state = vo.getState();
         inv.description = vo.getDescription();
         inv.identity = vo.getIdentity();
+        inv.rootUuid = inv.getRootUuid();
         inv.createDate = vo.getCreateDate();
         inv.lastOpDate = vo.getLastOpDate();
         inv.statements = RolePolicyStatementInventory.valueOf(vo.getStatements());
@@ -133,5 +136,13 @@ public class RoleInventory {
 
     public void setIdentity(String identity) {
         this.identity = identity;
+    }
+
+    public String getRootUuid() {
+        return rootUuid;
+    }
+
+    public void setRootUuid(String rootUuid) {
+        this.rootUuid = rootUuid;
     }
 }
