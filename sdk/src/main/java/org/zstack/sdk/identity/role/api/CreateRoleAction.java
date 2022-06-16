@@ -40,6 +40,9 @@ public class CreateRoleAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String identity;
 
+    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String rootUuid;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

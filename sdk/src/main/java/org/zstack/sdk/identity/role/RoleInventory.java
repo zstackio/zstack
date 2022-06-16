@@ -37,6 +37,14 @@ public class RoleInventory  {
         return this.identity;
     }
 
+    public java.lang.String rootUuid;
+    public void setRootUuid(java.lang.String rootUuid) {
+        this.rootUuid = rootUuid;
+    }
+    public java.lang.String getRootUuid() {
+        return this.rootUuid;
+    }
+
     public RoleType type;
     public void setType(RoleType type) {
         this.type = type;
