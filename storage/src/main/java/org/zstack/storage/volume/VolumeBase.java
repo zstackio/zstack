@@ -38,10 +38,12 @@ import org.zstack.header.message.*;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.group.MemorySnapshotGroupExtensionPoint;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
@@ -90,6 +92,8 @@ public class VolumeBase implements Volume {
     private PluginRegistry pluginRgty;
     @Autowired
     private VolumeDeletionPolicyManager deletionPolicyMgr;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
 
     public VolumeBase(VolumeVO vo) {
         self = vo;
@@ -2598,6 +2602,41 @@ public class VolumeBase implements Volume {
                     @Override
                     public void fail(ErrorCode errorCode) {
                         trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "archive-vm-devices-info-for-memory-snapshot-group";
+
+            @Override
+            public boolean skip(Map data) {
+                return msg.getConsistentType() != ConsistentType.Application;
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(pluginRgty.getExtensionList(MemorySnapshotGroupExtensionPoint.class)).each((ext, compl) -> {
+                    ext.afterCreateMemorySnapshotGroup(((VolumeSnapshotGroupInventory) data.get(SNAPSHOT_GROUP_INV)), new Completion(compl) {
+                        @Override
+                        public void success() {
+                            compl.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            compl.addError(errorCode);
+                            compl.allDone();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (errorCodeList.getCauses().isEmpty()) {
+                            vidm.archiveCurrentDeviceAddress(msg.getVmInstance().getUuid(), ((VolumeSnapshotGroupInventory) data.get(SNAPSHOT_GROUP_INV)).getUuid());
+                            trigger.next();
+                            return;
+                        }
+                        trigger.fail(errorCodeList.getCauses().get(0));
                     }
                 });
             }

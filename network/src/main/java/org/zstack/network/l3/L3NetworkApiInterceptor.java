@@ -18,6 +18,11 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.network.service.MtuGetter;
@@ -493,6 +498,22 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             APIDeleteL3NetworkEvent evt = new APIDeleteL3NetworkEvent(msg.getId());
             bus.publish(evt);
             throw new StopRoutingException();
+        }
+
+        List<String> nicUuidList = Q.New(VmNicVO.class).select(VmNicVO_.uuid)
+                .eq(VmNicVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .listValues();
+        if (nicUuidList.isEmpty()) {
+            return;
+        }
+
+        List<String> memorySnapshotGroupUuids = Q.New(VmInstanceDeviceAddressArchiveVO.class)
+                .select(VmInstanceDeviceAddressArchiveVO_.addressGroupUuid)
+                .eq(VmInstanceDeviceAddressArchiveVO_.metadataClass, VmNicInventory.class.getCanonicalName())
+                .in(VmInstanceDeviceAddressArchiveVO_.resourceUuid, nicUuidList).listValues();
+        if (!memorySnapshotGroupUuids.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr("nic with l3 network[uuid: %s] is referenced by VolumeSnapshotGroup[uuid: %s], delete this VolumeSnapshotGroup before deleting this l3 network.",
+                    msg.getL3NetworkUuid(), String.join("','", memorySnapshotGroupUuids)));
         }
     }
 
