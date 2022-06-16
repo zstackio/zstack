@@ -90,4 +90,15 @@ public class VmGlobalConfig {
     @BindResourceConfig(value = {VmInstanceVO.class})
     @GlobalConfigValidation(validValues = {"guest", "host"})
     public static GlobalConfig VM_CLOCK_TRACK = new GlobalConfig(CATEGORY, "vm.clock.track");
+
+    @BindResourceConfig(value = {VmInstanceVO.class})
+    @GlobalConfigValidation(validValues = {"0", "60", "600", "1800", "3600", "7200", "21600", "43200", "86400"})
+    @GlobalConfigDef(defaultValue = "0", type = Integer.class, description = "vm clock sync interval in seconds")
+    public static GlobalConfig VM_CLOCK_SYNC_INTERVAL_IN_SECONDS = new GlobalConfig(CATEGORY, "vm.clock.sync.interval.in.seconds");
+
+    @BindResourceConfig(value = {VmInstanceVO.class})
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "sync clock after vm resume")
+    public static GlobalConfig VM_CLOCK_SYNC_AFTER_VM_RESUME = new GlobalConfig(CATEGORY, "vm.clock.sync.after.vm.resume");
+
 }
