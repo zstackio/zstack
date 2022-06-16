@@ -41,6 +41,11 @@
     <bean id="KVMConnectExtensionForL2Network" class="org.zstack.kvm.KVMConnectExtensionForL2Network">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KVMHostConnectionReestablishExtensionForL2Network" class="org.zstack.kvm.KVMHostConnectionReestablishExtensionForL2Network">
+        <zstack:plugin>
             <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
         </zstack:plugin>
     </bean>
