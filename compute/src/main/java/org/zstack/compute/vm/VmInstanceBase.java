@@ -61,6 +61,8 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.IpRangeHelper;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
@@ -95,6 +97,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected DatabaseFacade dbf;
     @Autowired
     protected ThreadFacade thdf;
+    @Autowired
+    protected ResourceConfigFacade rcf;
     @Autowired
     protected VmInstanceManager vmMgr;
     @Autowired
@@ -3304,15 +3308,13 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(APISetVmClockTrackMsg msg) {
         APISetVmClockTrackEvent evt = new APISetVmClockTrackEvent(msg.getId());
-        if (msg.getTrack().equals(VmClockTrack.guest.toString())) {
-            SystemTagCreator creator = VmSystemTags.CLOCK_TRACK.newSystemTagCreator(self.getUuid());
-            creator.recreate = true;
-            creator.setTagByTokens(map(e(VmSystemTags.CLOCK_TRACK_TOKEN, msg.getTrack())));
-            creator.create();
-        } else {
-            VmSystemTags.CLOCK_TRACK.delete(self.getUuid());
+        //sync time by BIOS in win
+        ResourceConfig rc = rcf.getResourceConfig(VmGlobalConfig.VM_CLOCK_TRACK.getIdentity());
+        rc.updateValue(msg.getVmInstanceUuid(), msg.getTrack());
+        //sync time by QGA
+        for (VmClockSyncExtensionPoint ext : pluginRgty.getExtensionList(VmClockSyncExtensionPoint.class)) {
+            ext.clockSync(msg.getVmInstanceUuid(), msg.isSyncAfterVMResume(), msg.getIntervalInSeconds());
         }
-
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }
@@ -6600,6 +6602,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 evt.setInventory(inv);
                 bus.publish(evt);
+                extEmitter.afterResumeVm(inv);
                 taskChain.next();
             }
 

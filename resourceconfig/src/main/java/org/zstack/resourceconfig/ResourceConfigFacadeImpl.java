@@ -137,6 +137,17 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
         return rc.getResourceConfigValue(resourceUuid, clz);
     }
 
+    @Override
+    public List<ResourceConfigVO> getResourceConfigValues(String name, String category, List<String> resourceUuids) {
+        if (resourceUuids == null || resourceUuids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return Q.New(ResourceConfigVO.class)
+                .eq(ResourceConfigVO_.name, name)
+                .eq(ResourceConfigVO_.category, category)
+                .in(ResourceConfigVO_.resourceUuid, resourceUuids).list();
+    }
+
     protected void buildResourceConfig(Field field) throws Exception {
         BindResourceConfig at = field.getAnnotation(BindResourceConfig.class);
         GlobalConfig gc = (GlobalConfig) field.get(null);
