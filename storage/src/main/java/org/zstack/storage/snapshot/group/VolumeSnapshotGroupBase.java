@@ -30,6 +30,7 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
@@ -39,6 +40,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourceIdToRouteMsg;
@@ -59,6 +61,8 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
     private ThreadFacade thdf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
 
     public VolumeSnapshotGroupBase(VolumeSnapshotGroupVO self) {
         this.self = self;
@@ -222,6 +226,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
         }).run(new WhileDoneCompletion(msg) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
+                vidm.deleteArchiveVmInstanceDeviceAddressGroup(msg.getGroupUuid());
                 bus.reply(msg, reply);
             }
         });
@@ -286,29 +291,34 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
 
             @Override
             public boolean skip(Map data) {
-                return self.getVolumeSnapshotRefs().stream().filter(sp -> sp.getVolumeType().equals(VolumeType.Memory.toString())).findFirst() == null;
+                return self.getVolumeSnapshotRefs().stream().filter(sp -> sp.getVolumeType().equals(VolumeType.Memory.toString())).collect(Collectors.toList()).isEmpty();
             }
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                List<MemorySnapshotGroupExtensionPoint> extensionList = pluginRgty.getExtensionList(MemorySnapshotGroupExtensionPoint.class);
+                new While<>(pluginRgty.getExtensionList(MemorySnapshotGroupExtensionPoint.class)).each((ext, compl) -> {
+                    ext.beforeRevertMemorySnapshotGroup(getSelfInventory(), new Completion(compl) {
+                        @Override
+                        public void success() {
+                            compl.done();
+                        }
 
-                if (extensionList.isEmpty()) {
-                    trigger.next();
-                    return;
-                }
-
-                extensionList.forEach(exp -> exp.beforeRestoreVmRevertVmDeviceInfo(getSelfInventory(), new Completion(trigger) {
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            compl.addError(errorCode);
+                            compl.allDone();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void success() {
-                        trigger.next();
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (errorCodeList.getCauses().isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+                        trigger.fail(errorCodeList.getCauses().get(0));
                     }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                }));
+                });
             }
         }).then(new NoRollbackFlow() {
             @Override

@@ -10,7 +10,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
-import org.zstack.compute.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
