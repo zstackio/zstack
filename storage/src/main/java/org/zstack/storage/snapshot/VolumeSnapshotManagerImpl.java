@@ -34,10 +34,7 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -757,39 +754,45 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "sync-root-volume-size";
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        SyncVolumeSizeOnPrimaryStorageMsg smsg = new SyncVolumeSizeOnPrimaryStorageMsg();
+                if (volumeVO.getType().equals(VolumeType.Memory)) {
+                    volumeSize = Q.New(VmInstanceVO.class)
+                            .select(VmInstanceVO_.memorySize)
+                            .eq(VolumeVO_.vmInstanceUuid, volumeVO.getVmInstanceUuid())
+                            .findValue();
+                } else {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "sync-root-volume-size";
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            SyncVolumeSizeOnPrimaryStorageMsg smsg = new SyncVolumeSizeOnPrimaryStorageMsg();
 
-                        smsg.setPrimaryStorageUuid(volumeVO.getPrimaryStorageUuid());
-                        smsg.setVolumeUuid(volumeVO.getUuid());
-                        smsg.setInstallPath(volumeVO.getInstallPath());
-                        bus.makeTargetServiceIdByResourceUuid(smsg, PrimaryStorageConstant.SERVICE_ID, volumeVO.getPrimaryStorageUuid());
-                        bus.send(smsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
+                            smsg.setPrimaryStorageUuid(volumeVO.getPrimaryStorageUuid());
+                            smsg.setVolumeUuid(volumeVO.getUuid());
+                            smsg.setInstallPath(volumeVO.getInstallPath());
+                            bus.makeTargetServiceIdByResourceUuid(smsg, PrimaryStorageConstant.SERVICE_ID, volumeVO.getPrimaryStorageUuid());
+                            bus.send(smsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        trigger.fail(reply.getError());
+                                        return;
+                                    }
+
+                                    SyncVolumeSizeOnPrimaryStorageReply r = reply.castReply();
+                                    volumeSize = r.getActualSize();
+
+                                    trigger.next();
                                 }
 
-                                SyncVolumeSizeOnPrimaryStorageReply r = reply.castReply();
-                                volumeSize = r.getActualSize();
+                            });
+                        }
 
-                                trigger.next();
-                            }
-
-                        });
-                    }
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return !PrimaryStorageType.valueOf(storageVO.getType()).isSupportCreateVolumeSnapshotCheckCapacity();
-                    }
-                });
-
+                        @Override
+                        public boolean skip(Map data) {
+                            return !PrimaryStorageType.valueOf(storageVO.getType()).isSupportCreateVolumeSnapshotCheckCapacity();
+                        }
+                    });
+                }
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "check-primary-storage-capacity";
