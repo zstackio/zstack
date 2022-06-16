@@ -18,6 +18,10 @@ public class APISetVmClockTrackMsg extends APIMessage implements VmInstanceMessa
     private String uuid;
     @APIParam(validValues = {"guest", "host"})
     private String track;
+    @APIParam(required = false)
+    private Boolean syncAfterVMResume;
+    @APIParam(validValues = {"0", "60", "600", "1800", "3600", "7200", "21600", "43200", "86400"}, required = false)
+    private Integer intervalInSeconds;
 
     @Override
     public String getVmInstanceUuid() {
@@ -40,10 +44,28 @@ public class APISetVmClockTrackMsg extends APIMessage implements VmInstanceMessa
         this.track = track;
     }
 
+    public Boolean isSyncAfterVMResume() {
+        return syncAfterVMResume;
+    }
+
+    public void setSyncAfterVMResume(boolean syncAfterVMResume) {
+        this.syncAfterVMResume = syncAfterVMResume;
+    }
+
+    public Integer getIntervalInSeconds() {
+        return intervalInSeconds;
+    }
+
+    public void setIntervalInSeconds(Integer intervalInSeconds) {
+        this.intervalInSeconds = intervalInSeconds;
+    }
+
     public static APISetVmClockTrackMsg __example__() {
         APISetVmClockTrackMsg msg = new APISetVmClockTrackMsg();
         msg.uuid = uuid();
         msg.track = "guest";
+        msg.syncAfterVMResume = true;
+        msg.intervalInSeconds = 60;
         return msg;
     }
 }

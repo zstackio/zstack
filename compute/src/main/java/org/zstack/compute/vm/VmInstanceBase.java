@@ -65,6 +65,8 @@ import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.resourceconfig.ResourceConfigVO;
+import org.zstack.resourceconfig.ResourceConfigVO_;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
@@ -3556,8 +3558,13 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(APISetVmClockTrackMsg msg) {
         APISetVmClockTrackEvent evt = new APISetVmClockTrackEvent(msg.getId());
+        //sync time by BIOS in win
         ResourceConfig rc = rcf.getResourceConfig(VmGlobalConfig.VM_CLOCK_TRACK.getIdentity());
         rc.updateValue(msg.getVmInstanceUuid(), msg.getTrack());
+        //sync time by QGA
+        for (VmClockSyncExtensionPoint ext : pluginRgty.getExtensionList(VmClockSyncExtensionPoint.class)) {
+            ext.clockSync(msg.getVmInstanceUuid(), msg.isSyncAfterVMResume(), msg.getIntervalInSeconds());
+        }
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
     }
@@ -7337,6 +7344,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 evt.setInventory(inv);
                 bus.publish(evt);
+                extEmitter.afterResumeVm(inv);
                 taskChain.next();
             }
 
