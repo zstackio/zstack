@@ -1694,7 +1694,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     @Transactional
     private void changeVipOwner(AccountResourceRefInventory ref, String newOwnerUuid) {
-        String vipUuid = Q.New(EipVO.class).eq(EipVO_.uuid, ref.getResourceUuid()).select(EipVO_.vipUuid).findValue();
+        String vipUuid = Q.New(EipVO.class).select(EipVO_.vipUuid).findValue();
 
         if (StringUtils.isBlank(vipUuid)) {
             logger.debug(String.format("Eip[uuid:%s] doesn't have any vip, there is no need to change owner of vip.",
