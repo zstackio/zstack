@@ -20,6 +20,7 @@ import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.RunInQueue;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -1263,32 +1264,30 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void handle(final VmStateChangedOnHostMsg msg) {
         logger.debug(String.format("get VmStateChangedOnHostMsg for vm[uuid:%s], on host[uuid:%s], which tracing state is [%s]" +
                 " and current state on host is [%s]", msg.getVmInstanceUuid(), msg.getHostUuid(), msg.getVmStateAtTracingMoment(), msg.getStateOnHost()));
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                if (msg.isFromSync()) {
-                    return syncThreadName;
-                } else {
-                    return String.format("change-vm-state-%s", syncThreadName);
-                }
-            }
 
-            @Override
-            public void run(final SyncTaskChain chain) {
-                logger.debug(String.format("running sync task %s with sync signature %s", getName(), getSyncSignature()));
-                vmStateChangeOnHost(msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
-                });
-            }
+        String syncSignature;
+        // note: use vm as outer queue name to avoid
+        // abnormal vm issue blocks the queue's execution
+        if (msg.isFromSync()) {
+            syncSignature = syncThreadName;
+        } else {
+            syncSignature = String.format("change-vm-state-%s", syncThreadName);
+        }
 
-            @Override
-            public String getName() {
-                return String.format("vm-%s-state-change-on-the-host-%s", msg.getVmInstanceUuid(), msg.getHostUuid());
-            }
-        });
+        RunInQueue queue = new RunInQueue(syncSignature, thdf, 1);
+        queue.name(syncSignature)
+                .asyncBackup(msg)
+                .run(outer -> new RunInQueue(String.format("vm-state-change-on-host-%s", msg.getHostUuid()), thdf, 1)
+                        .name(String.format("vm-%s-state-change-on-the-host-%s", msg.getVmInstanceUuid(), msg.getHostUuid()))
+                        .asyncBackup(msg)
+                        .asyncBackup(outer)
+                        .run(chain -> vmStateChangeOnHost(msg, new NoErrorCompletion(chain) {
+                            @Override
+                            public void done() {
+                                chain.next();
+                                outer.next();
+                            }
+                        })));
     }
 
     private VmAbnormalLifeCycleOperation getVmAbnormalLifeCycleOperation(String originalHostUuid,
