@@ -22,3 +22,14 @@ DELIMITER ;
 
 CALL Alter_SCSI_Table();
 DROP PROCEDURE Alter_SCSI_Table;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`OAuthClientDetailsVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `clientId` varchar(128) DEFAULT NULL,
+    `clientSecret` varchar(128) DEFAULT NULL,
+    `codeUri` varchar(256) DEFAULT NULL,
+    `tokenUri` varchar(256) DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

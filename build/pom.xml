@@ -523,6 +523,11 @@
                     <artifactId>billing</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>oauth2-plugin</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
     </profiles>
