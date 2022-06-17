@@ -36,6 +36,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String strategy;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
+    private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -269,5 +270,13 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
         this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
+    }
+
+    public Map<String, List<String>> getDataVolumeSystemTagsOnIndex() {
+        return dataVolumeSystemTagsOnIndex;
+    }
+
+    public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
+        this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
     }
 }

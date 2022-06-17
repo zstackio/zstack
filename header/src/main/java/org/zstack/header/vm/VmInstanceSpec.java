@@ -321,6 +321,7 @@ public class VmInstanceSpec implements Serializable {
 
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
+    private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private boolean skipIpAllocation = false;
 
     public boolean isSkipIpAllocation() {
@@ -680,6 +681,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
         this.dataVolumeSystemTags = dataVolumeSystemTags;
+    }
+
+    public Map<String, List<String>> getDataVolumeSystemTagsOnIndex() {
+        return dataVolumeSystemTagsOnIndex;
+    }
+
+    public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
+        this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
     }
 
     public boolean isInstantiateResourcesSuccess() {
