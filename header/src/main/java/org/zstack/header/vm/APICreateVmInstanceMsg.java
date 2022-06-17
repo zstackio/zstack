@@ -17,6 +17,7 @@ import org.zstack.header.zone.ZoneVO;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
@@ -181,6 +182,9 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false)
     private List<String> dataVolumeSystemTags;
 
+    @APIParam(required = false)
+    private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
+
     public String getStrategy() {
         return strategy;
     }
@@ -339,6 +343,14 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
         this.dataVolumeSystemTags = dataVolumeSystemTags;
+    }
+
+    public Map<String, List<String>> getDataVolumeSystemTagsOnIndex() {
+        return dataVolumeSystemTagsOnIndex;
+    }
+
+    public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
+        this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
     }
 
     public static APICreateVmInstanceMsg __example__() {
