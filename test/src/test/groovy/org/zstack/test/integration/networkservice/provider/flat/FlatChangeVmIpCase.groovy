@@ -10,6 +10,8 @@ import org.zstack.network.service.flat.BridgeNameFinder
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmNicVO
 import org.zstack.header.vm.VmNicVO_
+import org.zstack.header.vm.VmUpdateNicOnHypervisorMsg
+import org.zstack.header.vm.VmUpdateNicOnHypervisorReply
 import org.zstack.header.network.l3.UsedIpVO
 import org.zstack.header.network.service.NetworkServiceProviderVO
 import org.zstack.header.network.service.NetworkServiceProviderVO_
@@ -150,7 +152,6 @@ class FlatChangeVmIpCase extends SubCase{
 
                     l3Network {
                         name = "pubL3"
-
                         service {
                             provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
                             types = [NetworkServiceType.DHCP.toString(),
@@ -162,12 +163,32 @@ class FlatChangeVmIpCase extends SubCase{
                             provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
                             types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
                         }
-
                         ip {
                             startIp = "12.100.10.10"
                             endIp = "12.100.10.200"
                             netmask = "255.255.255.0"
                             gateway = "12.100.10.1"
+                        }
+                    }
+
+                    l3Network {
+                        name = "flatL3_2"
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(),
+                                     UserdataConstant.USERDATA_TYPE_STRING,
+                                     EipConstant.EIP_NETWORK_SERVICE_TYPE
+                                    ]
+                        }
+                        service {
+                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
+                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
+                        }
+                        ip {
+                            startIp = "192.167.100.10"
+                            endIp = "192.167.100.200"
+                            netmask = "255.255.255.0"
+                            gateway = "192.167.100.1"
                         }
                     }
                 }
@@ -183,6 +204,7 @@ class FlatChangeVmIpCase extends SubCase{
             testFlatBaseServiceWhenChangeIp()
             testFlatBaseServiceWhenChangeL3()
             testEipWhenChangeIp()
+            testUpdateNicWhenChangeL3()
         }
     }
 
@@ -429,5 +451,43 @@ class FlatChangeVmIpCase extends SubCase{
         assert applyEipCmd != null
         assert applyEipCmd.eip.nicIp == ip2
         assert applyEipCmd.eip.vip == releaseEipCmd.eip.vip
+    }
+
+    void testUpdateNicWhenChangeL3() {
+        L3NetworkInventory flat_l3 = env.inventoryByName("flatL3")
+        L3NetworkInventory flat_l3_2 = env.inventoryByName("flatL3_2")
+        L3NetworkInventory pub_l3 = env.inventoryByName("pubL3")
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm-update-nic-change-ip"
+            imageUuid = env.inventoryByName("image1").uuid
+            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
+            l3NetworkUuids = [flat_l3.uuid, flat_l3_2.uuid]
+            defaultL3NetworkUuid = flat_l3.uuid
+        }
+        VmNicInventory vmNic = vm.getVmNics().get(0)
+        VmNicVO vmNicVO = dbFindByUuid(vmNic.uuid, VmNicVO.class)
+        String ip1 = vmNicVO.getIp()
+
+        KVMAgentCommands.UpdateNicCmd updateNicCmd = null
+        env.simulator(KVMConstant.KVM_UPDATE_NIC_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            updateNicCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.UpdateNicCmd.class)
+            return new KVMAgentCommands.UpdateNicRsp()
+        }
+
+        List<FreeIpInventory> freeIp4s = getFreeIp {
+            l3NetworkUuid = pub_l3.uuid
+            ipVersion = IPv6Constants.IPv4
+        }
+        String ip2 = freeIp4s.get(0).getIp()
+        changeVmNicNetwork {
+            vmNicUuid = vmNic.uuid
+            destL3NetworkUuid = pub_l3.uuid
+            systemTags = [String.format("staticIp::%s::%s", pub_l3.uuid, ip2)]
+        }
+
+        assert ip1 != ip2
+        assert updateNicCmd != null
+        assert updateNicCmd.nics.size() == 1
+        assert updateNicCmd.nics.get(0).mac == vmNicVO.getMac()
     }
 }
