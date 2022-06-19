@@ -90,7 +90,6 @@ class CephCreateVmByImageCapacityCase extends SubCase {
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = sizedImage.uuid
             l3NetworkUuids = [l3.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
         }
 
         GetPrimaryStorageCapacityResult capacityResult = getPrimaryStorageCapacity {
@@ -117,6 +116,5 @@ class CephCreateVmByImageCapacityCase extends SubCase {
             primaryStorageUuids = [ps.uuid]
         }
         assert beforeCapacityResult.availablePhysicalCapacity == afterCapacityResult.availablePhysicalCapacity + image_physical_size
-
     }
 }

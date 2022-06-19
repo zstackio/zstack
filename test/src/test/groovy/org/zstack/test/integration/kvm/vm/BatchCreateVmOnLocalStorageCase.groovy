@@ -180,7 +180,6 @@ class BatchCreateVmOnLocalStorageCase extends SubCase{
                             instanceOfferingUuid = instanceOffering.uuid
                             l3NetworkUuids = [l3.uuid]
                             imageUuid = image.uuid
-                            rootDiskOfferingUuid = diskOffering.uuid
                         }
 
                         latch.countDown()

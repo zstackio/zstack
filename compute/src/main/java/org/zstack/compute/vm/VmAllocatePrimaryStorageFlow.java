@@ -64,13 +64,10 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             Optional.ofNullable(spec.getImageSpec().getSelectedBackupStorage())
                     .ifPresent(it -> rmsg.setBackupStorageUuid(it.getBackupStorageUuid()));
         }
-        if (ImageMediaType.ISO.toString().equals(iminv.getMediaType())) {
-            rmsg.setSize(spec.getRootDiskOffering().getDiskSize());
-            rmsg.setAllocationStrategy(spec.getRootDiskOffering().getAllocatorStrategy());
+        rmsg.setSize(spec.getRootDiskAllocateSize());
+        if (spec.getRootDiskOffering() != null) {
             rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
-        } else {
-            //TODO: find a way to allow specifying strategy for root disk
-            rmsg.setSize(iminv.getSize());
+            rmsg.setAllocationStrategy(spec.getRootDiskOffering().getAllocatorStrategy());
         }
 
         rmsg.setRequiredHostUuid(destHost.getUuid());

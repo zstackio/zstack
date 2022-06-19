@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.allocator.HostAllocatorManager;
+import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
 import org.zstack.core.asyncbatch.AsyncLoop;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -28,7 +29,10 @@ import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -44,6 +48,7 @@ import static org.zstack.core.Platform.operr;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
+    private static final CLogger logger = Utils.getLogger(LocalStorageDesignatedAllocateCapacityFlow.class);
 
     @Autowired
     protected DatabaseFacade dbf;
@@ -63,7 +68,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
             return;
         }
 
-        AllocatePrimaryStorageSpaceMsg rootVolumeAllocationMsg =getRootVolumeAllocationMsg(spec);
+        AllocatePrimaryStorageSpaceMsg rootVolumeAllocationMsg = getRootVolumeAllocationMsg(spec);
         msgs.add(rootVolumeAllocationMsg);
         List<AllocatePrimaryStorageSpaceMsg> dataVolumeAllocationMsgs = getDataVolumeAllocationMsgs(spec);
         msgs.addAll(dataVolumeAllocationMsgs);
@@ -150,12 +155,9 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
         }
         rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
         rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
-        if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
-            rmsg.setSize(spec.getRootDiskOffering().getDiskSize());
+        rmsg.setSize(spec.getRootDiskAllocateSize());
+        if (spec.getRootDiskOffering() != null) {
             rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
-        } else {
-            //TODO: find a way to allow specifying strategy for root disk
-            rmsg.setSize(spec.getImageSpec().getInventory().getSize());
         }
 
         if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
