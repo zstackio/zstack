@@ -27,6 +27,7 @@ import org.zstack.header.agent.CancelCommand;
 import org.zstack.header.agent.ReloadableCommand;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
+import org.zstack.header.console.ConsoleProxyAgentVO;
 import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.trash.CleanTrashResult;
@@ -50,6 +51,7 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
@@ -2508,7 +2510,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void createVolumeFromTemplate(final InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
-
+        final VmInstanceSpec.ImageSpec ispec = msg.getTemplateSpec();
         String targetCephPoolName = getRootVolumeTargetPoolName(msg.getVolume().getUuid());
         checkCephPoolCapacityForNewVolume(targetCephPoolName, msg.getVolume().getSize());
 
@@ -2529,7 +2531,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         DownloadVolumeTemplateToPrimaryStorageMsg dmsg = new DownloadVolumeTemplateToPrimaryStorageMsg();
                         dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                         dmsg.setHostUuid(msg.getDestHost().getUuid());
-                        dmsg.setTemplateSpec(msg.getTemplateSpec());
+                        dmsg.setTemplateSpec(ispec);
                         bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, dmsg.getPrimaryStorageUuid());
                         bus.send(dmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -2573,6 +2575,36 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 trigger.next();
                             }
                         });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "resize-volume-on-primary-storage";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        ImageInventory image = ispec.getInventory();
+                        return image.getSize() >= msg.getVolume().getSize();
+                    }
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        ResizeVolumeOnPrimaryStorageMsg rmsg = new ResizeVolumeOnPrimaryStorageMsg();
+                        rmsg.setVolume(msg.getVolume());
+                        rmsg.setSize(msg.getVolume().getSize());
+                        rmsg.setPrimaryStorageUuid(msg.getVolume().getPrimaryStorageUuid());
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, msg.getVolume().getPrimaryStorageUuid());
+                        bus.send(rmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                        trigger.next();
                     }
                 });
 
