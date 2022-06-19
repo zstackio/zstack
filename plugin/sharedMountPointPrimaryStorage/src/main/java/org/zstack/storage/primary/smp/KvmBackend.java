@@ -115,6 +115,7 @@ public class KvmBackend extends HypervisorBackend {
         public String templatePathInCache;
         public String installPath;
         public String volumeUuid;
+        public long virtualSize;
     }
 
     public static class CreateVolumeWithBackingCmd extends AgentCmd {
@@ -889,6 +890,9 @@ public class KvmBackend extends HypervisorBackend {
                         cmd.installPath = installPath;
                         cmd.templatePathInCache = makeCachedImageInstallUrl(image);
                         cmd.volumeUuid = volume.getUuid();
+                        if (image.getSize() < volume.getSize()) {
+                            cmd.virtualSize = volume.getSize();
+                        }
 
                         httpCall(CREATE_VOLUME_FROM_CACHE_PATH, hostUuid, cmd, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
                             @Override

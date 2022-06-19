@@ -152,14 +152,9 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         }
         rmsg.setRequiredPrimaryStorageUuid(localStorageUuid);
         rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
+        rmsg.setSize(spec.getRootDiskAllocateSize());
         if (spec.getRootDiskOffering() != null) {
             rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
-        }
-        if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
-            rmsg.setSize(spec.getRootDiskOffering().getDiskSize());
-        } else {
-            //TODO: find a way to allow specifying strategy for root disk
-            rmsg.setSize(spec.getImageSpec().getInventory().getSize());
         }
 
         if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {

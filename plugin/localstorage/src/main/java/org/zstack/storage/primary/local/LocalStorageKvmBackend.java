@@ -264,6 +264,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         private String templatePathInCache;
         private String installUrl;
         private String volumeUuid;
+        private long virtualSize;
 
         public String getTemplatePathInCache() {
             return templatePathInCache;
@@ -287,6 +288,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         public void setVolumeUuid(String volumeUuid) {
             this.volumeUuid = volumeUuid;
+        }
+
+        public long getVirtualSize() {
+            return virtualSize;
+        }
+
+        public void setVirtualSize(long virtualSize) {
+            this.virtualSize = virtualSize;
         }
     }
 
@@ -1595,6 +1604,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         cmd.setInstallUrl(installPath);
                         cmd.setTemplatePathInCache(pathInCache);
                         cmd.setVolumeUuid(volume.getUuid());
+                        if (image.getSize() < volume.getSize()) {
+                            cmd.setVirtualSize(volume.getSize());
+                        }
 
                         httpCall(CREATE_VOLUME_FROM_CACHE_PATH, hostUuid, cmd, CreateVolumeFromCacheRsp.class, new ReturnValueCompletion<CreateVolumeFromCacheRsp>(trigger) {
                             @Override

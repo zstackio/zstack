@@ -321,6 +321,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class CreateRootVolumeFromTemplateCmd extends CreateVolumeCmd {
         private String templatePathInCache;
         private long timeout;
+        private long virtualSize;
         
         public long getTimeout() {
             return timeout;
@@ -333,6 +334,12 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
         public void setTemplatePathInCache(String templatePathInCache) {
             this.templatePathInCache = templatePathInCache;
+        }
+        public long getVirtualSize() {
+            return virtualSize;
+        }
+        public void setVirtualSize(long virtualSize) {
+            this.virtualSize = virtualSize;
         }
     }
     

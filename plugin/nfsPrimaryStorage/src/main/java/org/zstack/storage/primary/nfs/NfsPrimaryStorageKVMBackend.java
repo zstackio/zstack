@@ -1238,7 +1238,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
-    public void createVolumeFromImageCache(final PrimaryStorageInventory primaryStorage, final ImageCacheInventory image,
+    public void createVolumeFromImageCache(final PrimaryStorageInventory primaryStorage, final ImageInventory image, final ImageCacheInventory imageCache,
                                            final VolumeInventory volume, final ReturnValueCompletion<String> completion) {
         HostInventory host = nfsFactory.getConnectedHostForOperation(primaryStorage).get(0);
 
@@ -1246,12 +1246,15 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 NfsPrimaryStorageKvmHelper.makeRootVolumeInstallUrl(primaryStorage, volume);
         final String accountUuid = acntMgr.getOwnerAccountUuidOfResource(volume.getUuid());
         final CreateRootVolumeFromTemplateCmd cmd = new CreateRootVolumeFromTemplateCmd();
-        cmd.setTemplatePathInCache(image.getInstallUrl());
+        cmd.setTemplatePathInCache(imageCache.getInstallUrl());
         cmd.setInstallUrl(installPath);
         cmd.setAccountUuid(accountUuid);
         cmd.setName(volume.getName());
         cmd.setVolumeUuid(volume.getUuid());
         cmd.setUuid(primaryStorage.getUuid());
+        if (image.getSize() < volume.getSize()) {
+            cmd.setVirtualSize(volume.getSize());
+        }
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -1269,7 +1272,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 CreateRootVolumeFromTemplateResponse rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(CreateRootVolumeFromTemplateResponse.class);
                 if (!rsp.isSuccess()) {
                     ErrorCode err = operr("fails to create root volume[uuid:%s] from cached image[path:%s] because %s",
-                            volume.getUuid(), image.getImageUuid(), rsp.getError());
+                            volume.getUuid(), imageCache.getImageUuid(), rsp.getError());
                     completion.fail(err);
                     return;
                 }

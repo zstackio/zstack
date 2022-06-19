@@ -63,7 +63,7 @@ public interface NfsPrimaryStorageBackend {
 
     void resetRootVolumeFromImage(VolumeInventory vol, HostInventory host, ReturnValueCompletion<String> completion);
 
-    void createVolumeFromImageCache(PrimaryStorageInventory primaryStorage, ImageCacheInventory image, VolumeInventory volume, ReturnValueCompletion<String> completion);
+    void createVolumeFromImageCache(PrimaryStorageInventory primaryStorage, ImageInventory image, ImageCacheInventory imageCache, VolumeInventory volume, ReturnValueCompletion<String> completion);
 
     void createImageCacheFromVolumeResource(PrimaryStorageInventory primaryStorage, String volumeResourceInstallPath, ImageInventory image, ReturnValueCompletion<BitsInfo> completion);
 
