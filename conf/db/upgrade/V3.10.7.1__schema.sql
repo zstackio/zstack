@@ -1,28 +1,26 @@
-CREATE TABLE IF NOT EXISTS `zstack`.`IAM2ExternalOrganizationRefVO` (
+CREATE TABLE IF NOT EXISTS `zstack`.`IAM2RMSOrganizationRefVO` (
      `uuid` varchar(32) NOT NULL UNIQUE,
-     `externalOrganizationID` varchar(255) NOT NULL,
+     `rmsOrganizationNo` varchar(255) NOT NULL,
      `organizationUuid` varchar(32),
-     `externalOrganizationInfo` text,
      `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
      `createDate` timestamp,
-     INDEX externalOrganizationRefexOrgID (externalOrganizationID),
-     INDEX externalOrganizationRefOrguuid (organizationUuid),
+     INDEX rmsOrganizationRefexOrgNo (rmsOrganizationNo),
+     INDEX rmsOrganizationRefOrguuid (organizationUuid),
      PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `zstack`.`IAM2ExternalOrganizationRefVO` ADD CONSTRAINT fkExternalOrgRefVOOrganizationVO FOREIGN KEY (organizationUuid) REFERENCES IAM2OrganizationVO (uuid) ON DELETE CASCADE;
+ALTER TABLE `zstack`.`IAM2RMSOrganizationRefVO` ADD CONSTRAINT fkRMSOrgRefVOOrganizationVO FOREIGN KEY (organizationUuid) REFERENCES IAM2OrganizationVO (uuid) ON DELETE CASCADE;
 
-CREATE TABLE IF NOT EXISTS `zstack`.`IAM2ExternalVirtualIDRefVO` (
+CREATE TABLE IF NOT EXISTS `zstack`.`IAM2RMSUserRefVO` (
      `uuid` varchar(32) NOT NULL UNIQUE,
-     `externalVirtualID` varchar(255) NOT NULL,
+     `name` varchar(255) NOT NULL,
      `virtualIDUuid` varchar(32),
-     `externalOrganizationID` varchar(255) NOT NULL,
-     `externalVirtualIDInfo` text,
+     `rmsOrgNo` varchar(255) NOT NULL,
      `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
      `createDate` timestamp,
-     INDEX externalVirtualidRefexvirtualID (virtualIDUuid),
-     INDEX externalVirtualidRefvirtualiduuid (virtualIDUuid),
+     INDEX rmsVirtualidRefexvirtualID (virtualIDUuid),
+     INDEX rmsName (name),
      PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `zstack`.`IAM2ExternalVirtualIDRefVO` ADD CONSTRAINT fkExternalOrgRefVOVirtualIDVO FOREIGN KEY (virtualIDUuid) REFERENCES IAM2VirtualIDVO (uuid) ON DELETE CASCADE;
+ALTER TABLE `zstack`.`IAM2RMSUserRefVO` ADD CONSTRAINT fkRMSOrgRefVOVirtualIDVO FOREIGN KEY (virtualIDUuid) REFERENCES IAM2VirtualIDVO (uuid) ON DELETE CASCADE;
