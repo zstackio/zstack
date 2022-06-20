@@ -5821,10 +5821,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
 
                         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                        VmNicVO nicVo = (VmNicVO) data.get(VmInstanceConstant.Params.VmNicInventory.toString());
+                        VmNicVO nicVO = (VmNicVO) data.get(VmInstanceConstant.Params.VmNicInventory.toString());
                         HostInventory dest = spec.getDestHost();
                         VmInstanceInventory vm = getSelfInventory();
-                        vm.setVmNics(list(VmNicInventory.valueOf(nicVo)));
 
                         if (dest == null) {
                             trigger.next();
@@ -5834,6 +5833,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         VmUpdateNicOnHypervisorMsg cmsg = new VmUpdateNicOnHypervisorMsg();
                         cmsg.setVmInstanceUuid(vm.getUuid());
                         cmsg.setHostUuid(dest.getUuid());
+                        cmsg.setNicsUuid(list(nicVO.getUuid()));
                         bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, vm.getUuid());
                         bus.send(cmsg, new CloudBusCallBack(trigger) {
                             @Override
