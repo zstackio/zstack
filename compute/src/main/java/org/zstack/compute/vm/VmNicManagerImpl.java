@@ -276,10 +276,8 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
         List<VmNicVO> vmNicVOS = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, snapshotGroup.getVmInstanceUuid()).eq(VmNicVO_.type, VmInstanceConstant.VIRTUAL_NIC_TYPE).list();
 
         for (VmNicVO vmNicVO : vmNicVOS) {
-            String pci = vidm.getVmDevicePciAddress(vmNicVO.getUuid(), vmNicVO.getVmInstanceUuid());
-
             vidm.createOrUpdateVmDeviceAddress(vmNicVO.getUuid(),
-                    pci != null ? PciAddressConfig.fromString(pci) : null,
+                    null,
                     vmNicVO.getVmInstanceUuid(),
                     JSONObjectUtil.toJsonString(vmNicVO),
                     VmNicInventory.class.getCanonicalName());

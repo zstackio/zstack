@@ -2740,9 +2740,9 @@ public class KVMHost extends HostBase implements Host {
 
         to.setvHostAddOn(vHostAddOn);
 
-        String pci = vidm.getVmDevicePciAddress(nic.getUuid(), nic.getVmInstanceUuid());
+        PciAddressConfig pci = vidm.getVmDevicePciAddress(nic.getUuid(), nic.getVmInstanceUuid());
         if (pci != null) {
-            to.setPci(PciAddressConfig.fromString(pci));
+            to.setPci(pci);
         }
 
         to.setResourceUuid(nic.getUuid());
