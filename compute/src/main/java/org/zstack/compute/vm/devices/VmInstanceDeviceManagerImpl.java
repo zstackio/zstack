@@ -6,7 +6,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -58,7 +57,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
             vo = new VmInstanceDeviceAddressVO();
         }
 
-        vo.setPciAddress(pciAddress.toString());
+        vo.setPciAddress(pciAddress == null ? "" : pciAddress.toString());
         vo.setResourceUuid(resourceUuid);
         vo.setVmInstanceUuid(vmInstanceUuid);
         vo.setMetadata(metadata);
@@ -143,6 +142,8 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
                     archiveVO.setResourceUuid(vo.getResourceUuid());
                     archiveVO.setVmInstanceUuid(vmInstanceUuid);
                     archiveVO.setAddressGroupUuid(group.getUuid());
+                    archiveVO.setMetadata(vo.getMetadata());
+                    archiveVO.setMetadataClass(vo.getMetadataClass());
                     persist(archiveVO);
                 }
 
@@ -186,6 +187,29 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
         }
 
         return createdAddressList;
+    }
+
+    @Override
+    public void deleteArchiveVmInstanceDeviceAddressGroup(String archiveForResourceUuid) {
+        SQL.New(VmInstanceDeviceAddressGroupVO.class).eq(VmInstanceDeviceAddressGroupVO_.resourceUuid, archiveForResourceUuid).hardDelete();
+    }
+
+    @Override
+    public List<VmInstanceDeviceAddressArchiveVO> getAddressArchiveInfoFromArchiveForResourceUuid(String vmInstanceUuid, String archiveForResourceUuid, String metadataClass) {
+        String VmInstanceDeviceAddressGroupUuid = Q.New(VmInstanceDeviceAddressGroupVO.class)
+                .select(VmInstanceDeviceAddressGroupVO_.uuid)
+                .eq(VmInstanceDeviceAddressGroupVO_.resourceUuid, archiveForResourceUuid)
+                .findValue();
+
+        if (VmInstanceDeviceAddressGroupUuid == null) {
+            return new ArrayList<>();
+        }
+
+        return Q.New(VmInstanceDeviceAddressArchiveVO.class)
+                .eq(VmInstanceDeviceAddressArchiveVO_.addressGroupUuid, VmInstanceDeviceAddressGroupUuid)
+                .eq(VmInstanceDeviceAddressArchiveVO_.vmInstanceUuid, vmInstanceUuid)
+                .eq(VmInstanceDeviceAddressArchiveVO_.metadataClass, metadataClass)
+                .list();
     }
 
     private boolean vmExists(String vmInstanceUuid) {

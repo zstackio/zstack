@@ -51,6 +51,16 @@
     </message>
 
     <message>
+        <name>org.zstack.header.vm.devices.APIQueryVmInstanceDeviceAddressArchiveMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.vm.devices.APIQueryVmInstanceDeviceAddressGroupMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
         <name>org.zstack.header.storage.snapshot.group.APIUngroupVolumeSnapshotGroupMsg</name>
     </message>
 

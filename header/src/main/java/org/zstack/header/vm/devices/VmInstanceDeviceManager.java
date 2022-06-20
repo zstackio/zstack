@@ -1,4 +1,4 @@
-package org.zstack.compute.vm.devices;
+package org.zstack.header.vm.devices;
 
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.devices.PciAddressConfig;
@@ -25,4 +25,8 @@ public interface VmInstanceDeviceManager {
     List<VmInstanceDeviceAddressVO> revertDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid);
 
     List<VmInstanceDeviceAddressVO> createDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid, Map<String, String> resourceMap);
+
+    void deleteArchiveVmInstanceDeviceAddressGroup(String archiveForResourceUuid);
+
+    List<VmInstanceDeviceAddressArchiveVO> getAddressArchiveInfoFromArchiveForResourceUuid(String vmInstanceUuid, String archiveForResourceUuid, String metadataClass);
 }

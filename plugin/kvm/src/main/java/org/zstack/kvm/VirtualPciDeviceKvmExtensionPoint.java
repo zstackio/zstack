@@ -1,7 +1,7 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.compute.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceSpec;
 
