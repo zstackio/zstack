@@ -25,8 +25,7 @@ public class ExcelReader implements FormReader {
         byte[] decoded = Base64.getDecoder().decode(base64Content);
         InputStream input = new ByteArrayInputStream(decoded);
 
-        try {
-            Workbook workbook = WorkbookFactory.create(input);
+        try (Workbook workbook = WorkbookFactory.create(input)) {
             if (workbook.getNumberOfSheets() == 0) {
                 workbook.createSheet();
             }

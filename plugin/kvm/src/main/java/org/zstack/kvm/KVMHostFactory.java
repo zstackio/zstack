@@ -552,36 +552,30 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
     @AsyncThread
     private void startTcpServer() throws IOException {
-        Selector selector = Selector.open();
-        ServerSocketChannel serverSocket = ServerSocketChannel.open();
-        serverSocket.bind(new InetSocketAddress("0.0.0.0", KVMGlobalProperty.TCP_SERVER_PORT));
-        serverSocket.configureBlocking(false);
-        serverSocket.register(selector, SelectionKey.OP_ACCEPT);
-        ByteBuffer buffer = ByteBuffer.allocate(256);
+        try (Selector selector = Selector.open(); ServerSocketChannel serverSocket = ServerSocketChannel.open()) {
+            serverSocket.bind(new InetSocketAddress("0.0.0.0", KVMGlobalProperty.TCP_SERVER_PORT));
+            serverSocket.configureBlocking(false);
+            serverSocket.register(selector, SelectionKey.OP_ACCEPT);
+            ByteBuffer buffer = ByteBuffer.allocate(256);
 
-        Integer interval = KVMGlobalConfig.CONNECTION_SERVER_UPDATE_INTERVAL.value(Integer.class);
-        while (true) {
-            if (!KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
-                serverSocket.close();
-                selector.close();
-                break;
-            }
+            Integer interval = KVMGlobalConfig.CONNECTION_SERVER_UPDATE_INTERVAL.value(Integer.class);
+            while (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
+                selector.select(interval);
+                Set<SelectionKey> selectedKeys = selector.selectedKeys();
+                Iterator<SelectionKey> iter = selectedKeys.iterator();
+                while (iter.hasNext()) {
+                    SelectionKey key = iter.next();
 
-            selector.select(interval);
-            Set<SelectionKey> selectedKeys = selector.selectedKeys();
-            Iterator<SelectionKey> iter = selectedKeys.iterator();
-            while (iter.hasNext()) {
-                SelectionKey key = iter.next();
+                    if (key.isAcceptable()) {
+                        register(selector, serverSocket);
+                    }
 
-                if (key.isAcceptable()) {
-                    register(selector, serverSocket);
+                    if (key.isReadable()) {
+                        tryToRead(buffer, key);
+                    }
+
+                    iter.remove();
                 }
-
-                if (key.isReadable()) {
-                    tryToRead(buffer, key);
-                }
-
-                iter.remove();
             }
         }
     }

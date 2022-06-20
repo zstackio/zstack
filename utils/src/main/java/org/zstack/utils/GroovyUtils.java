@@ -2,6 +2,7 @@ package org.zstack.utils;
 
 import groovy.lang.GroovyClassLoader;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -58,10 +59,11 @@ public class GroovyUtils {
             return clz;
         }
 
-        GroovyClassLoader loader = new GroovyClassLoader(parent);
-        InputStream in =  parent.getResourceAsStream(scriptPath);
-        String script = StringDSL.inputStreamToString(in);
-        clz = loader.parseClass(script);
+        try (GroovyClassLoader loader = new GroovyClassLoader(parent)) {
+            InputStream in = parent.getResourceAsStream(scriptPath);
+            String script = StringDSL.inputStreamToString(in);
+            clz = loader.parseClass(script);
+        } catch (IOException ignore) {}
         groovyClasses.put(scriptPath, clz);
         return clz;
     }
