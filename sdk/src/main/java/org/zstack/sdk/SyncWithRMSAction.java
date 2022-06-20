@@ -1,10 +1,10 @@
-package org.zstack.sdk.iam2.api;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SyncWithExternalAction extends AbstractAction {
+public class SyncWithRMSAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SyncWithExternalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.SyncWithExternalResult value;
+        public org.zstack.sdk.SyncWithRMSResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,7 +28,7 @@ public class SyncWithExternalAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String request;
 
-    @Param(required = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
     @Param(required = false)
@@ -51,8 +51,8 @@ public class SyncWithExternalAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.SyncWithExternalResult value = res.getResult(org.zstack.sdk.iam2.api.SyncWithExternalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.SyncWithExternalResult() : value; 
+        org.zstack.sdk.SyncWithRMSResult value = res.getResult(org.zstack.sdk.SyncWithRMSResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncWithRMSResult() : value; 
 
         return ret;
     }
@@ -82,7 +82,7 @@ public class SyncWithExternalAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/iam2/external";
+        info.path = "/iam2/rms";
         info.needSession = false;
         info.needPoll = false;
         info.parameterName = "params";
