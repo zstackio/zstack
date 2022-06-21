@@ -36,7 +36,7 @@ public class UnknownVmGC extends TimeBasedGarbageCollector {
         }
 
         if (vo.getState() == VmInstanceState.Unknown) {
-            logger.debug(String.format("vm is already been set to Unknow, cancel job %s", NAME));
+            logger.debug(String.format("vm is already been set to Unknown, cancel job %s", NAME));
             completion.cancel();
             return;
         }
