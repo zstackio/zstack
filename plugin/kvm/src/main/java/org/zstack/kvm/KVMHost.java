@@ -2256,7 +2256,7 @@ public class KVMHost extends HostBase implements Host {
                 bus.reply(msg, reply);
 
                 if (ret.getVirtualDeviceInfoList() != null && !ret.getVirtualDeviceInfoList().isEmpty()) {
-                    ret.getVirtualDeviceInfoList().forEach(info -> vidm.createOrUpdateVmDeviceAddress(info.getResourceUuid(),
+                    ret.getVirtualDeviceInfoList().forEach(info -> vidm.createOrUpdateVmDeviceAddress(msg.getNicInventory().getUuid(),
                             info.getPciInfo(), msg.getNicInventory().getVmInstanceUuid(),
                             JSONObjectUtil.toJsonString(msg.getNicInventory()), VmNicInventory.class.getCanonicalName()));
                 }
