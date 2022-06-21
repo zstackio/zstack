@@ -43,10 +43,8 @@ public class VmCdRomMemorySnapshotGroupExtension implements MemorySnapshotGroupE
         List<VmCdRomVO> cdRomVOS = Q.New(VmCdRomVO.class).eq(VmCdRomVO_.vmInstanceUuid, snapshotGroup.getVmInstanceUuid()).list();
 
         for (VmCdRomVO cdRomVO : cdRomVOS) {
-            String pci = vidm.getVmDevicePciAddress(cdRomVO.getUuid(), cdRomVO.getVmInstanceUuid());
-
             vidm.createOrUpdateVmDeviceAddress(cdRomVO.getUuid(),
-                    pci != null ? PciAddressConfig.fromString(pci) : null,
+                    null,
                     cdRomVO.getVmInstanceUuid(),
                     JSONObjectUtil.toJsonString(cdRomVO),
                     VmCdRomInventory.class.getCanonicalName());

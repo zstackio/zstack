@@ -14,7 +14,7 @@ public interface VmInstanceDeviceManager {
 
     VmInstanceDeviceAddressVO createOrUpdateVmDeviceAddress(VirtualDeviceInfo virtualDeviceInfo, String vmInstanceUuid);
 
-    String getVmDevicePciAddress(String resourceUuid, String vmInstanceUuid);
+    PciAddressConfig getVmDevicePciAddress(String resourceUuid, String vmInstanceUuid);
 
     ErrorCode deleteVmDeviceAddress(String resourceUuid, String vmInstanceUuid);
 

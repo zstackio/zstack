@@ -1,8 +1,10 @@
 package org.zstack.kvm;
 
+import org.zstack.header.vm.devices.PciAddressConfig;
+
 public class BaseVirtualPciDeviceTO {
     private String resourceUuid;
-    private String pciAddress;
+    private PciAddressConfig pciAddress;
 
     public String getResourceUuid() {
         return resourceUuid;
@@ -12,11 +14,11 @@ public class BaseVirtualPciDeviceTO {
         this.resourceUuid = resourceUuid;
     }
 
-    public String getPciAddress() {
+    public PciAddressConfig getPciAddress() {
         return pciAddress;
     }
 
-    public void setPciAddress(String pciAddress) {
+    public void setPciAddress(PciAddressConfig pciAddress) {
         this.pciAddress = pciAddress;
     }
 }

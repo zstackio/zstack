@@ -57,7 +57,10 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
             vo = new VmInstanceDeviceAddressVO();
         }
 
-        vo.setPciAddress(pciAddress == null ? "" : pciAddress.toString());
+        if (pciAddress != null) {
+            vo.setPciAddress(pciAddress.toString());
+        }
+
         vo.setResourceUuid(resourceUuid);
         vo.setVmInstanceUuid(vmInstanceUuid);
         vo.setMetadata(metadata);
@@ -89,13 +92,13 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     }
 
     @Override
-    public String getVmDevicePciAddress(String resourceUuid, String vmInstanceUuid) {
+    public PciAddressConfig getVmDevicePciAddress(String resourceUuid, String vmInstanceUuid) {
         VmInstanceDeviceAddressVO vo = Q.New(VmInstanceDeviceAddressVO.class)
                 .eq(VmInstanceDeviceAddressVO_.resourceUuid, resourceUuid)
                 .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vmInstanceUuid)
                 .find();
 
-        return vo != null ? vo.getPciAddress() : null;
+        return vo != null ? PciAddressConfig.fromString(vo.getPciAddress()) : null;
     }
 
     @Override
