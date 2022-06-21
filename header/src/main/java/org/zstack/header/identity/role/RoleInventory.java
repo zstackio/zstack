@@ -46,7 +46,7 @@ public class RoleInventory {
         inv.state = vo.getState();
         inv.description = vo.getDescription();
         inv.identity = vo.getIdentity();
-        inv.rootUuid = inv.getRootUuid();
+        inv.rootUuid = vo.getRootUuid();
         inv.createDate = vo.getCreateDate();
         inv.lastOpDate = vo.getLastOpDate();
         inv.statements = RolePolicyStatementInventory.valueOf(vo.getStatements());
