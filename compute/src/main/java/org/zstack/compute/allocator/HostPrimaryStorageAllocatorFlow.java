@@ -104,6 +104,10 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                     .stream().map(ResourceVO::getUuid).collect(Collectors.toList());
         }
 
+        if (huuids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
         // for new created vm
         String sql = "select ps.uuid" +
                 " from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps, HostVO h" +
