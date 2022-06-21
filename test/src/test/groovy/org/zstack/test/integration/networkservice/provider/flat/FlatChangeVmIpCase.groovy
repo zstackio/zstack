@@ -38,6 +38,8 @@ import org.zstack.test.integration.networkservice.provider.NetworkServiceProvide
 import org.zstack.test.integration.networkservice.provider.flat.FlatNetworkServiceEnv
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.CollectionUtils
+import org.zstack.utils.function.Function
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.gson.JSONObjectUtil
@@ -205,6 +207,7 @@ class FlatChangeVmIpCase extends SubCase{
             testFlatBaseServiceWhenChangeL3()
             testEipWhenChangeIp()
             testUpdateNicWhenChangeL3()
+            testUserdataWhenChangeIp()
         }
     }
 
@@ -489,5 +492,53 @@ class FlatChangeVmIpCase extends SubCase{
         assert updateNicCmd != null
         assert updateNicCmd.nics.size() == 1
         assert updateNicCmd.nics.get(0).mac == vmNicVO.getMac()
+    }
+
+    void testUserdataWhenChangeIp() {
+        L3NetworkInventory flat_l3 = env.inventoryByName("flatL3")
+        L3NetworkInventory flat_l3_2 = env.inventoryByName("flatL3_2")
+        L3NetworkInventory pub_l3 = env.inventoryByName("pubL3")
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm-userdata-change-ip"
+            imageUuid = env.inventoryByName("image1").uuid
+            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
+            l3NetworkUuids = [flat_l3.uuid, flat_l3_2.uuid]
+            defaultL3NetworkUuid = flat_l3.uuid
+        }
+        VmNicInventory vmNic = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
+            @Override
+            public VmNicInventory call(VmNicInventory arg) {
+                return arg.getL3NetworkUuid().equals(flat_l3_2.getUuid()) ? arg : null
+            }
+        })
+        VmNicVO vmNicVO = dbFindByUuid(vmNic.uuid, VmNicVO.class)
+        String ip1 = vmNicVO.getIp()
+
+        assert vmNicVO != null
+
+        FlatUserdataBackend.ReleaseUserdataCmd releaseUserdataCmd = null
+        env.afterSimulator(FlatUserdataBackend.RELEASE_USER_DATA) { rsp, HttpEntity<String> e ->
+                releaseUserdataCmd = json(e.body, FlatUserdataBackend.ReleaseUserdataCmd.class)
+                return rsp
+        }
+        FlatUserdataBackend.ApplyUserdataCmd applyUserdataCmd = null
+        env.afterSimulator(FlatUserdataBackend.APPLY_USER_DATA) { rsp, HttpEntity<String> e ->
+            applyUserdataCmd = json(e.body, FlatUserdataBackend.ApplyUserdataCmd.class)
+            return rsp
+        }
+        List<FreeIpInventory> freeIp4s = getFreeIp {
+            l3NetworkUuid = flat_l3_2.uuid
+            ipVersion = IPv6Constants.IPv4
+        }
+        String ip2 = freeIp4s.get(0).getIp()
+        setVmStaticIp {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = flat_l3_2.uuid
+            ip = ip2
+        }
+
+        assert ip1 != ip2
+        assert releaseUserdataCmd == null
+        assert applyUserdataCmd == null
     }
 }
