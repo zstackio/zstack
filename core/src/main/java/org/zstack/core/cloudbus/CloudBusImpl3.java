@@ -18,7 +18,10 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Constants;
 import org.zstack.header.Service;
 import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.core.*;
+import org.zstack.header.core.ExceptionSafe;
+import org.zstack.header.core.FutureReturnValueCompletion;
+import org.zstack.header.core.NopeWhileDoneCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.cloudbus.CloudBusExtensionPoint;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -512,7 +515,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     class MessageSender {
-        private final Message msg;
+        private Message msg;
         private final String managementNodeId;
         private final String serviceId;
         private final boolean localSend;
@@ -649,12 +652,22 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
 
         private void localSend() {
+            checkHttpSend();
+
             Consumer consumer = messageConsumers.get(serviceId);
             if (consumer != null) {
                 consumer.accept(msg);
             } else {
                 dealWithUnknownMessage(msg);
             }
+        }
+
+        private void checkHttpSend() {
+            buildSchema(msg);
+            HttpHeaders headers = new HttpHeaders();
+            HttpEntity<String> e = new HttpEntity<>(CloudBusGson.toJson(msg), headers);
+
+            msg = buildMsgFromReq(e);
         }
     }
 
@@ -1270,19 +1283,23 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     @AsyncThread
     public void handleHttpRequest(HttpEntity<String> e, HttpServletResponse rsp) {
         try {
-            Message msg = CloudBusGson.fromJson(e.getBody());
-            Map raw = JSONObjectUtil.toObject(e.getBody(), LinkedHashMap.class);
-            try {
-                restoreFromSchema(msg, raw);
-            } catch (ClassNotFoundException e1) {
-                throw new CloudRuntimeException(e1);
-            }
-
-            new MessageSender(msg).localSend();
+            new MessageSender(buildMsgFromReq(e)).localSend();
             rsp.setStatus(HttpStatus.OK.value());
         } catch (Throwable t) {
             logger.warn(String.format("unable to deliver a message received from HTTP. HTTP body: %s", e.getBody()), t);
         }
+    }
+
+    private Message buildMsgFromReq(HttpEntity<String> e) {
+        Message msg = CloudBusGson.fromJson(e.getBody());
+        Map raw = JSONObjectUtil.toObject(e.getBody(), LinkedHashMap.class);
+        try {
+            restoreFromSchema(msg, raw);
+        } catch (ClassNotFoundException e1) {
+            throw new CloudRuntimeException(e1);
+        }
+
+        return msg;
     }
 
     @Override
