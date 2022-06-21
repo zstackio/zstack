@@ -30,7 +30,7 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
 
     private void setPciAddress(BaseVirtualPciDeviceTO to, KVMAgentCommands.StartVmCmd cmd) {
         to.setResourceUuid(cmd.getRootVolume().getVolumeUuid());
-        cmd.getRootVolume().setPciAddress(vidManager.getVmDevicePciAddress(to.getResourceUuid(), cmd.getVmInstanceUuid()));
+        to.setPciAddress(vidManager.getVmDevicePciAddress(to.getResourceUuid(), cmd.getVmInstanceUuid()));
     }
 
     @Override
