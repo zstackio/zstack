@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.errorcode.ErrorCode;
@@ -30,7 +31,6 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
     }
 
     private void setPciAddress(BaseVirtualPciDeviceTO to, KVMAgentCommands.StartVmCmd cmd) {
-        to.setResourceUuid(cmd.getRootVolume().getVolumeUuid());
         to.setPciAddress(vidManager.getVmDevicePciAddress(to.getResourceUuid(), cmd.getVmInstanceUuid()));
     }
 
@@ -43,7 +43,23 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
         // only update pci address, metadata is not mandatory in normal usage
         // check its usage when create snapshot or backup
         rsp.getVirtualDeviceInfoList().forEach(info -> vidManager.createOrUpdateVmDeviceAddress(info, spec.getVmInventory().getUuid()));
-        rsp.getNicInfos().forEach(info -> vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(spec.getDestNics().stream().filter(vmNicInventory -> vmNicInventory.getMac().equals(info.getMacAddress())).findFirst().orElse(null).getUuid(), info.getPciInfo()), spec.getVmInventory().getUuid()));
+
+        if (rsp.getNicInfos() == null) {
+            return;
+        }
+
+        rsp.getNicInfos().forEach(info -> {
+            VmNicInventory nic = spec.getDestNics()
+                    .stream()
+                    .filter(vmNicInventory -> vmNicInventory.getMac().equals(info.getMacAddress()))
+                    .findFirst()
+                    .orElse(null);
+            if (nic == null) {
+                return;
+            }
+
+            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(nic.getUuid(), info.getPciInfo()), spec.getVmInventory().getUuid());
+        });
     }
 
     @Override
