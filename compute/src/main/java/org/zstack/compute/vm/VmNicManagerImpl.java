@@ -29,7 +29,8 @@ import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.*;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -337,6 +338,56 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = "update-nic-info-for-memory-snapshot-group";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return intersection.isEmpty();
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new While<>(intersection).step((originalVmNic, whileCompletion) -> {
+                            VmNicInventory updateNicInventory = JSONObjectUtil.toObject(originalVmNic.getMetadata(), VmNicInventory.class);
+                            SetVmStaticIpMsg cmsg = new SetVmStaticIpMsg();
+                            cmsg.setIp(updateNicInventory.getIp());
+                            cmsg.setL3NetworkUuid(updateNicInventory.getL3NetworkUuid());
+                            cmsg.setVmInstanceUuid(updateNicInventory.getVmInstanceUuid());
+                            bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, cmsg.getVmInstanceUuid());
+                            bus.send(cmsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        whileCompletion.allDone();
+                                        return;
+                                    }
+                                    VmNicVO currentNic = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, updateNicInventory.getUuid()).find();
+                                    logger.info(String.format("start update vmNic[%s]: driverType[%s->%s], deviceId[%s->%s], mac[%s->%s]for memory snapshot group"
+                                            , updateNicInventory.getUuid()
+                                            , currentNic.getDriverType(), updateNicInventory.getDriverType()
+                                            , currentNic.getDeviceId(), updateNicInventory.getDeviceId()
+                                            , currentNic.getMac(), updateNicInventory.getMac()));
+                                    SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, updateNicInventory.getUuid())
+                                            .set(VmNicVO_.driverType, updateNicInventory.getDriverType())
+                                            .set(VmNicVO_.deviceId, updateNicInventory.getDeviceId())
+                                            .set(VmNicVO_.mac, updateNicInventory.getMac()).update();
+                                    whileCompletion.done();
+                                }
+                            });
+                        }, 10).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (errorCodeList.getCauses().isEmpty()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(errorCodeList.getCauses().get(0));
+                                }
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "attach-nics-saved-by-memory-snapshot-group";
 
                     private boolean checkDuplicateIp(String l3Uuid, String ip) {
@@ -373,6 +424,12 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
                                         whileCompletion.addError(reply.getError());
                                         whileCompletion.allDone();
                                     }
+                                    vidm.createDeviceAddressFromArchive(msg.getVmInstanceUuid(), snapshotGroup.getUuid(), new HashMap<String, String>() {
+                                        {
+                                            put(originalNicInventory.getUuid(), ((VmAttachNicReply) reply.castReply()).getInventroy().getUuid());
+                                        }
+                                    });
+                                    vidm.deleteVmDeviceAddress(originalNicInventory.getUuid(), originalNicInventory.getVmInstanceUuid());
                                     whileCompletion.done();
                                 }
                             });

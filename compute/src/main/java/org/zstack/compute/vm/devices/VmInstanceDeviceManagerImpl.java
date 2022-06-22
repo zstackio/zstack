@@ -185,7 +185,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
                 continue;
             }
 
-            VmInstanceDeviceAddressVO vo = createOrUpdateVmDeviceAddress(archive.getResourceUuid(), PciAddressConfig.fromString(archive.getPciAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
+            VmInstanceDeviceAddressVO vo = createOrUpdateVmDeviceAddress(matchedResourceUuid, PciAddressConfig.fromString(archive.getPciAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
             createdAddressList.add(vo);
         }
 

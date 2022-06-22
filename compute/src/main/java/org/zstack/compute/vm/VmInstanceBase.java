@@ -511,6 +511,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((AttachIsoToVmInstanceMsg) msg);
         } else if (msg instanceof GetVmCapabilitiesMsg) {
             handle((GetVmCapabilitiesMsg) msg);
+        } else if (msg instanceof SetVmStaticIpMsg) {
+            handle((SetVmStaticIpMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -3422,6 +3424,33 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final APISetVmStaticIpMsg msg) {
+        final APISetVmStaticIpEvent evt = new APISetVmStaticIpEvent(msg.getId());
+        refreshVO();
+        ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (error != null) {
+            throw new OperationFailureException(error);
+        }
+        SetVmStaticIpMsg cmsg = new SetVmStaticIpMsg();
+        cmsg.setIp(msg.getIp());
+        cmsg.setIp6(msg.getIp6());
+        cmsg.setL3NetworkUuid(msg.getL3NetworkUuid());
+        cmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, cmsg.getVmInstanceUuid());
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                    return;
+                }
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(final SetVmStaticIpMsg msg) {
+        SetVmStaticIpReply reply = new SetVmStaticIpReply();
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -3430,9 +3459,17 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                setStaticIp(msg, new NoErrorCompletion(msg, chain) {
+                setStaticIp(msg, new Completion(reply) {
                     @Override
-                    public void done() {
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
                         chain.next();
                     }
                 });
@@ -3445,14 +3482,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void setStaticIp(final APISetVmStaticIpMsg msg, final NoErrorCompletion completion) {
-        refreshVO();
-        ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
-        if (error != null) {
-            throw new OperationFailureException(error);
-        }
-
-        final APISetVmStaticIpEvent evt = new APISetVmStaticIpEvent(msg.getId());
+    private void setStaticIp(final SetVmStaticIpMsg msg, final Completion completion) {
         Map<Integer, String> staticIpMap = new HashMap<>();
         if (msg.getIp() != null) {
             if (NetworkUtils.isIpv4Address(msg.getIp())) {
@@ -3475,15 +3505,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                     new StaticIpOperator().setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp6());
                 }
                 new StaticIpOperator().setIpChange(self.getUuid(), msg.getL3NetworkUuid());
-                bus.publish(evt);
-                completion.done();
+                completion.success();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setError(errorCode);
-                bus.publish(evt);
-                completion.done();
+                completion.fail(errorCode);
             }
         });
     }
