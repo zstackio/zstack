@@ -43,6 +43,8 @@ import static org.zstack.utils.CollectionDSL.list;
 public class LdapUtil {
     private static final CLogger logger = Utils.getLogger(LdapUtil.class);
 
+    static final String PAGED_RESULTS_CONTROL_OID = "1.2.840.113556.1.4.319";
+
     public LdapUtil() {
 
     }
@@ -183,8 +185,12 @@ public class LdapUtil {
         return ldapContextSource;
     }
 
-    LdapTemplateContextSource loadLdap(LdapServerInventory inv) {
+    LdapTemplateContextSource doLoadLdap(LdapServerInventory inv, boolean emptyBase) {
         LdapContextSource ldapContextSource = buildLdapContextSource(inv, getBaseEnvProperties());
+
+        if (emptyBase) {
+            ldapContextSource.setBase("");
+        }
 
         LdapTemplate ldapTemplate;
         ldapTemplate = new LdapTemplate();
@@ -192,6 +198,14 @@ public class LdapUtil {
         ldapTemplate.setContextSource(ldapContextSource);
 
         return new LdapTemplateContextSource(ldapTemplate, ldapContextSource);
+    }
+
+    LdapTemplateContextSource loadRootLdap(LdapServerInventory inv) {
+        return doLoadLdap(inv, true);
+    }
+
+    LdapTemplateContextSource loadLdap(LdapServerInventory inv) {
+        return doLoadLdap(inv, false);
     }
 
     LdapTemplateContextSource loadLdap(LdapServerInventory inv, Map<String, Object> baseEnvironmentProperties) {
@@ -361,6 +375,98 @@ public class LdapUtil {
         return LdapConstant.WindowsAD.GLOBAL_UUID_KEY;
     }
 
+    private LdapTemplate getRootBaseLdapTemplate(String ldapServerUuid) {
+        LdapTemplateContextSource ldapTemplateContextSource = readRootLdapServerConfiguration(ldapServerUuid);
+        LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
+        ldapTemplate.setContextSource(new SingleContextSource(ldapTemplateContextSource.getLdapContextSource().getReadOnlyContext()));
+
+        return ldapTemplate;
+    }
+
+    private LdapEntrySearchMode getSuitableSearchMode(LdapTemplate ldapTemplate) {
+        if (isControlSupported(ldapTemplate, PAGED_RESULTS_CONTROL_OID)) {
+            logger.debug("[ldap] paged results control is supported");
+            return LdapEntrySearchMode.PAGE;
+        }
+
+        logger.debug("[ldap] no control matched, search without processor");
+        return LdapEntrySearchMode.NONE;
+    }
+
+    private boolean isControlSupported(LdapTemplate ldapTemplate, String dotOid) {
+        String[] returningAttributes =
+                {
+                        "supportedControl",
+                        "supportedExtension"
+                };
+
+        List<Set<String>> attributesResultList = ldapTemplate.search("", "(objectclass=*)", SearchControls.OBJECT_SCOPE, returningAttributes, new AbstractContextMapper<Set<String>>() {
+            @Override
+            protected Set<String> doMapFromContext(DirContextOperations ctx) {
+                Set<String> controlsSet = new HashSet<>();
+                controlsSet.addAll(Arrays.asList(ctx.getStringAttributes("supportedControl")));
+                    controlsSet.addAll(Arrays.asList(ctx.getStringAttributes("supportedExtension")));
+
+                return controlsSet;
+            }
+        });
+
+        if (attributesResultList.isEmpty()) {
+            return false;
+        }
+
+        return attributesResultList.get(0).remove(dotOid);
+    }
+
+    private LdapSearchedResult searchWithoutProcessor(LdapTemplate ldapTemplate, String filter, SearchControls searchCtls, ResultFilter resultFilter, Integer count) {
+        LdapSearchedResult ldapSearchedResult = new LdapSearchedResult();
+        ldapSearchedResult.setResult(new ArrayList<>());
+
+        List<Object> searchResult = new ArrayList<>();
+        try {
+            searchResult = ldapTemplate.search("", filter, searchCtls, new AbstractContextMapper<Object>() {
+                @Override
+                protected Object doMapFromContext(DirContextOperations ctx) {
+                    if (resultFilter != null && !resultFilter.needSelect(ctx.getNameInNamespace())){
+                        return null;
+                    }
+
+                    Map<String, Object> result = new HashMap<>();
+                    result.put(LdapConstant.LDAP_DN_KEY, ctx.getNameInNamespace());
+
+                    List<Object> list = new ArrayList<>();
+                    result.put("attributes", list);
+
+                    Attributes attributes = ctx.getAttributes();
+                    NamingEnumeration it = attributes.getAll();
+                    try {
+                        while (it.hasMore()){
+                            list.add(it.next());
+                        }
+                    } catch (javax.naming.NamingException e){
+                        logger.error("query ldap entry attributes fail", e.getCause());
+                        throw new OperationFailureException(operr("query ldap entry fail, %s", e.toString()));
+                    }
+
+                    return result;
+                }
+            });
+        } catch (Exception e){
+            logger.error("legacy query ldap entry fail", e);
+            ldapSearchedResult.setSuccess(false);
+            ldapSearchedResult.setResult(null);
+            ldapSearchedResult.setError(e.getMessage());
+        }
+
+        if (count != null && searchResult.size() > count){
+            ldapSearchedResult.setResult(searchResult.subList(0, count));
+        } else {
+            ldapSearchedResult.setResult(searchResult);
+        }
+
+        return ldapSearchedResult;
+    }
+
     private LdapSearchedResult pagedSearch(LdapTemplate ldapTemplate, String filter, SearchControls searchCtls, ResultFilter resultFilter, Integer count) {
         LdapSearchedResult ldapSearchedResult = new LdapSearchedResult();
         ldapSearchedResult.setResult(new ArrayList<>());
@@ -419,8 +525,8 @@ public class LdapUtil {
         return searchLdapEntry(ldapServerVO.getUuid(), filter, count, returningAttributes, resultFilter, searchAllAttributes);
     }
 
-    public List<Object> searchLdapEntry(String ldapSeverUuid, String filter, Integer count, String[] returningAttributes, ResultFilter resultFilter, boolean searchAllAttributes) {
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration(ldapSeverUuid);
+    public List<Object> searchLdapEntry(String ldapServerUuid, String filter, Integer count, String[] returningAttributes, ResultFilter resultFilter, boolean searchAllAttributes) {
+        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration(ldapServerUuid);
         LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
         ldapTemplate.setContextSource(new SingleContextSource(ldapTemplateContextSource.getLdapContextSource().getReadOnlyContext()));
 
@@ -434,7 +540,21 @@ public class LdapUtil {
         }
 
         String errorMessage = "";
-        LdapSearchedResult ldapSearchedResult = pagedSearch(ldapTemplate, filter, searchCtls, resultFilter, count);
+
+        LdapSearchedResult ldapSearchedResult;
+        LdapEntrySearchMode ldapEntrySearchMode = LdapEntrySearchMode.valueOf(LdapGlobalConfig.LDAP_ENTRY_SEARCH_MODE.value());
+        if (ldapEntrySearchMode == LdapEntrySearchMode.AUTO) {
+            ldapEntrySearchMode = getSuitableSearchMode(getRootBaseLdapTemplate(ldapServerUuid));
+        }
+
+        if (ldapEntrySearchMode == LdapEntrySearchMode.PAGE) {
+            ldapSearchedResult = pagedSearch(ldapTemplate, filter, searchCtls, resultFilter, count);
+        } else if (ldapEntrySearchMode == LdapEntrySearchMode.NONE) {
+            ldapSearchedResult = searchWithoutProcessor(ldapTemplate, filter, searchCtls, resultFilter, count);
+        } else {
+            throw new CloudRuntimeException(String.format("unexpected LdapEntrySearchMode: %s", ldapEntrySearchMode));
+        }
+
         if (ldapSearchedResult.isSuccess()) {
             return ldapSearchedResult.getResult();
         }
@@ -509,6 +629,15 @@ public class LdapUtil {
                 .find();
         LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
         return loadLdap(ldapServerInventory);
+    }
+
+    // set LdapContextSource base as empty
+    public LdapTemplateContextSource readRootLdapServerConfiguration(String ldapServerUuid) {
+        LdapServerVO ldapServerVO = Q.New(LdapServerVO.class)
+                .eq(LdapServerVO_.uuid, ldapServerUuid)
+                .find();
+        LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
+        return loadRootLdap(ldapServerInventory);
     }
 
     @Transactional(readOnly = true)
