@@ -2851,6 +2851,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setPriorityConfigStruct(new PriorityConfigStruct(priorityVO, spec.getVmInventory().getUuid()));
 
         VolumeTO rootVolume = new VolumeTO();
+        rootVolume.setResourceUuid(spec.getDestRootVolume().getUuid());
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
@@ -2904,6 +2905,7 @@ public class KVMHost extends HostBase implements Host {
 
         for (VmInstanceSpec.CdRomSpec cdRomSpec : spec.getCdRomSpecs()) {
             CdRomTO cdRomTO = new CdRomTO();
+            cdRomTO.setResourceUuid(cdRomSpec.getUuid());
             cdRomTO.setPath(cdRomSpec.getInstallPath());
             cdRomTO.setImageUuid(cdRomSpec.getImageUuid());
             cdRomTO.setDeviceId(cdRomSpec.getDeviceId());
