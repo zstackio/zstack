@@ -42,7 +42,11 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
 
         // only update pci address, metadata is not mandatory in normal usage
         // check its usage when create snapshot or backup
-        rsp.getVirtualDeviceInfoList().forEach(info -> vidManager.createOrUpdateVmDeviceAddress(info, spec.getVmInventory().getUuid()));
+        rsp.getVirtualDeviceInfoList().forEach(info -> {
+            if (info.getResourceUuid() != null) {
+                vidManager.createOrUpdateVmDeviceAddress(info, spec.getVmInventory().getUuid());
+            }
+        });
 
         if (rsp.getNicInfos() == null) {
             return;
