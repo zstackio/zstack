@@ -16,6 +16,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -30,6 +31,8 @@ public class VmDetachNicFlow extends NoRollbackFlow {
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -50,6 +53,8 @@ public class VmDetachNicFlow extends NoRollbackFlow {
             vm.setDefaultL3NetworkUuid(l3Uuid);
             dbf.update(vm);
         }
+
+        vidm.deleteVmDeviceAddress(nic.getUuid(), spec.getVmInventory().getUuid());
 
         boolean releaseNic = (boolean) data.get(VmInstanceConstant.Params.ReleaseNicAfterDetachNic.toString());
         if (!releaseNic) {

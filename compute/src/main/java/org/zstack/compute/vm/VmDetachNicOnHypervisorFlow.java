@@ -23,8 +23,6 @@ import java.util.Map;
 public class VmDetachNicOnHypervisorFlow extends NoRollbackFlow {
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private VmInstanceDeviceManager vidm;
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
@@ -39,7 +37,6 @@ public class VmDetachNicOnHypervisorFlow extends NoRollbackFlow {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    vidm.deleteVmDeviceAddress(spec.getDestNics().get(0).getUuid(), spec.getVmInventory().getUuid());
                     trigger.next();
                 } else {
                     trigger.fail(reply.getError());
