@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.zstack.compute.vm.VmSchedHistoryRecorder;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -27,8 +28,8 @@ import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -195,6 +196,13 @@ public abstract class HostBase extends AbstractHost {
         bus.publish(evt);
     }
 
+    private String getVmHostUuid(String vmUuid) {
+        return Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, vmUuid)
+                .select(VmInstanceVO_.hostUuid)
+                .findValue();
+    }
+
     protected void maintenanceHook(ChangeHostStateMsg changeHostStateMsg, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("maintenance-mode-host-%s-ip-%s", self.getUuid(), self.getManagementIp()));
@@ -265,6 +273,7 @@ public abstract class HostBase extends AbstractHost {
                         }
 
                         new While<>(vmUuids).step((vmUuid, compl) -> {
+                            VmSchedHistoryRecorder recorder = new VmSchedHistoryRecorder("HMT", vmUuid).begin();
                             MigrateVmMsg msg = new MigrateVmMsg();
                             msg.setVmInstanceUuid(vmUuid);
                             msg.setAllocationScene(AllocationScene.Auto);
@@ -274,6 +283,9 @@ public abstract class HostBase extends AbstractHost {
                                 public void run(MessageReply reply) {
                                     if (!reply.isSuccess()) {
                                         vmFailedToMigrate.put(msg.getVmInstanceUuid(), reply.getError());
+                                        recorder.end(null);
+                                    } else {
+                                        recorder.end(getVmHostUuid(vmUuid));
                                     }
                                     compl.done();
                                 }
