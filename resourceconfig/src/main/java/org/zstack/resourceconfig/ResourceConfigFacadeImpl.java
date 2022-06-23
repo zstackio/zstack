@@ -3,7 +3,6 @@ package org.zstack.resourceconfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.*;
@@ -135,17 +134,6 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
         }
 
         return rc.getResourceConfigValue(resourceUuid, clz);
-    }
-
-    @Override
-    public List<ResourceConfigVO> getResourceConfigValues(String name, String category, List<String> resourceUuids) {
-        if (resourceUuids == null || resourceUuids.isEmpty()) {
-            return new ArrayList<>();
-        }
-        return Q.New(ResourceConfigVO.class)
-                .eq(ResourceConfigVO_.name, name)
-                .eq(ResourceConfigVO_.category, category)
-                .in(ResourceConfigVO_.resourceUuid, resourceUuids).list();
     }
 
     protected void buildResourceConfig(Field field) throws Exception {

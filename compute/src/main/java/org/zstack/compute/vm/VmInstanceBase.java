@@ -3307,16 +3307,100 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(APISetVmClockTrackMsg msg) {
-        APISetVmClockTrackEvent evt = new APISetVmClockTrackEvent(msg.getId());
-        //sync time by BIOS in win
-        ResourceConfig rc = rcf.getResourceConfig(VmGlobalConfig.VM_CLOCK_TRACK.getIdentity());
-        rc.updateValue(msg.getVmInstanceUuid(), msg.getTrack());
-        //sync time by QGA
-        for (VmClockSyncExtensionPoint ext : pluginRgty.getExtensionList(VmClockSyncExtensionPoint.class)) {
-            ext.clockSync(msg.getVmInstanceUuid(), msg.isSyncAfterVMResume(), msg.getIntervalInSeconds());
-        }
-        evt.setInventory(getSelfInventory());
-        bus.publish(evt);
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("set-vm-clock-track-%s", msg.getUuid());
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                APISetVmClockTrackEvent event = new APISetVmClockTrackEvent(msg.getId());
+                setVmClockTrack(msg, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        refreshVO();
+                        event.setInventory(getSelfInventory());
+                        bus.publish(event);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        event.setError(errorCode);
+                        bus.publish(event);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void setVmClockTrack(APISetVmClockTrackMsg msg, Completion completion) {
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("set-vm-clock-track-for-%s", msg.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "set-QGA-sync-clock-task";
+
+            @Override
+            public boolean skip(Map data) {
+                return msg.isSyncAfterVMResume() == null && msg.getIntervalInSeconds() == null;
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                // sync clock by QGA
+                SetVmQgaSyncClockTaskMsg syncMsg = new SetVmQgaSyncClockTaskMsg();
+                syncMsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+                if (msg.isSyncAfterVMResume() != null) {
+                    syncMsg.setSyncAfterVMResume(msg.isSyncAfterVMResume());
+                }
+                if (msg.getIntervalInSeconds() != null) {
+                    syncMsg.setIntervalInSeconds(msg.getIntervalInSeconds());
+                }
+
+                bus.makeTargetServiceIdByResourceUuid(syncMsg, VmInstanceConstant.SERVICE_ID, syncMsg.getVmInstanceUuid());
+                bus.send(syncMsg, new CloudBusCallBack(trigger, msg) {
+                    @Override
+                    public void run(MessageReply r) {
+                        if (r.isSuccess()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        trigger.fail(r.getError());
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "set-vm-clock-track";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                // sync clock (Real-time Clock)
+                ResourceConfig rc = rcf.getResourceConfig(VmGlobalConfig.VM_CLOCK_TRACK.getIdentity());
+                rc.updateValue(msg.getVmInstanceUuid(), msg.getTrack());
+                trigger.next();
+            }
+        });
+
+        chain.error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).start();
     }
 
     private void handle(APISetVmBootOrderMsg msg) {
