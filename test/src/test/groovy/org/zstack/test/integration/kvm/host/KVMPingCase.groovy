@@ -118,7 +118,7 @@ class KVMPingCase extends SubCase {
 
         long timeoutVal = 0
 
-        notifyWhenReceivedMessage(ReconnectHostMsg.class) { ReconnectHostMsg msg ->
+        def cleanup = notifyWhenReceivedMessage(ReconnectHostMsg.class) { ReconnectHostMsg msg ->
             if (msg.hostUuid == kvm1.uuid) {
                 timeoutVal = msg.getTimeout()
             }
@@ -128,6 +128,8 @@ class KVMPingCase extends SubCase {
         pingSuccess = true
         waitHostConnected(kvm1.uuid)
         assert timeoutVal == 1234567
+
+        cleanup()
     }
 
     void testNoPingWhenHostMaintainedAndPingAfterEnabled() {
