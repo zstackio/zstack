@@ -71,6 +71,9 @@ public class VmAllocateVolumeFlow implements Flow {
                 }
                 String offeringUuid = spec.getDataDiskOfferings().get(Integer.parseInt(entry.getKey())).getUuid();
                 for (VolumeSpec volumeSpec : spec.getVolumeSpecs()) {
+                    if (!Objects.equals(volumeSpec.getType(), VolumeType.Data.toString())) {
+                        continue;
+                    }
                     if (volumeSpec.getDiskOfferingUuid() == null) {
                         continue;
                     }

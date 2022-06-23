@@ -4,6 +4,7 @@ import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.Message;
@@ -713,5 +714,13 @@ public class VmInstanceSpec implements Serializable {
 
     public void setBootMode(String bootMode) {
         this.bootMode = bootMode;
+    }
+
+    public long getRootDiskAllocateSize() {
+        String mediaType = this.getImageSpec().getInventory().getMediaType();
+        if (ImageConstant.ImageMediaType.RootVolumeTemplate.toString().equals(mediaType) && rootDiskOffering == null) {
+            return this.getImageSpec().getInventory().getSize();
+        }
+        return rootDiskOffering.getDiskSize();
     }
 }

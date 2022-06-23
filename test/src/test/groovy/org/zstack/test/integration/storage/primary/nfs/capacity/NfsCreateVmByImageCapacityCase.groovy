@@ -100,7 +100,6 @@ class NfsCreateVmByImageCapacityCase extends SubCase {
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = sizedImage.uuid
             l3NetworkUuids = [l3.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
         }
 
         GetPrimaryStorageCapacityResult capacityResult = getPrimaryStorageCapacity {
