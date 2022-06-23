@@ -983,6 +983,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.setName(String.format("change-vm-ip-l3-%s-vm-%s", l3Uuid, self.getUuid()));
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.ChangeNicIp);
         spec.setDestNics(list(VmNicInventory.valueOf(targetNic)));
+        L3NetworkVO l3VO = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
+        spec.setL3Networks(list(new VmNicSpec(L3NetworkInventory.valueOf(l3VO))));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.then(new ShareFlow() {
             @Override
@@ -5725,6 +5727,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.ChangeNicNetwork);
                 spec.setVmInventory(VmInstanceInventory.valueOf(self));
                 spec.setDestNics(list(nic));
+                L3NetworkVO l3VO = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+                spec.setL3Networks(list(new VmNicSpec(L3NetworkInventory.valueOf(l3VO))));
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
                 flowChain.getData().put(VmInstanceConstant.Params.L3NetworkInventory.toString(), destL3);
 

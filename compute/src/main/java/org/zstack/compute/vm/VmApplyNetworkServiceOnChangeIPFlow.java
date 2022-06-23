@@ -64,17 +64,6 @@ public class VmApplyNetworkServiceOnChangeIPFlow implements Flow {
 
     @Override
     public void rollback(FlowRollback trigger, Map data) {
-        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        nsMgr.releaseNetworkServiceOnChangeIP(spec, null, new Completion(trigger) {
-            @Override
-            public void success() {
-                trigger.rollback();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                trigger.rollback();
-            }
-        });
+        trigger.rollback();
     }
 }
