@@ -93,6 +93,8 @@ public class VirtualRouterCommands {
 		private String zvrVersion;
 		private String vyosVersion;
 		private String kernelVersion;
+		private String ipsecCurrentVersion;
+		private String ipsecLatestVersion;
 
 		public String getZvrVersion() {
 			return zvrVersion;
@@ -117,6 +119,23 @@ public class VirtualRouterCommands {
 		public void setKernelVersion(String kernelVersion) {
 			this.kernelVersion = kernelVersion;
 		}
+
+		public String getIpsecCurrentVersion() {
+			return ipsecCurrentVersion;
+		}
+
+		public void setIpsecCurrentVersion(String ipsecCurrentVersion) {
+			this.ipsecCurrentVersion = ipsecCurrentVersion;
+		}
+
+		public String getIpsecLatestVersion() {
+			return ipsecLatestVersion;
+		}
+
+		public void setIpsecLatestVersion(String ipsecLatestVersion) {
+			this.ipsecLatestVersion = ipsecLatestVersion;
+		}
+
 	}
 	
 	public static class NicInfo {

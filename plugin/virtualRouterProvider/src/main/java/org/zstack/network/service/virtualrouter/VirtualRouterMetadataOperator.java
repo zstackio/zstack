@@ -31,6 +31,16 @@ public class VirtualRouterMetadataOperator {
                 update = true;
             }
 
+            if (struct.getIpsecCurrentVersion() != null && !struct.getIpsecCurrentVersion().equals(vo.getIpsecCurrentVersion())) {
+                vo.setIpsecCurrentVersion(struct.getIpsecCurrentVersion());
+                update = true;
+            }
+
+            if (struct.getIpsecLatestVersion() != null && !struct.getIpsecLatestVersion().equals(vo.getIpsecLatestVersion())) {
+                vo.setIpsecLatestVersion(struct.getIpsecLatestVersion());
+                update = true;
+            }
+
             if (update) {
                 dbf.update(vo);
             }
@@ -50,6 +60,16 @@ public class VirtualRouterMetadataOperator {
 
             if (struct.getKernelVersion() != null) {
                 vo.setKernelVersion(struct.getKernelVersion());
+                update = true;
+            }
+
+            if (struct.getIpsecCurrentVersion() != null) {
+                vo.setIpsecCurrentVersion(struct.getIpsecCurrentVersion());
+                update = true;
+            }
+
+            if (struct.getIpsecLatestVersion() != null) {
+                vo.setIpsecLatestVersion(struct.getIpsecLatestVersion());
                 update = true;
             }
 

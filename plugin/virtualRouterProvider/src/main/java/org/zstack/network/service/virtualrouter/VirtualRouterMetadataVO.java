@@ -37,6 +37,12 @@ public class VirtualRouterMetadataVO {
     @Column
     private String kernelVersion;
 
+    @Column
+    private String ipsecCurrentVersion;
+
+    @Column
+    private String ipsecLatestVersion;
+
     public String getUuid() {
         return uuid;
     }
@@ -68,4 +74,21 @@ public class VirtualRouterMetadataVO {
     public void setKernelVersion(String kernelVersion) {
         this.kernelVersion = kernelVersion;
     }
+
+    public String getIpsecCurrentVersion() {
+        return ipsecCurrentVersion;
+    }
+
+    public void setIpsecCurrentVersion(String ipsecCurrentVersion) {
+        this.ipsecCurrentVersion = ipsecCurrentVersion;
+    }
+
+    public String getIpsecLatestVersion() {
+        return ipsecLatestVersion;
+    }
+
+    public void setIpsecLatestVersion(String ipsecLatestVersion) {
+        this.ipsecLatestVersion = ipsecLatestVersion;
+    }
+
 }
