@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetVmClockTrackAction extends AbstractAction {
+public class SyncVmClockAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetVmClockTrackAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetVmClockTrackResult value;
+        public SyncVmClockResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -20,22 +20,13 @@ public class SetVmClockTrackAction extends AbstractAction {
                     String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
-
+            
             return this;
         }
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, validValues = {"guest","host"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String track;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean syncAfterVMResume;
-
-    @Param(required = false, validValues = {"0", "60", "600", "1800", "3600", "7200", "21600", "43200", "86400"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer intervalInSeconds;
+    public String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -68,9 +59,9 @@ public class SetVmClockTrackAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
-        org.zstack.sdk.SetVmClockTrackResult value = res.getResult(org.zstack.sdk.SetVmClockTrackResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVmClockTrackResult() : value;
+        
+        SyncVmClockResult value = res.getResult(SyncVmClockResult.class);
+        ret.value = value == null ? new SyncVmClockResult() : value; 
 
         return ret;
     }
@@ -103,7 +94,7 @@ public class SetVmClockTrackAction extends AbstractAction {
         info.path = "/vm-instances/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "setVmClockTrack";
+        info.parameterName = "syncVmClock";
         return info;
     }
 
