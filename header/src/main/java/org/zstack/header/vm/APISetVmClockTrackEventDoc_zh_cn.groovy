@@ -5,7 +5,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-    title "设置BIOS时钟同步/设置定期时间同步的结果"
+    title "设置云主机时钟同步的结果"
 
     ref {
         name "inventory"

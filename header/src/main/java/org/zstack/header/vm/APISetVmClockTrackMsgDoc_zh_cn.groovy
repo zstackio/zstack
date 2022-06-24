@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc """设置BIOS时钟同步/设置定期时间同步"""
+    desc """设置云主机时钟同步"""
 
     rest {
         request {
