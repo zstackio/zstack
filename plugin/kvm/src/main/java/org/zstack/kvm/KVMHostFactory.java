@@ -289,15 +289,6 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
         }
 
-        if (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
-            try {
-                startTcpServer();
-                startTcpChannelTimeoutChecker();
-            } catch (IOException e) {
-                throw new CloudRuntimeException("Failed to start tcp server on management node");
-            }
-        }
-
         maxDataVolumeNum = KVMGlobalConfig.MAX_DATA_VOLUME_NUM.value(int.class);
         KVMGlobalConfig.MAX_DATA_VOLUME_NUM.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
