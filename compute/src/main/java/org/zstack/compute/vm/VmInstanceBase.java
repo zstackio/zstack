@@ -513,6 +513,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((GetVmCapabilitiesMsg) msg);
         } else if (msg instanceof SetVmStaticIpMsg) {
             handle((SetVmStaticIpMsg) msg);
+        } else if (msg instanceof ChangeVmNicNetworkMsg) {
+            handle((ChangeVmNicNetworkMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -5826,30 +5828,61 @@ public class VmInstanceBase extends AbstractVmInstance {
         completion.success();
     }
 
-    private void handle(APIChangeVmNicNetworkMsg msg) {
-        final APIChangeVmNicNetworkEvent evt = new APIChangeVmNicNetworkEvent(msg.getId());
-
+    private void handle(ChangeVmNicNetworkMsg msg) {
+        ChangeVmNicNetworkReply reply = new ChangeVmNicNetworkReply();
         VmNicVO vmNicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
-        L3NetworkVO destL3NetowrkVO = dbf.findByUuid(msg.getDestL3NetworkUuid(), L3NetworkVO.class);
+        L3NetworkVO destL3NetworkVO = dbf.findByUuid(msg.getDestL3NetworkUuid(), L3NetworkVO.class);
         VmNicInventory nic = VmNicInventory.valueOf(vmNicVO);
-        L3NetworkInventory destL3 = L3NetworkInventory.valueOf(destL3NetowrkVO);
+        L3NetworkInventory destL3 = L3NetworkInventory.valueOf(destL3NetworkVO);
 
         changeVmNicNetwork(msg, nic, destL3, new ReturnValueCompletion<VmNicInventory>(msg) {
             @Override
             public void success(VmNicInventory returnValue) {
-                evt.setInventory(returnValue);
-                bus.publish(evt);
+                reply.setInventory(returnValue);
+                bus.reply(msg, reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setError(errorCode);
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(APIChangeVmNicNetworkMsg msg) {
+        final APIChangeVmNicNetworkEvent evt = new APIChangeVmNicNetworkEvent(msg.getId());
+
+        refreshVO();
+        ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (allowed != null) {
+            evt.setError(allowed);
+            bus.publish(evt);
+            return;
+        }
+
+        ChangeVmNicNetworkMsg cmsg = new ChangeVmNicNetworkMsg();
+        cmsg.setDestL3NetworkUuid(msg.getDestL3NetworkUuid());
+        cmsg.setVmNicUuid(msg.getVmNicUuid());
+        cmsg.setStaticIp(msg.getStaticIp());
+        cmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        cmsg.setRequiredIpMap(msg.getRequiredIpMap());
+        bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, cmsg.getVmInstanceUuid());
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                    return;
+                }
+                evt.setInventory(((ChangeVmNicNetworkReply) reply.castReply()).getInventory());
                 bus.publish(evt);
             }
         });
     }
 
-    private void changeVmNicNetwork(APIChangeVmNicNetworkMsg msg, VmNicInventory nic, L3NetworkInventory destL3, final ReturnValueCompletion<VmNicInventory> completion) {
+    private void changeVmNicNetwork(ChangeVmNicNetworkMsg msg, VmNicInventory nic, L3NetworkInventory destL3, final ReturnValueCompletion<VmNicInventory> completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
@@ -5859,23 +5892,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             @Deferred
             public void run(final SyncTaskChain chain) {
-                refreshVO();
-                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
-                if (allowed != null) {
-                   completion.fail(allowed);
-                   chain.next();
-                   return;
-                }
-
                 class SetStaticIp {
                     private boolean isSet = false;
                     Map<String, List<String>> staticIpMap = null;
 
                     void set() {
-                        if (msg instanceof APIChangeVmNicNetworkMsg) {
-                            APIChangeVmNicNetworkMsg amsg = (APIChangeVmNicNetworkMsg) msg;
-                            staticIpMap = amsg.getRequiredIpMap();
-                        }
+                        staticIpMap = msg.getRequiredIpMap();
 
                         if (staticIpMap == null || staticIpMap.isEmpty()) {
                             return;
