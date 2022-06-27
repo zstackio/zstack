@@ -275,7 +275,8 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     @Override
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
-                            event.setError(reply.getError());
+                            trigger.fail(reply.getError());
+                            return;
                         }
 
                         if (reply instanceof RevertVmFromSnapshotGroupInnerReply) {
