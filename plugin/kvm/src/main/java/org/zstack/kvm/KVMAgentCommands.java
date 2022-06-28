@@ -2764,6 +2764,7 @@ public class KVMAgentCommands {
         private boolean xbzrle;
         private List<String> vdpaPaths;
         private Long timeout; // in seconds
+        private Map<String, VolumeTO> disks;  // A map from old install path to new volume
 
         public boolean isUseNuma() {
             return useNuma;
@@ -2843,6 +2844,14 @@ public class KVMAgentCommands {
 
         public void setTimeout(Long timeout) {
             this.timeout = timeout;
+        }
+
+        public Map<String, VolumeTO> getDisks() {
+            return disks;
+        }
+
+        public void setDisks(Map<String, VolumeTO> disks) {
+            this.disks = disks;
         }
     }
 
