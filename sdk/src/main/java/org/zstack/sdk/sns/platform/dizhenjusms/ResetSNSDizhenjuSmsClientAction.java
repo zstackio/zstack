@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns;
+package org.zstack.sdk.sns.platform.dizhenjusms;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddSNSSmsReceiverAction extends AbstractAction {
+public class ResetSNSDizhenjuSmsClientAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.AddSNSSmsReceiverResult value;
+        public org.zstack.sdk.sns.platform.dizhenjusms.ResetSNSDizhenjuSmsClientResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,8 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String phoneNumber;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String endpointUuid;
-
-    @Param(required = true, validValues = {"AliyunSms","DizhenjuSms"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String platformUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -75,8 +60,8 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.AddSNSSmsReceiverResult value = res.getResult(org.zstack.sdk.sns.AddSNSSmsReceiverResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.AddSNSSmsReceiverResult() : value; 
+        org.zstack.sdk.sns.platform.dizhenjusms.ResetSNSDizhenjuSmsClientResult value = res.getResult(org.zstack.sdk.sns.platform.dizhenjusms.ResetSNSDizhenjuSmsClientResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.dizhenjusms.ResetSNSDizhenjuSmsClientResult() : value; 
 
         return ret;
     }
@@ -106,10 +91,10 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/sns/sms-endpoints/receivers";
+        info.path = "/sns/application-platforms/dizhenjusms/resetclient";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
