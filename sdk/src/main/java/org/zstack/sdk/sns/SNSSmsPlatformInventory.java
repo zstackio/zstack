@@ -20,20 +20,52 @@ public class SNSSmsPlatformInventory extends org.zstack.sdk.sns.SNSApplicationPl
         return this.srcID;
     }
 
-    public java.lang.String downlinkChannelNumber;
-    public void setDownlinkChannelNumber(java.lang.String downlinkChannelNumber) {
-        this.downlinkChannelNumber = downlinkChannelNumber;
+    public java.lang.String node1Ip;
+    public void setNode1Ip(java.lang.String node1Ip) {
+        this.node1Ip = node1Ip;
     }
-    public java.lang.String getDownlinkChannelNumber() {
-        return this.downlinkChannelNumber;
+    public java.lang.String getNode1Ip() {
+        return this.node1Ip;
     }
 
-    public java.lang.String username;
-    public void setUsername(java.lang.String username) {
-        this.username = username;
+    public java.lang.String downlinkChannelNumber1;
+    public void setDownlinkChannelNumber1(java.lang.String downlinkChannelNumber1) {
+        this.downlinkChannelNumber1 = downlinkChannelNumber1;
     }
-    public java.lang.String getUsername() {
-        return this.username;
+    public java.lang.String getDownlinkChannelNumber1() {
+        return this.downlinkChannelNumber1;
+    }
+
+    public java.lang.String username1;
+    public void setUsername1(java.lang.String username1) {
+        this.username1 = username1;
+    }
+    public java.lang.String getUsername1() {
+        return this.username1;
+    }
+
+    public java.lang.String node2Ip;
+    public void setNode2Ip(java.lang.String node2Ip) {
+        this.node2Ip = node2Ip;
+    }
+    public java.lang.String getNode2Ip() {
+        return this.node2Ip;
+    }
+
+    public java.lang.String downlinkChannelNumber2;
+    public void setDownlinkChannelNumber2(java.lang.String downlinkChannelNumber2) {
+        this.downlinkChannelNumber2 = downlinkChannelNumber2;
+    }
+    public java.lang.String getDownlinkChannelNumber2() {
+        return this.downlinkChannelNumber2;
+    }
+
+    public java.lang.String username2;
+    public void setUsername2(java.lang.String username2) {
+        this.username2 = username2;
+    }
+    public java.lang.String getUsername2() {
+        return this.username2;
     }
 
 }
