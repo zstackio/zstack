@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface VmInstanceDeviceManager {
+    final static String MEMBALLOON_UUID = "4780bf6d2fa65700f22e36c27e8ff05c";
+
     VmInstanceDeviceAddressVO createOrUpdateVmDeviceAddress(String resourceUuid, PciAddressConfig pciAddress, String vmInstanceUuid, String metadata, String metadataClass);
 
     VmInstanceDeviceAddressVO createOrUpdateVmDeviceAddress(VirtualDeviceInfo virtualDeviceInfo, String vmInstanceUuid);

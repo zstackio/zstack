@@ -234,6 +234,10 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     }
 
     private ErrorCode checkParams(String vmInstanceUuid, String resourceUuid) {
+        if (MEMBALLOON_UUID.equals(resourceUuid)) {
+            return null;
+        }
+
         if (!vmExists(vmInstanceUuid)) {
             return operr("cannot find vm with uuid: %s", vmInstanceUuid);
         }
