@@ -237,6 +237,9 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 if (RBAC.isResourceGlobalReadable(resourceType)) {
                     return;
                 }
+                if (!OwnedByAccount.class.isAssignableFrom(resourceType)){
+                    return;
+                }
 
                 List<String> uuids = getResourceUuids(param);
                 if (uuids.isEmpty()) {
