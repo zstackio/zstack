@@ -16,10 +16,7 @@ import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.JsonWrapper;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class VmInstanceSpec implements Serializable {
@@ -48,6 +45,15 @@ public class VmInstanceSpec implements Serializable {
         private boolean isVolumeCreated;
         private List<String> tags;
         private String allocatedInstallUrl;
+        private String associatedVolumeUuid;
+
+        public String getAssociatedVolumeUuid() {
+            return associatedVolumeUuid;
+        }
+
+        public void setAssociatedVolumeUuid(String associatedVolumeUuid) {
+            this.associatedVolumeUuid = associatedVolumeUuid;
+        }
 
         public String getAllocatedInstallUrl() {
             return allocatedInstallUrl;
@@ -473,6 +479,15 @@ public class VmInstanceSpec implements Serializable {
 
     public List<VolumeSpec> getVolumeSpecs() {
         return volumeSpecs;
+    }
+
+    public String getAllocatedUrlFromVolumeSpecs(String associatedVolumeUuid) {
+        VolumeSpec vspec = volumeSpecs.stream()
+                .filter(v -> associatedVolumeUuid.equals(v.getAssociatedVolumeUuid()))
+                .findFirst()
+                .orElse(null);
+
+        return vspec != null ? vspec.getAllocatedInstallUrl() : null;
     }
 
     public void setVolumeSpecs(List<VolumeSpec> volumeSpecs) {

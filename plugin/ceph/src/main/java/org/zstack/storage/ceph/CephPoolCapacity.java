@@ -11,6 +11,15 @@ public class CephPoolCapacity {
     Long availableCapacity;
     Long usedCapacity;
     Long totalCapacity;
+    String relatedOsds;
+
+    public String getRelatedOsds() {
+        return relatedOsds;
+    }
+
+    public void setRelatedOsds(String relatedOsds) {
+        this.relatedOsds = relatedOsds;
+    }
 
     public String getName() {
         return name;
