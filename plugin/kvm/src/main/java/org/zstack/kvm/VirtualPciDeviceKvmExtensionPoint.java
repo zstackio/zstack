@@ -1,7 +1,9 @@
 package org.zstack.kvm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.devices.PciAddressConfig;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.errorcode.ErrorCode;
@@ -64,6 +66,10 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
 
             vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(nic.getUuid(), info.getPciInfo()), spec.getVmInventory().getUuid());
         });
+
+        if (!StringUtils.isEmpty(rsp.getMemBalloonInfo().getPciInfo().toString())) {
+            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(vidManager.MEMBALLOON_UUID, PciAddressConfig.fromString(rsp.getMemBalloonInfo().getPciInfo().toString())), spec.getVmInventory().getUuid());
+        }
     }
 
     @Override
