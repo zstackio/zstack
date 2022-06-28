@@ -1077,7 +1077,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             dvo.setAccountUuid(msg.getAccountUuid());
             dvo.setDiskSize(msg.getRootDiskSize());
             dvo.setName("for-create-vm-" + vo.getUuid());
-            dvo.setType("DefaultDiskOfferingType");
+            dvo.setType("TemporaryDiskOfferingType");
             dvo.setState(DiskOfferingState.Enabled);
             dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
             dbf.persist(dvo);
@@ -1125,19 +1125,21 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
         List<String> diskOfferingUuids = new ArrayList<>();
         List<DiskOfferingVO> diskOfferingVos = new ArrayList<>();
-        Map<Long, Long> sizeAndCountsMap = msg.getDataDiskSizes().stream().collect(Collectors.groupingBy(lng -> lng, Collectors.counting()));
-        for (Map.Entry<Long, Long> sizeAndCounts: sizeAndCountsMap.entrySet()) {
+        List<Long> volumeSizes = msg.getDataDiskSizes().stream().distinct().collect(Collectors.toList());
+        Map<Long, String> sizeDiskOfferingMap = new HashMap<>();
+        for (Long size : volumeSizes) {
             DiskOfferingVO dvo = new DiskOfferingVO();
             dvo.setUuid(Platform.getUuid());
             dvo.setAccountUuid(msg.getAccountUuid());
-            dvo.setDiskSize(sizeAndCounts.getKey());
+            dvo.setDiskSize(size);
             dvo.setName(String.format("create-data-volume-for-vm-%s", vmUuid));
-            dvo.setType("DefaultDataDiskOfferingType");
+            dvo.setType("TemporaryDiskOfferingType");
             dvo.setState(DiskOfferingState.Enabled);
             dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
             diskOfferingVos.add(dvo);
-            LongStream.range(0, sizeAndCounts.getValue()).forEach(i -> diskOfferingUuids.add(dvo.getUuid()));
+            sizeDiskOfferingMap.put(size, dvo.getUuid());
         }
+        msg.getDataDiskSizes().forEach(size -> diskOfferingUuids.add(sizeDiskOfferingMap.get(size)));
         dbf.persistCollection(diskOfferingVos);
         return diskOfferingUuids;
     }
