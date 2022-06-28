@@ -49,6 +49,7 @@
             <zstack:extension interface="org.zstack.compute.vm.VmCapabilitiesExtensionPoint" />
             <zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint" />
             <zstack:extension interface="org.zstack.header.storage.primary.PSCapacityExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityExtensionPoint" />
         </zstack:plugin>
     </bean>
 

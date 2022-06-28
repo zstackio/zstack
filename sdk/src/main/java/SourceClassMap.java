@@ -499,6 +499,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.backup.sftp.SftpBackupStorageInventory", "org.zstack.sdk.SftpBackupStorageInventory");
 			put("org.zstack.storage.ceph.backup.CephBackupStorageInventory", "org.zstack.sdk.CephBackupStorageInventory");
 			put("org.zstack.storage.ceph.backup.CephBackupStorageMonInventory", "org.zstack.sdk.CephBackupStorageMonInventory");
+			put("org.zstack.storage.ceph.primary.CephOsdGroupInventory", "org.zstack.sdk.CephOsdGroupInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageInventory", "org.zstack.sdk.CephPrimaryStorageInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageMonInventory", "org.zstack.sdk.CephPrimaryStorageMonInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStoragePoolInventory", "org.zstack.sdk.CephPrimaryStoragePoolInventory");
@@ -740,6 +741,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CdpTaskType", "org.zstack.header.storage.cdp.CdpTaskType");
 			put("org.zstack.sdk.CephBackupStorageInventory", "org.zstack.storage.ceph.backup.CephBackupStorageInventory");
 			put("org.zstack.sdk.CephBackupStorageMonInventory", "org.zstack.storage.ceph.backup.CephBackupStorageMonInventory");
+			put("org.zstack.sdk.CephOsdGroupInventory", "org.zstack.storage.ceph.primary.CephOsdGroupInventory");
 			put("org.zstack.sdk.CephPrimaryStorageInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageInventory");
 			put("org.zstack.sdk.CephPrimaryStorageMonInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageMonInventory");
 			put("org.zstack.sdk.CephPrimaryStoragePoolInventory", "org.zstack.storage.ceph.primary.CephPrimaryStoragePoolInventory");

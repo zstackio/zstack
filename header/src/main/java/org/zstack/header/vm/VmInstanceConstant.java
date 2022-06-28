@@ -37,6 +37,7 @@ public interface VmInstanceConstant {
         VmAllocateNicFlow_allowDuplicatedAddress,
         ApplianceVmSyncHaConfig_applianceVm,
         ApplianceVmSyncHaConfig_haUuid,
+        AllocatedUrlForAttachingVolume,
     }
 
     enum VmOperation {

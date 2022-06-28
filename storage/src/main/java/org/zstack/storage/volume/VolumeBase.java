@@ -43,6 +43,8 @@ import org.zstack.header.storage.snapshot.group.MemorySnapshotGroupExtensionPoin
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
@@ -175,9 +177,13 @@ public class VolumeBase implements Volume {
                 .findValue();
         // do the re-image op
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        List<String> systemTags = Q.New(SystemTagVO.class).select(SystemTagVO_.tag)
+                .eq(SystemTagVO_.resourceUuid, rootVolumeInventory.getUuid())
+                .listValues();
         chain.setName(String.format("reset-root-volume-%s-from-image-%s", self.getUuid(), self.getRootImageUuid()));
         chain.then(new ShareFlow() {
             VolumeVO vo = self;
+            String allocatedInstallUrl;
 
             @Override
             public void setup() {
@@ -185,14 +191,15 @@ public class VolumeBase implements Volume {
                     String __name__ = "allocate-primary-storage";
 
                     boolean success;
-                    String allocatedInstallUrl;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                         amsg.setRequiredPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                        amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateRootVolume.toString());
                         amsg.setSize(originSize);
                         amsg.setRequiredHostUuid(msg.getHostUuid());
+                        amsg.setSystemTags(systemTags);
 
                         bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                         bus.send(amsg, new CloudBusCallBack(trigger) {
@@ -256,6 +263,7 @@ public class VolumeBase implements Volume {
                         ReInitRootVolumeFromTemplateOnPrimaryStorageMsg rmsg = new ReInitRootVolumeFromTemplateOnPrimaryStorageMsg();
                         rmsg.setVolume(rootVolumeInventory);
                         rmsg.setOriginSize(originSize);
+                        rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
                         bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rootVolumeInventory.getPrimaryStorageUuid());
                         bus.send(rmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -430,6 +438,11 @@ public class VolumeBase implements Volume {
                             amsg.setRequiredHostUuid(msg.getHostUuid());
                             amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                             amsg.setSize(self.getSize());
+                            if (self.getType() == VolumeType.Root) {
+                                amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateRootVolume.toString());
+                            } else {
+                                amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
+                            }
 
                             bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                             bus.send(amsg, new CloudBusCallBack(trigger) {
@@ -442,6 +455,7 @@ public class VolumeBase implements Volume {
                                     success = true;
                                     AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                                     allocateInstallUrl = ar.getAllocatedInstallUrl();
+                                    msg.setAllocatedInstallUrl(allocateInstallUrl);
                                     trigger.next();
                                 }
                             });
@@ -544,6 +558,7 @@ public class VolumeBase implements Volume {
                         imsg.setVolume(getSelfInventory());
                         imsg.setSystemTags(msg.getSystemTags());
                         imsg.setSkipIfExisting(msg.isSkipIfExisting());
+                        imsg.setAllocatedInstallUrl(msg.getAllocatedInstallUrl());
                         if (msg.getHostUuid() != null) {
                             imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
                         }

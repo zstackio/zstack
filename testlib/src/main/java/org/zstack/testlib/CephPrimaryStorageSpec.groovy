@@ -125,7 +125,8 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                                 totalCapacity: rootSize,
                                 securityPolicy: DataSecurityPolicy.Copy.toString(),
                                 replicatedSize: 3,
-                                diskUtilization: 0.33
+                                diskUtilization: 0.33,
+                                relatedOsds: 'osd.1'
                         ),
                         new CephPoolCapacity(
                                 name: cspec.dataVolumePoolName,
@@ -134,7 +135,8 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                                 totalCapacity: dataSize,
                                 securityPolicy: DataSecurityPolicy.Copy.toString(),
                                 replicatedSize: 3,
-                                diskUtilization: 0.33
+                                diskUtilization: 0.33,
+                                relatedOsds: 'osd.2'
                         ),
                         new CephPoolCapacity(
                                 name: cspec.imageCachePoolName,
@@ -143,7 +145,8 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                                 totalCapacity: cacheSize,
                                 securityPolicy: DataSecurityPolicy.Copy.toString(),
                                 replicatedSize: 3,
-                                diskUtilization: 0.33
+                                diskUtilization: 0.33,
+                                relatedOsds: 'osd.3'
                         ),
                 ]
                 rsp.poolCapacities = poolCapacities
@@ -467,13 +470,49 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new CephPrimaryStorageBase.AgentResponse()
             }
 
-            simulator(CephPrimaryStorageBase.ADD_POOL_PATH) { HttpEntity<String> entity ->
+            simulator(CephPrimaryStorageBase.ADD_POOL_PATH) { HttpEntity<String> entity, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(entity.body, CephPrimaryStorageBase.AddPoolCmd.class)
 
+                CephPrimaryStorageSpec cspec = spec.specByUuid(cmd.uuid)
                 CephPrimaryStorageBase.AddPoolRsp rsp = new CephPrimaryStorageBase.AddPoolRsp()
+                rsp.totalCapacity = cspec.totalCapacity
+                rsp.availableCapacity = cspec.availableCapacity
+                long rootSize = cspec.availableCapacity / 3
+                long dataSize = cspec.availableCapacity / 3
+                long cacheSize = cspec.totalCapacity - rootSize - dataSize
                 rsp.setAvailableCapacity(SizeUnit.GIGABYTE.toByte(100))
                 rsp.setTotalCapacity(SizeUnit.GIGABYTE.toByte(100))
                 List<CephPoolCapacity> poolCapacities = [
+                        new CephPoolCapacity(
+                                name: cspec.rootVolumePoolName,
+                                availableCapacity: rootSize,
+                                usedCapacity: cspec.totalCapacity - cspec.availableCapacity,
+                                totalCapacity: rootSize,
+                                securityPolicy: DataSecurityPolicy.Copy.toString(),
+                                replicatedSize: 3,
+                                diskUtilization: 0.33,
+                                relatedOsds: 'osd.1'
+                        ),
+                        new CephPoolCapacity(
+                                name: cspec.dataVolumePoolName,
+                                availableCapacity: dataSize,
+                                usedCapacity: 0,
+                                totalCapacity: dataSize,
+                                securityPolicy: DataSecurityPolicy.Copy.toString(),
+                                replicatedSize: 3,
+                                diskUtilization: 0.33,
+                                relatedOsds: 'osd.2'
+                        ),
+                        new CephPoolCapacity(
+                                name: cspec.imageCachePoolName,
+                                availableCapacity: cacheSize,
+                                usedCapacity: 0,
+                                totalCapacity: cacheSize,
+                                securityPolicy: DataSecurityPolicy.Copy.toString(),
+                                replicatedSize: 3,
+                                diskUtilization: 0.33,
+                                relatedOsds: 'osd.3'
+                        ),
                         new CephPoolCapacity(
                                 name: cmd.poolName,
                                 availableCapacity: SizeUnit.GIGABYTE.toByte(100),
@@ -481,7 +520,8 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                                 totalCapacity: SizeUnit.GIGABYTE.toByte(100),
                                 securityPolicy: DataSecurityPolicy.Copy.toString(),
                                 replicatedSize: 3,
-                                diskUtilization: 0.33
+                                diskUtilization: 0.33,
+                                relatedOsds: "osd.4"
                         )
                 ]
                 rsp.setPoolCapacities(poolCapacities)

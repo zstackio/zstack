@@ -225,3 +225,43 @@ CREATE TABLE IF NOT EXISTS `zstack`.`RegisterLicenseApplicationVO` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 ALTER TABLE LicenseHistoryVO ADD COLUMN capacity int(10) NOT NULL;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`CephOsdGroupVO` (
+    `uuid` varchar(32) NOT NULL,
+    `primaryStorageUuid` varchar(32) NOT NULL,
+    `osds` text NOT NULL,
+    `availableCapacity` bigint(20) DEFAULT NULL,
+    `availablePhysicalCapacity` bigint(20) unsigned NOT NULL DEFAULT 0,
+    `totalPhysicalCapacity` bigint(20) unsigned NOT NULL DEFAULT 0,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`),
+    KEY `fkPrimaryStorageUuid` (`primaryStorageUuid`),
+    CONSTRAINT `fkPrimaryStorageUuid` FOREIGN KEY (`primaryStorageUuid`) REFERENCES `PrimaryStorageEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELIMITER $$
+CREATE PROCEDURE UpdateCephPrimaryStoragePoolVOSchema()
+    BEGIN
+        IF NOT EXISTS( SELECT 1
+                       FROM INFORMATION_SCHEMA.COLUMNS
+                       WHERE table_name = 'CephPrimaryStoragePoolVO'
+                             AND table_schema = 'zstack'
+                             AND column_name = 'osdGroupLtsUuid') THEN
+
+            ALTER TABLE `zstack`.`CephPrimaryStoragePoolVO` ADD COLUMN `osdGroupLtsUuid` VARCHAR(32) DEFAULT NULL;
+
+        END IF;
+
+        IF NOT EXISTS( SELECT 1
+                       FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+                       WHERE table_name = 'CephPrimaryStoragePoolVO'
+                             AND table_schema = 'zstack'
+                             AND CONSTRAINT_NAME = 'fkCephPrimaryStoragePoolVOOGLTSVO') THEN
+            ALTER TABLE `zstack`.`CephPrimaryStoragePoolVO` ADD CONSTRAINT fkCephPrimaryStoragePoolVOOGLTSVO FOREIGN KEY (osdGroupLtsUuid) REFERENCES CephOsdGroupVO (uuid) ON DELETE SET NULL;
+        END IF;
+    END $$
+DELIMITER ;
+CALL UpdateCephPrimaryStoragePoolVOSchema();
+DROP PROCEDURE IF EXISTS UpdateCephPrimaryStoragePoolVOSchema;
+

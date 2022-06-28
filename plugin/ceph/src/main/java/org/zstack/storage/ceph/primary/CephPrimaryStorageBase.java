@@ -66,6 +66,7 @@ import org.zstack.storage.ceph.CephMonBase.PingResult;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
+import org.zstack.storage.ceph.primary.capacity.CephOsdGroupCapacityHelper;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
@@ -128,6 +129,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     ReconnectMonLock reconnectMonLock = new ReconnectMonLock();
 
     private final String queueId = "Ceph-" + self.getUuid();
+
+    private CephOsdGroupCapacityHelper osdHelper;
 
     protected RunInQueue inQueue() {
         return new RunInQueue(queueId, thdf, getCephSyncLevel());
@@ -1561,192 +1564,25 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         return mediator;
     }
 
-    private String makeRootVolumeInstallPath(String volUuid, String volumePath) {
-        return String.format("ceph://%s/%s", getRootVolumeTargetPoolName(volUuid), volumePath);
-    }
-
-    private String makeRootVolumeInstallPath(String volUuid) {
-        return String.format("ceph://%s/%s", getRootVolumeTargetPoolName(volUuid), volUuid);
-    }
-
-    private String makeVolumeInstallPathByTargetPool(String volUuid, String targetPoolName) {
-        return String.format("ceph://%s/%s", targetPoolName, volUuid);
-    }
-
-    private String getRootVolumeTargetPoolName(String volUuid) {
-        String poolName = CephSystemTags.USE_CEPH_ROOT_POOL.getTokenByResourceUuid(volUuid, CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN);
-        return getPoolName(poolName, getDefaultRootVolumePoolName(), volUuid, CephPrimaryStoragePoolType.Root.toString());
-    }
-
-    private String makeResetImageRootVolumeInstallPath(String volUuid, String volumePath) {
-        return String.format("ceph://%s/%s",
-                getRootVolumeTargetPoolName(volUuid),
-                volumePath);
-    }
-
-    private String makeResetImageRootVolumeInstallPath(String volUuid) {
-        return String.format("ceph://%s/reset-image-%s-%s",
-                getRootVolumeTargetPoolName(volUuid),
-                volUuid,
-                System.currentTimeMillis());
-    }
-
-    private String makeDataVolumeInstallPath(String volUuid, String installPath) {
-        return String.format("ceph://%s/%s", getDataVolumeTargetPoolName(volUuid), installPath);
-    }
-
-    private String makeDataVolumeInstallPath(String volUuid) {
-        return String.format("ceph://%s/%s", getDataVolumeTargetPoolName(volUuid), volUuid);
-    }
-
-    private String getDataVolumeTargetPoolName(String volUuid) {
-        String poolName = CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.getTokenByResourceUuid(volUuid, CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN);
-        return getPoolName(poolName, getDefaultDataVolumePoolName(), volUuid, CephPrimaryStoragePoolType.Data.toString());
-    }
-
-    private String getPoolName(String customPoolName, String defaultPoolName, String volUuid, String poolType) {
-        if (customPoolName != null) {
-            return customPoolName;
-        }
-
-        CephPrimaryStoragePoolVO pool = getPoolFromPoolName(defaultPoolName);
-
-        Long volumeSize = Q.New(VolumeVO.class)
-                .select(VolumeVO_.size)
-                .eq(VolumeVO_.uuid, volUuid)
-                .findValue();
-
-        long poolVirtualAvailableSize = getPoolVirtualAvailableSize(defaultPoolName);
-        boolean capacityChecked = PrimaryStorageCapacityChecker.New(self.getUuid(),
-                        poolVirtualAvailableSize, pool.getTotalCapacity(), poolVirtualAvailableSize)
-                .checkRequiredSize(volumeSize);
-
-        if (!capacityChecked) {
-            //try to find other pool
-            List<CephPrimaryStoragePoolVO> pools = Q.New(CephPrimaryStoragePoolVO.class)
-                    .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
-                    .eq(CephPrimaryStoragePoolVO_.type, poolType)
-                    .notEq(CephPrimaryStoragePoolVO_.poolName, defaultPoolName)
-                    .list();
-
-            if (pools == null || pools.isEmpty()) {
-                return defaultPoolName;
-            }
-
-            return pools.stream()
-                    .filter(v -> {
-                        long pvs = getPoolVirtualAvailableSize(v.getPoolName());
-                        return PrimaryStorageCapacityChecker.New(self.getUuid(),
-                                        pvs, v.getTotalCapacity(), pvs)
-                                .checkRequiredSize(volumeSize);})
-                    .map(CephPrimaryStoragePoolVO::getPoolName)
-                    .findFirst()
-                    .orElse(defaultPoolName);
-        }
-
-        return defaultPoolName;
-    }
-
-    private String makeCacheInstallPath(String uuid) {
-        return String.format("ceph://%s/%s",
-                getDefaultImageCachePoolName(),
-                uuid);
-    }
 
     public CephPrimaryStorageBase(PrimaryStorageVO self) {
         super(self);
+        osdHelper = new CephOsdGroupCapacityHelper(self.getUuid());
     }
 
     protected CephPrimaryStorageVO getSelf() {
         return (CephPrimaryStorageVO) self;
     }
 
-    private String getDefaultImageCachePoolName() {
-        return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_IMAGE_CACHE_POOL.getTokenByResourceUuid(self.getUuid(), CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_IMAGE_CACHE_POOL_TOKEN);
-    }
-
-    private String getDefaultDataVolumePoolName() {
-        return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL.getTokenByResourceUuid(self.getUuid(), CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN);
-    }
-
-    private String getDefaultRootVolumePoolName() {
-        return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL.getTokenByResourceUuid(self.getUuid(), CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL_TOKEN);
-    }
-
     protected CephPrimaryStorageInventory getSelfInventory() {
         return CephPrimaryStorageInventory.valueOf(getSelf());
-    }
-
-    private long getPoolVirtualAvailableSize(String poolName) {
-        CephPrimaryStoragePoolVO poolVO = getPoolFromPoolName(poolName);
-        List<Long> sizes = Q.New(VolumeVO.class)
-                .select(VolumeAO_.size)
-                .eq(VolumeAO_.primaryStorageUuid, self.getUuid())
-                .like(VolumeAO_.installPath, String.format("ceph://%s%%", poolName))
-                .listValues();
-
-        return poolVO.getTotalCapacity() - sizes.stream().reduce(0L, Long::sum);
-    }
-
-    private CephPrimaryStoragePoolVO getPoolFromPoolName(String poolName) {
-        List<CephPrimaryStoragePoolVO> poolVOS = Q.New(CephPrimaryStoragePoolVO.class)
-                .eq(CephPrimaryStoragePoolVO_.poolName, poolName)
-                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
-                .list();
-
-        if (poolVOS.size() == 0) {
-            throw new OperationFailureException(operr("cannot find cephPrimaryStorage pool[poolName=%s]", poolName));
-        }
-
-        return poolVOS.get(0);
-    }
-
-    private void checkCephPoolCapacityForNewVolume(String poolName, long volumeSize) {
-        CephPrimaryStoragePoolVO poolVO = getPoolFromPoolName(poolName);
-        boolean capacityChecked = PrimaryStorageCapacityChecker.New(self.getUuid(),
-                poolVO.getAvailableCapacity(), poolVO.getTotalCapacity(), poolVO.getAvailableCapacity())
-                .checkRequiredSize(volumeSize);
-
-        if (!capacityChecked) {
-            throw new OperationFailureException(operr("cephPrimaryStorage pool[poolName=%s] available capacity not enough", poolName));
-        }
-    }
-
-    private String getPoolNameFromSystemTags(List<String> systemTags, String volumeType) {
-        if (systemTags == null || systemTags.isEmpty()) {
-            return null;
-        }
-
-        if (VolumeType.Root.toString().equals(volumeType)) {
-            return systemTags.stream().filter(tag -> TagUtils.isMatch(CephSystemTags.USE_CEPH_ROOT_POOL.getTagFormat(), tag))
-                    .map(tag -> TagUtils.parse(CephSystemTags.USE_CEPH_ROOT_POOL.getTagFormat(), tag).get(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN))
-                    .findFirst().orElse(null);
-        } else if (VolumeType.Data.toString().equals(volumeType)) {
-            return systemTags.stream().filter(tag -> TagUtils.isMatch(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.getTagFormat(), tag))
-                    .map(tag -> TagUtils.parse(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.getTagFormat(), tag).get(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN))
-                    .findFirst().orElse(null);
-        }
-        return null;
     }
 
     private void createEmptyVolume(final InstantiateVolumeOnPrimaryStorageMsg msg) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         String volumeUuid = msg.getVolume().getUuid();
-
-        String targetCephPoolName = getPoolNameFromSystemTags(msg.getSystemTags(), msg.getVolume().getType());
-
-        if (targetCephPoolName != null) {
-            cmd.installPath = makeVolumeInstallPathByTargetPool(volumeUuid, targetCephPoolName);
-        } else if (VolumeType.Root.toString().equals(msg.getVolume().getType())) {
-            targetCephPoolName = getRootVolumeTargetPoolName(volumeUuid);
-            cmd.installPath = makeRootVolumeInstallPath(msg.getVolume().getUuid());
-        } else {
-            targetCephPoolName = getDataVolumeTargetPoolName(volumeUuid);
-            cmd.installPath = makeDataVolumeInstallPath(msg.getVolume().getUuid());
-        }
-
-        checkCephPoolCapacityForNewVolume(targetCephPoolName, msg.getVolume().getSize());
-
+        final String finalPoolName = getTargetPoolNameFromAllocatedUrl(msg.getAllocatedInstallUrl());
+        cmd.installPath = makeVolumeInstallPathByTargetPool(volumeUuid, finalPoolName);
         cmd.size = msg.getVolume().getSize();
         cmd.setShareable(msg.getVolume().isShareable());
         cmd.skipIfExisting = msg.isSkipIfExisting();
@@ -1763,7 +1599,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success(CreateEmptyVolumeRsp ret) {
                 VolumeInventory vol = msg.getVolume();
-                vol.setInstallPath(buildEmptyVolumeInstallPath(msg.getVolume(), cmd.installPath, ret.getInstallPath()));
+                vol.setInstallPath(buildEmptyVolumeInstallPath(finalPoolName, cmd.installPath, ret.getInstallPath()));
                 vol.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
                 reply.setVolume(vol);
                 bus.reply(msg, reply);
@@ -1771,16 +1607,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private String buildEmptyVolumeInstallPath(VolumeInventory vo,String canonicalPath, String installPath) {
+    private String buildEmptyVolumeInstallPath(String targetCephPoolName,String canonicalPath, String installPath) {
         if (StringUtils.isEmpty(installPath)) {
             return canonicalPath;
         }
 
-        if (VolumeType.Root.toString().equals(vo.getType())) {
-            return makeRootVolumeInstallPath(vo.getUuid(), installPath);
-        } else {
-            return makeDataVolumeInstallPath(vo.getUuid(), installPath);
-        }
+        return makeVolumeInstallPathByTargetPool(installPath, targetCephPoolName);
     }
 
     private void cleanTrash(Long trashId, final ReturnValueCompletion<CleanTrashResult> completion) {
@@ -1825,6 +1657,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
                 msg.setPrimaryStorageUuid(self.getUuid());
                 msg.setInstallPath(inv.getInstallPath());
+                msg.setSize(inv.getSize());
                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                 bus.send(msg, new CloudBusCallBack(trigger) {
                     @Override
@@ -1911,6 +1744,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
                     msg.setPrimaryStorageUuid(self.getUuid());
                     msg.setInstallPath(inv.getInstallPath());
+                    msg.setSize(inv.getSize());
                     bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                     bus.send(msg, new CloudBusCallBack(trigger) {
                         @Override
@@ -2115,6 +1949,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 String cachePath;
                 String snapshotPath;
                 long actualSize = image.getInventory().getActualSize();
+                String allocatedInstall;
 
                 @Override
                 public void setup() {
@@ -2125,7 +1960,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                            AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                             amsg.setRequiredPrimaryStorageUuid(self.getUuid());
                             amsg.setSize(image.getInventory().getActualSize());
                             amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
@@ -2139,6 +1974,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                         trigger.fail(reply.getError());
                                     } else {
                                         s = true;
+                                        AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                                        allocatedInstall = ar.getAllocatedInstallUrl();
                                         trigger.next();
                                     }
                                 }
@@ -2148,12 +1985,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             if (s) {
-                                IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
-                                imsg.setNoOverProvisioning(true);
-                                imsg.setPrimaryStorageUuid(self.getUuid());
-                                imsg.setDiskSize(image.getInventory().getActualSize());
-                                bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);
-                                bus.send(imsg);
+                                ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+                                rmsg.setNoOverProvisioning(true);
+                                rmsg.setAllocatedInstallUrl(allocatedInstall);
+                                rmsg.setPrimaryStorageUuid(self.getUuid());
+                                rmsg.setDiskSize(image.getInventory().getActualSize());
+                                bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+                                bus.send(rmsg);
                             }
 
                             trigger.rollback();
@@ -2167,11 +2005,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            String dstPath = makeVolumeInstallPathByTargetPool(image.getInventory().getUuid(),
+                                    getTargetPoolNameFromAllocatedUrl(allocatedInstall));
                             if (snapshot != null) {
                                 deleteOnRollback = true;
                                 CpCmd cmd = new CpCmd();
                                 cmd.srcPath = snapshot.getPrimaryStorageInstallPath();
-                                cmd.dstPath = makeCacheInstallPath(image.getInventory().getUuid());
+                                cmd.dstPath = dstPath;
                                 cmd.shareable = false;
                                 httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(completion) {
                                     @Override
@@ -2191,7 +2031,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             } else {
                                 MediatorDownloadParam param = new MediatorDownloadParam();
                                 param.setImage(image);
-                                param.setInstallPath(makeCacheInstallPath(image.getInventory().getUuid()));
+                                param.setInstallPath(dstPath);
                                 param.setPrimaryStorageUuid(self.getUuid());
                                 BackupStorageMediator mediator = getBackupStorageMediator(image.getSelectedBackupStorage().getBackupStorageUuid());
                                 mediator.param = param;
@@ -2452,14 +2292,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private void createVolumeFromTemplate(final InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
         final VmInstanceSpec.ImageSpec ispec = msg.getTemplateSpec();
-        String targetCephPoolName = getRootVolumeTargetPoolName(msg.getVolume().getUuid());
-        checkCephPoolCapacityForNewVolume(targetCephPoolName, msg.getVolume().getSize());
+        String targetCephPoolName = getTargetPoolNameFromAllocatedUrl(msg.getAllocatedInstallUrl());
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-root-volume-%s", msg.getVolume().getUuid()));
         chain.then(new ShareFlow() {
             String cloneInstallPath;
-            String volumePath = makeRootVolumeInstallPath(msg.getVolume().getUuid());
+            String volumePath = makeVolumeInstallPathByTargetPool(msg.getVolume().getUuid(), targetCephPoolName);
             ImageCacheInventory cache;
 
             @Override
@@ -2508,11 +2347,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                             @Override
                             public void success(CloneRsp ret) {
-                                if (StringUtils.isNotEmpty(ret.getInstallPath()) &&
-                                        !ret.getInstallPath().equals(volumePath)) {
-                                    volumePath = makeRootVolumeInstallPath(msg.getVolume().getUuid(), ret.getInstallPath());
-                                }
-
                                 trigger.next();
                             }
                         });
@@ -2618,6 +2452,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void success(DeleteRsp ret) {
+                osdHelper.releaseAvailableCapWithRatio(msg.getVolume().getInstallPath(), msg.getVolume().getSize());
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -2992,7 +2827,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         spec.setSelectedBackupStorage(msg.getBackupStorageRef());
         MediatorDownloadParam param = new MediatorDownloadParam();
         param.setImage(spec);
-        param.setInstallPath(makeDataVolumeInstallPath(msg.getVolumeUuid()));
+        param.setInstallPath(makeVolumeInstallPathByTargetPool(msg.getVolumeUuid(),
+                getTargetPoolNameFromAllocatedUrl(msg.getAllocatedInstallUrl())));
         param.setPrimaryStorageUuid(self.getUuid());
         param.setShareable(dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class).isShareable());
         mediator.param = param;
@@ -3017,7 +2853,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     protected void handle(GetInstallPathForDataVolumeDownloadMsg msg) {
         GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
-        reply.setInstallPath(makeDataVolumeInstallPath(msg.getVolumeUuid()));
+        reply.setInstallPath(makeVolumeInstallPathByTargetPool(msg.getVolumeUuid(),
+                getTargetPoolNameFromAllocatedUrl(msg.getAllocatedInstallUrl())));
         bus.reply(msg, reply);
     }
 
@@ -3049,6 +2886,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void success(DeleteRsp ret) {
+                osdHelper.releaseAvailableCapWithRatio(msg.getInstallPath(), msg.getSize());
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -3278,6 +3116,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     if (!(cmd instanceof InitCmd)) {
                         updateCapacityIfNeeded(ret);
                     }
+
                     callback.success(ret);
                 }
 
@@ -3570,6 +3409,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
                                 CephCapacity cephCapacity = new CephCapacity(ret.fsid, ret);
                                 updater.update(cephCapacity, true);
+                                osdHelper.recalculateAvailableCapacity();
                                 createPrimaryStorageLicenseVendor(ret.getType());
                                 trigger.next();
                             }
@@ -3867,6 +3707,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         CephPrimaryStoragePoolVO vo = dbf.findByUuid(msg.getUuid(), CephPrimaryStoragePoolVO.class);
         dbf.remove(vo);
+        osdHelper.recalculateAvailableCapacity();
         bus.publish(evt);
     }
 
@@ -3905,6 +3746,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         httpCall(ADD_POOL_PATH, cmd, AddPoolRsp.class, new ReturnValueCompletion<AddPoolRsp>(msg) {
             @Override
             public void success(AddPoolRsp rsp) {
+                osdHelper.recalculateAvailableCapacity();
                 evt.setInventory(CephPrimaryStoragePoolInventory.valueOf(finalVo));
                 bus.publish(evt);
                 completion.done();
@@ -4719,8 +4561,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void fastCreateVolumeFromSnapshot(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
-
-        final String volPath = makeDataVolumeInstallPath(msg.getVolumeUuid());
+        // create volume first, then reserve size for it, so we use snapshot poolName for volume create
+        String snapShotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
+        final String volPath =  makeVolumeInstallPathByTargetPool(msg.getVolumeUuid(), getTargetPoolNameFromAllocatedUrl(snapShotPath));
         VolumeSnapshotInventory sp = msg.getSnapshot();
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
@@ -4759,7 +4602,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     public void success(CloneRsp rsp) {
                         reply.setInstallPath(volPath);
                         reply.setSize(rsp.size);
-
                         // current ceph has no way to get the actual size
                         long asize = rsp.actualSize == null ? 1 : rsp.actualSize;
                         reply.setActualSize(asize);
@@ -4788,8 +4630,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void createVolumeFromSnapshot(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
-
-        final String volPath = makeDataVolumeInstallPath(msg.getVolumeUuid());
+        String snapShotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
+        final String volPath =  makeVolumeInstallPathByTargetPool(msg.getVolumeUuid(), getTargetPoolNameFromAllocatedUrl(snapShotPath));
         VolumeSnapshotInventory sp = msg.getSnapshot();
         CpCmd cmd = new CpCmd();
         cmd.resourceUuid = msg.getSnapshot().getVolumeUuid();
@@ -4800,7 +4642,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             public void success(CpRsp rsp) {
                 reply.setInstallPath(volPath);
                 reply.setSize(rsp.size);
-
                 // current ceph has no way to get the actual size
                 long asize = rsp.actualSize == null ? 1 : rsp.actualSize;
                 reply.setActualSize(asize);
@@ -4919,7 +4760,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         chain.setName(String.format("reimage-vm-root-volume-%s", msg.getVolume().getUuid()));
         chain.then(new ShareFlow() {
             final String originalVolumePath = msg.getVolume().getInstallPath();
-            String volumePath = makeResetImageRootVolumeInstallPath(msg.getVolume().getUuid());
+            final String targetPoolName = getTargetPoolNameFromAllocatedUrl(msg.getAllocatedInstallUrl());
+            String volumePath = makeResetImageRootVolumeInstallPath(msg.getVolume().getUuid(), targetPoolName);
             String installUrl;
 
             @Override
@@ -4964,7 +4806,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         CloneCmd cmd = new CloneCmd();
                         cmd.srcPath = installUrl;
                         cmd.dstPath = volumePath;
-
                         httpCall(CLONE_PATH, cmd, CloneRsp.class, new ReturnValueCompletion<CloneRsp>(trigger) {
                             @Override
                             public void fail(ErrorCode err) {
@@ -4973,11 +4814,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                             @Override
                             public void success(CloneRsp ret) {
-                                if (StringUtils.isNotEmpty(ret.getInstallPath()) &&
-                                        !ret.getInstallPath().equals(volumePath)) {
-                                    volumePath = makeResetImageRootVolumeInstallPath(msg.getVolume().getUuid(), ret.getInstallPath());
-                                }
-
                                 trigger.next();
                             }
                         });
@@ -5574,5 +5410,42 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         }).setAvoidMonUuids(msg.getAvoidCephMonUuids()).tryNext().call();
+    }
+
+    private String makeVolumeInstallPathByTargetPool(String volUuid, String targetPoolName) {
+        return String.format("ceph://%s/%s", targetPoolName, volUuid);
+    }
+
+    private String getTargetPoolNameFromAllocatedUrl(String allocatedUrl) {
+        if (allocatedUrl == null) {
+            throw new OperationFailureException(operr("allocated url not found"));
+        }
+
+
+        if (!allocatedUrl.startsWith("ceph://")) {
+            throw new OperationFailureException(operr("invalid allocated url:%s", allocatedUrl));
+        }
+
+        String path = allocatedUrl.replaceFirst("ceph://", "");
+        return path.substring(0, path.lastIndexOf("/"));
+    }
+
+    private String makeResetImageRootVolumeInstallPath(String volUuid, String targetPoolName) {
+        return String.format("ceph://%s/reset-image-%s-%s",
+                targetPoolName,
+                volUuid,
+                System.currentTimeMillis());
+    }
+
+    private String getDefaultImageCachePoolName() {
+        return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_IMAGE_CACHE_POOL.getTokenByResourceUuid(self.getUuid(), CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_IMAGE_CACHE_POOL_TOKEN);
+    }
+
+    private String getDefaultDataVolumePoolName() {
+        return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL.getTokenByResourceUuid(self.getUuid(), CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN);
+    }
+
+    private String getDefaultRootVolumePoolName() {
+        return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL.getTokenByResourceUuid(self.getUuid(), CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL_TOKEN);
     }
 }

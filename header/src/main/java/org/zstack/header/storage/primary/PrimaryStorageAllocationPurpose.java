@@ -5,7 +5,8 @@ package org.zstack.header.storage.primary;
  */
 public enum PrimaryStorageAllocationPurpose {
     CreateNewVm,   // Be careful: purpose CreateNewVm has very special logic
-    CreateVolume,
+    CreateRootVolume,
+    CreateDataVolume,
     DownloadSnapshot,
     DownloadImage
 }

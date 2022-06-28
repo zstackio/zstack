@@ -487,6 +487,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private void allocatePrimaryStoreSpace(AllocatePrimaryStorageSpaceMsg msg, NoErrorCompletion completion) {
         AllocatePrimaryStorageSpaceReply reply = new AllocatePrimaryStorageSpaceReply(null);
+        if (msg.getRequiredInstallUri() == null && msg.getPurpose() == null) {
+            throw new OperationFailureException(
+                    argerr("please specify the purpose before allocating space"));
+        }
 
         if (msg.getRequiredInstallUri() != null && msg.isForce()) {
             PrimaryStorageVO psVO = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, msg.getRequiredPrimaryStorageUuid()).find();
@@ -667,6 +671,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 allocatedInstallUrl[0] = inv.getUrl();
                 if (PSCapacityExt != null) {
                     allocatedInstallUrl[0] = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
+                    if (allocatedInstallUrl[0] == null) {
+                        return null;
+                    }
                     PSCapacityExt.reserveCapacity(msg, allocatedInstallUrl[0], size, inv.getUuid());
                 }
                 return cap;
