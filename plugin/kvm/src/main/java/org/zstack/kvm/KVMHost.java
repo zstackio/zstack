@@ -19,6 +19,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
@@ -1905,6 +1906,21 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setTimeout(timeoutManager.getTimeout());
 
+                        if (s.diskMigrationMap != null) {
+                            Map<String, VolumeTO> diskMigrationMap = new HashMap<>();
+                            new SQLBatch() {
+                                @Override
+                                protected void scripts() {
+                                    s.diskMigrationMap.forEach((oldVolumeInstallPath, newVolumeUuid) -> {
+                                        VolumeVO vo = findByUuid(newVolumeUuid, VolumeVO.class);
+                                        diskMigrationMap.put(oldVolumeInstallPath,
+                                                VolumeTO.valueOf(VolumeInventory.valueOf(vo), (KVMHostInventory) getSelfInventory()));
+                                    });
+                                }
+                            }.execute();
+                            cmd.setDisks(diskMigrationMap);
+                        }
+
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
                         ub.host(migrateFromDestination ? dstHostMnIp : srcHostMnIp);
                         String migrateUrl = ub.build().toString();
@@ -2086,6 +2102,7 @@ public class KVMHost extends HostBase implements Host {
         String srcHostMigrateIp;
         String srcHostMnIp;
         String srcHostUuid;
+        Map<String, String> diskMigrationMap;
     }
 
     private MigrateStruct buildMigrateStuct(final MigrateVmOnHypervisorMsg msg){
@@ -2096,6 +2113,7 @@ public class KVMHost extends HostBase implements Host {
         s.storageMigrationPolicy = msg.getStorageMigrationPolicy();
         s.migrateFromDestition = msg.isMigrateFromDestination();
         s.strategy = msg.getStrategy();
+        s.diskMigrationMap = msg.getDiskMigrationMap();
 
         MigrateNetworkExtensionPoint.MigrateInfo migrateIpInfo = null;
         for (MigrateNetworkExtensionPoint ext: pluginRgty.getExtensionList(MigrateNetworkExtensionPoint.class)) {
