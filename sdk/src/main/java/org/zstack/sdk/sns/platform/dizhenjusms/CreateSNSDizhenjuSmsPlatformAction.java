@@ -17,10 +17,10 @@ public class CreateSNSDizhenjuSmsPlatformAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                        String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
+                    String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
-
+            
             return this;
         }
     }
@@ -32,13 +32,28 @@ public class CreateSNSDizhenjuSmsPlatformAction extends AbstractAction {
     public java.lang.String srcID = "106575007626";
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String username;
+    public java.lang.String node1Ip;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
+    public java.lang.String username1;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String downlinkChannelNumber;
+    public java.lang.String password1;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String downlinkChannelNumber1;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String node2Ip;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String username2;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password2;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String downlinkChannelNumber2;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
@@ -83,9 +98,9 @@ public class CreateSNSDizhenjuSmsPlatformAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.sns.CreateSNSApplicationPlatformResult value = res.getResult(org.zstack.sdk.sns.CreateSNSApplicationPlatformResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.CreateSNSApplicationPlatformResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.sns.CreateSNSApplicationPlatformResult() : value; 
 
         return ret;
     }
