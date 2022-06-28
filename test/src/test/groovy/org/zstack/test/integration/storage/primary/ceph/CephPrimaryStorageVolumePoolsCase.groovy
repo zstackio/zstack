@@ -2,11 +2,7 @@ package org.zstack.test.integration.storage.primary.ceph
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
-import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
-import org.zstack.header.message.MessageReply
-import org.zstack.header.vm.InstantiateNewCreatedVmInstanceMsg
-import org.zstack.header.vm.InstantiateNewCreatedVmInstanceReply
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMConstant
@@ -21,7 +17,6 @@ import org.zstack.testlib.vfs.VFS
 import org.zstack.utils.data.SizeUnit
 
 import static java.util.Arrays.asList
-import static org.zstack.core.Platform.operr
 
 /**
  * Created by xing5 on 2017/2/28.

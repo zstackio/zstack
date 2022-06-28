@@ -38,12 +38,14 @@ public class CephPrimaryStoragePoolInventory {
         inv.lastOpDate = vo.getLastOpDate();
         inv.aliasName = vo.getAliasName();
         inv.type = vo.getType();
-        inv.availableCapacity = vo.getAvailableCapacity();
         inv.usedCapacity = vo.getUsedCapacity();
         inv.replicatedSize = vo.getReplicatedSize();
         inv.totalCapacity = vo.getTotalCapacity();
         inv.diskUtilization = vo.getDiskUtilization();
         inv.securityPolicy = vo.getSecurityPolicy();
+        if (vo.getOsdGroup() != null) {
+            inv.availableCapacity = vo.getOsdGroup().getAvailableCapacity();
+        }
         return inv;
     }
 

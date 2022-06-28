@@ -160,7 +160,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
             rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
         } else if (spec.getCurrentVmOperation() == VmOperation.AttachVolume) {
-            rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
+            rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
         }
 
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
@@ -206,6 +206,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
                     amsg.setRequiredPrimaryStorageUuid(getRequiredStorageUuid(spec.getDestHost().getUuid(), spec.getRequiredPrimaryStorageUuidForDataVolume()));
                 }
 
+                amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
                 amsg.setDiskOfferingUuid(dinv.getUuid());
                 rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
                 bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);

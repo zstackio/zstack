@@ -7,9 +7,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -21,6 +19,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.header.volume.VolumeInventory;
 
 import java.util.Arrays;
@@ -58,7 +57,7 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
 
         AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
         amsg.setSize(volume.getSize());
-        amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
+        amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
         amsg.setDiskOfferingUuid(volume.getDiskOfferingUuid());
         amsg.setServiceId(bus.makeLocalServiceId(PrimaryStorageConstant.SERVICE_ID));
 
@@ -94,6 +93,7 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
                     AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                     allocatedInstallUrl = ar.getAllocatedInstallUrl();
                     data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
+                    data.put(VmInstanceConstant.Params.AllocatedUrlForAttachingVolume.toString(), allocatedInstallUrl);
                     data.put(VmAllocatePrimaryStorageForAttachingDiskFlow.class, ar.getSize());
                     chain.next();
                 } else {

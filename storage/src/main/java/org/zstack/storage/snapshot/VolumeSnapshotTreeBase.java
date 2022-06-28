@@ -1,5 +1,6 @@
 package org.zstack.storage.snapshot;
 
+import org.hibernate.sql.Update;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -766,6 +767,9 @@ public class VolumeSnapshotTreeBase {
                                     installPath = cr.getInstallPath();
                                     actualSize = cr.getActualSize();
                                     size = cr.getSize();
+                                    //update volume install path for ps allocate
+                                    //TODO: remove this
+                                    SQL.New(VolumeVO.class).set(VolumeVO_.installPath, installPath).eq(VolumeVO_.uuid, msg.getVolume().getUuid()).update();
                                     trigger.next();
                                 } else {
                                     trigger.fail(reply.getError());
