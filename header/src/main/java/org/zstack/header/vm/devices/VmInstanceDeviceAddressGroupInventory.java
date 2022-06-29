@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 public class VmInstanceDeviceAddressGroupInventory {
     private String uuid;
     private String resourceUuid;
+    private String vmInstanceUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -33,6 +34,7 @@ public class VmInstanceDeviceAddressGroupInventory {
         VmInstanceDeviceAddressGroupInventory inv = new VmInstanceDeviceAddressGroupInventory();
         inv.setUuid(vo.getUuid());
         inv.setResourceUuid(vo.getResourceUuid());
+        inv.setVmInstanceUuid(vo.getVmInstanceUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setAddressList(VmInstanceDeviceAddressArchiveInventory.valueOf(vo.getAddressList()));
@@ -57,6 +59,14 @@ public class VmInstanceDeviceAddressGroupInventory {
 
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
+    }
+
+    public String getVmInstanceUuid() {
+        return vmInstanceUuid;
+    }
+
+    public void setVmInstanceUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
     }
 
     public List<VmInstanceDeviceAddressArchiveInventory> getAddressList() {

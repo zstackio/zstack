@@ -30,6 +30,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,14 +64,14 @@ public class VmCdRomMemorySnapshotGroupExtension implements MemorySnapshotGroupE
 
     @Override
     public void beforeRevertMemorySnapshotGroup(VolumeSnapshotGroupInventory snapshotGroup, Completion completion) {
-        List<VmInstanceDeviceAddressArchiveVO> needToRevertCdRomList = vidm.getAddressArchiveInfoFromArchiveForResourceUuid(snapshotGroup.getVmInstanceUuid(), snapshotGroup.getUuid(), VmCdRomInventory.class.getCanonicalName());
+        List<VmInstanceDeviceAddressArchiveVO> needToRevertCdRomList = vidm.getAddressArchiveInfoFromArchiveForResourceUuid(snapshotGroup.getVmInstanceUuid(), snapshotGroup.getUuid(), VmCdRomInventory.class.getCanonicalName())
+                .stream().sorted(Comparator.comparingInt(needToRevertCdRom -> JSONObjectUtil.toObject(needToRevertCdRom.getMetadata(), VmCdRomInventory.class).getDeviceId()))
+                .collect(Collectors.toList());
+
         List<String> needToDeleteVmCdRomUuidListCurrently = Q.New(VmCdRomVO.class)
                 .select(VmCdRomVO_.uuid)
                 .eq(VmCdRomVO_.vmInstanceUuid, snapshotGroup.getVmInstanceUuid())
                 .listValues();
-        List<VmInstanceDeviceAddressArchiveVO> intersection = needToRevertCdRomList.stream().filter(originalCdRom -> needToDeleteVmCdRomUuidListCurrently.contains(originalCdRom.getResourceUuid())).collect(Collectors.toList());
-        needToDeleteVmCdRomUuidListCurrently.removeAll(intersection.stream().map(VmInstanceDeviceAddressArchiveVO::getResourceUuid).collect(Collectors.toList()));
-        needToRevertCdRomList.removeAll(intersection);
 
         FlowChain fchain = FlowChainBuilder.newShareFlowChain();
         fchain.setName(String.format("revert-vm-%s-cdRom-info", snapshotGroup.getVmInstanceUuid()));
@@ -78,7 +79,7 @@ public class VmCdRomMemorySnapshotGroupExtension implements MemorySnapshotGroupE
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
-                    String __name__ = "delete-extra-cdRoms";
+                    String __name__ = "delete-all-cdRoms";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -112,37 +113,6 @@ public class VmCdRomMemorySnapshotGroupExtension implements MemorySnapshotGroupE
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "update-cd-rom-info-for-memory-snapshot-group";
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return intersection.isEmpty();
-                    }
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        intersection.forEach(originalCdRom -> {
-                            VmCdRomInventory updateCdRomInventory = JSONObjectUtil.toObject(originalCdRom.getMetadata(), VmCdRomInventory.class);
-                            VmCdRomVO currentCdRom = Q.New(VmCdRomVO.class).eq(VmCdRomVO_.uuid, updateCdRomInventory.getUuid()).find();
-                            logger.info(String.format("update cdRom[%s]: name[%s->%s], description[%s->%s], isoUuid[%s->%s], isoInstallPath[%s->%s], deviceId[%s->%s] for memory snapshot group"
-                                    , updateCdRomInventory.getUuid()
-                                    , currentCdRom.getName(), updateCdRomInventory.getName()
-                                    , currentCdRom.getDescription(), updateCdRomInventory.getDescription()
-                                    , currentCdRom.getIsoUuid(), updateCdRomInventory.getIsoUuid()
-                                    , currentCdRom.getIsoInstallPath(), updateCdRomInventory.getIsoInstallPath()
-                                    , currentCdRom.getDeviceId(), updateCdRomInventory.getDeviceId()));
-                            SQL.New(VmCdRomVO.class).eq(VmCdRomVO_.uuid, updateCdRomInventory.getUuid())
-                                    .set(VmCdRomVO_.name, updateCdRomInventory.getName())
-                                    .set(VmCdRomVO_.isoUuid, updateCdRomInventory.getIsoUuid())
-                                    .set(VmCdRomVO_.isoInstallPath, updateCdRomInventory.getIsoInstallPath())
-                                    .set(VmCdRomVO_.description, updateCdRomInventory.getDescription())
-                                    .set(VmCdRomVO_.deviceId, updateCdRomInventory.getDeviceId()).update();
-                        });
-                        trigger.next();
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
                     String __name__ = "create-cdRoms-saved-by-memory-snapshot-group";
 
                     private boolean isCdRomIsoEnabled(String isoUuid){
@@ -154,7 +124,7 @@ public class VmCdRomMemorySnapshotGroupExtension implements MemorySnapshotGroupE
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        new While<>(needToRevertCdRomList).step((originalCdRom, whileCompletion) -> {
+                        new While<>(needToRevertCdRomList).each((originalCdRom, whileCompletion) -> {
                             VmCdRomInventory cdRomInventory = JSONObjectUtil.toObject(originalCdRom.getMetadata(), VmCdRomInventory.class);
                             CreateVmCdRomMsg cmsg = new CreateVmCdRomMsg();
                             cmsg.setVmInstanceUuid(snapshotGroup.getVmInstanceUuid());
@@ -182,7 +152,7 @@ public class VmCdRomMemorySnapshotGroupExtension implements MemorySnapshotGroupE
                                     whileCompletion.done();
                                 }
                             });
-                        }, 10).run(new WhileDoneCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
                             public void done(ErrorCodeList errorCodeList) {
                                 if (errorCodeList.getCauses().isEmpty()) {

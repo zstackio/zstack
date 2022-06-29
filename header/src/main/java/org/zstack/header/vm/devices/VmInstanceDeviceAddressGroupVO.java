@@ -17,6 +17,9 @@ public class VmInstanceDeviceAddressGroupVO implements ToInventory {
     private String resourceUuid;
 
     @Column
+    private String vmInstanceUuid;
+
+    @Column
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "addressGroupUuid", insertable = false, updatable = false)
     private List<VmInstanceDeviceAddressArchiveVO> addressList;
@@ -41,6 +44,14 @@ public class VmInstanceDeviceAddressGroupVO implements ToInventory {
 
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
+    }
+
+    public String getVmInstanceUuid() {
+        return vmInstanceUuid;
+    }
+
+    public void setVmInstanceUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
     }
 
     public Timestamp getCreateDate() {
