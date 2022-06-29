@@ -5,3 +5,6 @@ ALTER TABLE `zstack`.`IPsecConnectionVO` ADD COLUMN `remoteId` varchar(128) DEFA
 ALTER TABLE `zstack`.`IPsecConnectionVO` ADD COLUMN `localId` varchar(128) DEFAULT NULL;
 ALTER TABLE `zstack`.`IPsecConnectionVO` ADD COLUMN `ikeLifeTime` int(10) DEFAULT 0;
 ALTER TABLE `zstack`.`IPsecConnectionVO` ADD COLUMN `lifeTime` int(10) DEFAULT 0;
+
+ALTER TABLE `zstack`.`VirtualRouterMetadataVO` ADD COLUMN `ipsecCurrentVersion` varchar(32) DEFAULT NULL;
+ALTER TABLE `zstack`.`VirtualRouterMetadataVO` ADD COLUMN `ipsecLatestVersion` varchar(32) DEFAULT NULL;

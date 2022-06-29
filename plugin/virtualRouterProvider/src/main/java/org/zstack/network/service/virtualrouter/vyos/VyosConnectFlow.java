@@ -201,6 +201,8 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                         struct.setKernelVersion(ret.getKernelVersion());
                                         struct.setVyosVersion(ret.getVyosVersion());
                                         struct.setZvrVersion(ret.getZvrVersion());
+                                        struct.setIpsecCurrentVersion(ret.getIpsecCurrentVersion());
+                                        struct.setIpsecLatestVersion(ret.getIpsecLatestVersion());
                                         new VirtualRouterMetadataOperator().updateVirtualRouterMetadata(struct);
                                         errs.clear();
                                         wcompl.allDone();

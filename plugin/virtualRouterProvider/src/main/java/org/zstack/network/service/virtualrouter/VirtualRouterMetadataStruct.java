@@ -5,6 +5,8 @@ public class VirtualRouterMetadataStruct {
     private String zvrVersion;
     private String vyosVersion;
     private String kernelVersion;
+    private String ipsecCurrentVersion;
+    private String ipsecLatestVersion;
 
     public String getVrUuid() {
         return vrUuid;
@@ -37,4 +39,21 @@ public class VirtualRouterMetadataStruct {
     public void setKernelVersion(String kernelVersion) {
         this.kernelVersion = kernelVersion;
     }
+
+    public String getIpsecCurrentVersion() {
+        return ipsecCurrentVersion;
+    }
+
+    public void setIpsecCurrentVersion(String ipsecCurrentVersion) {
+        this.ipsecCurrentVersion = ipsecCurrentVersion;
+    }
+
+    public String getIpsecLatestVersion() {
+        return ipsecLatestVersion;
+    }
+
+    public void setIpsecLatestVersion(String ipsecLatestVersion) {
+        this.ipsecLatestVersion = ipsecLatestVersion;
+    }
+
 }

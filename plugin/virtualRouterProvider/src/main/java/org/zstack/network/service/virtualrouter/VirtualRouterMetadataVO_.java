@@ -9,4 +9,6 @@ public class VirtualRouterMetadataVO_ {
     public static volatile SingularAttribute<VirtualRouterMetadataVO, String> zvrVersion;
     public static volatile SingularAttribute<VirtualRouterMetadataVO, String> vyosVersion;
     public static volatile SingularAttribute<VirtualRouterMetadataVO, String> kernelVersion;
+    public static volatile SingularAttribute<VirtualRouterMetadataVO, String> ipsecCurrentVersion;
+    public static volatile SingularAttribute<VirtualRouterMetadataVO, String> ipsecLatestVersion;
 }
