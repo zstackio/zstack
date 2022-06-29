@@ -1578,6 +1578,7 @@ public class KVMAgentCommands {
         private int cpuOnSocket;
         private List<String> bootDev;
         private VolumeTO rootVolume;
+        private VirtualDeviceInfo memBalloon;
         private List<IsoTO> bootIso = new ArrayList<>();
         private List<CdRomTO> cdRoms = new ArrayList<>();
         private List<VolumeTO> dataVolumes;
@@ -1920,6 +1921,14 @@ public class KVMAgentCommands {
             this.rootVolume = rootVolume;
         }
 
+        public VirtualDeviceInfo getMemBalloon() {
+            return memBalloon;
+        }
+
+        public void setMemBalloon(VirtualDeviceInfo memBalloon) {
+            this.memBalloon = memBalloon;
+        }
+
         public List<VolumeTO> getDataVolumes() {
             return dataVolumes;
         }
@@ -2057,6 +2066,15 @@ public class KVMAgentCommands {
     public static class StartVmResponse extends AgentResponse {
         private List<VmNicInfo> nicInfos;
         private List<VirtualDeviceInfo> virtualDeviceInfoList;
+        private VirtualDeviceInfo memBalloonInfo;
+
+        public VirtualDeviceInfo getMemBalloonInfo() {
+            return memBalloonInfo;
+        }
+
+        public void setMemBalloonInfo(VirtualDeviceInfo memBalloonInfo) {
+            this.memBalloonInfo = memBalloonInfo;
+        }
 
         public List<VmNicInfo> getNicInfos() {
             return nicInfos;

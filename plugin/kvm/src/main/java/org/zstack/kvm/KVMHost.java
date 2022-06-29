@@ -10,6 +10,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
+import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
@@ -2934,6 +2935,11 @@ public class KVMHost extends HostBase implements Host {
             cmd.setAcpi(allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi());
             cmd.setHygonCpu(allGuestOsCharacter.get(vmArchPlatformRelease).getHygonCpu() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getHygonCpu());
         }
+
+        VirtualDeviceInfo memBalloon = new VirtualDeviceInfo();
+        memBalloon.setResourceUuid(vidm.MEMBALLOON_UUID);
+        memBalloon.setPciInfo(vidm.getVmDevicePciAddress(vidm.MEMBALLOON_UUID, spec.getVmInventory().getUuid()));
+        cmd.setMemBalloon(memBalloon);
 
         addons(spec, cmd);
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
