@@ -757,7 +757,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 if (volumeVO.getType().equals(VolumeType.Memory)) {
                     volumeSize = Q.New(VmInstanceVO.class)
                             .select(VmInstanceVO_.memorySize)
-                            .eq(VolumeVO_.vmInstanceUuid, volumeVO.getVmInstanceUuid())
+                            .eq(VmInstanceVO_.uuid, volumeVO.getVmInstanceUuid())
                             .findValue();
                 } else {
                     flow(new NoRollbackFlow() {
