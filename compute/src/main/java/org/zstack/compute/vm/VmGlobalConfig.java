@@ -28,6 +28,9 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"cirrus","vga", "qxl"})
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_VIDEO_TYPE = new GlobalConfig(CATEGORY, "videoType");
+    @GlobalConfigValidation(validValues = {"ich6","ich9", "ac97"})
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    public static GlobalConfig VM_SOUND_TYPE = new GlobalConfig(CATEGORY, "soundType");
     @GlobalConfigValidation(validValues = {"off","all", "filter"})
     public static GlobalConfig VM_SPICE_STREAMING_MODE= new GlobalConfig(CATEGORY, "spiceStreamingMode");
     @GlobalConfigValidation
