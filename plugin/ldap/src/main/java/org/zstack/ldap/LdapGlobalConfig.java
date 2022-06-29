@@ -23,4 +23,9 @@ public class LdapGlobalConfig {
     @GlobalConfigValidation
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class)
     public static GlobalConfig SKIP_ALL_SSL_CERTS_CHECK = new GlobalConfig(CATEGORY, "skip.all.ssl.certs.check");
+
+    @GlobalConfigValidation(validValues = {"AUTO", "NONE", "PAGE"})
+    @GlobalConfigDef(defaultValue = "PAGE", description = "set ldap preferred search mode")
+    public static GlobalConfig LDAP_ENTRY_SEARCH_MODE = new GlobalConfig(CATEGORY, "ldap.entry.search.mode");
+
 }
