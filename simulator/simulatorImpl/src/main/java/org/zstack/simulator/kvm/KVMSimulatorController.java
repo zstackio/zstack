@@ -1,5 +1,6 @@
 package org.zstack.simulator.kvm;
 
+import com.google.common.collect.ImmutableMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Controller;
@@ -7,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.*;
@@ -21,6 +23,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -705,6 +708,21 @@ public class KVMSimulatorController {
         logger.debug(String.format("login iscsi  target: %s", cmd.getTarget()));
         replyer.reply(entity, rsp);
     }
+
+
+    @RequestMapping(value = KVMConstant.KVM_HOST_NUMA_PATH, method = RequestMethod.POST)
+    private @ResponseBody String getHostNuma(HttpServletRequest req) throws InterruptedException {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        getHostNuma(entity);
+        return null;
+    }
+
+    private void getHostNuma(HttpEntity<String> entity) {
+        GetHostNUMATopologyCmd cmd = JSONObjectUtil.toObject(entity.getBody(), KVMAgentCommands.GetHostNUMATopologyCmd.class);
+        GetHostNUMATopologyResponse rsp = new GetHostNUMATopologyResponse();
+        replyer.reply(entity, rsp);
+    }
+
 
     @ExceptionHandler(Exception.class)
     public ModelAndView handleAllException(Exception ex) {

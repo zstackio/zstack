@@ -29,7 +29,9 @@ public class HostAllocatedCpuCascadeExtension extends AbstractAsyncCascadeExtens
 
     @Override
     public void asyncCascade(CascadeAction action, Completion completion) {
-        if (action.isActionCode(CascadeConstant.DELETION_DELETE_CODE)) {
+        if (action.isActionCode(CascadeConstant.DELETION_DELETE_CODE) ||
+                action.isActionCode(CascadeConstant.DELETION_CLEANUP_CODE) ||
+                action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
             handleDeletion(action, completion);
         } else {
             completion.success();
@@ -40,14 +42,23 @@ public class HostAllocatedCpuCascadeExtension extends AbstractAsyncCascadeExtens
         try {
             final List<String> hostUuids = hostFromAction(action);
             if (hostUuids != null && !hostUuids.isEmpty()) {
-                hostUuids.forEach(h -> SQL.New("delete from HostAllocatedCpuVO where hostUuid = :uuid")
-                        .param("uuid", h)
-                        .execute());
+                hostUuids.forEach(this::deleteHostAllocatedCpus);
             }
         } catch (NullPointerException e) {
             logger.warn(e.getMessage());
         } finally {
             completion.success();
+        }
+    }
+
+    private void deleteHostAllocatedCpus(String hostUuid) {
+        SimpleQuery<HostAllocatedCpuVO> cpusQuery = dbf.createQuery(HostAllocatedCpuVO.class);
+        cpusQuery.add(HostAllocatedCpuVO_.hostUuid, SimpleQuery.Op.EQ, hostUuid);
+        List<HostAllocatedCpuVO> cpus = cpusQuery.list();
+        if (!cpus.isEmpty()) {
+            for (HostAllocatedCpuVO cpu: cpus) {
+                dbf.remove(cpu);
+            }
         }
     }
 

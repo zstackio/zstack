@@ -1,12 +1,16 @@
 package org.zstack.compute.vm;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
 import org.zstack.header.vm.VmDeletionStruct;
 import org.zstack.header.vm.VmInstanceNumaNodeVO;
+import org.zstack.header.vm.VmInstanceNumaNodeVO_;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -20,9 +24,13 @@ import java.util.List;
 public class VmInstanceNumaCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final CLogger logger = Utils.getLogger(VmInstanceNumaCascadeExtension.class);
 
+    @Autowired
+    private DatabaseFacade dbf;
+
     @Override
     public void asyncCascade(CascadeAction action, Completion completion) {
-        if (action.isActionCode(CascadeConstant.DELETION_CLEANUP_CODE)) {
+        if (action.isActionCode(CascadeConstant.DELETION_CLEANUP_CODE) ||
+                action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
             handleCleanDeletion(action, completion);
         } else {
             completion.success();
@@ -33,14 +41,21 @@ public class VmInstanceNumaCascadeExtension extends AbstractAsyncCascadeExtensio
         try {
             final List<String> vmUuids = vmFromAction(action);
             if (vmUuids != null && !vmUuids.isEmpty()) {
-                vmUuids.forEach(h -> SQL.New("delete from VmInstanceNumaNodeVO where vmUuid = :uuid")
-                        .param("uuid", h)
-                        .execute());
+                vmUuids.forEach(this::deleteVmInstanceNumaNodes);
             }
         } catch (NullPointerException e) {
             logger.warn(e.getMessage());
         } finally {
             completion.success();
+        }
+    }
+
+    private void deleteVmInstanceNumaNodes(String vmUuid) {
+        SimpleQuery<VmInstanceNumaNodeVO> nodesQuery = dbf.createQuery(VmInstanceNumaNodeVO.class);
+        nodesQuery.add(VmInstanceNumaNodeVO_.vmUuid, SimpleQuery.Op.EQ, vmUuid);
+        List<VmInstanceNumaNodeVO> nodes = nodesQuery.list();
+        if (!nodes.isEmpty()) {
+            dbf.removeCollection(nodes, VmInstanceNumaNodeVO.class);
         }
     }
 
