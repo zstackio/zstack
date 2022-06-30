@@ -39,9 +39,11 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceDeviceAddressVO` (
 CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceDeviceAddressGroupVO` (
     `uuid` char(32) NOT NULL UNIQUE,
     `resourceUuid` char(32) NOT NULL,
+    `vmInstanceUuid` char(32) NOT NULL,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`uuid`)
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkVmInstanceDeviceAddressGroupVOVmInstanceEO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES VmInstanceEO(`uuid`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceDeviceAddressArchiveVO` (

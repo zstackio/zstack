@@ -137,6 +137,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
                 VmInstanceDeviceAddressGroupVO group = new VmInstanceDeviceAddressGroupVO();
                 group.setResourceUuid(archiveForResourceUuid);
                 group.setUuid(Platform.getUuid());
+                group.setVmInstanceUuid(vmInstanceUuid);
                 group = persist(group);
 
                 for (VmInstanceDeviceAddressVO vo : deviceAddressVOList) {
@@ -162,6 +163,10 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
                 .find();
 
         List<VmInstanceDeviceAddressVO> createdAddressList = new ArrayList<>();
+        if (group == null) {
+            return createdAddressList;
+        }
+
         for (VmInstanceDeviceAddressArchiveVO archive : group.getAddressList()) {
             VmInstanceDeviceAddressVO vo = createOrUpdateVmDeviceAddress(archive.getResourceUuid(), PciAddressConfig.fromString(archive.getPciAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
             createdAddressList.add(vo);
@@ -177,6 +182,10 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
                 .find();
 
         List<VmInstanceDeviceAddressVO> createdAddressList = new ArrayList<>();
+        if (group == null) {
+            return createdAddressList;
+        }
+
         for (VmInstanceDeviceAddressArchiveVO archive : group.getAddressList()) {
             String matchedResourceUuid = resourceMap.get(archive.getResourceUuid());
 

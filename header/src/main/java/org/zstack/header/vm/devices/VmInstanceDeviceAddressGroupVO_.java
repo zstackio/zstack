@@ -7,4 +7,5 @@ import javax.persistence.metamodel.StaticMetamodel;
 public class VmInstanceDeviceAddressGroupVO_ {
     public static volatile SingularAttribute<VmInstanceDeviceAddressGroupVO, String> uuid;
     public static volatile SingularAttribute<VmInstanceDeviceAddressGroupVO, String> resourceUuid;
+    public static volatile SingularAttribute<VmInstanceDeviceAddressArchiveVO, String> vmInstanceUuid;
 }
