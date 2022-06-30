@@ -238,11 +238,6 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             throw new ApiMessageInterceptionException(operr("the volume[uuid:%s, name:%s, type:%s] can't detach it",
                             vol.getUuid(), vol.getName(), vol.getType()));
         }
-
-        if (isDataVolumeHasMemorySnapshotGroup(msg.getVolumeUuid())) {
-            throw new ApiMessageInterceptionException(operr("the vm where the data volume [%s] is located has a memory snapshot, can't detach",
-                    msg.getVolumeUuid()));
-        }
     }
 
     private void validate(APIAttachDataVolumeToVmMsg msg) {
