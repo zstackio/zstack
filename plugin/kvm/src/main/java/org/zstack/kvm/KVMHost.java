@@ -2794,12 +2794,10 @@ public class KVMHost extends HostBase implements Host {
         }
 
         cmd.setVideoType(rcf.getResourceConfigValue(VmGlobalConfig.VM_VIDEO_TYPE, spec.getVmInventory().getUuid(), String.class));
+        cmd.setSoundType(rcf.getResourceConfigValue(VmGlobalConfig.VM_SOUND_TYPE, spec.getVmInventory().getUuid(), String.class));
         if (VmSystemTags.QXL_MEMORY.hasTag(spec.getVmInventory().getUuid())) {
             Map<String,String> qxlMemory = VmSystemTags.QXL_MEMORY.getTokensByResourceUuid(spec.getVmInventory().getUuid());
             cmd.setQxlMemory(qxlMemory);
-        }
-        if (VmSystemTags.SOUND_TYPE.hasTag(spec.getVmInventory().getUuid())) {
-            cmd.setSoundType(VmSystemTags.SOUND_TYPE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class, VmSystemTags.SOUND_TYPE_TOKEN));
         }
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
         cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getUuid(), Boolean.class));
