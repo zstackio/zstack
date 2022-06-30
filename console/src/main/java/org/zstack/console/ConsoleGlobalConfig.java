@@ -10,6 +10,9 @@ import org.zstack.core.config.GlobalConfigValidation;
 public class ConsoleGlobalConfig {
     public static final String CATEGORY = "console";
 
+    @GlobalConfigValidation(validValues = {"NONE", "TLSV1_1", "TLSV1_2"})
+    public static GlobalConfig PROXY_TLS_VERSION = new GlobalConfig(CATEGORY, "proxy.tls.version");
+
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig PROXY_IDLE_TIMEOUT = new GlobalConfig(CATEGORY, "proxy.idleTimeout");
 

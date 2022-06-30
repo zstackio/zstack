@@ -10,6 +10,14 @@
 
     <config>
         <category>console</category>
+        <name>proxy.tls.version</name>
+        <description>The tls version proxy to use</description>
+        <defaultValue>NONE</defaultValue>
+        <type>java.lang.String</type>
+    </config>
+
+    <config>
+        <category>console</category>
         <name>agent.ping.interval</name>
         <description>The interval to ping console proxy agents, in seconds</description>
         <defaultValue>60</defaultValue>

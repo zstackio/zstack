@@ -87,6 +87,11 @@ public class ConsoleProxyBase implements ConsoleProxy {
         cmd.setIdleTimeout(idleTimeout);
         cmd.setVncTokenTimeout(tokenTimeout);
 
+        ConsoleProxyTlsVersion tlsVersion = ConsoleProxyTlsVersion.valueOf(ConsoleGlobalConfig.PROXY_TLS_VERSION.value());
+        if (tlsVersion != ConsoleProxyTlsVersion.NONE) {
+            cmd.setTlsVersion(tlsVersion.toCommandParameter());
+        }
+
         String agentUrl = URLBuilder.buildHttpUrl(self.getAgentIp(), agentPort, ConsoleConstants.CONSOLE_PROXY_ESTABLISH_PROXY_PATH);
         restf.asyncJsonPost(agentUrl, cmd, new JsonAsyncRESTCallback<ConsoleProxyCommands.EstablishProxyRsp>(completion) {
             @Override
