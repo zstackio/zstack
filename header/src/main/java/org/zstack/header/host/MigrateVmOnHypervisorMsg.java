@@ -3,6 +3,8 @@ package org.zstack.header.host;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceInventory;
 
+import java.util.Map;
+
 public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
     public static enum StorageMigrationPolicy {
         FullCopy,
@@ -15,6 +17,8 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
     private String strategy;
     private StorageMigrationPolicy storageMigrationPolicy;
     private boolean migrateFromDestination;
+    // A map from old disk to new disk
+    private Map<String, String> diskMigrationMap;
 
     public StorageMigrationPolicy getStorageMigrationPolicy() {
         return storageMigrationPolicy;
@@ -67,5 +71,13 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
 
     public void setMigrateFromDestination(boolean migrateFromDestination) {
         this.migrateFromDestination = migrateFromDestination;
+    }
+
+    public Map<String, String> getDiskMigrationMap() {
+        return diskMigrationMap;
+    }
+
+    public void setDiskMigrationMap(Map<String, String> diskMigrationMap) {
+        this.diskMigrationMap = diskMigrationMap;
     }
 }
