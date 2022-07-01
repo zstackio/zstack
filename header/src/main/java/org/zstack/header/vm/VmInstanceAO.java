@@ -123,6 +123,7 @@ public class VmInstanceAO extends ResourceVO {
         this.state = other.state;
         this.platform = other.platform;
         this.guestOsType = other.guestOsType;
+        this.architecture = other.architecture;
     }
 
     @PreUpdate
