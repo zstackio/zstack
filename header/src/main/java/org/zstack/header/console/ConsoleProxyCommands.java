@@ -199,6 +199,7 @@ public interface ConsoleProxyCommands {
         private String scheme;
         private int idleTimeout;
         private int vncTokenTimeout;
+        private String tlsVersion;
 
         public String getToken() {
             return token;
@@ -286,6 +287,14 @@ public interface ConsoleProxyCommands {
 
         public void setVncTokenTimeout(int vncTokenTimeout) {
             this.vncTokenTimeout = vncTokenTimeout;
+        }
+
+        public String getTlsVersion() {
+            return tlsVersion;
+        }
+
+        public void setTlsVersion(String tlsVersion) {
+            this.tlsVersion = tlsVersion;
         }
     }
 
