@@ -102,12 +102,12 @@ public class CdpTaskInventory  {
         return this.maxLatency;
     }
 
-    public long currentLatency;
-    public void setCurrentLatency(long currentLatency) {
-        this.currentLatency = currentLatency;
+    public long lastLatency;
+    public void setLastLatency(long lastLatency) {
+        this.lastLatency = lastLatency;
     }
-    public long getCurrentLatency() {
-        return this.currentLatency;
+    public long getLastLatency() {
+        return this.lastLatency;
     }
 
     public java.sql.Timestamp createDate;
