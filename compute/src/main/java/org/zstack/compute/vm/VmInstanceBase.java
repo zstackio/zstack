@@ -982,6 +982,11 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("change-vm-ip-l3-%s-vm-%s", l3Uuid, self.getUuid()));
+        final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.ChangeNicIp);
+        spec.setDestNics(list(VmNicInventory.valueOf(targetNic)));
+        L3NetworkVO l3VO = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
+        spec.setL3Networks(list(new VmNicSpec(L3NetworkInventory.valueOf(l3VO))));
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
@@ -1050,6 +1055,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                if (self.getState() == VmInstanceState.Running) {
+                    flow(new VmReleaseNetworkServiceOnChangeIPFlow());
+                }
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "change-ip-in-database";
 
@@ -1094,9 +1103,51 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
-                done(new FlowDoneHandler(completion) {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-nic-on-host";
+
                     @Override
-                    public void handle(Map data) {
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (self.getState() != VmInstanceState.Running) {
+                            logger.debug(String.format("vm[uuid:%s] state is %s, no need to update nic on host", self.getUuid(), self.getState()));
+                            trigger.next();
+                            return;
+                        }
+
+                        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+                        VmNicVO nicVO = dbf.findByUuid(targetNic.getUuid(), VmNicVO.class);
+                        HostInventory dest = spec.getDestHost();
+                        data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
+
+                        if (dest == null) {
+                            trigger.next();
+                            return;
+                        }
+
+                        VmUpdateNicOnHypervisorMsg cmsg = new VmUpdateNicOnHypervisorMsg();
+                        cmsg.setVmInstanceUuid(getSelfInventory().getUuid());
+                        cmsg.setHostUuid(dest.getUuid());
+                        cmsg.setNicsUuid(list(nicVO.getUuid()));
+                        bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, getSelfInventory().getUuid());
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "post-change-nic-ip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
                         final VmInstanceInventory vm = getSelfInventory();
                         final VmNicInventory nic = VmNicInventory.valueOf(targetNic);
                         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmIpChangedExtensionPoint.class),
@@ -1106,7 +1157,17 @@ public class VmInstanceBase extends AbstractVmInstance {
                                         ext.vmIpChanged(vm, nic, oldIpMap, newIpMap);
                                     }
                                 });
+                        trigger.next();
+                    }
+                });
 
+                if (self.getState() == VmInstanceState.Running) {
+                    flow(new VmApplyNetworkServiceOnChangeIPFlow());
+                }
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
                         completion.success();
                     }
                 });
@@ -5703,7 +5764,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.ChangeNicNetwork);
                 spec.setVmInventory(VmInstanceInventory.valueOf(self));
                 spec.setDestNics(list(nic));
+                L3NetworkVO l3VO = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+                spec.setL3Networks(list(new VmNicSpec(L3NetworkInventory.valueOf(l3VO))));
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+                flowChain.getData().put(VmInstanceConstant.Params.L3NetworkInventory.toString(), destL3);
 
                 flowChain.then(new NoRollbackFlow() {
                     String __name__ = "allocate-ip-for-change-nic-network";
@@ -5722,9 +5786,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 trigger.fail(errorCode);
                             }
                         });
-
                     }
                 });
+
+                if (self.getState() == VmInstanceState.Running) {
+                    flowChain.then(new VmReleaseNetworkServiceOnChangeIPFlow());
+                }
+
                 flowChain.then(new NoRollbackFlow() {
                     String __name__ = "update-nic-ip";
 
@@ -5775,11 +5843,57 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 dbf.updateAndRefresh(nicVO);
                                 dbf.updateCollection(ipVOS);
                                 data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
+                                data.put(VmInstanceConstant.Params.vmInventory.toString(), getSelfInventory());
                                 trigger.next();
                             }
                         });
                     }
                 });
+
+                flowChain.then(new NoRollbackFlow() {
+                    String __name__ = "update-nic-bridge";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (self.getState() != VmInstanceState.Running) {
+                            logger.debug(String.format("vm[uuid:%s] state is %s, no need to update nic's bridge", self.getUuid(), self.getState()));
+                            trigger.next();
+                            return;
+                        }
+
+                        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+                        VmNicVO nicVO = (VmNicVO) data.get(VmInstanceConstant.Params.VmNicInventory.toString());
+                        HostInventory dest = spec.getDestHost();
+                        VmInstanceInventory vm = getSelfInventory();
+
+                        if (dest == null) {
+                            trigger.next();
+                            return;
+                        }
+
+                        VmUpdateNicOnHypervisorMsg cmsg = new VmUpdateNicOnHypervisorMsg();
+                        cmsg.setVmInstanceUuid(vm.getUuid());
+                        cmsg.setHostUuid(dest.getUuid());
+                        cmsg.setNicsUuid(list(nicVO.getUuid()));
+                        bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, vm.getUuid());
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                if (self.getState() == VmInstanceState.Running) {
+                    flowChain.then(new VmApplyNetworkServiceOnChangeIPFlow());
+                }
+
                 flowChain.done(new FlowDoneHandler(chain) {
                     @Override
                     public void handle(Map data) {

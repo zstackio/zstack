@@ -2169,7 +2169,14 @@ public class KVMHost extends HostBase implements Host {
         checkStateAndStatus();
         final VmUpdateNicOnHypervisorReply reply = new VmUpdateNicOnHypervisorReply();
 
-        List<VmNicVO> nics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
+        List<VmNicVO> nics = new ArrayList<>();
+        if (msg.getNicsUuid().isEmpty()) {
+            nics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
+        } else {
+            for (String nicUuid : msg.getNicsUuid()) {
+                nics.add(dbf.findByUuid(nicUuid, VmNicVO.class));
+            }
+        }
 
         UpdateNicCmd cmd = new UpdateNicCmd();
         cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
