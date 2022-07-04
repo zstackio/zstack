@@ -63,7 +63,9 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
 
         vo.setResourceUuid(resourceUuid);
         vo.setVmInstanceUuid(vmInstanceUuid);
-        vo.setMetadata(metadata);
+        if (metadata != null) {
+            vo.setMetadata(metadata);
+        }
 
         if (metadataClass != null) {
             Class clazz;

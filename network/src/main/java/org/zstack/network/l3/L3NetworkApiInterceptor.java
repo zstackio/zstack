@@ -5,7 +5,10 @@ import com.googlecode.ipv6.IPv6Address;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.apache.commons.validator.routines.DomainValidator;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -18,25 +21,23 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
-import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO_;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -500,20 +501,27 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             throw new StopRoutingException();
         }
 
-        List<String> nicUuidList = Q.New(VmNicVO.class).select(VmNicVO_.uuid)
-                .eq(VmNicVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                .listValues();
-        if (nicUuidList.isEmpty()) {
+        List<VmInstanceDeviceAddressArchiveVO> archiveNicInfoList = Q.New(VmInstanceDeviceAddressArchiveVO.class)
+                .eq(VmInstanceDeviceAddressArchiveVO_.metadataClass, ArchiveVmNicType.class.getCanonicalName()).list();
+
+        List<String> QuotedArchiveGroupList = new ArrayList<>();
+
+        QuotedArchiveGroupList = archiveNicInfoList.stream()
+                .filter(vmInstanceDeviceAddressArchiveVO -> JSONObjectUtil.toObject(vmInstanceDeviceAddressArchiveVO.getMetadata(), ArchiveVmNicType.class)
+                        .getVmNicInventory().getL3NetworkUuid().equals(msg.getL3NetworkUuid()))
+                .map(VmInstanceDeviceAddressArchiveVO::getAddressGroupUuid)
+                .collect(Collectors.toList());
+
+        if (QuotedArchiveGroupList.isEmpty()){
             return;
         }
 
-        List<String> memorySnapshotGroupUuids = Q.New(VmInstanceDeviceAddressArchiveVO.class)
-                .select(VmInstanceDeviceAddressArchiveVO_.addressGroupUuid)
-                .eq(VmInstanceDeviceAddressArchiveVO_.metadataClass, VmNicInventory.class.getCanonicalName())
-                .in(VmInstanceDeviceAddressArchiveVO_.resourceUuid, nicUuidList).listValues();
-        if (!memorySnapshotGroupUuids.isEmpty()) {
+        List<String> memorySnapshotGroupUuidList = Q.New(VmInstanceDeviceAddressGroupVO.class)
+                .select(VmInstanceDeviceAddressGroupVO_.resourceUuid)
+                .in(VmInstanceDeviceAddressGroupVO_.uuid, QuotedArchiveGroupList).listValues();
+        if (!memorySnapshotGroupUuidList.isEmpty()) {
             throw new ApiMessageInterceptionException(operr("nic with l3 network[uuid: %s] is referenced by VolumeSnapshotGroup[uuid: %s], delete this VolumeSnapshotGroup before deleting this l3 network.",
-                    msg.getL3NetworkUuid(), String.join("','", memorySnapshotGroupUuids)));
+                    msg.getL3NetworkUuid(), String.join("','", memorySnapshotGroupUuidList)));
         }
     }
 
