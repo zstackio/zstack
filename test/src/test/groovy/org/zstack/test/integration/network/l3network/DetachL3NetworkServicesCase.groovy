@@ -51,6 +51,20 @@ class DetachL3NetworkServicesCase extends SubCase {
                             types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
                         }
                     }
+
+                    l3Network {
+                        name = "l3-2"
+
+                        service {
+                            provider = VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE
+                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
+                        }
+
+                        service {
+                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
+                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
+                        }
+                    }
                 }
             }
         }
@@ -59,25 +73,46 @@ class DetachL3NetworkServicesCase extends SubCase {
     @Override
     void test() {
         env.create {
-            L3NetworkInventory l3 = env.inventoryByName("l3")
-
-            detachNetworkServiceFromL3Network {
-                l3NetworkUuid = l3.uuid
-                networkServices = l3.networkServices.inject([:]) { map, col ->
-                    List lst = map[col.networkServiceProviderUuid]
-                    if (lst == null) {
-                        lst = []
-                        map[col.networkServiceProviderUuid] = lst
-                    }
-                    lst.add(col.networkServiceType)
-
-                    map
-                }
-            }
-
-            l3 = queryL3Network { conditions = ["uuid=${l3.uuid}"]}[0]
-
-            assert l3.networkServices.isEmpty()
+            testDetachNetworkServiceWithUuid()
+            testDetachNetworkServiceWithType()
         }
+    }
+
+    void testDetachNetworkServiceWithUuid() {
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+
+        detachNetworkServiceFromL3Network {
+            l3NetworkUuid = l3.uuid
+            networkServices = l3.networkServices.inject([:]) { map, col ->
+                List lst = map[col.networkServiceProviderUuid]
+                if (lst == null) {
+                    lst = []
+                    map[col.networkServiceProviderUuid] = lst
+                }
+                lst.add(col.networkServiceType)
+
+                map
+            }
+        }
+
+        l3 = queryL3Network { conditions = ["uuid=${l3.uuid}"]}[0]
+
+        assert l3.networkServices.isEmpty()
+    }
+
+    void testDetachNetworkServiceWithType() {
+        L3NetworkInventory l3 = env.inventoryByName("l3-2")
+
+        detachNetworkServiceFromL3Network {
+            l3NetworkUuid = l3.uuid
+            networkServices = [
+                    (VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE):  [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()],
+                    (SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE):  [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE],
+            ]
+        }
+
+        l3 = queryL3Network { conditions = ["uuid=${l3.uuid}"]}[0]
+
+        assert l3.networkServices.isEmpty()
     }
 }
