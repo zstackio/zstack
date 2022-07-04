@@ -263,31 +263,6 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("revert-vm-%s-from-snapshot-group-%s", self.getVmInstanceUuid(), msg.getGroupUuid()));
         chain.then(new NoRollbackFlow() {
-            String __name__ = "revert-volume-snapshots";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                RevertVmFromSnapshotGroupInnerMsg imsg = new RevertVmFromSnapshotGroupInnerMsg();
-                imsg.setUuid(msg.getUuid());
-                imsg.setSession(msg.getSession());
-                bus.makeTargetServiceIdByResourceUuid(imsg, VolumeSnapshotConstant.SERVICE_ID, msg.getUuid());
-                overlaySend(imsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
-                        }
-
-                        if (reply instanceof RevertVmFromSnapshotGroupInnerReply) {
-                            event.setResults(((RevertVmFromSnapshotGroupInnerReply) reply).getResults());
-                        }
-
-                        trigger.next();
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
             String __name__ = "revert-vm-devices-info-before-restore-VmInstance";
 
             @Override
@@ -318,6 +293,31 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                             return;
                         }
                         trigger.fail(errorCodeList.getCauses().get(0));
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "revert-volume-snapshots";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                RevertVmFromSnapshotGroupInnerMsg imsg = new RevertVmFromSnapshotGroupInnerMsg();
+                imsg.setUuid(msg.getUuid());
+                imsg.setSession(msg.getSession());
+                bus.makeTargetServiceIdByResourceUuid(imsg, VolumeSnapshotConstant.SERVICE_ID, msg.getUuid());
+                overlaySend(imsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        if (reply instanceof RevertVmFromSnapshotGroupInnerReply) {
+                            event.setResults(((RevertVmFromSnapshotGroupInnerReply) reply).getResults());
+                        }
+
+                        trigger.next();
                     }
                 });
             }
