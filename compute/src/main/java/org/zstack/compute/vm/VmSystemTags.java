@@ -92,6 +92,9 @@ public class VmSystemTags {
     public static String BOOT_VOLUME_TOKEN = "bootVolume";
     public static PatternedSystemTag BOOT_VOLUME = new PatternedSystemTag(String.format("bootVolume::{%s}", BOOT_VOLUME_TOKEN), VmInstanceVO.class);
 
+    public static String MAX_INSTANCE_PER_HOST_TOKEN = "maxInstancePerHost";
+    public static PatternedSystemTag MAX_INSTANCE_PER_HOST = new PatternedSystemTag(String.format("maxInstancePerHost::{%s}", MAX_INSTANCE_PER_HOST_TOKEN), VmInstanceVO.class);
+
     public static PatternedSystemTag ADDITIONAL_QMP_ADDED = new PatternedSystemTag("additionalQmp", VmInstanceVO.class);
 
     public static String CLEAN_TRAFFIC_TOKEN = "cleanTraffic";
