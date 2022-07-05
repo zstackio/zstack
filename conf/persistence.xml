@@ -76,6 +76,7 @@
         <class>org.zstack.appliancevm.ApplianceVmVO</class>
         <class>org.zstack.appliancevm.ApplianceVmFirewallRuleVO</class>
         <class>org.zstack.header.vm.VmNicVO</class>
+        <class>org.zstack.header.vm.VmSchedHistoryVO</class>
         <class>org.zstack.header.identity.SessionVO</class>
         <class>org.zstack.header.identity.AccountVO</class>
         <class>org.zstack.header.identity.AccountResourceRefVO</class>

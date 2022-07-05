@@ -86,3 +86,20 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VirtualRouterSoftwareVersionVO` (
     CONSTRAINT `fkVirtualRouterSoftwareVersionVOVirtualRouterVmVO` FOREIGN KEY (`uuid`) REFERENCES `VirtualRouterVmVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`VmSchedHistoryVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `vmInstanceUuid` char(32) NOT NULL,
+    `zoneUuid` char(32) DEFAULT NULL,
+    `accountUuid` char(32) NOT NULL,
+    `schedType` varchar(32) NOT NULL,
+    `success` tinyint(1),
+    `lastHostUuid` char(32) DEFAULT NULL,
+    `destHostUuid` char(32) DEFAULT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idxVmSchedHistoryVOVmInstanceUuid (vmInstanceUuid),
+    INDEX idxVmSchedHistoryVOZoneUuid (zoneUuid),
+    INDEX idxVmSchedHistoryVOSchedType (schedType),
+    CONSTRAINT fkVmSchedHistoryVOZoneEO FOREIGN KEY (zoneUuid) REFERENCES ZoneEO (uuid) ON DELETE SET NULL,
+    PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
