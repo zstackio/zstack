@@ -28,6 +28,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.*;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
@@ -35,6 +36,10 @@ import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO_;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -48,6 +53,7 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
 
@@ -1121,9 +1127,37 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             handle((APIBatchDeleteVolumeSnapshotMsg) msg);
         } else if (msg instanceof APICheckVolumeSnapshotGroupAvailabilityMsg) {
             handle((APICheckVolumeSnapshotGroupAvailabilityMsg) msg);
+        } else if (msg instanceof APIGetMemorySnapshotGroupReferenceMsg) {
+            handle((APIGetMemorySnapshotGroupReferenceMsg) msg);
         } else  {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetMemorySnapshotGroupReferenceMsg msg) {
+        APIGetMemorySnapshotGroupReferenceReply reply = new APIGetMemorySnapshotGroupReferenceReply();
+
+        if (!L3NetworkVO.class.getSimpleName().equals(msg.getResourceType())) {
+            bus.reply(msg, reply);
+            return;
+        }
+
+        List<String> quotedArchiveGroupList = Q.New(VmInstanceDeviceAddressArchiveVO.class)
+                .select(VmInstanceDeviceAddressArchiveVO_.addressGroupUuid)
+                .eq(VmInstanceDeviceAddressArchiveVO_.metadataClass, ArchiveVmNicType.class.getCanonicalName())
+                .like(VmInstanceDeviceAddressArchiveVO_.metadata, String.format("%%\"l3NetworkUuid\":\"%s\"%%", msg.getResourceUuid())).listValues();
+
+        if (quotedArchiveGroupList.isEmpty()){
+            bus.reply(msg, reply);
+            return;
+        }
+
+        String sql = "select snapshotGroup from VolumeSnapshotGroupVO snapshotGroup, VmInstanceDeviceAddressGroupVO deviceAddressGroup where snapshotGroup.uuid = deviceAddressGroup.resourceUuid and deviceAddressGroup.uuid in :addressGroupUuids";
+        TypedQuery<VolumeSnapshotGroupVO> q = dbf.getEntityManager().createQuery(sql, VolumeSnapshotGroupVO.class);
+        q.setParameter("addressGroupUuids", quotedArchiveGroupList);
+        List<VolumeSnapshotGroupVO> result = q.getResultList();
+        reply.setInventories(VolumeSnapshotGroupInventory.valueOf(result));
+        bus.reply(msg, reply);
     }
 
     @Override
