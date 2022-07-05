@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -32,6 +33,7 @@ import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RestAuthenticationBackend;
 import org.zstack.header.rest.RestAuthenticationParams;
 import org.zstack.header.rest.RestAuthenticationType;
@@ -131,7 +133,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void handleLocalMessage(Message msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof CreateAccountMsg) {
+            handle((CreateAccountMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
     }
 
     @Override
@@ -554,13 +560,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         bus.reply(msg, reply);
     }
 
-    private void handle(APICreateAccountMsg msg) {
+    private void handle(CreateAccountMsg msg) {
         final AccountInventory inv = new SQLBatchWithReturn<AccountInventory>() {
             @Override
             protected AccountInventory scripts() {
                 AccountVO vo = new AccountVO();
-                if (msg.getResourceUuid() != null) {
-                    vo.setUuid(msg.getResourceUuid());
+                if (msg.getUuid() != null) {
+                    vo.setUuid(msg.getUuid());
                 } else {
                     vo.setUuid(Platform.getUuid());
                 }
@@ -605,10 +611,37 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterCreateAccountExtensionPoint.class),
                 arg -> arg.afterCreateAccount(inv));
+        CreateAccountReply reply = new CreateAccountReply();
+        reply.setInventory(inv);
+        bus.reply(msg, reply);
 
-        APICreateAccountEvent evt = new APICreateAccountEvent(msg.getId());
-        evt.setInventory(inv);
-        bus.publish(evt);
+    }
+
+    private void handle(APICreateAccountMsg msg) {
+        CreateAccountMsg accountMsg = new CreateAccountMsg();
+        if (msg.getResourceUuid() != null) {
+            accountMsg.setUuid(msg.getResourceUuid());
+        } else {
+            accountMsg.setUuid(Platform.getUuid());
+        }
+        accountMsg.setName(msg.getName());
+        accountMsg.setDescription(msg.getDescription());
+        accountMsg.setPassword(msg.getPassword());
+        accountMsg.setType(msg.getType());
+        bus.makeTargetServiceIdByResourceUuid(accountMsg, AccountConstant.SERVICE_ID, accountMsg.getUuid());
+        bus.send(accountMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                APICreateAccountEvent evt = new APICreateAccountEvent(msg.getId());
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                } else {
+                    CreateAccountReply reply1 = reply.castReply();
+                    evt.setInventory(reply1.getInventory());
+                }
+                bus.publish(evt);
+            }
+        });
     }
 
     @Override
