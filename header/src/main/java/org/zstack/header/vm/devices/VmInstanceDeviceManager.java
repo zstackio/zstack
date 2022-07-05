@@ -26,6 +26,8 @@ public interface VmInstanceDeviceManager {
 
     List<VmInstanceDeviceAddressVO> revertDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid);
 
+    List<VmInstanceDeviceAddressVO> revertRequestedDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid, List<String> needRevertResourceUuidList);
+
     List<VmInstanceDeviceAddressVO> createDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid, Map<String, String> resourceMap);
 
     void deleteArchiveVmInstanceDeviceAddressGroup(String archiveForResourceUuid);
