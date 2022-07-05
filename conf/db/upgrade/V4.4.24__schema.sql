@@ -8,6 +8,16 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SharedBlockCapacityVO` (
     CONSTRAINT `fkSharedBlockCapacityVOSharedBlockVO` FOREIGN KEY (`uuid`) REFERENCES `zstack`.`SharedBlockVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `zstack`.`CdpPolicyEO` ADD COLUMN `dailyRPSinceDay` int unsigned DEFAULT 0;
+ALTER TABLE `zstack`.`CdpPolicyEO` ADD COLUMN `expireTime` int unsigned DEFAULT 0;
+ALTER TABLE `zstack`.`CdpPolicyEO` ADD COLUMN `fullBackupInterval` int unsigned DEFAULT 0;
+
+DROP VIEW IF EXISTS `zstack`.`CdpPolicyVO`;
+CREATE VIEW `zstack`.`CdpPolicyVO` AS SELECT uuid, name, description, retentionTimePerDay, dailyRPSinceDay, expireTime, recoveryPointPerSecond, fullBackupInterval, state, lastOpDate, createDate FROM `zstack`.`CdpPolicyEO` WHERE deleted IS NULL;
+
+ALTER TABLE `zstack`.`CdpTaskVO` ADD COLUMN `maxLatency` bigint(20) unsigned DEFAULT 0;
+ALTER TABLE `zstack`.`CdpTaskVO` ADD COLUMN `lastLatency` bigint(20) unsigned DEFAULT 0;
+
 DROP PROCEDURE IF EXISTS `Alter_SCSI_Table`;
 DELIMITER $$
 CREATE PROCEDURE Alter_SCSI_Table()
