@@ -118,6 +118,7 @@
         <class>org.zstack.header.tag.TagPatternVO</class>
         <class>org.zstack.network.service.virtualrouter.VirtualRouterVmVO</class>
         <class>org.zstack.network.service.virtualrouter.VirtualRouterMetadataVO</class>
+        <class>org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageResourceRefVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageHostRefVO</class>
         <class>org.zstack.storage.ceph.backup.CephBackupStorageVO</class>

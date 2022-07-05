@@ -37,4 +37,5 @@ public class VirtualRouterMetadataStruct {
     public void setKernelVersion(String kernelVersion) {
         this.kernelVersion = kernelVersion;
     }
+
 }

@@ -196,12 +196,18 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                 @Override
                                 public void success(InitRsp ret) {
                                     if (ret.isSuccess()) {
-                                        VirtualRouterMetadataStruct struct = new VirtualRouterMetadataStruct();
-                                        struct.setVrUuid(vrUuid);
-                                        struct.setKernelVersion(ret.getKernelVersion());
-                                        struct.setVyosVersion(ret.getVyosVersion());
-                                        struct.setZvrVersion(ret.getZvrVersion());
-                                        new VirtualRouterMetadataOperator().updateVirtualRouterMetadata(struct);
+                                        VirtualRouterMetadataStruct metadataStruct = new VirtualRouterMetadataStruct();
+                                        VirtualRouterSoftwareVersionStruct versionStruct = new VirtualRouterSoftwareVersionStruct();
+                                        metadataStruct.setVrUuid(vrUuid);
+                                        metadataStruct.setKernelVersion(ret.getKernelVersion());
+                                        metadataStruct.setVyosVersion(ret.getVyosVersion());
+                                        metadataStruct.setZvrVersion(ret.getZvrVersion());
+                                        versionStruct.setVrUuid(vrUuid);
+                                        versionStruct.setSoftwareName("IPsec");
+                                        versionStruct.setCurrentVersion(ret.getIpsecCurrentVersion());
+                                        versionStruct.setLatestVersion(ret.getIpsecLatestVersion());
+                                        new VirtualRouterMetadataOperator().updateVirtualRouterMetadata(metadataStruct);
+                                        new VirtualRouterSoftwareVersionOperator().updateVirtualRouterSoftwareVersion(versionStruct);
                                         errs.clear();
                                         wcompl.allDone();
                                     } else {
