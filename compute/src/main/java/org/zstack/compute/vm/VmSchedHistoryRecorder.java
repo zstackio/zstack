@@ -9,6 +9,7 @@ import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.data.Pair;
 
 import javax.persistence.Tuple;
 
@@ -17,6 +18,7 @@ public class VmSchedHistoryRecorder {
     private final String vmInstanceUuid;
     private final String schedType;
     private final String hostUuid;
+    private final String zoneUuid;
     private VmSchedHistoryVO vo;
 
     @Autowired
@@ -27,25 +29,28 @@ public class VmSchedHistoryRecorder {
     public VmSchedHistoryRecorder(String schedType, String vmUuid) {
         this.schedType = schedType;
         this.vmInstanceUuid = vmUuid;
-        this.hostUuid = new SQLBatchWithReturn<String>() {
+        final Pair<String, String> p = new SQLBatchWithReturn<Pair<String, String>>() {
             @Override
-            protected String scripts() {
+            protected Pair<String, String> scripts() {
                 Tuple t = q(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmInstanceUuid)
-                        .select(VmInstanceVO_.hostUuid, VmInstanceVO_.lastHostUuid)
+                        .select(VmInstanceVO_.hostUuid, VmInstanceVO_.lastHostUuid, VmInstanceVO_.zoneUuid)
                         .findTuple();
                 String huuid = t.get(0, String.class);
                 if (huuid == null) {
                     huuid = t.get(1, String.class);
                 }
-                return huuid;
+                return new Pair<>(huuid, t.get(2, String.class));
             }
         }.execute();
+        this.hostUuid = p.first();
+        this.zoneUuid = p.second();
     }
 
     public VmSchedHistoryRecorder(String schedType, VmInstanceInventory vmInv) {
         this.schedType = schedType;
         this.vmInstanceUuid = vmInv.getUuid();
         this.hostUuid = vmInv.getHostUuid() == null ? vmInv.getLastHostUuid() : vmInv.getHostUuid();
+        this.zoneUuid = vmInv.getZoneUuid();
     }
 
     public VmSchedHistoryRecorder begin() {
@@ -54,6 +59,7 @@ public class VmSchedHistoryRecorder {
         vo.setVmInstanceUuid(vmInstanceUuid);
         vo.setSchedType(schedType);
         vo.setAccountUuid(acntUuid);
+        vo.setZoneUuid(zoneUuid);
         vo.setLastHostUuid(hostUuid);
         vo = dbf.persistAndRefresh(vo);
         return this;

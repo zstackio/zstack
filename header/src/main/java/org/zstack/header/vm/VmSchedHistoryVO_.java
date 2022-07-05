@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 public class VmSchedHistoryVO_ {
     public static volatile SingularAttribute<VmSchedHistoryVO, Long> id;
     public static volatile SingularAttribute<VmSchedHistoryVO, String> vmInstanceUuid;
+    public static volatile SingularAttribute<VmSchedHistoryVO, String> zoneUuid;
     public static volatile SingularAttribute<VmSchedHistoryVO, String> accountUuid;
     public static volatile SingularAttribute<VmSchedHistoryVO, String> schedType;
     public static volatile SingularAttribute<VmSchedHistoryVO, Boolean> success;

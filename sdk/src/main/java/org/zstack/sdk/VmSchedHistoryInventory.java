@@ -68,4 +68,12 @@ public class VmSchedHistoryInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String zoneUuid;
+    public void setZoneUuid(java.lang.String zoneUuid) {
+        this.zoneUuid = zoneUuid;
+    }
+    public java.lang.String getZoneUuid() {
+        return this.zoneUuid;
+    }
+
 }

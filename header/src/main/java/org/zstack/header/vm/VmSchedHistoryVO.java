@@ -1,13 +1,22 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ToInventory;
+import org.zstack.header.zone.ZoneEO;
+import org.zstack.header.zone.ZoneInventory;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
 @Table
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "zone", inventoryClass = ZoneInventory.class,
+                foreignKey = "zoneUuid", expandedInventoryKey = "uuid"),
+})
 public class VmSchedHistoryVO implements ToInventory {
     @Id
     @Column
@@ -17,6 +26,10 @@ public class VmSchedHistoryVO implements ToInventory {
     @Column
     @Index
     private String vmInstanceUuid;
+
+    @Column
+    @ForeignKey(parentEntityClass = ZoneEO.class, onDeleteAction = ForeignKey.ReferenceOption.SET_NULL)
+    private String zoneUuid;
 
     @Column
     private String accountUuid;
@@ -66,6 +79,14 @@ public class VmSchedHistoryVO implements ToInventory {
 
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
+    }
+
+    public String getZoneUuid() {
+        return zoneUuid;
+    }
+
+    public void setZoneUuid(String zoneUuid) {
+        this.zoneUuid = zoneUuid;
     }
 
     public String getSchedType() {

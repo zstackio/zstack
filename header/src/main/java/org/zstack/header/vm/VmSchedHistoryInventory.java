@@ -1,8 +1,11 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.zone.ZoneInventory;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -12,6 +15,10 @@ import java.util.stream.Collectors;
 
 @Inventory(mappingVOClass = VmSchedHistoryVO.class)
 @PythonClassInventory
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "zone", inventoryClass = ZoneInventory.class,
+                foreignKey = "zoneUuid", expandedInventoryKey = "uuid"),
+})
 public class VmSchedHistoryInventory implements Serializable {
     @APINoSee
     private long id;
@@ -23,6 +30,11 @@ public class VmSchedHistoryInventory implements Serializable {
     private String destHostUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+
+    /**
+     * @desc uuid of zone this vm is in. See :ref:`ZoneInventory`
+     */
+    private String zoneUuid;
 
     public VmSchedHistoryInventory() {
     }
@@ -38,6 +50,7 @@ public class VmSchedHistoryInventory implements Serializable {
         inv.setDestHostUuid(vo.getDestHostUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
+        inv.setZoneUuid(vo.getZoneUuid());
         return inv;
     }
 
@@ -67,6 +80,14 @@ public class VmSchedHistoryInventory implements Serializable {
 
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
+    }
+
+    public String getZoneUuid() {
+        return zoneUuid;
+    }
+
+    public void setZoneUuid(String zoneUuid) {
+        this.zoneUuid = zoneUuid;
     }
 
     public String getSchedType() {
