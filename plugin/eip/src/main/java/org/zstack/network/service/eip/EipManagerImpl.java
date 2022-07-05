@@ -237,8 +237,9 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
         HashMap<Boolean,List<String>> ret = new HashMap<>();
         for (GetEipAttachableL3UuidsForVmNicExtensionPoint extp : pluginRgty.getExtensionList(GetEipAttachableL3UuidsForVmNicExtensionPoint.class)) {
-            if(!extp.getEipAttachableL3UuidsForVmNic(vmNicInv, l3Network).isEmpty()){
-                ret.putAll(extp.getEipAttachableL3UuidsForVmNic(vmNicInv, l3Network));
+            HashMap<Boolean, List<String>> res = extp.getEipAttachableL3UuidsForVmNic(vmNicInv, l3Network);
+            if(!res.isEmpty()){
+                ret.putAll(res);
             }
         }
         return ret;

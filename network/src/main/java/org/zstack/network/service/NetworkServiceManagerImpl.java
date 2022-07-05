@@ -320,7 +320,6 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 	}
 
     @Override
-    @Transactional(readOnly = true)
     public NetworkServiceProviderType getTypeOfNetworkServiceProviderForService(String l3NetworkUuid, NetworkServiceType serviceType) {
         L3NetworkVO l3vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3NetworkUuid).find();
         L3NetworkInventory l3inv = L3NetworkInventory.valueOf(l3vo);
