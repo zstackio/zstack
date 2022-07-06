@@ -13,7 +13,7 @@ import org.zstack.header.volume.VolumeInventory;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class VolumeTO extends BaseVirtualPciDeviceTO {
+public class VolumeTO extends BaseVirtualDeviceTO {
     public static final String FILE = "file";
     public static final String ISCSI = "iscsi";
     public static final String CEPH = "ceph";

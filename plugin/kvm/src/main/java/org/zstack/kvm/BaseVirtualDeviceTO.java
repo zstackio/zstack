@@ -1,16 +1,10 @@
-package org.zstack.header.vm.devices;
+package org.zstack.kvm;
 
-public class VirtualDeviceInfo {
+import org.zstack.header.vm.devices.DeviceAddress;
+
+public class BaseVirtualDeviceTO {
     private String resourceUuid;
     private DeviceAddress deviceAddress;
-
-    public VirtualDeviceInfo(String resourceUuid, DeviceAddress deviceAddress) {
-        this.resourceUuid = resourceUuid;
-        this.deviceAddress = deviceAddress;
-    }
-
-    public VirtualDeviceInfo() {
-    }
 
     public String getResourceUuid() {
         return resourceUuid;

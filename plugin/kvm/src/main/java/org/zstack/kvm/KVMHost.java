@@ -62,7 +62,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.PciAddressConfig;
+import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
@@ -2258,7 +2258,7 @@ public class KVMHost extends HostBase implements Host {
 
                 if (ret.getVirtualDeviceInfoList() != null && !ret.getVirtualDeviceInfoList().isEmpty()) {
                     ret.getVirtualDeviceInfoList().forEach(info -> vidm.createOrUpdateVmDeviceAddress(msg.getNicInventory().getUuid(),
-                            info.getPciInfo(), msg.getNicInventory().getVmInstanceUuid(),
+                            info.getDeviceAddress(), msg.getNicInventory().getVmInstanceUuid(),
                             JSONObjectUtil.toJsonString(msg.getNicInventory()), VmNicInventory.class.getCanonicalName()));
                 }
 
@@ -2741,7 +2741,7 @@ public class KVMHost extends HostBase implements Host {
 
         to.setvHostAddOn(vHostAddOn);
 
-        PciAddressConfig pci = vidm.getVmDevicePciAddress(nic.getUuid(), nic.getVmInstanceUuid());
+        DeviceAddress pci = vidm.getVmDevicePciAddress(nic.getUuid(), nic.getVmInstanceUuid());
         if (pci != null) {
             to.setPci(pci);
         }
@@ -2968,7 +2968,7 @@ public class KVMHost extends HostBase implements Host {
 
         VirtualDeviceInfo memBalloon = new VirtualDeviceInfo();
         memBalloon.setResourceUuid(vidm.MEMBALLOON_UUID);
-        memBalloon.setPciInfo(vidm.getVmDevicePciAddress(vidm.MEMBALLOON_UUID, spec.getVmInventory().getUuid()));
+        memBalloon.setDeviceAddress(vidm.getVmDevicePciAddress(vidm.MEMBALLOON_UUID, spec.getVmInventory().getUuid()));
         cmd.setMemBalloon(memBalloon);
 
         addons(spec, cmd);
@@ -3012,7 +3012,7 @@ public class KVMHost extends HostBase implements Host {
                         SystemTagCreator creator = KVMSystemTags.VMNIC_PCI_ADDRESS.newSystemTagCreator(nic.getUuid());
                         creator.inherent = true;
                         creator.recreate = true;
-                        creator.setTagByTokens(map(e(KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN, vmNicInfo.getPciInfo().toString())));
+                        creator.setTagByTokens(map(e(KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN, vmNicInfo.getDeviceAddress().toString())));
                         creator.create();
                     }
                 }

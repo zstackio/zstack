@@ -3,7 +3,7 @@ package org.zstack.kvm;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.devices.PciAddressConfig;
+import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.errorcode.ErrorCode;
@@ -16,24 +16,24 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
     @Override
     public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, KVMAgentCommands.StartVmCmd cmd) {
         if (cmd.getRootVolume() != null) {
-            setPciAddress(cmd.getRootVolume(), cmd);
+            setDeviceAddress(cmd.getRootVolume(), cmd);
         }
 
         if (cmd.getDataVolumes() != null) {
-            cmd.getDataVolumes().forEach(to -> setPciAddress(to, cmd));
+            cmd.getDataVolumes().forEach(to -> setDeviceAddress(to, cmd));
         }
 
         if (cmd.getNics() != null) {
-            cmd.getNics().forEach(to -> setPciAddress(to, cmd));
+            cmd.getNics().forEach(to -> setDeviceAddress(to, cmd));
         }
 
         if (cmd.getCdRoms() != null) {
-            cmd.getCdRoms().forEach(to -> setPciAddress(to, cmd));
+            cmd.getCdRoms().forEach(to -> setDeviceAddress(to, cmd));
         }
     }
 
-    private void setPciAddress(BaseVirtualPciDeviceTO to, KVMAgentCommands.StartVmCmd cmd) {
-        to.setPciAddress(vidManager.getVmDevicePciAddress(to.getResourceUuid(), cmd.getVmInstanceUuid()));
+    private void setDeviceAddress(BaseVirtualDeviceTO to, KVMAgentCommands.StartVmCmd cmd) {
+        to.setDeviceAddress(vidManager.getVmDevicePciAddress(to.getResourceUuid(), cmd.getVmInstanceUuid()));
     }
 
     @Override
@@ -64,11 +64,11 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
                 return;
             }
 
-            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(nic.getUuid(), info.getPciInfo()), spec.getVmInventory().getUuid());
+            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(nic.getUuid(), info.getDeviceAddress()), spec.getVmInventory().getUuid());
         });
 
-        if (!StringUtils.isEmpty(rsp.getMemBalloonInfo().getPciInfo().toString())) {
-            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(vidManager.MEMBALLOON_UUID, PciAddressConfig.fromString(rsp.getMemBalloonInfo().getPciInfo().toString())), spec.getVmInventory().getUuid());
+        if (!StringUtils.isEmpty(rsp.getMemBalloonInfo().getDeviceAddress().toString())) {
+            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(vidManager.MEMBALLOON_UUID, DeviceAddress.fromString(rsp.getMemBalloonInfo().getDeviceAddress().toString())), spec.getVmInventory().getUuid());
         }
     }
 
