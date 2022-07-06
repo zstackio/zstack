@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import edu.emory.mathcs.backport.java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -143,12 +144,10 @@ public class VmCdRomMemorySnapshotGroupExtension implements MemorySnapshotGroupE
                                         whileCompletion.allDone();
                                         return;
                                     }
-                                    vidm.createDeviceAddressFromArchive(cdRomInventory.getVmInstanceUuid(), snapshotGroup.getUuid(), new HashMap<String, String>() {
-                                        {
-                                            put(cdRomInventory.getUuid(), ((CreateVmCdRomReply) reply.castReply()).getInventory().getUuid());
-                                        }
-                                    });
-                                    vidm.deleteVmDeviceAddress(cdRomInventory.getUuid(), cdRomInventory.getVmInstanceUuid());
+
+                                    vidm.revertRequestedDeviceAddressFromArchive(cdRomInventory.getVmInstanceUuid(),
+                                            snapshotGroup.getUuid(),
+                                            Collections.singletonList(cdRomInventory.getUuid()));
                                     whileCompletion.done();
                                 }
                             });
