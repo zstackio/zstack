@@ -32,7 +32,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     private DatabaseFacade dbf;
 
     @Override
-    public VmInstanceDeviceAddressVO createOrUpdateVmDeviceAddress(String resourceUuid, PciAddressConfig pciAddress, String vmInstanceUuid, String metadata, String metadataClass) {
+    public VmInstanceDeviceAddressVO createOrUpdateVmDeviceAddress(String resourceUuid, DeviceAddress deviceAddress, String vmInstanceUuid, String metadata, String metadataClass) {
         if (resourceUuid == null || vmInstanceUuid == null) {
             throw new OperationFailureException(operr("missing parameter, resourceUuid: %s, vmInstanceUuid: %s is requested", resourceUuid, vmInstanceUuid));
         }
@@ -57,8 +57,8 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
             vo = new VmInstanceDeviceAddressVO();
         }
 
-        if (pciAddress != null) {
-            vo.setPciAddress(pciAddress.toString());
+        if (deviceAddress != null) {
+            vo.setDeviceAddress(deviceAddress.toString());
         }
 
         vo.setResourceUuid(resourceUuid);
@@ -90,17 +90,17 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
 
     @Override
     public VmInstanceDeviceAddressVO createOrUpdateVmDeviceAddress(VirtualDeviceInfo virtualDeviceInfo, String vmInstanceUuid) {
-        return createOrUpdateVmDeviceAddress(virtualDeviceInfo.getResourceUuid(), virtualDeviceInfo.getPciInfo(), vmInstanceUuid, null, null);
+        return createOrUpdateVmDeviceAddress(virtualDeviceInfo.getResourceUuid(), virtualDeviceInfo.getDeviceAddress(), vmInstanceUuid, null, null);
     }
 
     @Override
-    public PciAddressConfig getVmDevicePciAddress(String resourceUuid, String vmInstanceUuid) {
+    public DeviceAddress getVmDevicePciAddress(String resourceUuid, String vmInstanceUuid) {
         VmInstanceDeviceAddressVO vo = Q.New(VmInstanceDeviceAddressVO.class)
                 .eq(VmInstanceDeviceAddressVO_.resourceUuid, resourceUuid)
                 .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vmInstanceUuid)
                 .find();
 
-        return vo != null ? PciAddressConfig.fromString(vo.getPciAddress()) : null;
+        return vo != null ? DeviceAddress.fromString(vo.getDeviceAddress()) : null;
     }
 
     @Override
@@ -144,7 +144,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
 
                 for (VmInstanceDeviceAddressVO vo : deviceAddressVOList) {
                     VmInstanceDeviceAddressArchiveVO archiveVO = new VmInstanceDeviceAddressArchiveVO();
-                    archiveVO.setPciAddress(vo.getPciAddress());
+                    archiveVO.setDeviceAddress(vo.getDeviceAddress());
                     archiveVO.setResourceUuid(vo.getResourceUuid());
                     archiveVO.setVmInstanceUuid(vmInstanceUuid);
                     archiveVO.setAddressGroupUuid(group.getUuid());
@@ -170,7 +170,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
         }
 
         for (VmInstanceDeviceAddressArchiveVO archive : group.getAddressList()) {
-            VmInstanceDeviceAddressVO vo = createOrUpdateVmDeviceAddress(archive.getResourceUuid(), PciAddressConfig.fromString(archive.getPciAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
+            VmInstanceDeviceAddressVO vo = createOrUpdateVmDeviceAddress(archive.getResourceUuid(), DeviceAddress.fromString(archive.getDeviceAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
             createdAddressList.add(vo);
         }
 
@@ -193,7 +193,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
                 continue;
             }
 
-            VmInstanceDeviceAddressVO vo = createOrUpdateVmDeviceAddress(archive.getResourceUuid(), PciAddressConfig.fromString(archive.getPciAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
+            VmInstanceDeviceAddressVO vo = createOrUpdateVmDeviceAddress(archive.getResourceUuid(), DeviceAddress.fromString(archive.getDeviceAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
             createdAddressList.add(vo);
         }
 
@@ -219,7 +219,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
                 continue;
             }
 
-            VmInstanceDeviceAddressVO vo = createOrUpdateVmDeviceAddress(matchedResourceUuid, PciAddressConfig.fromString(archive.getPciAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
+            VmInstanceDeviceAddressVO vo = createOrUpdateVmDeviceAddress(matchedResourceUuid, DeviceAddress.fromString(archive.getDeviceAddress()), vmInstanceUuid, archive.getMetadata(), archive.getMetadataClass());
             createdAddressList.add(vo);
         }
 

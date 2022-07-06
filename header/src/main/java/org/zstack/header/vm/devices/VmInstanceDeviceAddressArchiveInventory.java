@@ -15,7 +15,7 @@ public class VmInstanceDeviceAddressArchiveInventory {
     private long id;
     private String resourceUuid;
     private String vmInstanceUuid;
-    private String pciAddress;
+    private String deviceAddress;
     private String addressGroupUuid;
     private String metadata;
     private String metadataClass;
@@ -26,7 +26,7 @@ public class VmInstanceDeviceAddressArchiveInventory {
         VmInstanceDeviceAddressArchiveInventory inv = new VmInstanceDeviceAddressArchiveInventory();
         inv.setId(1);
         inv.setResourceUuid(vo.getResourceUuid());
-        inv.setPciAddress(vo.getPciAddress());
+        inv.setDeviceAddress(vo.getDeviceAddress());
         inv.setAddressGroupUuid(vo.getAddressGroupUuid());
         inv.setVmInstanceUuid(vo.getVmInstanceUuid());
         inv.setCreateDate(vo.getCreateDate());
@@ -64,12 +64,12 @@ public class VmInstanceDeviceAddressArchiveInventory {
         this.vmInstanceUuid = vmInstanceUuid;
     }
 
-    public String getPciAddress() {
-        return pciAddress;
+    public String getDeviceAddress() {
+        return deviceAddress;
     }
 
-    public void setPciAddress(String pciAddress) {
-        this.pciAddress = pciAddress;
+    public void setDeviceAddress(String deviceAddress) {
+        this.deviceAddress = deviceAddress;
     }
 
     public String getAddressGroupUuid() {

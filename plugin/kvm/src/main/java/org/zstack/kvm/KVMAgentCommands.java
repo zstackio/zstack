@@ -1,6 +1,6 @@
 package org.zstack.kvm;
 
-import org.zstack.header.vm.devices.PciAddressConfig;
+import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
@@ -771,7 +771,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class NicTO extends BaseVirtualPciDeviceTO {
+    public static class NicTO extends BaseVirtualDeviceTO {
         private String mac;
         private List<String> ips;
         private String bridgeName;
@@ -786,7 +786,7 @@ public class KVMAgentCommands {
         private Integer mtu;
         private String driverType;
         private VHostAddOn vHostAddOn;
-        private PciAddressConfig pci;
+        private DeviceAddress pci;
         private String type;
 
         // only for vf nic
@@ -913,11 +913,11 @@ public class KVMAgentCommands {
             this.vHostAddOn = vHostAddOn;
         }
 
-        public PciAddressConfig getPci() {
+        public DeviceAddress getPci() {
             return pci;
         }
 
-        public void setPci(PciAddressConfig pci) {
+        public void setPci(DeviceAddress pci) {
             this.pci = pci;
         }
 
@@ -1098,7 +1098,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class CdRomTO extends BaseVirtualPciDeviceTO {
+    public static class CdRomTO extends BaseVirtualDeviceTO {
         private String path;
         private String imageUuid;
         private int deviceId;
@@ -2095,7 +2095,7 @@ public class KVMAgentCommands {
 
     public static class VmNicInfo {
         private String macAddress;
-        private PciAddressConfig pciInfo;
+        private DeviceAddress deviceAddress;
 
         public String getMacAddress() {
             return macAddress;
@@ -2105,12 +2105,12 @@ public class KVMAgentCommands {
             this.macAddress = macAddress;
         }
 
-        public PciAddressConfig getPciInfo() {
-            return pciInfo;
+        public DeviceAddress getDeviceAddress() {
+            return deviceAddress;
         }
 
-        public void setPciInfo(PciAddressConfig pciInfo) {
-            this.pciInfo = pciInfo;
+        public void setDeviceAddress(DeviceAddress deviceAddress) {
+            this.deviceAddress = deviceAddress;
         }
     }
 

@@ -28,12 +28,12 @@ public class VmInstanceDeviceAddressArchiveInventory  {
         return this.vmInstanceUuid;
     }
 
-    public java.lang.String pciAddress;
-    public void setPciAddress(java.lang.String pciAddress) {
-        this.pciAddress = pciAddress;
+    public java.lang.String deviceAddress;
+    public void setDeviceAddress(java.lang.String deviceAddress) {
+        this.deviceAddress = deviceAddress;
     }
-    public java.lang.String getPciAddress() {
-        return this.pciAddress;
+    public java.lang.String getDeviceAddress() {
+        return this.deviceAddress;
     }
 
     public java.lang.String addressGroupUuid;

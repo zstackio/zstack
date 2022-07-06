@@ -26,7 +26,14 @@ public class APIQueryVmInstanceDeviceAddressArchiveReply extends APIQueryReply {
         VmInstanceDeviceAddressArchiveInventory inv = new VmInstanceDeviceAddressArchiveInventory();
         inv.setId(1);
         inv.setResourceUuid(uuid());
-        inv.setPciAddress(uuid());
+
+        DeviceAddress address = new DeviceAddress();
+        address.bus = "00";
+        address.domain = "0000";
+        address.slot = "0d";
+        address.function = "0";
+
+        inv.setDeviceAddress(address.toString());
         inv.setAddressGroupUuid(uuid());
         inv.setMetadata("Metadata");
         inv.setMetadataClass(VmInstanceDeviceAddressArchiveInventory.class.getCanonicalName());
