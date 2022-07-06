@@ -1,10 +1,6 @@
 package org.zstack.header.vm.devices;
 
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.vm.devices.PciAddressConfig;
-import org.zstack.header.vm.devices.VirtualDeviceInfo;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO;
 
 import java.util.List;
 import java.util.Map;
@@ -12,11 +8,11 @@ import java.util.Map;
 public interface VmInstanceDeviceManager {
     final static String MEMBALLOON_UUID = "4780bf6d2fa65700f22e36c27e8ff05c";
 
-    VmInstanceDeviceAddressVO createOrUpdateVmDeviceAddress(String resourceUuid, PciAddressConfig pciAddress, String vmInstanceUuid, String metadata, String metadataClass);
+    VmInstanceDeviceAddressVO createOrUpdateVmDeviceAddress(String resourceUuid, DeviceAddress pciAddress, String vmInstanceUuid, String metadata, String metadataClass);
 
     VmInstanceDeviceAddressVO createOrUpdateVmDeviceAddress(VirtualDeviceInfo virtualDeviceInfo, String vmInstanceUuid);
 
-    PciAddressConfig getVmDevicePciAddress(String resourceUuid, String vmInstanceUuid);
+    DeviceAddress getVmDevicePciAddress(String resourceUuid, String vmInstanceUuid);
 
     ErrorCode deleteVmDeviceAddress(String resourceUuid, String vmInstanceUuid);
 

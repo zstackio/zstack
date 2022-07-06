@@ -20,7 +20,7 @@ public class VmInstanceDeviceAddressArchiveVO implements ToInventory {
     private String vmInstanceUuid;
 
     @Column
-    private String pciAddress;
+    private String deviceAddress;
 
     @Column
     private String addressGroupUuid;
@@ -66,12 +66,12 @@ public class VmInstanceDeviceAddressArchiveVO implements ToInventory {
         this.vmInstanceUuid = vmInstanceUuid;
     }
 
-    public String getPciAddress() {
-        return pciAddress;
+    public String getDeviceAddress() {
+        return deviceAddress;
     }
 
-    public void setPciAddress(String pciAddress) {
-        this.pciAddress = pciAddress;
+    public void setDeviceAddress(String deviceAddress) {
+        this.deviceAddress = deviceAddress;
     }
 
     public Timestamp getCreateDate() {
