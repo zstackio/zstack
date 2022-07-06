@@ -1,13 +1,10 @@
 package org.zstack.network.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.Q;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
@@ -30,14 +27,16 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
    private final static CLogger logger = Utils.getLogger(NetworkServiceApiInterceptor.class);
    @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private ErrorFacade errf;
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAttachNetworkServiceToL3NetworkMsg) {
-       	   convertNetworkProviderTypeToUuid((APIAttachNetworkServiceToL3NetworkMsg)msg);
-           validate((APIAttachNetworkServiceToL3NetworkMsg)msg);
+            APIAttachNetworkServiceToL3NetworkMsg attachMsg = (APIAttachNetworkServiceToL3NetworkMsg)msg;
+            attachMsg.setNetworkServices(convertNetworkProviderTypeToUuid(attachMsg.getNetworkServices()));
+            validate(attachMsg);
+        } else if (msg instanceof APIDetachNetworkServiceFromL3NetworkMsg) {
+            APIDetachNetworkServiceFromL3NetworkMsg detachMsg = (APIDetachNetworkServiceFromL3NetworkMsg)msg;
+            detachMsg.setNetworkServices(convertNetworkProviderTypeToUuid(detachMsg.getNetworkServices()));
         }
 
         return msg;
@@ -103,33 +102,20 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void convertNetworkProviderTypeToUuid(APIAttachNetworkServiceToL3NetworkMsg msg){
-        Map<String, List<String>> map = msg.getNetworkServices();
+    private Map<String, List<String>> convertNetworkProviderTypeToUuid(Map<String, List<String>> map){
         if (map.isEmpty()) {
             throw new ApiMessageInterceptionException(argerr("networkServices cannot be empty"));
         }
 
-        boolean isNetworkServiceProveiderType = false;
-
+        Map<String, List<String>> mapNew = new HashMap<>(map);
         List<NetworkServiceProviderVO> networkServiceProviderVOs = Q.New(NetworkServiceProviderVO.class).list();
 
-
-        List<String> keys  = new ArrayList<String>(map.keySet());
-        List<String> uuids = new ArrayList<String>();
-        for (NetworkServiceProviderVO vo :networkServiceProviderVOs){
-            uuids.add(vo.getUuid());
-        }
-
-        if(Collections.disjoint(keys,uuids)) {
-            isNetworkServiceProveiderType = true;
-        }
-        if(isNetworkServiceProveiderType){
-            for (NetworkServiceProviderVO vo :networkServiceProviderVOs) {
-                if(map.containsKey(vo.getType())){
-                    map.put(vo.getUuid(), map.remove(vo.getType()));
-                }
+        for (NetworkServiceProviderVO vo :networkServiceProviderVOs) {
+            if (mapNew.containsKey(vo.getType())){
+                mapNew.put(vo.getUuid(), mapNew.remove(vo.getType()));
             }
-            msg.setNetworkServices(map);
         }
+
+        return mapNew;
     }
 }
