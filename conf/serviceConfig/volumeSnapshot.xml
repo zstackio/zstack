@@ -61,6 +61,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.vm.APIGetMemorySnapshotGroupReferenceMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.storage.snapshot.group.APIUngroupVolumeSnapshotGroupMsg</name>
     </message>
 
