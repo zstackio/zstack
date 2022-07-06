@@ -9,6 +9,7 @@ import org.zstack.header.volume.VolumeInventory;
 public class ResizeVolumeOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private long size;
+    private boolean force;
     private VolumeInventory volume;
 
     public VolumeInventory getVolume() {
@@ -25,6 +26,14 @@ public class ResizeVolumeOnPrimaryStorageMsg extends NeedReplyMessage implements
 
     public void setSize(long size) {
         this.size = size;
+    }
+
+    public boolean isForce() {
+        return force;
+    }
+
+    public void setForce(boolean force) {
+        this.force = force;
     }
 
     @Override
