@@ -321,6 +321,7 @@ public class VmInstanceSpec implements Serializable {
 
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
+    private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private boolean skipIpAllocation = false;
 
     public boolean isSkipIpAllocation() {
@@ -682,6 +683,14 @@ public class VmInstanceSpec implements Serializable {
         this.dataVolumeSystemTags = dataVolumeSystemTags;
     }
 
+    public Map<String, List<String>> getDataVolumeSystemTagsOnIndex() {
+        return dataVolumeSystemTagsOnIndex;
+    }
+
+    public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
+        this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
+    }
+
     public boolean isInstantiateResourcesSuccess() {
         return instantiateResourcesSuccess;
     }
@@ -704,5 +713,12 @@ public class VmInstanceSpec implements Serializable {
 
     public void setBootMode(String bootMode) {
         this.bootMode = bootMode;
+    }
+
+    public long getRootDiskAllocateSize() {
+        if (rootDiskOffering == null) {
+            return this.getImageSpec().getInventory().getSize();
+        }
+        return rootDiskOffering.getDiskSize();
     }
 }

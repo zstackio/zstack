@@ -23,6 +23,7 @@ public class InstantiateVmFromNewCreatedStruct {
     private String requiredHostUuid;
     private List<String> softAvoidHostUuids;
     private List<String> avoidHostUuids;
+    private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -99,6 +100,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setRequiredHostUuid(msg.getHostUuid());
         struct.setSoftAvoidHostUuids(msg.getSoftAvoidHostUuids());
         struct.setAvoidHostUuids(msg.getAvoidHostUuids());
+        struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         return struct;
     }
 
@@ -115,6 +117,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         struct.setRequiredHostUuid(msg.getHostUuid());
+        struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
         return struct;
     }
 
@@ -165,5 +168,13 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
         this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
+    }
+
+    public Map<String, List<String>> getDataVolumeSystemTagsOnIndex() {
+        return dataVolumeSystemTagsOnIndex;
+    }
+
+    public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
+        this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
     }
 }

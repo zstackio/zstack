@@ -20,6 +20,7 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     private List<String> dataVolumeSystemTags;
     private List<String> softAvoidHostUuids;
     private List<String> avoidHostUuids;
+    private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
 
     public List<String> getSoftAvoidHostUuids() {
         return softAvoidHostUuids;
@@ -136,5 +137,13 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
         this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
+    }
+
+    public Map<String, List<String>> getDataVolumeSystemTagsOnIndex() {
+        return dataVolumeSystemTagsOnIndex;
+    }
+
+    public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
+        this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
     }
 }
