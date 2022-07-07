@@ -7,17 +7,16 @@ import org.zstack.header.AbstractService
 import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.managementnode.ManagementNodeInventory
-import org.zstack.header.managementnode.ManagementNodeState
-import org.zstack.header.managementnode.ManagementNodeVO
-import org.zstack.header.message.*
+import org.zstack.header.message.APIEvent
+import org.zstack.header.message.Message
+import org.zstack.header.message.MessageReply
+import org.zstack.header.message.NeedReplyMessage
 import org.zstack.header.vm.APIQueryVmInstanceMsg
 import org.zstack.header.vm.APIStartVmInstanceMsg
 import org.zstack.header.vm.StartVmInstanceMsg
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.SubCase
 
-import java.sql.Timestamp
-import java.time.LocalDateTime
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
@@ -175,7 +174,7 @@ class CloudBus3Case extends SubCase {
         tracker.startCleanupTimer()
 
         qmsg = new APIQueryVmInstanceMsg()
-        qmsg.setTimeout(1L)
+        qmsg.setTimeout(2L)
         bus.makeLocalServiceId(qmsg, SERVICE_ID)
         bus.send(qmsg, new CloudBusCallBack(null) {
             @Override
@@ -223,6 +222,14 @@ class CloudBus3Case extends SubCase {
 
         def qmsg = new APIQueryVmInstanceMsg()
         qmsg.setTimeout(1L)
+        bus.makeLocalServiceId(qmsg, SERVICE_ID)
+        bus.makeServiceIdByManagementNodeId(qmsg, SERVICE_ID, "some-fake-uuid")
+
+        MessageReply r = bus.call(qmsg)
+        assert r.error.isError(SysErrors.TIMEOUT)
+
+        qmsg = new APIQueryVmInstanceMsg()
+        qmsg.setTimeout(2L)
         bus.makeLocalServiceId(qmsg, SERVICE_ID)
         bus.makeServiceIdByManagementNodeId(qmsg, SERVICE_ID, "some-fake-uuid")
 

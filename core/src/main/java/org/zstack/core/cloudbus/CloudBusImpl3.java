@@ -293,6 +293,10 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     @Override
     public void send(NeedReplyMessage msg, CloudBusCallBack callback) {
         evaluateMessageTimeout(msg);
+        if (msg.getTimeout() <= 1) {
+            callback.run(createTimeoutReply(msg));
+            return;
+        }
 
         Envelope e = new Envelope() {
             final AtomicBoolean called = new AtomicBoolean(false);
