@@ -16,6 +16,7 @@ public interface CloudBus extends Component {
     
     <T extends Message> void send(List<T> msgs);
 
+    @Deprecated
     void send(APIMessage msg, Consumer<APIEvent> consumer);
 
     void send(NeedReplyMessage msg, CloudBusCallBack callback);
