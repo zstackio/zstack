@@ -1668,6 +1668,8 @@ public class KVMAgentCommands {
         private boolean isApplianceVm;
         private String systemSerialNumber;
         private String bootMode;
+        // used when bootMode == 'UEFI'
+        private boolean secureBoot;
         private boolean fromForeignHypervisor;
         private String machineType;
         private Integer pciePortNums;
@@ -1747,6 +1749,14 @@ public class KVMAgentCommands {
 
         public void setBootMode(String bootMode) {
             this.bootMode = bootMode;
+        }
+
+        public boolean isSecureBoot() {
+            return secureBoot;
+        }
+
+        public void setSecureBoot(boolean secureBoot) {
+            this.secureBoot = secureBoot;
         }
 
         public boolean isEmulateHyperV() {

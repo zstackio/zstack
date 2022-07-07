@@ -2933,6 +2933,11 @@ public class KVMHost extends HostBase implements Host {
 
         String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.BOOT_MODE_TOKEN);
         cmd.setBootMode(bootMode == null ? ImageBootMode.Legacy.toString() : bootMode);
+        if (cmd.getBootMode().equals(ImageBootMode.UEFI.toString())
+                || cmd.getBootMode().equals(ImageBootMode.UEFI_WITH_CSM.toString())) {
+            cmd.setSecureBoot(VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT.value(Boolean.class));
+        }
+
         deviceBootOrderOperator.updateVmDeviceBootOrder(cmd, spec);
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
         cmd.setHostManagementIp(self.getManagementIp());
