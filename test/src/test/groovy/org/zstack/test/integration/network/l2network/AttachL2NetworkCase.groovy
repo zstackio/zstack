@@ -107,6 +107,7 @@ public class AttachL2NetworkCase extends SubCase{
         L2NetworkInventory l21 = env.inventoryByName("l2-1")
         L2NetworkInventory l22 = env.inventoryByName("l2-2")
         ClusterInventory cluster = env.inventoryByName("cluster1")
+        ZoneInventory zone  = env.inventoryByName("zone")
 
         NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES = true
         KVMAgentCommands.CreateBridgeCmd createCmd = null
@@ -131,6 +132,14 @@ public class AttachL2NetworkCase extends SubCase{
             attachL2NetworkToCluster {
                 l2NetworkUuid = l22.uuid
                 clusterUuid = cluster.uuid
+            }
+        }
+
+        expect(AssertionError.class){
+            createL2NoVlanNetwork {
+                zoneUuid = zone.uuid
+                name = "l2"
+                physicalInterface = "eth0.1010"
             }
         }
 
