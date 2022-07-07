@@ -443,6 +443,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                         try {
                             TimeUnit.SECONDS.sleep(sleep);
                         } catch (InterruptedException ignored) {
+                            Thread.currentThread().interrupt();
                         }
                     }
                     compl.done();
