@@ -35,8 +35,8 @@ import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
-import org.zstack.header.message.*;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
+import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.MemorySnapshotGroupExtensionPoint;
@@ -762,6 +762,7 @@ public class VolumeBase implements Volume {
         }
 
         final VolumeInventory inv = getSelfInventory();
+        String accountUuid = self.getAccountUuid();
         pluginRgty.getExtensionList(VolumeBeforeExpungeExtensionPoint.class).forEach(ext -> ext.volumePreExpunge(inv));
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("expunge-volume");
@@ -849,7 +850,6 @@ public class VolumeBase implements Volume {
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class), arg -> arg.volumeAfterExpunge(inv));
 
                 VolumeInventory volumeInventory = getSelfInventory();
-                String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
                 dbf.remove(self);
                 cleanupVolumeEO(self.getUuid());
                 completion.success();
@@ -1181,12 +1181,12 @@ public class VolumeBase implements Volume {
                     @Override
                     public void handle(Map data) {
                         VolumeStatus oldStatus = self.getStatus();
+                        String accountUuid = self.getAccountUuid();
 
                         if (deletionPolicy == VolumeDeletionPolicy.Direct) {
                             callVmJustBeforeDeleteFromDbExtensionPoint();
                             self.setStatus(VolumeStatus.Deleted);
                             self = dbf.updateAndRefresh(self);
-                            String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
                             VolumeInventory volumeInventory = getSelfInventory();
                             dbf.remove(self);
                             cleanupVolumeEO(self.getUuid());
@@ -1203,7 +1203,6 @@ public class VolumeBase implements Volume {
                             callVmJustBeforeDeleteFromDbExtensionPoint();
                             VolumeInventory inventory = getSelfInventory();
                             inventory.setStatus(VolumeStatus.Deleted.toString());
-                            String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
                             dbf.remove(self);
                             new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, inventory, accountUuid);
                         } else {
@@ -1395,7 +1394,7 @@ public class VolumeBase implements Volume {
                     if (deletionPolicy == VolumeDeletionPolicy.DBOnly) {
                         callVmJustBeforeDeleteFromDbExtensionPoint();
                         VolumeInventory inventory = getSelfInventory();
-                        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
+                        String accountUuid = self.getAccountUuid();
                         dbf.remove(self);
                         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(self.getStatus(), inventory, accountUuid);
                     }

@@ -16,7 +16,7 @@ import java.lang.reflect.Field;
  * @Date: 2021/12/2
  */
 public aspect EncryptColumnAspect {
-     private static final CLogger logger = Utils.getLogger(OwnedByAccountAspect.class);
+     private static final CLogger logger = Utils.getLogger(EncryptColumnAspect.class);
 
     @Autowired
     protected PluginRegistry pluginRegistry;
