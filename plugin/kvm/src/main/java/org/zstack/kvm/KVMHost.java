@@ -2716,7 +2716,7 @@ public class KVMHost extends HostBase implements Host {
 
         to.setvHostAddOn(vHostAddOn);
 
-        DeviceAddress pci = vidm.getVmDevicePciAddress(nic.getUuid(), nic.getVmInstanceUuid());
+        DeviceAddress pci = vidm.getVmDeviceAddress(nic.getUuid(), nic.getVmInstanceUuid());
         if (pci != null) {
             to.setPci(pci);
         }
@@ -2937,8 +2937,8 @@ public class KVMHost extends HostBase implements Host {
         }
 
         VirtualDeviceInfo memBalloon = new VirtualDeviceInfo();
-        memBalloon.setResourceUuid(vidm.MEMBALLOON_UUID);
-        memBalloon.setDeviceAddress(vidm.getVmDevicePciAddress(vidm.MEMBALLOON_UUID, spec.getVmInventory().getUuid()));
+        memBalloon.setResourceUuid(vidm.MEM_BALLOON_UUID);
+        memBalloon.setDeviceAddress(vidm.getVmDeviceAddress(vidm.MEM_BALLOON_UUID, spec.getVmInventory().getUuid()));
         cmd.setMemBalloon(memBalloon);
 
         addons(spec, cmd);

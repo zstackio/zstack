@@ -90,4 +90,7 @@ public class VmGlobalConfig {
     @BindResourceConfig(value = {VmInstanceVO.class})
     @GlobalConfigValidation(validValues = {"guest", "host"})
     public static GlobalConfig VM_CLOCK_TRACK = new GlobalConfig(CATEGORY, "vm.clock.track");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig ENABLE_VM_DEVICE_ADDRESS_RECORDING = new GlobalConfig(CATEGORY, "enable.vm.address.recording");
 }
