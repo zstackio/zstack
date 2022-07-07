@@ -261,4 +261,12 @@
 		<category>vm</category>
 		<type>java.lang.String</type>
 	</config>
+
+	<config>
+		<name>enable.uefi.secure.boot</name>
+		<description>enable uefi secure boot</description>
+		<defaultValue>true</defaultValue>
+		<category>vm</category>
+		<type>java.lang.Boolean</type>
+	</config>
 </globalConfig>
