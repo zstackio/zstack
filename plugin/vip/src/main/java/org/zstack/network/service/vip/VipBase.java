@@ -36,6 +36,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
@@ -1011,4 +1012,15 @@ public class VipBase {
                 type, uuid, self.getUuid()));
     }
 
+    public void delSystemServiceRef() {
+        self.setSystem(false);
+        dbf.update(self);
+        if (self.getServicesTypes().contains(NetworkServiceType.SNAT.toString())) {
+            VipNetworkServicesRefVO vipRef = Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, self.getUuid())
+                    .eq(VipNetworkServicesRefVO_.serviceType, NetworkServiceType.SNAT.toString()).find();
+            if(vipRef != null) {
+                delServicesRef(vipRef.getUuid(), vipRef.getServiceType());
+            }
+        }
+    }
 }
