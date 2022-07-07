@@ -13,9 +13,15 @@ public class VmInstanceDeviceAddressGroupVO implements ToInventory {
     @Column
     private String uuid;
 
+    /**
+     * vm instance uuid
+     */
     @Column
     private String resourceUuid;
 
+    /**
+     * vm device address archive that referred by this group
+     */
     @Column
     private String vmInstanceUuid;
 
