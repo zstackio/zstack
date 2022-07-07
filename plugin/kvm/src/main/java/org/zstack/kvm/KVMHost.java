@@ -1309,19 +1309,6 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void doHandleKvmSyncMsg(final KVMHostSyncHttpCallMsg msg, SyncTaskChain outter) {
-        inQueue().name(String.format("execute-sync-http-call-on-kvm-host-%s", self.getUuid()))
-                .asyncBackup(msg)
-                .asyncBackup(outter)
-                .run(chain -> executeSyncHttpCall(msg, new NoErrorCompletion(chain, outter) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                        outter.next();
-                    }
-                }));
-    }
-
     private static int getHostMaxThreadsNum() {
         int n = (int)(KVMGlobalProperty.KVM_HOST_MAX_THREDS_RATIO * ThreadGlobalProperty.MAX_THREAD_NUM);
         int m = ThreadGlobalProperty.MAX_THREAD_NUM / 5;
@@ -1329,27 +1316,20 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final KVMHostSyncHttpCallMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return "host-sync-control";
-            }
-
-            @Override
-            public void run(SyncTaskChain chain) {
-                doHandleKvmSyncMsg(msg, chain);
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostMaxThreadsNum();
-            }
-
-            @Override
-            public String getName() {
-                return String.format("sync-call-on-kvm-%s", self.getUuid());
-            }
-        });
+        inQueue().name(String.format("execute-sync-http-call-on-kvm-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(outer -> new RunInQueue("host-sync-control", thdf, getHostMaxThreadsNum())
+                        .name("sync-call-on-kvm-" + self.getUuid())
+                        .asyncBackup(msg)
+                        .asyncBackup(outer)
+                        .run((chain) -> executeSyncHttpCall(msg, new NoErrorCompletion(chain, outer) {
+                            @Override
+                            public void done() {
+                                chain.next();
+                                outer.next();
+                            }
+                        }))
+                );
     }
 
     private void executeSyncHttpCall(KVMHostSyncHttpCallMsg msg, NoErrorCompletion completion) {
@@ -1367,41 +1347,21 @@ public class KVMHost extends HostBase implements Host {
         completion.done();
     }
 
-    private void doHandleKvmAsyncMsg(final KVMHostAsyncHttpCallMsg msg, SyncTaskChain outter) {
+    private void handle(final KVMHostAsyncHttpCallMsg msg) {
         inQueue().name(String.format("execute-async-http-call-on-kvm-host-%s", self.getUuid()))
                 .asyncBackup(msg)
-                .asyncBackup(outter)
-                .run(chain -> executeAsyncHttpCall(msg, new NoErrorCompletion(chain, outter) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                        outter.next();
-                    }
-                }));
-    }
-
-    private void handle(final KVMHostAsyncHttpCallMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return "host-sync-control";
-            }
-
-            @Override
-            public void run(SyncTaskChain chain) {
-                doHandleKvmAsyncMsg(msg, chain);
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostMaxThreadsNum();
-            }
-
-            @Override
-            public String getName() {
-                return String.format("async-call-on-kvm-%s", self.getUuid());
-            }
-        });
+                .run(outer -> new RunInQueue("host-sync-control", thdf, getHostMaxThreadsNum())
+                        .name("async-call-on-kvm-" + self.getUuid())
+                        .asyncBackup(msg)
+                        .asyncBackup(outer)
+                        .run((chain) -> executeAsyncHttpCall(msg, new NoErrorCompletion(chain, outer) {
+                            @Override
+                            public void done() {
+                                chain.next();
+                                outer.next();
+                            }
+                        }))
+                );
     }
 
     private String buildUrl(String path) {
