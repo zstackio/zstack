@@ -269,4 +269,13 @@
 		<category>vm</category>
 		<type>java.lang.Boolean</type>
 	</config>
+
+	<config>
+		<category>vm</category>
+		<name>enable.vm.address.recording</name>
+		<description>enable vm device address record</description>
+		<type>java.lang.Boolean</type>
+		<defaultValue>true</defaultValue>
+	</config>
+
 </globalConfig>

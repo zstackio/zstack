@@ -33,7 +33,7 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
     }
 
     private void setDeviceAddress(BaseVirtualDeviceTO to, KVMAgentCommands.StartVmCmd cmd) {
-        to.setDeviceAddress(vidManager.getVmDevicePciAddress(to.getResourceUuid(), cmd.getVmInstanceUuid()));
+        to.setDeviceAddress(vidManager.getVmDeviceAddress(to.getResourceUuid(), cmd.getVmInstanceUuid()));
     }
 
     @Override
@@ -68,7 +68,7 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
         });
 
         if (!StringUtils.isEmpty(rsp.getMemBalloonInfo().getDeviceAddress().toString())) {
-            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(vidManager.MEMBALLOON_UUID, DeviceAddress.fromString(rsp.getMemBalloonInfo().getDeviceAddress().toString())), spec.getVmInventory().getUuid());
+            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(vidManager.MEM_BALLOON_UUID, DeviceAddress.fromString(rsp.getMemBalloonInfo().getDeviceAddress().toString())), spec.getVmInventory().getUuid());
         }
     }
 

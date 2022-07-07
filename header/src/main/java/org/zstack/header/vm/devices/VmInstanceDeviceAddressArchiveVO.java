@@ -13,23 +13,41 @@ public class VmInstanceDeviceAddressArchiveVO implements ToInventory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    /**
+     * uuid of vm device
+     */
     @Column
     private String resourceUuid;
 
+    /**
+     * vm instance uuid that the resourceUuid related resource attached
+     */
     @Column
     private String vmInstanceUuid;
 
+    /**
+     * pciAddress used to store a string format by PciAddressConfig
+     */
     @Column
     private String deviceAddress;
 
-    @Column
-    private String addressGroupUuid;
-
+    /**
+     * normally a json string of resource inventory
+     */
     @Column
     private String metadata;
 
+    /**
+     * canonical name of metadata
+     */
     @Column
     private String metadataClass;
+
+    /**
+     * use to mark a group of vm device archives
+     */
+    @Column
+    private String addressGroupUuid;
 
     @Column
     private Timestamp createDate;

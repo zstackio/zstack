@@ -1,6 +1,7 @@
 package org.zstack.compute.vm.devices;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -21,6 +22,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -31,8 +33,16 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     @Autowired
     private DatabaseFacade dbf;
 
+    private boolean deviceAddressRecordingDisabled() {
+        return !VmGlobalConfig.ENABLE_VM_DEVICE_ADDRESS_RECORDING.value(Boolean.class);
+    }
+
     @Override
     public VmInstanceDeviceAddressVO createOrUpdateVmDeviceAddress(String resourceUuid, DeviceAddress deviceAddress, String vmInstanceUuid, String metadata, String metadataClass) {
+        if (deviceAddressRecordingDisabled()) {
+            return null;
+        }
+
         if (resourceUuid == null || vmInstanceUuid == null) {
             throw new OperationFailureException(operr("missing parameter, resourceUuid: %s, vmInstanceUuid: %s is requested", resourceUuid, vmInstanceUuid));
         }
@@ -94,7 +104,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     }
 
     @Override
-    public DeviceAddress getVmDevicePciAddress(String resourceUuid, String vmInstanceUuid) {
+    public DeviceAddress getVmDeviceAddress(String resourceUuid, String vmInstanceUuid) {
         VmInstanceDeviceAddressVO vo = Q.New(VmInstanceDeviceAddressVO.class)
                 .eq(VmInstanceDeviceAddressVO_.resourceUuid, resourceUuid)
                 .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vmInstanceUuid)
@@ -129,6 +139,10 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
 
     @Override
     public VmInstanceDeviceAddressGroupVO archiveCurrentDeviceAddress(String vmInstanceUuid, String archiveForResourceUuid) {
+        if (deviceAddressRecordingDisabled()) {
+            return null;
+        }
+
         return new SQLBatchWithReturn<VmInstanceDeviceAddressGroupVO>() {
             @Override
             protected VmInstanceDeviceAddressGroupVO scripts() {
@@ -160,6 +174,10 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
 
     @Override
     public List<VmInstanceDeviceAddressVO> revertDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid) {
+        if (deviceAddressRecordingDisabled()) {
+            return Collections.emptyList();
+        }
+
         VmInstanceDeviceAddressGroupVO group = Q.New(VmInstanceDeviceAddressGroupVO.class)
                 .eq(VmInstanceDeviceAddressGroupVO_.resourceUuid, archiveForResourceUuid)
                 .find();
@@ -202,6 +220,10 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
 
     @Override
     public List<VmInstanceDeviceAddressVO> createDeviceAddressFromArchive(String vmInstanceUuid, String archiveForResourceUuid, Map<String, String> resourceMap) {
+        if (deviceAddressRecordingDisabled()) {
+            return Collections.emptyList();
+        }
+
         VmInstanceDeviceAddressGroupVO group = Q.New(VmInstanceDeviceAddressGroupVO.class)
                 .eq(VmInstanceDeviceAddressGroupVO_.resourceUuid, archiveForResourceUuid)
                 .find();
@@ -233,6 +255,10 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
 
     @Override
     public List<VmInstanceDeviceAddressArchiveVO> getAddressArchiveInfoFromArchiveForResourceUuid(String vmInstanceUuid, String archiveForResourceUuid, String metadataClass) {
+        if (deviceAddressRecordingDisabled()) {
+            return Collections.emptyList();
+        }
+
         String VmInstanceDeviceAddressGroupUuid = Q.New(VmInstanceDeviceAddressGroupVO.class)
                 .select(VmInstanceDeviceAddressGroupVO_.uuid)
                 .eq(VmInstanceDeviceAddressGroupVO_.resourceUuid, archiveForResourceUuid)
@@ -268,7 +294,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     }
 
     private ErrorCode checkParams(String vmInstanceUuid, String resourceUuid) {
-        if (MEMBALLOON_UUID.equals(resourceUuid)) {
+        if (MEM_BALLOON_UUID.equals(resourceUuid)) {
             return null;
         }
 
