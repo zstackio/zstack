@@ -58,7 +58,7 @@ public class VmAssignDeviceIdToAttachingVolumeFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) ctx.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         VolumeVO dvol = dbf.findByUuid(volume.getUuid(), VolumeVO.class);
-        dvol.setDeviceId(new NextVolumeDeviceIdGetter().getNextVolumeDeviceId(spec.getVmInventory().getUuid()));
+        dvol.setDeviceId(volume.getDeviceId() != null ? volume.getDeviceId() : new NextVolumeDeviceIdGetter().getNextVolumeDeviceId(spec.getVmInventory().getUuid()));
         dvol = dbf.updateAndRefresh(dvol);
         ctx.put(VmInstanceConstant.Params.AttachingVolumeInventory.toString(), VolumeInventory.valueOf(dvol));
         chain.next();
