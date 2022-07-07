@@ -94,5 +94,14 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
         if (isConflict) {
             throw new ApiMessageInterceptionException(argerr("can not create %s L2Network with physicalInterface:[%s] which was already been used by another vSwitchType.", msg.getvSwitchType(), msg.getPhysicalInterface()));
         }
+
+
+        if (L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(msg.getType())) {
+            /* physical interface can not be vlan sub-interface */
+            if (msg.getPhysicalInterface().contains(".")) {
+                throw new ApiMessageInterceptionException(argerr("can not create l2 network because physical interface[%s] is a vlan sub -interface",
+                        msg.getPhysicalInterface()));
+            }
+        }
     }
 }
