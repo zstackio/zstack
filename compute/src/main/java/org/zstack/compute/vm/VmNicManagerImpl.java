@@ -525,6 +525,12 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
                                                 .set(VmInstanceVO_.defaultL3NetworkUuid, vmAttachNicReply.getInventroy().getL3NetworkUuid()).update();
                                     }
 
+                                    if (!originalNicInventory.getDriverType().equals(vmAttachNicReply.getInventroy().getDriverType())) {
+                                        logger.info(String.format("update driverType[%s->%s]for new vmNic %s"
+                                                , vmAttachNicReply.getInventroy().getDriverType(), originalNicInventory.getDriverType(), vmAttachNicReply.getInventroy().getUuid()));
+                                        SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, vmAttachNicReply.getInventroy().getUuid()).set(VmNicVO_.driverType, originalNicInventory.getDriverType()).update();
+                                    }
+
                                     needToSetNicQosArchiveVmNicTypeList.add(new ArchiveVmNicType(vmAttachNicReply.getInventroy(), updateArchiveVmNicType.getOutboundBandwidth(), updateArchiveVmNicType.getInboundBandwidth()));
 
                                     whileCompletion.done();
