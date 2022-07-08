@@ -16,6 +16,12 @@ doc {
 		clz VolumeSnapshotGroupInventory.class
 	}
 	field {
+		name "resourceUuid"
+		desc "资源UUID"
+		type "String"
+		since "4.4.24"
+	}
+	field {
 		name "success"
 		desc ""
 		type "boolean"

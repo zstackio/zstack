@@ -27,10 +27,9 @@ import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.storage.snapshot.ConsistentType;
 import org.zstack.header.storage.snapshot.group.*;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.*;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
 import org.zstack.header.volume.*;
 
 import javax.persistence.Tuple;
@@ -104,6 +103,12 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                 .param("dVolumeType", VolumeType.Data.toString())
                 .param("volumeUuid", volumeUuid)
                 .find() > 0L;
+    }
+
+    private boolean isVmHasMemorySnapshotGroup(String vmUuid) {
+        return Q.New(VmInstanceDeviceAddressArchiveVO.class)
+                .eq(VmInstanceDeviceAddressArchiveVO_.vmInstanceUuid, vmUuid)
+                .isExists();
     }
 
     private void validate(APICreateVolumeSnapshotMsg msg) {
@@ -238,9 +243,18 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             throw new ApiMessageInterceptionException(operr("the volume[uuid:%s, name:%s, type:%s] can't detach it",
                             vol.getUuid(), vol.getName(), vol.getType()));
         }
+
+        if (isDataVolumeHasMemorySnapshotGroup(msg.getVolumeUuid())) {
+            throw new ApiMessageInterceptionException(operr("the vm where the data volume [%s] is located has a memory snapshot, can't detach",
+                    msg.getVolumeUuid()));
+        }
     }
 
     private void validate(APIAttachDataVolumeToVmMsg msg) {
+        if (isVmHasMemorySnapshotGroup(msg.getVmInstanceUuid())) {
+            throw new ApiMessageInterceptionException(operr("unable to attach volume %s to vmInstance %s with memory snapshot group",
+                    msg.getVolumeUuid(), msg.getVmInstanceUuid()));
+        }
 
         new SQLBatch(){
             @Override
