@@ -1135,7 +1135,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     private void handle(APIGetMemorySnapshotGroupReferenceMsg msg) {
-        APIGetMemorySnapshotGroupReferenceReply reply = new APIGetMemorySnapshotGroupReferenceReply();
+        APIGetMemorySnapshotGroupReferenceReply reply = new APIGetMemorySnapshotGroupReferenceReply(msg.getResourceUuid());
 
         if (!L3NetworkVO.class.getSimpleName().equals(msg.getResourceType())) {
             bus.reply(msg, reply);
