@@ -30,6 +30,8 @@ import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.cdrom.*;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
 import org.zstack.header.volume.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
@@ -603,6 +605,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private boolean isVmHasMemorySnapshotGroup(String vmUuid) {
+        return Q.New(VmInstanceDeviceAddressArchiveVO.class)
+                .eq(VmInstanceDeviceAddressArchiveVO_.vmInstanceUuid, vmUuid)
+                .isExists();
+    }
+
     private void validate(APISetVmBootVolumeMsg msg) {
         VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
         if (volume.isShareable()) {
@@ -612,6 +620,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (!volume.getVmInstanceUuid().equals(msg.getVmInstanceUuid())) {
             throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] must be attached to vm[uuid:%s]",
                     msg.getVolumeUuid(), msg.getVmInstanceUuid()));
+        }
+
+        if (isVmHasMemorySnapshotGroup(msg.getVmInstanceUuid())) {
+            throw new ApiMessageInterceptionException(argerr("the vm %s with memory snapshots do not support setting boot volume", msg.getVmInstanceUuid()));
         }
     }
 
