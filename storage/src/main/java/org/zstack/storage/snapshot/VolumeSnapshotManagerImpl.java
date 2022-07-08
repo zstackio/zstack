@@ -26,6 +26,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HypervisorFactory;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -45,6 +47,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
+import org.zstack.storage.snapshot.group.MemorySnapshotGroupReferenceFactory;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
@@ -102,6 +105,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private EventFacade evtf;
     @Autowired
     private CascadeFacade casf;
+
+    private Map<String, MemorySnapshotGroupReferenceFactory> referenceFactories = Collections.synchronizedMap(new HashMap<>());
+
 
     private void passThrough(VolumeSnapshotMessage msg) {
         VolumeSnapshotVO vo = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
@@ -1137,26 +1143,14 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private void handle(APIGetMemorySnapshotGroupReferenceMsg msg) {
         APIGetMemorySnapshotGroupReferenceReply reply = new APIGetMemorySnapshotGroupReferenceReply(msg.getResourceUuid());
 
-        if (!L3NetworkVO.class.getSimpleName().equals(msg.getResourceType())) {
+        MemorySnapshotGroupReferenceFactory factory = referenceFactories.get(msg.getResourceType());
+        if (factory != null) {
+            reply.setInventories(factory.getVolumeSnapshotGroupReferenceList(msg.getResourceUuid()));
             bus.reply(msg, reply);
             return;
         }
 
-        List<String> quotedArchiveGroupList = Q.New(VmInstanceDeviceAddressArchiveVO.class)
-                .select(VmInstanceDeviceAddressArchiveVO_.addressGroupUuid)
-                .eq(VmInstanceDeviceAddressArchiveVO_.metadataClass, ArchiveVmNicType.class.getCanonicalName())
-                .like(VmInstanceDeviceAddressArchiveVO_.metadata, String.format("%%\"l3NetworkUuid\":\"%s\"%%", msg.getResourceUuid())).listValues();
-
-        if (quotedArchiveGroupList.isEmpty()){
-            bus.reply(msg, reply);
-            return;
-        }
-
-        String sql = "select snapshotGroup from VolumeSnapshotGroupVO snapshotGroup, VmInstanceDeviceAddressGroupVO deviceAddressGroup where snapshotGroup.uuid = deviceAddressGroup.resourceUuid and deviceAddressGroup.uuid in :addressGroupUuids";
-        TypedQuery<VolumeSnapshotGroupVO> q = dbf.getEntityManager().createQuery(sql, VolumeSnapshotGroupVO.class);
-        q.setParameter("addressGroupUuids", quotedArchiveGroupList);
-        List<VolumeSnapshotGroupVO> result = q.getResultList();
-        reply.setInventories(VolumeSnapshotGroupInventory.valueOf(result));
+        reply.setError(operr("this resource type %s does not support querying memory snapshot references", msg.getResourceType()));
         bus.reply(msg, reply);
     }
 
@@ -1167,6 +1161,15 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     @Override
     public boolean start() {
+        for (MemorySnapshotGroupReferenceFactory f : pluginRgty.getExtensionList(MemorySnapshotGroupReferenceFactory.class)) {
+            MemorySnapshotGroupReferenceFactory old = referenceFactories.get(f.getReferenceResourceType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate MemorySnapshotGroupReferenceFactory[%s, %s] for type[%s]",
+                        old.getClass().getName(), f.getClass().getName(), f.getReferenceResourceType()));
+            }
+            referenceFactories.put(f.getReferenceResourceType(), f);
+        }
+
         pluginRgty.saveExtensionAsMap(CreateTemplateFromVolumeSnapshotExtensionPoint.class,
                 (Function<Object, CreateTemplateFromVolumeSnapshotExtensionPoint>) arg -> arg.createTemplateFromVolumeSnapshotPrimaryStorageType());
 
