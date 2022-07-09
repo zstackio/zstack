@@ -1,27 +1,19 @@
 package org.zstack.testlib
 
-import com.google.common.collect.ImmutableMap
+
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
-import org.zstack.header.Constants
-import org.zstack.header.host.HostNUMANode
-import org.zstack.header.storage.primary.PrimaryStorageVO
-import org.zstack.header.storage.primary.PrimaryStorageVO_
-import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
-import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
-import org.zstack.header.vm.VmInstanceState
-import org.zstack.header.vm.VmInstanceVO
-import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.core.db.SQLBatch
 import org.zstack.header.Constants
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
+import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
+import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.header.vm.devices.VirtualDeviceInfo
 import org.zstack.header.volume.VolumeInventory
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
@@ -162,8 +154,13 @@ class KVMSimulator implements Simulator {
             return rsp
         }
 
-        spec.simulator(KVMConstant.KVM_ATTACH_NIC_PATH) {
-            return new KVMAgentCommands.AttachNicResponse()
+        spec.simulator(KVMConstant.KVM_ATTACH_NIC_PATH) { HttpEntity<String> e ->
+            KVMAgentCommands.AttachNicCommand cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.AttachNicCommand.class)
+            KVMAgentCommands.AttachNicResponse rsp = new KVMAgentCommands.AttachNicResponse()
+            VirtualDeviceInfo deviceInfo = new VirtualDeviceInfo()
+            deviceInfo.setResourceUuid(cmd.nic.getUuid())
+            rsp.setVirtualDeviceInfoList(Arrays.asList(deviceInfo))
+            return rsp
         }
 
         spec.simulator(KVMConstant.KVM_DETACH_NIC_PATH) {

@@ -66,6 +66,15 @@ public class KVMExtensionEmitter implements Component {
         }
     }
 
+    public void afterReceiveStartVmResponse(final KVMHostInventory host, final VmInstanceSpec spec, final KVMAgentCommands.StartVmResponse rsp) {
+        CollectionUtils.safeForEach(startVmExts, new ForEachFunction<KVMStartVmExtensionPoint>() {
+            @Override
+            public void run(KVMStartVmExtensionPoint arg) {
+                arg.afterReceiveStartVmResponse(host, spec, rsp);
+            }
+        });
+    }
+
     public void startVmOnKvmSuccess(final KVMHostInventory host, final VmInstanceSpec spec) {
         CollectionUtils.safeForEach(startVmExts, new ForEachFunction<KVMStartVmExtensionPoint>() {
             @Override

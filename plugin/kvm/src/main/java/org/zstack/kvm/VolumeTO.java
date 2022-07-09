@@ -13,7 +13,7 @@ import org.zstack.header.volume.VolumeInventory;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class VolumeTO {
+public class VolumeTO extends BaseVirtualDeviceTO {
     public static final String FILE = "file";
     public static final String ISCSI = "iscsi";
     public static final String CEPH = "ceph";
@@ -75,6 +75,7 @@ public class VolumeTO {
 
     public static VolumeTO valueOf(VolumeInventory vol, KVMHostInventory host, String platform, boolean withExtension) {
         VolumeTO to = new VolumeTO();
+        to.setResourceUuid(vol.getUuid());
         to.setInstallPath(vol.getInstallPath());
         if (vol.getDeviceId() != null) {
             to.setDeviceId(vol.getDeviceId());

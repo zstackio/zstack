@@ -10,6 +10,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
+import org.zstack.header.vm.devices.VirtualDeviceInfo;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
@@ -60,6 +62,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
@@ -123,6 +126,8 @@ public class KVMHost extends HostBase implements Host {
     private VmNicManager nicManager;
     @Autowired
     private ClusterResourceConfigInitializer crci;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
 
     private KVMHostContext context;
 
@@ -2251,12 +2256,10 @@ public class KVMHost extends HostBase implements Host {
 
                 bus.reply(msg, reply);
 
-                if (ret.getPciAddress() != null) {
-                    SystemTagCreator creator = KVMSystemTags.VMNIC_PCI_ADDRESS.newSystemTagCreator(msg.getNicInventory().getUuid());
-                    creator.inherent = true;
-                    creator.recreate = true;
-                    creator.setTagByTokens(map(e(KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN, ret.getPciAddress().toString())));
-                    creator.create();
+                if (ret.getVirtualDeviceInfoList() != null && !ret.getVirtualDeviceInfoList().isEmpty()) {
+                    ret.getVirtualDeviceInfoList().forEach(info -> vidm.createOrUpdateVmDeviceAddress(msg.getNicInventory().getUuid(),
+                            info.getDeviceAddress(), msg.getNicInventory().getVmInstanceUuid(),
+                            JSONObjectUtil.toJsonString(msg.getNicInventory()), VmNicInventory.class.getCanonicalName()));
                 }
 
                 completion.done();
@@ -2393,6 +2396,7 @@ public class KVMHost extends HostBase implements Host {
                     extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError(), data);
                 } else {
                     extEmitter.afterAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
+                    reply.setVirtualDeviceInfoList(ret.getVirtualDeviceInfoList());
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -2737,10 +2741,12 @@ public class KVMHost extends HostBase implements Host {
 
         to.setvHostAddOn(vHostAddOn);
 
-        String pci = KVMSystemTags.VMNIC_PCI_ADDRESS.getTokenByResourceUuid(nic.getUuid(), KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN);
+        DeviceAddress pci = vidm.getVmDeviceAddress(nic.getUuid(), nic.getVmInstanceUuid());
         if (pci != null) {
-            to.setPci(PciAddressConfig.fromString(pci));
+            to.setPci(pci);
         }
+
+        to.setResourceUuid(nic.getUuid());
 
         return to;
     }
@@ -2871,6 +2877,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setPriorityConfigStruct(new PriorityConfigStruct(priorityVO, spec.getVmInventory().getUuid()));
 
         VolumeTO rootVolume = new VolumeTO();
+        rootVolume.setResourceUuid(spec.getDestRootVolume().getUuid());
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
@@ -2924,6 +2931,7 @@ public class KVMHost extends HostBase implements Host {
 
         for (VmInstanceSpec.CdRomSpec cdRomSpec : spec.getCdRomSpecs()) {
             CdRomTO cdRomTO = new CdRomTO();
+            cdRomTO.setResourceUuid(cdRomSpec.getUuid());
             cdRomTO.setPath(cdRomSpec.getInstallPath());
             cdRomTO.setImageUuid(cdRomSpec.getImageUuid());
             cdRomTO.setDeviceId(cdRomSpec.getDeviceId());
@@ -2958,6 +2966,11 @@ public class KVMHost extends HostBase implements Host {
             cmd.setHygonCpu(allGuestOsCharacter.get(vmArchPlatformRelease).getHygonCpu() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getHygonCpu());
         }
 
+        VirtualDeviceInfo memBalloon = new VirtualDeviceInfo();
+        memBalloon.setResourceUuid(vidm.MEM_BALLOON_UUID);
+        memBalloon.setDeviceAddress(vidm.getVmDeviceAddress(vidm.MEM_BALLOON_UUID, spec.getVmInventory().getUuid()));
+        cmd.setMemBalloon(memBalloon);
+
         addons(spec, cmd);
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
         extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
@@ -2969,6 +2982,8 @@ public class KVMHost extends HostBase implements Host {
             public void success(StartVmResponse ret) {
                 StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
                 if (ret.isSuccess()) {
+                    extEmitter.afterReceiveStartVmResponse(KVMHostInventory.valueOf(getSelf()), spec, ret);
+
                     String info = String.format("successfully start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s]",
                             spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
                             self.getUuid(), self.getManagementIp());
@@ -2997,7 +3012,7 @@ public class KVMHost extends HostBase implements Host {
                         SystemTagCreator creator = KVMSystemTags.VMNIC_PCI_ADDRESS.newSystemTagCreator(nic.getUuid());
                         creator.inherent = true;
                         creator.recreate = true;
-                        creator.setTagByTokens(map(e(KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN, vmNicInfo.getPciInfo().toString())));
+                        creator.setTagByTokens(map(e(KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN, vmNicInfo.getDeviceAddress().toString())));
                         creator.create();
                     }
                 }

@@ -120,6 +120,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="VirtualPciDeviceKvmExtension" class="org.zstack.kvm.VirtualPciDeviceKvmExtensionPoint">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="DeviceBootOrderOperator" class="org.zstack.kvm.DeviceBootOrderOperator">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>

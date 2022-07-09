@@ -1,7 +1,5 @@
 package org.zstack.storage.volume;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.OfferingUserConfigUtils;
@@ -17,9 +15,8 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
-import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageState;
@@ -28,22 +25,15 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
-import org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotMsg;
 import org.zstack.header.storage.snapshot.ConsistentType;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.storage.snapshot.group.*;
+import org.zstack.header.vm.*;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
 import org.zstack.header.volume.*;
-import org.zstack.storage.snapshot.group.VolumeSnapshotGroup;
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -107,6 +97,20 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         return msg;
     }
 
+    private boolean isDataVolumeHasMemorySnapshotGroup(String volumeUuid) {
+        return (Long) SQL.New("select count(*) from VolumeSnapshotGroupRefVO ref where ref.volumeType = :mVolumeType and ref.volumeSnapshotGroupUuid in (select vRef.volumeSnapshotGroupUuid from VolumeSnapshotGroupRefVO vRef where vRef.volumeType = :dVolumeType and vRef.volumeUuid = :volumeUuid)", Long.class)
+                .param("mVolumeType", VolumeType.Memory.toString())
+                .param("dVolumeType", VolumeType.Data.toString())
+                .param("volumeUuid", volumeUuid)
+                .find() > 0L;
+    }
+
+    private boolean isVmHasMemorySnapshotGroup(String vmUuid) {
+        return Q.New(VmInstanceDeviceAddressArchiveVO.class)
+                .eq(VmInstanceDeviceAddressArchiveVO_.vmInstanceUuid, vmUuid)
+                .isExists();
+    }
+
     private void validate(APICreateVolumeSnapshotMsg msg) {
         SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
         q.select(VolumeVO_.status, VolumeVO_.type);
@@ -151,6 +155,17 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         msg.setVmInstance(VmInstanceInventory.valueOf(vmvo));
         if (msg.isWithMemory()) {
             msg.setConsistentType(ConsistentType.Application);
+        }
+
+        for (MemorySnapshotValidatorExtensionPoint ext : pluginRgty.getExtensionList(MemorySnapshotValidatorExtensionPoint.class)) {
+            if (!msg.isWithMemory()) {
+                break;
+            }
+
+            ErrorCode errorCode = ext.checkVmWhereMemorySnapshotExistExternalDevices(msg.getVmInstance().getUuid());
+            if (errorCode != null) {
+                throw new ApiMessageInterceptionException(errorCode);
+            }
         }
     }
 
@@ -228,9 +243,18 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             throw new ApiMessageInterceptionException(operr("the volume[uuid:%s, name:%s, type:%s] can't detach it",
                             vol.getUuid(), vol.getName(), vol.getType()));
         }
+
+        if (isDataVolumeHasMemorySnapshotGroup(msg.getVolumeUuid())) {
+            throw new ApiMessageInterceptionException(operr("the vm where the data volume [%s] is located has a memory snapshot, can't detach",
+                    msg.getVolumeUuid()));
+        }
     }
 
     private void validate(APIAttachDataVolumeToVmMsg msg) {
+        if (isVmHasMemorySnapshotGroup(msg.getVmInstanceUuid())) {
+            throw new ApiMessageInterceptionException(operr("unable to attach volume %s to vmInstance %s with memory snapshot group",
+                    msg.getVolumeUuid(), msg.getVmInstanceUuid()));
+        }
 
         new SQLBatch(){
             @Override
@@ -393,6 +417,11 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         VolumeStatus status = t.get(1, VolumeStatus.class);
         if (status == VolumeStatus.Deleted) {
             throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is already in status of deleted", msg.getVolumeUuid()));
+        }
+
+        if (isDataVolumeHasMemorySnapshotGroup(msg.getVolumeUuid())) {
+            throw new ApiMessageInterceptionException(operr("the vm where the data volume [%s] is located has a memory snapshot, can't delete",
+                    msg.getVolumeUuid()));
         }
     }
 

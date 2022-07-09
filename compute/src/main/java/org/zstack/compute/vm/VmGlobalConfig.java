@@ -103,4 +103,7 @@ public class VmGlobalConfig {
 
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ENABLE_UEFI_SECURE_BOOT = new GlobalConfig(CATEGORY, "enable.uefi.secure.boot");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig ENABLE_VM_DEVICE_ADDRESS_RECORDING = new GlobalConfig(CATEGORY, "enable.vm.address.recording");
 }
