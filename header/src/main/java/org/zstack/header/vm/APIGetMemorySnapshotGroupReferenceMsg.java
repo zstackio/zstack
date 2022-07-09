@@ -19,7 +19,7 @@ import org.zstack.header.vo.ResourceVO;
         responseClass = APIGetMemorySnapshotGroupReferenceReply.class
 )
 public class APIGetMemorySnapshotGroupReferenceMsg extends APISyncCallMessage {
-    @APIParam(resourceType = L3NetworkVO.class)
+    @APIParam(resourceType = ResourceVO.class)
     private String resourceUuid;
 
     @APIParam

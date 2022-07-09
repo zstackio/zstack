@@ -39,4 +39,16 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="L3NetworkMemorySnapshotGroupReference" class="org.zstack.storage.snapshot.group.L3NetworkMemorySnapshotGroupReference">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.snapshot.group.MemorySnapshotGroupReferenceFactory" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VolumeMemorySnapshotGroupReferenceFactory" class="org.zstack.storage.snapshot.group.VolumeMemorySnapshotGroupReferenceFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.snapshot.group.MemorySnapshotGroupReferenceFactory"/>
+        </zstack:plugin>
+    </bean>
+
 </beans>
