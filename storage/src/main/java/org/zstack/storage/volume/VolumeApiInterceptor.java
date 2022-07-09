@@ -28,8 +28,8 @@ import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.storage.snapshot.ConsistentType;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO_;
 import org.zstack.header.volume.*;
 
 import javax.persistence.Tuple;
@@ -106,8 +106,16 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
     }
 
     private boolean isVmHasMemorySnapshotGroup(String vmUuid) {
-        return Q.New(VmInstanceDeviceAddressArchiveVO.class)
-                .eq(VmInstanceDeviceAddressArchiveVO_.vmInstanceUuid, vmUuid)
+        List<String> snapShotGroupUuids = Q.New(VmInstanceDeviceAddressGroupVO.class)
+                .select(VmInstanceDeviceAddressGroupVO_.resourceUuid)
+                .eq(VmInstanceDeviceAddressGroupVO_.vmInstanceUuid, vmUuid)
+                .listValues();
+        if (snapShotGroupUuids.isEmpty()) {
+            return false;
+        }
+        return Q.New(VolumeSnapshotGroupVO.class)
+                .eq(VolumeSnapshotGroupVO_.vmInstanceUuid, vmUuid)
+                .in(VolumeSnapshotGroupVO_.uuid, snapShotGroupUuids)
                 .isExists();
     }
 

@@ -30,7 +30,6 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
@@ -61,8 +60,6 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
     private ThreadFacade thdf;
     @Autowired
     private PluginRegistry pluginRgty;
-    @Autowired
-    private VmInstanceDeviceManager vidm;
 
     public VolumeSnapshotGroupBase(VolumeSnapshotGroupVO self) {
         this.self = self;
@@ -226,7 +223,6 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
         }).run(new WhileDoneCompletion(msg) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                vidm.deleteArchiveVmInstanceDeviceAddressGroup(msg.getGroupUuid());
                 bus.reply(msg, reply);
             }
         });
