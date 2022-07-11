@@ -55,6 +55,7 @@ import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
@@ -89,6 +90,8 @@ public class VolumeSnapshotTreeBase {
 
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
 
     static {
         allowedStatus.addState(VolumeSnapshotStatus.Ready,
@@ -1303,6 +1306,7 @@ public class VolumeSnapshotTreeBase {
 
             }
 
+            groupUuids.forEach(groupUuid -> vidm.deleteArchiveVmInstanceDeviceAddressGroup(groupUuid));
             dbf.removeByPrimaryKeys(groupUuids, VolumeSnapshotGroupVO.class);
         }
     }
