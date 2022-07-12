@@ -2640,6 +2640,21 @@ public class VolumeBase implements Volume {
                     }
                 });
             }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "sync-vm-status-for-memory-snapshot-group";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                VmCheckOwnStateMsg cmsg = new VmCheckOwnStateMsg();
+                cmsg.setVmInstanceUuid(msg.getVmInstance().getUuid());
+                bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, msg.getVmInstance().getUuid());
+                bus.send(cmsg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        trigger.next();
+                    }
+                });
+            }
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
