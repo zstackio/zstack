@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter.vyos;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.appliancevm.ApplianceVmType;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.network.service.lb.LoadBalancerConstants;
 import org.zstack.network.service.vip.VipGetUsedPortRangeExtensionPoint;
 import org.zstack.network.service.vip.VipVO;
@@ -39,13 +40,14 @@ public class VyosVmFactory extends VyosVmBaseFactory implements VipGetUsedPortRa
 
         VipVO vipVO = dbf.findByUuid(vipUuid, VipVO.class);
         /* system vip is the vip of public ip of vpc or vpc ha group */
+        boolean hasSnat = vipVO.getServicesTypes().contains(NetworkServiceType.SNAT.toString());
         if (vipVO.isSystem()) {
-            if (protocol.equalsIgnoreCase(LoadBalancerConstants.LB_PROTOCOL_UDP)){
+            if (protocol.equalsIgnoreCase(LoadBalancerConstants.LB_PROTOCOL_UDP) && hasSnat){
                 portRanges.add(new RangeSet.Range(VyosConstants.DNS_PORT, VyosConstants.DNS_PORT, true));
                 portRanges.add(new RangeSet.Range(VyosConstants.NTP_PORT, VyosConstants.NTP_PORT, true));
             }
 
-            if (protocol.equalsIgnoreCase(LoadBalancerConstants.LB_PROTOCOL_TCP)){
+            if (protocol.equalsIgnoreCase(LoadBalancerConstants.LB_PROTOCOL_TCP) && hasSnat){
                 portRanges.add(new RangeSet.Range(VyosConstants.DNS_PORT, VyosConstants.DNS_PORT, true));
 
                 int sshPort = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
