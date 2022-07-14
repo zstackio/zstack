@@ -99,7 +99,7 @@
 		<name>emulateHyperV</name>
 		<description>whether to emulate hyper-v</description>
 		<category>vm</category>
-		<defaultValue>true</defaultValue>
+		<defaultValue>false</defaultValue>
 		<type>java.lang.Boolean</type>
 	</config>
 
