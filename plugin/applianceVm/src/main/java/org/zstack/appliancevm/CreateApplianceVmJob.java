@@ -176,10 +176,6 @@ public class CreateApplianceVmJob implements Job {
                     }
                 }
 
-                // set VPC router's CPU mode to default NONE
-                ResourceConfig rc = rcf.getResourceConfig(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
-                rc.updateValue(avo.getUuid(), KVMConstant.CPU_MODE_NONE);
-
                 trigger.next();
             }
 
