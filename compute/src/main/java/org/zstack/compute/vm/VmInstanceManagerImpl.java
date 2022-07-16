@@ -111,7 +111,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         AfterChangeHostStatusExtensionPoint,
         VmInstanceMigrateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
-    private final Map<String, VmInstanceFactory> vmInstanceFactories = new ConcurrentHashMap<>();
     private List<String> createVmWorkFlowElements;
     private List<String> stopVmWorkFlowElements;
     private List<String> rebootVmWorkFlowElements;
@@ -138,9 +137,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private FlowChainBuilder resumeVmFlowBuilder;
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
     private Future<Void> expungeVmTask;
-    private Map<Class, VmInstanceBaseExtensionFactory> vmInstanceBaseExtensionFactories = new HashMap<>();
-    private Map<String, VmInstanceNicFactory> vmInstanceNicFactories = new HashMap<>();
-    private Map<String, VmNicQosConfigBackend> vmNicQosConfigMap = new HashMap<>();
 
     static {
         allowedMessageAfterSoftDeletion.add(VmInstanceDeletionMsg.class);
@@ -174,6 +170,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
     protected L3NetworkManager l3nm;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private VmFactoryManager vmFactoryManager;
 
     private List<VmInstanceExtensionManager> vmExtensionManagers = new ArrayList<>();
 
@@ -1331,52 +1329,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
         resumeVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(resumeVmWorkFlowElements).construct();
     }
 
-    private void populateExtensions() {
-        for (VmInstanceFactory ext : pluginRgty.getExtensionList(VmInstanceFactory.class)) {
-            VmInstanceFactory old = vmInstanceFactories.get(ext.getType().toString());
-            if (old != null) {
-                throw new CloudRuntimeException(String.format("duplicate VmInstanceFactory[%s, %s] for type[%s]",
-                        old.getClass().getName(), ext.getClass().getName(), ext.getType()));
-            }
-            vmInstanceFactories.put(ext.getType().toString(), ext);
-        }
-
-        for (VmInstanceBaseExtensionFactory ext : pluginRgty.getExtensionList(VmInstanceBaseExtensionFactory.class)) {
-            for (Class clz : ext.getMessageClasses()) {
-                VmInstanceBaseExtensionFactory old = vmInstanceBaseExtensionFactories.get(clz);
-                if (old != null) {
-                    throw new CloudRuntimeException(String.format("duplicate VmInstanceBaseExtensionFactory[%s, %s] for the" +
-                            " message[%s]", old.getClass(), ext.getClass(), clz));
-                }
-
-                vmInstanceBaseExtensionFactories.put(clz, ext);
-            }
-        }
-
-        for (VmInstanceNicFactory ext : pluginRgty.getExtensionList(VmInstanceNicFactory.class)) {
-            VmInstanceNicFactory old = vmInstanceNicFactories.get(ext.getType().toString());
-            if (old != null) {
-                throw new CloudRuntimeException(String.format("duplicate VmInstanceNicFactory[%s, %s] for type[%s]",
-                        old.getClass().getName(), ext.getClass().getName(), ext.getType()));
-            }
-            vmInstanceNicFactories.put(ext.getType().toString(), ext);
-        }
-
-        for (VmNicQosConfigBackend ext : pluginRgty.getExtensionList(VmNicQosConfigBackend.class)) {
-            VmNicQosConfigBackend old = vmNicQosConfigMap.get(ext.getVmInstanceType());
-            if (old != null) {
-                throw new CloudRuntimeException(String.format("can not add VmNicQosConfigBackend, because duplicate VmNicQosConfigBackend [%s, %s] for type[%s]",
-                        old.getClass().getName(), ext.getClass().getName(), ext.getVmInstanceType()));
-            }
-            vmNicQosConfigMap.put(ext.getVmInstanceType(), ext);
-        }
-    }
-
     @Override
     public boolean start() {
         try {
             createVmFlowChainBuilder();
-            populateExtensions();
             installSystemTagValidator();
             installGlobalConfigUpdater();
             vmExtensionManagers.addAll(pluginRgty.getExtensionList(VmInstanceExtensionManager.class));
@@ -1819,7 +1775,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     @Override
     public VmInstanceFactory getVmInstanceFactory(VmInstanceType type) {
-        VmInstanceFactory factory = vmInstanceFactories.get(type.toString());
+        VmInstanceFactory factory = vmFactoryManager.getVmInstanceFactory(type.toString());
         if (factory == null) {
             throw new CloudRuntimeException(String.format("No VmInstanceFactory of type[%s] found", type));
         }
@@ -1828,12 +1784,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     @Override
     public VmInstanceBaseExtensionFactory getVmInstanceBaseExtensionFactory(Message msg) {
-        return vmInstanceBaseExtensionFactories.get(msg.getClass());
+        return vmFactoryManager.getVmInstanceBaseExtensionFactory(msg.getClass());
     }
 
     @Override
     public VmInstanceNicFactory getVmInstanceNicFactory(VmNicType type) {
-        VmInstanceNicFactory factory = vmInstanceNicFactories.get(type.toString());
+        VmInstanceNicFactory factory = vmFactoryManager.getVmInstanceNicFactory(type.toString());
         if (factory == null) {
             throw new CloudRuntimeException(String.format("No VmInstanceNicFactory of type[%s] found", type));
         }
@@ -2305,6 +2261,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     @Override
     public VmNicQosConfigBackend getVmNicQosConfigBackend(String type) {
-        return vmNicQosConfigMap.get(type);
+        return vmFactoryManager.getVmNicQosConfigBackend(type);
     }
 }

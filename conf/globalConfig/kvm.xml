@@ -201,4 +201,12 @@
         <defaultValue>3</defaultValue>
         <type>java.lang.Long</type>
     </config>
+
+    <config>
+        <category>kvm</category>
+        <name>redirect.vm.log.to.file</name>
+        <description>Redirect vm console log to file</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>
