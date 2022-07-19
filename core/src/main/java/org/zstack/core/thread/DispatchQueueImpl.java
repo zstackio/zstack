@@ -645,8 +645,8 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                 }
 
                 private void executeSingleRunTasks(ErrorCode errorCode) {
-                    safeRun(runningTask, errorCode);
-                    synchronized (pendingQueue) {
+                    synchronized (singleFlightTasks) {
+                        safeRun(runningTask, errorCode);
                         pendingQueue.forEach(task -> safeRun((SingleFlightFuture) task, errorCode));
 
                         // all tasks done, reset counter
