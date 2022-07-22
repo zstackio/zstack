@@ -108,10 +108,6 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("could not set the default network, because l3 uuid[:%s] is not public network", msg.getDefaultRouteL3NetworkUuid()));
             }
         }
-
-        if (VirtualRouterGlobalProperty.ENABLE_MULTI_SNAT) {
-            throw new ApiMessageInterceptionException(operr("Could not update virtualRouter default public network, due to multi snat feature is enabled"));
-        }
     }
 
     private void validate(APIUpdateVirtualRouterOfferingMsg msg) {
