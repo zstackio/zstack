@@ -33,6 +33,15 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KvmApplianceVmFactory"
+          class="org.zstack.appliancevm.kvm.KvmApplianceVmFactory">
+
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.kvm.KVMSubTypeVmConfigurationFactory" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="ApplianceVmFactory"
         class="org.zstack.appliancevm.ApplianceVmFactory">
 

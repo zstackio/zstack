@@ -12,6 +12,12 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
+    <bean id="VyosKvmVmFactory" class="org.zstack.network.service.virtualrouter.vyos.VyosKvmVmFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.appliancevm.kvm.KvmApplianceVmSubTypeFactory" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="VyosVmFactory" class="org.zstack.network.service.virtualrouter.vyos.VyosVmFactory">
         <property name="vyosPostCreateFlows">
             <list>
@@ -150,6 +156,12 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.service.eip.EipBackend" />
             <zstack:extension interface="org.zstack.network.service.eip.GetEipAttachableL3UuidsForVmNicExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VyosKvmVmBaseFactory" class="org.zstack.network.service.virtualrouter.vyos.VyosKvmVmBaseFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.appliancevm.kvm.KvmApplianceVmSubTypeFactory" />
         </zstack:plugin>
     </bean>
 

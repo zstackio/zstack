@@ -167,4 +167,11 @@
             <zstack:extension interface="org.zstack.core.cloudbus.MarshalReplyMessageExtensionPoint"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="KVMVmConfigurationFactory" class="org.zstack.kvm.KVMVmConfigurationFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.HypervisorBasedVmConfigurationFactory"/>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
 </beans>
