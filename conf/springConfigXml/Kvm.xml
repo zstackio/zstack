@@ -165,7 +165,7 @@
 
     <bean id="KVMVmConfigurationFactory" class="org.zstack.kvm.KVMVmConfigurationFactory">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.vm.VmInstanceConfigurationFactory"/>
+            <zstack:extension interface="org.zstack.header.vm.HypervisorBasedVmConfigurationFactory"/>
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
