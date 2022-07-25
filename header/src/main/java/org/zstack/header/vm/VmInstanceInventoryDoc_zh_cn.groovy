@@ -7,6 +7,7 @@ import java.sql.Timestamp
 import java.sql.Timestamp
 import org.zstack.header.vm.VmNicInventory
 import org.zstack.header.volume.VolumeInventory
+import org.zstack.header.vm.cdrom.VmCdRomInventory
 
 doc {
 
@@ -77,6 +78,12 @@ doc {
 		desc ""
 		type "String"
 		since "0.6"
+	}
+	field {
+		name "architecture"
+		desc "架构类型"
+		type "String"
+		since "4.1.1"
 	}
 	field {
 		name "defaultL3NetworkUuid"
@@ -153,5 +160,19 @@ doc {
 		type "List"
 		since "0.6"
 		clz VolumeInventory.class
+	}
+	ref {
+		name "vmCdRoms"
+		path "org.zstack.header.vm.VmInstanceInventory.vmCdRoms"
+		desc ""
+		type "List"
+		since ""
+		clz VmCdRomInventory.class
+	}
+	field {
+		name "guestOsType"
+		desc "操作系统类型"
+		type "String"
+		since "4.1.2"
 	}
 }
