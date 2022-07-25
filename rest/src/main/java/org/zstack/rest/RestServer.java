@@ -18,6 +18,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
 import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.log.LogUtils;
 import org.zstack.core.retry.Retry;
@@ -874,6 +875,13 @@ public class RestServer implements Component, CloudBusEventListener {
             if (jobUuid.length() != 32) {
                 throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid header[%s], it" +
                         " must be a UUID with '-' stripped", RestConstants.HEADER_JOB_UUID));
+            }
+
+            if (Arrays.asList(HttpMethod.POST.toString(), HttpMethod.PUT.toString(), HttpMethod.DELETE.toString()).contains(
+                    req.getMethod())) {
+                if (Q.New(AsyncRestVO.class).eq(AsyncRestVO_.uuid, jobUuid).isExists()) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Duplicate job uuid[%s]", jobUuid));
+                }
             }
 
             msg.setId(jobUuid);
