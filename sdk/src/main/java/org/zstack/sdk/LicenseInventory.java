@@ -100,6 +100,14 @@ public class LicenseInventory  {
         return this.expired;
     }
 
+    public java.lang.String source;
+    public void setSource(java.lang.String source) {
+        this.source = source;
+    }
+    public java.lang.String getSource() {
+        return this.source;
+    }
+
     public java.lang.String licenseRequest;
     public void setLicenseRequest(java.lang.String licenseRequest) {
         this.licenseRequest = licenseRequest;
