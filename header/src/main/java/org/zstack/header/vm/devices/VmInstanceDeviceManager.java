@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface VmInstanceDeviceManager {
     String MEM_BALLOON_UUID = "4780bf6d2fa65700f22e36c27e8ff05c";
-
+    
     /**
      * create or update vm device address,
      * if no VmInstanceDeviceAddressVO with current resource, a new
@@ -58,6 +58,15 @@ public interface VmInstanceDeviceManager {
      * @return ErrorCode if success it is null else not
      */
     ErrorCode deleteAllDeviceAddressesByVm(String vmInstanceUuid);
+
+    /**
+     * modify virtio ,pci address is modify, need vm clean related devices
+     *
+     * @param vmInstanceUuid vm uuid will be used to find related device address
+     * @return ErrorCode if success it is null else not
+     */
+
+    ErrorCode deleteDeviceAddressesByVmModifyVirtIO(String vmInstanceUuid);
 
     /**
      * archive current device address

@@ -34,6 +34,7 @@ public interface KVMConstant {
     String KVM_DELETE_VDPA_PATH = "/network/ovsdpdk/deletevdpa";
     String KVM_ATTACH_ISO_PATH = "/vm/iso/attach";
     String KVM_DETACH_ISO_PATH = "/vm/iso/detach";
+    String KVM_SYNC_VM_DEVICEINFO_PATH = "/sync/vm/deviceinfo";
     String KVM_START_VM_PATH = "/vm/start";
     String KVM_STOP_VM_PATH = "/vm/stop";
     String KVM_PAUSE_VM_PATH = "/vm/pause";

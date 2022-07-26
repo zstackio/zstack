@@ -2,6 +2,9 @@ package org.zstack.kvm;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
@@ -9,7 +12,7 @@ import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceSpec;
 
-public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoint {
+public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoint, KVMSyncVmDeviceInfoExtensionPoint {
     @Autowired
     private VmInstanceDeviceManager vidManager;
 
@@ -37,7 +40,7 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
     }
 
     @Override
-    public void afterReceiveStartVmResponse(KVMHostInventory host, VmInstanceSpec spec, KVMAgentCommands.StartVmResponse rsp) {
+    public void afterReceiveVmDeviceInfoResponse(VmInstanceInventory vm, KVMAgentCommands.VmDevicesInfoResponse rsp) {
         if (rsp.getVirtualDeviceInfoList() == null) {
             return;
         }
@@ -46,7 +49,7 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
         // check its usage when create snapshot or backup
         rsp.getVirtualDeviceInfoList().forEach(info -> {
             if (info.getResourceUuid() != null) {
-                vidManager.createOrUpdateVmDeviceAddress(info, spec.getVmInventory().getUuid());
+                vidManager.createOrUpdateVmDeviceAddress(info, vm.getUuid());
             }
         });
 
@@ -55,7 +58,7 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
         }
 
         rsp.getNicInfos().forEach(info -> {
-            VmNicInventory nic = spec.getDestNics()
+            VmNicInventory nic = vm.getVmNics()
                     .stream()
                     .filter(vmNicInventory -> vmNicInventory.getMac().equals(info.getMacAddress()))
                     .findFirst()
@@ -64,11 +67,12 @@ public class VirtualPciDeviceKvmExtensionPoint implements KVMStartVmExtensionPoi
                 return;
             }
 
-            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(nic.getUuid(), info.getDeviceAddress()), spec.getVmInventory().getUuid());
+            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(nic.getUuid(), info.getDeviceAddress()), vm.getUuid());
         });
 
         if (!StringUtils.isEmpty(rsp.getMemBalloonInfo().getDeviceAddress().toString())) {
-            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(vidManager.MEM_BALLOON_UUID, DeviceAddress.fromString(rsp.getMemBalloonInfo().getDeviceAddress().toString())), spec.getVmInventory().getUuid());
+            vidManager.createOrUpdateVmDeviceAddress(new VirtualDeviceInfo(vidManager.MEM_BALLOON_UUID,
+                    DeviceAddress.fromString(rsp.getMemBalloonInfo().getDeviceAddress().toString())), vm.getUuid());
         }
     }
 
