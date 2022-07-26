@@ -176,6 +176,7 @@ public class KVMHost extends HostBase implements Host {
     private String startColoSyncPath;
     private String registerPrimaryVmHeartbeatPath;
     private String getHostNumaPath;
+    private String syncVmDeviceInfo;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
@@ -361,6 +362,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_NUMA_PATH);
         getHostNumaPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_SYNC_VM_DEVICEINFO_PATH);
+        syncVmDeviceInfo = ub.build().toString();
 
     }
 
@@ -560,9 +565,39 @@ public class KVMHost extends HostBase implements Host {
             handle((CheckFileOnHostMsg) msg);
         } else if (msg instanceof GetHostNumaTopologyMsg) {
             handle((GetHostNumaTopologyMsg) msg);
+        } else if (msg instanceof SyncVmDeviceInfoMsg) {
+            handle((SyncVmDeviceInfoMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(SyncVmDeviceInfoMsg msg) {
+        SyncVmDeviceInfoReply reply = new SyncVmDeviceInfoReply();
+
+        SyncVmDeviceInfoCmd cmd = new SyncVmDeviceInfoCmd();
+        cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
+        new Http<>(syncVmDeviceInfo, cmd, SyncVmDeviceInfoResponse.class)
+                .call(msg.getHostUuid(), new ReturnValueCompletion<SyncVmDeviceInfoResponse>(msg) {
+            @Override
+            public void success(SyncVmDeviceInfoResponse ret) {
+                if (!ret.isSuccess()) {
+                    ErrorCode err = Platform.err(SysErrors.OPERATION_ERROR, ret.getError());
+                    reply.setError(err);
+                }
+
+                extEmitter.afterReceiveSyncVmDeviceInfoRespoinse(VmInstanceInventory
+                        .valueOf(dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class)), ret);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+
     }
 
     private void handle(GetHostNumaTopologyMsg msg) {
@@ -2964,7 +2999,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(StartVmResponse ret) {
                 StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
                 if (ret.isSuccess()) {
-                    extEmitter.afterReceiveStartVmResponse(KVMHostInventory.valueOf(getSelf()), spec, ret);
+                    extEmitter.afterReceiveSyncVmDeviceInfoRespoinse(spec.getVmInventory(), ret);
 
                     String info = String.format("successfully start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s]",
                             spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
