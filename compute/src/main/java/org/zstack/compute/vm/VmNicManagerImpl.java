@@ -12,6 +12,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Component;
@@ -20,17 +21,23 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
+import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.storage.snapshot.group.MemorySnapshotGroupExtensionPoint;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
+import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
+import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO_;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -41,6 +48,7 @@ import javax.persistence.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -250,11 +258,13 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
             @Override
             public void tagCreated(SystemTagInventory tag) {
                 resetVmNicDriverType(tag.getResourceUuid(), defaultPVNicDriver);
+                vidm.deleteDeviceAddressesByVmModifyVirtIO(tag.getResourceUuid());
             }
 
             @Override
             public void tagDeleted(SystemTagInventory tag) {
                 resetVmNicDriverType(tag.getResourceUuid(), defaultNicDriver);
+                vidm.deleteDeviceAddressesByVmModifyVirtIO(tag.getResourceUuid());
             }
 
             @Override
@@ -262,6 +272,22 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
 
             }
         });
+
+        VmSystemTags.VIRTIO.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                VmInstanceState state = Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.uuid, resourceUuid)
+                        .select(VmInstanceVO_.state)
+                        .findValue();
+
+                if (state == VmInstanceState.Running || state == VmInstanceState.Unknown) {
+                    throw new OperationFailureException(argerr("vm current state[%s], " +
+                            "modify virtio requires the vm state[%s]", state, VmInstanceState.Stopped));
+                }
+            }
+        });
+
         return true;
     }
 
