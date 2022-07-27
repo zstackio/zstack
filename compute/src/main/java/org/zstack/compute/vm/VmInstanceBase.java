@@ -5422,11 +5422,71 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        VmInstanceInventory pinv = getSelfInventory();
-        for (VmPreMigrationExtensionPoint ext : pluginRgty.getExtensionList(VmPreMigrationExtensionPoint.class)) {
-            ext.preVmMigration(pinv);
-        }
+        VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
 
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("migrate-vm-%s", self.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "call-pre-vm-migration-extension";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                ErrorCodeList errorCodeList = new ErrorCodeList();
+                new While<>(pluginRgty.getExtensionList(VmPreMigrationExtensionPoint.class))
+                    .each((extension, whileCompletion) -> extension.preVmMigration(inv, new Completion(whileCompletion) {
+                        @Override
+                        public void success() {
+                            whileCompletion.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            errorCodeList.getCauses().add(errorCode);
+                            whileCompletion.allDone();
+                        }
+                    }))
+                    .run(new NoErrorCompletion() {
+                        @Override
+                        public void done() {
+                            if (!errorCodeList.getCauses().isEmpty()) {
+                                trigger.fail(errorCodeList);
+                                return;
+                            }
+                            trigger.next();
+                        }
+                    });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = String.format("migrate-vm-%s", self.getUuid());
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                doMigrateVm(msg, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        });
+
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    private void doMigrateVm(final MigrateVmMessage msg, final Completion completion) {
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Migrate);
 
@@ -5439,12 +5499,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         setFlowMarshaller(chain);
 
         String lastHostUuid = self.getHostUuid();
-        chain.setName(String.format("migrate-vm-%s", self.getUuid()));
+        chain.setName(String.format("do-migrate-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(final Map data) {
-                VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
                 HostInventory host = spec.getDestHost();
                 self = changeVmStateInDb(VmInstanceStateEvent.running, ()-> {
                     self.setZoneUuid(host.getZoneUuid());
