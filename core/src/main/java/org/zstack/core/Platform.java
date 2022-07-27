@@ -1139,4 +1139,12 @@ public class Platform {
     public static Map<String, Double> getErrorCounter() {
         return errorCounter;
     }
+
+    public static boolean isSimulatorOn() {
+        return StartModeConstants.SIMULATOR_MODE.equals(CoreGlobalProperty.START_MODE) || CoreGlobalProperty.SIMULATORS_ON;
+    }
+
+    public static boolean isMinimalOn() {
+        return StartModeConstants.MINIMAL_MODE.equals(CoreGlobalProperty.START_MODE);
+    }
 }
