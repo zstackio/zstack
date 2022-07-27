@@ -2368,20 +2368,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         return snatInfo;
     }
 
-    private void changeVirtualRouterSnatData(String vrUuid, String newL3Uuid, String oldL3Uuid){
-        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuid).find();
-        if (vrVO == null) {
-            return ;
-        }
-        ApplianceVmSubTypeFactory subTypeFactory = apvmFactory.getApplianceVmSubTypeFactory(vrVO.getApplianceVmType());
-        ApplianceVm app = subTypeFactory.getSubApplianceVm(vrVO);
-        app.detachNetworkService(vrUuid, NetworkServiceType.SNAT.toString(), oldL3Uuid);
-        app.attachNetworkService(vrUuid, NetworkServiceType.SNAT.toString(), newL3Uuid);
-        String msg = String.format(
-                "virtual router[uuid:%s] successfully change snat for old default public l3[uuid:%s] to new default public l3[uuid:%s]",
-                vrUuid, oldL3Uuid, newL3Uuid);
-        logger.warn(msg);
-    }
 
     @Transactional
     protected void changeVirtualRouterNicMetaData(String vrUuid, String newL3Uuid, String oldL3Uuid) {
@@ -2455,7 +2441,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                             vrUuid, ret.getError());
                     completion.fail(err);
                 } else {
-                    changeVirtualRouterSnatData(vrUuid, newL3Uuid, oldL3Uuid);
                     changeVirtualRouterNicMetaData(vrUuid, newL3Uuid, oldL3Uuid);
                     completion.success();
                 }
