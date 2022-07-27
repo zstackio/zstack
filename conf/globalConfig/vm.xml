@@ -72,6 +72,14 @@
 	</config>
 
 	<config>
+		<name>soundType</name>
+		<description>sound type for VM. "ich6" supply basic sound typen for VM.  Options:[ich6, ich9, ac97]</description>
+		<category>vm</category>
+		<defaultValue>ich6</defaultValue>
+		<type>java.lang.String</type>
+	</config>
+
+	<config>
 		<category>vm</category>
 		<name>numa</name>
 		<description>whether to use numa structure</description>
