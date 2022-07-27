@@ -79,6 +79,8 @@ public class CoreGlobalProperty {
     public static String MN_VIP;
     @GlobalProperty(name = "simulatorsOn", defaultValue = "false")
     public static boolean SIMULATORS_ON;
+    @GlobalProperty(name = "startMode", defaultValue = "")
+    public static String START_MODE;
     @GlobalProperty(name = "updatePkgWhenConnect", defaultValue = "true")
     public static boolean UPDATE_PKG_WHEN_CONNECT;
     @GlobalProperty(name = "syncNodeTime", defaultValue = "true")

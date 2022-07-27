@@ -7,7 +7,7 @@ import org.zstack.utils.ShellUtils
  */
 abstract class StabilityTest extends Test implements Case{
 
-    private static final String targetSubCaseParamKey = "cases"
+    public static final String targetSubCaseParamKey = "cases"
     private static final String subCaseExecutionTimesKey = "times"
 
     private List<Case> targetSubCaseList

@@ -4,7 +4,10 @@ import org.junit.ClassRule
 import org.zapodot.junit.ldap.EmbeddedLdapRule
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
 import org.zstack.test.integration.ZStackTest
+import org.zstack.testlib.Case
+import org.zstack.testlib.PreStabilityTest
 import org.zstack.testlib.SpringSpec
+import org.zstack.testlib.StabilityTest
 import org.zstack.testlib.Test
 
 /**
@@ -28,7 +31,10 @@ class TestCaseStabilityTest extends Test {
 
     @Override
     void setup() {
-        useSpring(springSpec)
+        String targetCaseList = System.getProperty(StabilityTest.targetSubCaseParamKey)
+        String[] caseClassNameList = targetCaseList.split(",")
+        PreStabilityTest c = Class.forName(caseClassNameList[0]).newInstance() as PreStabilityTest
+        setupByMode(c)
     }
 
     @Override
