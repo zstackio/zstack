@@ -25,7 +25,7 @@ public class VmGlobalConfig {
     public static GlobalConfig VM_EXPUNGE_INTERVAL = new GlobalConfig(CATEGORY, "expungeInterval");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig VM_CLEAN_TRAFFIC = new GlobalConfig(CATEGORY, "cleanTraffic");
-    @GlobalConfigValidation(validValues = {"cirrus","vga", "qxl"})
+    @GlobalConfigValidation(validValues = {"cirrus","vga", "qxl", "virtio"})
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_VIDEO_TYPE = new GlobalConfig(CATEGORY, "videoType");
     @GlobalConfigValidation(validValues = {"ich6","ich9", "ac97"})
