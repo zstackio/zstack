@@ -26,6 +26,8 @@ public aspect SetThreadContextAspect {
 
         if (tc.taskContext != null) {
             TaskContext.setTaskContext(tc.taskContext);
+        } else {
+            TaskContext.removeTaskContext();
         }
     }
 

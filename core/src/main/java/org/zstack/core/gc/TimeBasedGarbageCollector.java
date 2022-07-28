@@ -59,7 +59,6 @@ public abstract class TimeBasedGarbageCollector extends GarbageCollector {
         NEXT_TIME_UNIT = unit;
         NEXT_TIME = next;
 
-        cleanThreadContext();
         saveToDb();
         setupTimer();
 
