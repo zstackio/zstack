@@ -1,5 +1,7 @@
 package org.zstack.identity;
 
+import com.google.common.collect.Interner;
+import com.google.common.collect.Interners;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -40,6 +42,7 @@ public class Session implements Component {
     private EventFacade evtf;
 
     private Future<Void> expiredSessionCollector;
+    private static Interner<String> sessionLock = Interners.newWeakInterner();
 
     private static Map<String, SessionInventory> sessions = new ConcurrentHashMap<>();
 
@@ -96,6 +99,12 @@ public class Session implements Component {
     }
 
     public static SessionInventory renewSession(String uuid, Long extendPeriod) {
+        synchronized (sessionLock.intern(uuid)) {
+            return doRenewSession(uuid, extendPeriod);
+        }
+    }
+
+    public static SessionInventory doRenewSession(String uuid, Long extendPeriod) {
         errorOnTimeout(uuid);
 
         if (extendPeriod == null) {
@@ -149,6 +158,12 @@ public class Session implements Component {
     }
 
     public static void logout(String uuid) {
+        synchronized (sessionLock.intern(uuid)) {
+            deleteSession(uuid);
+        }
+    }
+    
+    private static void deleteSession(String uuid) {
         new SQLBatch() {
             @Override
             protected void scripts() {
@@ -234,8 +249,12 @@ public class Session implements Component {
     }
 
     public static SessionInventory getSession(String uuid) {
-        SessionInventory s = sessions.get(uuid);
-        if (s == null) {
+        synchronized (sessionLock.intern(uuid)) {
+            SessionInventory s = sessions.get(uuid);
+            if (s != null) {
+                return s;
+            }
+
             SessionVO vo = Q.New(SessionVO.class).eq(SessionVO_.uuid, uuid).find();
             if (vo == null) {
                 return null;
@@ -243,9 +262,8 @@ public class Session implements Component {
 
             s = SessionInventory.valueOf(vo);
             sessions.put(s.getUuid(), s);
+            return s;
         }
-
-        return s;
     }
 
     @Override
