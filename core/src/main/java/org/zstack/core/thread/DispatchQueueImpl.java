@@ -1,7 +1,6 @@
 package org.zstack.core.thread;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -576,13 +575,6 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                         removeSubPending(cf.getTask().getDeduplicateString(), false);
                     }
 
-                    // recover task context from backup
-                    if (cf.getTask().taskContext != null) {
-                        TaskContext.setTaskContext(cf.getTask().taskContext);
-                    } else {
-                        TaskContext.removeTaskContext();
-                    }
-
                     cf.run(() -> {
                         synchronized (runningQueue) {
                             Optional.ofNullable(getApiId(cf))
@@ -670,11 +662,6 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     @Override
     public Future<Void> chainSubmit(ChainTask task) {
-        // backup task context for each chain task
-        if (TaskContext.getTaskContext() != null) {
-            task.taskContext = new HashMap<>(TaskContext.getTaskContext());
-        }
-
         return doChainSyncSubmit(task);
     }
 

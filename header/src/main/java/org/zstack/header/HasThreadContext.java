@@ -9,4 +9,8 @@ public interface HasThreadContext {
     default Map<String, String> getThreadContext() {
         return null;
     }
+
+    default Map<Object, Object> getTaskContext() {
+        return null;
+    }
 }
