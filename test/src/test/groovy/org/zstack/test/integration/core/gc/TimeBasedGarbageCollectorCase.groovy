@@ -11,6 +11,7 @@ import org.zstack.core.gc.GarbageCollectorManagerImpl
 import org.zstack.core.gc.TimeBasedGarbageCollector
 import org.zstack.sdk.GarbageCollectorInventory
 import org.zstack.testlib.SubCase
+import org.zstack.utils.TaskContext
 
 import java.util.concurrent.TimeUnit
 import static org.zstack.core.Platform.operr
@@ -334,6 +335,41 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         assert inv.status == GCStatus.Idle.toString()
     }
 
+    void testTimeBasedGCJobContext() {
+        int count = 0
+
+        TaskContext.putTaskContextItem("test", "test trigger")
+        def contextInGC1 = null
+        def contextInGC2 = null
+        def gc = new TimeBasedGC1()
+        gc.NAME = "testTimeBasedGCJobContext"
+        gc.triggerNowLogic = {
+            if (count == 0) {
+                contextInGC1 = TaskContext.getTaskContextItem("test")
+                TaskContext.putTaskContextItem("test", "test trigger")
+                count ++
+                return Behavior.FAILURE
+            } else if (count == 1) {
+                contextInGC2 = TaskContext.getTaskContextItem("test")
+                count ++
+                return Behavior.FAILURE
+            }
+
+            count ++
+            return Behavior.SUCCESS
+        }
+        gc.submit(500, TimeUnit.MILLISECONDS)
+
+        retryInSecs {
+            assert count == 3
+            assert dbFindByUuid(gc.uuid, GarbageCollectorVO.class).status == GCStatus.Done
+            assert contextInGC1 == null
+            assert contextInGC2 == null
+        }
+
+        TaskContext.removeTaskContext()
+    }
+
     @Override
     void test() {
         dbf = bean(DatabaseFacade.class)
@@ -350,6 +386,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
         testGCInDBTriggeredByApiWithMgmtUuidNull()
         testGCInDBTriggeredByApiWithMgmtUuidNotNull()
         testQueryGCJob()
+        testTimeBasedGCJobContext()
     }
 
     @Override

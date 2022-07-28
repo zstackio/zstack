@@ -49,7 +49,7 @@ public class ScheduledThreadPoolExecutorExt extends ScheduledThreadPoolExecutor 
             try {
                 hook.beforeExecute(t, r);
             } catch (Exception e) {
-                _logger.warn("Unhandle exception happend during executing ThreadAroundHook: " + debugHook.getClass().getCanonicalName(), e);
+                _logger.warn("Unhandled exception happened during executing ThreadAroundHook: " + debugHook.getClass().getCanonicalName(), e);
             }
         }
     }
@@ -70,7 +70,7 @@ public class ScheduledThreadPoolExecutorExt extends ScheduledThreadPoolExecutor 
             try {
                 hook.afterExecute(r, t);
             } catch (Exception e) {
-                _logger.warn("Unhandle exception happend during executing ThreadAroundHook: " + debugHook.getClass().getCanonicalName(), e);
+                _logger.warn("Unhandled exception happened during executing ThreadAroundHook: " + debugHook.getClass().getCanonicalName(), e);
             }
         }
     }
