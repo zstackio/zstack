@@ -13,6 +13,7 @@ import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.header.vm.devices.DeviceAddress
 import org.zstack.header.vm.devices.VirtualDeviceInfo
 import org.zstack.header.volume.VolumeInventory
 import org.zstack.header.volume.VolumeVO
@@ -362,10 +363,36 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.AgentResponse()
         }
 
+        spec.simulator(KVMConstant.KVM_SYNC_VM_DEVICEINFO_PATH) { HttpEntity<String> e ->
+            KVMAgentCommands.SyncVmDeviceInfoCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.SyncVmDeviceInfoCmd.class)
+            return new KVMAgentCommands.SyncVmDeviceInfoResponse()
+        }
+
         spec.simulator(KVMConstant.KVM_START_VM_PATH) { HttpEntity<String> e ->
             KVMAgentCommands.StartVmCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
             assert new HashSet<>(cmd.dataVolumes.deviceId).size() == cmd.dataVolumes.size()
-            return new KVMAgentCommands.StartVmResponse()
+            KVMAgentCommands.StartVmResponse  rsp = new KVMAgentCommands.StartVmResponse()
+            rsp.virtualDeviceInfoList = []
+            List<VolumeTO> pciInfo = new ArrayList<VolumeTO>()
+            pciInfo.add(cmd.rootVolume)
+            pciInfo.addAll(cmd.dataVolumes)
+
+            Integer counter = 0
+            pciInfo.each { to ->
+                VirtualDeviceInfo info = new VirtualDeviceInfo()
+                info.resourceUuid = to.volumeUuid
+                info.deviceAddress = new DeviceAddress()
+                info.deviceAddress.domain = "0000"
+                info.deviceAddress.bus = "00"
+                info.deviceAddress.slot = Integer.toHexString(counter)
+                info.deviceAddress.function = "0"
+
+                counter++
+
+                rsp.virtualDeviceInfoList.add(info)
+            }
+
+            return rsp
         }
 
         spec.simulator(KVMConstant.KVM_STOP_VM_PATH) {

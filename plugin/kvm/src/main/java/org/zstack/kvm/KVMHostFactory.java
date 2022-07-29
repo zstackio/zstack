@@ -6,6 +6,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.vm.CrashStrategy;
 import org.zstack.compute.vm.VmGlobalConfig;
+import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagLifeCycleListener;
+import org.zstack.header.tag.SystemTagValidator;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO_;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
@@ -122,6 +128,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private ThreadFacade thdf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
 
     private Future<Void> checkSocketChannelTimeoutThread;
 
@@ -443,7 +451,45 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
         });
 
+        KVMSystemTags.VOLUME_VIRTIO_SCSI.installLifeCycleListener(new SystemTagLifeCycleListener() {
+            @Override
+            public void tagCreated(SystemTagInventory tag) {
+                cleanDeviceAddress(tag);
+            }
+
+            @Override
+            public void tagDeleted(SystemTagInventory tag) {
+                cleanDeviceAddress(tag);
+            }
+
+            @Override
+            public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+
+            }
+        });
+
+        KVMSystemTags.VOLUME_VIRTIO_SCSI.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                VmInstanceVO vm = SQL.New("select vm from VmInstanceVO vm, VolumeVO volume " +
+                        "where vm.uuid = volume.vmInstanceUuid and volume.uuid = :uuid", VmInstanceVO.class)
+                        .param("uuid", resourceUuid)
+                        .find();
+
+                if (vm != null && (vm.getState() == VmInstanceState.Running || vm.getState() == VmInstanceState.Unknown)) {
+                    throw new OperationFailureException(argerr("vm current state[%s], " +
+                            "modify virtioSCSI requires the vm state[%s]", vm.getState(), VmInstanceState.Stopped));
+                }
+
+            }
+        });
+
         return true;
+    }
+
+    private void cleanDeviceAddress(SystemTagInventory tag) {
+        VolumeVO volume = dbf.findByUuid(tag.getResourceUuid(), VolumeVO.class);
+        vidm.deleteVmDeviceAddress(volume.getUuid(), volume.getVmInstanceUuid());
     }
 
     private void configKVMDeviceType() {
