@@ -28,6 +28,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageConstant;
@@ -2606,6 +2607,27 @@ public class VolumeBase implements Volume {
                 });
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = "sync-vm-devices-address-info";
+            @Override
+            public boolean skip(Map data) {
+                return msg.getConsistentType() != ConsistentType.Application;
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                syncVmDevicesAddressInfo(msg.getVmInstance(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
             String __name__ = "archive-vm-devices-info-for-memory-snapshot-group";
 
             @Override
@@ -2666,6 +2688,24 @@ public class VolumeBase implements Volume {
                 completion.success((VolumeSnapshotGroupInventory) data.get(SNAPSHOT_GROUP_INV));
             }
         }).start();
+    }
+
+    private void syncVmDevicesAddressInfo(VmInstanceInventory vm, Completion completion) {
+        SyncVmDeviceInfoMsg msg = new SyncVmDeviceInfoMsg();
+        msg.setVmInstanceUuid(vm.getUuid());
+        msg.setHostUuid(vm.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(msg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+                completion.success();
+            }
+        });
+
     }
 
     private void createSnapshotGroup(CreateVolumeSnapshotGroupMessage msg, ReturnValueCompletion<VolumeSnapshotGroupInventory> completion) {

@@ -2128,7 +2128,10 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class StartVmResponse extends AgentResponse {
+    public static class StartVmResponse extends VmDevicesInfoResponse {
+    }
+
+    public static class VmDevicesInfoResponse extends AgentResponse {
         private List<VmNicInfo> nicInfos;
         private List<VirtualDeviceInfo> virtualDeviceInfoList;
         private VirtualDeviceInfo memBalloonInfo;
@@ -2156,6 +2159,21 @@ public class KVMAgentCommands {
         public void setVirtualDeviceInfoList(List<VirtualDeviceInfo> virtualDeviceInfoList) {
             this.virtualDeviceInfoList = virtualDeviceInfoList;
         }
+    }
+
+    public static class SyncVmDeviceInfoCmd extends AgentCommand {
+        private String vmInstanceUuid;
+
+        public String getVmInstanceUuid() {
+            return vmInstanceUuid;
+        }
+
+        public void setVmInstanceUuid(String vmInstanceUuid) {
+            this.vmInstanceUuid = vmInstanceUuid;
+        }
+    }
+
+    public static class SyncVmDeviceInfoResponse extends VmDevicesInfoResponse {
     }
 
     public static class VmNicInfo {
