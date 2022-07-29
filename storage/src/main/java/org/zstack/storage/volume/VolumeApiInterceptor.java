@@ -28,8 +28,7 @@ import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.storage.snapshot.ConsistentType;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO_;
+import org.zstack.header.vm.devices.*;
 import org.zstack.header.volume.*;
 
 import javax.persistence.Tuple;

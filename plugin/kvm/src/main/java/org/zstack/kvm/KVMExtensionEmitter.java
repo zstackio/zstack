@@ -45,6 +45,7 @@ public class KVMExtensionEmitter implements Component {
     private List<KVMCheckSnapshotExtensionPoint> checkSnapshotExts = new ArrayList<>();
     private List<KVMMergeSnapshotExtensionPoint> mergeSnapshotExts = new ArrayList<>();
     private List<KVMCheckVmStateExtensionPoint> checkVmStateExts = new ArrayList<>();
+    private List<KVMSyncVmDeviceInfoExtensionPoint> syncVmDeviceInfoExts = new ArrayList<>();
 
     private void populateExtensions() {
         startVmExts = pluginRgty.getExtensionList(KVMStartVmExtensionPoint.class);
@@ -58,6 +59,16 @@ public class KVMExtensionEmitter implements Component {
         mergeSnapshotExts = pluginRgty.getExtensionList(KVMMergeSnapshotExtensionPoint.class);
         checkVmStateExts = pluginRgty.getExtensionList(KVMCheckVmStateExtensionPoint.class);
         checkSnapshotExts = pluginRgty.getExtensionList(KVMCheckSnapshotExtensionPoint.class);
+        syncVmDeviceInfoExts = pluginRgty.getExtensionList(KVMSyncVmDeviceInfoExtensionPoint.class);
+    }
+
+    public void afterReceiveSyncVmDeviceInfoRespoinse(final VmInstanceInventory vm, final KVMAgentCommands.VmDevicesInfoResponse rsp) {
+        CollectionUtils.safeForEach(syncVmDeviceInfoExts, new ForEachFunction<KVMSyncVmDeviceInfoExtensionPoint>() {
+            @Override
+            public void run(KVMSyncVmDeviceInfoExtensionPoint arg) {
+                arg.afterReceiveVmDeviceInfoResponse(vm, rsp);
+            }
+        });
     }
 
     public void beforeStartVmOnKvm(final KVMHostInventory host, final VmInstanceSpec spec, final StartVmCmd cmd) {
@@ -66,14 +77,6 @@ public class KVMExtensionEmitter implements Component {
         }
     }
 
-    public void afterReceiveStartVmResponse(final KVMHostInventory host, final VmInstanceSpec spec, final KVMAgentCommands.StartVmResponse rsp) {
-        CollectionUtils.safeForEach(startVmExts, new ForEachFunction<KVMStartVmExtensionPoint>() {
-            @Override
-            public void run(KVMStartVmExtensionPoint arg) {
-                arg.afterReceiveStartVmResponse(host, spec, rsp);
-            }
-        });
-    }
 
     public void startVmOnKvmSuccess(final KVMHostInventory host, final VmInstanceSpec spec) {
         CollectionUtils.safeForEach(startVmExts, new ForEachFunction<KVMStartVmExtensionPoint>() {

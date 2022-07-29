@@ -10,9 +10,7 @@ import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmNicVO;
-import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.vm.*;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.vm.devices.*;
@@ -134,6 +132,36 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
 
     @Override
     public ErrorCode deleteAllDeviceAddressesByVm(String vmInstanceUuid) {
+        if (vmInstanceUuid == null) {
+            return operr("missing parameter, vmInstanceUuid: %s is requested", vmInstanceUuid);
+        }
+
+        if (!vmExists(vmInstanceUuid)) {
+            return operr("cannot find vm with uuid: %s", vmInstanceUuid);
+        }
+
+        SQL.New(VmInstanceDeviceAddressVO.class)
+                .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vmInstanceUuid)
+                .delete();
+
+        return null;
+    }
+
+    @Override
+    public ErrorCode deleteDeviceAddressesByVmModifyVirtIO(String vmInstanceUuid) {
+        if (vmInstanceUuid == null) {
+            return operr("missing parameter, vmInstanceUuid: %s is requested", vmInstanceUuid);
+        }
+
+        if (!vmExists(vmInstanceUuid)) {
+            return operr("cannot find vm with uuid: %s", vmInstanceUuid);
+        }
+
+        VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmInstanceUuid).find();
+
+        VmInstanceInventory inventory = vo.toInventory();
+        inventory.getVmNics().forEach(vmNic -> deleteVmDeviceAddress(vmNic.getUuid(), vmInstanceUuid));
+        inventory.getAllVolumes().forEach(volume -> deleteVmDeviceAddress(volume.getUuid(), vmInstanceUuid));
         return null;
     }
 
