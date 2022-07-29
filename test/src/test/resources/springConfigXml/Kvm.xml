@@ -123,6 +123,7 @@
     <bean id="VirtualPciDeviceKvmExtension" class="org.zstack.kvm.VirtualPciDeviceKvmExtensionPoint">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMSyncVmDeviceInfoExtensionPoint" />
         </zstack:plugin>
     </bean>
 
