@@ -28,6 +28,9 @@ public class RefreshFiberChannelStorageAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String zoneUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List scsiLunUuids;
+
     @Param(required = false)
     public java.util.List systemTags;
 

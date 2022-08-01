@@ -64,7 +64,7 @@ public class DeleteVmUserDefinedXmlHookScriptAction extends AbstractAction {
         }
         
         org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptResult value = res.getResult(org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptResult() : value; 
 
         return ret;
     }
