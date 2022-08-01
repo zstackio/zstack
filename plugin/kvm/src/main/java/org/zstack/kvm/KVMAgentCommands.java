@@ -2540,6 +2540,8 @@ public class KVMAgentCommands {
         private String srcPath;
         private String destPath;
         private boolean fullRebase;
+        // timeout seconds
+        private long timeout;
 
         public boolean isFullRebase() {
             return fullRebase;
@@ -2579,6 +2581,62 @@ public class KVMAgentCommands {
 
         public void setVolume(VolumeTO volume) {
             this.volume = volume;
+        }
+
+        public long getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(long timeout) {
+            this.timeout = timeout;
+        }
+    }
+
+    public static class CheckSnapshotCmd extends AgentCommand {
+        private String vmUuid;
+        private String volumeUuid;
+        private String currentInstallPath;
+        private List<String> excludeInstallPaths;
+        private Map<String, Integer> volumeChainToCheck;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
+
+        public Map<String, Integer> getVolumeChainToCheck() {
+            return volumeChainToCheck;
+        }
+
+        public void setVolumeChainToCheck(Map<String, Integer> volumeChainToCheck) {
+            this.volumeChainToCheck = volumeChainToCheck;
+        }
+
+        public String getCurrentInstallPath() {
+            return currentInstallPath;
+        }
+
+        public void setCurrentInstallPath(String currentInstallPath) {
+            this.currentInstallPath = currentInstallPath;
+        }
+
+        public List<String> getExcludeInstallPaths() {
+            return excludeInstallPaths;
+        }
+
+        public void setExcludeInstallPaths(List<String> excludeInstallPaths) {
+            this.excludeInstallPaths = excludeInstallPaths;
         }
     }
 
@@ -2655,6 +2713,10 @@ public class KVMAgentCommands {
         public void setVolume(VolumeTO volume) {
             this.volume = volume;
         }
+    }
+
+    public static class CheckSnapshotResponse extends AgentResponse {
+
     }
 
     public static class TakeSnapshotResponse extends AgentResponse {

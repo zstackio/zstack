@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteVmUserDefinedXmlHookScriptAction extends AbstractAction {
+public class ValidateVolumeSnapshotChainAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteVmUserDefinedXmlHookScriptAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptResult value;
+        public org.zstack.sdk.ValidateVolumeSnapshotChainResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,7 @@ public class DeleteVmUserDefinedXmlHookScriptAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +60,8 @@ public class DeleteVmUserDefinedXmlHookScriptAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptResult value = res.getResult(org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteVmUserDefinedXmlHookScriptResult() : value; 
+        org.zstack.sdk.ValidateVolumeSnapshotChainResult value = res.getResult(org.zstack.sdk.ValidateVolumeSnapshotChainResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ValidateVolumeSnapshotChainResult() : value; 
 
         return ret;
     }
@@ -93,11 +90,11 @@ public class DeleteVmUserDefinedXmlHookScriptAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/vm-instances/{vmInstanceUuid}/xml-hook-script";
+        info.httpMethod = "PUT";
+        info.path = "/volumes/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "validateVolumeSnapshotChain";
         return info;
     }
 

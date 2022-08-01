@@ -522,6 +522,8 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     public void handleLocalMessage(Message msg) {
         if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
+        } else if (msg instanceof CheckSnapshotMsg) {
+            handle((CheckSnapshotMsg) msg);
         } else if (msg instanceof BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) {
             handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
         } else if (msg instanceof CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg) {
@@ -839,6 +841,23 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(format);
         HypervisorFactory f = getHypervisorFactoryByHypervisorType(type.toString());
         return f.getHypervisorBackend(self);
+    }
+
+    private void handle(final CheckSnapshotMsg msg) {
+        CheckSnapshotReply reply = new CheckSnapshotReply();
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getVolumeUuid());
+        bkd.handle(msg, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final TakeSnapshotMsg msg) {

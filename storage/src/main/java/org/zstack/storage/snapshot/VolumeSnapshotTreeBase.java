@@ -33,6 +33,8 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.CancelHostTasksMsg;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
@@ -52,8 +54,6 @@ import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtens
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTree.SnapshotLeaf;
 import org.zstack.header.storage.snapshot.group.*;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -204,9 +204,72 @@ public class VolumeSnapshotTreeBase {
             handle((RevertVolumeSnapshotMsg) msg);
         } else if (msg instanceof RevertVolumeFromSnapshotGroupMsg) {
             handle((RevertVolumeFromSnapshotGroupMsg) msg);
+        } else if (msg instanceof CancelDeleteVolumeSnapshotMsg) {
+            handle((CancelDeleteVolumeSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(CancelDeleteVolumeSnapshotMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "cancel-delete-volume-snapshot";
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                CancelDeleteVolumeSnapshotReply reply = new CancelDeleteVolumeSnapshotReply();
+                doCancelDeleteVolumeSnapshot(msg, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    private void doCancelDeleteVolumeSnapshot(CancelDeleteVolumeSnapshotMsg cmsg, Completion completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName("cancel-delete-volume-snapshot");
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                CancelHostTasksMsg msg = new CancelHostTasksMsg();
+                msg.setCancellationApiId(cmsg.getCancellationApiId());
+                bus.makeLocalServiceId(msg, HostConstant.SERVICE_ID);
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).start();
     }
 
     private void handle(RevertVolumeSnapshotMsg msg) {

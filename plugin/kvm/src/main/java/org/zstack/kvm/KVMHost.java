@@ -27,6 +27,7 @@ import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.Constants;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
@@ -137,6 +138,7 @@ public class KVMHost extends HostBase implements Host {
     private String detachNicPath;
     private String migrateVmPath;
     private String snapshotPath;
+    private String checkSnapshotPath;
     private String mergeSnapshotPath;
     private String hostFactPath;
     private String attachIsoPath;
@@ -237,6 +239,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH);
         snapshotPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_CHECK_VOLUME_SNAPSHOT_PATH);
+        checkSnapshotPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_MERGE_SNAPSHOT_PATH);
@@ -473,6 +479,8 @@ public class KVMHost extends HostBase implements Host {
             handle((MigrateVmOnHypervisorMsg) msg);
         } else if (msg instanceof TakeSnapshotOnHypervisorMsg) {
             handle((TakeSnapshotOnHypervisorMsg) msg);
+        } else if (msg instanceof CheckSnapshotOnHypervisorMsg) {
+            handle((CheckSnapshotOnHypervisorMsg) msg);
         } else if (msg instanceof MergeVolumeSnapshotOnKvmMsg) {
             handle((MergeVolumeSnapshotOnKvmMsg) msg);
         } else if (msg instanceof KVMHostAsyncHttpCallMsg) {
@@ -1453,6 +1461,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setSrcPath(snapshot.getPrimaryStorageInstallPath());
         cmd.setVmUuid(volume.getVmInstanceUuid());
         cmd.setVolume(VolumeTO.valueOf(volume, (KVMHostInventory) getSelfInventory()));
+        cmd.setTimeout(timeoutManager.getTimeoutSeconds());
 
         extEmitter.beforeMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
         new Http<>(mergeSnapshotPath, cmd, MergeSnapshotRsp.class)
@@ -1476,6 +1485,126 @@ public class KVMHost extends HostBase implements Host {
                 completion.done();
             }
         });
+    }
+
+    private void handle(final CheckSnapshotOnHypervisorMsg msg) {
+        inQueue().name(String.format("check-snapshot-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> {
+                    checkSnapshot(msg);
+                    chain.next();
+                });
+    }
+
+    private void checkSnapshot(final CheckSnapshotOnHypervisorMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                CheckSnapshotOnHypervisorReply reply = new CheckSnapshotOnHypervisorReply();
+                doCheckSnapshot(msg, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return KVMGlobalConfig.HOST_SNAPSHOT_SYNC_LEVEL.value(Integer.class);
+            }
+
+            @Override
+            public String getName() {
+                return String.format("take-snapshot-on-kvm-%s", self.getUuid());
+            }
+        });
+    }
+
+    private void doCheckSnapshot(final CheckSnapshotOnHypervisorMsg msg, final Completion completion) {
+        checkStateAndStatus();
+
+        CheckSnapshotCmd cmd = new CheckSnapshotCmd();
+        if (msg.getVmUuid() != null) {
+            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
+            q.select(VmInstanceVO_.state);
+            q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, msg.getVmUuid());
+            VmInstanceState vmState = q.findValue();
+            if (vmState != VmInstanceState.Running && vmState != VmInstanceState.Stopped && vmState != VmInstanceState.Paused) {
+                throw new OperationFailureException(operr("vm[uuid:%s] is not Running or Stopped, current state[%s]", msg.getVmUuid(), vmState));
+            }
+        }
+
+        cmd.setVolumeUuid(msg.getVolumeUuid());
+        cmd.setVmUuid(msg.getVmUuid());
+        cmd.setVolumeChainToCheck(msg.getVolumeChainToCheck());
+        cmd.setCurrentInstallPath(msg.getCurrentInstallPath());
+        cmd.setExcludeInstallPaths(msg.getExcludeInstallPaths());
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("check-volume-%s-snapshot-chain", msg.getVolumeUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "before-check-volume-snapshot-extension";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                extEmitter.beforeCheckSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "check-volume-snapshot";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new Http<>(checkSnapshotPath, cmd, CheckSnapshotResponse.class).call(new ReturnValueCompletion<CheckSnapshotResponse>(msg, trigger) {
+                    @Override
+                    public void success(CheckSnapshotResponse ret) {
+                        if (!ret.isSuccess()) {
+                            trigger.fail(operr("operation error, because:%s", ret.getError()));
+                            return;
+                        }
+
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).start();
     }
 
     private void handle(final TakeSnapshotOnHypervisorMsg msg) {

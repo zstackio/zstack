@@ -15,6 +15,7 @@ import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -296,6 +297,11 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
         }
 
         return getMessageTimeout();
+    }
+
+    @Override
+    public Long getTimeoutSeconds() {
+        return TimeUnit.MILLISECONDS.toSeconds(getTimeout());
     }
 
     /**

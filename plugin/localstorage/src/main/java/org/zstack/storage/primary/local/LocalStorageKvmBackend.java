@@ -41,14 +41,12 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
@@ -1717,6 +1715,55 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         completion.fail(errorCode);
                     }
                 });
+    }
+
+    @Override
+    void handle(final CheckSnapshotMsg msg, final String hostUuid, final Completion completion) {
+        Tuple tuple = Q.New(VolumeVO.class)
+                .select(VolumeVO_.vmInstanceUuid, VolumeVO_.installPath, VolumeVO_.rootImageUuid)
+                .eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                .findTuple();
+
+        CheckSnapshotOnHypervisorMsg hmsg = new CheckSnapshotOnHypervisorMsg();
+        hmsg.setHostUuid(hostUuid);
+        hmsg.setVolumeChainToCheck(msg.getVolumeChainToCheck());
+        hmsg.setVolumeUuid(msg.getVolumeUuid());
+        hmsg.setVmUuid((String) tuple.get(0));
+        hmsg.setCurrentInstallPath((String) tuple.get(1));
+        hmsg.setPrimaryStorageUuid(self.getUuid());
+        if (tuple.get(2) != null) {
+            String imageCacheInstallPath = getImageCacheInstallPath((String) tuple.get(2), hostUuid);
+            if (imageCacheInstallPath != null) {
+                hmsg.getExcludeInstallPaths().add(imageCacheInstallPath);
+            }
+        }
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, hmsg.getHostUuid());
+        bus.send(hmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                completion.success();
+            }
+        });
+    }
+
+    private String getImageCacheInstallPath(String imageUuid, String hostUuid) {
+        SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
+        q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+        q.add(ImageCacheVO_.imageUuid, Op.EQ, imageUuid);
+        q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", hostUuid));
+        ImageCacheVO cache = q.find();
+        if (cache == null) {
+            return null;
+        }
+
+        CacheInstallPath path = new CacheInstallPath();
+        path.fullPath = cache.getInstallUrl();
+        return path.disassemble().installPath;
     }
 
     @Override

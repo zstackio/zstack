@@ -35,6 +35,8 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
 
     abstract void handle(DeleteIsoFromPrimaryStorageMsg msg, ReturnValueCompletion<DeleteIsoFromPrimaryStorageReply> completion);
 
+    abstract void handle(CheckSnapshotMsg msg, Completion completion);
+
     abstract void handle(TakeSnapshotMsg msg, ReturnValueCompletion<TakeSnapshotReply> completion);
 
     abstract void handle(DeleteSnapshotOnPrimaryStorageMsg msg, ReturnValueCompletion<DeleteSnapshotOnPrimaryStorageReply> completion);

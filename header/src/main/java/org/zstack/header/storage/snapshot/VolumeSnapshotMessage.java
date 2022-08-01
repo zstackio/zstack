@@ -7,7 +7,7 @@ public interface VolumeSnapshotMessage {
 
     String getVolumeUuid();
 
-    void setVolumeUuid(String treeUuid);
+    void setVolumeUuid(String volumeUuid);
 
     void setTreeUuid(String treeUuid);
 
