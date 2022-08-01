@@ -76,6 +76,14 @@ public class HostNetworkBondingInventory  {
         return this.miimon;
     }
 
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
+    }
+
     public java.lang.Boolean allSlavesActive;
     public void setAllSlavesActive(java.lang.Boolean allSlavesActive) {
         this.allSlavesActive = allSlavesActive;
