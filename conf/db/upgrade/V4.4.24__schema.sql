@@ -176,3 +176,17 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceDeviceAddressArchiveVO` (
     CONSTRAINT `fkVmInstanceDeviceAddressArchiveVOVmInstanceEO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES VmInstanceEO(`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkVmInstanceDeviceAddressArchiveVOVmInstanceDeviceAddressGroupVO` FOREIGN KEY (`addressGroupUuid`) REFERENCES VmInstanceDeviceAddressGroupVO (uuid) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`AiSiNoSecretResourcePoolVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `managementIp` varchar(32) NOT NULL,
+    `port` int unsigned NOT NULL,
+    `route` varchar(32) NOT NULL,
+    `clientID` varchar(32) NOT NULL,
+    `clientSecrete` varchar(32) NOT NULL,
+    `appId` varchar(8) NOT NULL,
+    `keyNumSM2` varchar(8) NOT NULL,
+    `keyNumSM4` varchar(8) NOT NULL,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT fkAiSiNoSecretResourcePoolVOSecretResourcePoolVO FOREIGN KEY (uuid) REFERENCES SecretResourcePoolVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

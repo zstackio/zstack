@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateInfoSecSecretResourcePoolAction extends AbstractAction {
+public class CreateAiSiNoSecretResourcePoolAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -25,8 +25,29 @@ public class CreateInfoSecSecretResourcePoolAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,4L}, noTrim = false)
-    public int connectionMode = 0;
+    @Param(required = false)
+    public java.lang.String managementIp;
+
+    @Param(required = false)
+    public java.lang.Integer port;
+
+    @Param(required = false)
+    public java.lang.String route;
+
+    @Param(required = false)
+    public java.lang.String clientID;
+
+    @Param(required = false)
+    public java.lang.String clientSecrete;
+
+    @Param(required = false)
+    public java.lang.String appId;
+
+    @Param(required = false)
+    public java.lang.String keyNumSM2;
+
+    @Param(required = false)
+    public java.lang.String keyNumSM4;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
@@ -115,7 +136,7 @@ public class CreateInfoSecSecretResourcePoolAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/secret-resource-pool/infoSec";
+        info.path = "/secret-resource-pool/aisino";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
