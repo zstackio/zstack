@@ -908,6 +908,33 @@ abstract class ApiHelper {
     }
 
 
+    def addBlockPrimaryStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddBlockPrimaryStorageAction.class) Closure c) {
+        def a = new org.zstack.sdk.AddBlockPrimaryStorageAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def addBuildApp(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddBuildAppAction.class) Closure c) {
         def a = new org.zstack.sdk.AddBuildAppAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -16541,6 +16568,33 @@ abstract class ApiHelper {
     }
 
 
+    def getBlockPrimaryStorageMetadata(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetBlockPrimaryStorageMetadataAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetBlockPrimaryStorageMetadataAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getCandidateAffinityGroupForAttachingVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetCandidateAffinityGroupForAttachingVmAction.class) Closure c) {
         def a = new org.zstack.sdk.GetCandidateAffinityGroupForAttachingVmAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -23744,6 +23798,35 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryBlockPrimaryStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryBlockPrimaryStorageAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryBlockPrimaryStorageAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())
