@@ -56,6 +56,10 @@ public interface RESTFacade {
 
     <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout);
 
+    <T> T syncJsonPut(String url, String body, Map<String, String> headers, Class<T> returnClass);
+
+    <T> T syncJsonPut(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout);
+
     HttpHeaders syncHead(String url);
 
     HttpEntity<String> httpServletRequestToHttpEntity(HttpServletRequest req);
