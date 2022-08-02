@@ -522,6 +522,7 @@ public class RESTFacadeImpl implements RESTFacade {
     public <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass) {
         return syncJsonPost(url, body, headers, returnClass, null, -1);
     }
+
     @Override
     public <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
         return syncJson(url, body, headers, HttpMethod.POST, returnClass, unit, timeout);
@@ -546,6 +547,16 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
+    public <T> T syncJsonPut(String url, String body, Map<String, String> headers, Class<T> returnClass) {
+        return syncJsonPut(url, body, headers, returnClass, null, -1);
+    }
+
+    @Override
+    public <T> T syncJsonPut(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
+        return syncJson(url, body, headers, HttpMethod.PUT, returnClass, unit, timeout);
+    }
+
+    @Override
     public HttpHeaders syncHead(String url) {
         return template.headForHeaders(URI.create(url));
     }
@@ -554,11 +565,16 @@ public class RESTFacadeImpl implements RESTFacade {
         body = body == null ? "" : body;
 
         HttpHeaders requestHeaders = new HttpHeaders();
-        if (headers != null) {
+        if (headers != null && headers.containsKey("customizeHeaderSet")) {
+            headers.remove("customizeHeaderSet");
             requestHeaders.setAll(headers);
+        } else {
+            if (headers != null) {
+                requestHeaders.setAll(headers);
+            }
+            requestHeaders.setContentType(MediaType.APPLICATION_JSON);
+            requestHeaders.setContentLength(body.length());
         }
-        requestHeaders.setContentType(MediaType.APPLICATION_JSON);
-        requestHeaders.setContentLength(body.length());
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("json %s[%s], %s", method.toString().toLowerCase(), url, req));
@@ -606,8 +622,8 @@ public class RESTFacadeImpl implements RESTFacade {
         if (!valid) {
             throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
         }
-        
-        if (rsp.getBody() != null && returnClass != Void.class) {
+
+        if (rsp.getBody() != null && returnClass != Void.class && returnClass != null) {
 
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("[http response(url: %s)] %s", url, rsp.getBody()));
@@ -618,7 +634,7 @@ public class RESTFacadeImpl implements RESTFacade {
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("[http response(url: %s)] %s", url, rsp.getBody()));
             }
-            return null;
+            return (T) rsp;
         }
     }
 
