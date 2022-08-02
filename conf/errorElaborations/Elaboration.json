@@ -1244,9 +1244,9 @@
     "category": "VM",
     "code": "1014",
     "method": "regex",
-    "regex": ".*requested vcpus is greater than max allowable vcpus for the live domain: .* make NUMA take effect.*",
-    "message_cn": "请求的 vCPU 超过允许最大 vCPU 的范围，请尝试重新启动云主机以使 NUMA 生效。",
-    "message_en": "Requested vCPU count exceeds the upper limit. Please reboot the VM to make NUMA take effect."
+    "regex": ".*requested vcpus is greater than max allowable vcpus for the live domain: .* make Instance Offering Online Modification take effect.*",
+    "message_cn": "请求的 vCPU 超过允许最大 vCPU 的范围，请尝试重新启动云主机以使 计算规格在线修改 生效。",
+    "message_en": "Requested vCPU count exceeds the upper limit. Please reboot the VM to make Instance Offering Online Modification take effect."
   },
   {
     "category": "VM",

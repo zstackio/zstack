@@ -407,7 +407,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getVmInstanceUuid(), Boolean.class);
                 if (!numa && !VmInstanceState.Stopped.equals(vo.getState())) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "the VM cannot do online cpu/memory update because it is not of NUMA architecture. Please stop the VM then do the cpu/memory update again"
+                            "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again"
                     ));
                 }
 
@@ -446,7 +446,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getUuid(), Boolean.class);
                 if (!numa && !VmInstanceState.Stopped.equals(vmState)) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "the VM cannot do online cpu/memory update because it is not of NUMA architecture. Please stop the VM then do the cpu/memory update again"
+                            "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again"
                     ));
                 }
 
