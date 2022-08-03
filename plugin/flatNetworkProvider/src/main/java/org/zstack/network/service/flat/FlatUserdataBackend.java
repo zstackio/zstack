@@ -402,11 +402,17 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 return;
             }
 
+            String vmIp = CollectionUtils.find(struct.getVmNics(), arg -> arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null);
+            if (vmIp == null) {
+                completion.cancel();
+                return;
+            }
+
             ReleaseUserdataCmd cmd = new ReleaseUserdataCmd();
             cmd.hostUuid = struct.getHostUuid();
             cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
             cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
-            cmd.vmIp = CollectionUtils.find(struct.getVmNics(), arg -> arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null);
+            cmd.vmIp = vmIp;
 
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
             msg.setHostUuid(struct.getHostUuid());
@@ -715,7 +721,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             }
         });
 
-        if (destNic == null) {
+        if (destNic == null || destNic.getIp() == null) {
             completion.success();
             return;
         }
