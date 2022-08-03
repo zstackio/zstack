@@ -1746,12 +1746,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
     protected void exportImage(ExportImageFromBackupStorageMsg msg) {
         TaskProgressRange parentStage = getTaskStage();
 
+        String imageName = Q.New(ImageVO.class).select(ImageVO_.name).eq(ImageVO_.uuid, msg.getImageUuid()).findValue();
         ExportImageFromBackupStorageReply reply = new ExportImageFromBackupStorageReply();
         Tuple t = Q.New(ImageBackupStorageRefVO.class).select(ImageBackupStorageRefVO_.installPath, ImageBackupStorageRefVO_.exportUrl)
                 .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
                 .eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
                 .findTuple();
-        if (t == null) {
+        if (t == null || imageName == null) {
             reply.setError(operr("image[uuid: %s] is not on backup storage[uuid:%s, name:%s]",
                     msg.getImageUuid(), self.getUuid(), self.getName()));
             bus.reply(msg, reply);
@@ -1787,9 +1788,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
             private String buildUrl(String hostname, String token) {
                 String[] splits = imageInstallUrl.split("/");
                 String poolName = splits[splits.length - 2];
-                String imageName = splits[splits.length - 1];
+                String imageNameAndImagePathName = String.format("%s-%s", imageName, splits[splits.length - 1]);
                 return CephAgentUrl.backupStorageUrl(hostname, CephBackupStorageMonBase.EXPORT) +
-                        String.format("/%s/%s?token=%s", poolName, imageName, token);
+                        String.format("/%s/%s?token=%s", poolName, imageNameAndImagePathName, token);
             }
 
             @Override
