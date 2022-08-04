@@ -29,6 +29,8 @@ public interface AccountConstant {
 
     String LOGIN_TYPE = "account";
 
+    String NO_EXIST_ACCOUNT ="no-exist-account:::%s";
+
     IdentityType identityType = new IdentityType("IAM");
 
     static boolean isAdminPermission(SessionInventory session) {
