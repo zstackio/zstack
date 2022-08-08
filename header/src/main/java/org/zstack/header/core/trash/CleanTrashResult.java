@@ -3,6 +3,7 @@ package org.zstack.header.core.trash;
 import org.zstack.header.rest.SDK;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -10,7 +11,7 @@ import java.util.List;
  */
 @SDK
 public class CleanTrashResult {
-    private List<String> resourceUuids = new ArrayList<>();
+    private List<String> resourceUuids = Collections.synchronizedList(new ArrayList<>());
     private List<String> details = new ArrayList<>();
     private Long size = 0L;
 
