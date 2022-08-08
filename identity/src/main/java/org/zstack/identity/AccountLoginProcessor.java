@@ -46,6 +46,10 @@ public class AccountLoginProcessor implements LoginProcessor {
                     break;
                 }
             }
+            if (resourceIdentity == null) {
+                //account not found in DB
+                resourceIdentity = String.format(AccountConstant.NO_EXIST_ACCOUNT, name);
+            }
         }
 
         return resourceIdentity;
