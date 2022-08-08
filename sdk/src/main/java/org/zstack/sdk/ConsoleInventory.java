@@ -44,12 +44,4 @@ public class ConsoleInventory  {
         return this.token;
     }
 
-    public java.lang.String version;
-    public void setVersion(java.lang.String version) {
-        this.version = version;
-    }
-    public java.lang.String getVersion() {
-        return this.version;
-    }
-
 }

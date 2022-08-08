@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetVpcVRouterNetworkServiceStateAction extends AbstractAction {
 
@@ -30,7 +31,7 @@ public class GetVpcVRouterNetworkServiceStateAction extends AbstractAction {
     @Param(required = true, validValues = {"SNAT"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String networkService;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false)
     public java.lang.String l3NetworkUuid;
 
     @Param(required = false)
