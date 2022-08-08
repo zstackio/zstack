@@ -186,7 +186,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
                             msg.getManagementNetworkUuid(), msg.getZoneUuid()));
         }
         /* mgt network does not support ipv6 yet, TODO, will be implemented soon */
-        if (mgtL3.getIpVersions().contains(IPv6Constants.IPv6)) {
+        if (mgtL3.getIpVersions().contains(IPv6Constants.IPv6) && !mgtL3.getIpVersions().contains(IPv6Constants.IPv4)) {
             throw new ApiMessageInterceptionException(argerr("can not create virtual router offering, because management network doesn't support ipv6 yet"));
         }
 
