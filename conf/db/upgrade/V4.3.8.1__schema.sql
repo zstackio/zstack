@@ -1,5 +1,3 @@
-ALTER TABLE `zstack`.`VpcSnatStateVO` ADD CONSTRAINT uqVpcL3NetworkRefVO UNIQUE (vpcUuid, l3NetworkUuid);
-
 DROP PROCEDURE IF EXISTS syncSnatDefaultL3ConfigForVirtualRouter;
 DELIMITER $$
 CREATE PROCEDURE syncSnatDefaultL3ConfigForVirtualRouter()
@@ -18,7 +16,9 @@ BEGIN
         END IF;
         SELECT `defaultRouteL3NetworkUuid` INTO defaultL3NetworkUuid FROM `zstack`.`ApplianceVmVO` WHERE `uuid` = virtualRouterUuid;
         IF STRCMP(defaultL3NetworkUuid, publicNetworkUuid) THEN
-            UPDATE `zstack`.`VpcSnatStateVO` SET `l3NetworkUuid` = defaultL3NetworkUuid WHERE `vpcUuid` = virtualRouterUuid AND `l3NetworkUuid` = publicNetworkUuid;
+            IF (select count(*) from `zstack`.`VpcSnatStateVO` where `l3NetworkUuid` = defaultL3NetworkUuid and `vpcUuid` = virtualRouterUuid) < 1 THEN
+                UPDATE `zstack`.`VpcSnatStateVO` SET `l3NetworkUuid` = defaultL3NetworkUuid WHERE `vpcUuid` = virtualRouterUuid AND `l3NetworkUuid` = publicNetworkUuid;
+            END IF;
         END IF;
     END LOOP;
     CLOSE cur;
@@ -27,6 +27,8 @@ END $$
 DELIMITER ;
 CALL syncSnatDefaultL3ConfigForVirtualRouter();
 DROP PROCEDURE IF EXISTS syncSnatDefaultL3ConfigForVirtualRouter;
+
+ALTER TABLE `zstack`.`VpcSnatStateVO` ADD CONSTRAINT uqVpcL3NetworkRefVO UNIQUE (vpcUuid, l3NetworkUuid);
 
 
 DROP PROCEDURE IF EXISTS syncSnatDefaultL3ConfigForVpcHa;
@@ -59,7 +61,7 @@ BEGIN
         LIMIT 1 INTO defaultL3NetworkUuid;
 
         IF STRCMP(defaultL3NetworkUuid, vpcHaRouterDefaultPublicNetworkUuid) THEN
-            UPDATE `zstack`.`VpcHaGroupNetworkServiceRefVO` SET `networkServiceUuid` = defaultL3NetworkUuid WHERE `vpcHaRouterUuid` = thisVpcHaRouterUuid;
+            UPDATE `zstack`.`VpcHaGroupNetworkServiceRefVO` SET `networkServiceUuid` = defaultL3NetworkUuid WHERE `vpcHaRouterUuid` = thisVpcHaRouterUuid AND `networkServiceName` = 'SNAT';
         END IF;
     END LOOP;
     CLOSE cur;
