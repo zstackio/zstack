@@ -56,6 +56,22 @@ public class ClusterApiInterceptor implements ApiMessageInterceptor {
                     "if cluster type is baremetal, then hypervisorType must be baremetal too, or vice versa"
             ));
         }
+
+        if (msg.getArchitecture() != null && msg.getArchitecture().equals("aarch64")) {
+            if (msg.getSystemTags() == null) {
+                throw new ApiMessageInterceptionException(Platform.argerr(
+                        "If the cluster architecture is aarch64, there are some differences in the default configuration, then need to use the [\"resourceConfig::category::name::value\"] tag"
+                ));
+            }
+
+            for (String sysTag : msg.getSystemTags()) {
+                if (!sysTag.contains("resourceConfig::kvm::vm.cpuMode")) {
+                    throw new ApiMessageInterceptionException(Platform.argerr(
+                            "If the cluster architecture is aarch64, then must add [\"resourceConfig::kvm::vm.cpuMode::value\"] tag"
+                    ));
+                }
+            }
+        }
     }
 
     private void validate(APIUpdateClusterOSMsg msg) {
