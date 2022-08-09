@@ -60,6 +60,14 @@ public class TicketInventory  {
         return this.ticketTypeUuid;
     }
 
+    public java.lang.String organizationUuid;
+    public void setOrganizationUuid(java.lang.String organizationUuid) {
+        this.organizationUuid = organizationUuid;
+    }
+    public java.lang.String getOrganizationUuid() {
+        return this.organizationUuid;
+    }
+
     public java.lang.Object accountSystemContext;
     public void setAccountSystemContext(java.lang.Object accountSystemContext) {
         this.accountSystemContext = accountSystemContext;
