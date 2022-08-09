@@ -151,8 +151,8 @@ public class PrimaryStorageAllocationSpec {
         this.tags = tags;
     }
 
-    public Long getTotalSize() {
-        return totalSize;
+    public long getTotalSize() {
+        return totalSize != null ? totalSize : size;
     }
 
     public void setTotalSize(Long totalSize) {

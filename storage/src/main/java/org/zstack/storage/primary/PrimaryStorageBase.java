@@ -51,6 +51,7 @@ import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -91,6 +92,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected PrimaryStoragePingTracker tracker;
     @Autowired
     protected StorageTrash trash;
+    @Autowired
+    protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
 
     public PrimaryStorageBase() {
     }

@@ -2339,9 +2339,15 @@ public class VolumeBase implements Volume {
                 dmsg.setUuid(memoryVolume.getUuid());
                 dmsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
                 bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeConstant.SERVICE_ID, memoryVolume.getUuid());
-                bus.send(dmsg);
-
-                trigger.rollback();
+                bus.send(dmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if(!reply.isSuccess()) {
+                            logger.debug(String.format("failed to delete volume[uuid: %s]", memoryVolume.getUuid()));
+                        }
+                        trigger.rollback();
+                    }
+                });
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "instantiate-memory-volume";

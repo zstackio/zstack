@@ -21,6 +21,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.snapshot.SnapshotDeletionExtensionPoint;
@@ -108,30 +109,24 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             List<LocalStorageHostRefVO> refs = q.list();
 
             final Set<String> toRemoveHuuids = new HashSet<>();
+            final Set<String> toAddHuuids = new HashSet<>();
             for (LocalStorageHostRefVO ref : refs) {
                 String huuid = ref.getHostUuid();
-                long cap = ref.getAvailableCapacity();
                 String psUuid = ref.getPrimaryStorageUuid();
                 // check primary storage capacity and host physical capacity
-                if (cap - reservedCapacity < ratioMgr.calculateByRatio(psUuid, spec.getDiskSize()) ||
-                        !physicalCapacityMgr.checkCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity()) ||
-                        !physicalCapacityMgr.checkRequiredCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), spec.getDiskSize())) {
+                boolean capacityChecked = PrimaryStorageCapacityChecker.New(psUuid,
+                        ref.getAvailableCapacity(), ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())
+                        .checkRequiredSize(spec.getDiskSize());
+
+                if (!capacityChecked) {
                     addHostPrimaryStorageBlacklist(huuid, psUuid, spec);
                     toRemoveHuuids.add(huuid);
+                } else {
+                    toAddHuuids.add(huuid);
                 }
             }
             // for more than one local storage, maybe one of it fit the requirement
-            for (LocalStorageHostRefVO ref : refs) {
-                String huuid = ref.getHostUuid();
-                long cap = ref.getAvailableCapacity();
-                String psUuid = ref.getPrimaryStorageUuid();
-                if (cap - reservedCapacity >= ratioMgr.calculateByRatio(psUuid, spec.getDiskSize()) &&
-                        physicalCapacityMgr.checkCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity()) &&
-                        physicalCapacityMgr.checkRequiredCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), spec.getDiskSize())) {
-                    toRemoveHuuids.remove(huuid);
-                }
-            }
-
+            toRemoveHuuids.removeAll(toAddHuuids);
             if (!toRemoveHuuids.isEmpty()) {
                 logger.debug(String.format("local storage filters out hosts%s, because they don't have required disk capacity[%s bytes]",
                         toRemoveHuuids, spec.getDiskSize()));

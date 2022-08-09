@@ -20,6 +20,7 @@ public class PrimaryStorageType {
     private boolean supportSharedVolume;
     private int order;
     private PrimaryStorageFindBackupStorage primaryStorageFindBackupStorage;
+    private  boolean supportCreateVolumeSnapshotCheckCapacity = true;
 
     public boolean isSupportSharedVolume() {
         return supportSharedVolume;
@@ -182,5 +183,13 @@ public class PrimaryStorageType {
 
     public List<String> findBackupStorage(String psUuid) {
         return primaryStorageFindBackupStorage.findBackupStorage(psUuid);
+    }
+
+    public boolean isSupportCreateVolumeSnapshotCheckCapacity() {
+        return supportCreateVolumeSnapshotCheckCapacity;
+    }
+
+    public void setSupportCreateVolumeSnapshotCheckCapacity(boolean supportCreateVolumeSnapshotCheckCapacity) {
+        this.supportCreateVolumeSnapshotCheckCapacity = supportCreateVolumeSnapshotCheckCapacity;
     }
 }

@@ -68,10 +68,7 @@ import org.zstack.storage.ceph.CephMonBase.PingResult;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
-import org.zstack.storage.primary.GetPrimaryStorageLicenseInfoMsg;
-import org.zstack.storage.primary.GetPrimaryStorageLicenseInfoReply;
-import org.zstack.storage.primary.PrimaryStorageBase;
-import org.zstack.storage.primary.PrimaryStorageSystemTags;
+import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.*;
@@ -1586,8 +1583,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         CephPrimaryStoragePoolVO poolVO = poolVOS.get(0);
-        long requiredSize = ratioMgr.calculateByRatio(self.getUuid(), volumeSize);
-        if (requiredSize > poolVO.getAvailableCapacity()) {
+        boolean capacityChecked = PrimaryStorageCapacityChecker.New(self.getUuid(),
+                poolVO.getAvailableCapacity(), poolVO.getTotalCapacity(), poolVO.getAvailableCapacity())
+                .checkRequiredSize(volumeSize);
+
+        if (!capacityChecked) {
             throw new OperationFailureException(operr("cephPrimaryStorage pool[poolName=%s] available capacity not enough", poolName));
         }
     }
