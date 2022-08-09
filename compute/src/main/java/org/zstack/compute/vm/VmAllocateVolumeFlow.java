@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -12,6 +13,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -60,6 +62,33 @@ public class VmAllocateVolumeFlow implements Flow {
         String accountUuid = acntMgr.getOwnerAccountUuidOfResource(spec.getVmInventory().getUuid());
         if (accountUuid == null) {
             throw new CloudRuntimeException(String.format("accountUuid for vm[uuid:%s] is null", spec.getVmInventory().getUuid()));
+        }
+
+        if (MapUtils.isNotEmpty(spec.getDataVolumeSystemTagsOnIndex())) {
+            for (Map.Entry<String, List<String>> entry : spec.getDataVolumeSystemTagsOnIndex().entrySet()) {
+                if (spec.getDataDiskOfferings().get(Integer.parseInt(entry.getKey())) == null) {
+                    continue;
+                }
+                String offeringUuid = spec.getDataDiskOfferings().get(Integer.parseInt(entry.getKey())).getUuid();
+                for (VolumeSpec volumeSpec : spec.getVolumeSpecs()) {
+                    if (!Objects.equals(volumeSpec.getType(), VolumeType.Data.toString())) {
+                        continue;
+                    }
+                    if (volumeSpec.getDiskOfferingUuid() == null) {
+                        continue;
+                    }
+                    if (!volumeSpec.getDiskOfferingUuid().equals(offeringUuid)) {
+                        continue;
+                    }
+                    if (volumeSpec.getTags() == null) {
+                        volumeSpec.setTags(entry.getValue());
+                        break;
+                    } else if (volumeSpec.getTags() != null && !volumeSpec.getTags().containsAll(entry.getValue())) {
+                        volumeSpec.setTags(entry.getValue());
+                        break;
+                    }
+                }
+            }
         }
 
         List<VolumeSpec> volumeSpecs = spec.getVolumeSpecs();
