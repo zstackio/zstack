@@ -1,4 +1,4 @@
-package org.zstack.test.integration.core.chaintask
+package org.zstack.test.integration.core.taskqueue
 
 import org.zstack.core.Platform
 import org.zstack.core.thread.ChainTask
