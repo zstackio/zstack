@@ -5,3 +5,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SecurityLevelResourceRefVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`RoleVO` ADD COLUMN `rootUuid` VARCHAR(32) DEFAULT NULL;
+
+ALTER TABLE `zstack`.`TicketVO` ADD organizationUuid VARCHAR(32);
+ALTER TABLE `zstack`.`TicketVO` ADD CONSTRAINT fkTicketVOOrganizationVO FOREIGN KEY (organizationUuid) REFERENCES IAM2OrganizationVO (uuid) ON DELETE CASCADE;
