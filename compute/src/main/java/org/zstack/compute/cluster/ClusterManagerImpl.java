@@ -9,14 +9,17 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.defer.Deferred;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.*;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.CpuArchitecture;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.resourceconfig.ClusterResourceConfigInitializer;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
@@ -27,6 +30,8 @@ import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+
+import static org.zstack.core.Platform.argerr;
 
 public class ClusterManagerImpl extends AbstractService implements ClusterManager {
 	private static final CLogger logger = Utils.getLogger(ClusterManager.class);
@@ -46,7 +51,7 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
 	private ClusterResourceConfigInitializer crci;
 
 	private Map<String, ClusterFactory> clusterFactories = Collections.synchronizedMap(new HashMap<String, ClusterFactory>());
-    private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
+	private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
 
     static {
         allowedMessageAfterSoftDeletion.add(ClusterDeletionMsg.class);
@@ -183,10 +188,11 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
             clusterFactories.put(ext.getType().toString(), ext);
         }
     }
-	   
+
 	@Override
 	public boolean start() {
 	    populateClusterFactories();
+		installResourceConfigSystemTagValidator();
 		return true;
 	}
 
@@ -202,4 +208,37 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
         }
         return factory;
     }
+
+	private void installVmCpuModeValidator() {
+		class VmCpuModeValidator implements SystemTagCreateMessageValidator {
+
+			private void validate(APICreateClusterMsg msg) {
+				int vmCpuModeTagCount = 0;
+
+				for (String systemTag : msg.getSystemTags()) {
+					if (ClusterResourceConfigSystemTag.KVM_VM_CPU_MODE.isMatch(systemTag)) {
+						vmCpuModeTagCount++;
+					}
+				}
+
+				if (msg.getArchitecture() != null && CpuArchitecture.aarch64.toString().equals(msg.getArchitecture()) && vmCpuModeTagCount == 0) {
+					throw new ApiMessageInterceptionException(argerr("The %s cluster lacks the default vmCpuMode configuration", msg.getArchitecture()));
+				}
+			}
+
+			@Override
+			public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+				if (msg instanceof APICreateClusterMsg) {
+					validate((APICreateClusterMsg) msg);
+				}
+			}
+		}
+
+		VmCpuModeValidator validator = new VmCpuModeValidator();
+		tagMgr.installCreateMessageValidator(ClusterVO.class.getSimpleName(), validator);
+	}
+
+	private void installResourceConfigSystemTagValidator() {
+		installVmCpuModeValidator();
+	}
 }
