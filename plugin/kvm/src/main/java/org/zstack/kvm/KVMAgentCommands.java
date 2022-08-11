@@ -391,6 +391,7 @@ public class KVMAgentCommands {
         private String cpuProcessorNum;
         private String powerSupplyModelName;
         private String powerSupplyManufacturer;
+        private String ipmiAddress;
         private String powerSupplyMaxPowerCapacity;
         private String hostCpuModelName;
         private String systemProductName;
@@ -507,6 +508,12 @@ public class KVMAgentCommands {
 
         public void setPowerSupplyManufacturer(String powerSupplyManufacturer) {
             this.powerSupplyManufacturer = powerSupplyManufacturer;
+        }
+
+        public String getIpmiAddress() {return ipmiAddress;}
+
+        public void setIpmiAddress(String ipmiAddress) {
+            this.ipmiAddress = ipmiAddress;
         }
 
         public String getPowerSupplyMaxPowerCapacity() {

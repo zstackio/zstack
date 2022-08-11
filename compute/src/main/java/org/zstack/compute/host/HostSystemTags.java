@@ -56,6 +56,9 @@ public class HostSystemTags {
     public static final String POWER_SUPPLY_MANUFACTURER_TOKEN = "powerSupplyManufacturer";
     public static PatternedSystemTag POWER_SUPPLY_MANUFACTURER = new PatternedSystemTag(String.format("powerSupplyManufacturer::{%s}", POWER_SUPPLY_MANUFACTURER_TOKEN), HostVO.class);
 
+    public static final String IPMI_ADDRESS_TOKEN = "ipmiAddress";
+    public static PatternedSystemTag IPMI_ADDRESS = new PatternedSystemTag(String.format("ipmiAddress::{%s}", IPMI_ADDRESS_TOKEN), HostVO.class);
+
     public static final String PAGE_TABLE_EXTENSION_DISABLED_TOKEN = "pageTableExtensionDisabled";
     public static PatternedSystemTag PAGE_TABLE_EXTENSION_DISABLED = new PatternedSystemTag(PAGE_TABLE_EXTENSION_DISABLED_TOKEN, HostVO.class);
 
