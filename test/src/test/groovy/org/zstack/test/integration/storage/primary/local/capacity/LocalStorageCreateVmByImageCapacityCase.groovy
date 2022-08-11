@@ -82,7 +82,6 @@ class LocalStorageCreateVmByImageCapacityCase extends SubCase {
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = sizedImage.uuid
             l3NetworkUuids = [l3.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
             hostUuid = host.uuid
         }
 

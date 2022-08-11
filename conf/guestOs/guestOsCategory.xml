@@ -128,6 +128,18 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>openSUSE</name>
+        <version>12-SP5</version>
+        <osRelease>openSUSE 12-SP5</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>openSUSE</name>
+        <version>15.4</version>
+        <osRelease>openSUSE 15.4</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>Linux</name>
         <version></version>
         <osRelease>Linux</osRelease>
