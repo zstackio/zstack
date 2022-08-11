@@ -48,7 +48,9 @@ Options:
 
   pysdk               generate Python SDK
 
-  sdk                 generate Java
+  sdk                 generate Java SDK
+
+  gosdk               generate Golang SDK
 
   ts                  generate Typescript bindings
 
@@ -278,6 +280,17 @@ sdk() {
   cd -
   yes | cp -r ~/zstack-sdk/java/* sdk/src/main/java/
   set +u
+}
+
+gosdk() {
+  if [ -d premium/test-premium ]; then
+      cd premium/test-premium
+  else
+      cd test
+  fi
+
+  $MVNTest -Dtest=TestGenerateGoSDK
+  cd - > /dev/null
 }
 
 globalconfigdocmd() {
@@ -523,6 +536,8 @@ run_profile() {
     globalconfigdocmd
   elif test x$1 = x'git'; then
     gitconfig $@
+  elif test x$1 = x'gosdk'; then
+    gosdk
   else
     mvn -pl build -P $1 exec:exec -D$1
   fi
