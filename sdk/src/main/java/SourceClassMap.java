@@ -31,6 +31,8 @@ public class SourceClassMap {
 			put("org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleTriggerInventory", "org.zstack.sdk.AutoScalingRuleTriggerInventory");
 			put("org.zstack.autoscaling.template.AutoScalingTemplateInventory", "org.zstack.sdk.AutoScalingTemplateInventory");
 			put("org.zstack.autoscaling.template.AutoScalingVmTemplateInventory", "org.zstack.sdk.AutoScalingVmTemplateInventory");
+			put("org.zstack.baremetal2.chassis.BareMetal2BondingInventory", "org.zstack.sdk.BareMetal2BondingInventory");
+			put("org.zstack.baremetal2.chassis.BareMetal2BondingNicRefInventory", "org.zstack.sdk.BareMetal2BondingNicRefInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisDiskInventory", "org.zstack.sdk.BareMetal2ChassisDiskInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisInventory", "org.zstack.sdk.BareMetal2ChassisInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisNicInventory", "org.zstack.sdk.BareMetal2ChassisNicInventory");
@@ -506,6 +508,8 @@ public class SourceClassMap {
 			put("org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory", "org.zstack.sdk.RaidPhysicalDriveInventory");
 			put("org.zstack.storage.device.localRaid.RunningState", "org.zstack.sdk.RunningState");
 			put("org.zstack.storage.device.localRaid.SmartDataStruct", "org.zstack.sdk.SmartDataStruct");
+			put("org.zstack.storage.device.nvme.NvmeLunInventory", "org.zstack.sdk.NvmeLunInventory");
+			put("org.zstack.storage.device.nvme.NvmeTargetInventory", "org.zstack.sdk.NvmeTargetInventory");
 			put("org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity", "org.zstack.sdk.HostDiskCapacity");
 			put("org.zstack.storage.primary.local.LocalStorageResourceRefInventory", "org.zstack.sdk.LocalStorageResourceRefInventory");
 			put("org.zstack.storage.primary.ministorage.MiniStorageHostRefInventory", "org.zstack.sdk.MiniStorageHostRefInventory");
@@ -896,6 +900,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NetworkServiceL3NetworkRefInventory", "org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
 			put("org.zstack.sdk.NormalIpRangeInventory", "org.zstack.header.network.l3.NormalIpRangeInventory");
+			put("org.zstack.sdk.NvmeLunInventory", "org.zstack.storage.device.nvme.NvmeLunInventory");
+			put("org.zstack.sdk.NvmeTargetInventory", "org.zstack.storage.device.nvme.NvmeTargetInventory");
 			put("org.zstack.sdk.OssBucketInventory", "org.zstack.header.aliyun.oss.OssBucketInventory");
 			put("org.zstack.sdk.OssBucketProperty", "org.zstack.header.aliyun.oss.OssBucketProperty");
 			put("org.zstack.sdk.OvfCdDriverInfo", "org.zstack.ovf.datatype.OvfCdDriverInfo");
