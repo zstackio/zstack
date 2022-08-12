@@ -217,6 +217,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     } else {
                         fireServicehealthyCanonicalEvent();
                     }
+                    reply.setServiceHealthList(ret.getServiceHealthList());
                 }
                 completion.success(reply);
             }

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateIPsecConnectionAction extends AbstractAction {
+public class ChangeIPsecConnectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateIPsecConnectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateIPsecConnectionResult value;
+        public org.zstack.sdk.ChangeIPsecConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,8 @@ public class CreateIPsecConnectionAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vipUuid;
+    public java.lang.String uuid;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String peerAddress;
@@ -51,12 +45,6 @@ public class CreateIPsecConnectionAction extends AbstractAction {
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String remoteId;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l3NetworkUuid;
-
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List peerCidrs;
 
     @Param(required = false, validValues = {"ike","ikev1","ikev2"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ikeVersion = "ike";
@@ -79,7 +67,7 @@ public class CreateIPsecConnectionAction extends AbstractAction {
     @Param(required = false, validValues = {"3des","aes-128","aes-192","aes-256"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String policyEncryptionAlgorithm = "aes-256";
 
-    @Param(required = false, validValues = {"none","dh-group0","dh-group2","dh-group5","dh-group14","dh-group15","dh-group16","dh-group17","dh-group18","dh-group19","dh-group20","dh-group21","dh-group22","dh-group23","dh-group24","dh-group25","dh-group26"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"none","dh-group2","dh-group5","dh-group14","dh-group15","dh-group16","dh-group17","dh-group18","dh-group19","dh-group20","dh-group21","dh-group22","dh-group23","dh-group24","dh-group25","dh-group26"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String pfs = "dh-group14";
 
     @Param(required = false, validValues = {"tunnel","transport"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -90,12 +78,6 @@ public class CreateIPsecConnectionAction extends AbstractAction {
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {30L,604800L}, noTrim = false)
     public int lifeTime = 3600;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -129,8 +111,8 @@ public class CreateIPsecConnectionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateIPsecConnectionResult value = res.getResult(org.zstack.sdk.CreateIPsecConnectionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateIPsecConnectionResult() : value; 
+        org.zstack.sdk.ChangeIPsecConnectionResult value = res.getResult(org.zstack.sdk.ChangeIPsecConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeIPsecConnectionResult() : value; 
 
         return ret;
     }
@@ -159,11 +141,11 @@ public class CreateIPsecConnectionAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/ipsec";
+        info.httpMethod = "PUT";
+        info.path = "/ipsec/config/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "changeIPsecConnection";
         return info;
     }
 
