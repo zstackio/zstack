@@ -16,7 +16,9 @@ BEGIN
         END IF;
         SELECT `defaultRouteL3NetworkUuid` INTO defaultL3NetworkUuid FROM `zstack`.`ApplianceVmVO` WHERE `uuid` = virtualRouterUuid;
         IF STRCMP(defaultL3NetworkUuid, publicNetworkUuid) THEN
-            UPDATE `zstack`.`VpcSnatStateVO` SET `l3NetworkUuid` = defaultL3NetworkUuid WHERE `vpcUuid` = virtualRouterUuid AND `l3NetworkUuid` = publicNetworkUuid;
+            IF (select count(*) from `zstack`.`VpcSnatStateVO` where `l3NetworkUuid` = defaultL3NetworkUuid and `vpcUuid` = virtualRouterUuid) < 1 THEN
+                UPDATE `zstack`.`VpcSnatStateVO` SET `l3NetworkUuid` = defaultL3NetworkUuid WHERE `vpcUuid` = virtualRouterUuid AND `l3NetworkUuid` = publicNetworkUuid;
+            END IF;
         END IF;
     END LOOP;
     CLOSE cur;
