@@ -9,14 +9,15 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.kvm.KvmCommandFailureChecker;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
-import static org.zstack.core.Platform.operr;
+import org.zstack.storage.volume.VolumeErrors;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 /**
  * Created by xing5 on 2017/3/5.
@@ -30,6 +31,7 @@ public class LocalStorageDeleteBitsGC extends EventBasedGarbageCollector {
     public String installPath;
     @GC
     public boolean isDir;
+    private static CLogger logger = Utils.getLogger(LocalStorageDeleteBitsGC.class);
 
     @Override
     protected void triggerNow(GCCompletion completion) {
@@ -58,7 +60,7 @@ public class LocalStorageDeleteBitsGC extends EventBasedGarbageCollector {
                     @Override
                     public ErrorCode getError(KvmResponseWrapper wrapper) {
                         LocalStorageKvmBackend.DeleteBitsRsp rsp = wrapper.getResponse(LocalStorageKvmBackend.DeleteBitsRsp.class);
-                        return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+                        return rsp.buildErrorCode();
                     }
                 },
 
@@ -70,6 +72,10 @@ public class LocalStorageDeleteBitsGC extends EventBasedGarbageCollector {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
+                        if (errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
+                            completion.cancel();
+                            return;
+                        }
                         completion.fail(errorCode);
                     }
                 }

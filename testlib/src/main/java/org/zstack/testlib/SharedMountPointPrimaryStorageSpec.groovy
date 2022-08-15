@@ -78,7 +78,7 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(KvmBackend.DELETE_BITS_PATH) {
-                return new KvmBackend.AgentRsp()
+                return new KvmBackend.DeleteRsp()
             }
 
             VFS.vfsHook(KvmBackend.DELETE_BITS_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
