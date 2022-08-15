@@ -173,5 +173,9 @@
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO</class>
+        <class>org.zstack.sdnController.header.SdnControllerVO</class>
+        <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO</class>
+        <class>org.zstack.sdnController.header.VxlanHostMappingVO</class>
+        <class>org.zstack.sdnController.header.VxlanClusterMappingVO</class>
     </persistence-unit>
 </persistence>
