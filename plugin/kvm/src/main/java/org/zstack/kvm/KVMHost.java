@@ -1821,60 +1821,11 @@ public class KVMHost extends HostBase implements Host {
         q.add(VmInstanceVO_.uuid, Op.EQ, vmUuid);
         final Long vmInternalId = q.findValue();
 
-        List<VmNicVO> nics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, s.vmUuid)
-                .eq(VmNicVO_.type, "vDPA")
-                .list();
-        List<NicTO> nicTos = VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList());
-        List<NicTO> vDPANics = new ArrayList<NicTO>();
-        for (NicTO nicTo : nicTos) {
-            if (nicTo.getType().equals("vDPA")) {
-                vDPANics.add(nicTo);
-            }
-        }
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-vm-%s-on-kvm-host-%s", vmUuid, self.getUuid()));
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "generate-vDPA-on-dst-host";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        if (vDPANics.isEmpty()) {
-                            trigger.next();
-                            return;
-                        }
-                        GenerateVdpaCmd cmd = new GenerateVdpaCmd();
-                        cmd.vmUuid = vmUuid;
-                        cmd.setNics(nicTos);
-
-                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-                        ub.host(dstHostMnIp);
-                        ub.path(KVMConstant.KVM_GENERATE_VDPA_PATH);
-                        String url = ub.build().toString();
-                        new Http<>(url, cmd, GenerateVdpaResponse.class).call(dstHostUuid, new ReturnValueCompletion<GenerateVdpaResponse>(trigger) {
-                            @Override
-                            public void success(GenerateVdpaResponse ret) {
-                                if (!ret.isSuccess()) {
-                                    logger.warn(String.format("generate vDPA for %s failed, %s", vmUuid, ret.getError()));
-                                }
-
-                                data.put("vDPA_paths", ret.getVdpaPaths());
-
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                logger.warn(String.format("generate vDPA for %s failed, %s", vmUuid, errorCode));
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
-
                 flow(new NoRollbackFlow() {
                     String __name__ = "migrate-vm";
 
@@ -1998,41 +1949,6 @@ public class KVMHost extends HostBase implements Host {
                                 //TODO
                                 logger.warn(String.format("failed to delete console firewall rule for the vm[uuid:%s] on" +
                                         " the source host[uuid:%s, ip:%s], %s", vmUuid, srcHostUuid, srcHostMigrateIp, errorCode));
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "delete-vDPA-on-src-host";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        if (vDPANics.isEmpty()) {
-                            trigger.next();
-                            return;
-                        }
-                        DeleteVdpaCmd cmd = new DeleteVdpaCmd();
-                        cmd.vmUuid = vmUuid;
-
-                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-                        ub.host(srcHostMnIp);
-                        ub.path(KVMConstant.KVM_DELETE_VDPA_PATH);
-                        String url = ub.build().toString();
-                        new Http<>(url, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(trigger) {
-                            @Override
-                            public void success(AgentResponse ret) {
-                                if (!ret.isSuccess()) {
-                                    logger.warn(String.format("delete vDPA for %s failed, %s", vmUuid, ret.getError()));
-                                }
-
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                logger.warn(String.format("delete vDPA for %s failed, %s", vmUuid, errorCode));
                                 trigger.next();
                             }
                         });
@@ -2661,6 +2577,16 @@ public class KVMHost extends HostBase implements Host {
         return L2NetworkInventory.valueOf(l2vo);
     }
 
+    private boolean isOvsNicType(String nicType) {
+        switch (nicType) {
+            case VmOvsNicConstant.ACCEL_TYPE_VDPA:
+                return true;
+            case VmOvsNicConstant.ACCEL_TYPE_VHOST_USER_SPACE:
+                return true;
+        }
+        return false;
+    }
+
     @Transactional(readOnly = true)
     private NicTO completeNicInfo(VmNicInventory nic) {
         /* all l3 networks of the nic has same l2 network */
@@ -2674,7 +2600,8 @@ public class KVMHost extends HostBase implements Host {
             to.setIps(getCleanTrafficIp(nic));
         }
 
-        if (!nic.getType().equals(VmInstanceConstant.VIRTUAL_NIC_TYPE)) {
+        String nicType = nic.getType();
+        if (!nicType.equals(VmInstanceConstant.VIRTUAL_NIC_TYPE) && !isOvsNicType(nicType)) {
             return to;
         }
 

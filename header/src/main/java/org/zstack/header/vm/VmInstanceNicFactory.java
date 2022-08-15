@@ -7,6 +7,7 @@ import java.util.List;
 public interface VmInstanceNicFactory {
     VmNicType getType();
     VmNicVO createVmNic(VmNicInventory inv, VmInstanceSpec spec, List<UsedIpInventory> ips);
+    VmNicVO createApplianceVmNic(VmNicInventory inv, VmInstanceSpec spec);
 
     static VmNicVO createVmNic(VmNicInventory nic) {
         VmNicVO vnic = new VmNicVO();
@@ -23,6 +24,12 @@ public interface VmInstanceNicFactory {
         vnic.setIpVersion(nic.getIpVersion());
         vnic.setInternalName(nic.getInternalName());
         vnic.setDriverType(nic.getDriverType());
+        return vnic;
+    }
+
+    static VmNicVO createApplianceVmNic(VmNicInventory nic) {
+        VmNicVO vnic = createVmNic(nic);
+        vnic.setMetaData(nic.getMetaData());
         return vnic;
     }
 

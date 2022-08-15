@@ -365,6 +365,14 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.AgentResponse()
         }
 
+        spec.simulator(KVMConstant.KVM_GENERATE_VHOST_USER_CLIENT_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_DELETE_VHOST_USER_CLIENT_PATH) {
+             return new KVMAgentCommands.AgentResponse()
+        }
+
         spec.simulator(KVMConstant.KVM_START_VM_PATH) { HttpEntity<String> e ->
             KVMAgentCommands.StartVmCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
             assert new HashSet<>(cmd.dataVolumes.deviceId).size() == cmd.dataVolumes.size()

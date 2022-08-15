@@ -1,26 +1,19 @@
 package org.zstack.network.service.userdata;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicSpec;
 import org.zstack.network.securitygroup.SecurityGroupGetDefaultRuleExtensionPoint;
-import org.zstack.network.securitygroup.SecurityGroupRuleProtocolType;
-import org.zstack.network.securitygroup.SecurityGroupRuleType;
-import org.zstack.network.securitygroup.SecurityGroupRuleVO;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -29,7 +22,6 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by frank on 10/13/2015.
@@ -112,15 +104,6 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
 
         if (defaultL3 == null) {
             // the L3 for operation is not the default L3
-            completion.success();
-            return;
-        }
-
-        // TODO: vDPA do not support Userdata service yet;
-        boolean isOvsDpdk = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, defaultL3.getL2NetworkUuid())
-                .eq(L2NetworkVO_.vSwitchType, L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)
-                .isExists();
-        if (isOvsDpdk) {
             completion.success();
             return;
         }
