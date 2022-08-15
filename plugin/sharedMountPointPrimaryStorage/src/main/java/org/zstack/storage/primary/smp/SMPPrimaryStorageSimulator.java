@@ -5,7 +5,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -61,7 +60,7 @@ public class SMPPrimaryStorageSimulator {
     String deleteBits(HttpEntity<String> entity) {
         DeleteBitsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteBitsCmd.class);
         config.deleteBitsCmds.add(cmd);
-        reply(entity, new AgentRsp());
+        reply(entity, new DeleteRsp());
         return null;
     }
 

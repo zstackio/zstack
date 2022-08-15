@@ -419,6 +419,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class DeleteResponse extends NfsPrimaryStorageAgentResponse {
+        public boolean inUse;
     }
 
     public static class ListDirectionCmd extends NfsPrimaryStorageAgentCommand {

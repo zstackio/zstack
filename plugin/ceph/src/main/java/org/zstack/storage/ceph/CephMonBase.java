@@ -90,8 +90,9 @@ public abstract class CephMonBase {
 
             @Override
             public void success(T ret) {
-                if (!ret.isSuccess()) {
-                    completion.fail(Platform.operr("operation error, because:%s", ret.getError()));
+                ErrorCode errorCode = ret.buildErrorCode();
+                if (errorCode != null) {
+                    completion.fail(errorCode);
                     return;
                 }
                 completion.success(ret);
@@ -131,6 +132,13 @@ public abstract class CephMonBase {
 
         public void setSuccess(boolean success) {
             this.success = success;
+        }
+
+        protected ErrorCode buildErrorCode() {
+            if (success) {
+                return null;
+            }
+            return operr("operation error, because:%s", error);
         }
     }
 

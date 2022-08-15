@@ -2,9 +2,9 @@ package org.zstack.storage.primary.nfs;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Primary;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.asyncbatch.While;
@@ -44,7 +44,6 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
@@ -53,6 +52,7 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
 import org.zstack.storage.snapshot.VolumeSnapshotSystemTags;
+import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
@@ -1141,6 +1141,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                 DeleteResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(DeleteResponse.class);
                 if (!rsp.isSuccess()) {
+                    if (rsp.inUse) {
+                        completion.fail(Platform.err(VolumeErrors.VOLUME_IN_USE, rsp.getError()));
+                        return;
+                    }
                     logger.warn(String.format("failed to delete bits[%s] on nfs primary storage[uuid:%s], %s, will clean up",
                             installPath, pinv.getUuid(), rsp.getError()));
                     completion.fail(operr("failed to delete bits[%s] on nfs primary storage[uuid:%s], %s, will clean up " +

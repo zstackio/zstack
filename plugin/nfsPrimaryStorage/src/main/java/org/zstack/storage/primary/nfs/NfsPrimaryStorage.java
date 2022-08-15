@@ -28,20 +28,15 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.ImageBackupStorageRefVO;
-import org.zstack.header.image.ImageBackupStorageRefVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageEO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.CreateImageCacheFromVolumeSnapshotReply;
 import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -53,6 +48,7 @@ import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
@@ -929,6 +925,11 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                if (errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
+                    logger.debug(String.format("unable to delete volume[uuid:%s] right now, skip this GC job because it's in use", msg.getVolume().getUuid()));
+                    bus.reply(msg, reply);
+                    return;
+                }
                 NfsDeleteVolumeGC gc = new NfsDeleteVolumeGC();
                 gc.NAME = String.format("gc-nfs-%s-volume-%s", self.getUuid(), vol.getUuid());
                 gc.primaryStorageUuid = self.getUuid();

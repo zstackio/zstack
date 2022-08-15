@@ -27,7 +27,6 @@ import org.zstack.header.agent.CancelCommand;
 import org.zstack.header.agent.ReloadableCommand;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
-import org.zstack.header.console.ConsoleProxyAgentVO;
 import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.trash.CleanTrashResult;
@@ -67,6 +66,7 @@ import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
 import org.zstack.storage.primary.*;
+import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.*;
@@ -404,7 +404,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class DeleteRsp extends AgentResponse {
-
+        public boolean inUse;
+        public ErrorCode buildErrorCode() {
+            if (inUse) {
+                return Platform.err(VolumeErrors.VOLUME_IN_USE, getError());
+            }
+            return super.buildErrorCode();
+        }
     }
 
     public static class CloneCmd extends AgentCommand {
@@ -2658,6 +2664,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
+                if (err.isError(VolumeErrors.VOLUME_IN_USE)) {
+                    logger.debug(String.format("unable to delete volume[uuid:%s] right now, skip this GC job because it's in use", msg.getVolume().getUuid()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
                 CephDeleteVolumeGC gc = new CephDeleteVolumeGC();
                 gc.NAME = String.format("gc-ceph-%s-volume-%s", self.getUuid(), msg.getVolume().getUuid());
                 gc.primaryStorageUuid = self.getUuid();
@@ -3334,7 +3346,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    if (!errorCode.isError(SysErrors.OPERATION_ERROR)) {
+                    if (!errorCode.isError(SysErrors.OPERATION_ERROR) && !errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
                         logger.warn(String.format("mon[%s] failed to execute http call[%s], error is: %s",
                                 base.getSelf().getHostname(), path, JSONObjectUtil.toJsonString(errorCode)));
                         errorCodes.getCauses().add(errorCode);
