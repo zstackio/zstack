@@ -16,6 +16,7 @@ class ZoneSpec extends Spec {
     List<PrimaryStorageSpec> primaryStorage = []
     List<L2NetworkSpec> l2Networks = []
     List<VirtualRouterOfferingSpec> virtualRouterOfferingSpecs = []
+    List<SdnControllerSpec> sdnControllerSpecs = []
 
     protected List<String> backupStorageToAttach = []
 
@@ -150,6 +151,16 @@ class ZoneSpec extends Spec {
         cl()
         addChild(spec)
         return spec
+    }
+
+    SdnControllerSpec sdnController(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SdnControllerSpec.class) Closure c) {
+        def nspec = new SdnControllerSpec(envSpec)
+        c.delegate = nspec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        addChild(nspec)
+        sdnControllerSpecs.add(nspec)
+        return nspec
     }
 
     SpecID create(String uuid, String sessionId) {
