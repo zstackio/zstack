@@ -2766,6 +2766,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmPortOff(VmGlobalConfig.VM_PORT_OFF.value(Boolean.class));
         cmd.setConsoleMode("vnc");
         cmd.setTimeout(TimeUnit.MINUTES.toSeconds(5));
+        cmd.setConsoleLogToFile(!VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType()));
         if (spec.isCreatePaused()) {
             cmd.setCreatePaused(true);
         }
