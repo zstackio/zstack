@@ -1662,10 +1662,13 @@ public class KVMHost extends HostBase implements Host {
 
             if (!HostSystemTags.LIVE_SNAPSHOT.hasTag(self.getUuid())) {
                 if (vmState != VmInstanceState.Stopped) {
-                    throw new OperationFailureException(err(SysErrors.NO_CAPABILITY_ERROR,
+                    reply.setError(err(SysErrors.NO_CAPABILITY_ERROR,
                             "kvm host[uuid:%s, name:%s, ip:%s] doesn't not support live snapshot. please stop vm[uuid:%s] and try again",
                                     self.getUuid(), self.getName(), self.getManagementIp(), msg.getVmUuid()
                     ));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
                 }
             }
 
