@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractAction {
 
@@ -39,7 +40,7 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataDiskOfferingUuids;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L, 100L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
     public java.util.List dataDiskSizes;
 
     @Param(required = false)
