@@ -9,10 +9,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.cluster.*;
-import org.zstack.header.host.HostState;
-import org.zstack.header.host.HostStatus;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
 
 /**
@@ -54,6 +51,13 @@ public class ClusterApiInterceptor implements ApiMessageInterceptor {
                 (msg.getHypervisorType().equals("baremetal") && msg.getType() != null && !msg.getType().equals("baremetal"))) {
             throw new ApiMessageInterceptionException(Platform.argerr(
                     "if cluster type is baremetal, then hypervisorType must be baremetal too, or vice versa"
+            ));
+        }
+
+        if ((msg.getArchitecture() != null && CpuArchitecture.aarch64.toString().equals(msg.getArchitecture())
+                && msg.getSystemTags() == null)) {
+            throw new ApiMessageInterceptionException(Platform.argerr(
+                    "The %s cluster lacks the default configuration", msg.getArchitecture()
             ));
         }
     }
