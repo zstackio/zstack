@@ -18,4 +18,5 @@ public interface ZTester {
     String KVM_QemuImageVersion = "kvm.qemu.image.version";
     String KVM_CpuModelName = "kvm.cpu.model.name";
     String KVM_CpuProcessorNum = "kvm.cpu.processor.num";
+    String KVM_IpmiAddress = "kvm.ipmi.address";
 }
