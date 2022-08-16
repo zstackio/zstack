@@ -53,8 +53,8 @@ public class IpStatisticData  {
     }
 
     public java.lang.String applianceVmOwnerUuid;
-    public void setApplianceVmOwnerUuid(java.lang.String applianceVmOwnerUuid) {
-        this.applianceVmOwnerUuid = applianceVmOwnerUuid;
+    public void setApplianceVmOwnerUuid(java.lang.String vmInstanceParentUuid) {
+        this.applianceVmOwnerUuid = vmInstanceParentUuid;
     }
     public java.lang.String getApplianceVmOwnerUuid() {
         return this.applianceVmOwnerUuid;

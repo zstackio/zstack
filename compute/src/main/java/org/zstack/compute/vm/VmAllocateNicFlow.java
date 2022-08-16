@@ -23,12 +23,12 @@ import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
-import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
@@ -116,16 +116,10 @@ public class VmAllocateNicFlow implements Flow {
                     enableSriov ? "vf nic" : "vnic", nw.getUuid()));
 
             L2NetworkVO l2nw =  dbf.findByUuid(nw.getL2NetworkUuid(), L2NetworkVO.class);
-            if (enableSriov) {
-                vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VF"));
-            } else if (l2nw.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)
-                    && NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class)) {
-                vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf(VmOvsNicConstant.ACCEL_TYPE_VHOST_USER_SPACE));
-            } else if (l2nw.getvSwitchType().equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
-                vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf(VmOvsNicConstant.ACCEL_TYPE_VDPA));
-            } else {
-                vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VNIC"));
-            }
+            VSwitchType vSwitchType = new VSwitchType(l2nw.getvSwitchType());
+
+            VmNicType type = VmNicType.valueOf(vSwitchType, enableSriov);
+            vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 
             List<Integer> ipVersions = nw.getIpVersions();
             Map<Integer, String> nicStaticIpMap = new StaticIpOperator().getNicStaticIpMap(vmStaticIps.get(nw.getUuid()));

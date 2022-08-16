@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateBareMetal2IpmiChassisHardwareInfoAction extends AbstractAction {
 
@@ -32,9 +33,6 @@ public class CreateBareMetal2IpmiChassisHardwareInfoAction extends AbstractActio
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String hardwareInfo;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String convertInfo;
 
     @Param(required = false)
     public java.util.List systemTags;

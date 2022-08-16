@@ -1,7 +1,8 @@
 package org.zstack.network.service;
 
+import org.zstack.core.GlobalProperty;
+import org.zstack.core.GlobalPropertyDefinition;
 import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.network.l2.L2NetworkVO;
@@ -28,7 +29,4 @@ public class NetworkServiceGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig DHCP_MTU_DUMMY = new GlobalConfig(CATEGORY, "defaultDhcpMtu.dummyNetwork");
-
-    @GlobalConfigValidation(validValues = {"true", "false"})
-    public static GlobalConfig ENABLE_VHOSTUSER = new GlobalConfig(CATEGORY, "enableVHostUser");
 }
