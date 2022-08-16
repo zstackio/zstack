@@ -131,4 +131,10 @@
     <index name="org.zstack.network.service.portforwarding.PortForwardingRuleVO" baseClass="false">
         <prop name="name"/>
     </index>
+    <index name="org.zstack.sdnController.header.SdnControllerVO" baseClass="false">
+        <prop name="name"/>
+    </index>
+    <index name="org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO" baseClass="false">
+        <prop name="name"/>
+    </index>
 </indexes>
