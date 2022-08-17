@@ -30,8 +30,6 @@ import java.util.*;
 
 import static java.util.Arrays.asList;
 
-/**
- */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SystemTag {
     private static final CLogger logger = Utils.getLogger(SystemTag.class);
