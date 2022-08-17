@@ -40,7 +40,7 @@ public class KVMGlobalConfig {
     public static GlobalConfig ALLOW_LIVE_SNAPSHOT_ON_REDHAT = new GlobalConfig(CATEGORY, "redhat.liveSnapshotOn");
     @GlobalConfigValidation(validValues = {"none", "writethrough", "writeback"})
     public static GlobalConfig LIBVIRT_CACHE_MODE = new GlobalConfig(CATEGORY, "vm.cacheMode");
-    @GlobalConfigValidation(validValues = {"none", "host-model", "host-passthrough", "Haswell", "Haswell-noTSX", "Broadwell", "Broadwell-noTSX", "SandyBridge", "IvyBridge", "Conroe", "Penryn", "Nehalem", "Westmere", "Opteron_G1", "Opteron_G2", "Opteron_G3", "Opteron_G4"})
+    @GlobalConfigValidation(validValues = {"none", "host-model", "host-passthrough", "Hygon_Customized", "Dhyana", "EPYC", "EPYC-IBPB", "Haswell", "Haswell-noTSX", "Broadwell", "Broadwell-noTSX", "SandyBridge", "IvyBridge", "Conroe", "Penryn", "Nehalem", "Westmere", "Opteron_G1", "Opteron_G2", "Opteron_G3", "Opteron_G4"})
     @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig NESTED_VIRTUALIZATION = new GlobalConfig(CATEGORY, "vm.cpuMode");
     @GlobalConfigValidation

@@ -2996,7 +2996,6 @@ public class KVMHost extends HostBase implements Host {
         String vmArchPlatformRelease = String.format("%s_%s_%s", spec.getVmInventory().getArchitecture(), spec.getVmInventory().getPlatform(), spec.getVmInventory().getGuestOsType());
         if (allGuestOsCharacter.containsKey(vmArchPlatformRelease)) {
             cmd.setAcpi(allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi());
-            cmd.setHygonCpu(allGuestOsCharacter.get(vmArchPlatformRelease).getHygonCpu() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getHygonCpu());
         }
 
         VirtualDeviceInfo memBalloon = new VirtualDeviceInfo();
