@@ -111,7 +111,6 @@ class CreateVmWithHybridClusterCase extends SubCase {
                     name = "cluster_arm64"
                     hypervisorType = "KVM"
                     architecture = "aarch64"
-                    systemTags = ["resourceConfig::kvm::vm.cpuMode::host-passthrough"]
 
                     kvm {
                         name = "kvm2"
