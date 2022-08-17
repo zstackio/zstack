@@ -9,7 +9,10 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.cluster.*;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.APIMessage;
 
 /**
@@ -54,11 +57,20 @@ public class ClusterApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
-        if ((msg.getArchitecture() != null && CpuArchitecture.aarch64.toString().equals(msg.getArchitecture())
-                && msg.getSystemTags() == null)) {
-            throw new ApiMessageInterceptionException(Platform.argerr(
-                    "The %s cluster lacks the default configuration", msg.getArchitecture()
-            ));
+        if (msg.getArchitecture() != null && msg.getArchitecture().equals("aarch64")) {
+            if (msg.getSystemTags() == null) {
+                throw new ApiMessageInterceptionException(Platform.argerr(
+                        "If the cluster architecture is aarch64, there are some differences in the default configuration, then need to use the [\"resourceConfig::category::name::value\"] tag"
+                ));
+            }
+
+            for (String sysTag : msg.getSystemTags()) {
+                if (!sysTag.contains("resourceConfig::kvm::vm.cpuMode")) {
+                    throw new ApiMessageInterceptionException(Platform.argerr(
+                            "If the cluster architecture is aarch64, then must add [\"resourceConfig::kvm::vm.cpuMode::value\"] tag"
+                    ));
+                }
+            }
         }
     }
 
