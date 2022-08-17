@@ -137,4 +137,10 @@
     <index name="org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO" baseClass="false">
         <prop name="name"/>
     </index>
+    <index name="org.zstack.sdnController.header.VxlanMappingVO" baseClass="false">
+        <prop name="name"/>
+    </index>
+    <index name="org.zstack.sdnController.header.PortLldpInfoVO" baseClass="false">
+        <prop name="name"/>
+    </index>
 </indexes>

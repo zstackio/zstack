@@ -5,8 +5,6 @@ import org.zstack.core.GlobalPropertyDefinition;
 
 import java.util.List;
 
-/**
- */
 @GlobalPropertyDefinition
 public class SdnControllerGlobalProperty {
     @GlobalProperty(name="H3c.Scheme", defaultValue = "http")

@@ -24,7 +24,6 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
-
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class H3cSdnController implements SdnController {
     private static final CLogger logger = Utils.getLogger(H3cSdnController.class);
