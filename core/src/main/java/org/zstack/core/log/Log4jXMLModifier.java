@@ -25,6 +25,7 @@ public class Log4jXMLModifier {
         log4jXMLPath = PathUtil.findFileOnClassPath("log4j2.xml", true).getAbsolutePath();
 
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        docFactory.setExpandEntityReferences(false);
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         this.doc = docBuilder.parse(log4jXMLPath);
     }
