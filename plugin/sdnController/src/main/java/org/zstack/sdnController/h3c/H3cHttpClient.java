@@ -48,6 +48,8 @@ public class H3cHttpClient<T> {
         if (body != null) {
             MessageCommandRecorder.record(body.getClass());
             httpBody = JSONObjectUtil.toJsonString(body);
+        } else {
+            return null;
         }
 
         switch (action) {

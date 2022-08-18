@@ -36,12 +36,12 @@ public class HardwareVxlanNetworkPool extends VxlanNetworkPool {
         super(vo);
     }
 
-    private HardwareL2VxlanNetworkPoolVO getSelf() {
+    private HardwareL2VxlanNetworkPoolVO getSelf1() {
         return (HardwareL2VxlanNetworkPoolVO) self;
     }
 
     protected HardwareL2VxlanNetworkPoolInventory getSelfInventory() {
-        return HardwareL2VxlanNetworkPoolInventory.valueOf(getSelf());
+        return HardwareL2VxlanNetworkPoolInventory.valueOf(getSelf1());
     }
 
     @Override
