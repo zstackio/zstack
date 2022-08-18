@@ -25,6 +25,7 @@ public class ApplianceVmConstant {
         managementNodeIp,
         managementNodeCidr,
         additionalL3Uuids,
+        l3Uuid2IfName,
     }
 
     public static enum Params {

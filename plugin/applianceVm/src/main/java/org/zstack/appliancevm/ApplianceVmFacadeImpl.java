@@ -279,7 +279,9 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         }
 
         Map<String, Object> ret = new HashMap<String, Object>();
+        Map<String, String> l3NetworkUuid2IfName = new HashMap<>();
         ApplianceVmNicTO mto = new ApplianceVmNicTO(mgmtNic);
+        ret.put(ApplianceVmConstant.BootstrapParams.l3Uuid2IfName.toString(), l3NetworkUuid2IfName);
         mto.setDeviceName(String.format("eth0"));
         if (mgmtNic.getL3NetworkUuid().equals(defaultL3Uuid)) {
             mto.setDefaultRoute(true);
@@ -287,6 +289,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
         L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, mgmtNic.getL3NetworkUuid()).find();
         L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
+        l3NetworkUuid2IfName.put(l3NetworkVO.getUuid(), mto.getDeviceName());
 
         mto.setCategory(l3NetworkVO.getCategory().toString());
         mto.setL2type(l2NetworkVO.getType());
@@ -332,6 +335,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             t.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
             deviceId ++;
             extraTos.add(t);
+            l3NetworkUuid2IfName.put(l3NetworkVO.getUuid(), t.getDeviceName());
             additionalNics = reduceNic(additionalNics, defaultRouteNic);
         }
 
@@ -347,6 +351,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             nto.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
             nto.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
             extraTos.add(nto);
+            l3NetworkUuid2IfName.put(l3NetworkVO.getUuid(), nto.getDeviceName());
             deviceId ++;
         }
 

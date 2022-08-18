@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.ApplianceVmKvmCommands.PrepareBootstrapInfoRsp;
+import org.zstack.appliancevm.ApplianceVmConstant.BootstrapParams;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -40,6 +41,8 @@ public class ApplianceVmKvmBootstrapFlow extends NoRollbackFlow {
     public void run(final FlowTrigger chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         Map<String, Object> info = apvmf.prepareBootstrapInformation(spec);
+        String l3Uuid2IfNameKey = ApplianceVmConstant.BootstrapParams.l3Uuid2IfName.toString();
+        data.put(l3Uuid2IfNameKey, info.remove(l3Uuid2IfNameKey));
         ApplianceVmKvmCommands.PrepareBootstrapInfoCmd cmd = new ApplianceVmKvmCommands.PrepareBootstrapInfoCmd();
         cmd.setInfo(info);
         cmd.setSocketPath(kvmExt.makeChannelSocketPath(spec.getVmInventory().getUuid()));
