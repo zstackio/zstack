@@ -84,6 +84,14 @@ public class HostPhysicalMemoryInventory  {
         return this.voltage;
     }
 
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
