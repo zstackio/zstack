@@ -82,8 +82,8 @@ class GlobalConfigCase extends SubCase {
             name = KVMGlobalConfig.NESTED_VIRTUALIZATION.name
         } as GetGlobalConfigOptionsResult
 
-        // there are 17 valid values for category "vm.cpuMode" from KVMGlobalConfig.java
-        assert configOptions.options.validValue.size() == 17
+        // there are 21 valid values for category "vm.cpuMode" from KVMGlobalConfig.java
+        assert configOptions.options.validValue.size() == 21
     }
 
     void testGetNumberRange() {
