@@ -25,7 +25,6 @@ public class GuestOsCharacter {
             "platform",
             "osRelease",
             "acpi",
-            "hygonCpu"
     })
     public static class Config {
         @XmlElement(required = true)
@@ -39,10 +38,6 @@ public class GuestOsCharacter {
 
         @XmlElement(required = false)
         protected Boolean acpi;
-
-        //whether guest need to set EPYC cpu model on Hygon
-        @XmlElement(required = false)
-        protected Boolean hygonCpu;
 
         public String getPlatform() {
             return platform;
@@ -74,15 +69,6 @@ public class GuestOsCharacter {
 
         public void setArchitecture(String architecture) {
             this.architecture = architecture;
-        }
-
-
-        public Boolean getHygonCpu() {
-            return hygonCpu;
-        }
-
-        public void setHygonCpu(Boolean hygonCpu) {
-            this.hygonCpu = hygonCpu;
         }
     }
 }
