@@ -58,6 +58,8 @@ public interface VirtualRouterConstant {
     public static final String ANSIBLE_MODULE_PATH = "ansible/virtualrouter";
     public static final String SNAT_NETWORK_SERVICE_TYPE = "SNAT";
     public static final String IPSEC_NETWORK_SERVICE_TYPE = "IPsec";
+    public static final String IPSEC_NETWORK_SERVICE_LATEST_VERSION = "5.9.4";
+    public static final String IPSEC_NETWORK_SERVICE_OLD_VERSION = "4.5.2";
 
 	public static final String VR_CHANGE_DEFAULT_ROUTE_JOB = "changeDefaultNic";
 	public static final String VR_DEFAULT_ROUTE_NETWORK = "defaultNetwork";
