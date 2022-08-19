@@ -5,9 +5,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
@@ -22,8 +27,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -47,17 +51,73 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
     }
 
     @Override
-    @Transactional
     public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion) {
         HardwareL2VxlanNetworkPoolVO vo = new HardwareL2VxlanNetworkPoolVO(ovo);
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo.setSdnControllerUuid(((APICreateL2HardwareVxlanNetworkPoolMsg) msg).getSdnControllerUuid());
-        vo = dbf.persistAndRefresh(vo);
 
-        HardwareL2VxlanNetworkPoolInventory inv = HardwareL2VxlanNetworkPoolInventory.valueOf(vo);
-        String info = String.format("successfully create HardwareVxlanNetworkPool, %s", JSONObjectUtil.toJsonString(inv));
-        logger.debug(info);
-        completion.success(inv);
+        HardwareVxlanNetworkPool hardwareVxlanPool = new HardwareVxlanNetworkPool(vo);
+
+        Map data = new HashMap();
+        FlowChain fchain = FlowChainBuilder.newShareFlowChain();
+        fchain.setData(data);
+        fchain.setName(String.format("create-hardware-vxlan-network-pool-%s", msg.getName()));
+        fchain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("pre-check-for-create-hardware-vxlan-network-pool-%s", msg.getName());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        hardwareVxlanPool.preCreateVxlanNetworkPoolOnSdnController(vo, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                data.put(SdnControllerConstant.Params.HARDWARE_VXLAN_POOLS.toString(), vo);
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+                flow(new Flow() {
+                    String __name__ = String.format("create-hardware-vxlan-on-db-%s", msg.getName());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        HardwareL2VxlanNetworkPoolVO vo = (HardwareL2VxlanNetworkPoolVO) data.get(SdnControllerConstant.Params.HARDWARE_VXLAN_POOLS.toString());
+                        vo = dbf.persistAndRefresh(vo);
+
+                        HardwareL2VxlanNetworkPoolInventory inv = HardwareL2VxlanNetworkPoolInventory.valueOf(vo);
+                        String info = String.format("successfully create HardwareVxlanNetworkPool, %s", JSONObjectUtil.toJsonString(inv));
+                        logger.debug(info);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        trigger.rollback();
+                    }
+                });
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success(HardwareL2VxlanNetworkPoolInventory.valueOf(dbf.findByUuid(vo.getUuid(), HardwareL2VxlanNetworkPoolVO.class)));
+                    }
+                });
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        dbf.removeByPrimaryKey(vo.getUuid(), HardwareL2VxlanNetworkPoolVO.class);
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override
@@ -78,15 +138,15 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAttachL2NetworkToClusterMsg) {
-            validate((APIAttachL2NetworkToClusterMsg)msg);
-        } else if (msg instanceof APICreateL3NetworkMsg){
-            validate((APICreateL3NetworkMsg)msg);
-        } else if (msg instanceof APICreateL2VxlanNetworkMsg){
-            validate((APICreateL2VxlanNetworkMsg)msg);
-        } else if (msg instanceof APICreateL2HardwareVxlanNetworkMsg){
-            validate((APICreateL2HardwareVxlanNetworkMsg)msg);
-        } else if (msg instanceof APICreateL2HardwareVxlanNetworkPoolMsg){
-            validate((APICreateL2HardwareVxlanNetworkPoolMsg)msg);
+            validate((APIAttachL2NetworkToClusterMsg) msg);
+        } else if (msg instanceof APICreateL3NetworkMsg) {
+            validate((APICreateL3NetworkMsg) msg);
+        } else if (msg instanceof APICreateL2VxlanNetworkMsg) {
+            validate((APICreateL2VxlanNetworkMsg) msg);
+        } else if (msg instanceof APICreateL2HardwareVxlanNetworkMsg) {
+            validate((APICreateL2HardwareVxlanNetworkMsg) msg);
+        } else if (msg instanceof APICreateL2HardwareVxlanNetworkPoolMsg) {
+            validate((APICreateL2HardwareVxlanNetworkPoolMsg) msg);
         }
 
         return msg;
@@ -125,24 +185,24 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
     private void validate(APICreateL2VxlanNetworkMsg msg) {
         VxlanNetworkPoolVO poolVO = dbf.findByUuid(msg.getPoolUuid(), VxlanNetworkPoolVO.class);
         if (poolVO.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)
-            && !msg.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE)){
+                && !msg.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
             throw new ApiMessageInterceptionException(argerr("ONLY hareware vxlan network can be created in hareware vxlan pool"));
         }
 
         if (!poolVO.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)
-                && msg.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE)){
+                && msg.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
             throw new ApiMessageInterceptionException(argerr("hareware vxlan network can ONLY be created in hareware vxlan pool"));
         }
     }
 
     private void validate(APICreateL2HardwareVxlanNetworkMsg msg) {
         VxlanNetworkPoolVO poolVO = dbf.findByUuid(msg.getPoolUuid(), VxlanNetworkPoolVO.class);
-        if (msg.getZoneUuid() != null && !msg.getZoneUuid().equals(poolVO.getZoneUuid()))  {
+        if (msg.getZoneUuid() != null && !msg.getZoneUuid().equals(poolVO.getZoneUuid())) {
             throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
                     String.format("the zone uuid provided not equals to zone uuid of pool [%s], please correct it or do not fill it",
                             msg.getPoolUuid())
             ));
-        } else if (msg.getZoneUuid() == null ) {
+        } else if (msg.getZoneUuid() == null) {
             msg.setZoneUuid(poolVO.getZoneUuid());
         }
 

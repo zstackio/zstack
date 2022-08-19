@@ -41,7 +41,7 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="HardwareVxlanNetworkPool" class="org.zstack.sdnController.hardwareVxlan.HardwareVxlanNetworkPoolFactory">
+    <bean id="HardwareVxlanNetworkPoolFactory" class="org.zstack.sdnController.hardwareVxlan.HardwareVxlanNetworkPoolFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkFactory" />
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
@@ -55,12 +55,6 @@
             <zstack:extension interface="org.zstack.network.l2.L2NetworkDefaultMtu"/>
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint" />
             <zstack:extension interface="org.zstack.network.l2.L2NetworkCascadeFilterExtensionPoint" />
-        </zstack:plugin>
-    </bean>
-
-    <bean id="HardwareVxlanNetwork" class="org.zstack.sdnController.hardwareVxlan.HardwareVxlanNetwork">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.sdnController.hardwareVxlan.HardwareVxlanNetworkExtensionPoint" />
         </zstack:plugin>
     </bean>
 

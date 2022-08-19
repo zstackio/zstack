@@ -5,6 +5,7 @@ import org.zstack.header.log.NoLogging;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
+import org.zstack.sdnController.h3c.H3cSdnControllerSystemTags;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -46,11 +47,11 @@ public class SdnControllerInventory implements Serializable {
         inv.setLastOpDate(vo.getLastOpDate());
         inv.vniRanges = new ArrayList<>();
         if (vo.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
-            List<Map<String, String>> tokenList = SdnControllerSystemTags.H3C_VNI_RANGE.getTokensOfTagsByResourceUuid(vo.getUuid());
+            List<Map<String, String>> tokenList = H3cSdnControllerSystemTags.H3C_VNI_RANGE.getTokensOfTagsByResourceUuid(vo.getUuid());
             for (Map<String, String> tokens : tokenList) {
                 SdnVniRange range = new SdnVniRange();
-                range.startVni = Integer.valueOf(tokens.get(SdnControllerSystemTags.H3C_START_VNI_TOKEN));
-                range.endVni = Integer.valueOf(tokens.get(SdnControllerSystemTags.H3C_END_VNI_TOKEN));
+                range.startVni = Integer.valueOf(tokens.get(H3cSdnControllerSystemTags.H3C_START_VNI_TOKEN));
+                range.endVni = Integer.valueOf(tokens.get(H3cSdnControllerSystemTags.H3C_END_VNI_TOKEN));
                 inv.vniRanges.add(range);
             }
         }

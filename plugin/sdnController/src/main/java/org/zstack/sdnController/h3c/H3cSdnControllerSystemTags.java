@@ -1,11 +1,12 @@
-package org.zstack.sdnController.header;
+package org.zstack.sdnController.h3c;
 
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
+import org.zstack.sdnController.header.SdnControllerVO;
 import org.zstack.tag.PatternedSystemTag;
 
 @TagDefinition
-public class SdnControllerSystemTags {
+public class H3cSdnControllerSystemTags {
     public static String H3C_TENANT_UUID_TOKEN = "tenantUuid";
     public static PatternedSystemTag H3C_TENANT_UUID = new PatternedSystemTag(String.format("tenantUuid::{%s}", H3C_TENANT_UUID_TOKEN), SdnControllerVO.class);
 

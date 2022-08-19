@@ -9,6 +9,7 @@ import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
+import org.zstack.sdnController.h3c.H3cSdnControllerSystemTags;
 import org.zstack.sdnController.header.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -77,7 +78,7 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor , Glob
 
         boolean vds = false;
         for (String tag : msg.getSystemTags()) {
-            if (SdnControllerSystemTags.H3C_VDS_UUID.isMatch(tag)){
+            if (H3cSdnControllerSystemTags.H3C_VDS_UUID.isMatch(tag)){
                 vds = true;
             }
         }

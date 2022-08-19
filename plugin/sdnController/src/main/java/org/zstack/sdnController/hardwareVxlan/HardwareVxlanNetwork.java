@@ -36,10 +36,6 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
         super(self);
     }
 
-    public HardwareVxlanNetwork() {
-        super();
-    }
-
     @Override
     public void createVxlanNetworkOnSdnController(VxlanNetworkVO vo, Completion completion) {
         HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);

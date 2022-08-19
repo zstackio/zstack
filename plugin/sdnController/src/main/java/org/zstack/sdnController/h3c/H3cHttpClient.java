@@ -7,7 +7,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.sdnController.header.SdnControllerGlobalProperty;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.Map;
@@ -24,18 +23,18 @@ public class H3cHttpClient<T> {
     public H3cHttpClient(Class<T> rspClz) {
         this.responseClass = rspClz;
         this.unit = TimeUnit.MILLISECONDS;
-        this.timeout = SdnControllerGlobalProperty.H3C_CONTROLLER_TIMEOUT;
+        this.timeout = H3cSdnControllerGlobalProperty.H3C_CONTROLLER_TIMEOUT;
     }
 
     private String buildUrl(String ip, String path) {
         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
-        ub.scheme(SdnControllerGlobalProperty.H3C_CONTROLLER_SCHEME);
+        ub.scheme(H3cSdnControllerGlobalProperty.H3C_CONTROLLER_SCHEME);
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             ub.host("localhost");
             ub.port(8989);
         } else {
             ub.host(ip);
-            ub.port(SdnControllerGlobalProperty.H3C_CONTROLLER_PORT);
+            ub.port(H3cSdnControllerGlobalProperty.H3C_CONTROLLER_PORT);
         }
 
         ub.path(path);
