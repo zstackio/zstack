@@ -46,7 +46,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
 
         SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
         SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-        sdnController.createVxlanNetwork(L2VxlanNetworkInventory.valueOf(vo), completion);
+        sdnController.postCreateVxlanNetwork(L2VxlanNetworkInventory.valueOf(vo), new ArrayList<>(), completion);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
 
         SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
         SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-        sdnController.deleteVxlanNetwork(L2VxlanNetworkInventory.valueOf(vo), completion);
+        sdnController.postDeleteVxlanNetwork(L2VxlanNetworkInventory.valueOf(vo), completion);
     }
 
     private void realizeNetwork(String hostUuid, String htype, L2VxlanNetworkInventory inv , Completion completion) {

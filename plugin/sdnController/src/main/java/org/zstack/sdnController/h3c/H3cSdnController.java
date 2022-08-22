@@ -15,6 +15,8 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.header.*;
+import org.zstack.sdnController.header.SdnControllerConstant.Operations;
+import org.zstack.sdnController.header.SdnControllerConstant.ResourceTypes;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -216,8 +218,55 @@ public class H3cSdnController implements SdnController {
         }).start();
     }
 
+    /* 日志模板
+    def _get_method_name(op, resource):
+    return op + '_' + resource + '_postcommit'
+
+
+    def _build_method(cls, resource):
+    # add methods like the following:
+    #
+    #    @log_helpers.log_method_call
+    #    def <method>_<resource>_postcommit(self, *args, **kwargs):
+    #        self.journal.set_sync_event()
+
+    operations = ['create', 'update', 'delete']
+    for op in operations:
+        client_method = _get_method_name(op, resource)
+        if hasattr(cls, client_method) and client_method not in cls.__dict__:
+            f = _build_func(client_method)
+            unbound = _unboundmethod(f, cls)
+            setattr(cls, client_method, unbound)
+    @staticmethod
+    def _record_in_journal(context, object_type, operation, data=None):
+            if data is None:
+                data = context.current
+                 journal.record(context._plugin_context, object_type,
+    context.current['id'], operation, data,
+    ml2_context=context)
+
+    @log_helpers.log_method_call
+    def create_network_precommit(self, context):
+            OpenDaylightMechanismDriver._record_in_journal(
+    context, odl_const.ODL_NETWORK, odl_const.ODL_CREATE)
+
+        @log_helpers.log_method_call
+    def create_network_precommit(self, context):
+        OpenDaylightMechanismDriver._record_in_journal(
+            context, odl_const.ODL_NETWORK, odl_const.ODL_CREATE)
+     */
+
+    private void recordInJournal(Operations operation, ResourceTypes resourceType, String resourceName){
+        logger.debug(String.format("pre operation for %s-%s which name is %s", resourceType.toString(), operation.toString(), resourceName));
+    }
+
     @Override
-    public void initSdnController(APIAddSdnControllerMsg msg, Completion completion) {
+    public void preInitSdnController(SdnControllerInventory controller, List<String> systemTags, Completion completion) {
+        recordInJournal(Operations.Create, ResourceTypes.SdnController, controller.getName());
+    }
+
+    @Override
+    public void postInitSdnController(APIAddSdnControllerMsg msg, Completion completion) {
         getH3cControllerToken(new Completion(completion) {
             @Override
             public void success() {
@@ -250,6 +299,7 @@ public class H3cSdnController implements SdnController {
                 }
             }
         }
+        recordInJournal(Operations.Create, ResourceTypes.VxlanNetworkPool, pool.getName());
         completion.success();
     }
 
@@ -259,8 +309,8 @@ public class H3cSdnController implements SdnController {
     }
 
     @Override
-    public void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan) {
-
+    public void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+        recordInJournal(Operations.Create, ResourceTypes.VxlanNetwork, vxlan.getName());
     }
 
     private void createVxlanNetworkOnController(L2VxlanNetworkInventory vxlan, Completion completion) {
@@ -318,7 +368,7 @@ public class H3cSdnController implements SdnController {
     }
 
     @Override
-    public void createVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion) {
+    public void postCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
         /* initSdnController get the token */
         getH3cControllerToken(new Completion(completion) {
             @Override
@@ -331,6 +381,41 @@ public class H3cSdnController implements SdnController {
                 completion.fail(errorCode);
             }
         });
+    }
+
+    @Override
+    public void preAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, List<String> systemTags, Completion completion) {
+        recordInJournal(Operations.AttachToCluster, ResourceTypes.VxlanNetwork, vxlan.getName());
+    }
+
+    @Override
+    public void postAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, List<String> systemTags, Completion completion) {
+
+    }
+
+    @Override
+    public void preDeleteSdnController(SdnControllerInventory controller, Completion completion) {
+        recordInJournal(Operations.Delete, ResourceTypes.SdnController, controller.getName());
+    }
+
+    @Override
+    public void postDeleteSdnController(SdnControllerInventory controller, Completion completion) {
+
+    }
+
+    @Override
+    public void preDetachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion) {
+        recordInJournal(Operations.DetachFromCluster, ResourceTypes.VxlanNetwork, vxlan.getName());
+    }
+
+    @Override
+    public void postDetachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion) {
+
+    }
+
+    @Override
+    public void preDeleteVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion) {
+        recordInJournal(Operations.Delete, ResourceTypes.VxlanNetwork, vxlan.getName());
     }
 
     private void deleteVxlanNetworkOnController(L2VxlanNetworkInventory vxlan, Completion completion) {
@@ -364,7 +449,7 @@ public class H3cSdnController implements SdnController {
     }
 
     @Override
-    public void deleteVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion) {
+    public void postDeleteVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion) {
         /* initSdnController get the token */
         getH3cControllerToken(new Completion(completion) {
             @Override
@@ -408,7 +493,6 @@ public class H3cSdnController implements SdnController {
         return vxlanMapping.get(keyMap);
     }
 
-    // from systemTag
     @Override
     public List<SdnVniRange> getVniRange(SdnControllerInventory controller) {
         List<Map<String, String>> tokenList = H3cSdnControllerSystemTags.H3C_VNI_RANGE
@@ -423,7 +507,6 @@ public class H3cSdnController implements SdnController {
         return vniRanges;
     }
 
-    // from systemTag
     @Override
     public List<SdnVlanRange> getAccessVlanRange(SdnControllerInventory controller) {
         // H3c: access vlan == vni

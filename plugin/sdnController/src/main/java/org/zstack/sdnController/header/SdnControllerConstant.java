@@ -20,8 +20,22 @@ public class SdnControllerConstant {
     public static final String H3C_VCFC_DEFAULT_TENANT_NAME = "default";
     public static final String H3C_VCFC_DEFAULT_TENANT_TYPE = "default";
 
+    public enum Operations {
+        INIT,
+        Create,
+        AttachToCluster,
+        DetachFromCluster,
+        Delete
+    }
+
+    public enum ResourceTypes{
+        SdnController,
+        VxlanNetworkPool,
+        VxlanNetwork
+    }
+
     public enum Params {
         HARDWARE_VXLAN_POOLS,
-        VXLAN_NETWORK,
+        VXLAN_NETWORK
     }
 }

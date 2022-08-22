@@ -28,7 +28,7 @@ public class H3cSdnControllerFactory implements SdnControllerFactory {
         SdnControllerVO sdnControllerVO = dbf.persistAndRefresh(vo);
 
         H3cSdnController controller = new H3cSdnController(sdnControllerVO);
-        controller.initSdnController(msg, new Completion(completion) {
+        controller.postInitSdnController(msg, new Completion(completion) {
             @Override
             public void success() {
                 completion.success();
