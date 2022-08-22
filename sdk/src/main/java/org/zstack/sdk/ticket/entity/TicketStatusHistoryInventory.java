@@ -85,6 +85,14 @@ public class TicketStatusHistoryInventory  {
         return this.operatorUuid;
     }
 
+    public java.lang.String flowName;
+    public void setFlowName(java.lang.String flowName) {
+        this.flowName = flowName;
+    }
+    public java.lang.String getFlowName() {
+        return flowName;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
