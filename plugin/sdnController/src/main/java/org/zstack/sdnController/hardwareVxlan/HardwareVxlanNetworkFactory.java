@@ -123,7 +123,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 VxlanNetworkVO ovo = (VxlanNetworkVO)data.get(SdnControllerConstant.Params.VXLAN_NETWORK.toString());
-                hardwareVxlan.createVxlanNetworkOnSdnController(ovo,new Completion(trigger) {
+                hardwareVxlan.postCreateVxlanNetworkOnSdnController(ovo,new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -139,7 +139,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 VxlanNetworkVO ovo = (VxlanNetworkVO)data.get(SdnControllerConstant.Params.VXLAN_NETWORK.toString());
-                hardwareVxlan.deleteVxlanNetworkOnSdnController(ovo, new Completion(trigger) {
+                hardwareVxlan.postDeleteVxlanNetworkOnSdnController(ovo, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.rollback();
@@ -208,7 +208,6 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
     public L2Network getL2Network(L2NetworkVO vo) {
         return new HardwareVxlanNetwork(vo);
     }
-
 
     @Override
     public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {

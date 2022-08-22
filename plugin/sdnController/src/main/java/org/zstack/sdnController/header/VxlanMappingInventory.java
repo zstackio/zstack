@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @PythonClassInventory
 @Inventory(mappingVOClass = VxlanMappingVO.class, collectionValueOfMethod = "valueOf1")
@@ -34,6 +35,14 @@ public class VxlanMappingInventory implements Serializable {
         return new VxlanMappingInventory(vo);
     }
 
+    public static VxlanMappingInventory valueOf2(Map<Integer,String> keyMap, Map<Integer,String> valueMap) {
+        VxlanMappingInventory  inv = new VxlanMappingInventory();
+        inv.setVni(keyMap.entrySet().stream().findFirst().get().getKey());
+        inv.setPhysicalInterface(keyMap.entrySet().stream().findFirst().get().getValue());
+        inv.setVlanId(valueMap.entrySet().stream().findFirst().get().getKey());
+        inv.setPhysicalInterface(valueMap.entrySet().stream().findFirst().get().getValue());
+        return inv;
+    }
 
     public static List<VxlanMappingInventory> valueOf1(Collection<VxlanMappingVO> vos) {
         List<VxlanMappingInventory> invs = new ArrayList<VxlanMappingInventory>(vos.size());

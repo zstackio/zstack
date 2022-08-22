@@ -37,7 +37,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
-    public void createVxlanNetworkOnSdnController(VxlanNetworkVO vo, Completion completion) {
+    public void postCreateVxlanNetworkOnSdnController(VxlanNetworkVO vo, Completion completion) {
         HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
         if (poolVO == null || poolVO.getSdnControllerUuid() == null) {
             completion.fail(argerr("there is no sdn controller for vxlan pool [uuid:%s]", vo.getPoolUuid()));
@@ -50,7 +50,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
-    public void deleteVxlanNetworkOnSdnController(VxlanNetworkVO vo, Completion completion) {
+    public void postDeleteVxlanNetworkOnSdnController(VxlanNetworkVO vo, Completion completion) {
         HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
         if (poolVO == null || poolVO.getSdnControllerUuid() == null) {
             completion.fail(argerr("there is no sdn controller for vxlan pool [uuid:%s]", vo.getPoolUuid()));
@@ -137,8 +137,18 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
+    public Map<Integer, String> getMappingVlanIdAndPhysicalInterface(L2VxlanNetworkInventory vxlan, String hostUuid) {
+        VxlanNetworkVO vo = (VxlanNetworkVO) self;
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+        SdnControllerVO sdnVo = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+
+        SdnController sdn = sdnControllerManager.getSdnController(sdnVo);
+        return sdn.getMappingVlanIdAndPhysicalInterface(L2VxlanNetworkInventory.valueOf((VxlanNetworkVO)self), hostUuid);
+    }
+
+    @Override
     public void deleteHook(Completion completion) {
-        deleteVxlanNetworkOnSdnController((VxlanNetworkVO) self, new Completion(completion) {
+        postDeleteVxlanNetworkOnSdnController((VxlanNetworkVO) self, new Completion(completion) {
             @Override
             public void success() {
                 completion.success();

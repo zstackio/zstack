@@ -1,13 +1,11 @@
 package org.zstack.sdnController;
 
 import org.zstack.header.core.Completion;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
-import org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory;
 import org.zstack.sdnController.header.*;
 
 import java.util.List;
+import java.util.Map;
 
 public interface SdnController {
 //    void initSdnController(APIAddSdnControllerMsg msg, Completion completion);
@@ -25,11 +23,12 @@ public interface SdnController {
     // 获取host对应的vlanId
     // H3c
     int  getMappingVlanId(L2VxlanNetworkInventory vxlan, String hostUuid);
+    Map<Integer, String> getMappingVlanIdAndPhysicalInterface(L2VxlanNetworkInventory vxlan, String hostUuid);
 
     void preCreateVxlanNetworkPool(HardwareL2VxlanNetworkPoolInventory pool, List<String> systemTags, Completion completion);
     void postCreateVxlanNetworkPool(HardwareL2VxlanNetworkPoolInventory pool, List<String> systemTags, Completion completion);
 
-//    void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan);
+    void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan);
     void createVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion);
 //    void postCreateVxlanNetwork(L2VxlanNetworkInventory l2Network, Completion completion);
 //    void preCreateL2Network(L2NetworkInventory l2Network, List<String> systemTags, Completion completion);

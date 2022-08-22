@@ -7,13 +7,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
-import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.header.*;
@@ -25,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -261,6 +258,11 @@ public class H3cSdnController implements SdnController {
 
     }
 
+    @Override
+    public void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan) {
+
+    }
+
     private void createVxlanNetworkOnController(L2VxlanNetworkInventory vxlan, Completion completion) {
         getH3cControllerLeaderIp(new Completion(completion) {
             @Override
@@ -380,6 +382,30 @@ public class H3cSdnController implements SdnController {
     @Override
     public int getMappingVlanId(L2VxlanNetworkInventory vxlan, String hostUuid) {
         return vxlan.getVni();
+    }
+
+    // vxlan + host/cluster  ->  physicalInterface + vlan
+    // msg: vni switch -> port vlanId
+    @Override
+    public Map<Integer, String> getMappingVlanIdAndPhysicalInterface(L2VxlanNetworkInventory vxlan, String hostUuid) {
+        int vni = vxlan.getVni();
+        Map<Map<Integer, String>, Map<Integer, String>> vxlanMapping = new HashMap<>();
+        Map<Integer, String> keyMap = new HashMap<Integer, String>();
+        keyMap.put(vni, hostUuid);
+        Map<Integer, String> valueMap = new HashMap<Integer, String>();
+        valueMap.put(vxlan.getVni(), "eth1");
+        vxlanMapping.put(keyMap,valueMap);
+
+//        VxlanMappingVO vxlanMappingVO = new VxlanMappingVO();
+//        vxlanMappingVO.setVni(vni);
+//        vxlanMappingVO.setPhysicalInterface(hostUuid);
+//        vxlanMappingVO.setVlanId(valueMap.entrySet().stream().findFirst().get().getKey());
+//        vxlanMappingVO.setPhysicalInterface(valueMap.entrySet().stream().findFirst().get().getValue());
+//        dbf.persistAndRefresh(vxlanMappingVO);
+//
+//        VxlanMappingInventory inv = VxlanMappingInventory.valueOf2(keyMap, valueMap);
+
+        return vxlanMapping.get(keyMap);
     }
 
     // from systemTag
