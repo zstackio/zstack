@@ -913,7 +913,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         }
 
         // forbid live migration with data volumes for local storage
-        if (vm.getAllVolumes().size() > 1) {
+        if (vm.getAllDiskVolumes().size() > 1) {
             return operr("unable to live migrate vm[uuid:%s] with data volumes on local storage." +
                     " Need detach all data volumes first.", vm.getUuid());
         }

@@ -1329,10 +1329,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
     @Transactional(readOnly = true)
     private List<VolumeInventory> getVolumeOnLocalStorage(VmInstanceSpec spec) {
         String sql = "select v from VolumeVO v, PrimaryStorageVO ps where v.primaryStorageUuid = ps.uuid" +
-                " and ps.type = :type and v.vmInstanceUuid = :vmUuid";
+                " and ps.type = :type and v.vmInstanceUuid = :vmUuid and v.type != :memoryType";
         TypedQuery<VolumeVO> q = dbf.getEntityManager().createQuery(sql, VolumeVO.class);
         q.setParameter("type", LocalStorageConstants.LOCAL_STORAGE_TYPE);
         q.setParameter("vmUuid", spec.getVmInventory().getUuid());
+        q.setParameter("memoryType", VolumeType.Memory);
         return VolumeInventory.valueOf(q.getResultList());
     }
 }
