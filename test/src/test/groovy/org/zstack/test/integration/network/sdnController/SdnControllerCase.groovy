@@ -54,7 +54,7 @@ class SdnControllerCase extends SubCase {
             systemTags = [String.format("vdsUuid::%s", h3cVdsUuid), String.format("tenantUuid::%s", inputTenantUuid)]
         }
         String vdsUuid = H3cVcfcSdnControllerSystemTags.H3C_VDS_UUID.getTokenByResourceUuid(sdn2.uuid,
-                H3cSdnControllerSystemTags.H3C_VDS_TOKEN)
+                H3cVcfcSdnControllerSystemTags.H3C_VDS_TOKEN)
         assert vdsUuid == h3cVdsUuid
         String tenantUuid = H3cVcfcSdnControllerSystemTags.H3C_TENANT_UUID.getTokenByResourceUuid(sdn2.uuid,
                 H3cVcfcSdnControllerSystemTags.H3C_TENANT_UUID_TOKEN)
