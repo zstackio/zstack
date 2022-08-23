@@ -7,6 +7,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -263,6 +264,16 @@ public class H3cSdnController implements SdnController {
     @Override
     public void preInitSdnController(SdnControllerInventory controller, List<String> systemTags, Completion completion) {
         recordInJournal(Operations.Create, ResourceTypes.SdnController, controller.getName());
+        boolean vds = false;
+        for (String tag : systemTags) {
+            if (H3cSdnControllerSystemTags.H3C_VDS_UUID.isMatch(tag)){
+                vds = true;
+            }
+        }
+        if(!vds){
+            completion.fail(argerr("H3C VCFC controller must include systemTags vdsUuid::{%s}"));
+        }
+        completion.success();
     }
 
     @Override
