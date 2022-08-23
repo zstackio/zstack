@@ -1,5 +1,6 @@
 package org.zstack.query;
 
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.rest.RestResponse;
@@ -10,6 +11,7 @@ import java.util.List;
 @RestResponse(allTo = "results")
 public class APIZQLQueryReply extends APIReply {
     @NoJsonSchema
+    @NoLogging(behavior = NoLogging.Behavior.Auto)
     private List<ZQLQueryReturn> results;
 
     public static APIZQLQueryReply __example__() {
