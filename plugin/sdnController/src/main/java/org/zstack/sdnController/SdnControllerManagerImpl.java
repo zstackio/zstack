@@ -80,6 +80,9 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     }
 
     private void doDeletionSdnController(SdnControllerDeletionMsg msg, Completion completion) {
+        SdnControllerVO vo = dbf.findByUuid(msg.getSdnControllerUuid(), SdnControllerVO.class);
+        SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
+
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("sdn-controller-deletion-%s", msg.getSdnControllerUuid()));
         chain.then(new NoRollbackFlow() {
@@ -115,6 +118,21 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             public void run(FlowTrigger trigger, Map data) {
                 dbf.removeByPrimaryKey(msg.getSdnControllerUuid(), SdnControllerVO.class);
                 trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                factory.deleteSdnController(vo, msg, new Completion(msg) {
+                    @Override
+                    public void success() {
+                       trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                       trigger.fail(errorCode);
+                    }
+                });
             }
         }).done(new FlowDoneHandler(completion) {
             @Override

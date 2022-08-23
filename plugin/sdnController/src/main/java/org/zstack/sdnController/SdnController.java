@@ -8,37 +8,32 @@ import java.util.List;
 import java.util.Map;
 
 public interface SdnController {
-//    void initSdnController(APIAddSdnControllerMsg msg, Completion completion);
-//    void createVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion);
-//    void deleteVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion);
-//    int  getMappingVlanId(L2VxlanNetworkInventory vxlan, String hostUuid);
-
     /*
     有关sdn控制器的前置检查: pre-event
-    对sdn控制器的控制:post-event
+    对sdn控制器的控制: event
+    有关sdn控制器的后置处理: post-event
      */
-    void preInitSdnController(SdnControllerInventory controller, List<String> systemTags, Completion completion);
-    void postInitSdnController(APIAddSdnControllerMsg msg, Completion completion);
-
-//TODO lldp获取sw和sw port数据  sw + sw port + vlan + vni
-//    void createAccessPort(L2VxlanNetworkInventory l2Network, HostInventory host, Completion completion);
-//    void deleteAccessPort(L2VxlanNetworkInventory l2Network, HostInventory host, Completion completion);
-    int  getMappingVlanId(L2VxlanNetworkInventory vxlan, String hostUuid);
-    Map<Integer, String> getMappingVlanIdAndPhysicalInterface(L2VxlanNetworkInventory vxlan, String hostUuid);
+    void preInitSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion);
+    void initSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion);
+    void postInitSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion);
 
     void preCreateVxlanNetworkPool(HardwareL2VxlanNetworkPoolInventory pool, List<String> systemTags, Completion completion);
-    void postCreateVxlanNetworkPool(HardwareL2VxlanNetworkPoolInventory pool, List<String> systemTags, Completion completion);
-    void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
-    void postCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
-    void preAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, List<String> systemTags, Completion completion);
-    void postAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, List<String> systemTags, Completion completion);
 
-    void preDeleteSdnController(SdnControllerInventory controller, Completion completion);
-    void postDeleteSdnController(SdnControllerInventory controller, Completion completion);
-    void preDetachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion);
-    void postDetachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion);
-    void preDeleteVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion);
-    void postDeleteVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion);
+    void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
+    void createVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
+    void postCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
+
+    void preAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
+    void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
+    void postAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
+
+    void deleteSdnController(SdnControllerDeletionMsg msg, SdnControllerInventory sdn, Completion completion);
+    void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion);
+    void deleteVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion);
+
+    //TODO lldp获取sw和sw port数据  sw + sw port + vlan + vni
+    int  getMappingVlanId(L2VxlanNetworkInventory vxlan, String hostUuid);
+    Map<Integer, String> getMappingVlanIdAndPhysicalInterface(L2VxlanNetworkInventory vxlan, String hostUuid);
 
     List<SdnVniRange> getVniRange(SdnControllerInventory controller);
     List<SdnVlanRange> getAccessVlanRange(SdnControllerInventory controller);

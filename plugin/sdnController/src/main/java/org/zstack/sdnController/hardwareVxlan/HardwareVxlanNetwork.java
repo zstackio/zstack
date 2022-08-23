@@ -37,20 +37,36 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
-    public void postCreateVxlanNetworkOnSdnController(VxlanNetworkVO vo, Completion completion) {
-        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+    public void preCreateVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
         if (poolVO == null || poolVO.getSdnControllerUuid() == null) {
-            completion.fail(argerr("there is no sdn controller for vxlan pool [uuid:%s]", vo.getPoolUuid()));
+            completion.fail(argerr("there is no sdn controller for vxlan pool [uuid:%s]", vxlan.getPoolUuid()));
             return;
         }
 
         SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
         SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-        sdnController.postCreateVxlanNetwork(L2VxlanNetworkInventory.valueOf(vo), new ArrayList<>(), completion);
+        sdnController.preCreateVxlanNetwork(vxlan, systemTags, completion);
     }
 
     @Override
-    public void postDeleteVxlanNetworkOnSdnController(VxlanNetworkVO vo, Completion completion) {
+    public void createVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+        SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+        SdnController sdnController = sdnControllerManager.getSdnController(sdn);
+        sdnController.createVxlanNetwork(vxlan, systemTags, completion);
+    }
+
+    @Override
+    public void postCreateVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+        SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+        SdnController sdnController = sdnControllerManager.getSdnController(sdn);
+        sdnController.postCreateVxlanNetwork(vxlan, systemTags, completion);
+    }
+
+    @Override
+    public void deleteVxlanNetworkOnSdnController(VxlanNetworkVO vo, Completion completion) {
         HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
         if (poolVO == null || poolVO.getSdnControllerUuid() == null) {
             completion.fail(argerr("there is no sdn controller for vxlan pool [uuid:%s]", vo.getPoolUuid()));
@@ -59,7 +75,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
 
         SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
         SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-        sdnController.postDeleteVxlanNetwork(L2VxlanNetworkInventory.valueOf(vo), completion);
+        sdnController.deleteVxlanNetwork(L2VxlanNetworkInventory.valueOf(vo), completion);
     }
 
     private void realizeNetwork(String hostUuid, String htype, L2VxlanNetworkInventory inv , Completion completion) {
@@ -71,8 +87,16 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
-    public void attachHardwareVxlanToCluster(VxlanNetworkVO vo, Completion completion) {
-        List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, vo.getPoolUuid())
+    public void preAttachL2NetworkToClusterOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+        SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+        SdnController sdnController = sdnControllerManager.getSdnController(sdn);
+        sdnController.preAttachL2NetworkToCluster(vxlan, systemTags, completion);
+    }
+
+    @Override
+    public void attachL2NetworkToClusterOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+        List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, vxlan.getPoolUuid())
                 .select(L2NetworkClusterRefVO_.clusterUuid).listValues();
         if (clusterUuids == null || clusterUuids.isEmpty()) {
             completion.success();
@@ -85,7 +109,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
         List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("attach-hardware-vxlan-%s-on-hosts", vo.getUuid()));
+        chain.setName(String.format("attach-hardware-vxlan-%s-on-hosts", vxlan.getUuid()));
         chain.then(new NoRollbackFlow() {
             final String __name__ = "realize-physical-interface";
 
@@ -96,7 +120,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
                 }
 
                 HostInventory host = it.next();
-                realizeNetwork(host.getUuid(), host.getHypervisorType(),L2VxlanNetworkInventory.valueOf(vo), new Completion(trigger) {
+                realizeNetwork(host.getUuid(), host.getHypervisorType(), vxlan, new Completion(trigger) {
                     @Override
                     public void success() {
                         realize(it, trigger);
@@ -113,6 +137,24 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
             public void run(FlowTrigger trigger, Map data) {
                 realize(hvinvs.iterator(), trigger);
             }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+                SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+                SdnController sdnController = sdnControllerManager.getSdnController(sdn);
+                sdnController.attachL2NetworkToCluster(vxlan, systemTags, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
@@ -127,7 +169,15 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
-    public int getMappingVxlanId(String hostUuid) {
+    public void postAttachL2NetworkToClusterOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+        SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+        SdnController sdnController = sdnControllerManager.getSdnController(sdn);
+        sdnController.postAttachL2NetworkToCluster(vxlan, systemTags, completion);
+    }
+
+    @Override
+    public Integer getMappingVxlanId(String hostUuid) {
         VxlanNetworkVO vo = (VxlanNetworkVO) self;
         HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
         SdnControllerVO sdnVo = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
@@ -148,7 +198,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
 
     @Override
     public void deleteHook(Completion completion) {
-        postDeleteVxlanNetworkOnSdnController((VxlanNetworkVO) self, new Completion(completion) {
+        deleteVxlanNetworkOnSdnController((VxlanNetworkVO) self, new Completion(completion) {
             @Override
             public void success() {
                 completion.success();

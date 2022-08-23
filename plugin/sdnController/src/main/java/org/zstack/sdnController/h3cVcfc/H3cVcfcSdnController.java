@@ -261,22 +261,13 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
-    public void preInitSdnController(SdnControllerInventory controller, List<String> systemTags, Completion completion) {
-        recordInJournal(Operations.Create, ResourceTypes.SdnController, controller.getName());
-        boolean vds = false;
-        for (String tag : systemTags) {
-            if (H3cVcfcSdnControllerSystemTags.H3C_VDS_UUID.isMatch(tag)){
-                vds = true;
-            }
-        }
-        if(!vds){
-            completion.fail(argerr("H3C VCFC controller must include systemTags vdsUuid::{%s}"));
-        }
+    public void preInitSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion) {
+        recordInJournal(Operations.Create, ResourceTypes.SdnController, msg.getName());
         completion.success();
     }
 
     @Override
-    public void postInitSdnController(APIAddSdnControllerMsg msg, Completion completion) {
+    public void initSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion) {
         getH3cControllerToken(new Completion(completion) {
             @Override
             public void success() {
@@ -291,7 +282,13 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
+    public void postInitSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion) {
+        completion.success();
+    }
+
+    @Override
     public void preCreateVxlanNetworkPool(HardwareL2VxlanNetworkPoolInventory pool, List<String> systemTags, Completion completion) {
+        recordInJournal(Operations.Create, ResourceTypes.VxlanNetworkPool, pool.getName());
         SdnControllerVO vo = dbf.findByUuid(pool.getSdnControllerUuid(), SdnControllerVO.class);
         List <VniRangeInventory> list = pool.getAttachedVniRanges();
         List <SdnVniRange> legalList = getVniRange(SdnControllerInventory.valueOf(vo));
@@ -309,18 +306,13 @@ public class H3cVcfcSdnController implements SdnController {
                 }
             }
         }
-        recordInJournal(Operations.Create, ResourceTypes.VxlanNetworkPool, pool.getName());
         completion.success();
-    }
-
-    @Override
-    public void postCreateVxlanNetworkPool(HardwareL2VxlanNetworkPoolInventory pool, List<String> systemTags, Completion completion) {
-
     }
 
     @Override
     public void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
         recordInJournal(Operations.Create, ResourceTypes.VxlanNetwork, vxlan.getName());
+        completion.success();
     }
 
     private void createVxlanNetworkOnController(L2VxlanNetworkInventory vxlan, Completion completion) {
@@ -378,7 +370,7 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
-    public void postCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+    public void createVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
         /* initSdnController get the token */
         getH3cControllerToken(new Completion(completion) {
             @Override
@@ -394,38 +386,37 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
-    public void preAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, List<String> systemTags, Completion completion) {
+    public void postCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void preAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
         recordInJournal(Operations.AttachToCluster, ResourceTypes.VxlanNetwork, vxlan.getName());
+        completion.success();
     }
 
     @Override
-    public void postAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, List<String> systemTags, Completion completion) {
-
+    public void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+        completion.success();
     }
 
     @Override
-    public void preDeleteSdnController(SdnControllerInventory controller, Completion completion) {
-        recordInJournal(Operations.Delete, ResourceTypes.SdnController, controller.getName());
+    public void postAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+        completion.success();
     }
 
     @Override
-    public void postDeleteSdnController(SdnControllerInventory controller, Completion completion) {
-
+    public void deleteSdnController(SdnControllerDeletionMsg msg, SdnControllerInventory sdn, Completion completion) {
+        recordInJournal(Operations.Delete, ResourceTypes.SdnController, sdn.getName());
+        completion.success();
     }
 
+
     @Override
-    public void preDetachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion) {
+    public void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion) {
         recordInJournal(Operations.DetachFromCluster, ResourceTypes.VxlanNetwork, vxlan.getName());
-    }
-
-    @Override
-    public void postDetachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion) {
-
-    }
-
-    @Override
-    public void preDeleteVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion) {
-        recordInJournal(Operations.Delete, ResourceTypes.VxlanNetwork, vxlan.getName());
+        completion.success();
     }
 
     private void deleteVxlanNetworkOnController(L2VxlanNetworkInventory vxlan, Completion completion) {
@@ -459,7 +450,8 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
-    public void postDeleteVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion) {
+    public void deleteVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion) {
+        recordInJournal(Operations.Delete, ResourceTypes.VxlanNetwork, vxlan.getName());
         /* initSdnController get the token */
         getH3cControllerToken(new Completion(completion) {
             @Override
@@ -479,8 +471,6 @@ public class H3cVcfcSdnController implements SdnController {
         return vxlan.getVni();
     }
 
-    // vxlan + host/cluster  ->  physicalInterface + vlan
-    // msg: vni switch -> port vlanId
     @Override
     public Map<Integer, String> getMappingVlanIdAndPhysicalInterface(L2VxlanNetworkInventory vxlan, String hostUuid) {
         int vni = vxlan.getVni();

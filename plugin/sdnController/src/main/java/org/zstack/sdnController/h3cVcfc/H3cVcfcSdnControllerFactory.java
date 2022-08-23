@@ -30,23 +30,29 @@ public class H3cVcfcSdnControllerFactory implements SdnControllerFactory {
     }
 
     @Override
+    public SdnController getSdnController(SdnControllerVO vo) {
+        return new H3cVcfcSdnController(vo);
+    }
+
+    @Override
     public void createSdnController(final SdnControllerVO vo, APIAddSdnControllerMsg msg, Completion completion) {
         SdnControllerVO sdnControllerVO = dbf.persistAndRefresh(vo);
+        SdnControllerInventory sdn = SdnControllerInventory.valueOf(sdnControllerVO);
         H3cVcfcSdnController controller = new H3cVcfcSdnController(sdnControllerVO);
 
         Map data = new HashMap();
-        FlowChain fchain = FlowChainBuilder.newShareFlowChain();
-        fchain.setData(data);
-        fchain.setName(String.format("create-sdn-controller-%s", msg.getName()));
-        fchain.then(new ShareFlow() {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setData(data);
+        chain.setName(String.format("create-sdn-controller-%s", msg.getName()));
+        chain.then(new ShareFlow() {
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
-                    String __name__ = String.format("pre-check-for-create-sdn-controller-%s", msg.getName());
+                    String __name__ = String.format("pre-process-for-create-sdn-controller-%s", msg.getName());
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.preInitSdnController(vo.toInventory(), msg.getSystemTags(), new Completion(trigger) {
+                        controller.preInitSdnController(msg, sdn, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -64,7 +70,7 @@ public class H3cVcfcSdnControllerFactory implements SdnControllerFactory {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.postInitSdnController(msg, new Completion(completion) {
+                        controller.initSdnController(msg, sdn, new Completion(completion) {
                             @Override
                             public void success() {
                                 completion.success();
@@ -81,6 +87,24 @@ public class H3cVcfcSdnControllerFactory implements SdnControllerFactory {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         trigger.rollback();
+                    }
+                });
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("post-process-for-create-sdn-controller--%s", msg.getName());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        controller.postInitSdnController(msg, sdn, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
                     }
                 });
                 done(new FlowDoneHandler(completion) {
@@ -101,12 +125,43 @@ public class H3cVcfcSdnControllerFactory implements SdnControllerFactory {
     }
 
     @Override
-    public SdnController getSdnController(SdnControllerVO vo) {
-        return new H3cVcfcSdnController(vo);
-    }
+    public void deleteSdnController(SdnControllerVO vo, SdnControllerDeletionMsg msg, Completion completion) {
+        SdnControllerVO sdnControllerVO = dbf.persistAndRefresh(vo);
+        SdnControllerInventory sdn = SdnControllerInventory.valueOf(sdnControllerVO);
+        H3cVcfcSdnController controller = new H3cVcfcSdnController(sdnControllerVO);
 
-    @Override
-    public int getMappingVlanIdFromHardwareVxlanNetwork(L2VxlanNetworkInventory vxlan, String controllerUuid) {
-        return 0;
+        Map data = new HashMap();
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setData(data);
+        chain.setName(String.format("delete-sdn-controller-%s", sdnControllerVO.getName()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = String.format("delete-sdn-controller-%s", sdnControllerVO.getName());
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                controller.deleteSdnController(msg, sdn, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.success();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                logger.debug(String.format("successfully delete sdn controller"));
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 }

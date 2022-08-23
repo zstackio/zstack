@@ -1,7 +1,6 @@
 package org.zstack.sdnController.hardwareVxlan;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -85,7 +84,7 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
                     }
                 });
                 flow(new Flow() {
-                    String __name__ = String.format("create-hardware-vxlan-on-db-%s", msg.getName());
+                    String __name__ = String.format("create-hardware-vxlan-network-pool-on-db-%s", msg.getName());
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
