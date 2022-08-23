@@ -163,6 +163,8 @@
 
         <Logger name="org.zstack.drs" level="TRACE" />
 
+        <Logger name="org.zstack.core.log" level="TRACE"/>
+
         <Logger name="org.springframework.data.cassandra.core" level="TRACE" />
 
         <Logger name="org.hibernate" level="WARN">
