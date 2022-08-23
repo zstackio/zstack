@@ -1,4 +1,4 @@
-package org.zstack.sdnController.h3c;
+package org.zstack.sdnController.h3cVcfc;
 
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,7 +7,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -33,8 +32,8 @@ import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class H3cSdnController implements SdnController {
-    private static final CLogger logger = Utils.getLogger(H3cSdnController.class);
+public class H3cVcfcSdnController implements SdnController {
+    private static final CLogger logger = Utils.getLogger(H3cVcfcSdnController.class);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -48,20 +47,20 @@ public class H3cSdnController implements SdnController {
 
     private String buildUrl(String path) {
         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
-        ub.scheme(H3cSdnControllerGlobalProperty.H3C_CONTROLLER_SCHEME);
+        ub.scheme(H3cVcfcSdnControllerGlobalProperty.H3C_CONTROLLER_SCHEME);
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             ub.host("localhost");
             ub.port(8989);
         } else {
             ub.host(self.getIp());
-            ub.port(H3cSdnControllerGlobalProperty.H3C_CONTROLLER_PORT);
+            ub.port(H3cVcfcSdnControllerGlobalProperty.H3C_CONTROLLER_PORT);
         }
 
         ub.path(path);
         return ub.build().toUriString();
     }
 
-    public H3cSdnController(SdnControllerVO self) {
+    public H3cVcfcSdnController(SdnControllerVO self) {
         this.self = self;
     }
 
@@ -86,26 +85,26 @@ public class H3cSdnController implements SdnController {
 
     // from H3cCmd
     private void getH3cVniRanges(Completion completion) {
-        H3cCommands.GetH3cVniRangeCmd cmd = new H3cCommands.GetH3cVniRangeCmd();
+        H3cVcfcCommands.GetH3cVniRangeCmd cmd = new H3cVcfcCommands.GetH3cVniRangeCmd();
         try {
-            H3cCommands.GetH3cVniRangeRsp rsp = new H3cHttpClient<>(H3cCommands.GetH3cVniRangeRsp.class).syncCall("GET", self.getIp(), H3cCommands.H3C_VCFC_VNI_RANGES, cmd, getH3cHeaders(token));
+            H3cVcfcCommands.GetH3cVniRangeRsp rsp = new H3cVcfcHttpClient<>(H3cVcfcCommands.GetH3cVniRangeRsp.class).syncCall("GET", self.getIp(), H3cVcfcCommands.H3C_VCFC_VNI_RANGES, cmd, getH3cHeaders(token));
             if (rsp == null) {
                 completion.fail(operr("get vni range on sdn controller [ip:%s] failed", self.getIp()));
                 return;
             }
 
             int count = 0;
-            for (H3cCommands.H3cVniRangeStruct d : rsp.domains) {
-                for (H3cCommands.VniRangeStruct v : d.vlan_map_list) {
+            for (H3cVcfcCommands.H3cVniRangeStruct d : rsp.domains) {
+                for (H3cVcfcCommands.VniRangeStruct v : d.vlan_map_list) {
                     Integer startVni = Integer.valueOf(v.start_vxlan);
                     Integer endVni = Integer.valueOf(v.end_vxlan);
-                    SystemTagCreator creator = H3cSdnControllerSystemTags.H3C_VNI_RANGE.newSystemTagCreator(self.getUuid());
+                    SystemTagCreator creator = H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE.newSystemTagCreator(self.getUuid());
                     creator.ignoreIfExisting = false;
                     creator.inherent = false;
                     creator.setTagByTokens(
                             map(
-                                    e(H3cSdnControllerSystemTags.H3C_START_VNI_TOKEN, v.start_vxlan),
-                                    e(H3cSdnControllerSystemTags.H3C_END_VNI_TOKEN, v.end_vxlan)
+                                    e(H3cVcfcSdnControllerSystemTags.H3C_START_VNI_TOKEN, v.start_vxlan),
+                                    e(H3cVcfcSdnControllerSystemTags.H3C_END_VNI_TOKEN, v.end_vxlan)
                             )
                     );
                     creator.create();
@@ -125,24 +124,24 @@ public class H3cSdnController implements SdnController {
     }
 
     private void getH3cDefaultTenant(Completion completion) {
-        H3cCommands.GetH3cTenantsCmd cmd = new H3cCommands.GetH3cTenantsCmd();
+        H3cVcfcCommands.GetH3cTenantsCmd cmd = new H3cVcfcCommands.GetH3cTenantsCmd();
         try {
-            H3cCommands.GetH3cTenantsRsp rsp = new H3cHttpClient<>(H3cCommands.GetH3cTenantsRsp.class).syncCall("GET", self.getIp(), H3cCommands.H3C_VCFC_TENANTS, cmd, getH3cHeaders(token));
+            H3cVcfcCommands.GetH3cTenantsRsp rsp = new H3cVcfcHttpClient<>(H3cVcfcCommands.GetH3cTenantsRsp.class).syncCall("GET", self.getIp(), H3cVcfcCommands.H3C_VCFC_TENANTS, cmd, getH3cHeaders(token));
             if (rsp == null) {
                 completion.fail(operr("there is no vni range on sdn controller [ip:%s]", self.getIp()));
                 return;
             }
 
             boolean found = false;
-            for (H3cCommands.H3cTenantStruct d : rsp.tenants) {
+            for (H3cVcfcCommands.H3cTenantStruct d : rsp.tenants) {
                 if (SdnControllerConstant.H3C_VCFC_DEFAULT_TENANT_NAME.equals(d.name)
                         && SdnControllerConstant.H3C_VCFC_DEFAULT_TENANT_TYPE.equals(d.type)) {
-                    SystemTagCreator creator = H3cSdnControllerSystemTags.H3C_TENANT_UUID.newSystemTagCreator(self.getUuid());
+                    SystemTagCreator creator = H3cVcfcSdnControllerSystemTags.H3C_TENANT_UUID.newSystemTagCreator(self.getUuid());
                     creator.ignoreIfExisting = false;
                     creator.inherent = false;
                     creator.setTagByTokens(
                             map(
-                                    e(H3cSdnControllerSystemTags.H3C_TENANT_UUID_TOKEN, d.id)
+                                    e(H3cVcfcSdnControllerSystemTags.H3C_TENANT_UUID_TOKEN, d.id)
                             )
                     );
                     creator.create();
@@ -189,7 +188,7 @@ public class H3cSdnController implements SdnController {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 for(String systemTag : msg.getSystemTags()) {
-                    if(H3cSdnControllerSystemTags.H3C_TENANT_UUID.isMatch(systemTag)) {
+                    if(H3cVcfcSdnControllerSystemTags.H3C_TENANT_UUID.isMatch(systemTag)) {
                         trigger.next();
                         return;
                     }
@@ -266,7 +265,7 @@ public class H3cSdnController implements SdnController {
         recordInJournal(Operations.Create, ResourceTypes.SdnController, controller.getName());
         boolean vds = false;
         for (String tag : systemTags) {
-            if (H3cSdnControllerSystemTags.H3C_VDS_UUID.isMatch(tag)){
+            if (H3cVcfcSdnControllerSystemTags.H3C_VDS_UUID.isMatch(tag)){
                 vds = true;
             }
         }
@@ -340,10 +339,10 @@ public class H3cSdnController implements SdnController {
 
     /* H3C VCFC backup node can not handle the create command  */
     private void doCreateVxlanNetworkOnController(L2VxlanNetworkInventory vxlan, Completion completion) {
-        String tenantUuid = H3cSdnControllerSystemTags.H3C_TENANT_UUID.getTokenByResourceUuid(self.getUuid(), H3cSdnControllerSystemTags.H3C_TENANT_UUID_TOKEN);
-        String vdsUuid = H3cSdnControllerSystemTags.H3C_VDS_UUID.getTokenByResourceUuid(self.getUuid(), H3cSdnControllerSystemTags.H3C_VDS_TOKEN);
-        H3cCommands.CreateH3cNetworksCmd cmd = new H3cCommands.CreateH3cNetworksCmd();
-        H3cCommands.NetworkCmd networkCmd = new H3cCommands.NetworkCmd();
+        String tenantUuid = H3cVcfcSdnControllerSystemTags.H3C_TENANT_UUID.getTokenByResourceUuid(self.getUuid(), H3cVcfcSdnControllerSystemTags.H3C_TENANT_UUID_TOKEN);
+        String vdsUuid = H3cVcfcSdnControllerSystemTags.H3C_VDS_UUID.getTokenByResourceUuid(self.getUuid(), H3cVcfcSdnControllerSystemTags.H3C_VDS_TOKEN);
+        H3cVcfcCommands.CreateH3cNetworksCmd cmd = new H3cVcfcCommands.CreateH3cNetworksCmd();
+        H3cVcfcCommands.NetworkCmd networkCmd = new H3cVcfcCommands.NetworkCmd();
         networkCmd.name = vxlan.getName();
         networkCmd.tenant_id = tenantUuid;
         networkCmd.distributed = true;
@@ -356,18 +355,18 @@ public class H3cSdnController implements SdnController {
 
         cmd.networks.add(networkCmd);
         try {
-            H3cCommands.CreateH3cNetworksRsp rsp = new H3cHttpClient<>(H3cCommands.CreateH3cNetworksRsp.class).syncCall("POST", leaderIp, H3cCommands.H3C_VCFC_L2_NETWORKS, cmd, getH3cHeaders(token));
+            H3cVcfcCommands.CreateH3cNetworksRsp rsp = new H3cVcfcHttpClient<>(H3cVcfcCommands.CreateH3cNetworksRsp.class).syncCall("POST", leaderIp, H3cVcfcCommands.H3C_VCFC_L2_NETWORKS, cmd, getH3cHeaders(token));
             if (rsp == null) {
                 completion.fail(operr("create vxlan network on sdn controller [ip:%s] failed", self.getIp()));
                 return;
             }
-            H3cCommands.NetworkCmd network = rsp.networks.get(0);
-            SystemTagCreator creator = H3cSdnControllerSystemTags.H3C_L2_NETWORK_UUID.newSystemTagCreator(vxlan.getUuid());
+            H3cVcfcCommands.NetworkCmd network = rsp.networks.get(0);
+            SystemTagCreator creator = H3cVcfcSdnControllerSystemTags.H3C_L2_NETWORK_UUID.newSystemTagCreator(vxlan.getUuid());
             creator.ignoreIfExisting = false;
             creator.inherent = false;
             creator.setTagByTokens(
                     map(
-                            e(H3cSdnControllerSystemTags.H3C_L2_NETWORK_UUID_TOKEN, network.id)
+                            e(H3cVcfcSdnControllerSystemTags.H3C_L2_NETWORK_UUID_TOKEN, network.id)
                     )
             );
             creator.create();
@@ -444,10 +443,10 @@ public class H3cSdnController implements SdnController {
     }
 
     private void doDeleteVxlanNetworkOnController(L2VxlanNetworkInventory vxlan, Completion completion) {
-        H3cCommands.DeleteH3cNetworksCmd cmd = new H3cCommands.DeleteH3cNetworksCmd();
+        H3cVcfcCommands.DeleteH3cNetworksCmd cmd = new H3cVcfcCommands.DeleteH3cNetworksCmd();
         try {
-            String h3cL2NetworkUuid = H3cSdnControllerSystemTags.H3C_L2_NETWORK_UUID.getTokenByResourceUuid(vxlan.getUuid(), H3cSdnControllerSystemTags.H3C_L2_NETWORK_UUID_TOKEN);
-            H3cCommands.DeleteH3cNetworksRsp rsp = new H3cHttpClient<>(H3cCommands.DeleteH3cNetworksRsp.class).syncCall("DELETE", leaderIp, String.format("%s/%s", H3cCommands.H3C_VCFC_L2_NETWORKS, h3cL2NetworkUuid), cmd, getH3cHeaders(token));
+            String h3cL2NetworkUuid = H3cVcfcSdnControllerSystemTags.H3C_L2_NETWORK_UUID.getTokenByResourceUuid(vxlan.getUuid(), H3cVcfcSdnControllerSystemTags.H3C_L2_NETWORK_UUID_TOKEN);
+            H3cVcfcCommands.DeleteH3cNetworksRsp rsp = new H3cVcfcHttpClient<>(H3cVcfcCommands.DeleteH3cNetworksRsp.class).syncCall("DELETE", leaderIp, String.format("%s/%s", H3cVcfcCommands.H3C_VCFC_L2_NETWORKS, h3cL2NetworkUuid), cmd, getH3cHeaders(token));
             if (rsp == null) {
                 completion.fail(operr("delete vxlan network on sdn controller [ip:%s] failed", self.getIp()));
                 return;
@@ -506,13 +505,13 @@ public class H3cSdnController implements SdnController {
 
     @Override
     public List<SdnVniRange> getVniRange(SdnControllerInventory controller) {
-        List<Map<String, String>> tokenList = H3cSdnControllerSystemTags.H3C_VNI_RANGE
+        List<Map<String, String>> tokenList = H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE
                 .getTokensOfTagsByResourceUuid(controller.getUuid());
         List<SdnVniRange> vniRanges = new ArrayList<>();
         for (Map<String, String> tokens : tokenList) {
             SdnVniRange range = new SdnVniRange();
-            range.startVni = Integer.valueOf(tokens.get(H3cSdnControllerSystemTags.H3C_START_VNI_TOKEN));
-            range.endVni = Integer.valueOf(tokens.get(H3cSdnControllerSystemTags.H3C_END_VNI_TOKEN));
+            range.startVni = Integer.valueOf(tokens.get(H3cVcfcSdnControllerSystemTags.H3C_START_VNI_TOKEN));
+            range.endVni = Integer.valueOf(tokens.get(H3cVcfcSdnControllerSystemTags.H3C_END_VNI_TOKEN));
             vniRanges.add(range);
         }
         return vniRanges;
@@ -521,23 +520,23 @@ public class H3cSdnController implements SdnController {
     @Override
     public List<SdnVlanRange> getAccessVlanRange(SdnControllerInventory controller) {
         // H3c: access vlan == vni
-        List<Map<String, String>> tokenList = H3cSdnControllerSystemTags.H3C_VNI_RANGE
+        List<Map<String, String>> tokenList = H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE
                 .getTokensOfTagsByResourceUuid(controller.getUuid());
         List<SdnVlanRange> vlanRanges = new ArrayList<>();
         for (Map<String, String> tokens : tokenList) {
             SdnVlanRange range = new SdnVlanRange();
-            range.startVlan = Integer.valueOf(tokens.get(H3cSdnControllerSystemTags.H3C_START_VNI_TOKEN));
-            range.endVlan = Integer.valueOf(tokens.get(H3cSdnControllerSystemTags.H3C_END_VNI_TOKEN));
+            range.startVlan = Integer.valueOf(tokens.get(H3cVcfcSdnControllerSystemTags.H3C_START_VNI_TOKEN));
+            range.endVlan = Integer.valueOf(tokens.get(H3cVcfcSdnControllerSystemTags.H3C_END_VNI_TOKEN));
             vlanRanges.add(range);
         }
         return vlanRanges;
     }
 
     private void getH3cControllerLeaderIp(Completion completion) {
-        H3cCommands.GetH3cTeamLederIpCmd cmd = new H3cCommands.GetH3cTeamLederIpCmd();
+        H3cVcfcCommands.GetH3cTeamLederIpCmd cmd = new H3cVcfcCommands.GetH3cTeamLederIpCmd();
 
         try {
-            H3cCommands.GetH3cTeamLederIpReply rsp = new H3cHttpClient<>(H3cCommands.GetH3cTeamLederIpReply.class).syncCall("GET", self.getIp(), H3cCommands.H3C_VCFC_TEAM_LEADERIP, cmd, getH3cHeaders(token));
+            H3cVcfcCommands.GetH3cTeamLederIpReply rsp = new H3cVcfcHttpClient<>(H3cVcfcCommands.GetH3cTeamLederIpReply.class).syncCall("GET", self.getIp(), H3cVcfcCommands.H3C_VCFC_TEAM_LEADERIP, cmd, getH3cHeaders(token));
             if (rsp == null) {
                 completion.fail(operr("get leader of sdn controller [ip:%s] failed", self.getIp()));
                 return;
@@ -551,14 +550,14 @@ public class H3cSdnController implements SdnController {
     }
 
     private void getH3cControllerToken(Completion completion) {
-        H3cCommands.GetH3cTokenCmd cmd = new H3cCommands.GetH3cTokenCmd();
-        H3cCommands.LoginCmd loginCmd = new H3cCommands.LoginCmd();
+        H3cVcfcCommands.GetH3cTokenCmd cmd = new H3cVcfcCommands.GetH3cTokenCmd();
+        H3cVcfcCommands.LoginCmd loginCmd = new H3cVcfcCommands.LoginCmd();
         loginCmd.user = self.getUsername();
         loginCmd.password = self.getPassword();
         cmd.login = loginCmd;
 
         try {
-            H3cCommands.LoginRsp rsp = new H3cHttpClient<>(H3cCommands.LoginRsp.class).syncCall("POST", self.getIp(), H3cCommands.H3C_VCFC_GET_TOKEN, cmd, getH3cHeaders());
+            H3cVcfcCommands.LoginRsp rsp = new H3cVcfcHttpClient<>(H3cVcfcCommands.LoginRsp.class).syncCall("POST", self.getIp(), H3cVcfcCommands.H3C_VCFC_GET_TOKEN, cmd, getH3cHeaders());
             if (rsp == null) {
                 completion.fail(operr("get token of sdn controller [ip:%s] failed", self.getIp()));
                 return;

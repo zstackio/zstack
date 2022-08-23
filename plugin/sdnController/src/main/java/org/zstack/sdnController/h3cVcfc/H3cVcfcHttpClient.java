@@ -1,4 +1,4 @@
-package org.zstack.sdnController.h3c;
+package org.zstack.sdnController.h3cVcfc;
 
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,28 +13,28 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class H3cHttpClient<T> {
+public class H3cVcfcHttpClient<T> {
     @Autowired
     private RESTFacade restf;
     private TimeUnit unit;
     private Long timeout;
     private Class<T> responseClass;
 
-    public H3cHttpClient(Class<T> rspClz) {
+    public H3cVcfcHttpClient(Class<T> rspClz) {
         this.responseClass = rspClz;
         this.unit = TimeUnit.MILLISECONDS;
-        this.timeout = H3cSdnControllerGlobalProperty.H3C_CONTROLLER_TIMEOUT;
+        this.timeout = H3cVcfcSdnControllerGlobalProperty.H3C_CONTROLLER_TIMEOUT;
     }
 
     private String buildUrl(String ip, String path) {
         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
-        ub.scheme(H3cSdnControllerGlobalProperty.H3C_CONTROLLER_SCHEME);
+        ub.scheme(H3cVcfcSdnControllerGlobalProperty.H3C_CONTROLLER_SCHEME);
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             ub.host("localhost");
             ub.port(8989);
         } else {
             ub.host(ip);
-            ub.port(H3cSdnControllerGlobalProperty.H3C_CONTROLLER_PORT);
+            ub.port(H3cVcfcSdnControllerGlobalProperty.H3C_CONTROLLER_PORT);
         }
 
         ub.path(path);
@@ -59,7 +59,7 @@ public class H3cHttpClient<T> {
                 return restf.syncJsonDelete(buildUrl(ip, url), httpBody, headers, responseClass);
             }
             default: {
-                if (url.equals(H3cCommands.H3C_VCFC_L2_NETWORKS)) {
+                if (url.equals(H3cVcfcCommands.H3C_VCFC_L2_NETWORKS)) {
                     httpBody = httpBody.replace("\"network_type\"", "\"provider:network_type\"")
                             .replace("\"original_network_type\"", "\"provider:original_network_type\"")
                             .replace("\"domain\"", "\"provider:domain\"")

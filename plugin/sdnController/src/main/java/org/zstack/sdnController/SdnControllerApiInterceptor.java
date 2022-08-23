@@ -9,7 +9,6 @@ import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
-import org.zstack.sdnController.h3c.H3cSdnControllerSystemTags;
 import org.zstack.sdnController.header.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;

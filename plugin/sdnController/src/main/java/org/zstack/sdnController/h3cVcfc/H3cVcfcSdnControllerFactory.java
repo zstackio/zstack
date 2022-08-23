@@ -1,4 +1,4 @@
-package org.zstack.sdnController.h3c;
+package org.zstack.sdnController.h3cVcfc;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.DatabaseFacade;
@@ -12,14 +12,13 @@ import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerFactory;
 import org.zstack.sdnController.SdnControllerType;
 import org.zstack.sdnController.header.*;
-import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.zstack.utils.ObjectUtils.logger;
 
-public class H3cSdnControllerFactory implements SdnControllerFactory {
+public class H3cVcfcSdnControllerFactory implements SdnControllerFactory {
     SdnControllerType sdnControllerType = new SdnControllerType(SdnControllerConstant.H3C_VCFC_CONTROLLER);
 
     @Autowired
@@ -33,7 +32,7 @@ public class H3cSdnControllerFactory implements SdnControllerFactory {
     @Override
     public void createSdnController(final SdnControllerVO vo, APIAddSdnControllerMsg msg, Completion completion) {
         SdnControllerVO sdnControllerVO = dbf.persistAndRefresh(vo);
-        H3cSdnController controller = new H3cSdnController(sdnControllerVO);
+        H3cVcfcSdnController controller = new H3cVcfcSdnController(sdnControllerVO);
 
         Map data = new HashMap();
         FlowChain fchain = FlowChainBuilder.newShareFlowChain();
@@ -103,7 +102,7 @@ public class H3cSdnControllerFactory implements SdnControllerFactory {
 
     @Override
     public SdnController getSdnController(SdnControllerVO vo) {
-        return new H3cSdnController(vo);
+        return new H3cVcfcSdnController(vo);
     }
 
     @Override

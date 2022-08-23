@@ -3,7 +3,7 @@ package org.zstack.test.integration.network.sdnController
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.sdk.*
 import org.zstack.sdnController.header.SdnControllerConstant
-import org.zstack.sdnController.h3c.H3cSdnControllerSystemTags
+import org.zstack.sdnController.h3cVcfc.H3cVcfcSdnControllerSystemTags
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
@@ -53,14 +53,14 @@ class SdnControllerCase extends SubCase {
             password = "password"
             systemTags = [String.format("vdsUuid::%s", h3cVdsUuid), String.format("tenantUuid::%s", inputTenantUuid)]
         }
-        String vdsUuid = H3cSdnControllerSystemTags.H3C_VDS_UUID.getTokenByResourceUuid(sdn2.uuid,
+        String vdsUuid = H3cVcfcSdnControllerSystemTags.H3C_VDS_UUID.getTokenByResourceUuid(sdn2.uuid,
                 H3cSdnControllerSystemTags.H3C_VDS_TOKEN)
         assert vdsUuid == h3cVdsUuid
-        String tenantUuid = H3cSdnControllerSystemTags.H3C_TENANT_UUID.getTokenByResourceUuid(sdn2.uuid,
-                H3cSdnControllerSystemTags.H3C_TENANT_UUID_TOKEN)
+        String tenantUuid = H3cVcfcSdnControllerSystemTags.H3C_TENANT_UUID.getTokenByResourceUuid(sdn2.uuid,
+                H3cVcfcSdnControllerSystemTags.H3C_TENANT_UUID_TOKEN)
         assert tenantUuid != null
         assert tenantUuid == inputTenantUuid
-        List<Map<String, String>> vniRanges = H3cSdnControllerSystemTags.H3C_VNI_RANGE.getTokensOfTagsByResourceUuid(sdn2.uuid)
+        List<Map<String, String>> vniRanges = H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE.getTokensOfTagsByResourceUuid(sdn2.uuid)
         assert vniRanges.size() > 0
         /* this result depends on the simulator */
         assert sdn2.vniRanges.size() == 2
