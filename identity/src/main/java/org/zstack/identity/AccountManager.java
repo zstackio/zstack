@@ -1,8 +1,6 @@
 package org.zstack.identity;
 
-import org.zstack.header.identity.AccountResourceRefInventory;
-import org.zstack.header.identity.Quota;
-import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
 
 import java.util.List;
@@ -28,4 +26,6 @@ public interface AccountManager {
     void adminAdoptAllOrphanedResource(List<String> resourceUuid, String originAccountUuid);
 
     Class getBaseResourceType(Class clz);
+
+    AccountInventory createAccount(CreateAccountMsg msg);
 }

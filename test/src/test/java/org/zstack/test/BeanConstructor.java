@@ -42,7 +42,9 @@ public class BeanConstructor {
             "<import resource=\"springConfigXml/debug.xml\" />",
             "<import resource=\"springConfigXml/jsonlabel.xml\" />",
             "<import resource=\"springConfigXml/encrypt.xml\" />",
-            "<import resource=\"springConfigXml/rest.xml\" />"
+            "<import resource=\"springConfigXml/rest.xml\" />",
+            "<import resource=\"springConfigXml/cas.xml\" />"
+
 
     ).toString();
 
