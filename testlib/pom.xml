@@ -167,6 +167,14 @@
             <artifactId>directory-watcher</artifactId>
             <version>0.9.3</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jasig.cas.client</groupId>
+            <artifactId>cas-client-core</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
