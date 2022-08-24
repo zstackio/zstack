@@ -37,10 +37,10 @@ public class CreateInfoSecSecretResourcePoolAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String model;
 
-    @Param(required = true, validValues = {"CloudSecurityMachine","OrdinarySecurityMachine","CloudSecurityResourceService"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"CloudSecurityMachine","OrdinarySecurityMachine"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {6L,180L}, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {6L,180L}, noTrim = false)
     public java.lang.Integer heartbeatInterval;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
