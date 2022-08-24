@@ -17,8 +17,6 @@ public interface SdnController {
     void initSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion);
     void postInitSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion);
 
-    void preCreateVxlanNetworkPool(HardwareL2VxlanNetworkPoolInventory pool, List<String> systemTags, Completion completion);
-
     void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
     void createVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
     void postCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);

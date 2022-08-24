@@ -21,7 +21,7 @@ import static org.zstack.core.Platform.argerr;
 /**
  * Created by shixin.ruan on 09/17/2019
  */
-public class SdnControllerApiInterceptor implements ApiMessageInterceptor , GlobalApiMessageInterceptor {
+public class SdnControllerApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(SdnControllerApiInterceptor.class);
 
     @Autowired

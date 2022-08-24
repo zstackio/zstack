@@ -64,16 +64,23 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KVMConnectExtensionForHardwareVxlanNetwork" class="org.zstack.sdnController.hardwareVxlan.KVMConnectExtensionForHardwareVxlanNetwork">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="H3cSdnControllerFactory" class="org.zstack.sdnController.h3cVcfc.H3cVcfcSdnControllerFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.sdnController.SdnControllerFactory"/>
         </zstack:plugin>
     </bean>
 
-    <bean id="KVMConnectExtensionForHardwareVxlanNetwork" class="org.zstack.sdnController.hardwareVxlan.KVMConnectExtensionForHardwareVxlanNetwork">
+    <bean id="H3cVcfcApiInterceptor" class="org.zstack.sdnController.h3cVcfc.H3cVcfcApiInterceptor">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
 

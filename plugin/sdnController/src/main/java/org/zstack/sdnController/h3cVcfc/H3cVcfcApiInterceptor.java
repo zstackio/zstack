@@ -1,0 +1,174 @@
+package org.zstack.sdnController.h3cVcfc;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l2.APIAttachL2NetworkToClusterMsg;
+import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterMsg;
+import org.zstack.header.network.l3.APICreateL3NetworkMsg;
+import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
+import org.zstack.network.l2.vxlan.vxlanNetwork.APIDeleteVxlanL2Network;
+import org.zstack.sdnController.SdnController;
+import org.zstack.sdnController.SdnControllerManager;
+import org.zstack.sdnController.header.*;
+import org.zstack.utils.TagUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static org.zstack.core.Platform.argerr;
+
+public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
+    private static final CLogger logger = Utils.getLogger(H3cVcfcApiInterceptor.class);
+
+    @Autowired
+    protected DatabaseFacade dbf;
+    @Autowired
+    protected CloudBus bus;
+    @Autowired
+    SdnControllerManager sdnControllerManager;
+
+    private void setServiceId(APIMessage msg) {
+        if (msg instanceof SdnControllerMessage) {
+            SdnControllerMessage smsg = (SdnControllerMessage) msg;
+            bus.makeTargetServiceIdByResourceUuid(msg, SdnControllerConstant.SERVICE_ID, smsg.getSdnControllerUuid());
+        }
+    }
+
+    public List<Class> getMessageClassToIntercept() {
+        List<Class> ret = new ArrayList<>();
+        ret.add(APIAddSdnControllerMsg.class);
+        ret.add(APICreateL2HardwareVxlanNetworkPoolMsg.class);
+        ret.add(APICreateL2VxlanNetworkMsg.class);
+        ret.add(APICreateL2HardwareVxlanNetworkMsg.class);
+        ret.add(APIAttachL2NetworkToClusterMsg.class);
+        ret.add(APIDetachL2NetworkFromClusterMsg.class);
+        ret.add(APIDeleteVxlanL2Network.class);
+        ret.add(APIRemoveSdnControllerMsg.class);
+        ret.add(APICreateL3NetworkMsg.class);
+        return ret;
+    }
+
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.END;
+    }
+
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof APIAddSdnControllerMsg) {
+            validate((APIAddSdnControllerMsg) msg);
+        } else if (msg instanceof APICreateL2HardwareVxlanNetworkPoolMsg){
+            validate((APICreateL2HardwareVxlanNetworkPoolMsg)msg);
+        } else if (msg instanceof APICreateL2VxlanNetworkMsg){
+            validate((APICreateL2VxlanNetworkMsg)msg);
+        } else if (msg instanceof APICreateL2HardwareVxlanNetworkMsg) {
+            validate((APICreateL2HardwareVxlanNetworkMsg)msg);
+        } else if (msg instanceof APIAttachL2NetworkToClusterMsg) {
+            validate((APIAttachL2NetworkToClusterMsg) msg);
+        } else if (msg instanceof APIDetachL2NetworkFromClusterMsg) {
+            validate((APIDetachL2NetworkFromClusterMsg) msg);
+        } else if (msg instanceof APIDeleteVxlanL2Network) {
+            validate((APIDeleteVxlanL2Network) msg);
+        } else if (msg instanceof APIRemoveSdnControllerMsg) {
+            validate((APIRemoveSdnControllerMsg) msg);
+        } else if (msg instanceof APICreateL3NetworkMsg) {
+            validate((APICreateL3NetworkMsg) msg);
+        }
+
+        setServiceId(msg);
+
+        return msg;
+    }
+
+    private void validate(APICreateL3NetworkMsg msg) {
+    }
+
+    private void validate(APIRemoveSdnControllerMsg msg) {
+    }
+
+    private void validate(APIDeleteVxlanL2Network msg) {
+    }
+
+    private void validate(APIDetachL2NetworkFromClusterMsg msg) {
+    }
+
+    private void validate(APICreateL2HardwareVxlanNetworkMsg msg) {
+    }
+
+    public static boolean isOverlappedVniRange(Integer startVni1, Integer endVni1, Integer startVni2, Integer endVni2) {
+        if (startVni2 >= startVni1 && endVni1 <= endVni2) {
+            return true;
+        }
+        return false;
+    }
+
+    private void validate(APICreateL2HardwareVxlanNetworkPoolMsg msg) {
+        SdnControllerVO vo = dbf.findByUuid(msg.getSdnControllerUuid(), SdnControllerVO.class);
+        SdnController sdnController = sdnControllerManager.getSdnController(vo);
+        if (!vo.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
+            return;
+        }
+
+        List <SdnVniRange> userList = new ArrayList<>();
+        if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
+            for (String tag : msg.getSystemTags()) {
+                if (!H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE.isMatch(tag)) {
+                    continue;
+                }
+
+                Map<String, String> token = TagUtils.parse(H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE.getTagFormat(), tag);
+                SdnVniRange vniRange = new SdnVniRange();
+                vniRange.startVni = new Integer(token.get(H3cVcfcSdnControllerSystemTags.H3C_START_VNI_TOKEN));
+                vniRange.endVni = new Integer(token.get(H3cVcfcSdnControllerSystemTags.H3C_END_VNI_TOKEN));
+                userList.add(vniRange);
+            }
+        }
+
+        // user's vniRange must respectively covered by a sdn's vniRange
+        List <SdnVniRange> legalList = sdnController.getVniRange(SdnControllerInventory.valueOf(vo));
+        for(SdnVniRange userRange : userList) {
+            for (SdnVniRange legalRange : legalList) {
+                if (!isOverlappedVniRange(userRange.startVni, userRange.endVni, legalRange.startVni, legalRange.endVni)) {
+                    continue;
+                } else {
+                    throw new ApiMessageInterceptionException(argerr("the vni range:[%s.%s} is illegal ", userRange.startVni, userRange.endVni));
+                }
+            }
+        }
+    }
+
+    private void validate(APICreateL2VxlanNetworkMsg msg) {
+    }
+
+    private void validate(APIAttachL2NetworkToClusterMsg msg) {
+    }
+
+    private boolean validateH3cController(APIAddSdnControllerMsg msg) {
+        if (msg.getSystemTags() == null || msg.getSystemTags().isEmpty()) {
+            return false;
+        }
+
+        boolean vds = false;
+        for (String tag : msg.getSystemTags()) {
+            if (H3cVcfcSdnControllerSystemTags.H3C_VDS_UUID.isMatch(tag)){
+                vds = true;
+            }
+        }
+        return vds;
+    }
+
+    private void validate(APIAddSdnControllerMsg msg) {
+        if (!msg.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
+            return;
+        }
+        if (!validateH3cController(msg)) {
+            throw new ApiMessageInterceptionException(argerr("H3C VCFC controller must include systemTags vdsUuid::{%s}"));
+        }
+    }
+}

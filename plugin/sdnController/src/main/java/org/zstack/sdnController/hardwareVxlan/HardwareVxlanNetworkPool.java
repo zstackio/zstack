@@ -36,7 +36,7 @@ import static org.zstack.core.Platform.argerr;
  * Created by shixin.ruan on 09/17/2019.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class HardwareVxlanNetworkPool extends VxlanNetworkPool implements HardwareVxlanNetworkPoolExtensionPoint {
+public class HardwareVxlanNetworkPool extends VxlanNetworkPool {
     @Autowired
     SdnControllerManager sdnControllerManager;
 
@@ -107,18 +107,5 @@ public class HardwareVxlanNetworkPool extends VxlanNetworkPool implements Hardwa
                 completion.success();
             }
         });
-
-    }
-
-    @Override
-    public void preCreateVxlanNetworkPoolOnSdnController(HardwareL2VxlanNetworkPoolVO vo, Completion completion) {
-        if (vo == null || vo.getSdnControllerUuid() == null) {
-            completion.fail(argerr("there is no sdn controller for vxlan pool [uuid:%s]", vo.getUuid()));
-            return;
-        }
-
-        SdnControllerVO sdn = dbf.findByUuid(vo.getSdnControllerUuid(), SdnControllerVO.class);
-        SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-        sdnController.preCreateVxlanNetworkPool(HardwareL2VxlanNetworkPoolInventory.valueOf(vo), new ArrayList<>(), completion);
     }
 }

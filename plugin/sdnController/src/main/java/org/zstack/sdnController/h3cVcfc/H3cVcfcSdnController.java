@@ -287,29 +287,6 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
-    public void preCreateVxlanNetworkPool(HardwareL2VxlanNetworkPoolInventory pool, List<String> systemTags, Completion completion) {
-        recordInJournal(Operations.Create, ResourceTypes.VxlanNetworkPool, pool.getName());
-        SdnControllerVO vo = dbf.findByUuid(pool.getSdnControllerUuid(), SdnControllerVO.class);
-        List <VniRangeInventory> list = pool.getAttachedVniRanges();
-        List <SdnVniRange> legalList = getVniRange(SdnControllerInventory.valueOf(vo));
-        List<Integer> allList = new ArrayList<>();
-        for(SdnVniRange sdnVniRange : legalList){
-            for(int i = sdnVniRange.startVni; i < sdnVniRange.endVni; i++){
-                allList.add(i);
-            }
-        }
-        for(VniRangeInventory vniRangeInventory : list){
-            for(int i = vniRangeInventory.getStartVni(); i <= vniRangeInventory.getEndVni() ; i++) {
-                if(!allList.contains(i)){
-                    completion.fail(argerr("the pool's vni is not in legal range"));
-                    return;
-                }
-            }
-        }
-        completion.success();
-    }
-
-    @Override
     public void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
         recordInJournal(Operations.Create, ResourceTypes.VxlanNetwork, vxlan.getName());
         completion.success();
