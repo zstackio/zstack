@@ -8,6 +8,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -1035,6 +1036,7 @@ public class VirtualRouterCommands {
 		private String haStatus;
 		private Boolean healthy;
 		private String healthDetail;
+		private HashMap<String, String> serviceHealthList;
 
 		public String getUuid() {
 			return uuid;
@@ -1074,6 +1076,14 @@ public class VirtualRouterCommands {
 
 		public void setHealthDetail(String healthDetail) {
 			this.healthDetail = healthDetail;
+		}
+
+		public HashMap<String, String> getServiceHealthList() {
+			return serviceHealthList;
+		}
+
+		public void setServiceHealthList(HashMap<String, String> serviceHealthList) {
+			this.serviceHealthList = serviceHealthList;
 		}
 	}
 

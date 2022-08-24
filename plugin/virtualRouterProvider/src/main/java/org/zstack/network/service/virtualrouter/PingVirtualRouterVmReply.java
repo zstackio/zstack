@@ -2,6 +2,8 @@ package org.zstack.network.service.virtualrouter;
 
 import org.zstack.header.message.MessageReply;
 
+import java.util.HashMap;
+
 /**
  * Created by frank on 6/29/2015.
  */
@@ -10,6 +12,8 @@ public class PingVirtualRouterVmReply extends MessageReply {
     private boolean doReconnect;
     private String haStatus;
     private String vrUuid;
+    private HashMap<String, String> serviceHealthList;
+
 
     public PingVirtualRouterVmReply(String vrUuid) {
         this.vrUuid = vrUuid;
@@ -45,5 +49,13 @@ public class PingVirtualRouterVmReply extends MessageReply {
 
     public void setVrUuid(String vrUuid) {
         this.vrUuid = vrUuid;
+    }
+
+    public HashMap<String, String> getServiceHealthList() {
+        return serviceHealthList;
+    }
+
+    public void setServiceHealthList(HashMap<String, String> serviceHealthList) {
+        this.serviceHealthList = serviceHealthList;
     }
 }
