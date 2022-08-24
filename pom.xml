@@ -494,6 +494,11 @@
                 <artifactId>jackson-core</artifactId>
                 <version>2.9.6</version>
             </dependency>
+            <dependency>
+                <groupId>org.jasig.cas.client</groupId>
+                <artifactId>cas-client-core</artifactId>
+                <version>3.4.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
