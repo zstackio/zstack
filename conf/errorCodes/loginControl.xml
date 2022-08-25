@@ -25,4 +25,9 @@
         <id>1004</id>
         <description>Request refused</description>
     </code>
+
+    <code>
+        <id>1005</id>
+        <description>Missing captcha</description>
+    </code>
 </error>
