@@ -5,10 +5,7 @@ import org.zstack.header.search.Inventory;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @PythonClassInventory
 @Inventory(mappingVOClass = VxlanClusterMappingVO.class, collectionValueOfMethod = "valueOf1")
@@ -37,13 +34,15 @@ public class VxlanClusterMappingInventory implements Serializable {
 
     public static VxlanClusterMappingInventory valueOf2(Map<String,String> keyMap, Map<Integer,String> valueMap) {
         VxlanClusterMappingInventory inv = new VxlanClusterMappingInventory();
-        if (keyMap.entrySet().stream().findFirst().isPresent()) {
-            inv.setClusterUuid(keyMap.entrySet().stream().findFirst().get().getKey());
-            inv.setPhysicalInterface(keyMap.entrySet().stream().findFirst().get().getValue());
+        Optional<Map.Entry<String, String>> key = keyMap.entrySet().stream().findFirst();
+        if (key.isPresent()) {
+            inv.setClusterUuid(key.get().getKey());
+            inv.setPhysicalInterface(key.get().getValue());
         }
-        if (valueMap.entrySet().stream().findFirst().isPresent()) {
-            inv.setVlanId(valueMap.entrySet().stream().findFirst().get().getKey());
-            inv.setPhysicalInterface(valueMap.entrySet().stream().findFirst().get().getValue());
+        Optional<Map.Entry<Integer, String>> value = valueMap.entrySet().stream().findFirst();
+        if (value.isPresent()) {
+            inv.setVlanId(value.get().getKey());
+            inv.setPhysicalInterface(value.get().getValue());
         }
         return inv;
     }

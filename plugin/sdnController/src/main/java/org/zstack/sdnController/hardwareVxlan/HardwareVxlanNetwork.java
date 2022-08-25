@@ -187,13 +187,23 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
-    public Map<Integer, String> getMappingVlanIdAndPhysicalInterface(L2VxlanNetworkInventory vxlan, String hostUuid) {
+    public Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromHost(L2VxlanNetworkInventory vxlan, String hostUuid) {
         VxlanNetworkVO vo = (VxlanNetworkVO) self;
         HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
         SdnControllerVO sdnVo = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
 
         SdnController sdn = sdnControllerManager.getSdnController(sdnVo);
-        return sdn.getMappingVlanIdAndPhysicalInterface(L2VxlanNetworkInventory.valueOf((VxlanNetworkVO)self), hostUuid);
+        return sdn.getMappingVlanIdAndPhysicalInterfaceFromHost(L2VxlanNetworkInventory.valueOf((VxlanNetworkVO)self), hostUuid);
+    }
+
+    @Override
+    public Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid) {
+        VxlanNetworkVO vo = (VxlanNetworkVO) self;
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+        SdnControllerVO sdnVo = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+
+        SdnController sdn = sdnControllerManager.getSdnController(sdnVo);
+        return sdn.getMappingVlanIdAndPhysicalInterfaceFromCluster(L2VxlanNetworkInventory.valueOf((VxlanNetworkVO)self), clusterUuid);
     }
 
     @Override

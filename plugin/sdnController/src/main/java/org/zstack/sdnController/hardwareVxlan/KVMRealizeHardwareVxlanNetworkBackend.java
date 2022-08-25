@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
@@ -13,7 +14,9 @@ import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkState;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.CheckVlanBridgeResponse;
@@ -24,12 +27,15 @@ import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.service.MtuGetter;
-import org.zstack.sdnController.header.SdnControllerConstant;
+import org.zstack.sdnController.header.*;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -52,24 +58,37 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
     @Override
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
         final L2VxlanNetworkInventory vxlan = (L2VxlanNetworkInventory) l2Network;
+
+        // get vlanId: mappingVO; controller
+        // get physicalInterface: vxlanVO; mappingVO; controller
         VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class);
         HardwareVxlanNetwork vx = new HardwareVxlanNetwork(vo);
+        Integer vlanId = vx.getMappingVxlanId(hostUuid);
+        String physicalInterface = vxlan.getPhysicalInterface();
 
-        final CreateVlanBridgeCmd cmd = new CreateVlanBridgeCmd();
-        // Map<Map<Integer, String>, Map<Integer, String>> vxlanMapping = new HashMap<>();
-        Map<Integer, String> map = vx.getMappingVlanIdAndPhysicalInterface(vxlan, hostUuid);
-        int vlanId = vx.getMappingVxlanId(hostUuid);
-        if (map.entrySet().stream().findFirst().isPresent()) {
-            vlanId = map.entrySet().stream().findFirst().get().getKey();
-            String physicalInterface = map.get(vlanId);
-
-            if (physicalInterface != null) {
-                cmd.setPhysicalInterfaceName(physicalInterface);
-            } else {
-                map.put(vlanId, vxlan.getPhysicalInterface());
+        Tuple hostMapping = Q.New(VxlanHostMappingVO.class)
+                .select(VxlanHostMappingVO_.vlanId, VxlanHostMappingVO_.physicalInterface)
+                .eq(VxlanHostMappingVO_.vxlanUuid, vxlan.getUuid())
+                .eq(VxlanHostMappingVO_.hostUuid, hostUuid)
+                .findTuple();
+        if(hostMapping != null){
+            vlanId = hostMapping.get(0, Integer.class);
+            if(hostMapping.get(1, String.class) != null) {
+                physicalInterface = hostMapping.get(1, String.class);
             }
         }
-        cmd.setPhysicalInterfaceName(vxlan.getPhysicalInterface());
+
+        Map<Integer, String> map = vx.getMappingVlanIdAndPhysicalInterfaceFromHost(vxlan, hostUuid);
+        final CreateVlanBridgeCmd cmd = new CreateVlanBridgeCmd();
+        //int vlanId = vx.getMappingVxlanId(hostUuid);
+        Optional<Map.Entry<Integer, String>> value = map.entrySet().stream().findFirst();
+        if (value.isPresent()) {
+            vlanId = value.get().getKey();
+            if (map.get(vlanId) != null) {
+                physicalInterface = map.get(vlanId);
+            }
+        }
+        cmd.setPhysicalInterfaceName(physicalInterface);
         cmd.setBridgeName(makeBridgeName(vxlan.getUuid(), vlanId));
         cmd.setVlan(vlanId);
         cmd.setMtu(new MtuGetter().getL2Mtu(vxlan));

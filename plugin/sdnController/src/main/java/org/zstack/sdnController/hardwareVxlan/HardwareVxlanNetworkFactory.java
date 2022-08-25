@@ -39,8 +39,6 @@ import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.sdnController.header.APICreateL2HardwareVxlanNetworkMsg;
 import org.zstack.sdnController.header.SdnControllerConstant;
-import org.zstack.sdnController.header.SdnControllerVO;
-import org.zstack.sdnController.header.VxlanMappingInventory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

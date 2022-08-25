@@ -31,7 +31,8 @@ public interface SdnController {
 
     //TODO lldp获取sw和sw port数据  sw + sw port + vlan + vni
     int  getMappingVlanId(L2VxlanNetworkInventory vxlan, String hostUuid);
-    Map<Integer, String> getMappingVlanIdAndPhysicalInterface(L2VxlanNetworkInventory vxlan, String hostUuid);
+    Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromHost(L2VxlanNetworkInventory vxlan, String hostUuid);
+    Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid);
 
     List<SdnVniRange> getVniRange(SdnControllerInventory controller);
     List<SdnVlanRange> getAccessVlanRange(SdnControllerInventory controller);
