@@ -16,14 +16,12 @@ import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.header.*;
 import org.zstack.sdnController.header.SdnControllerConstant.Operations;
 import org.zstack.sdnController.header.SdnControllerConstant.ResourceTypes;
+import org.zstack.sdnController.SdnControllerLog;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -216,55 +214,14 @@ public class H3cVcfcSdnController implements SdnController {
         }).start();
     }
 
-    /* 日志模板
-    def _get_method_name(op, resource):
-    return op + '_' + resource + '_postcommit'
-
-
-    def _build_method(cls, resource):
-    # add methods like the following:
-    #
-    #    @log_helpers.log_method_call
-    #    def <method>_<resource>_postcommit(self, *args, **kwargs):
-    #        self.journal.set_sync_event()
-
-    operations = ['create', 'update', 'delete']
-    for op in operations:
-        client_method = _get_method_name(op, resource)
-        if hasattr(cls, client_method) and client_method not in cls.__dict__:
-            f = _build_func(client_method)
-            unbound = _unboundmethod(f, cls)
-            setattr(cls, client_method, unbound)
-    @staticmethod
-    def _record_in_journal(context, object_type, operation, data=None):
-            if data is None:
-                data = context.current
-                 journal.record(context._plugin_context, object_type,
-    context.current['id'], operation, data,
-    ml2_context=context)
-
-    @log_helpers.log_method_call
-    def create_network_precommit(self, context):
-            OpenDaylightMechanismDriver._record_in_journal(
-    context, odl_const.ODL_NETWORK, odl_const.ODL_CREATE)
-
-        @log_helpers.log_method_call
-    def create_network_precommit(self, context):
-        OpenDaylightMechanismDriver._record_in_journal(
-            context, odl_const.ODL_NETWORK, odl_const.ODL_CREATE)
-     */
-
-    private void recordInJournal(Operations operation, ResourceTypes resourceType, String resourceName){
-        logger.debug(String.format("pre operation for %s-%s which name is %s", resourceType.toString(), operation.toString(), resourceName));
-    }
-
     @Override
+    @SdnControllerLog
     public void preInitSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion) {
-        recordInJournal(Operations.Create, ResourceTypes.SdnController, msg.getName());
         completion.success();
     }
 
     @Override
+    @SdnControllerLog
     public void initSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion) {
         getH3cControllerToken(new Completion(completion) {
             @Override
@@ -280,13 +237,14 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
+    @SdnControllerLog
     public void postInitSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion) {
         completion.success();
     }
 
     @Override
+    @SdnControllerLog
     public void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
-        recordInJournal(Operations.Create, ResourceTypes.VxlanNetwork, vxlan.getName());
         completion.success();
     }
 
@@ -345,6 +303,7 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
+    @SdnControllerLog
     public void createVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
         /* initSdnController get the token */
         getH3cControllerToken(new Completion(completion) {
@@ -361,36 +320,39 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
+    @SdnControllerLog
     public void postCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
         completion.success();
     }
 
     @Override
+    @SdnControllerLog
     public void preAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
-        recordInJournal(Operations.AttachToCluster, ResourceTypes.VxlanNetwork, vxlan.getName());
         completion.success();
     }
 
     @Override
+    @SdnControllerLog
     public void attachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
         completion.success();
     }
 
     @Override
+    @SdnControllerLog
     public void postAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
         completion.success();
     }
 
     @Override
+    @SdnControllerLog
     public void deleteSdnController(SdnControllerDeletionMsg msg, SdnControllerInventory sdn, Completion completion) {
-        recordInJournal(Operations.Delete, ResourceTypes.SdnController, sdn.getName());
         completion.success();
     }
 
 
     @Override
+    @SdnControllerLog
     public void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion) {
-        recordInJournal(Operations.DetachFromCluster, ResourceTypes.VxlanNetwork, vxlan.getName());
         completion.success();
     }
 
@@ -425,8 +387,8 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
+    @SdnControllerLog
     public void deleteVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion) {
-        recordInJournal(Operations.Delete, ResourceTypes.VxlanNetwork, vxlan.getName());
         /* initSdnController get the token */
         getH3cControllerToken(new Completion(completion) {
             @Override
@@ -458,9 +420,10 @@ public class H3cVcfcSdnController implements SdnController {
         VxlanHostMappingVO vxlanHostMappingVO = new VxlanHostMappingVO();
         vxlanHostMappingVO.setVxlanUuid(vxlan.getUuid());
         vxlanHostMappingVO.setHostUuid(hostUuid);
-        if(valueMap.entrySet().stream().findFirst().isPresent()) {
-            vxlanHostMappingVO.setVlanId(valueMap.entrySet().stream().findFirst().get().getKey());
-            vxlanHostMappingVO.setPhysicalInterface(valueMap.entrySet().stream().findFirst().get().getValue());
+        Optional<Map.Entry<Integer, String>> value = valueMap.entrySet().stream().findFirst();
+        if (value.isPresent()) {
+            vxlanHostMappingVO.setVlanId(value.get().getKey());
+            vxlanHostMappingVO.setPhysicalInterface(value.get().getValue());
         }
         dbf.persistAndRefresh(vxlanHostMappingVO);
 
@@ -481,9 +444,10 @@ public class H3cVcfcSdnController implements SdnController {
         VxlanClusterMappingVO vxlanClusterMappingVO = new VxlanClusterMappingVO();
         vxlanClusterMappingVO.setVxlanUuid(vxlan.getUuid());
         vxlanClusterMappingVO.setClusterUuid(clusterUuid);
-        if(valueMap.entrySet().stream().findFirst().isPresent()) {
-            vxlanClusterMappingVO.setVlanId(valueMap.entrySet().stream().findFirst().get().getKey());
-            vxlanClusterMappingVO.setPhysicalInterface(valueMap.entrySet().stream().findFirst().get().getValue());
+        Optional<Map.Entry<Integer, String>> value = valueMap.entrySet().stream().findFirst();
+        if (value.isPresent()) {
+            vxlanClusterMappingVO.setVlanId(value.get().getKey());
+            vxlanClusterMappingVO.setPhysicalInterface(value.get().getValue());
         }
         dbf.persistAndRefresh(vxlanClusterMappingVO);
 
