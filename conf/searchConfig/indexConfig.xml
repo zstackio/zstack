@@ -143,7 +143,4 @@
     <index name="org.zstack.sdnController.header.VxlanClusterMappingVO" baseClass="false">
         <prop name="name"/>
     </index>
-    <index name="org.zstack.sdnController.header.PortLldpInfoVO" baseClass="false">
-        <prop name="name"/>
-    </index>
 </indexes>
