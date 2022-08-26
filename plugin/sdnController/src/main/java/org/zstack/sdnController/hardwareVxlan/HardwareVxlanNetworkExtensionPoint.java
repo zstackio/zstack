@@ -8,12 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface HardwareVxlanNetworkExtensionPoint {
-    void preCreateVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
     void createVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
-    void postCreateVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
-    void preAttachL2NetworkToClusterOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
     void attachL2NetworkToClusterOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
-    void postAttachL2NetworkToClusterOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
     void deleteVxlanNetworkOnSdnController(VxlanNetworkVO vo, Completion completion);
     Integer getMappingVxlanId(String hostUuid);
     Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromHost(L2VxlanNetworkInventory vxlan, String hostUuid);

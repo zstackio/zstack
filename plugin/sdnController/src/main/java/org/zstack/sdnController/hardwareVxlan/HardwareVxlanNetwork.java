@@ -37,32 +37,11 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
-    public void preCreateVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
-        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
-        if (poolVO == null || poolVO.getSdnControllerUuid() == null) {
-            completion.fail(argerr("there is no sdn controller for vxlan pool [uuid:%s]", vxlan.getPoolUuid()));
-            return;
-        }
-
-        SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
-        SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-        sdnController.preCreateVxlanNetwork(vxlan, systemTags, completion);
-    }
-
-    @Override
     public void createVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
         HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
         SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
         SdnController sdnController = sdnControllerManager.getSdnController(sdn);
         sdnController.createVxlanNetwork(vxlan, systemTags, completion);
-    }
-
-    @Override
-    public void postCreateVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
-        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
-        SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
-        SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-        sdnController.postCreateVxlanNetwork(vxlan, systemTags, completion);
     }
 
     @Override
@@ -84,14 +63,6 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
 
         L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
         ext.realize(inv, hostUuid, completion);
-    }
-
-    @Override
-    public void preAttachL2NetworkToClusterOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
-        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
-        SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
-        SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-        sdnController.preAttachL2NetworkToCluster(vxlan, systemTags, completion);
     }
 
     @Override
@@ -166,14 +137,6 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
                 completion.fail(errCode);
             }
         }).start();
-    }
-
-    @Override
-    public void postAttachL2NetworkToClusterOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
-        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
-        SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
-        SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-        sdnController.postAttachL2NetworkToCluster(vxlan, systemTags, completion);
     }
 
     @Override
