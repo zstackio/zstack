@@ -11,8 +11,4 @@ public interface SdnControllerFactory {
     SdnControllerType getVendorType();
 
     SdnController getSdnController(SdnControllerVO vo);
-
-    void createSdnController(SdnControllerVO vo, APIAddSdnControllerMsg msg, Completion completion);
-
-    void deleteSdnController(SdnControllerVO vo, SdnControllerDeletionMsg msg, Completion completion);
 }

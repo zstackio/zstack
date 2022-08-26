@@ -404,7 +404,7 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
-    public int getMappingVlanId(L2VxlanNetworkInventory vxlan, String hostUuid) {
+    public Integer getMappingVlanId(L2VxlanNetworkInventory vxlan, String hostUuid) {
         return vxlan.getVni();
     }
 
