@@ -18,3 +18,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ClusterIAM2ProjectRefVO` (
     PRIMARY KEY  (`id`),
     UNIQUE KEY `projectUuid` (`projectUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`IAM2TicketFlowCollectionVO` ADD COLUMN organizationUuid VARCHAR(32) DEFAULT NULL;
+ALTER TABLE `zstack`.`IAM2TicketFlowCollectionVO` ADD CONSTRAINT fkIAM2TicketFlowCollectionVOIAM2OrganizationVO FOREIGN KEY (organizationUuid) REFERENCES IAM2OrganizationVO (uuid) ON DELETE CASCADE;
+ALTER TABLE `zstack`.`IAM2TicketFlowCollectionVO` MODIFY COLUMN projectUuid VARCHAR(32) DEFAULT NULL;
