@@ -64,6 +64,7 @@ import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
@@ -122,6 +123,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected L3NetworkManager l3nm;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private TagManager tagMgr;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
@@ -2068,6 +2071,27 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
+        class SetL3SecurityGroupSystemTag {
+            private boolean isSet = false;
+
+            void set () {
+                if (msg instanceof APIAttachL3NetworkToVmMsg) {
+                    APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
+
+                    if (amsg.hasSystemTag(VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF::isMatch)) {
+                        tagMgr.createInherentSystemTags(amsg.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
+                        isSet = true;
+                    }
+                }
+            }
+
+            void rollback() {
+                if (isSet) {
+                    VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.delete(self.getUuid());
+                }
+            }
+        }
+
         final SetDefaultL3Network setDefaultL3Network = new SetDefaultL3Network();
         setDefaultL3Network.set();
         Defer.guard(new Runnable() {
@@ -2085,6 +2109,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 setStaticIp.rollback();
             }
         });
+
+        final SetL3SecurityGroupSystemTag setSystemTag = new SetL3SecurityGroupSystemTag();
+        setSystemTag.set();
+        Defer.guard(setSystemTag::rollback);
 
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
         final VmInstanceInventory vm = spec.getVmInventory();
@@ -2160,6 +2188,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         });
                 setDefaultL3Network.rollback();
                 setStaticIp.rollback();
+                setSystemTag.rollback();
                 completion.fail(errCode);
             }
         }).start();

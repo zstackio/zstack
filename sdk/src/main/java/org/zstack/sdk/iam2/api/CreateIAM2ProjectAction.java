@@ -40,6 +40,12 @@ public class CreateIAM2ProjectAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List roleUuids;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List resourceTemplates;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String organizationUuid;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

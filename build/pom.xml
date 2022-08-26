@@ -53,6 +53,7 @@
                                         <exclude>springConfigXml/AccountManager.xml</exclude>
                                         <exclude>serviceConfig/metadata.xml</exclude>
                                         <exclude>searchConfig/indexConfig.xml</exclude>
+                                        <exclude>springConfigXml/resourceConfig.xml</exclude>
                                     </excludes>
                                 </resource>
                                 <resource>
@@ -505,6 +506,11 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>iam2-script-plugin</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>iam2project-securitygroup-plugin</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

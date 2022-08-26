@@ -36,7 +36,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.IpRangeInventory;
-import org.zstack.header.network.l3.L3Network;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
@@ -72,7 +71,7 @@ import static org.zstack.network.securitygroup.SecurityGroupMembersTO.ACTION_COD
 import static org.zstack.utils.CollectionDSL.list;
 
 public class SecurityGroupManagerImpl extends AbstractService implements SecurityGroupManager, ManagementNodeReadyExtensionPoint,
-        VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
+        VmInstanceMigrateExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, ValidateL3SecurityGroupExtensionPoint {
     private static CLogger logger = Utils.getLogger(SecurityGroupManagerImpl.class);
 
     @Autowired
@@ -163,6 +162,19 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     @AsyncThread
     public void managementNodeReady() {
         startFailureHostCopingThread();
+    }
+
+    @Override
+    public void validateSystemtagL3SecurityGroup(String l3Uuid, List<String> securityGroupUuids) {
+        for(String uuid : securityGroupUuids) {
+            if (!Q.New(SecurityGroupL3NetworkRefVO.class)
+                    .eq(SecurityGroupL3NetworkRefVO_.l3NetworkUuid, l3Uuid)
+                    .eq(SecurityGroupL3NetworkRefVO_.securityGroupUuid, uuid)
+                    .isExists()) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "l3NetWorkVO[uuid:%s] is not attach SecurityGroupVO[uuid:%s]", l3Uuid, uuid));
+            }
+        }
     }
 
     private class RuleCalculator {
@@ -639,6 +651,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     private void handleLocalMessage(Message msg) {
         if (msg instanceof RefreshSecurityGroupRulesOnHostMsg) {
             handle((RefreshSecurityGroupRulesOnHostMsg) msg);
+        } else if (msg instanceof AddSecurityGroupRuleMsg) {
+            handle((AddSecurityGroupRuleMsg) msg);
+        } else if (msg instanceof CreateSecurityGroupMsg) {
+            handle((CreateSecurityGroupMsg) msg);
         } else if (msg instanceof RefreshSecurityGroupRulesOnVmMsg) {
             handle((RefreshSecurityGroupRulesOnVmMsg) msg);
         } else if (msg instanceof RemoveVmNicFromSecurityGroupMsg) {
@@ -650,6 +666,31 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(CreateSecurityGroupMsg msg) {
+        CreateSecurityGroupReply reply = new CreateSecurityGroupReply();
+        SecurityGroupVO vo = new SecurityGroupVO();
+        vo.setUuid(Platform.getUuid());
+        vo.setName(msg.getName());
+        vo.setDescription(msg.getDescription());
+        vo.setState(SecurityGroupState.Enabled);
+        vo.setInternalId(dbf.generateSequenceNumber(SecurityGroupSequenceNumberVO.class));
+        vo.setAccountUuid(msg.getAccountUuid());
+        vo = dbf.persistAndRefresh(vo);
+
+        createDefaultRule(vo.getUuid(), IPv6Constants.IPv4);
+        createDefaultRule(vo.getUuid(), IPv6Constants.IPv6);
+
+        reply.setInventory(SecurityGroupInventory.valueOf(vo));
+        bus.reply(msg, reply);
+    }
+
+    private void handle(AddSecurityGroupRuleMsg msg) {
+        AddSecurityGroupRuleReply reply = new AddSecurityGroupRuleReply();
+        SecurityGroupVO securityGroupVO = addRuleToSecurityGroup(msg);
+        reply.setInventory(SecurityGroupInventory.valueOf(securityGroupVO));
+        bus.reply(msg, reply);
     }
 
     private void handle(SecurityGroupDeletionMsg msg) {
@@ -1292,12 +1333,19 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     private void handle(APIAddSecurityGroupRuleMsg msg) {
         APIAddSecurityGroupRuleEvent evt = new APIAddSecurityGroupRuleEvent(msg.getId());
-        SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+        SecurityGroupVO securityGroupVO = addRuleToSecurityGroup(msg);
+        evt.setInventory(SecurityGroupInventory.valueOf(securityGroupVO));
+        logger.debug(String.format("successfully add rules to security group[uuid:%s, name:%s]:\n%s", securityGroupVO.getUuid(), securityGroupVO.getName(), JSONObjectUtil.toJsonString(msg.getRules())));
+        bus.publish(evt);
+    }
+
+    private SecurityGroupVO addRuleToSecurityGroup(AddSecurityGroupRuleMessage message) {
+        SecurityGroupVO sgvo = dbf.findByUuid(message.getSecurityGroupUuid(), SecurityGroupVO.class);
 
         List<SecurityGroupRuleVO> vos = new ArrayList<SecurityGroupRuleVO>();
-        for (SecurityGroupRuleAO ao : msg.getRules()) {
-            if (msg.getRemoteSecurityGroupUuids() != null){
-                for (String remoteGroupUuid : msg.getRemoteSecurityGroupUuids()){
+        for (SecurityGroupRuleAO ao : message.getRules()) {
+            if (message.getRemoteSecurityGroupUuids() != null) {
+                for (String remoteGroupUuid : message.getRemoteSecurityGroupUuids()) {
                     SecurityGroupRuleVO vo = new SecurityGroupRuleVO();
                     vo.setUuid(Platform.getUuid());
                     vo.setIpVersion(ao.getIpVersion());
@@ -1306,14 +1354,14 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     vo.setStartPort(ao.getStartPort());
                     vo.setProtocol(SecurityGroupRuleProtocolType.valueOf(ao.getProtocol()));
                     vo.setType(SecurityGroupRuleType.valueOf(ao.getType()));
-                    vo.setSecurityGroupUuid(msg.getSecurityGroupUuid());
+                    vo.setSecurityGroupUuid(message.getSecurityGroupUuid());
                     vo.setRemoteSecurityGroupUuid(remoteGroupUuid);
                     if (SecurityGroupState.Disabled == sgvo.getState()) {
                         vo.setState(SecurityGroupRuleState.Disabled);
                     }
                     vos.add(vo);
                 }
-            }else {
+            } else {
                 SecurityGroupRuleVO vo = new SecurityGroupRuleVO();
                 vo.setUuid(Platform.getUuid());
                 vo.setIpVersion(ao.getIpVersion());
@@ -1322,7 +1370,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 vo.setStartPort(ao.getStartPort());
                 vo.setProtocol(SecurityGroupRuleProtocolType.valueOf(ao.getProtocol()));
                 vo.setType(SecurityGroupRuleType.valueOf(ao.getType()));
-                vo.setSecurityGroupUuid(msg.getSecurityGroupUuid());
+                vo.setSecurityGroupUuid(message.getSecurityGroupUuid());
                 if (SecurityGroupState.Disabled == sgvo.getState()) {
                     vo.setState(SecurityGroupRuleState.Disabled);
                 }
@@ -1333,16 +1381,13 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         if (SecurityGroupState.Enabled == sgvo.getState()) {
             RuleCalculator cal = new RuleCalculator();
-            cal.securityGroupUuids = asList(msg.getSecurityGroupUuid());
+            cal.securityGroupUuids = asList(message.getSecurityGroupUuid());
             cal.vmStates = asList(VmInstanceState.Running);
             List<HostRuleTO> htos = cal.calculate();
             applyRules(htos);
         }
-      
-        sgvo =  dbf.reload(sgvo);
-        evt.setInventory(SecurityGroupInventory.valueOf(sgvo));
-        logger.debug(String.format("successfully add rules to security group[uuid:%s, name:%s]:\n%s", sgvo.getUuid(), sgvo.getName(), JSONObjectUtil.toJsonString(msg.getRules())));
-        bus.publish(evt);
+
+        return dbf.reload(sgvo);
     }
 
     private void handle(APICreateSecurityGroupMsg msg) {

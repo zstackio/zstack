@@ -431,8 +431,8 @@ public class AccountBase extends AbstractAccount {
 
         Map<String, String> addUuidType = getUuidTypeMapByResourceUuids(msg.getResourceUuids());
         List<String> additionUuids = new ArrayList<>();
-        for (BeforeResourceSharingExtensionPoint extp : pluginRgty.getExtensionList(
-                BeforeResourceSharingExtensionPoint.class)) {
+        for (ResourceSharingExtensionPoint extp : pluginRgty.getExtensionList(
+                ResourceSharingExtensionPoint.class)) {
             additionUuids.addAll(extp.beforeResourceSharingExtensionPoint(addUuidType));
         }
         if (!additionUuids.isEmpty()) {
@@ -504,8 +504,8 @@ public class AccountBase extends AbstractAccount {
     private void handle(APIShareResourceMsg msg) {
         Map<String, String> addUuidType = getUuidTypeMapByResourceUuids(msg.getResourceUuids());
         List<String> additionUuids = new ArrayList<>();
-        for (BeforeResourceSharingExtensionPoint extp : pluginRgty.getExtensionList(
-                BeforeResourceSharingExtensionPoint.class)) {
+        for (ResourceSharingExtensionPoint extp : pluginRgty.getExtensionList(
+                ResourceSharingExtensionPoint.class)) {
             additionUuids.addAll(extp.beforeResourceSharingExtensionPoint(addUuidType));
         }
         if (!additionUuids.isEmpty()) {
@@ -565,6 +565,11 @@ public class AccountBase extends AbstractAccount {
                 }
             }
         }.execute();
+
+        for (ResourceSharingExtensionPoint extp : pluginRgty.getExtensionList(
+                ResourceSharingExtensionPoint.class)) {
+            extp.afterResourceSharingExtensionPoint(uuidType,msg.getAccountUuids(),msg.isToPublic());
+        }
 
         APIShareResourceEvent evt = new APIShareResourceEvent(msg.getId());
         bus.publish(evt);
