@@ -33,7 +33,6 @@ public interface SdnController {
     Integer  getMappingVlanId(L2VxlanNetworkInventory vxlan, String hostUuid);
     Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromHost(L2VxlanNetworkInventory vxlan, String hostUuid);
     Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid);
-
     List<SdnVniRange> getVniRange(SdnControllerInventory controller);
-    List<SdnVlanRange> getAccessVlanRange(SdnControllerInventory controller);
+    List<SdnVlanRange> getVlanRange(SdnControllerInventory controller);
 }

@@ -427,8 +427,6 @@ public class H3cVcfcSdnController implements SdnController {
         }
         dbf.persistAndRefresh(vxlanHostMappingVO);
 
-        VxlanHostMappingInventory inv = VxlanHostMappingInventory.valueOf2(keyMap, valueMap);
-
         return vxlanMapping.get(keyMap);
     }
 
@@ -469,7 +467,7 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
-    public List<SdnVlanRange> getAccessVlanRange(SdnControllerInventory controller) {
+    public List<SdnVlanRange> getVlanRange(SdnControllerInventory controller) {
         // H3c: access vlan == vni
         List<Map<String, String>> tokenList = H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE
                 .getTokensOfTagsByResourceUuid(controller.getUuid());
