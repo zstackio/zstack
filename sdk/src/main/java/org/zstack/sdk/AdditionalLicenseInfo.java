@@ -12,6 +12,14 @@ public class AdditionalLicenseInfo  {
         return this.type;
     }
 
+    public java.lang.String appId;
+    public void setAppId(java.lang.String appId) {
+        this.appId = appId;
+    }
+    public java.lang.String getAppId() {
+        return this.appId;
+    }
+
     public java.lang.String path;
     public void setPath(java.lang.String path) {
         this.path = path;
