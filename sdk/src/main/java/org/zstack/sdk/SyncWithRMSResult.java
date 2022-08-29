@@ -1,8 +1,8 @@
-package org.zstack.sdk.iam2.api;
+package org.zstack.sdk;
 
 
 
-public class SyncWithExternalResult {
+public class SyncWithRMSResult {
     public java.lang.String response;
     public void setResponse(java.lang.String response) {
         this.response = response;

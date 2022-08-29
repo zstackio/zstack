@@ -1,10 +1,10 @@
-package org.zstack.sdk.iam2.api;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SyncWithExternalAction extends AbstractAction {
+public class GenerateChallengeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SyncWithExternalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.SyncWithExternalResult value;
+        public org.zstack.sdk.GenerateChallengeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,12 +24,6 @@ public class SyncWithExternalAction extends AbstractAction {
             return this;
         }
     }
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String request;
-
-    @Param(required = false)
-    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -51,8 +45,8 @@ public class SyncWithExternalAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.SyncWithExternalResult value = res.getResult(org.zstack.sdk.iam2.api.SyncWithExternalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.SyncWithExternalResult() : value; 
+        org.zstack.sdk.GenerateChallengeResult value = res.getResult(org.zstack.sdk.GenerateChallengeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GenerateChallengeResult() : value; 
 
         return ret;
     }
@@ -81,11 +75,11 @@ public class SyncWithExternalAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/iam2/external";
+        info.httpMethod = "GET";
+        info.path = "/iam2/rms/GenerateChallenge";
         info.needSession = false;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
