@@ -108,24 +108,6 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
             public void run(FlowTrigger trigger, Map data) {
                 realize(hvinvs.iterator(), trigger);
             }
-        }).then(new NoRollbackFlow() {
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
-                SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
-                SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-                sdnController.attachL2NetworkToCluster(vxlan, systemTags, new Completion(trigger) {
-                    @Override
-                    public void success() {
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
-            }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {

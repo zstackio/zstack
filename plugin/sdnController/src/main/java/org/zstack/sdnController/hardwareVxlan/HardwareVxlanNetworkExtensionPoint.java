@@ -5,7 +5,6 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 
 import java.util.List;
-import java.util.Map;
 
 public interface HardwareVxlanNetworkExtensionPoint {
     void createVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);

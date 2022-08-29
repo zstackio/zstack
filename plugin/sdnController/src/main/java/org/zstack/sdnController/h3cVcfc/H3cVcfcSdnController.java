@@ -14,8 +14,6 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.header.*;
-import org.zstack.sdnController.header.SdnControllerConstant.Operations;
-import org.zstack.sdnController.header.SdnControllerConstant.ResourceTypes;
 import org.zstack.sdnController.SdnControllerLog;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
@@ -216,13 +214,13 @@ public class H3cVcfcSdnController implements SdnController {
 
     @Override
     @SdnControllerLog
-    public void preInitSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion) {
+    public void preInitSdnController(APIAddSdnControllerMsg msg, Completion completion) {
         completion.success();
     }
 
     @Override
     @SdnControllerLog
-    public void initSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion) {
+    public void initSdnController(APIAddSdnControllerMsg msg, Completion completion) {
         getH3cControllerToken(new Completion(completion) {
             @Override
             public void success() {
@@ -238,7 +236,7 @@ public class H3cVcfcSdnController implements SdnController {
 
     @Override
     @SdnControllerLog
-    public void postInitSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion) {
+    public void postInitSdnController(APIAddSdnControllerMsg msg, Completion completion) {
         completion.success();
     }
 
