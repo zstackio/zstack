@@ -404,55 +404,6 @@ public class H3cVcfcSdnController implements SdnController {
     }
 
     @Override
-    public Integer getMappingVlanId(L2VxlanNetworkInventory vxlan, String hostUuid) {
-        return vxlan.getVni();
-    }
-
-    @Override
-    public Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromHost(L2VxlanNetworkInventory vxlan, String hostUuid) {
-        Map<Map<String, String>, Map<Integer, String>> vxlanMapping = new HashMap<>();
-        Map<String, String> keyMap = new HashMap<String, String>();
-        keyMap.put(vxlan.getUuid(), hostUuid);
-        Map<Integer, String> valueMap = new HashMap<Integer, String>();
-        valueMap.put(vxlan.getVni(), null);
-        vxlanMapping.put(keyMap,valueMap);
-
-        VxlanHostMappingVO vxlanHostMappingVO = new VxlanHostMappingVO();
-        vxlanHostMappingVO.setVxlanUuid(vxlan.getUuid());
-        vxlanHostMappingVO.setHostUuid(hostUuid);
-        Optional<Map.Entry<Integer, String>> value = valueMap.entrySet().stream().findFirst();
-        if (value.isPresent()) {
-            vxlanHostMappingVO.setVlanId(value.get().getKey());
-            vxlanHostMappingVO.setPhysicalInterface(value.get().getValue());
-        }
-        dbf.persistAndRefresh(vxlanHostMappingVO);
-
-        return vxlanMapping.get(keyMap);
-    }
-
-    @Override
-    public Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid) {
-        Map<Map<String, String>, Map<Integer, String>> vxlanMapping = new HashMap<>();
-        Map<String, String> keyMap = new HashMap<String, String>();
-        keyMap.put(vxlan.getUuid(), clusterUuid);
-        Map<Integer, String> valueMap = new HashMap<Integer, String>();
-        valueMap.put(vxlan.getVni(), "eth1");
-        vxlanMapping.put(keyMap,valueMap);
-
-        VxlanClusterMappingVO vxlanClusterMappingVO = new VxlanClusterMappingVO();
-        vxlanClusterMappingVO.setVxlanUuid(vxlan.getUuid());
-        vxlanClusterMappingVO.setClusterUuid(clusterUuid);
-        Optional<Map.Entry<Integer, String>> value = valueMap.entrySet().stream().findFirst();
-        if (value.isPresent()) {
-            vxlanClusterMappingVO.setVlanId(value.get().getKey());
-            vxlanClusterMappingVO.setPhysicalInterface(value.get().getValue());
-        }
-        dbf.persistAndRefresh(vxlanClusterMappingVO);
-
-        return vxlanMapping.get(keyMap);
-    }
-
-    @Override
     public List<SdnVniRange> getVniRange(SdnControllerInventory controller) {
         List<Map<String, String>> tokenList = H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE
                 .getTokensOfTagsByResourceUuid(controller.getUuid());
