@@ -478,14 +478,14 @@ public class CephBackupStorageMonBase extends CephMonBase {
         cmd.backupStorageUuid = getSelf().getBackupStorageUuid();
 
         restf.asyncJsonPost(CephAgentUrl.backupStorageUrl(self.getHostname(), PING_PATH),
-                cmd, new JsonAsyncRESTCallback<CephPrimaryStorageMonBase.PingRsp>(completion) {
+                cmd, new JsonAsyncRESTCallback<CephBackupStorageMonBase.PingRsp>(completion) {
                     @Override
                     public void fail(ErrorCode err) {
                         completion.fail(err);
                     }
 
                     @Override
-                    public void success(CephPrimaryStorageMonBase.PingRsp rsp) {
+                    public void success(CephBackupStorageMonBase.PingRsp rsp) {
                         PingResult res = new PingResult();
                         res.success = rsp.isSuccess();
                         res.error = rsp.getError();
@@ -495,8 +495,8 @@ public class CephBackupStorageMonBase extends CephMonBase {
                     }
 
                     @Override
-                    public Class<CephPrimaryStorageMonBase.PingRsp> getReturnClass() {
-                        return CephPrimaryStorageMonBase.PingRsp.class;
+                    public Class<CephBackupStorageMonBase.PingRsp> getReturnClass() {
+                        return CephBackupStorageMonBase.PingRsp.class;
                     }
                 }, TimeUnit.SECONDS, 60);
     }

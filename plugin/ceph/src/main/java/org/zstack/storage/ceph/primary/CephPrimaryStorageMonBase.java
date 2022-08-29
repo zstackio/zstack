@@ -498,6 +498,15 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                         // if agent met unexpected error, no failure will be set
                         res.failure = Objects.toString(rsp.failure, null);
                         completion.success(res);
+
+                        if (rsp.isSuccess() && rsp.availableCapacity != null && rsp.totalCapacity != null) {
+                            String fsid = Q.New(CephPrimaryStorageVO.class)
+                                    .select(CephPrimaryStorageVO_.fsid)
+                                    .eq(CephPrimaryStorageVO_.uuid, primaryStorageUuid)
+                                    .findValue();
+                            CephCapacity cephCapacity = new CephCapacity(fsid, rsp);
+                            new CephCapacityUpdater().update(cephCapacity);
+                        }
                     }
 
                     @Override
