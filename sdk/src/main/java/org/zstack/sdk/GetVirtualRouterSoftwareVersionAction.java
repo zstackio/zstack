@@ -31,7 +31,7 @@ public class GetVirtualRouterSoftwareVersionAction extends AbstractAction {
     @Param(required = true, validValues = {"IPsec"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String softwareName;
 
-    @Param(required = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean needUpdate = false;
 
     @Param(required = false)

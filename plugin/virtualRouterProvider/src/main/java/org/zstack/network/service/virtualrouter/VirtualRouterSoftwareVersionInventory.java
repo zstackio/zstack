@@ -1,5 +1,8 @@
 package org.zstack.network.service.virtualrouter;
 
+import org.zstack.appliancevm.ApplianceVmInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 
 import java.util.ArrayList;
@@ -7,6 +10,10 @@ import java.util.Collection;
 import java.util.List;
 
 @Inventory(mappingVOClass = VirtualRouterSoftwareVersionVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "applianceVm", inventoryClass = ApplianceVmInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "uuid"),
+})
 public class VirtualRouterSoftwareVersionInventory {
     private String uuid;
     private String softwareName;

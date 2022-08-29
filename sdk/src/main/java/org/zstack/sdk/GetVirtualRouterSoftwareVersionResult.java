@@ -3,11 +3,11 @@ package org.zstack.sdk;
 
 
 public class GetVirtualRouterSoftwareVersionResult {
-    public java.util.List virtualRouterSoftwareVersionList;
+    public java.util.List inventories;
     public void setInventories(java.util.List inventories) {
-        this.virtualRouterSoftwareVersionList = inventories;
+        this.inventories = inventories;
     }
     public java.util.List getInventories() {
-        return this.virtualRouterSoftwareVersionList;
+        return this.inventories;
     }
 }
