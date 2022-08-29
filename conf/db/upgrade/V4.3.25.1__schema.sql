@@ -20,3 +20,13 @@ CREATE TABLE IF NOT EXISTS `zstack`.`IAM2ProjectResourceRefVO` (
     CONSTRAINT `fkIAM2ProjectResourceRefVOResourceVO` FOREIGN KEY (`resourceUuid`) REFERENCES `ResourceVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkIAM2ProjectResourceRefVOIAM2ProjectVO` FOREIGN KEY (`projectUuid`) REFERENCES `IAM2ProjectVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ClusterIAM2ProjectRefVO` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `projectUuid` varchar(32) NOT NULL,
+    `clusterUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`id`),
+    UNIQUE KEY `projectUuid` (`projectUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
