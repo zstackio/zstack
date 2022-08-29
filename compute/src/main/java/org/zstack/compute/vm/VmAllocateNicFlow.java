@@ -21,7 +21,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
@@ -29,12 +28,16 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -105,7 +108,7 @@ public class VmAllocateNicFlow implements Flow {
             }
             final String mac = customMac;
 
-            // choose vnic factory based on enableSRIOV system tag
+            // choose vnic factory based on enableSRIOV system tag & enableVhostUser globalConfig
             VmInstanceNicFactory vnicFactory;
             boolean enableSriov = Q.New(SystemTagVO.class)
                     .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
@@ -114,11 +117,14 @@ public class VmAllocateNicFlow implements Flow {
                     .isExists();
             logger.debug(String.format("create %s on l3 network[uuid:%s] inside VmAllocateNicFlow",
                     enableSriov ? "vf nic" : "vnic", nw.getUuid()));
+            boolean enableVhostUser = NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class);
 
             L2NetworkVO l2nw =  dbf.findByUuid(nw.getL2NetworkUuid(), L2NetworkVO.class);
-            VSwitchType vSwitchType = new VSwitchType(l2nw.getvSwitchType());
-
-            VmNicType type = VmNicType.valueOf(vSwitchType, enableSriov);
+            VSwitchType vSwitchType = VSwitchType.valueOf(l2nw.getvSwitchType());
+            VmNicType type = vSwitchType.getVmNicTypeWithCondition(enableSriov, enableVhostUser);
+            if (type == null) {
+                throw new OperationFailureException(Platform.operr("there is no available nicType on L2 network [%s]", l2nw.getUuid()));
+            }
             vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 
             List<Integer> ipVersions = nw.getIpVersions();

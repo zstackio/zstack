@@ -723,6 +723,13 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             throw new ApiMessageInterceptionException(
                     argerr("no system tag matches[%s] for resourceType[%s]", tag, resourceType));
         }
+
+        for (ValidateSystemTagExtensionPoint exp: pluginRgty.getExtensionList(ValidateSystemTagExtensionPoint.class)) {
+            if (!exp.validateSystemTag(resourceUuid, resourceType, tag)) {
+                throw new ApiMessageInterceptionException(
+                        argerr("validate system tag [%s] for resourceType[%s] failed", tag, resourceType));
+            }
+        }
     }
 
     @Override
