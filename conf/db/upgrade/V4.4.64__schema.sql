@@ -11,5 +11,3 @@ END IF;
 END $$
 DELIMITER ;
 CALL AddFkPciDeviceVOVmInstanceEO();
-
-ALTER TABLE SecretResourcePoolVO ADD COLUMN status VARCHAR(32) NOT NULL DEFAULT 'Connected';
