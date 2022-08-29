@@ -7,6 +7,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkInventory;
@@ -53,21 +55,11 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
     @Override
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
         final L2VxlanNetworkInventory vxlan = (L2VxlanNetworkInventory) l2Network;
+        HostInventory host = HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class));
 
-        VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class);
-        HardwareVxlanNetwork vx = new HardwareVxlanNetwork(vo);
-        Integer vlanId = vx.getMappingVxlanId(hostUuid);
-        String physicalInterface = vxlan.getPhysicalInterface();
-
-//        Map<Integer, String> map = vx.getMappingVlanIdAndPhysicalInterfaceFromHost(vxlan, hostUuid);
-//        map = SdnControllerMappingOperator.getMappingVlanIdAndPhysicalInterfaceFromHost(vxlan, hostUuid);
-//        Optional<Map.Entry<Integer, String>> value = map.entrySet().stream().findFirst();
-//        if (value.isPresent()) {
-//            vlanId = value.get().getKey();
-//            if (value.get().getValue() != null) {
-//                physicalInterface = value.get().getValue();
-//            }
-//        }
+        HardwareVxlanHelper.VxlanHostMappingStruct struct = HardwareVxlanHelper.getHardwareVxlanMappingVxlanId(vxlan, host);
+        Integer vlanId = struct.getVlanId();
+        String physicalInterface = struct.getPhysicalInterface();
 
         final CreateVlanBridgeCmd cmd = new CreateVlanBridgeCmd();
         cmd.setPhysicalInterfaceName(physicalInterface);
@@ -125,13 +117,15 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
 
     public void check(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
         final L2VxlanNetworkInventory vxlan = (L2VxlanNetworkInventory) l2Network;
-        VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class);
-        HardwareVxlanNetwork vx = new HardwareVxlanNetwork(vo);
-        int vlanId = vx.getMappingVxlanId(hostUuid);
+
+        HostInventory host = HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class));
+        HardwareVxlanHelper.VxlanHostMappingStruct struct = HardwareVxlanHelper.getHardwareVxlanMappingVxlanId(vxlan, host);
+        Integer vlanId = struct.getVlanId();
+        String physicalInterface = struct.getPhysicalInterface();
 
         final KVMAgentCommands.CheckVlanBridgeCmd cmd = new KVMAgentCommands.CheckVlanBridgeCmd();
         cmd.setVlan(vlanId);
-        cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
+        cmd.setPhysicalInterfaceName(physicalInterface);
         cmd.setBridgeName(makeBridgeName(l2Network.getUuid(), vlanId));
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
@@ -186,10 +180,13 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
 
 	@Override
 	public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-        VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class);
+        L2VxlanNetworkInventory vxlan = L2VxlanNetworkInventory.valueOf(dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class));
         VmInstanceVO vm = dbf.findByUuid(nic.getVmInstanceUuid(), VmInstanceVO.class);
-        HardwareVxlanNetwork vx = new HardwareVxlanNetwork(vo);
-        int vlanId = vx.getMappingVxlanId(vm.getHostUuid());
+
+        /* TODO vm must have hostUuid */
+        HostInventory host = HostInventory.valueOf(dbf.findByUuid(vm.getHostUuid(), HostVO.class));
+        HardwareVxlanHelper.VxlanHostMappingStruct struct = HardwareVxlanHelper.getHardwareVxlanMappingVxlanId(vxlan, host);
+        Integer vlanId = struct.getVlanId();
 
         NicTO to = new NicTO();
 		to.setMac(nic.getMac());

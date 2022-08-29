@@ -29,10 +29,6 @@ public interface SdnController {
     void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid, Completion completion);
     void deleteVxlanNetwork(L2VxlanNetworkInventory vxlan, Completion completion);
 
-    //TODO lldp获取sw和sw port数据  sw + sw port + vlan + vni
-    Integer  getMappingVlanId(L2VxlanNetworkInventory vxlan, String hostUuid);
-    Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromHost(L2VxlanNetworkInventory vxlan, String hostUuid);
-    Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid);
     List<SdnVniRange> getVniRange(SdnControllerInventory controller);
     List<SdnVlanRange> getVlanRange(SdnControllerInventory controller);
 }

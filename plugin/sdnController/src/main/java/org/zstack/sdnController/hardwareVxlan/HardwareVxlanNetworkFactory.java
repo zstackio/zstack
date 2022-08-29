@@ -38,10 +38,7 @@ import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerManager;
-import org.zstack.sdnController.header.APICreateL2HardwareVxlanNetworkMsg;
-import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO;
-import org.zstack.sdnController.header.SdnControllerConstant;
-import org.zstack.sdnController.header.SdnControllerVO;
+import org.zstack.sdnController.header.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -410,9 +407,12 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
     @Override
     public Integer getL2NetworkVni(String l2NetworkUuid, String hostUuid) {
         VxlanNetworkVO vxlan = dbf.findByUuid(l2NetworkUuid, VxlanNetworkVO.class);
+        HostInventory host = HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class));
 
-        HardwareVxlanNetwork hardwareVxlan = new HardwareVxlanNetwork(vxlan);
-        return hardwareVxlan.getMappingVxlanId(hostUuid);
+        HardwareVxlanHelper.VxlanHostMappingStruct struct = HardwareVxlanHelper.getHardwareVxlanMappingVxlanId(
+                L2VxlanNetworkInventory.valueOf(vxlan), host);
+
+        return struct.getVlanId();
     }
 
     @Override

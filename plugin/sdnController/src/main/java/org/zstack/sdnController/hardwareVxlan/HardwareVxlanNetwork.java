@@ -140,36 +140,6 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
-    public Integer getMappingVxlanId(String hostUuid) {
-        VxlanNetworkVO vo = (VxlanNetworkVO) self;
-        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
-        SdnControllerVO sdnVo = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
-
-        SdnController sdn = sdnControllerManager.getSdnController(sdnVo);
-        return sdn.getMappingVlanId(L2VxlanNetworkInventory.valueOf((VxlanNetworkVO)self), hostUuid);
-    }
-
-    @Override
-    public Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromHost(L2VxlanNetworkInventory vxlan, String hostUuid) {
-        VxlanNetworkVO vo = (VxlanNetworkVO) self;
-        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
-        SdnControllerVO sdnVo = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
-
-        SdnController sdn = sdnControllerManager.getSdnController(sdnVo);
-        return sdn.getMappingVlanIdAndPhysicalInterfaceFromHost(L2VxlanNetworkInventory.valueOf((VxlanNetworkVO)self), hostUuid);
-    }
-
-    @Override
-    public Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid) {
-        VxlanNetworkVO vo = (VxlanNetworkVO) self;
-        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
-        SdnControllerVO sdnVo = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
-
-        SdnController sdn = sdnControllerManager.getSdnController(sdnVo);
-        return sdn.getMappingVlanIdAndPhysicalInterfaceFromCluster(L2VxlanNetworkInventory.valueOf((VxlanNetworkVO)self), clusterUuid);
-    }
-
-    @Override
     public void deleteHook(Completion completion) {
         deleteVxlanNetworkOnSdnController((VxlanNetworkVO) self, new Completion(completion) {
             @Override
