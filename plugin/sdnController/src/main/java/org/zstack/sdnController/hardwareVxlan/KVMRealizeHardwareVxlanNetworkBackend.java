@@ -24,10 +24,13 @@ import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.service.MtuGetter;
-import org.zstack.sdnController.header.SdnControllerConstant;
+import org.zstack.sdnController.header.*;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.Map;
+import java.util.Optional;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -50,17 +53,30 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
     @Override
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
         final L2VxlanNetworkInventory vxlan = (L2VxlanNetworkInventory) l2Network;
+
         VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class);
         HardwareVxlanNetwork vx = new HardwareVxlanNetwork(vo);
-        int vlanId = vx.getMappingVxlanId(hostUuid);
+        Integer vlanId = vx.getMappingVxlanId(hostUuid);
+        String physicalInterface = vxlan.getPhysicalInterface();
+
+//        Map<Integer, String> map = vx.getMappingVlanIdAndPhysicalInterfaceFromHost(vxlan, hostUuid);
+//        map = SdnControllerMappingOperator.getMappingVlanIdAndPhysicalInterfaceFromHost(vxlan, hostUuid);
+//        Optional<Map.Entry<Integer, String>> value = map.entrySet().stream().findFirst();
+//        if (value.isPresent()) {
+//            vlanId = value.get().getKey();
+//            if (value.get().getValue() != null) {
+//                physicalInterface = value.get().getValue();
+//            }
+//        }
 
         final CreateVlanBridgeCmd cmd = new CreateVlanBridgeCmd();
-        cmd.setPhysicalInterfaceName(vxlan.getPhysicalInterface());
+        cmd.setPhysicalInterfaceName(physicalInterface);
         cmd.setBridgeName(makeBridgeName(vxlan.getUuid(), vlanId));
         cmd.setVlan(vlanId);
         cmd.setMtu(new MtuGetter().getL2Mtu(vxlan));
         cmd.setL2NetworkUuid(l2Network.getUuid());
 
+        int finalVlanId = vlanId;
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
         msg.setCommand(cmd);
@@ -79,14 +95,14 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
                 CreateVlanBridgeResponse rsp = hreply.toResponse(CreateVlanBridgeResponse.class);
                 if (!rsp.isSuccess()) {
                     ErrorCode err = operr("failed to create bridge[%s] for hardwareVxlan[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
-                            cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), vlanId, hostUuid, rsp.getError());
+                            cmd.getBridgeName(), l2Network.getUuid(), l2Network.getType(), finalVlanId, hostUuid, rsp.getError());
                     completion.fail(err);
                     return;
                 }
 
                 String info = String.format(
                         "successfully realize bridge[%s] for hardwareVxlan[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s]", cmd
-                                .getBridgeName(), l2Network.getUuid(), l2Network.getType(), vlanId, hostUuid);
+                                .getBridgeName(), l2Network.getUuid(), l2Network.getType(), finalVlanId, hostUuid);
                 logger.debug(info);
 
                 SystemTagCreator creator = KVMSystemTags.L2_BRIDGE_NAME.newSystemTagCreator(l2Network.getUuid());
@@ -94,6 +110,8 @@ public class KVMRealizeHardwareVxlanNetworkBackend implements L2NetworkRealizati
                 creator.ignoreIfExisting = true;
                 creator.setTagByTokens(map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, cmd.getBridgeName())));
                 creator.create();
+
+                //
 
                 completion.success();
             }

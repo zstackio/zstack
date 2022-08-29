@@ -41,7 +41,7 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="HardwareVxlanNetworkPool" class="org.zstack.sdnController.hardwareVxlan.HardwareVxlanNetworkPoolFactory">
+    <bean id="HardwareVxlanNetworkPoolFactory" class="org.zstack.sdnController.hardwareVxlan.HardwareVxlanNetworkPoolFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkFactory" />
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
@@ -58,21 +58,9 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="HardwareVxlanNetwork" class="org.zstack.sdnController.hardwareVxlan.HardwareVxlanNetwork">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.sdnController.hardwareVxlan.HardwareVxlanNetworkExtensionPoint" />
-        </zstack:plugin>
-    </bean>
-
     <bean id="SdnControllerCascadeExtension" class="org.zstack.sdnController.SdnControllerCascadeExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
-        </zstack:plugin>
-    </bean>
-
-    <bean id="H3cSdnControllerFactory" class="org.zstack.sdnController.h3c.H3cSdnControllerFactory">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.sdnController.SdnControllerFactory"/>
         </zstack:plugin>
     </bean>
 
@@ -80,6 +68,19 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="H3cSdnControllerFactory" class="org.zstack.sdnController.h3cVcfc.H3cVcfcSdnControllerFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.sdnController.SdnControllerFactory"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="H3cVcfcApiInterceptor" class="org.zstack.sdnController.h3cVcfc.H3cVcfcApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
 

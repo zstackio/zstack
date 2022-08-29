@@ -1,6 +1,7 @@
 package org.zstack.sdnController.hardwareVxlan;
 
 import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -18,31 +19,39 @@ import org.zstack.network.l2.vxlan.vtep.PopulateVtepPeersMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.*;
+import org.zstack.sdnController.SdnController;
+import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory;
 import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO;
+import org.zstack.sdnController.header.SdnControllerVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import static org.zstack.core.Platform.argerr;
 
 /**
  * Created by shixin.ruan on 09/17/2019.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class HardwareVxlanNetworkPool extends VxlanNetworkPool {
+    @Autowired
+    SdnControllerManager sdnControllerManager;
+
     private static final CLogger logger = Utils.getLogger(HardwareVxlanNetworkPool.class);
 
     public HardwareVxlanNetworkPool(L2NetworkVO vo) {
         super(vo);
     }
 
-    private HardwareL2VxlanNetworkPoolVO getSelf() {
+    private HardwareL2VxlanNetworkPoolVO getSelf1() {
         return (HardwareL2VxlanNetworkPoolVO) self;
     }
 
     protected HardwareL2VxlanNetworkPoolInventory getSelfInventory() {
-        return HardwareL2VxlanNetworkPoolInventory.valueOf(getSelf());
+        return HardwareL2VxlanNetworkPoolInventory.valueOf(getSelf1());
     }
 
     @Override
@@ -98,6 +107,5 @@ public class HardwareVxlanNetworkPool extends VxlanNetworkPool {
                 completion.success();
             }
         });
-
     }
 }

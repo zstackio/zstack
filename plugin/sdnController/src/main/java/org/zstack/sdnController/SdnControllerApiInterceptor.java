@@ -21,7 +21,7 @@ import static org.zstack.core.Platform.argerr;
 /**
  * Created by shixin.ruan on 09/17/2019
  */
-public class SdnControllerApiInterceptor implements ApiMessageInterceptor , GlobalApiMessageInterceptor {
+public class SdnControllerApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(SdnControllerApiInterceptor.class);
 
     @Autowired
@@ -70,30 +70,9 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor , Glob
     private void handle(APIAttachL2NetworkToClusterMsg msg) {
     }
 
-    private boolean validateH3cController(APIAddSdnControllerMsg msg) {
-        if (msg.getSystemTags() == null || msg.getSystemTags().isEmpty()) {
-            return false;
-        }
-
-        boolean vds = false;
-        for (String tag : msg.getSystemTags()) {
-            if (SdnControllerSystemTags.H3C_VDS_UUID.isMatch(tag)){
-                vds = true;
-            }
-        }
-
-        return vds;
-    }
-
     private void handle(APIAddSdnControllerMsg msg) {
         if (!SdnControllerType.getAllTypeNames().contains(msg.getVendorType())) {
             throw new ApiMessageInterceptionException(argerr("Sdn controller type: %s in not in the supported list: %s ", msg.getVendorType(), SdnControllerType.getAllTypeNames()));
-        }
-
-        if (msg.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
-            if (!validateH3cController(msg)) {
-                throw new ApiMessageInterceptionException(argerr("H3C VCFC controller must include systemTags vdsUuid::{%s}"));
-            }
         }
     }
 }

@@ -14,6 +14,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -26,6 +27,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.sdnController.h3cVcfc.H3cVcfcSdnController;
 import org.zstack.sdnController.header.*;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
@@ -37,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static org.zstack.utils.ObjectUtils.logger;
 
 public class SdnControllerManagerImpl extends AbstractService implements SdnControllerManager {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
@@ -80,10 +83,16 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     }
 
     private void doDeletionSdnController(SdnControllerDeletionMsg msg, Completion completion) {
+        SdnControllerVO vo = dbf.findByUuid(msg.getSdnControllerUuid(), SdnControllerVO.class);
+        SdnControllerInventory sdn = SdnControllerInventory.valueOf(vo);
+
+        SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
+        SdnController controller = factory.getSdnController(vo);
+
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("sdn-controller-deletion-%s", msg.getSdnControllerUuid()));
         chain.then(new NoRollbackFlow() {
-            String __name__ = "detach-hardvxlan-network-of-sdn-controller";
+            String __name__ =  String.format("detach-hardvxlan-network-of-sdn-controller-%s", vo.getName());
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -110,7 +119,24 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                 });
             }
         }).then(new NoRollbackFlow() {
-            String __name__ = "delete-sdn-controller";
+            String __name__ = String.format("delete-sdn-controller-%s", vo.getName());
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    controller.deleteSdnController(msg, sdn, new Completion(completion) {
+                        @Override
+                        public void success() {
+                            completion.success();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                        }
+                    });
+                }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "delete-sdn-controller-on-db";
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 dbf.removeByPrimaryKey(msg.getSdnControllerUuid(), SdnControllerVO.class);
@@ -162,10 +188,100 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         });
     }
 
+    private void doCreateSdnController(SdnControllerVO vo, APIAddSdnControllerMsg msg, Completion completion) {
+        SdnControllerVO sdnControllerVO = dbf.persistAndRefresh(vo);
+        SdnControllerInventory sdn = SdnControllerInventory.valueOf(sdnControllerVO);
+
+        SdnControllerFactory factory = getSdnControllerFactory(msg.getVendorType());
+        SdnController controller = factory.getSdnController(sdnControllerVO);
+
+        Map data = new HashMap();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setData(data);
+        chain.setName(String.format("create-sdn-controller-%s", msg.getName()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("pre-process-for-create-sdn-controller-%s", msg.getName());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        controller.preInitSdnController(msg, sdn, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+                flow(new Flow() {
+                    String __name__ = String.format("init-sdn-controller-%s", msg.getName());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        controller.initSdnController(msg, sdn, new Completion(completion) {
+                            @Override
+                            public void success() {
+                                completion.success();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                dbf.removeByPrimaryKey(vo.getUuid(), SdnControllerVO.class);
+                                completion.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        trigger.rollback();
+                    }
+                });
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("post-process-for-create-sdn-controller--%s", msg.getName());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        controller.postInitSdnController(msg, sdn, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        logger.debug(String.format("successfully create sdn controller"));
+                        completion.success();
+                    }
+                });
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
+    }
+
     private void handle(APIAddSdnControllerMsg msg) {
         APIAddSdnControllerEvent event = new APIAddSdnControllerEvent(msg.getId());
 
-        SdnControllerFactory factory = getSdnControllerFactory(msg.getVendorType());
         SdnControllerVO vo = new SdnControllerVO();
         vo.setVendorType(msg.getVendorType());
         if (msg.getResourceUuid() != null) {
@@ -179,7 +295,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         vo.setUsername(msg.getUserName());
         vo.setPassword(msg.getPassword());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
-        factory.createSdnController(vo, msg, new Completion(msg) {
+
+        doCreateSdnController(vo, msg, new Completion(msg) {
             @Override
             public void success() {
                 tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), SdnControllerVO.class.getSimpleName());

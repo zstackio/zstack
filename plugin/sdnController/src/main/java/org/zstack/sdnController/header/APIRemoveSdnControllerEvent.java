@@ -3,7 +3,6 @@ package org.zstack.sdnController.header;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
-
 @RestResponse
 public class APIRemoveSdnControllerEvent extends APIEvent {
 

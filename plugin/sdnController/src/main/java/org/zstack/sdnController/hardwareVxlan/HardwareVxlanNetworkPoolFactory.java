@@ -15,15 +15,13 @@ import org.zstack.header.network.l3.APICreateL3NetworkMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkChecker;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
-import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.sdnController.header.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -38,8 +36,6 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
     private DatabaseFacade dbf;
     @Autowired
     private VxlanNetworkChecker vxlanInterceptor;
-    @Autowired
-    private ResourceConfigFacade rcf;
 
     @Override
     public L2NetworkType getType() {
@@ -78,15 +74,15 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAttachL2NetworkToClusterMsg) {
-            validate((APIAttachL2NetworkToClusterMsg)msg);
-        } else if (msg instanceof APICreateL3NetworkMsg){
-            validate((APICreateL3NetworkMsg)msg);
-        } else if (msg instanceof APICreateL2VxlanNetworkMsg){
-            validate((APICreateL2VxlanNetworkMsg)msg);
-        } else if (msg instanceof APICreateL2HardwareVxlanNetworkMsg){
-            validate((APICreateL2HardwareVxlanNetworkMsg)msg);
-        } else if (msg instanceof APICreateL2HardwareVxlanNetworkPoolMsg){
-            validate((APICreateL2HardwareVxlanNetworkPoolMsg)msg);
+            validate((APIAttachL2NetworkToClusterMsg) msg);
+        } else if (msg instanceof APICreateL3NetworkMsg) {
+            validate((APICreateL3NetworkMsg) msg);
+        } else if (msg instanceof APICreateL2VxlanNetworkMsg) {
+            validate((APICreateL2VxlanNetworkMsg) msg);
+        } else if (msg instanceof APICreateL2HardwareVxlanNetworkMsg) {
+            validate((APICreateL2HardwareVxlanNetworkMsg) msg);
+        } else if (msg instanceof APICreateL2HardwareVxlanNetworkPoolMsg) {
+            validate((APICreateL2HardwareVxlanNetworkPoolMsg) msg);
         }
 
         return msg;
@@ -125,24 +121,24 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
     private void validate(APICreateL2VxlanNetworkMsg msg) {
         VxlanNetworkPoolVO poolVO = dbf.findByUuid(msg.getPoolUuid(), VxlanNetworkPoolVO.class);
         if (poolVO.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)
-            && !msg.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE)){
+                && !msg.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
             throw new ApiMessageInterceptionException(argerr("ONLY hareware vxlan network can be created in hareware vxlan pool"));
         }
 
         if (!poolVO.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)
-                && msg.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE)){
+                && msg.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
             throw new ApiMessageInterceptionException(argerr("hareware vxlan network can ONLY be created in hareware vxlan pool"));
         }
     }
 
     private void validate(APICreateL2HardwareVxlanNetworkMsg msg) {
         VxlanNetworkPoolVO poolVO = dbf.findByUuid(msg.getPoolUuid(), VxlanNetworkPoolVO.class);
-        if (msg.getZoneUuid() != null && !msg.getZoneUuid().equals(poolVO.getZoneUuid()))  {
+        if (msg.getZoneUuid() != null && !msg.getZoneUuid().equals(poolVO.getZoneUuid())) {
             throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
                     String.format("the zone uuid provided not equals to zone uuid of pool [%s], please correct it or do not fill it",
                             msg.getPoolUuid())
             ));
-        } else if (msg.getZoneUuid() == null ) {
+        } else if (msg.getZoneUuid() == null) {
             msg.setZoneUuid(poolVO.getZoneUuid());
         }
 

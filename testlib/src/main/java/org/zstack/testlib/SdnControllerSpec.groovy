@@ -2,17 +2,17 @@ package org.zstack.testlib
 
 
 import org.zstack.sdk.SdnControllerInventory
-import org.zstack.sdnController.h3c.H3cCommands
-import org.zstack.sdnController.h3c.H3cCommands.LoginReply
-import org.zstack.sdnController.h3c.H3cCommands.LoginRsp
-import org.zstack.sdnController.h3c.H3cCommands.CreateH3cNetworksRsp
-import org.zstack.sdnController.h3c.H3cCommands.NetworkCmd
-import org.zstack.sdnController.h3c.H3cCommands.GetH3cVniRangeRsp
-import org.zstack.sdnController.h3c.H3cCommands.H3cVniRangeStruct
-import org.zstack.sdnController.h3c.H3cCommands.VniRangeStruct
-import org.zstack.sdnController.h3c.H3cCommands.GetH3cTenantsRsp
-import org.zstack.sdnController.h3c.H3cCommands.H3cTenantStruct
-import org.zstack.sdnController.h3c.H3cCommands.GetH3cTeamLederIpReply
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.LoginReply
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.LoginRsp
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.CreateH3cNetworksRsp
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.NetworkCmd
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.GetH3cVniRangeRsp
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.H3cVniRangeStruct
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.VniRangeStruct
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.GetH3cTenantsRsp
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.H3cTenantStruct
+import org.zstack.sdnController.h3cVcfc.H3cVcfcCommands.GetH3cTeamLederIpReply
 import org.zstack.testlib.*
 
 /**
@@ -62,7 +62,7 @@ class SdnControllerSpec extends Spec implements HasSession {
                 xspec.simulator(arg1, arg2)
             }
 
-            simulator(H3cCommands.H3C_VCFC_GET_TOKEN) {
+            simulator(H3cVcfcCommands.H3C_VCFC_GET_TOKEN) {
                 LoginReply reply = new LoginReply()
                 LoginRsp login = new LoginRsp()
                 reply.token = "token1"
@@ -70,7 +70,7 @@ class SdnControllerSpec extends Spec implements HasSession {
                 return login
             }
 
-            simulator(H3cCommands.H3C_VCFC_L2_NETWORKS) {
+            simulator(H3cVcfcCommands.H3C_VCFC_L2_NETWORKS) {
                 CreateH3cNetworksRsp rsp = new CreateH3cNetworksRsp()
                 rsp.networks = new ArrayList()
 
@@ -81,7 +81,7 @@ class SdnControllerSpec extends Spec implements HasSession {
                 return rsp
             }
 
-            simulator(H3cCommands.H3C_VCFC_VNI_RANGES) {
+            simulator(H3cVcfcCommands.H3C_VCFC_VNI_RANGES) {
                 GetH3cVniRangeRsp rsp = new GetH3cVniRangeRsp()
                 rsp.domains = new ArrayList<>()
 
@@ -103,7 +103,7 @@ class SdnControllerSpec extends Spec implements HasSession {
                 return rsp
             }
 
-            simulator(H3cCommands.H3C_VCFC_TENANTS) {
+            simulator(H3cVcfcCommands.H3C_VCFC_TENANTS) {
                 GetH3cTenantsRsp rsp = new GetH3cTenantsRsp()
                 rsp.tenants = new ArrayList<>()
 
@@ -122,7 +122,7 @@ class SdnControllerSpec extends Spec implements HasSession {
                 return rsp
             }
 
-            simulator(H3cCommands.H3C_VCFC_TEAM_LEADERIP) {
+            simulator(H3cVcfcCommands.H3C_VCFC_TEAM_LEADERIP) {
                 GetH3cTeamLederIpReply rsp = new GetH3cTeamLederIpReply()
                 rsp.ip = "127.1.1.1"
                 return rsp

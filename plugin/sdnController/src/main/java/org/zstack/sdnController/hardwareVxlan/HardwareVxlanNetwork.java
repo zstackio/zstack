@@ -36,21 +36,12 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
         super(self);
     }
 
-    public HardwareVxlanNetwork() {
-        super();
-    }
-
     @Override
-    public void createVxlanNetworkOnSdnController(VxlanNetworkVO vo, Completion completion) {
-        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
-        if (poolVO == null || poolVO.getSdnControllerUuid() == null) {
-            completion.fail(argerr("there is no sdn controller for vxlan pool [uuid:%s]", vo.getPoolUuid()));
-            return;
-        }
-
+    public void createVxlanNetworkOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
         SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
         SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-        sdnController.createVxlanNetwork(L2VxlanNetworkInventory.valueOf(vo), completion);
+        sdnController.createVxlanNetwork(vxlan, systemTags, completion);
     }
 
     @Override
@@ -75,8 +66,8 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
-    public void attachHardwareVxlanToCluster(VxlanNetworkVO vo, Completion completion) {
-        List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, vo.getPoolUuid())
+    public void attachL2NetworkToClusterOnSdnController(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion) {
+        List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, vxlan.getPoolUuid())
                 .select(L2NetworkClusterRefVO_.clusterUuid).listValues();
         if (clusterUuids == null || clusterUuids.isEmpty()) {
             completion.success();
@@ -89,7 +80,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
         List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("attach-hardware-vxlan-%s-on-hosts", vo.getUuid()));
+        chain.setName(String.format("attach-hardware-vxlan-%s-on-hosts", vxlan.getUuid()));
         chain.then(new NoRollbackFlow() {
             final String __name__ = "realize-physical-interface";
 
@@ -100,7 +91,7 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
                 }
 
                 HostInventory host = it.next();
-                realizeNetwork(host.getUuid(), host.getHypervisorType(),L2VxlanNetworkInventory.valueOf(vo), new Completion(trigger) {
+                realizeNetwork(host.getUuid(), host.getHypervisorType(), vxlan, new Completion(trigger) {
                     @Override
                     public void success() {
                         realize(it, trigger);
@@ -117,6 +108,24 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
             public void run(FlowTrigger trigger, Map data) {
                 realize(hvinvs.iterator(), trigger);
             }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+                SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+                SdnController sdnController = sdnControllerManager.getSdnController(sdn);
+                sdnController.attachL2NetworkToCluster(vxlan, systemTags, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
@@ -131,13 +140,33 @@ public class HardwareVxlanNetwork extends VxlanNetwork implements HardwareVxlanN
     }
 
     @Override
-    public int getMappingVxlanId(String hostUuid) {
+    public Integer getMappingVxlanId(String hostUuid) {
         VxlanNetworkVO vo = (VxlanNetworkVO) self;
         HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
         SdnControllerVO sdnVo = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
 
         SdnController sdn = sdnControllerManager.getSdnController(sdnVo);
         return sdn.getMappingVlanId(L2VxlanNetworkInventory.valueOf((VxlanNetworkVO)self), hostUuid);
+    }
+
+    @Override
+    public Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromHost(L2VxlanNetworkInventory vxlan, String hostUuid) {
+        VxlanNetworkVO vo = (VxlanNetworkVO) self;
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+        SdnControllerVO sdnVo = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+
+        SdnController sdn = sdnControllerManager.getSdnController(sdnVo);
+        return sdn.getMappingVlanIdAndPhysicalInterfaceFromHost(L2VxlanNetworkInventory.valueOf((VxlanNetworkVO)self), hostUuid);
+    }
+
+    @Override
+    public Map<Integer, String> getMappingVlanIdAndPhysicalInterfaceFromCluster(L2VxlanNetworkInventory vxlan, String clusterUuid) {
+        VxlanNetworkVO vo = (VxlanNetworkVO) self;
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+        SdnControllerVO sdnVo = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+
+        SdnController sdn = sdnControllerManager.getSdnController(sdnVo);
+        return sdn.getMappingVlanIdAndPhysicalInterfaceFromCluster(L2VxlanNetworkInventory.valueOf((VxlanNetworkVO)self), clusterUuid);
     }
 
     @Override

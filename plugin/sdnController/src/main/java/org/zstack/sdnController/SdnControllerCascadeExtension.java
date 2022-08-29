@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-
 public class SdnControllerCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final CLogger logger = Utils.getLogger(SdnControllerCascadeExtension.class);
 

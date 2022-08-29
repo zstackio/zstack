@@ -1,11 +1,11 @@
-package org.zstack.sdnController.h3c;
+package org.zstack.sdnController.h3cVcfc;
 
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class H3cCommands {
+public class H3cVcfcCommands {
     public static final String H3C_VCFC_GET_TOKEN = "/sdn/v2.0/auth";
     public static final String H3C_VCFC_L2_NETWORKS = "/vds/1.0/networks";
     public static final String H3C_VCFC_VNI_RANGES = "/nem/v1.0/vlan_domains";

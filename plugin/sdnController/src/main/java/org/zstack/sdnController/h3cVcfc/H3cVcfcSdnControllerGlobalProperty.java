@@ -1,14 +1,10 @@
-package org.zstack.sdnController.header;
+package org.zstack.sdnController.h3cVcfc;
 
 import org.zstack.core.GlobalProperty;
 import org.zstack.core.GlobalPropertyDefinition;
 
-import java.util.List;
-
-/**
- */
 @GlobalPropertyDefinition
-public class SdnControllerGlobalProperty {
+public class H3cVcfcSdnControllerGlobalProperty {
     @GlobalProperty(name="H3c.Scheme", defaultValue = "http")
     public static String H3C_CONTROLLER_SCHEME;
 
