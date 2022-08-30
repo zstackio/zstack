@@ -80,6 +80,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
         vo.setPoolUuid((amsg.getPoolUuid()));
         VxlanNetworkPoolVO poolVO = dbf.findByUuid(vo.getPoolUuid(), VxlanNetworkPoolVO.class);
         vo.setPhysicalInterface(poolVO.getPhysicalInterface());
+        vo.setVni(0);
 
         HardwareVxlanNetwork hardwareVxlan = new HardwareVxlanNetwork(vo);
 
@@ -90,8 +91,35 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
         chain.then(new ShareFlow(){
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("pre-process-for-create-hardware-vxlan-network-%s", msg.getName());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        L2VxlanNetworkInventory vxlan = L2VxlanNetworkInventory.valueOf(vo);
+                        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+                        if (poolVO == null || poolVO.getSdnControllerUuid() == null) {
+                            completion.fail(argerr("there is no sdn controller for vxlan pool [uuid:%s]", vxlan.getPoolUuid()));
+                            return;
+                        }
+                        SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+                        SdnController controller = sdnControllerManager.getSdnController(sdn);
+
+                        controller.preCreateVxlanNetwork(vxlan, msg.getSystemTags(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
                 flow(new Flow() {
-                    String __name__ = String.format("allocate-vni-for-%s", msg.getName());
+                    String __name__ = String.format("allocate-vni-for-%s-and-store-in-db", msg.getName());
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -121,34 +149,6 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
                     public void rollback(FlowRollback trigger, Map data) {
                         /* no need to release vni because vni is saved in VxlanNetworkVO */
                         trigger.rollback();
-                    }
-                });
-                flow(new NoRollbackFlow() {
-                    String __name__ = String.format("pre-process-for-create-hardware-vxlan-network-%s", msg.getName());
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        VxlanNetworkVO ovo = (VxlanNetworkVO)data.get(SdnControllerConstant.Params.VXLAN_NETWORK.toString());
-                        L2VxlanNetworkInventory vxlan = L2VxlanNetworkInventory.valueOf(ovo);
-                        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
-                        if (poolVO == null || poolVO.getSdnControllerUuid() == null) {
-                            completion.fail(argerr("there is no sdn controller for vxlan pool [uuid:%s]", vxlan.getPoolUuid()));
-                            return;
-                        }
-                        SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
-                        SdnController controller = sdnControllerManager.getSdnController(sdn);
-
-                        controller.preCreateVxlanNetwork(vxlan, msg.getSystemTags(), new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
                     }
                 });
                 flow(new Flow() {
@@ -236,7 +236,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
                     }
                 });
                 flow(new Flow() {
-                    String __name__ = String.format("attach-hardware-vxlan-on-host-%s", msg.getName());
+                    String __name__ = String.format("attach-hardware-vxlan-on-host-%s-and-store-in-db", msg.getName());
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -258,6 +258,35 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         /* same to vlan network, when network is deleted, bridge is deleted from host */
+                        trigger.rollback();
+                    }
+                });
+                flow(new Flow() {
+                    String __name__ = String.format("attach-hardware-vxlan-on-host-on-sdn-controller-%s", msg.getName());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VxlanNetworkVO ovo = (VxlanNetworkVO)data.get(SdnControllerConstant.Params.VXLAN_NETWORK.toString());
+                        L2VxlanNetworkInventory vxlan = L2VxlanNetworkInventory.valueOf(ovo);
+                        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(vxlan.getPoolUuid(), HardwareL2VxlanNetworkPoolVO.class);
+                        SdnControllerVO sdn = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+
+                        SdnController controller = sdnControllerManager.getSdnController(sdn);
+                        controller.attachL2NetworkToCluster(vxlan, msg.getSystemTags(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
                         trigger.rollback();
                     }
                 });

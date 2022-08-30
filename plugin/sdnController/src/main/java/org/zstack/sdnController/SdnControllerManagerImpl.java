@@ -27,7 +27,6 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.sdnController.h3cVcfc.H3cVcfcSdnController;
 import org.zstack.sdnController.header.*;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
@@ -39,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
-import static org.zstack.utils.ObjectUtils.logger;
 
 public class SdnControllerManagerImpl extends AbstractService implements SdnControllerManager {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
@@ -189,11 +187,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     }
 
     private void doCreateSdnController(SdnControllerVO vo, APIAddSdnControllerMsg msg, Completion completion) {
-        SdnControllerVO sdnControllerVO = dbf.persistAndRefresh(vo);
-        SdnControllerInventory sdn = SdnControllerInventory.valueOf(sdnControllerVO);
-
         SdnControllerFactory factory = getSdnControllerFactory(msg.getVendorType());
-        SdnController controller = factory.getSdnController(sdnControllerVO);
+        SdnController controller = factory.getSdnController(vo);
 
         Map data = new HashMap();
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -207,7 +202,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.preInitSdnController(msg, sdn, new Completion(trigger) {
+                        controller.preInitSdnController(msg, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -221,11 +216,26 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                     }
                 });
                 flow(new Flow() {
+                    String __name__ = String.format("create-sdn-controller-%s-on-db", msg.getName());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        dbf.persist(vo);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        dbf.removeByPrimaryKey(vo.getUuid(), SdnControllerVO.class);
+                        trigger.rollback();
+                    }
+                });
+                flow(new Flow() {
                     String __name__ = String.format("init-sdn-controller-%s", msg.getName());
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.initSdnController(msg, sdn, new Completion(completion) {
+                        controller.initSdnController(msg, new Completion(completion) {
                             @Override
                             public void success() {
                                 completion.success();
@@ -249,7 +259,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        controller.postInitSdnController(msg, sdn, new Completion(trigger) {
+                        controller.postInitSdnController(msg, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();

@@ -31,9 +31,6 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Map;
-import java.util.Optional;
-
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;

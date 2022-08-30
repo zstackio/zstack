@@ -5,7 +5,6 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.sdnController.header.*;
 
 import java.util.List;
-import java.util.Map;
 
 public interface SdnController {
     /*
@@ -13,9 +12,9 @@ public interface SdnController {
     对sdn控制器的控制: event
     有关sdn控制器的后置处理: post-event
      */
-    void preInitSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion);
-    void initSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion);
-    void postInitSdnController(APIAddSdnControllerMsg msg, SdnControllerInventory sdn, Completion completion);
+    void preInitSdnController(APIAddSdnControllerMsg msg, Completion completion);
+    void initSdnController(APIAddSdnControllerMsg msg, Completion completion);
+    void postInitSdnController(APIAddSdnControllerMsg msg, Completion completion);
 
     void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
     void createVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);

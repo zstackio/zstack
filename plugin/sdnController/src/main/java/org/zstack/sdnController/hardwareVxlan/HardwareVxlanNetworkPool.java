@@ -19,15 +19,12 @@ import org.zstack.network.l2.vxlan.vtep.PopulateVtepPeersMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.*;
-import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory;
 import org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO;
-import org.zstack.sdnController.header.SdnControllerVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.zstack.core.Platform.argerr;
