@@ -12,16 +12,16 @@ import org.zstack.header.network.l2.APIDetachL2NetworkFromClusterMsg;
 import org.zstack.header.network.l3.APICreateL3NetworkMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APIDeleteVxlanL2Network;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVniRangeMsg;
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.sdnController.header.*;
-import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -46,6 +46,7 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
         List<Class> ret = new ArrayList<>();
         ret.add(APIAddSdnControllerMsg.class);
         ret.add(APICreateL2HardwareVxlanNetworkPoolMsg.class);
+        ret.add(APICreateVniRangeMsg.class);
         ret.add(APICreateL2VxlanNetworkMsg.class);
         ret.add(APICreateL2HardwareVxlanNetworkMsg.class);
         ret.add(APIAttachL2NetworkToClusterMsg.class);
@@ -65,6 +66,8 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
             validate((APIAddSdnControllerMsg) msg);
         } else if (msg instanceof APICreateL2HardwareVxlanNetworkPoolMsg){
             validate((APICreateL2HardwareVxlanNetworkPoolMsg)msg);
+        } else if (msg instanceof APICreateVniRangeMsg){
+            validate((APICreateVniRangeMsg)msg);
         } else if (msg instanceof APICreateL2VxlanNetworkMsg){
             validate((APICreateL2VxlanNetworkMsg)msg);
         } else if (msg instanceof APICreateL2HardwareVxlanNetworkMsg) {
@@ -86,6 +89,44 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
         return msg;
     }
 
+    public static boolean isOverlappedVniRange(Integer startVni1, Integer endVni1, Integer startVni2, Integer endVni2) {
+        if (startVni2 <= startVni1 && endVni1 <= endVni2) {
+            return true;
+        }
+        return false;
+    }
+
+    private void validate(APICreateVniRangeMsg msg) {
+        VxlanNetworkPoolVO pool = dbf.findByUuid(msg.getL2NetworkUuid(), VxlanNetworkPoolVO.class);
+        if ( pool == null ) {
+            throw new ApiMessageInterceptionException(argerr("unable create vni range, because l2 uuid[%s] is not vxlan network pool",msg.getL2NetworkUuid()));
+        }
+
+        HardwareL2VxlanNetworkPoolVO poolVO = dbf.findByUuid(msg.getL2NetworkUuid(), HardwareL2VxlanNetworkPoolVO.class);
+        if (poolVO == null) {
+            return;
+        }
+
+        SdnControllerVO vo = dbf.findByUuid(poolVO.getSdnControllerUuid(), SdnControllerVO.class);
+        if (!vo.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
+            return;
+        }
+        
+        SdnController sdnController = sdnControllerManager.getSdnController(vo);
+        SdnVniRange userVniRange = new SdnVniRange();
+        userVniRange.startVni = msg.getStartVni();
+        userVniRange.endVni = msg.getEndVni();
+
+        // user's vniRange must respectively covered by a sdn's vniRange
+        List <SdnVniRange> legalList = sdnController.getVniRange(SdnControllerInventory.valueOf(vo));
+        for (SdnVniRange legalRange : legalList) {
+            if (isOverlappedVniRange(userVniRange.startVni, userVniRange.endVni, legalRange.startVni, legalRange.endVni)) {
+                return;
+            }
+        }
+        throw new ApiMessageInterceptionException(argerr("the vni range:[%s.%s} is illegal, must covered by a sdn's vniRange", userVniRange.startVni, userVniRange.endVni));
+    }
+
     private void validate(APICreateL3NetworkMsg msg) {
     }
 
@@ -101,46 +142,7 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
     private void validate(APICreateL2HardwareVxlanNetworkMsg msg) {
     }
 
-    public static boolean isOverlappedVniRange(Integer startVni1, Integer endVni1, Integer startVni2, Integer endVni2) {
-        if (startVni2 >= startVni1 && endVni1 <= endVni2) {
-            return true;
-        }
-        return false;
-    }
-
     private void validate(APICreateL2HardwareVxlanNetworkPoolMsg msg) {
-        SdnControllerVO vo = dbf.findByUuid(msg.getSdnControllerUuid(), SdnControllerVO.class);
-        SdnController sdnController = sdnControllerManager.getSdnController(vo);
-        if (!vo.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
-            return;
-        }
-
-        List <SdnVniRange> userList = new ArrayList<>();
-        if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
-            for (String tag : msg.getSystemTags()) {
-                if (!H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE.isMatch(tag)) {
-                    continue;
-                }
-
-                Map<String, String> token = TagUtils.parse(H3cVcfcSdnControllerSystemTags.H3C_VNI_RANGE.getTagFormat(), tag);
-                SdnVniRange vniRange = new SdnVniRange();
-                vniRange.startVni = new Integer(token.get(H3cVcfcSdnControllerSystemTags.H3C_START_VNI_TOKEN));
-                vniRange.endVni = new Integer(token.get(H3cVcfcSdnControllerSystemTags.H3C_END_VNI_TOKEN));
-                userList.add(vniRange);
-            }
-        }
-
-        // user's vniRange must respectively covered by a sdn's vniRange
-        List <SdnVniRange> legalList = sdnController.getVniRange(SdnControllerInventory.valueOf(vo));
-        for(SdnVniRange userRange : userList) {
-            for (SdnVniRange legalRange : legalList) {
-                if (!isOverlappedVniRange(userRange.startVni, userRange.endVni, legalRange.startVni, legalRange.endVni)) {
-                    continue;
-                } else {
-                    throw new ApiMessageInterceptionException(argerr("the vni range:[%s.%s} is illegal ", userRange.startVni, userRange.endVni));
-                }
-            }
-        }
     }
 
     private void validate(APICreateL2VxlanNetworkMsg msg) {

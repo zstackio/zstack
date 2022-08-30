@@ -54,7 +54,7 @@ class HardwareVxlanPoolCase extends SubCase {
 
         VniRangeInventory vniRange = createVniRange {
             startVni = 100
-            endVni = 10000
+            endVni = 200
             l2NetworkUuid = poolinv.getUuid()
             name = "TestRange2"
         }
@@ -67,21 +67,21 @@ class HardwareVxlanPoolCase extends SubCase {
         L2VxlanNetworkInventory vx1 = createL2HardwareVxlanNetwork {
             poolUuid = poolinv.getUuid()
             name = "hardVxlan1"
-            vni = 200
+            vni = 100
             zoneUuid = zone.uuid
         }
 
         createL2HardwareVxlanNetwork {
             poolUuid = poolinv.getUuid()
             name = "hardVxlan2"
-            vni = 201
+            vni = 101
             zoneUuid = zone.uuid
         }
 
         createL2HardwareVxlanNetwork {
             poolUuid = poolinv.getUuid()
             name = "hardVxlan3"
-            vni = 203
+            vni = 103
             zoneUuid = zone.uuid
         }
 
