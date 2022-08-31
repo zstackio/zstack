@@ -59,7 +59,7 @@ class HardwareVxlanCase extends SubCase {
 
         createVniRange {
             startVni = 100
-            endVni = 10000
+            endVni = 200
             l2NetworkUuid = hardPool.getUuid()
             name = "TestRange-1"
         }
@@ -75,8 +75,8 @@ class HardwareVxlanCase extends SubCase {
         }
 
          createVniRange {
-            startVni = 100
-            endVni = 10000
+            startVni = 400
+            endVni = 500
             l2NetworkUuid = softPool.getUuid()
             name = "TestRange-2"
         }
