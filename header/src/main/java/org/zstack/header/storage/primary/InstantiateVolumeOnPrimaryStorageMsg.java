@@ -10,6 +10,15 @@ public class InstantiateVolumeOnPrimaryStorageMsg extends NeedReplyMessage imple
     private VolumeInventory volume;
     private String primaryStorageUuid;
     private boolean skipIfExisting;
+    private String allocatedUrl;
+
+    public String getAllocatedUrl() {
+        return allocatedUrl;
+    }
+
+    public void setAllocatedUrl(String allocatedUrl) {
+        this.allocatedUrl = allocatedUrl;
+    }
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;

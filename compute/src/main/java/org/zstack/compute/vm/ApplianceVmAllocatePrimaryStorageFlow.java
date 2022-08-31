@@ -85,6 +85,7 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
             rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
             rmsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
             rmsg.setAllocationStrategy(allocatorStrategyType);
+            rmsg.setSystemTags(spec.getRootVolumeSystemTags());
 
             bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(rmsg);

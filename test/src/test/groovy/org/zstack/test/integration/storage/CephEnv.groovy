@@ -70,8 +70,8 @@ use:
                 cephPrimaryStorage {
                     name="ceph-pri"
                     description="Test"
-                    totalCapacity = SizeUnit.GIGABYTE.toByte(100)
-                    availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                    totalCapacity = SizeUnit.GIGABYTE.toByte(200)
+                    availableCapacity= SizeUnit.GIGABYTE.toByte(200)
                     url="ceph://pri"
                     fsid="7ff218d9-f525-435f-8a40-3618d1772a64"
                     monUrls=["root:password@localhost/?monPort=7777"]

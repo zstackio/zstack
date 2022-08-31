@@ -169,6 +169,7 @@ public class VmAllocateVolumeFlow implements Flow {
                             spec.getDestDataVolumes().add(inv);
                         }
 
+                        vspec.setAssociatedVolumeUuid(inv.getUuid());
                         vspec.setIsVolumeCreated(true);
                     } else {
                         err = r.getError();

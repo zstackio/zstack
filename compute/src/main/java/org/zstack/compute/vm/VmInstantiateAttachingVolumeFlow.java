@@ -37,12 +37,14 @@ public class VmInstantiateAttachingVolumeFlow extends NoRollbackFlow {
         assert spec != null;
 
         final PrimaryStorageInventory pinv = (PrimaryStorageInventory) ctx.get(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString());
+        final String allocatedUrl = (String) ctx.get(VmInstanceConstant.Params.AllocatedUrlForAttachingVolume.toString());
 
         InstantiateVolumeMsg msg = new InstantiateVolumeMsg();
         msg.setPrimaryStorageAllocated(true);
         msg.setPrimaryStorageUuid(pinv.getUuid());
         msg.setVolumeUuid(volume.getUuid());
         msg.setHostUuid(spec.getDestHost().getUuid());
+        msg.setAllocatedUrl(allocatedUrl);
         bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, volume.getUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override
