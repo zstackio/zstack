@@ -157,16 +157,13 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         ResourceConfig numa = rcf.getResourceConfig("vm.numa");
         boolean isNumaEnable = numa.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
 
-        ResourceConfig hugepage = rcf.getResourceConfig("premiumCluster.hugepage.enable");
-        boolean isHugepage = hugepage.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
-
         boolean isOvsDpdkSup = false;
         ResourceConfig ovsDpdkSup = rcf.getResourceConfig("premiumCluster.network.ovsdpdk");
         if (ovsDpdkSup != null) {
             isOvsDpdkSup = ovsDpdkSup.getResourceConfigValue(clusterVO.getUuid(), Boolean.class);
         }
 
-        if (memAccessMode.equals("private") || !isNumaEnable || !isOvsDpdkSup || !isHugepage){
+        if (memAccessMode.equals("private") || !isNumaEnable || !isOvsDpdkSup){
             return false;
         }
 
