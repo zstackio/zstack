@@ -181,6 +181,42 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         });
     }
 
+    private Map<String, Object> collectArguments(RunAnsibleMsg msg) {
+        Map<String, Object> arguments = new HashMap<String, Object>();
+        if (msg.getArguments() != null) {
+            arguments.putAll(msg.getArguments());
+        }
+
+        if (msg.getDeployArguments() != null) {
+            arguments.putAll(msg.getDeployArguments().toArgumentMap());
+        }
+
+        arguments.put("host", msg.getTargetIp());
+        if (AnsibleGlobalConfig.ENABLE_ANSIBLE_CACHE_SYSTEM_INFO.value(Boolean.class)) {
+            arguments.put("host_uuid", msg.getTargetUuid());
+        }
+
+        arguments.put("zstack_root", AnsibleGlobalProperty.ZSTACK_ROOT);
+        arguments.put("pkg_zstacklib", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME);
+        arguments.putAll(getVariables());
+        String playBookPath = msg.getPlayBookPath();
+        if (!playBookPath.contains("py")) {
+            arguments.put("ansible_ssh_user", arguments.get("remote_user"));
+            arguments.put("ansible_ssh_port", arguments.get("remote_port"));
+            arguments.put("ansible_ssh_pass", arguments.get("remote_pass"));
+            arguments.remove("remote_user");
+            arguments.remove("remote_pass");
+            arguments.remove("remote_port");
+            if (!arguments.get("ansible_ssh_user").equals("root")) {
+                arguments.put("ansible_become", "yes");
+                arguments.put("become_user", "root");
+                arguments.put("ansible_become_pass", arguments.get("ansible_ssh_pass"));
+            }
+        }
+
+        return arguments;
+    }
+
     private void doHandle(final RunAnsibleMsg msg, SyncTaskChain outter) {
         thdf.syncSubmit(new SyncTask<Object>() {
             @Override
@@ -201,36 +237,10 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             private void run(Completion completion) {
                 new PrepareAnsible().setTargetIp(msg.getTargetIp()).prepare();
 
-                logger.debug(String.format("start running ansible for playbook[%s]", msg.getPlayBookPath()));
-                Map<String, Object> arguments = new HashMap<String, Object>();
-                if (msg.getArguments() != null) {
-                    arguments.putAll(msg.getArguments());
-                }
-                if (msg.getRemotePass() != null) {
-                    arguments.put("remote_pass", msg.getRemotePass());
-                }
-                arguments.put("host", msg.getTargetIp());
-                if (AnsibleGlobalConfig.ENABLE_ANSIBLE_CACHE_SYSTEM_INFO.value(Boolean.class)) {
-                    arguments.put("host_uuid", msg.getTargetUuid());
-                }
-
-                arguments.put("zstack_root", AnsibleGlobalProperty.ZSTACK_ROOT);
-                arguments.put("pkg_zstacklib", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME);
-                arguments.putAll(getVariables());
                 String playBookPath = msg.getPlayBookPath();
-                if (!playBookPath.contains("py")) {
-                    arguments.put("ansible_ssh_user", arguments.get("remote_user"));
-                    arguments.put("ansible_ssh_port", arguments.get("remote_port"));
-                    arguments.put("ansible_ssh_pass", arguments.get("remote_pass"));
-                    arguments.remove("remote_user");
-                    arguments.remove("remote_pass");
-                    arguments.remove("remote_port");
-                    if (!arguments.get("ansible_ssh_user").equals("root")) {
-                        arguments.put("ansible_become", "yes");
-                        arguments.put("become_user", "root");
-                        arguments.put("ansible_become_pass", arguments.get("ansible_ssh_pass"));
-                    }
-                }
+                Map<String, Object> arguments = collectArguments(msg);
+                logger.debug(String.format("start running ansible for playbook[%s]", msg.getPlayBookPath()));
+
                 String executable = msg.getAnsibleExecutable() == null ? AnsibleGlobalProperty.EXECUTABLE : msg.getAnsibleExecutable();
                 long timeout = TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout());
                 try {

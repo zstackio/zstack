@@ -82,6 +82,8 @@ public class AnsibleRunner {
     private String ansibleExecutable;
     private boolean forceRun;
 
+    private AnsibleBasicArguments deployArguments;
+
     public String getAnsibleExecutable() {
         return ansibleExecutable;
     }
@@ -180,6 +182,14 @@ public class AnsibleRunner {
 
     public void setPlayBookName(String playBookName) {
         this.playBookName = playBookName;
+    }
+
+    public AnsibleBasicArguments getDeployArguments() {
+        return deployArguments;
+    }
+
+    public void setDeployArguments(AnsibleBasicArguments deployArguments) {
+        this.deployArguments = deployArguments;
     }
 
     public Map<String, Object> getArguments() {
@@ -284,8 +294,7 @@ public class AnsibleRunner {
         msg.setPrivateKeyFile(privKeyFile);
         msg.setArguments(arguments);
         msg.setAnsibleExecutable(ansibleExecutable);
-        // TODO hack for hide password
-        Optional.ofNullable(arguments.remove("remote_pass")).ifPresent(it -> msg.setRemotePass(it.toString()));
+        msg.setDeployArguments(deployArguments);
 
         if (playBookPath != null) {
             msg.setPlayBookPath(playBookPath);
@@ -389,18 +398,27 @@ public class AnsibleRunner {
             }
 
             int port = new URI(restf.getBaseUrl()).getPort();
-            putArgument("pip_url", String.format("http://%s:%d/zstack/static/pypi/simple", restf.getHostName(), port));
-            putArgument("trusted_host", restf.getHostName());
-            putArgument("yum_server", String.format("%s:%d", restf.getHostName(), port));
-            putArgument("remote_user", username);
-            if (password != null && !password.isEmpty()) {
-                putArgument("remote_pass", password);
+
+            if (deployArguments == null) {
+                deployArguments = new AnsibleBasicArguments();
             }
-            putArgument("remote_port", Integer.toString(sshPort));
+
+            deployArguments.setPipUrl(String.format("http://%s:%d/zstack/static/pypi/simple", restf.getHostName(), port));
+            deployArguments.setTrustedHost(restf.getHostName());
+            deployArguments.setYumServer(String.format("%s:%d", restf.getHostName(), port));
+            deployArguments.setRemoteUser(username);
+            if (password != null && !password.isEmpty()) {
+                deployArguments.setRemotePass(password);
+            }
+            deployArguments.setRemotePort(Integer.toString(sshPort));
 
             logger.debug(String.format("starts to run ansible[%s]", playBookPath == null ? playBookName : playBookPath));
             new PrepareAnsible().setTargetIp(targetIp).prepare();
-            setupPublicKey();
+
+            if (!CoreGlobalProperty.UNIT_TEST_ON) {
+                setupPublicKey();
+            }
+
             callAnsible(completion);
         } catch (SshException e) {
             throw new OperationFailureException(operr("User name or password or port number may be problematic"));

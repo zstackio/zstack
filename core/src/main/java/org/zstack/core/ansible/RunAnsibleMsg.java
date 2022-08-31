@@ -1,9 +1,7 @@
 package org.zstack.core.ansible;
 
-import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.NeedReplyMessage;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,8 +13,8 @@ public class RunAnsibleMsg extends NeedReplyMessage {
     private String privateKeyFile;
     private String playBookPath;
     private String ansibleExecutable;
-    @NoLogging
-    private String remotePass;
+    private AnsibleBasicArguments deployArguments;
+
     private Map<String, Object> arguments = new HashMap<String, Object>();
 
     public String getAnsibleExecutable() {
@@ -67,11 +65,11 @@ public class RunAnsibleMsg extends NeedReplyMessage {
         this.targetUuid = targetUuid;
     }
 
-    public String getRemotePass() {
-        return remotePass;
+    public AnsibleBasicArguments getDeployArguments() {
+        return deployArguments;
     }
 
-    public void setRemotePass(String remotePass) {
-        this.remotePass = remotePass;
+    public void setDeployArguments(AnsibleBasicArguments deployArguments) {
+        this.deployArguments = deployArguments;
     }
 }

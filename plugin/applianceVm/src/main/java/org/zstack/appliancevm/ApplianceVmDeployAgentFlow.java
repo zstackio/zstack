@@ -190,14 +190,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         runner.setPrivateKey(privKey);
         runner.setAgentPort(ApplianceVmGlobalProperty.AGENT_PORT);
         runner.setTargetIp(mgmtIp);
-        runner.putArgument("pkg_appliancevm", ApplianceVmGlobalProperty.AGENT_PACKAGE_NAME);
-        if (CoreGlobalProperty.SYNC_NODE_TIME) {
-            if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
-                trigger.fail(operr("chrony server not configured!"));
-                return;
-            }
-            runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
-        }
+        runner.setDeployArguments(new ApplianceVmDeployArguments());
         runner.run(new ReturnValueCompletion<Boolean>(trigger) {
             @Override
             public void success(Boolean deployed) {

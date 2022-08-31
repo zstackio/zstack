@@ -4029,41 +4029,39 @@ public class KVMHost extends HostBase implements Host {
                             runner.setUsername(getSelf().getUsername());
                             runner.setPassword(getSelf().getPassword());
                             runner.setSshPort(getSelf().getPort());
+
+                            KVMHostDeployArguments deployArguments = new KVMHostDeployArguments();
                             if (info.isNewAdded()) {
-                                runner.putArgument("init", "true");
+                                deployArguments.setInit("true");
                                 runner.setFullDeploy(true);
                             }
                             if (NetworkGlobalProperty.SKIP_IPV6) {
-                                runner.putArgument("skipIpv6", "true");
+                                deployArguments.setSkipIpv6("true");
                             }
                             for (CheckMiniExtensionPoint ext : pluginRegistry.getExtensionList(CheckMiniExtensionPoint.class)) {
-                                if (ext.isMini()) {
-                                    runner.putArgument("isMini", "true");
+                                if (!ext.isMini()) {
+                                    continue;
                                 }
+
+                                deployArguments.setIsMini("true");
                             }
                             if ("baremetal2".equals(self.getHypervisorType())) {
-                                runner.putArgument("isBareMetal2Gateway", "true");
+                                deployArguments.setIsBareMetal2Gateway("true");
                             }
                             if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
-                                runner.putArgument("bridgeDisableIptables", "true");
+                                deployArguments.setBridgeDisableIptables("true");
                             }
-                            runner.putArgument("pkg_kvmagent", agentPackageName);
-                            runner.putArgument("hostname", String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
-                            if (CoreGlobalProperty.SYNC_NODE_TIME) {
-                                if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
-                                    trigger.fail(operr("chrony server not configured!"));
-                                    return;
-                                }
-                                runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
-                            }
-                            runner.putArgument("skip_packages", info.getSkipPackages());
-                            runner.putArgument("update_packages", String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
+
+                            deployArguments.setHostname(String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
+                            deployArguments.setSkipPackages(info.getSkipPackages());
+                            deployArguments.setUpdatePackages(String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
 
                             UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
                             ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
                             String postUrl = ub.build().toString();
 
-                            runner.putArgument("post_url", postUrl);
+                            deployArguments.setPostUrl(postUrl);
+                            runner.setDeployArguments(deployArguments);
                             runner.run(new ReturnValueCompletion<Boolean>(trigger) {
                                 @Override
                                 public void success(Boolean run) {
