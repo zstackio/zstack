@@ -111,6 +111,11 @@ public class H3cVcfcApiInterceptor implements ApiMessageInterceptor, GlobalApiMe
         if (!vo.getVendorType().equals(SdnControllerConstant.H3C_VCFC_CONTROLLER)) {
             return;
         }
+
+        // user's vni must <= 4094
+        if (msg.getStartVni() > 4094 || msg.getEndVni() > 4094) {
+            throw new ApiMessageInterceptionException(argerr("the vni range:[%s.%s} is illegal, because h3c's controller uses vni as vlan id", msg.getStartVni(), msg.getEndVni()));
+        }
         
         SdnController sdnController = sdnControllerManager.getSdnController(vo);
         SdnVniRange userVniRange = new SdnVniRange();
