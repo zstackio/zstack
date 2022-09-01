@@ -11,6 +11,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.GsonUtil;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -21,8 +22,31 @@ import java.util.regex.Pattern;
  * Created by MaJin on 2019/9/21.
  */
 public class LogSafeGson {
+    private static final CLogger logger = Utils.getLogger(LogSafeGson.class);
+
+    /**
+     * class and its need be masked fields
+     */
     private static Map<Class, Set<FieldNoLogging>> maskFields = new HashMap<>();
+    /**
+     * field with annotation @NoLogging(behavior = NoLogging.Behavior.Auto) will be collect to this map
+     *
+     * when serialize class with autoFields, the specific class will be found (for example, its super class) and
+     * then execute serialize.
+     *
+     * this should be used for base abstractions
+     */
     private static Map<Class, Set<FieldNoLogging>> autoFields = new HashMap<>();
+
+    /**
+     * used for class implements Serializable or Message for potential sensitive check
+     *
+     * this is different from autoFields, because with NoLogging means there are some
+     * sensitive fields so more extendable fields check could be used.
+     *
+     * all class not annotated with NoLogging will be store in potentialSensitiveFields.
+     */
+    private static Map<Class, Set<FieldNoLogging>> potentialSensitiveFields = new HashMap<>();
 
     private static final List<Class<?>> searchClasses = Arrays.asList(Serializable.class, Message.class);
     private static final Gson logSafeGson;
@@ -95,10 +119,11 @@ public class LogSafeGson {
 
         for (Class<?> baseClz : searchClasses) {
             for (Class<?> clz : BeanUtils.reflections.getSubTypesOf(baseClz)) {
-                if (!clz.isInterface()) {
-                    cacheNoLoggingInfo(clz);
+                if (clz.isInterface()) {
+                    continue;
                 }
 
+                cacheNoLoggingInfo(clz);
             }
         }
     }
@@ -107,6 +132,8 @@ public class LogSafeGson {
         for (Field f : FieldUtils.getAllFields(si)) {
             NoLogging an = f.getAnnotation(NoLogging.class);
             if (an != null) {
+                logger.trace(String.format("load @NoLogging annotated class: %s", si.getName()));
+
                 f.setAccessible(true);
                 if (an.behavior().auto()) {
                     autoFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
@@ -114,8 +141,9 @@ public class LogSafeGson {
                     maskFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
                 }
             } else if (mayHasSensitiveInfo(f.getType()) && !f.getType().isEnum() && !f.getType().isAssignableFrom(si)) {
+                logger.trace(String.format("load potentially sensitive info contained class: %s", si.getName()));
                 f.setAccessible(true);
-                autoFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f));
+                potentialSensitiveFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f));
             }
         }
     }
@@ -145,6 +173,17 @@ public class LogSafeGson {
                 }
             });
 
+            potentialSensitiveFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
+                Object si = f.getValue(o);
+                if (mayHasSensitiveInfo(si)) {
+                    jObj.add(f.getName(), toJsonElement(si));
+                } else if (si instanceof Collection) {
+                    JsonArray array = new JsonArray();
+                    ((Collection<?>) si).forEach(v -> array.add(toJsonElement(v)));
+                    jObj.add(f.getName(), array);
+                }
+            });
+
             return jObj;
         };
     }
@@ -158,7 +197,36 @@ public class LogSafeGson {
     }
 
     public static boolean needMaskLog(Class clz) {
-        return maskFields.keySet().contains(clz);
+        return maskFields.containsKey(clz);
+    }
+
+    /**
+     * only use maskFields and autoFields to check class
+     * most likely contains sensitive info which is collected from
+     * @NoLogging annotated classes.
+     *
+     * @param clz the class need check if contains any sensitive field
+     * @return if the class has any field annotated by @NoLogging return false
+     *         else return true
+     */
+    private static boolean mostLikelyCommonClass(Class clz) {
+        return !maskFields.containsKey(clz) && !autoFields.containsKey(clz);
+    }
+
+    public static Object desensitize(Object o) {
+        if (o == null || mostLikelyCommonClass(o.getClass())) {
+            logger.trace(String.format("%s is not class annotated by @NoLogging, skip desensitize",
+                    o != null ? o.getClass().getCanonicalName() : null));
+            return o;
+        }
+
+        Object result = JSONObjectUtil.toObject(toJson(o), o.getClass());
+        logger.trace(String.format("object class: %s \ntransform sensitive object: %s \n to insensitive object: %s",
+                o.getClass().getName(),
+                JSONObjectUtil.toJsonString(o),
+                JSONObjectUtil.toJsonString(result)));
+
+        return result;
     }
 
     public static Map<String, String> getValuesToMask(Object o) {
@@ -173,6 +241,19 @@ public class LogSafeGson {
         });
 
         autoFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
+            Object si = f.getValue(o);
+            if (mayHasSensitiveInfo(si)) {
+                results.putAll(getValuesToMask(si));
+            } else if (si instanceof Collection) {
+                ((Collection<?>) si).forEach(v -> {
+                    if (mayHasSensitiveInfo(v)) {
+                        results.put(v.toString(), f.getMaskedValue(v.toString()));
+                    }
+                });
+            }
+        });
+
+        potentialSensitiveFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
             Object si = f.getValue(o);
             if (mayHasSensitiveInfo(si)) {
                 results.putAll(getValuesToMask(si));
