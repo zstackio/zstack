@@ -488,5 +488,16 @@ class KVMSimulator implements Simulator {
             def rsp = new  KVMAgentCommands.GetHostNUMATopologyResponse()
             return rsp
         }
+
+        spec.simulator(KVMConstant.KVM_HOST_ATTACH_VOLUME_PATH) {
+            def rsp = new KVMAgentCommands.AttachVolumeRsp()
+            rsp.device = "/dev/nbd0"
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_HOST_DETACH_VOLUME_PATH) {
+            def rsp = new KVMAgentCommands.DetachVolumeRsp()
+            return rsp
+        }
     }
 }
