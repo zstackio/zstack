@@ -178,5 +178,6 @@
         <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO</class>
         <class>org.zstack.sdnController.header.VxlanHostMappingVO</class>
         <class>org.zstack.sdnController.header.VxlanClusterMappingVO</class>
+        <class>org.zstack.header.volume.VolumeHostRefVO</class>
     </persistence-unit>
 </persistence>
