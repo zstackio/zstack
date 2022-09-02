@@ -17,6 +17,9 @@ import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageState;
@@ -90,6 +93,10 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             validate((APICreateVolumeSnapshotGroupMsg) msg);
         } else if (msg instanceof APICreateVolumeSnapshotMsg) {
             validate((APICreateVolumeSnapshotMsg) msg);
+        } else if (msg instanceof APIAttachDataVolumeToHostMsg){
+            validate((APIAttachDataVolumeToHostMsg) msg);
+        } else if (msg instanceof APIDetachDataVolumeFromHostMsg) {
+            validate((APIDetachDataVolumeFromHostMsg) msg);
         }
 
         setServiceId(msg);
@@ -430,6 +437,13 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             throw new ApiMessageInterceptionException(operr("the vm where the data volume [%s] is located has a memory snapshot, can't delete",
                     msg.getVolumeUuid()));
         }
+
+        String hostUuid = Q.New(VolumeHostRefVO.class).select(VolumeHostRefVO_.hostUuid)
+                .eq(VolumeHostRefVO_.volumeUuid, msg.getUuid()).findValue();
+        if (hostUuid != null) {
+            throw new ApiMessageInterceptionException(argerr("can not delete volume[%s], " +
+                    "because volume attach to host[%s]", msg.getVolumeUuid(), hostUuid));
+        }
     }
 
     private boolean isRootVolume(String uuid) {
@@ -446,6 +460,38 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         }
 
         exceptionIsVolumeIsDeleted(msg.getVolumeUuid());
+
+        String hostUuid = Q.New(VolumeHostRefVO.class).select(VolumeHostRefVO_.hostUuid)
+                .eq(VolumeHostRefVO_.volumeUuid, msg.getUuid()).findValue();
+        if (hostUuid != null) {
+            throw new ApiMessageInterceptionException(argerr("can not change volume[%s] state, " +
+                    "because volume attach to host[%s]", msg.getVolumeUuid(), hostUuid));
+        }
+    }
+
+    private void validate(APIAttachDataVolumeToHostMsg msg) {
+        String hostUuid = Q.New(VolumeHostRefVO.class).select(VolumeHostRefVO_.hostUuid)
+                .eq(VolumeHostRefVO_.volumeUuid, msg.getVolumeUuid()).findValue();
+        if (hostUuid != null) {
+            throw new ApiMessageInterceptionException(operr("can not attach volume[%s] to host[%s], " +
+                    "because volume is attaching to host[%s] ", msg.getVolumeUuid(), msg.getHostUuid(), hostUuid));
+        }
+
+        HostStatus hostStatus = Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, msg.getHostUuid()).findValue();
+        if (hostStatus != HostStatus.Connected) {
+            throw new ApiMessageInterceptionException(operr("can not attach volume[%s] to host[%s], " +
+                    "because host[status:%s] is not connected", msg.getVolumeUuid(), msg.getHostUuid(), hostStatus));
+        }
+        if (!msg.getMountPath().startsWith("/")) {
+            throw new ApiMessageInterceptionException(argerr("mount path must be absolute path"));
+        }
+    }
+
+    private void validate(APIDetachDataVolumeFromHostMsg msg) {
+        if (!Q.New(VolumeHostRefVO.class).eq(VolumeHostRefVO_.volumeUuid, msg.getVolumeUuid()).isExists()) {
+            throw new ApiMessageInterceptionException(operr("can not detach volume[%s] from host. " +
+                    "it may have been detached", msg.getVolumeUuid()));
+        }
     }
 
     private void populateExtensions() {
