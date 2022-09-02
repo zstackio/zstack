@@ -481,6 +481,28 @@ public class VolumeSnapshotTreeBase {
             }
         });
 
+        chain.then(new NoRollbackFlow() {
+            String __name__ = String.format("call before delete snapshot extension point");
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<BeforeDeleteSnapshotExtensionPoint> extensionPointList = pluginRgty.getExtensionList(BeforeDeleteSnapshotExtensionPoint.class);
+                if (extensionPointList == null || extensionPointList.isEmpty()) {
+                    trigger.next();
+                }
+                extensionPointList.forEach(ext -> ext.beforeDeleteSnapshot(currentLeaf.getDescendants(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                }));
+            }
+        });
+
         if (!msg.isVolumeDeletion()) {
             // this deletion is caused by snapshot deletion, check if merge need
             SimpleQuery<VolumeSnapshotTreeVO> tq = dbf.createQuery(VolumeSnapshotTreeVO.class);
@@ -1940,6 +1962,30 @@ public class VolumeSnapshotTreeBase {
                             trash.removeFromDb(trashId);
                         }
                         trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "after-revert-volume-from-snapshot-ext";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<AfterRevertVolumeFromSnapshotExtensionPoint> extensionList = pluginRgty.getExtensionList(AfterRevertVolumeFromSnapshotExtensionPoint.class);
+                        if (extensionList == null || extensionList.isEmpty()) {
+                            trigger.next();
+                        }
+
+                        extensionList.forEach(exp -> exp.afterRevertVolumeFromSnapshot(getSelfInventory(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        }));
                     }
                 });
 
