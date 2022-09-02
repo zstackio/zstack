@@ -108,13 +108,13 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
     private void validate(APICreateL3NetworkMsg msg) {
         String type = Q.New(L2NetworkVO.class).select(L2NetworkVO_.type).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).findValue();
         if (type.equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)) {
-            throw new ApiMessageInterceptionException(argerr("hareware vxlan network pool doesn't support create l3 network"));
+            throw new ApiMessageInterceptionException(argerr("hardware vxlan network pool doesn't support create l3 network"));
         }
     }
 
     private void validate(APICreateL2HardwareVxlanNetworkPoolMsg msg) {
         if (msg.getPhysicalInterface() == null || msg.getPhysicalInterface().equals("")) {
-            throw new ApiMessageInterceptionException(argerr("hareware vxlan network pool must configure the physical interface"));
+            throw new ApiMessageInterceptionException(argerr("hardware vxlan network pool must configure the physical interface"));
         }
     }
 
@@ -122,12 +122,12 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
         VxlanNetworkPoolVO poolVO = dbf.findByUuid(msg.getPoolUuid(), VxlanNetworkPoolVO.class);
         if (poolVO.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)
                 && !msg.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
-            throw new ApiMessageInterceptionException(argerr("ONLY hareware vxlan network can be created in hareware vxlan pool"));
+            throw new ApiMessageInterceptionException(argerr("ONLY hardware vxlan network can be created in hardware vxlan pool"));
         }
 
         if (!poolVO.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)
                 && msg.getType().equals(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
-            throw new ApiMessageInterceptionException(argerr("hareware vxlan network can ONLY be created in hareware vxlan pool"));
+            throw new ApiMessageInterceptionException(argerr("hardware vxlan network can ONLY be created in hardware vxlan pool"));
         }
     }
 

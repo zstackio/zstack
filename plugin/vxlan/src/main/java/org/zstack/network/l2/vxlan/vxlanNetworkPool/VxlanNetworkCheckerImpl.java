@@ -80,10 +80,6 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
         List<String> l2Uuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.l2NetworkUuid)
                 .eq(L2NetworkClusterRefVO_.clusterUuid, clusterUuid).notEq(L2NetworkClusterRefVO_.l2NetworkUuid, inv.getUuid()).listValues();
 
-        if (l2Uuids == null){
-            return null;
-        }
-
         for (String l2Uuid : l2Uuids) {
             L2NetworkVO l2 = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l2Uuid).find();
             if (!l2.getType().equals(inv.getType())){
