@@ -135,6 +135,16 @@ class SdnControllerCase extends SubCase {
             }
         }
 
+        //VxlanPoolApiInterceptor: APICreateVniRangeMsg <=4094
+        expectError {
+            createVniRange {
+                startVni = 2000
+                endVni = 5000
+                l2NetworkUuid = hardPool.getUuid()
+                name = "TestRange-2"
+            }
+        }
+
         //H3cVcfcApiInterceptor: APICreateVniRangeMsg vni not in sdn controller's vni
         expectError {
             createVniRange {
