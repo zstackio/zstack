@@ -140,6 +140,10 @@ public class Platform {
                 valueToSet = ret;
             }  else if (List.class.isAssignableFrom(f.getType())) {
                 List<String> ret = linkGlobalPropertyList(name);
+                if (ret.isEmpty() && at.defaultListValue().length > 0) {
+                    ret = Arrays.asList(at.defaultListValue());
+                }
+
                 if (ret.isEmpty() && at.required()) {
                     throw new IllegalArgumentException(String.format("A required global property[%s] missing in zstack.properties", name));
                 }
