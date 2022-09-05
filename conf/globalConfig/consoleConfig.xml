@@ -20,7 +20,7 @@
         <category>console</category>
         <name>vnc.token.timeout</name>
         <description>Timeout of VNC token, in seconds</description>
-        <defaultValue>1800</defaultValue>
+        <defaultValue>60</defaultValue>
         <type>java.lang.Integer</type>
     </config>
 

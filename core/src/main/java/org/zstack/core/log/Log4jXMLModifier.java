@@ -3,6 +3,8 @@ package org.zstack.core.log;
 import org.w3c.dom.*;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.path.PathUtil;
+
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
@@ -25,6 +27,7 @@ public class Log4jXMLModifier {
         log4jXMLPath = PathUtil.findFileOnClassPath("log4j2.xml", true).getAbsolutePath();
 
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        docFactory.setExpandEntityReferences(false);
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         this.doc = docBuilder.parse(log4jXMLPath);
     }
@@ -137,6 +140,8 @@ public class Log4jXMLModifier {
 
     void updateLog4jXMLFile() throws Exception {
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
         Transformer transformer = transformerFactory.newTransformer();;
 
         DOMSource source = new DOMSource(doc);
