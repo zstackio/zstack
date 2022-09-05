@@ -10,4 +10,5 @@ public class GetVirtualRouterSoftwareVersionResult {
     public java.util.List getInventories() {
         return this.inventories;
     }
+
 }

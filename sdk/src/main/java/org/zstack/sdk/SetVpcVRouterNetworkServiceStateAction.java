@@ -34,7 +34,7 @@ public class SetVpcVRouterNetworkServiceStateAction extends AbstractAction {
     @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String state;
 
-    @Param(required = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String l3NetworkUuid;
 
     @Param(required = false)

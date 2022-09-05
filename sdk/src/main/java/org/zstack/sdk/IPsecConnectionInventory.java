@@ -124,6 +124,38 @@ public class IPsecConnectionInventory  {
         return this.transformProtocol;
     }
 
+    public java.lang.String ikeVersion;
+    public void setIkeVersion(java.lang.String ikeVersion) {
+        this.ikeVersion = ikeVersion;
+    }
+    public java.lang.String getIkeVersion() {
+        return this.ikeVersion;
+    }
+
+    public java.lang.String idType;
+    public void setIdType(java.lang.String idType) {
+        this.idType = idType;
+    }
+    public java.lang.String getIdType() {
+        return this.idType;
+    }
+
+    public java.lang.String localId;
+    public void setLocalId(java.lang.String localId) {
+        this.localId = localId;
+    }
+    public java.lang.String getLocalId() {
+        return this.localId;
+    }
+
+    public java.lang.String remoteId;
+    public void setRemoteId(java.lang.String remoteId) {
+        this.remoteId = remoteId;
+    }
+    public java.lang.String getRemoteId() {
+        return this.remoteId;
+    }
+
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;
@@ -138,6 +170,22 @@ public class IPsecConnectionInventory  {
     }
     public java.lang.String getStatus() {
         return this.status;
+    }
+
+    public int ikeLifeTime;
+    public void setIkeLifeTime(int ikeLifeTime) {
+        this.ikeLifeTime = ikeLifeTime;
+    }
+    public int getIkeLifeTime() {
+        return this.ikeLifeTime;
+    }
+
+    public int lifeTime;
+    public void setLifeTime(int lifeTime) {
+        this.lifeTime = lifeTime;
+    }
+    public int getLifeTime() {
+        return this.lifeTime;
     }
 
     public java.sql.Timestamp createDate;
