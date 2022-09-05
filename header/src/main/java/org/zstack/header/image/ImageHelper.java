@@ -1,6 +1,10 @@
 package org.zstack.header.image;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.util.HashMap;
+
+import static org.zstack.header.image.ImageConstant.EXPORTED_IMAGE_PREFIX;
 
 public class ImageHelper {
     private static final HashMap<String, AbstractImageUpdate> updateImageFactory = new HashMap<>();
@@ -59,7 +63,16 @@ public class ImageHelper {
         updateImageFactory.put(ImagePlatform.Paravirtualization.toString(), imagePlatformIsParavirtualization);
     }
 
-    public static void updateImageIfVirtioIsNull(ImageInventory imageInventory){
+    public static void updateImageIfVirtioIsNull(ImageInventory imageInventory) {
         updateImageFactory.get(imageInventory.getPlatform()).doUpdateImageIfVirtioIsNull(imageInventory);
+    }
+
+    public static abstract class ExportUrl {
+        static public String addNameToExportUrl(String exportUrl, String name) {
+            String image = StringUtils.substringAfterLast(exportUrl, "/");
+            return exportUrl.replace(image, String.format("%s-%s", name, image));
+        }
+
+        public abstract String removeNameFromExportUrl(String exportUrl);
     }
 }

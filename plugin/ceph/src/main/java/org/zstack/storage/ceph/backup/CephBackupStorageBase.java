@@ -1746,13 +1746,12 @@ public class CephBackupStorageBase extends BackupStorageBase {
     protected void exportImage(ExportImageFromBackupStorageMsg msg) {
         TaskProgressRange parentStage = getTaskStage();
 
-        String imageName = Q.New(ImageVO.class).select(ImageVO_.name).eq(ImageVO_.uuid, msg.getImageUuid()).findValue();
         ExportImageFromBackupStorageReply reply = new ExportImageFromBackupStorageReply();
         Tuple t = Q.New(ImageBackupStorageRefVO.class).select(ImageBackupStorageRefVO_.installPath, ImageBackupStorageRefVO_.exportUrl)
                 .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
                 .eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
                 .findTuple();
-        if (t == null || imageName == null) {
+        if (t == null) {
             reply.setError(operr("image[uuid: %s] is not on backup storage[uuid:%s, name:%s]",
                     msg.getImageUuid(), self.getUuid(), self.getName()));
             bus.reply(msg, reply);
@@ -1773,13 +1772,16 @@ public class CephBackupStorageBase extends BackupStorageBase {
             @Override
             public void success(AddImageExportTokenRsp rsp) {
                 String url = buildUrl(rsp.handleMon.getHostname(), cmd.token);
+                String imageName = Q.New(ImageVO.class).select(ImageVO_.name)
+                        .eq(ImageVO_.uuid, msg.getImageUuid()).findValue();
+                String exportUrl = CephBackStorageHelper.CephBackStorageExportUrl.addNameToExportUrl(url, imageName);
                 SQL.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid())
                         .eq(ImageBackupStorageRefVO_.backupStorageUuid, msg.getBackupStorageUuid())
-                        .set(ImageBackupStorageRefVO_.exportUrl, url)
+                        .set(ImageBackupStorageRefVO_.exportUrl, exportUrl)
                         .set(ImageBackupStorageRefVO_.exportMd5Sum, rsp.md5sum)
                         .update();
 
-                reply.setImageUrl(url);
+                reply.setImageUrl(exportUrl);
                 reply.setMd5sum(rsp.md5sum);
                 reportProgress(parentStage.getEnd().toString());
                 bus.reply(msg, reply);
@@ -1788,9 +1790,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
             private String buildUrl(String hostname, String token) {
                 String[] splits = imageInstallUrl.split("/");
                 String poolName = splits[splits.length - 2];
-                String imageNameAndImagePathName = String.format("%s-%s", imageName, splits[splits.length - 1]);
+                String imageName = splits[splits.length - 1];
                 return CephAgentUrl.backupStorageUrl(hostname, CephBackupStorageMonBase.EXPORT) +
-                        String.format("/%s/%s?token=%s", poolName, imageNameAndImagePathName, token);
+                        String.format("/%s/%s?token=%s", poolName, imageName, token);
             }
 
             @Override
