@@ -28,20 +28,15 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.ImageBackupStorageRefVO;
-import org.zstack.header.image.ImageBackupStorageRefVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageEO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.CreateImageCacheFromVolumeSnapshotReply;
 import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -194,37 +189,43 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void updatePrimaryStorage(APIUpdatePrimaryStorageMsg msg, ReturnValueCompletion<PrimaryStorageVO> completion) {
-        boolean update = false;
-        if (msg.getName() != null) {
-            self.setName(msg.getName());
-            update = true;
-        }
-        if (msg.getDescription() != null) {
-            self.setDescription(msg.getDescription());
-            update = true;
-        }
-
+    protected void updatePrimaryStorage(APIUpdatePrimaryStorageMsg msg, ReturnValueCompletion<PrimaryStorageInventory> completion) {
         if (msg.getUrl() != null && !self.getUrl().equals(msg.getUrl())) {
-            updateMountPoint(msg.getUrl(), new Completion(completion) {
+            thdf.chainSubmit(new ChainTask(msg) {
+
                 @Override
-                public void success() {
-                    self.setUrl(msg.getUrl());
-                    self = dbf.updateAndRefresh(self);
-                    for (UpdatePrimaryStorageExtensionPoint ext : pluginRgty.getExtensionList(UpdatePrimaryStorageExtensionPoint.class)) {
-                        ext.afterUpdatePrimaryStorage(PrimaryStorageInventory.valueOf(self));
-                    }
-                    completion.success(self);
+                public String getSyncSignature() {
+                    return getSyncId();
                 }
 
                 @Override
-                public void fail(ErrorCode errorCode) {
-                    completion.fail(errorCode);
+                public String getName() {
+                    return String.format("update-primary-storage-%s", self.getUuid());
+                }
+
+                @Override
+                public void run(SyncTaskChain chain) {
+                    updateMountPoint(msg.getUrl(), new Completion(completion) {
+                        @Override
+                        public void success() {
+                            NfsPrimaryStorage.super.updatePrimaryStorage(msg, completion);
+                            for (UpdatePrimaryStorageExtensionPoint ext : pluginRgty.getExtensionList(UpdatePrimaryStorageExtensionPoint.class)) {
+                                ext.afterUpdatePrimaryStorage(PrimaryStorageInventory.valueOf(self));
+                            }
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                            chain.next();
+                        }
+                    });
                 }
             });
-            return;
+        } else {
+            super.updatePrimaryStorage(msg, completion);
         }
-        completion.success(update ? self : null);
     }
 
     @Override

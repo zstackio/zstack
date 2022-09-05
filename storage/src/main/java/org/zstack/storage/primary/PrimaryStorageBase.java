@@ -1217,53 +1217,42 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }).start();
     }
 
-    protected void updatePrimaryStorage(APIUpdatePrimaryStorageMsg msg, ReturnValueCompletion<PrimaryStorageVO> completion) {
-        boolean update = false;
-        if (msg.getName() != null) {
-            self.setName(msg.getName());
-            update = true;
+    protected void updatePrimaryStorage(APIUpdatePrimaryStorageMsg msg, ReturnValueCompletion<PrimaryStorageInventory> completion) {
+        final String name = msg.getName();
+        final String des = msg.getDescription();
+        final String url = msg.getUrl();
+        if (name == null && des == null && url == null) {
+            return;
         }
-        if (msg.getDescription() != null) {
-            self.setDescription(msg.getDescription());
-            update = true;
+        UpdateQuery uq = SQL.New(self.getClass()).eq(PrimaryStorageVO_.uuid, self.getUuid());
+        if (name != null) {
+            uq.set(PrimaryStorageVO_.name, name);
         }
-        completion.success(update? self : null);
+        if (des != null) {
+            uq.set(PrimaryStorageVO_.description, des);
+        }
+        if (url != null) {
+            uq.set(PrimaryStorageVO_.url, url);
+        }
+        uq.update();
+        self = dbf.reload(self);
+        completion.success(getSelfInventory());
     }
 
     private void handle(APIUpdatePrimaryStorageMsg msg) {
         APIUpdatePrimaryStorageEvent evt = new APIUpdatePrimaryStorageEvent(msg.getId());
+        updatePrimaryStorage(msg, new ReturnValueCompletion<PrimaryStorageInventory>(msg) {
 
-        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public String getSyncSignature() {
-                return getSyncId();
+            public void success(PrimaryStorageInventory returnValue) {
+                evt.setInventory(returnValue);
+                bus.publish(evt);
             }
 
             @Override
-            public void run(SyncTaskChain chain) {
-                updatePrimaryStorage(msg, new ReturnValueCompletion<PrimaryStorageVO>(msg) {
-                    @Override
-                    public void success(PrimaryStorageVO vo) {
-                        if (vo != null){
-                            self = dbf.updateAndRefresh(vo);
-                        }
-                        evt.setInventory(getSelfInventory());
-                        bus.publish(evt);
-                        chain.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        evt.setError(errorCode);
-                        bus.publish(evt);
-                        chain.next();
-                    }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("update-primary-storage-%s", self.getUuid());
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
             }
         });
     }
