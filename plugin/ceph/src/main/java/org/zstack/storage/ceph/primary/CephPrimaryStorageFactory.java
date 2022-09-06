@@ -1224,7 +1224,9 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Override
     public String buildAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, PrimaryStorageInventory psInv) {
         if (msg.getRequiredInstallUri() != null) {
-            return CephRequiredUrlParser.parseUrl(msg.getRequiredInstallUri());
+            CephRequiredUrlParser.InstallPath path = CephRequiredUrlParser.getInstallPathFromUri(msg.getRequiredInstallUri());
+            checkCephPoolCapacityForNewVolume(path.poolName, msg.getSize(), psInv.getUuid());
+            return path.fullPath;
         }
         return getPreAllocatedInstallUrl(msg, psInv.getUuid());
     }

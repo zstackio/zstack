@@ -13,14 +13,14 @@ public class GetInstallPathForDataVolumeDownloadMsg extends NeedReplyMessage imp
     private ImageInventory image;
     private String volumeUuid;
     private String hostUuid;
-    private String allocatedUrl;
+    private String allocatedInstallUrl;
 
-    public String getAllocatedUrl() {
-        return allocatedUrl;
+    public String getAllocatedInstallUrl() {
+        return allocatedInstallUrl;
     }
 
-    public void setAllocatedUrl(String allocatedUrl) {
-        this.allocatedUrl = allocatedUrl;
+    public void setAllocatedInstallUrl(String allocatedInstallUrl) {
+        this.allocatedInstallUrl = allocatedInstallUrl;
     }
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {

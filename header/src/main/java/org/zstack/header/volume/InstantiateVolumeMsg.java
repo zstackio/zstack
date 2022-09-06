@@ -11,14 +11,14 @@ public class InstantiateVolumeMsg extends NeedReplyMessage implements VolumeMess
     private String hostUuid;
     private boolean primaryStorageAllocated;
     private boolean skipIfExisting;
-    private String allocatedUrl;
+    private String allocatedInstallUrl;
 
-    public String getAllocatedUrl() {
-        return allocatedUrl;
+    public String getAllocatedInstallUrl() {
+        return allocatedInstallUrl;
     }
 
-    public void setAllocatedUrl(String allocatedUrl) {
-        this.allocatedUrl = allocatedUrl;
+    public void setAllocatedInstallUrl(String allocatedInstallUrl) {
+        this.allocatedInstallUrl = allocatedInstallUrl;
     }
 
     public boolean isPrimaryStorageAllocated() {

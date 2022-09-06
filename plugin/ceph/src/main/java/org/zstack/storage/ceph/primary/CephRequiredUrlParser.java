@@ -23,7 +23,7 @@ public class CephRequiredUrlParser {
         parseRequiredInstallUri();
     }
 
-    public static String parseUrl(String requiredUrl) {
+    public static InstallPath getInstallPathFromUri(String requiredUrl) {
         String protocol;
         try {
             protocol = new URI(requiredUrl).getScheme();
@@ -32,8 +32,7 @@ public class CephRequiredUrlParser {
                     argerr("invalid uri, correct example is ceph://$POOLNAME/$VOLUMEUUID or volume://$VOLUMEUUID"));
         }
 
-        InstallPath path = uriParsers.get(protocol).parseUri(requiredUrl);
-        return path.makeFullPath();
+        return uriParsers.get(protocol).parseUri(requiredUrl);
     }
 
     public static class InstallPath {

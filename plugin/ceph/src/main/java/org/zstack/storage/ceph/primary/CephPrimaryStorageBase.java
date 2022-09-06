@@ -1639,7 +1639,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private void createEmptyVolume(final InstantiateVolumeOnPrimaryStorageMsg msg) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         String volumeUuid = msg.getVolume().getUuid();
-        final String finalPoolName = getTargetPoolNameFromAllocatedUrl(msg.getAllocatedUrl());
+        final String finalPoolName = getTargetPoolNameFromAllocatedUrl(msg.getAllocatedInstallUrl());
         cmd.installPath = makeVolumeInstallPathByTargetPool(volumeUuid, finalPoolName);
         cmd.size = msg.getVolume().getSize();
         cmd.setShareable(msg.getVolume().isShareable());
@@ -2350,7 +2350,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private void createVolumeFromTemplate(final InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
         final VmInstanceSpec.ImageSpec ispec = msg.getTemplateSpec();
-        String targetCephPoolName = getTargetPoolNameFromAllocatedUrl(msg.getAllocatedUrl());
+        String targetCephPoolName = getTargetPoolNameFromAllocatedUrl(msg.getAllocatedInstallUrl());
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-root-volume-%s", msg.getVolume().getUuid()));
@@ -2879,7 +2879,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         MediatorDowloadParam param = new MediatorDowloadParam();
         param.setImage(spec);
         param.setInstallPath(makeVolumeInstallPathByTargetPool(msg.getVolumeUuid(),
-                getTargetPoolNameFromAllocatedUrl(msg.getAllocatedUrl())));
+                getTargetPoolNameFromAllocatedUrl(msg.getAllocatedInstallUrl())));
         param.setPrimaryStorageUuid(self.getUuid());
         param.setShareable(dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class).isShareable());
         mediator.param = param;
@@ -2905,7 +2905,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     protected void handle(GetInstallPathForDataVolumeDownloadMsg msg) {
         GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
         reply.setInstallPath(makeVolumeInstallPathByTargetPool(msg.getVolumeUuid(),
-                getTargetPoolNameFromAllocatedUrl(msg.getAllocatedUrl())));
+                getTargetPoolNameFromAllocatedUrl(msg.getAllocatedInstallUrl())));
         bus.reply(msg, reply);
     }
 
