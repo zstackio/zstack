@@ -10,6 +10,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
@@ -174,6 +175,11 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
         MessageReply reply = bus.call(msg);
         rsp.setFinishedDate(new Date());
         rsp.setState(RestAPIState.Done.toString());
+
+        if (CoreGlobalProperty.MASK_SENSITIVE_INFO) {
+            reply = (MessageReply) LogSafeGson.desensitize(reply);
+        }
+
         rsp.setResult(RESTApiDecoder.dump(reply));
         return rsp;
     }
