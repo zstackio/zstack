@@ -61,7 +61,7 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(KvmBackend.CREATE_VOLUME_FROM_CACHE_PATH) {
-                return new KvmBackend.AgentRsp()
+                return new KvmBackend.CreateVolumeFromCacheRsp()
             }
 
             VFS.vfsHook(KvmBackend.CREATE_VOLUME_FROM_CACHE_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
@@ -202,7 +202,7 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(KvmBackend.CREATE_EMPTY_VOLUME_PATH) {
-                return new KvmBackend.AgentRsp()
+                return new KvmBackend.CreateEmptyVolumeRsp()
             }
 
             VFS.vfsHook(KvmBackend.CREATE_EMPTY_VOLUME_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->

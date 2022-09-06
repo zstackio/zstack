@@ -419,6 +419,7 @@ public class VolumeBase implements Volume {
         chain.then(new ShareFlow() {
             String installPath;
             String format;
+            Long actualSize;
 
             @Override
             public void setup() {
@@ -495,6 +496,7 @@ public class VolumeBase implements Volume {
                                     success = true;
                                     installPath = ret.getInstallPath();
                                     format = ret.getFormat();
+                                    actualSize = ret.getActualSize();
                                     trigger.next();
                                 }
 
@@ -576,6 +578,7 @@ public class VolumeBase implements Volume {
                                 InstantiateVolumeOnPrimaryStorageReply ir = reply.castReply();
                                 installPath = ir.getVolume().getInstallPath();
                                 format = ir.getVolume().getFormat();
+                                actualSize = ir.getVolume().getActualSize();
 
                                 List<AfterInstantiateVolumeExtensionPoint> exts = pluginRgty.getExtensionList(AfterInstantiateVolumeExtensionPoint.class);
                                 for (AfterInstantiateVolumeExtensionPoint ext : exts) {
@@ -609,6 +612,9 @@ public class VolumeBase implements Volume {
                         DebugUtils.Assert(format != null, "format cannot be null");
                         self.setFormat(format);
                         self.setStatus(VolumeStatus.Ready);
+                        if (actualSize != null) {
+                            self.setActualSize(actualSize);
+                        }
                         self = dbf.updateAndRefresh(self);
 
                         VolumeInventory vol = getSelfInventory();

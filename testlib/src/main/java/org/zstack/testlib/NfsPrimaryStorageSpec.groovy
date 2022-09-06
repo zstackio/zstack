@@ -115,7 +115,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(NfsPrimaryStorageKVMBackend.CREATE_EMPTY_VOLUME_PATH) {
-                return new NfsPrimaryStorageKVMBackendCommands.CreateRootVolumeFromTemplateResponse()
+                return new NfsPrimaryStorageKVMBackendCommands.CreateEmptyVolumeResponse()
             }
 
             VFS.vfsHook(NfsPrimaryStorageKVMBackend.CREATE_EMPTY_VOLUME_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->

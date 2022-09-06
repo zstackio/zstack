@@ -133,6 +133,10 @@ public class KvmBackend extends HypervisorBackend {
         public long virtualSize;
     }
 
+    public static class CreateVolumeFromCacheRsp extends AgentRsp {
+        public Long actualSize;
+    }
+
     public static class CreateVolumeWithBackingCmd extends AgentCmd {
         public String templatePathInCache;
         public String installPath;
@@ -241,6 +245,10 @@ public class KvmBackend extends HypervisorBackend {
         public long size;
         public String name;
         public String volumeUuid;
+    }
+
+    public static class CreateEmptyVolumeRsp extends AgentRsp {
+        public Long actualSize;
     }
 
     public static class CheckBitsCmd extends AgentCmd {
@@ -828,12 +836,14 @@ public class KvmBackend extends HypervisorBackend {
         cmd.size = volume.getSize();
         cmd.volumeUuid = volume.getUuid();
 
-        new Do(hostUuid).go(CREATE_EMPTY_VOLUME_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
+        new Do(hostUuid).go(CREATE_EMPTY_VOLUME_PATH, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
             @Override
             public void success(AgentRsp returnValue) {
+                CreateEmptyVolumeRsp rsp = (CreateEmptyVolumeRsp) returnValue;
                 InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
                 volume.setInstallPath(cmd.installPath);
                 volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+                volume.setActualSize(rsp.actualSize);
                 reply.setVolume(volume);
                 completion.success(reply);
             }
@@ -869,6 +879,7 @@ public class KvmBackend extends HypervisorBackend {
             String pathInCache = makeCachedImageInstallUrl(image);
             String installPath = StringUtils.isNotEmpty(volume.getInstallPath()) ? volume.getInstallPath() :
                     makeRootVolumeInstallUrl(volume) ;
+            Long actualSize;
 
             @Override
             public void setup() {
@@ -910,9 +921,11 @@ public class KvmBackend extends HypervisorBackend {
                             cmd.virtualSize = volume.getSize();
                         }
 
-                        httpCall(CREATE_VOLUME_FROM_CACHE_PATH, hostUuid, cmd, AgentRsp.class, new ReturnValueCompletion<AgentRsp>(trigger) {
+                        httpCall(CREATE_VOLUME_FROM_CACHE_PATH, hostUuid, cmd, CreateVolumeFromCacheRsp.class,
+                                new ReturnValueCompletion<CreateVolumeFromCacheRsp>(trigger) {
                             @Override
-                            public void success(AgentRsp rsp) {
+                            public void success(CreateVolumeFromCacheRsp rsp) {
+                                actualSize = rsp.actualSize;
                                 trigger.next();
                             }
 
@@ -930,6 +943,7 @@ public class KvmBackend extends HypervisorBackend {
                         InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
                         volume.setInstallPath(installPath);
                         volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+                        volume.setActualSize(actualSize);
                         reply.setVolume(volume);
                         completion.success(reply);
                     }

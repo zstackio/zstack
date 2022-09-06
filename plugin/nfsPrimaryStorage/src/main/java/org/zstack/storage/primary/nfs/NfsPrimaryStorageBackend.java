@@ -7,6 +7,7 @@ import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.volume.VolumeInfo;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 
@@ -63,7 +64,7 @@ public interface NfsPrimaryStorageBackend {
 
     void resetRootVolumeFromImage(VolumeInventory vol, HostInventory host, ReturnValueCompletion<String> completion);
 
-    void createVolumeFromImageCache(PrimaryStorageInventory primaryStorage, ImageInventory image, ImageCacheInventory imageCache, VolumeInventory volume, ReturnValueCompletion<String> completion);
+    void createVolumeFromImageCache(PrimaryStorageInventory primaryStorage, ImageInventory image, ImageCacheInventory imageCache, VolumeInventory volume, ReturnValueCompletion<VolumeInfo> completion);
 
     void createImageCacheFromVolumeResource(PrimaryStorageInventory primaryStorage, String volumeResourceInstallPath, ImageInventory image, ReturnValueCompletion<BitsInfo> completion);
 

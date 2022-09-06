@@ -42,6 +42,7 @@ import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeInfo;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.identity.AccountManager;
@@ -1047,6 +1048,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                 volume.setInstallPath(cmd.getInstallUrl());
                 volume.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+                volume.setActualSize(rsp.actualSize);
 
                 nfsMgr.reportCapacityIfNeeded(pinv.getUuid(), rsp);
                 complete.success(volume);
@@ -1240,7 +1242,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
     @Override
     public void createVolumeFromImageCache(final PrimaryStorageInventory primaryStorage, final ImageInventory image, final ImageCacheInventory imageCache,
-                                           final VolumeInventory volume, final ReturnValueCompletion<String> completion) {
+                                           final VolumeInventory volume, final ReturnValueCompletion<VolumeInfo> completion) {
         HostInventory host = nfsFactory.getConnectedHostForOperation(primaryStorage).get(0);
 
         final String installPath = StringUtils.isNotEmpty(volume.getInstallPath()) ? volume.getInstallPath() :
@@ -1280,7 +1282,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
 
                 nfsMgr.reportCapacityIfNeeded(primaryStorage.getUuid(), rsp);
-                completion.success(installPath);
+                completion.success(new VolumeInfo(installPath, rsp.actualSize));
             }
         });
     }
