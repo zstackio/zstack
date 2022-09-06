@@ -1110,7 +1110,7 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     private void writeResponse(ApiResponse response, RestResponseWrapper w, Object replyOrEvent) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        if (RestGlobalProperty.MASK_SENSITIVE_INFO) {
+        if (CoreGlobalProperty.MASK_SENSITIVE_INFO) {
             replyOrEvent = LogSafeGson.desensitize(replyOrEvent);
         }
 

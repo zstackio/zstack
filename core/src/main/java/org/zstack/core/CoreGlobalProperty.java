@@ -48,6 +48,15 @@ public class CoreGlobalProperty {
     public static int REST_FACADE_MAX_PER_ROUTE;
     @GlobalProperty(name = "RESTFacade.maxTotal", defaultValue = "128")
     public static int REST_FACADE_MAX_TOTAL;
+    /**
+     * When set RestServer.maskSensitiveInfo to true, sensitive info will be
+     * masked see @NoLogging.
+     *
+     * Set default value as false to keep back-compatible to avoid breaking users who
+     * depend on plaintext API result
+     */
+    @GlobalProperty(name="Rest.maskSensitiveInfo", defaultValue = "false")
+    public static boolean MASK_SENSITIVE_INFO;
     @GlobalProperty(name = "upgradeStartOn", defaultValue = "false")
     public static boolean IS_UPGRADE_START;
     @GlobalProperty(name = "shadowEntityOn", defaultValue = "false")
