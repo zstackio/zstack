@@ -420,6 +420,7 @@ public class SourceClassMap {
 			put("org.zstack.network.service.vip.VipNetworkServicesRefInventory", "org.zstack.sdk.VipNetworkServicesRefInventory");
 			put("org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory", "org.zstack.sdk.VipPortRangeInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory", "org.zstack.sdk.VirtualRouterOfferingInventory");
+			put("org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionInventory", "org.zstack.sdk.VirtualRouterSoftwareVersionInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterVmInventory", "org.zstack.sdk.VirtualRouterVmInventory");
 			put("org.zstack.ovf.datatype.ImagePackageInventory", "org.zstack.sdk.ImagePackageInventory");
 			put("org.zstack.ovf.datatype.ImagePackageState", "org.zstack.sdk.ImagePackageState");
@@ -1087,6 +1088,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VipQosInventory", "org.zstack.header.vipQos.VipQosInventory");
 			put("org.zstack.sdk.VirtualBorderRouterInventory", "org.zstack.header.aliyun.network.connection.VirtualBorderRouterInventory");
 			put("org.zstack.sdk.VirtualRouterOfferingInventory", "org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory");
+			put("org.zstack.sdk.VirtualRouterSoftwareVersionInventory", "org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionInventory");
 			put("org.zstack.sdk.VirtualRouterVRouterRouteTableRefInventory", "org.zstack.vrouterRoute.VirtualRouterVRouterRouteTableRefInventory");
 			put("org.zstack.sdk.VirtualRouterVmInventory", "org.zstack.network.service.virtualrouter.VirtualRouterVmInventory");
 			put("org.zstack.sdk.VmCPUBillingInventory", "org.zstack.billing.generator.vm.cpu.VmCPUBillingInventory");
