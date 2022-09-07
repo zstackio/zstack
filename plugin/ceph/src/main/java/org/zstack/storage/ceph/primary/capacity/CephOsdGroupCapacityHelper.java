@@ -25,7 +25,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.stopwatch.StopWatch;
 
-import javax.persistence.Query;
 import javax.transaction.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -125,6 +124,13 @@ public class CephOsdGroupCapacityHelper {
         }
         CephOsdGroupVO osdGroupVO = dbf.findByUuid(pool.getOsdGroup().getUuid(), CephOsdGroupVO.class);
         osdGroupVO.setAvailableCapacity(osdGroupVO.getAvailableCapacity() + size);
+        if (osdGroupVO.getAvailableCapacity() > osdGroupVO.getTotalPhysicalCapacity()) {
+            throw new OperationFailureException(operr("invalid pool[uuid:%s] capacity after release size %s, available capacity[%s] > total capacity[%s]",
+                    size, poolUuid, osdGroupVO.getAvailableCapacity(), osdGroupVO.getTotalPhysicalCapacity()));
+        }
+
+        logger.debug(String.format("ceph osd group[%s] release capacity: %s, updated: %s",
+                osdGroupVO.getUuid(), size, osdGroupVO.getAvailableCapacity()));
         dbf.getEntityManager().merge(osdGroupVO);
     }
 
@@ -147,9 +153,16 @@ public class CephOsdGroupCapacityHelper {
         }
         CephOsdGroupVO osdGroupVO = dbf.findByUuid(pool.getOsdGroup().getUuid(), CephOsdGroupVO.class);
         long originAvailableCapacity = osdGroupVO.getAvailableCapacity();
+        if (originAvailableCapacity < size) {
+            throw new OperationFailureException(operr("required ceph pool[uuid:%s] cannot satisfy conditions [availableSize > %s bytes], " +
+                    "current available size %s", poolUuid, size, originAvailableCapacity));
+        }
+
         osdGroupVO.setAvailableCapacity(osdGroupVO.getAvailableCapacity() - size);
         dbf.getEntityManager().merge(osdGroupVO);
 
+        logger.debug(String.format("ceph osd group[%s] reserve capacity: %s, origin: %s, updated: %s",
+                osdGroupVO.getUuid(), size, originAvailableCapacity, osdGroupVO.getAvailableCapacity()));
         return originAvailableCapacity;
     }
 

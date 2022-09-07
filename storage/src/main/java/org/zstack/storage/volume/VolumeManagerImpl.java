@@ -368,7 +368,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         gmsg.setBackupStorageRef(ImageBackupStorageRefInventory.valueOf(targetBackupStorageRef));
                         gmsg.setImage(ImageInventory.valueOf(template));
                         gmsg.setHostUuid(msg.getHostUuid());
-                        gmsg.setAllocatedUrl(allocatedInstallUrl);
+                        gmsg.setAllocatedInstallUrl(allocatedInstallUrl);
                         bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
                         bus.send(gmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -398,7 +398,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         dmsg.setBackupStorageRef(ImageBackupStorageRefInventory.valueOf(targetBackupStorageRef));
                         dmsg.setImage(ImageInventory.valueOf(template));
                         dmsg.setHostUuid(msg.getHostUuid());
-                        dmsg.setAllocatedUrl(allocatedInstallUrl);
+                        dmsg.setAllocatedInstallUrl(allocatedInstallUrl);
                         bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
                         bus.send(dmsg, new CloudBusCallBack(trigger) {
                             @Override

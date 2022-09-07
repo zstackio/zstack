@@ -453,7 +453,7 @@ public class VolumeBase implements Volume {
                                     success = true;
                                     AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                                     allocateInstallUrl = ar.getAllocatedInstallUrl();
-                                    msg.setAllocatedUrl(allocateInstallUrl);
+                                    msg.setAllocatedInstallUrl(allocateInstallUrl);
                                     trigger.next();
                                 }
                             });
@@ -556,7 +556,7 @@ public class VolumeBase implements Volume {
                         imsg.setVolume(getSelfInventory());
                         imsg.setSystemTags(msg.getSystemTags());
                         imsg.setSkipIfExisting(msg.isSkipIfExisting());
-                        imsg.setAllocatedUrl(msg.getAllocatedUrl());
+                        imsg.setAllocatedInstallUrl(msg.getAllocatedInstallUrl());
                         if (msg.getHostUuid() != null) {
                             imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
                         }
