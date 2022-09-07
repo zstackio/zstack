@@ -1,10 +1,10 @@
-package org.zstack.sdk.ticket.iam2.api;
+package org.zstack.sdk.iam2.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateIAM2TickFlowCollectionAction extends AbstractAction {
+public class DetachIAM2ProjectFromClusterAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateIAM2TickFlowCollectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ticket.api.CreateTickFlowCollectionResult value;
+        public org.zstack.sdk.iam2.api.DetachIAM2ProjectFromClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,8 @@ public class CreateIAM2TickFlowCollectionAction extends AbstractAction {
         }
     }
 
-    @Param(required = false)
-    public java.util.List flows;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String organizationUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.lang.Boolean isDefault = false;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List ticketTypeUuids;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -84,8 +60,8 @@ public class CreateIAM2TickFlowCollectionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ticket.api.CreateTickFlowCollectionResult value = res.getResult(org.zstack.sdk.ticket.api.CreateTickFlowCollectionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ticket.api.CreateTickFlowCollectionResult() : value; 
+        org.zstack.sdk.iam2.api.DetachIAM2ProjectFromClusterResult value = res.getResult(org.zstack.sdk.iam2.api.DetachIAM2ProjectFromClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.DetachIAM2ProjectFromClusterResult() : value; 
 
         return ret;
     }
@@ -114,11 +90,11 @@ public class CreateIAM2TickFlowCollectionAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/tickets/flow-collections";
+        info.httpMethod = "DELETE";
+        info.path = "/iam2/projects/{projectUuid}/clusters";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

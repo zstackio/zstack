@@ -29,6 +29,8 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String identity;
     @Column
+    private String rootUuid;
+    @Column
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
@@ -57,6 +59,7 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
         vo.description = description;
         vo.type = type;
         vo.identity = identity;
+        vo.rootUuid = rootUuid;
         return vo;
     }
 
@@ -70,6 +73,7 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
         this.description = vo.getDescription();
         this.type = vo.getType();
         this.identity = vo.getIdentity();
+        this.rootUuid = vo.getRootUuid();
         this.createDate = vo.getCreateDate();
         this.lastOpDate = vo.getLastOpDate();
     }
@@ -159,5 +163,13 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
 
     public void setIdentity(String identity) {
         this.identity = identity;
+    }
+
+    public String getRootUuid() {
+        return rootUuid;
+    }
+
+    public void setRootUuid(String rootUuid) {
+        this.rootUuid = rootUuid;
     }
 }

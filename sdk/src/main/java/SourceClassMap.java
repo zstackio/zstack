@@ -333,6 +333,7 @@ public class SourceClassMap {
 			put("org.zstack.iam2.api.Attribute", "org.zstack.sdk.iam2.api.Attribute");
 			put("org.zstack.iam2.api.ErrorResult", "org.zstack.sdk.iam2.api.ErrorResult");
 			put("org.zstack.iam2.entity.AttributeType", "org.zstack.sdk.iam2.entity.AttributeType");
+			put("org.zstack.iam2.entity.ClusterIAM2ProjectRefInventory", "org.zstack.sdk.iam2.entity.ClusterIAM2ProjectRefInventory");
 			put("org.zstack.iam2.entity.IAM2AttributeInventory", "org.zstack.sdk.iam2.entity.IAM2AttributeInventory");
 			put("org.zstack.iam2.entity.IAM2OrganizationAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2OrganizationAttributeInventory");
 			put("org.zstack.iam2.entity.IAM2OrganizationInventory", "org.zstack.sdk.iam2.entity.IAM2OrganizationInventory");
@@ -471,6 +472,7 @@ public class SourceClassMap {
 			put("org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdnController.header.SdnControllerInventory", "org.zstack.sdk.SdnControllerInventory");
 			put("org.zstack.sdnController.header.SdnVniRange", "org.zstack.sdk.SdnVniRange");
+			put("org.zstack.smzy.entity.SecurityLevelResourceRefInventory", "org.zstack.sdk.SecurityLevelResourceRefInventory");
 			put("org.zstack.sns.SNSApplicationEndpointInventory", "org.zstack.sdk.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sns.SNSApplicationPlatformInventory", "org.zstack.sdk.sns.SNSApplicationPlatformInventory");
 			put("org.zstack.sns.SNSSmsEndpointInventory", "org.zstack.sdk.sns.SNSSmsEndpointInventory");
@@ -1010,6 +1012,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SecurityGroupIngressRuleTO", "org.zstack.network.securitygroup.SecurityGroupIngressRuleTO");
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
+			put("org.zstack.sdk.SecurityLevelResourceRefInventory", "org.zstack.smzy.entity.SecurityLevelResourceRefInventory");
 			put("org.zstack.sdk.SecurityMachineInventory", "org.zstack.header.securitymachine.SecurityMachineInventory");
 			put("org.zstack.sdk.SessionInventory", "org.zstack.header.identity.SessionInventory");
 			put("org.zstack.sdk.SessionStatus", "org.zstack.header.portMirror.SessionStatus");
@@ -1159,6 +1162,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.iam2.api.ErrorResult", "org.zstack.iam2.api.ErrorResult");
 			put("org.zstack.sdk.iam2.api.Permission", "org.zstack.iam2.api.APIGetIAM2VirtualIDAPIPermissionReply$Permission");
 			put("org.zstack.sdk.iam2.entity.AttributeType", "org.zstack.iam2.entity.AttributeType");
+			put("org.zstack.sdk.iam2.entity.ClusterIAM2ProjectRefInventory", "org.zstack.iam2.entity.ClusterIAM2ProjectRefInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2AttributeInventory", "org.zstack.iam2.entity.IAM2AttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2OrganizationAttributeInventory", "org.zstack.iam2.entity.IAM2OrganizationAttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2OrganizationInventory", "org.zstack.iam2.entity.IAM2OrganizationInventory");
