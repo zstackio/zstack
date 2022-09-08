@@ -122,11 +122,12 @@ public class CephOsdGroupCapacityHelper {
             logger.warn(String.format("cannot find ceph pool [%s] related osdgroup", poolUuid));
             return;
         }
-        CephOsdGroupVO osdGroupVO = dbf.findByUuid(pool.getOsdGroup().getUuid(), CephOsdGroupVO.class);
+        CephOsdGroupVO osdGroupVO = pool.getOsdGroup();
         osdGroupVO.setAvailableCapacity(osdGroupVO.getAvailableCapacity() + size);
         if (osdGroupVO.getAvailableCapacity() > osdGroupVO.getTotalPhysicalCapacity()) {
-            throw new OperationFailureException(operr("invalid pool[uuid:%s] capacity after release size %s, available capacity[%s] > total capacity[%s]",
-                    size, poolUuid, osdGroupVO.getAvailableCapacity(), osdGroupVO.getTotalPhysicalCapacity()));
+            logger.warn(String.format("invalid pool[uuid:%s] capacity after release size %s, available capacity[%s] > total capacity[%s], " +
+                            "try to reconnect ceph ps to recalculate pool capacity",
+                    poolUuid, size, osdGroupVO.getAvailableCapacity(), osdGroupVO.getTotalPhysicalCapacity()));
         }
 
         logger.debug(String.format("ceph osd group[%s] release capacity: %s, updated: %s",
