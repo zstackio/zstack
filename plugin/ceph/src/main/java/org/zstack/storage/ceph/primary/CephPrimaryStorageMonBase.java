@@ -204,14 +204,9 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                             runner.setTargetUuid(getSelf().getUuid());
                             runner.setAgentPort(CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT);
                             runner.setPlayBookName(CephGlobalProperty.PRIMARY_STORAGE_PLAYBOOK_NAME);
-                            runner.putArgument("pkg_cephpagent", CephGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME);
-                            if (CoreGlobalProperty.SYNC_NODE_TIME) {
-                                if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
-                                    trigger.fail(operr("chrony server not configured!"));
-                                    return;
-                                }
-                                runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
-                            }
+
+                            CephPrimaryStorageDeployArguments deployArguments = new CephPrimaryStorageDeployArguments();
+                            runner.setDeployArguments(deployArguments);
                             runner.run(new ReturnValueCompletion<Boolean>(trigger) {
                                 @Override
                                 public void success(Boolean deployed) {
