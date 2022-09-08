@@ -109,7 +109,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         String l2Uuid = msg.getL2NetworkUuid();
         L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l2Uuid).find();
 
-        if (l2NetworkVO == null || l2NetworkVO.getType().equals("VxlanNetwork")) {
+        if (l2NetworkVO == null || l2NetworkVO.getType().equals(L2NetworkConstant.VXLAN_NETWORK_TYPE)) {
             return new ArrayList<>();
         }
 
@@ -384,7 +384,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
                 vlanL2s.add(l2);
             } else if (l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
                 noVlanL2s.add(l2);
-            } else if (l2.getType().equals("VxlanNetworkPool") || l2.getType().equals("HardwareVxlanNetworkPool")) {
+            } else if (l2.getType().equals(L2NetworkConstant.VXLAN_NETWORK_POOL_TYPE) || l2.getType().equals(L2NetworkConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)) {
                 vxlanL2s.add(l2);
             }
         }
