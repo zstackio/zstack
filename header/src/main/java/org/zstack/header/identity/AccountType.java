@@ -6,4 +6,5 @@ import org.zstack.header.configuration.PythonClass;
 public enum AccountType {
     SystemAdmin,
     Normal,
+    ThirdParty
 }
