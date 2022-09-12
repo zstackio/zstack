@@ -116,9 +116,11 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
                     for (Map<String, String> tokens : list) {
                         String clusterUuid = tokens.get(VxlanSystemTags.CLUSTER_UUID_TOKEN);
                         String cidr = tokens.get(VxlanSystemTags.VTEP_CIDR_TOKEN).split("[{}]")[1];
-                        if (NetworkUtils.isSameCidr(cidr, attachedClusters.get(clusterUuid))) {
-                            sameCidr = true;
-                            break;
+                        if (attachedClusters.get(clusterUuid) != null) {
+                            if (NetworkUtils.isSameCidr(cidr, attachedClusters.get(clusterUuid))) {
+                                sameCidr = true;
+                                break;
+                            }
                         }
                     }
 
