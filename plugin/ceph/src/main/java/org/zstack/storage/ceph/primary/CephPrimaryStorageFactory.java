@@ -1228,6 +1228,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             checkCephPoolCapacityForNewVolume(path.poolName, msg.getSize(), psInv.getUuid());
             return path.fullPath;
         }
+
         return getPreAllocatedInstallUrl(msg, psInv.getUuid());
     }
 
@@ -1277,15 +1278,17 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                     .notEq(CephPrimaryStoragePoolVO_.poolName, defaultPoolName)
                     .list();
 
-            if (pools == null || pools.isEmpty()) {
-                throw new OperationFailureException(operr("unable to find a %s pool with the required size %s", poolType, volumeSize));
-            }
-
-            return pools.stream()
+            Optional<String> opt = pools.stream()
                     .filter(v -> osdHelper.checkVirtualSizeByRatio(v.getUuid(), volumeSize))
                     .map(CephPrimaryStoragePoolVO::getPoolName)
-                    .findFirst()
-                    .orElseThrow(() -> new OperationFailureException(operr("unable to find a pool with the required size %s", volumeSize)));
+                    .findFirst();
+
+            if (opt.isPresent()) {
+                return opt.get();
+            }
+
+            logger.debug(String.format("unable to find a %s pool with the required size %s", poolType, volumeSize));
+            return null;
         }
 
         return defaultPoolName;
@@ -1352,6 +1355,11 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         return getPoolName(poolName, getDefaultRootVolumePoolName(psUuid), volumeSize, CephPrimaryStoragePoolType.Root.toString(), psUuid);
     }
 
+    private String getImageCachePoolTargetPoolName(String psUuid, long volumeSize) {
+        String imageCachePool = getDefaultImageCachePoolName(psUuid);
+        return getPoolName(null, imageCachePool, volumeSize, CephPrimaryStoragePoolType.ImageCache.toString(), psUuid);
+    }
+
     private String getPreAllocatedInstallUrl(AllocatePrimaryStorageSpaceMsg msg, String psUuid) {
         final String purpose = msg.getPurpose();
         if (purpose.equals(PrimaryStorageAllocationPurpose.CreateNewVm.toString())||
@@ -1360,15 +1368,17 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         } else if (purpose.equals(PrimaryStorageAllocationPurpose.CreateDataVolume.toString())) {
             return makePreAllocatedInstallUrl(getDataVolumeTargetPoolName(msg.getSystemTags(), msg.getSize(), psUuid));
         } else if (purpose.equals(PrimaryStorageAllocationPurpose.DownloadImage.toString())) {
-            String imageCachePool = getDefaultImageCachePoolName(psUuid);
-            checkCephPoolCapacityForNewVolume(imageCachePool, msg.getSize(), psUuid);
-            return makePreAllocatedInstallUrl(imageCachePool);
+            return makePreAllocatedInstallUrl(getImageCachePoolTargetPoolName(psUuid, msg.getSize()));
         }
 
         throw new OperationFailureException(operr("cannot allocate pool for primaryStorage[%s], purpose: %s", psUuid, purpose));
     }
 
     private String makePreAllocatedInstallUrl(String poolName) {
+        if (poolName == null) {
+            return null;
+        }
+
         return String.format("ceph://%s/", poolName);
     }
 }

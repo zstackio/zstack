@@ -671,6 +671,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 allocatedInstallUrl[0] = inv.getUrl();
                 if (PSCapacityExt != null) {
                     allocatedInstallUrl[0] = PSCapacityExt.buildAllocatedInstallUrl(msg, inv);
+                    if (allocatedInstallUrl[0] == null) {
+                        return null;
+                    }
                     PSCapacityExt.reserveCapacity(msg, allocatedInstallUrl[0], size, inv.getUuid());
                 }
                 return cap;
