@@ -321,9 +321,9 @@ public class StringSimilarity {
         return result;
     }
 
-    public static String formatElaboration(String message_cn, Object...args) {
+    public static String formatElaboration(String message, Object...args) {
         StringBuilder buffer = new StringBuilder();
-        buffer.append(String.format("错误信息: %s\n", message_cn));
+        buffer.append(message);
 
         buffer.deleteCharAt(buffer.lastIndexOf("\n"));
         return String.format(buffer.toString(), args);

@@ -972,15 +972,22 @@ public class Platform {
                         ela = elaborate(result.getDescription());
                     }
                     if (ela != null) {
+                        String prefix, msg;
+                        if (locale.equals(Locale.SIMPLIFIED_CHINESE)) {
+                            prefix = "错误信息: %s\n";
+                            msg = ela.getMessage_cn();
+                        } else {
+                            prefix = "Error message: %s\n";
+                            msg = ela.getMessage_en();
+                        }
                         if (args != null && args.length == 1 && StringSimilarity.isRegexMatched(ela.getRegex(), String.valueOf(args[0]))) {
                             result.setMessages(new ErrorCodeElaboration(ela));
-                            result.setElaboration(StringSimilarity.formatElaboration(String.valueOf(args[0])));
-                            StringSimilarity.addErrors(fmt, ela);
+                            result.setElaboration(StringSimilarity.formatElaboration(String.format(prefix, args[0])));
                         } else {
                             result.setMessages(new ErrorCodeElaboration(ela, args));
-                            result.setElaboration(StringSimilarity.formatElaboration(ela.getMessage_cn(), args));
-                            StringSimilarity.addErrors(fmt, ela);
+                            result.setElaboration(StringSimilarity.formatElaboration(String.format(prefix, msg), args));
                         }
+                        StringSimilarity.addErrors(fmt, ela);
                     } else {
                         StringSimilarity.addMissed(fmt);
                     }
