@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.appliancevm.*;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
@@ -17,6 +18,7 @@ import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.agent.versioncontrol.AgentVersionVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -570,6 +572,17 @@ public class VirtualRouter extends ApplianceVmBase {
         });
     }
 
+    private boolean skipConnectVirtualRouter() {
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            AgentVersionVO agentVersionVO = dbf.findByUuid(self.getUuid(), AgentVersionVO.class);
+            if (agentVersionVO == null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void handle(final ReconnectVirtualRouterVmMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -580,6 +593,12 @@ public class VirtualRouter extends ApplianceVmBase {
             @Override
             public void run(final SyncTaskChain chain) {
                 final ReconnectVirtualRouterVmReply reply = new ReconnectVirtualRouterVmReply();
+
+                if (skipConnectVirtualRouter()) {
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
 
                 refreshVO();
                 ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
