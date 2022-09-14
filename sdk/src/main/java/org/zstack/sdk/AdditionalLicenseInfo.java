@@ -12,6 +12,14 @@ public class AdditionalLicenseInfo  {
         return this.type;
     }
 
+    public java.lang.String primaryLicenseInfo;
+    public void setPrimaryLicenseInfo(java.lang.String primaryLicenseInfo) {
+        this.primaryLicenseInfo = primaryLicenseInfo;
+    }
+    public java.lang.String getPrimaryLicenseInfo() {
+        return this.primaryLicenseInfo;
+    }
+
     public java.lang.String appId;
     public void setAppId(java.lang.String appId) {
         this.appId = appId;
