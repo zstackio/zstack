@@ -11,20 +11,14 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccountResourceRefInventory;
-import org.zstack.header.identity.Quota;
-import org.zstack.header.identity.Quota.QuotaOperator;
-import org.zstack.header.identity.Quota.QuotaPair;
-import org.zstack.header.identity.ReportQuotaExtensionPoint;
-import org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint;
+import org.zstack.header.identity.*;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
@@ -35,7 +29,6 @@ import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.ResourceSharingExtensionPoint;
-import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceSystemTag;
 import org.zstack.tag.SystemTagCreator;
@@ -671,60 +664,15 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     @Override
     public List<Quota> reportQuota() {
-        QuotaOperator checker = new QuotaOperator() {
-            @Override
-            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                    if (msg instanceof APICreateL3NetworkMsg) {
-                        check((APICreateL3NetworkMsg) msg, pairs);
-                    }
-                }
-            }
-
-            @Override
-            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
-
-            }
-
-            @Override
-            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
-                Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(L3NetworkQuotaConstant.L3_NUM);
-                usage.setUsed(getUsedL3(accountUuid));
-                return list(usage);
-            }
-
-            @Transactional(readOnly = true)
-            private long getUsedL3(String accountUuid) {
-                String sql = "select count(l3) from L3NetworkVO l3, AccountResourceRefVO ref where l3.uuid = ref.resourceUuid and " +
-                        "ref.accountUuid = :auuid and ref.resourceType = :rtype";
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", accountUuid);
-                q.setParameter("rtype", L3NetworkVO.class.getSimpleName());
-                Long l3n = q.getSingleResult();
-                l3n = l3n == null ? 0 : l3n;
-                return l3n;
-            }
-
-            private void check(APICreateL3NetworkMsg msg, Map<String, QuotaPair> pairs) {
-                long l3Num = pairs.get(L3NetworkQuotaConstant.L3_NUM).getValue();
-                long l3n = getUsedL3(msg.getSession().getAccountUuid());
-
-                if (l3n + 1 > l3Num) {
-                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                            msg.getSession().getAccountUuid(), L3NetworkQuotaConstant.L3_NUM, l3Num));
-                }
-            }
-        };
-
         Quota quota = new Quota();
-        quota.setOperator(checker);
-        quota.addMessageNeedValidation(APICreateL3NetworkMsg.class);
-
-        QuotaPair p = new QuotaPair();
-        p.setName(L3NetworkQuotaConstant.L3_NUM);
-        p.setValue(L3NetworkQuotaGlobalConfig.L3_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+        quota.defineQuota(new L3NumQuotaDefinition());
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateL3NetworkMsg.class)
+                .addCounterQuota(L3NetworkQuotaConstant.L3_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
+                .addCheckCondition((msg) -> Q.New(L3NetworkVO.class)
+                        .eq(L3NetworkVO_.uuid, msg.getResourceUuid())
+                        .isExists())
+                .addCounterQuota(L3NetworkQuotaConstant.L3_NUM));
 
         return list(quota);
     }

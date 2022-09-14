@@ -1,13 +1,14 @@
 package org.zstack.compute.vm;
 
-import org.apache.commons.collections.CollectionUtils;
 import com.google.common.collect.Maps;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
+import org.zstack.compute.vm.quota.*;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -48,8 +49,8 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -76,9 +77,11 @@ import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.ExceptionDSL;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.TagUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -89,11 +92,9 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
@@ -1905,51 +1906,163 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     @Override
     public List<Quota> reportQuota() {
-        QuotaOperator checker = new VmQuotaOperator() ;
-
         Quota quota = new Quota();
-        QuotaPair p;
+        quota.defineQuota(new VmTotalNumQuotaDefinition());
+        quota.defineQuota(new VmRunningNumQuotaDefinition());
+        quota.defineQuota(new VmRunningCpuNumQuotaDefinition());
+        quota.defineQuota(new VmRunningMemoryNumQuotaDefinition());
+        quota.defineQuota(new DataVolumeNumQuotaDefinition());
+        quota.defineQuota(new VolumeSizeQuotaDefinition());
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateVmInstanceMsg.class)
+                .addCounterQuota(VmQuotaConstant.VM_TOTAL_NUM)
+                .addCounterQuota(VmQuotaConstant.VM_RUNNING_NUM)
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_CPU_NUM, (msg) -> {
+                    if (msg.getCpuNum() != null) {
+                        return Integer.toUnsignedLong(msg.getCpuNum());
+                    }
 
-        p = new QuotaPair();
-        p.setName(VmQuotaConstant.VM_TOTAL_NUM);
-        p.setValue(VmQuotaGlobalConfig.VM_TOTAL_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+                    Integer cpuNum = Q.New(InstanceOfferingVO.class)
+                            .select(InstanceOfferingVO_.cpuNum)
+                            .eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid())
+                            .findValue();
+                    return Integer.toUnsignedLong(cpuNum);
+                }).addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE, (msg) -> {
+                    if (msg.getMemorySize() != null) {
+                        return msg.getMemorySize();
+                    }
 
-        p = new QuotaPair();
-        p.setName(VmQuotaConstant.VM_RUNNING_NUM);
-        p.setValue(VmQuotaGlobalConfig.VM_RUNNING_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+                    return Q.New(InstanceOfferingVO.class)
+                            .select(InstanceOfferingVO_.memorySize)
+                            .eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid())
+                            .findValue();
+                }).addMessageRequiredQuotaHandler(VmQuotaConstant.DATA_VOLUME_NUM, (msg) -> {
+                    if (msg.getDataDiskOfferingUuids() == null || msg.getDataDiskOfferingUuids().isEmpty()) {
+                        return 0L;
+                    }
 
-        p = new QuotaPair();
-        p.setName(VmQuotaConstant.VM_RUNNING_CPU_NUM);
-        p.setValue(VmQuotaGlobalConfig.VM_RUNNING_CPU_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+                    return (long) (msg.getDataDiskOfferingUuids().size());
+                }).addMessageRequiredQuotaHandler(VmQuotaConstant.VOLUME_SIZE, (msg) ->  {
+                    long allVolumeSizeAsked = 0;
+                    String sql = "select img.size, img.mediaType" +
+                            " from ImageVO img" +
+                            " where img.uuid = :iuuid";
+                    TypedQuery<Tuple> iq = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                    iq.setParameter("iuuid", msg.getImageUuid());
+                    Tuple it = iq.getSingleResult();
+                    Long imgSize = it.get(0, Long.class);
+                    ImageConstant.ImageMediaType imgType = it.get(1, ImageConstant.ImageMediaType.class);
 
-        p = new QuotaPair();
-        p.setName(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE);
-        p.setValue(VmQuotaGlobalConfig.VM_RUNNING_MEMORY_SIZE.defaultValue(Long.class));
-        quota.addPair(p);
+                    List<String> diskOfferingUuids = new ArrayList<>();
+                    if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
+                        diskOfferingUuids.addAll(msg.getDataDiskOfferingUuids());
+                    }
+                    if (imgType == ImageConstant.ImageMediaType.RootVolumeTemplate) {
+                        allVolumeSizeAsked += imgSize;
+                    } else if (imgType == ImageConstant.ImageMediaType.ISO) {
+                        if (msg.getRootDiskOfferingUuid() != null) {
+                            diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
+                        } else if (msg.getRootDiskSize() != null) {
+                            allVolumeSizeAsked += msg.getRootDiskSize();
+                        } else {
+                            throw new ApiMessageInterceptionException(argerr("rootDiskOfferingUuid cannot be null when image mediaType is ISO"));
+                        }
+                    }
 
-        p = new QuotaPair();
-        p.setName(VmQuotaConstant.DATA_VOLUME_NUM);
-        p.setValue(VmQuotaGlobalConfig.DATA_VOLUME_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+                    HashMap<String, Long> diskOfferingCountMap = new HashMap<>();
+                    if (!diskOfferingUuids.isEmpty()) {
+                        for (String diskOfferingUuid : diskOfferingUuids) {
+                            if (diskOfferingCountMap.containsKey(diskOfferingUuid)) {
+                                diskOfferingCountMap.put(diskOfferingUuid, diskOfferingCountMap.get(diskOfferingUuid) + 1);
+                            } else {
+                                diskOfferingCountMap.put(diskOfferingUuid, 1L);
+                            }
+                        }
+                        for (String diskOfferingUuid : diskOfferingCountMap.keySet()) {
+                            sql = "select diskSize from DiskOfferingVO where uuid = :uuid";
+                            TypedQuery<Long> dq = dbf.getEntityManager().createQuery(sql, Long.class);
+                            dq.setParameter("uuid", diskOfferingUuid);
+                            Long dsize = dq.getSingleResult();
+                            dsize = dsize == null ? 0 : dsize;
+                            allVolumeSizeAsked += dsize * diskOfferingCountMap.get(diskOfferingUuid);
+                        }
+                    }
 
-        p = new QuotaPair();
-        p.setName(VmQuotaConstant.VOLUME_SIZE);
-        p.setValue(VmQuotaGlobalConfig.VOLUME_SIZE.defaultValue(Long.class));
-        quota.addPair(p);
+                    return allVolumeSizeAsked;
+                }).addCheckCondition((msg) -> !msg.getStrategy().equals(VmCreationStrategy.JustCreate.toString())));
 
-        quota.addMessageNeedValidation(APICreateVmInstanceMsg.class);
-        quota.addMessageNeedValidation(APIRecoverVmInstanceMsg.class);
-        quota.addMessageNeedValidation(APICreateDataVolumeMsg.class);
-        quota.addMessageNeedValidation(APIRecoverDataVolumeMsg.class);
-        quota.addMessageNeedValidation(APIStartVmInstanceMsg.class);
-        quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
-        quota.addMessageNeedValidation(StartVmInstanceMsg.class);
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIRecoverVmInstanceMsg.class)
+                .addCounterQuota(VmQuotaConstant.VM_TOTAL_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIStartVmInstanceMsg.class)
+                .addCounterQuota(VmQuotaConstant.VM_RUNNING_NUM)
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_CPU_NUM, (msg) -> new VmQuotaUtil().getRequiredCpu(msg.getVmInstanceUuid()))
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE, (msg) -> new VmQuotaUtil().getRequiredMemory(msg.getVmInstanceUuid())));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(StartVmInstanceMsg.class)
+                .addCounterQuota(VmQuotaConstant.VM_RUNNING_NUM)
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_CPU_NUM, (msg) -> new VmQuotaUtil().getRequiredCpu(msg.getVmInstanceUuid()))
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE, (msg) -> new VmQuotaUtil().getRequiredMemory(msg.getVmInstanceUuid())));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateDataVolumeMsg.class)
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VOLUME_SIZE, (msg) -> {
+                    if (msg.getDiskOfferingUuid() == null) {
+                        return msg.getDiskSize();
+                    }
 
-        quota.setOperator(checker);
+                    String sql = "select diskSize from DiskOfferingVO where uuid = :uuid ";
+                    TypedQuery<Long> dq = dbf.getEntityManager().createQuery(sql, Long.class);
+                    dq.setParameter("uuid", msg.getDiskOfferingUuid());
+                    Long dsize = dq.getSingleResult();
+                    dsize = dsize == null ? 0 : dsize;
+                    return dsize;
+                })
+                .addCounterQuota(VmQuotaConstant.DATA_VOLUME_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIRecoverDataVolumeMsg.class)
+                .addCounterQuota(VmQuotaConstant.DATA_VOLUME_NUM));
 
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
+                .addCheckCondition((msg) -> Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.uuid, msg.getResourceUuid())
+                        .notEq(VmInstanceVO_.type, "baremetal2")
+                        .isExists())
+                .addCounterQuota(VmQuotaConstant.VM_TOTAL_NUM)
+                .addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_CPU_NUM, (msg) -> {
+                    VmInstanceState state = Q.New(VmInstanceVO.class)
+                            .select(VmInstanceVO_.state)
+                            .eq(VmInstanceVO_.uuid, msg.getResourceUuid())
+                            .findValue();
+
+                    // vm is running
+                    if (list(VmInstanceState.Stopped, VmInstanceState.Destroying,
+                            VmInstanceState.Destroyed, VmInstanceState.Created).contains(state)) {
+                        return 0L;
+                    }
+
+                    return new VmQuotaUtil().getRequiredCpu(msg.getResourceUuid());
+                }).addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE, (msg) -> {
+                    VmInstanceState state = Q.New(VmInstanceVO.class)
+                            .select(VmInstanceVO_.state)
+                            .eq(VmInstanceVO_.uuid, msg.getResourceUuid())
+                            .findValue();
+
+                    // vm is running
+                    if (list(VmInstanceState.Stopped, VmInstanceState.Destroying,
+                            VmInstanceState.Destroyed, VmInstanceState.Created).contains(state)) {
+                        return 0L;
+                    }
+
+                    return new VmQuotaUtil().getRequiredMemory(msg.getResourceUuid());
+                }).addMessageRequiredQuotaHandler(VmQuotaConstant.VM_RUNNING_NUM, (msg) -> {
+                    VmInstanceState state = Q.New(VmInstanceVO.class)
+                            .select(VmInstanceVO_.state)
+                            .eq(VmInstanceVO_.uuid, msg.getResourceUuid())
+                            .findValue();
+
+                    // vm is running
+                    if (list(VmInstanceState.Stopped, VmInstanceState.Destroying,
+                            VmInstanceState.Destroyed, VmInstanceState.Created).contains(state)) {
+                        return 0L;
+                    }
+
+                    return 1L;
+                }));
         return list(quota);
     }
 

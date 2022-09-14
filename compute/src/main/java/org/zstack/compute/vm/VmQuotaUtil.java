@@ -5,9 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
@@ -136,5 +138,23 @@ public class VmQuotaUtil {
         Long rootVolumeSize = sq.findValue();
         rootVolumeSize = rootVolumeSize == null ? 0 : rootVolumeSize;
         return rootVolumeSize;
+    }
+
+    @Transactional(readOnly = true)
+    public Long getRequiredCpu(String vmInstanceUuid) {
+        Integer cpuNum = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.cpuNum)
+                .eq(VmInstanceVO_.uuid, vmInstanceUuid)
+                .findValue();
+
+        return Integer.toUnsignedLong(cpuNum);
+    }
+
+    @Transactional(readOnly = true)
+    public Long getRequiredMemory(String vmInstanceUuid) {
+        return Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.memorySize)
+                .eq(VmInstanceVO_.uuid, vmInstanceUuid)
+                .findValue();
     }
 }

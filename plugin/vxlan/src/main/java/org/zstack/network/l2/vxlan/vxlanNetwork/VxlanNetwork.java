@@ -3,18 +3,14 @@ package org.zstack.network.l2.vxlan.vxlanNetwork;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -24,12 +20,11 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l2.*;
-import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkGlobalConfig;
 import org.zstack.network.l2.L2NetworkManager;
@@ -281,56 +276,10 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
 
     @Override
     public List<Quota> reportQuota() {
-        Quota.QuotaOperator checker = new Quota.QuotaOperator() {
-            @Override
-            public void checkQuota(APIMessage msg, Map<String, Quota.QuotaPair> pairs) {
-                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                    if (msg instanceof APICreateL2VxlanNetworkMsg) {
-                        check((APICreateL2VxlanNetworkMsg) msg, pairs);
-                    }
-                }
-            }
-
-            @Override
-            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, Quota.QuotaPair> pairs) {
-
-            }
-
-            @Override
-            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
-                Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(VxlanNetworkQuotaConstant.VXLAN_NUM);
-                usage.setUsed(getUsedVxlan(accountUuid));
-                return list(usage);
-            }
-
-            @Transactional(readOnly = true)
-            private long getUsedVxlan(String accountUuid) {
-                long cnt = SQL.New("select count(vxlan) from VxlanNetworkVO vxlan, AccountResourceRefVO ref " +
-                        "where vxlan.uuid = ref.resourceUuid and ref.accountUuid = :auuid", Long.class)
-                        .param("auuid", accountUuid).find();
-                return cnt;
-            }
-
-            private void check(APICreateL2VxlanNetworkMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                long vxlanNum = pairs.get(VxlanNetworkQuotaConstant.VXLAN_NUM).getValue();
-                long vxlan = getUsedVxlan(msg.getSession().getAccountUuid());
-
-                if (vxlan + 1 > vxlanNum) {
-                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                    msg.getSession().getAccountUuid(), VxlanNetworkQuotaConstant.VXLAN_NUM, vxlanNum));
-                }
-            }
-        };
-
         Quota quota = new Quota();
-        quota.setOperator(checker);
-        quota.addMessageNeedValidation(APICreateL2VxlanNetworkMsg.class);
-
-        Quota.QuotaPair p = new Quota.QuotaPair();
-        p.setName(VxlanNetworkQuotaConstant.VXLAN_NUM);
-        p.setValue(VxlanNetworkQuotaGlobalConfig.VXLAN_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+        quota.defineQuota(new VxlanNumQuotaDefinition());
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateL2VxlanNetworkMsg.class)
+                .addCounterQuota(VxlanNetworkQuotaConstant.VXLAN_NUM));
 
         return list(quota);
     }

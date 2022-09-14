@@ -15,20 +15,18 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.APIChangeResourceOwnerMsg;
 import org.zstack.header.identity.Quota;
-import org.zstack.header.identity.Quota.QuotaOperator;
-import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.UsedIpInventory;
@@ -39,7 +37,6 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
@@ -59,7 +56,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.list;
 
 public class PortForwardingManagerImpl extends AbstractService implements PortForwardingManager,
         VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint,
@@ -1279,60 +1276,15 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
     @Override
     public List<Quota> reportQuota() {
-        QuotaOperator checker = new QuotaOperator() {
-            @Override
-            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                    if (msg instanceof APICreatePortForwardingRuleMsg) {
-                        check((APICreatePortForwardingRuleMsg) msg, pairs);
-                    }
-                }
-            }
-
-            @Override
-            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
-
-            }
-
-            @Override
-            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
-                Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(PortForwardingQuotaConstant.PF_NUM);
-                usage.setUsed(getUsedPf(accountUuid));
-                return list(usage);
-            }
-
-            @Transactional(readOnly = true)
-            private long getUsedPf(String accountUuid) {
-                String sql = "select count(pf) from PortForwardingRuleVO pf, AccountResourceRefVO ref where pf.uuid = ref.resourceUuid" +
-                        " and ref.accountUuid = :auuid and ref.resourceType = :rtype";
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", accountUuid);
-                q.setParameter("rtype", PortForwardingRuleVO.class.getSimpleName());
-                Long pfn = q.getSingleResult();
-                pfn = pfn == null ? 0 : pfn;
-                return pfn;
-            }
-
-            private void check(APICreatePortForwardingRuleMsg msg, Map<String, QuotaPair> pairs) {
-                long pfNum = pairs.get(PortForwardingQuotaConstant.PF_NUM).getValue();
-                long pfn = getUsedPf(msg.getSession().getAccountUuid());
-
-                if (pfn + 1 > pfNum) {
-                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                    msg.getSession().getAccountUuid(), PortForwardingQuotaConstant.PF_NUM, pfNum));
-                }
-            }
-        };
-
         Quota quota = new Quota();
-        quota.setOperator(checker);
-        quota.addMessageNeedValidation(APICreatePortForwardingRuleMsg.class);
-
-        QuotaPair p = new QuotaPair();
-        p.setName(PortForwardingQuotaConstant.PF_NUM);
-        p.setValue(PortFowardingQuotaGlobalConfig.PF_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+        quota.defineQuota(new PortForwardingNumQuotaDefinition());
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreatePortForwardingRuleMsg.class)
+                .addCounterQuota(PortForwardingQuotaConstant.PF_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
+                .addCheckCondition((msg) -> Q.New(PortForwardingRuleVO.class)
+                        .eq(PortForwardingRuleVO_.uuid, msg.getResourceUuid())
+                        .isExists())
+                .addCounterQuota(PortForwardingQuotaConstant.PF_NUM));
         return list(quota);
     }
 
