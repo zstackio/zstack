@@ -41,6 +41,8 @@ class ElaborationCase extends SubCase {
             testElaborationWithUnknownFormatConversion()
             testErrorList()
             testNestedError()
+            testElaborationLanguageEnglish()
+            testElaborationLanguageNotSupport()
         }
     }
 
@@ -58,6 +60,36 @@ class ElaborationCase extends SubCase {
         err = operr("The state of vm[uuid:%s] is %s. Only these state[Running,Stopped] is allowed to update cpu or memory.", Platform.uuid, "Rebooting") as ErrorCode
         assert err.elaboration != null
         assert err.elaboration.trim() == "错误信息: 云主机的状态为 Rebooting，只有状态 [Running，Stopped] 允许升级 CPU/内存。"
+
+        err = operr("test for missed error") as ErrorCode
+        assert err.elaboration == null
+
+        err = Platform.err(IdentityErrors.INVALID_SESSION, "xxxxxxxxx") as ErrorCode
+        assert err.elaboration != null
+    }
+
+    void testElaborationLanguageEnglish() {
+        Locale originLocale = Platform.locale
+        Platform.locale = Locale.US
+        testElaborationEnglish()
+        Platform.locale = originLocale
+    }
+
+    void testElaborationLanguageNotSupport() {
+        Locale originLocale = Platform.locale
+        Platform.locale = Locale.FRANCE
+        testElaborationEnglish()
+        Platform.locale = originLocale
+    }
+
+    void testElaborationEnglish() {
+        def err = operr("certificate has expired or is not yet valid") as ErrorCode
+        assert err.elaboration != null
+        assert err.elaboration.trim() == "Error message: The current system time has expired for ImageStore certificate. Possible reason: ImageStore server system time or certificate is modified."
+
+        err = operr("The state of vm[uuid:%s] is %s. Only these state[Running,Stopped] is allowed to update cpu or memory.", Platform.uuid, "Rebooting") as ErrorCode
+        assert err.elaboration != null
+        assert err.elaboration.trim() == "Error message: Only VMs with the status [Running, Stopped] support CPU/memory update. Current status: Rebooting."
 
         err = operr("test for missed error") as ErrorCode
         assert err.elaboration == null
