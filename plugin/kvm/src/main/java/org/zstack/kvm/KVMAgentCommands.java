@@ -3396,4 +3396,24 @@ public class KVMAgentCommands {
             this.status = status;
         }
     }
+
+    public static class AttachVolumeCmd extends AgentCommand {
+        public String volumePrimaryStorageUuid;
+        public String volumeInstallPath;
+        public String mountPath;
+        public String device;
+    }
+
+    public static class AttachVolumeRsp extends AgentResponse {
+        public String device;
+    }
+
+    public static class DetachVolumeCmd extends AgentCommand {
+        public String volumeInstallPath;
+        public String mountPath;
+        public String device;
+    }
+
+    public static class DetachVolumeRsp extends AgentResponse {
+    }
 }

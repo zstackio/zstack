@@ -26,6 +26,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.host.*;
 import org.zstack.header.identity.AccountResourceRefInventory;
 import org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint;
 import org.zstack.header.image.*;
@@ -67,7 +68,7 @@ import static org.zstack.core.Platform.operr;
 
 public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint, VmStateChangedExtensionPoint, VmDetachVolumeExtensionPoint,
-        VmAttachVolumeExtensionPoint {
+        VmAttachVolumeExtensionPoint, HostAfterConnectedExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeManagerImpl.class);
 
     @Autowired
@@ -1120,5 +1121,28 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
                 .set(VolumeVO_.vmInstanceUuid, null)
                 .update();
+    }
+
+    @Override
+    public void afterHostConnected(HostInventory host) {
+        String hostUuid = host.getUuid();
+        VolumeHostRefVO refVO = Q.New(VolumeHostRefVO.class).eq(VolumeHostRefVO_.hostUuid, hostUuid).find();
+        if (refVO == null) {
+            return;
+        }
+        AttachDataVolumeToHostMsg mmsg = new AttachDataVolumeToHostMsg();
+        mmsg.setHostUuid(refVO.getHostUuid());
+        mmsg.setVolumeUuid(refVO.getVolumeUuid());
+        mmsg.setMountPath(refVO.getMountPath());
+        mmsg.setDevice(refVO.getDevice());
+        bus.makeTargetServiceIdByResourceUuid(mmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(mmsg, new CloudBusCallBack(mmsg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to mount volume[%s] on host [%s]", refVO.getVolumeUuid(), hostUuid));
+                }
+            }
+        });
     }
 }
