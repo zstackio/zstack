@@ -148,11 +148,19 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         if (msg.getVipPortEnd() == null) {
             msg.setVipPortEnd(msg.getVipPortStart());
         }
-        if (msg.getPrivatePortStart() == null) {
+        if (msg.getPrivatePortStart() == null && msg.getPrivatePortEnd() == null) {
             msg.setPrivatePortStart(msg.getVipPortStart());
-        }
-        if (msg.getPrivatePortEnd() == null) {
             msg.setPrivatePortEnd(msg.getVipPortEnd());
+        }
+        if (msg.getPrivatePortStart() == null && msg.getPrivatePortEnd() != null) {
+            msg.setPrivatePortStart(msg.getPrivatePortEnd());
+        }
+        if (msg.getPrivatePortEnd() == null && msg.getPrivatePortStart() != null) {
+            msg.setPrivatePortEnd(msg.getPrivatePortStart());
+        }
+        if (msg.getVipPortEnd()-msg.getVipPortStart() != msg.getPrivatePortEnd()-msg.getPrivatePortStart()) {
+            throw new ApiMessageInterceptionException(argerr("could not create port forwarding rule, because vip port range[vipStartPort:%s, vipEndPort:%s] is incompatible with private port range[privateStartPort:%s, privateEndPort:%s]",
+                    msg.getVipPortStart(), msg.getVipPortEnd(), msg.getPrivatePortStart(), msg.getPrivatePortEnd()));
         }
 
         int vipStart = Math.min(msg.getVipPortStart(), msg.getVipPortEnd());
