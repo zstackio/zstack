@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ThirdClientAccountRefVO` (
     `resourceType` varchar(255) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
-    PRIMARY KEY  (`uuid`)
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT `fkThirdClientAccountRefVOSSOClientVO` FOREIGN KEY (`clientUuid`) REFERENCES `SSOClientVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`SSORedirectTemplateVO` (
