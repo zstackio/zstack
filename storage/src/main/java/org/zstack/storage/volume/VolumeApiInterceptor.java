@@ -40,8 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -470,20 +469,49 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
     }
 
     private void validate(APIAttachDataVolumeToHostMsg msg) {
-        String hostUuid = Q.New(VolumeHostRefVO.class).select(VolumeHostRefVO_.hostUuid)
-                .eq(VolumeHostRefVO_.volumeUuid, msg.getVolumeUuid()).findValue();
-        if (hostUuid != null) {
-            throw new ApiMessageInterceptionException(operr("can not attach volume[%s] to host[%s], " +
-                    "because volume is attaching to host[%s] ", msg.getVolumeUuid(), msg.getHostUuid(), hostUuid));
-        }
-
         HostStatus hostStatus = Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, msg.getHostUuid()).findValue();
         if (hostStatus != HostStatus.Connected) {
             throw new ApiMessageInterceptionException(operr("can not attach volume[%s] to host[%s], " +
                     "because host[status:%s] is not connected", msg.getVolumeUuid(), msg.getHostUuid(), hostStatus));
         }
+
         if (!msg.getMountPath().startsWith("/")) {
             throw new ApiMessageInterceptionException(argerr("mount path must be absolute path"));
+        }
+
+        String attachVolumeErr = i18n("can not attach volume[%s] to host[%s], ",
+                msg.getVolumeUuid(), msg.getHostUuid());
+
+        Tuple hostAndMountPath = Q.New(VolumeHostRefVO.class)
+                .eq(VolumeHostRefVO_.volumeUuid, msg.getVolumeUuid())
+                .select(VolumeHostRefVO_.hostUuid, VolumeHostRefVO_.mountPath).findTuple();
+        if (hostAndMountPath != null) {
+            doValidateAttachedVolume(hostAndMountPath, msg, attachVolumeErr);
+        } else {
+            checkMountPathOnHost(msg, attachVolumeErr);
+        }
+    }
+
+    private void doValidateAttachedVolume(Tuple hostAndMountPath, APIAttachDataVolumeToHostMsg msg, String attachVolumeErr) {
+        String hostUuid = hostAndMountPath.get(0, String.class);
+        String mountPath = hostAndMountPath.get(1, String.class);
+        if (!hostUuid.equals(msg.getHostUuid())) {
+            throw new ApiMessageInterceptionException(operr(attachVolumeErr +
+                    "because volume is attaching to host[%s] ", hostUuid));
+        }
+        if (!mountPath.equals(msg.getMountPath())) {
+            throw new ApiMessageInterceptionException(operr(attachVolumeErr +
+                    "because the volume[%s] occupies the mount path[%s] on host[%s]", msg.getVolumeUuid(), mountPath, hostUuid));
+        }
+    }
+
+    private void checkMountPathOnHost(APIAttachDataVolumeToHostMsg msg, String attachVolumeErr) {
+        List<String> mountPaths = Q.New(VolumeHostRefVO.class)
+                .eq(VolumeHostRefVO_.hostUuid, msg.getHostUuid())
+                .select(VolumeHostRefVO_.mountPath).listValues();
+        if (mountPaths.contains(msg.getMountPath())) {
+            throw new ApiMessageInterceptionException(operr(attachVolumeErr +
+                    "because the another volume occupies the mount path[%s]", msg.getMountPath()));
         }
     }
 
