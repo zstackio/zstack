@@ -112,6 +112,11 @@ public class CephOsdGroupCapacityHelper {
 
     @Transactional
     private void _release(String installPath, long size) {
+        if (installPath == null) {
+            logger.debug("no install path found, skip release ceph pool capacity");
+            return;
+        }
+
         String poolUuid = getPoolUuidFromInstallPath(installPath);
         if (poolUuid == null) {
             return;
@@ -142,6 +147,11 @@ public class CephOsdGroupCapacityHelper {
 
     @Transactional
     private long _reserve(String installPath, long size) {
+        if (installPath == null) {
+            logger.debug("no install path found, skip reserve ceph pool capacity");
+            return 0;
+        }
+
         String poolUuid = getPoolUuidFromInstallPath(installPath);
         if (poolUuid == null) {
             return 0;
