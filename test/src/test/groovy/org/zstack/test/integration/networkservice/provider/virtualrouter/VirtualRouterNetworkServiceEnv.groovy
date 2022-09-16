@@ -533,8 +533,8 @@ class VirtualRouterNetworkServiceEnv {
                     privatePortStart = 50
                     privatePortEnd = 80
                     protocolType = "UDP"
-                    vipPortEnd = 50
-                    vipPortStart = 80
+                    vipPortStart = 50
+                    vipPortEnd = 80
                     useVip("PublicNetwork")
                 }
                 virtualRouterOffering {
