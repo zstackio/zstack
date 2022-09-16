@@ -43,7 +43,7 @@
 通过公有网络，云主机可以和物理网络互通，因此，公有网络IP地址段是物理网络某个地址段的一部分。
 公有网络的物理拓扑结果如下：
 
-image::publicNetwork.xml.svg[]
+image::l3/publicNetwork.xml.svg[]
 ====
 
 * 扁平网络
@@ -55,7 +55,7 @@ image::publicNetwork.xml.svg[]
 
 扁平网络的物理拓扑结果如下：
 
-image::flatNetwork.xml.svg[]
+image::l3/flatNetwork.xml.svg[]
 ====
 
 * VPC网络
@@ -66,7 +66,7 @@ image::flatNetwork.xml.svg[]
 
 VPC网络网络的物理拓扑结果如下：
 
-image::vpcNetwork.xml.svg[]
+image::l3/vpcNetwork.xml.svg[]
 ====
 
 == VPC路由器
