@@ -1,17 +1,26 @@
 package org.zstack.compute.host;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.*;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.volume.VolumeHostRefVO;
+import org.zstack.header.volume.VolumeHostRefVO_;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -20,6 +29,8 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.inerr;
 
@@ -75,6 +86,8 @@ public class HostCascadeExtension extends AbstractAsyncCascadeExtension {
             completion.success();
             return;
         }
+
+        detachDataVolume(hinvs);
 
         List<HostDeletionMsg> msgs = new ArrayList<HostDeletionMsg>();
         for (HostInventory hinv : hinvs) {
@@ -172,5 +185,51 @@ public class HostCascadeExtension extends AbstractAsyncCascadeExtension {
         }
 
         return null;
+    }
+
+    private void detachDataVolume(List<HostInventory> hinvs) {
+        List<DetachDataVolumeFromHostMsg> dmsgs = hinvs.stream().map(hostInv -> {
+            VolumeHostRefVO refVO = Q.New(VolumeHostRefVO.class).eq(VolumeHostRefVO_.hostUuid, hostInv.getUuid()).find();
+            if (refVO == null) {
+                return null;
+            }
+            String volumeInstallPath = Q.New(VolumeVO.class).select(VolumeVO_.installPath)
+                    .eq(VolumeVO_.uuid, refVO.getVolumeUuid()).findValue();
+            return new VolumeHostRef(refVO, volumeInstallPath);
+        }).filter(Objects::nonNull).map(volumeHostRef -> {
+            DetachDataVolumeFromHostMsg dmsg = new DetachDataVolumeFromHostMsg();
+            dmsg.setHostUuid(volumeHostRef.refVO.getHostUuid());
+            dmsg.setMountPath(volumeHostRef.refVO.getMountPath());
+            dmsg.setDevice(volumeHostRef.refVO.getDevice());
+            dmsg.setVolumeInstallPath(volumeHostRef.volumeInstallPath);
+            bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, volumeHostRef.refVO.getHostUuid());
+            return dmsg;
+        }).collect(Collectors.toList());
+        if (dmsgs.isEmpty()) {
+            return;
+        }
+        new While<>(dmsgs).each((umsg, com) -> bus.send(umsg, new CloudBusCallBack(com) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to detach volume on host, %s", reply.getError()));
+                }
+                com.done();
+            }
+        })).run(new WhileDoneCompletion(null) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+            }
+        });
+    }
+
+    static class VolumeHostRef {
+        private final VolumeHostRefVO refVO;
+        private final String volumeInstallPath;
+
+        VolumeHostRef(VolumeHostRefVO refVO, String volumeInstallPath) {
+            this.refVO = refVO;
+            this.volumeInstallPath = volumeInstallPath;
+        }
     }
 }

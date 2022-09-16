@@ -10,6 +10,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
+import org.zstack.core.db.SQL;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
@@ -63,9 +65,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.DeviceAddress;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
@@ -178,6 +178,8 @@ public class KVMHost extends HostBase implements Host {
     private String registerPrimaryVmHeartbeatPath;
     private String getHostNumaPath;
     private String syncVmDeviceInfo;
+    private String attachVolumePath;
+    private String detachVolumePath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
@@ -368,6 +370,13 @@ public class KVMHost extends HostBase implements Host {
         ub.path(KVMConstant.KVM_SYNC_VM_DEVICEINFO_PATH);
         syncVmDeviceInfo = ub.build().toString();
 
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_ATTACH_VOLUME_PATH);
+        attachVolumePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_DETACH_VOLUME_PATH);
+        detachVolumePath = ub.build().toString();
     }
 
     class Http<T> {
@@ -568,6 +577,10 @@ public class KVMHost extends HostBase implements Host {
             handle((GetHostNumaTopologyMsg) msg);
         } else if (msg instanceof SyncVmDeviceInfoMsg) {
             handle((SyncVmDeviceInfoMsg) msg);
+        } else if (msg instanceof AttachDataVolumeToHostMsg) {
+            handle((AttachDataVolumeToHostMsg) msg);
+        } else if (msg instanceof DetachDataVolumeFromHostMsg) {
+            handle((DetachDataVolumeFromHostMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -4837,6 +4850,109 @@ public class KVMHost extends HostBase implements Host {
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(AttachDataVolumeToHostMsg msg) {
+        inQueue().name(String.format("attach-volume-to-kvm-host-%s", self.getUuid())).asyncBackup(msg)
+                .run(chain -> doAttachVolume(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void doAttachVolume(AttachDataVolumeToHostMsg msg, NoErrorCompletion completion) {
+        AttachDataVolumeToHostReply reply = new AttachDataVolumeToHostReply();
+        VolumeVO volumeVO = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
+
+        AttachVolumeCmd cmd = new AttachVolumeCmd();
+        cmd.volumeInstallPath = volumeVO.getInstallPath();
+        cmd.volumePrimaryStorageUuid = volumeVO.getPrimaryStorageUuid();
+        cmd.mountPath = msg.getMountPath();
+        cmd.device = msg.getDevice() == null ? null : msg.getDevice();
+        new Http<>(attachVolumePath, cmd, AttachVolumeRsp.class).call(new ReturnValueCompletion<AttachVolumeRsp>(msg) {
+            @Override
+            public void success(AttachVolumeRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("failed to attach volume to host, because:%s", rsp.getError()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+
+                VolumeVO vo = dbf.findByUuid(volumeVO.getUuid(), VolumeVO.class);
+                vo.setState(VolumeState.Disabled);
+                vo = dbf.updateAndRefresh(vo);
+
+                VolumeHostRefVO ref = dbf.findByUuid(vo.getUuid(), VolumeHostRefVO.class);
+                if (ref == null) {
+                    ref = new VolumeHostRefVO();
+                    ref.setHostUuid(self.getUuid());
+                    ref.setVolumeUuid(vo.getUuid());
+                    ref.setMountPath(msg.getMountPath());
+                    ref.setDevice(rsp.device);
+                    dbf.persistAndRefresh(ref);
+                } else {
+                    if (!Objects.equals(ref.getDevice(), rsp.device)) {
+                        ref.setDevice(rsp.device);
+                        dbf.update(ref);
+                    }
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(DetachDataVolumeFromHostMsg msg) {
+        inQueue().name(String.format("detach-volume-from-kvm-host-%s", self.getUuid())).asyncBackup(msg)
+                .run(chain -> doDetachVolume(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void doDetachVolume(DetachDataVolumeFromHostMsg msg, NoErrorCompletion completion) {
+        DetachDataVolumeFromHostReply reply = new DetachDataVolumeFromHostReply();
+        DetachVolumeCmd cmd = new DetachVolumeCmd();
+        cmd.volumeInstallPath = msg.getVolumeInstallPath();
+        cmd.mountPath = msg.getMountPath();
+        cmd.device = msg.getDevice();
+        new Http<>(detachVolumePath, cmd, DetachVolumeRsp.class).call(new ReturnValueCompletion<DetachVolumeRsp>(msg) {
+            @Override
+            public void success(DetachVolumeRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("failed to detach volume from host, because:%s", rsp.getError()));
+                } else {
+                    SQL.New(VolumeHostRefVO.class)
+                            .eq(VolumeHostRefVO_.mountPath, msg.getMountPath())
+                            .eq(VolumeHostRefVO_.hostUuid, msg.getHostUuid())
+                            .eq(VolumeHostRefVO_.device, msg.getDevice())
+                            .delete();
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
