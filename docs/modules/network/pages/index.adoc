@@ -1,14 +1,18 @@
 = ZStack 网络
 
-ZStack网络包括两个方面：网络资源，网络服务。
+网络是ZStack云平台的基础组件。ZStack网络包括两个方面：网络资源，网络服务。
 
-网络资源是让云主机的网络连通起来的资源对象，比如：二层网络，三层网络，IP地址段，网卡等。
+//网络资源是让云主机的网络连通起来的资源对象，比如：二层网络，三层网络，IP地址段，网卡等。
 
-网络服务为云主机提供更多功能模块，比如安全组，防火墙可以为云主机提供安全功能。不同的三层网络类型实现相同网络服务，实现机制并不相同。ZStack有三种网络服务
-实现机制：SecurityGroup, Flat，vrouter.
+//网络服务为云主机提供各种功能模块，比如安全组，防火墙可以为云主机提供安全功能。
+//不同的三层网络类型实现相同网络服务，实现机制并不相同。ZStack有三种网络服务实现机制：SecurityGroup, Flat，vrouter.
 
-网络资源和网络服务的关系如下
+//网络资源和网络服务的关系如下
 
-image::networkTotal.svg[]
+//image::networkTotal.svg[]
 
-* xref:networkResource/index.adoc[]
+* xref:networkResource/networkResource.adoc[]
+** xref:networkResource/L2Network.adoc[]
+** xref:networkResource/L3Network.adoc[]
+** xref:networkResource/VpcRouter.adoc[]
+* xref:networkResource/networkResource.adoc[]
