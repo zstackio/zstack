@@ -114,7 +114,7 @@ class LdapExceptionCase extends SubCase {
                 description : "test-ldap0",
                 base : ZStackTest.DOMAIN_DSN,
                 url : "ldap://localhost:1888",
-                username : "",
+                username : "cn=Micha Kops",
                 password : "wrongPassword",
                 encryption : "None",
                 systemTags : ["ephemeral::validationOnly"],
