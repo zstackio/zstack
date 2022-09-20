@@ -71,4 +71,9 @@
         <name>org.zstack.storage.ceph.primary.APIQueryCephPrimaryStoragePoolMsg</name>
         <serviceId>query</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.storage.ceph.primary.APIQueryCephOsdGroupMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

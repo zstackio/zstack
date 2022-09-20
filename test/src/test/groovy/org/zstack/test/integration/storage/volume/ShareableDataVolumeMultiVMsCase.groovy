@@ -38,7 +38,7 @@ class ShareableDataVolumeMultiVMsCase extends SubCase{
             }
             diskOffering {
                 name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
+                diskSize = SizeUnit.GIGABYTE.toByte(5)
             }
             zone{
                 name = "zone"
@@ -86,8 +86,8 @@ class ShareableDataVolumeMultiVMsCase extends SubCase{
                 cephPrimaryStorage {
                     name="ceph-pri"
                     description="Test"
-                    totalCapacity = SizeUnit.GIGABYTE.toByte(100)
-                    availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                    totalCapacity = SizeUnit.GIGABYTE.toByte(300)
+                    availableCapacity= SizeUnit.GIGABYTE.toByte(300)
                     url="ceph://pri"
                     fsid="7ff218d9-f525-435f-8a40-3618d1772a64"
                     monUrls=["root:password@localhost/?monPort=7777"]
@@ -101,8 +101,8 @@ class ShareableDataVolumeMultiVMsCase extends SubCase{
             cephBackupStorage {
                 name="ceph-bk"
                 description="Test"
-                totalCapacity = SizeUnit.GIGABYTE.toByte(100)
-                availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                totalCapacity = SizeUnit.GIGABYTE.toByte(300)
+                availableCapacity= SizeUnit.GIGABYTE.toByte(300)
                 url = "/bk"
                 fsid ="7ff218d9-f525-435f-8a40-3618d1772a64"
                 monUrls = ["root:password@localhost/?monPort=7777"]

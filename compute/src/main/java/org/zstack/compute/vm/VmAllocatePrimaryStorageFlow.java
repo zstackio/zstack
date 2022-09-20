@@ -73,6 +73,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         rmsg.setRequiredHostUuid(destHost.getUuid());
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
         rmsg.setPossiblePrimaryStorageTypes(selectPsTypesFromSpec(spec));
+        rmsg.setSystemTags(spec.getRootVolumeSystemTags());
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
         msgs.add(rmsg);
 
@@ -84,7 +85,9 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             amsg.setSize(dinv.getDiskSize());
             amsg.setRequiredHostUuid(destHost.getUuid());
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
+            amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
             amsg.setDiskOfferingUuid(dinv.getUuid());
+            amsg.setSystemTags(spec.getDataVolumeSystemTags());
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }

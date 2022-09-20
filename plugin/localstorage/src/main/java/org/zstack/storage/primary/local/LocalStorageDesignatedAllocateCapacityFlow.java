@@ -163,7 +163,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
         if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
             rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
         } else if (spec.getCurrentVmOperation() == VmOperation.AttachVolume) {
-            rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
+            rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
         }
 
         String requiredPrimaryStorageType = Q.New(PrimaryStorageVO.class)
@@ -201,6 +201,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
                 amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
             }
 
+            amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
             amsg.setDiskOfferingUuid(dinv.getUuid());
             if (spec.getImageSpec() != null) {
                 amsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
