@@ -62,7 +62,7 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
             msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
             msg.setL3NetworkUuid(iprinv.getL3NetworkUuid());
             msg.setIpRangeUuid(iprinv.getUuid());
-            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, iprinv.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, iprinv.getL3NetworkUuid());
             msgs.add(msg);
         }
 
