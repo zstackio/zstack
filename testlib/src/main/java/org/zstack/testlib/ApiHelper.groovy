@@ -38026,6 +38026,33 @@ abstract class ApiHelper {
     }
 
 
+    def attachResourceToIAM2VirtualID(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.AttachResourceToIAM2VirtualIDAction.class) Closure c) {
+        def a = new org.zstack.sdk.iam2.api.AttachResourceToIAM2VirtualIDAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def batchCreateIAM2VirtualIDFromConfigFile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.BatchCreateIAM2VirtualIDFromConfigFileAction.class) Closure c) {
         def a = new org.zstack.sdk.iam2.api.BatchCreateIAM2VirtualIDFromConfigFileAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -38649,6 +38676,33 @@ abstract class ApiHelper {
 
     def detachIAM2ProjectFromIAM2Organization(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.DetachIAM2ProjectFromIAM2OrganizationAction.class) Closure c) {
         def a = new org.zstack.sdk.iam2.api.DetachIAM2ProjectFromIAM2OrganizationAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def detachResourceFromIAM2VirtualID(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.DetachResourceFromIAM2VirtualIDAction.class) Closure c) {
+        def a = new org.zstack.sdk.iam2.api.DetachResourceFromIAM2VirtualIDAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
