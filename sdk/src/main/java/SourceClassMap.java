@@ -355,6 +355,7 @@ public class SourceClassMap {
 			put("org.zstack.iam2.entity.IAM2VirtualIDGroupAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupAttributeInventory");
 			put("org.zstack.iam2.entity.IAM2VirtualIDGroupInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupInventory");
 			put("org.zstack.iam2.entity.IAM2VirtualIDInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDInventory");
+			put("org.zstack.iam2.entity.IAM2VirtualIDResourceRefInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDResourceRefInventory");
 			put("org.zstack.iam2.entity.OrganizationType", "org.zstack.sdk.iam2.entity.OrganizationType");
 			put("org.zstack.iam2.entity.ProjectState", "org.zstack.sdk.iam2.entity.ProjectState");
 			put("org.zstack.iam2.entity.State", "org.zstack.sdk.iam2.entity.State");
@@ -1197,6 +1198,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupAttributeInventory", "org.zstack.iam2.entity.IAM2VirtualIDGroupAttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupInventory", "org.zstack.iam2.entity.IAM2VirtualIDGroupInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDInventory", "org.zstack.iam2.entity.IAM2VirtualIDInventory");
+			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDResourceRefInventory", "org.zstack.iam2.entity.IAM2VirtualIDResourceRefInventory");
 			put("org.zstack.sdk.iam2.entity.OrganizationType", "org.zstack.iam2.entity.OrganizationType");
 			put("org.zstack.sdk.iam2.entity.ProjectState", "org.zstack.iam2.entity.ProjectState");
 			put("org.zstack.sdk.iam2.entity.State", "org.zstack.iam2.entity.State");
