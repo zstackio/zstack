@@ -1,0 +1,10 @@
+= VPC路由器
+
+VPC路由器为VPC网络提供网关的功能，同时它还提供SNAT, 弹性IP, 端口转发，IPSec, 负载均衡，VipQos, 路由表，OSPF, 防火墙，组播转发，Netflow，
+源进源出等网络功能
+
+== VPC高可用组
+
+VPC路由器作为网络业务的一个核心节点，为了避免单点故障，VPC高可用组创建两台完全相同配置的两台VPC，通过Keepalived, 选举其中一台为Master路由器。
+如果Master故障，Backup路由器能迅速切换到为Master路由器，快速恢复网络流量。
+
