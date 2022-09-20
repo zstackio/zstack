@@ -29,18 +29,7 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
             return allocateRequiredIp(msg);
         }
 
-        List<IpRangeVO> ranges;
-        /* when allocate ip address from address pool, ipRangeUuid is not null  except for vip */
-        if (msg.getIpRangeUuid() != null) {
-            ranges = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
-        } else {
-            ranges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                    .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
-            if (msg.isUseAddressPoolIfNotRequiredIpRange()) /* for vip */ {
-                ranges.addAll(Q.New(AddressPoolVO.class).eq(AddressPoolVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                        .eq(AddressPoolVO_.ipVersion, IPv6Constants.IPv4).list());
-            }
-        }
+        List<IpRangeVO> ranges = getReqIpRanges(msg, IPv6Constants.IPv4);
 
         Collections.shuffle(ranges);
 

@@ -54,6 +54,8 @@ public class IPv6NetworkUtils {
 
         if (!isConsecutiveRange(part1)) {
             return findFirstHoleByDichotomy(part1);
+        } else if (part2[0].compareTo(part1[part1.length-1].add(BigInteger.ONE)) > 0) {
+            return part1[part1.length-1].add(BigInteger.ONE);
         } else {
             return findFirstHoleByDichotomy(part2);
         }
