@@ -3,25 +3,25 @@ package org.zstack.header.vm;
 /**
  * Created by LiangHanYu on 2022/7/1 13:33
  */
-public class ArchiveVmNicType {
+public class ArchiveVmNicBundle {
     VmNicInventory vmNicInventory;
     long outboundBandwidth;
     long inboundBandwidth;
     boolean isVmDefaultL3Network = false;
 
-    public ArchiveVmNicType() {
+    public ArchiveVmNicBundle() {
     }
 
-    public ArchiveVmNicType(VmNicInventory vmNicInventory) {
+    public ArchiveVmNicBundle(VmNicInventory vmNicInventory) {
         this.vmNicInventory = vmNicInventory;
     }
 
-    public ArchiveVmNicType(VmNicInventory vmNicInventory, boolean isVmDefaultL3Network) {
+    public ArchiveVmNicBundle(VmNicInventory vmNicInventory, boolean isVmDefaultL3Network) {
         this.vmNicInventory = vmNicInventory;
         this.isVmDefaultL3Network = isVmDefaultL3Network;
     }
 
-    public ArchiveVmNicType(VmNicInventory vmNicInventory, long outboundBandwidth, long inboundBandwidth) {
+    public ArchiveVmNicBundle(VmNicInventory vmNicInventory, long outboundBandwidth, long inboundBandwidth) {
         this.vmNicInventory = vmNicInventory;
         this.outboundBandwidth = outboundBandwidth;
         this.inboundBandwidth = inboundBandwidth;

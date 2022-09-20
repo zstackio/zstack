@@ -518,6 +518,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((SetVmStaticIpMsg) msg);
         } else if (msg instanceof ChangeVmNicNetworkMsg) {
             handle((ChangeVmNicNetworkMsg) msg);
+        } else if (msg instanceof UpdateVmInstanceMsg) {
+            handle((UpdateVmInstanceMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -5235,7 +5237,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
-    private void doVmInstanceUpdate(final APIUpdateVmInstanceMsg msg, Completion completion) {
+    private void doVmInstanceUpdate(final UpdateVmInstanceMsg msg, Completion completion) {
         refreshVO();
 
         List<Runnable> extensions = new ArrayList<Runnable>();
@@ -5360,6 +5362,34 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final APIUpdateVmInstanceMsg msg) {
+        APIUpdateVmInstanceEvent evt = new APIUpdateVmInstanceEvent(msg.getId());
+        UpdateVmInstanceMsg umsg = new UpdateVmInstanceMsg();
+        umsg.setUuid(msg.getUuid());
+        umsg.setName(msg.getName());
+        umsg.setDescription(msg.getDescription());
+        umsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
+        umsg.setCpuNum(msg.getCpuNum());
+        umsg.setMemorySize(msg.getMemorySize());
+        umsg.setPlatform(msg.getPlatform());
+        umsg.setState(msg.getState());
+        umsg.setGuestOsType(msg.getGuestOsType());
+        umsg.setSystemTags(msg.getSystemTags());
+        bus.makeTargetServiceIdByResourceUuid(umsg, VmInstanceConstant.SERVICE_ID, umsg.getVmInstanceUuid());
+        bus.send(umsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                    return;
+                }
+                evt.setInventory(((UpdateVmInstanceReply) reply.castReply()).getInventory());
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(final UpdateVmInstanceMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -5368,21 +5398,20 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(SyncTaskChain chain) {
-                APIUpdateVmInstanceEvent evt = new APIUpdateVmInstanceEvent(msg.getId());
-
+                UpdateVmInstanceReply reply = new UpdateVmInstanceReply();
                 doVmInstanceUpdate(msg, new Completion(msg) {
                     @Override
                     public void success() {
                         refreshVO();
-                        evt.setInventory(getSelfInventory());
-                        bus.publish(evt);
+                        reply.setInventory(getSelfInventory());
+                        bus.reply(msg, reply);
                         chain.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setError(errorCode);
-                        bus.publish(evt);
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
                         chain.next();
                     }
                 });
