@@ -48,6 +48,7 @@ import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
@@ -930,6 +931,11 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                if (errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
+                    logger.debug(String.format("unable to delete volume[uuid:%s] right now, skip this GC job because it's in use", msg.getVolume().getUuid()));
+                    bus.reply(msg, reply);
+                    return;
+                }
                 NfsDeleteVolumeGC gc = new NfsDeleteVolumeGC();
                 gc.NAME = String.format("gc-nfs-%s-volume-%s", self.getUuid(), vol.getUuid());
                 gc.primaryStorageUuid = self.getUuid();

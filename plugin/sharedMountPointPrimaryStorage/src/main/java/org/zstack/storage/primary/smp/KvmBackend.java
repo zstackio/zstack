@@ -3,6 +3,7 @@ package org.zstack.storage.primary.smp;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
@@ -51,6 +52,7 @@ import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.snapshot.VolumeSnapshotSystemTags;
+import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
@@ -97,6 +99,22 @@ public class KvmBackend extends HypervisorBackend {
         public String error;
         public Long totalCapacity;
         public Long availableCapacity;
+        protected ErrorCode buildErrorCode() {
+            if (success) {
+                return null;
+            }
+            return operr("operation error, because:%s", error);
+        }
+    }
+
+    public static class DeleteRsp extends AgentRsp {
+        public boolean inUse;
+        public ErrorCode buildErrorCode() {
+            if (inUse) {
+                return Platform.err(VolumeErrors.VOLUME_IN_USE, error);
+            }
+            return super.buildErrorCode();
+        }
     }
 
     public static class ConnectCmd extends AgentCmd {
@@ -358,8 +376,9 @@ public class KvmBackend extends HypervisorBackend {
 
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 final T rsp = r.toResponse(rspType);
-                if (!rsp.success) {
-                    completion.fail(operr("operation error, because:%s", rsp.error));
+                ErrorCode errorCode = rsp.buildErrorCode();
+                if (errorCode != null) {
+                    completion.fail(errorCode);
                     return;
                 }
 
@@ -969,7 +988,7 @@ public class KvmBackend extends HypervisorBackend {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
+                    if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE) || errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
                         completion.fail(errorCode);
                         return;
                     }
@@ -1597,7 +1616,7 @@ public class KvmBackend extends HypervisorBackend {
         DeleteBitsCmd cmd = new DeleteBitsCmd();
         cmd.path = path;
         cmd.folder = folder;
-        new Do().go(DELETE_BITS_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
+        new Do().go(DELETE_BITS_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
             @Override
             public void success(AgentRsp rsp) {
                 completion.success();

@@ -6,10 +6,12 @@ import org.zstack.core.gc.GCCompletion;
 import org.zstack.core.gc.TimeBasedGarbageCollector;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
-import org.zstack.header.storage.primary.DeleteVolumeOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.storage.volume.VolumeErrors;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 /**
  * Created by kayo on 2018/7/24.
@@ -19,6 +21,8 @@ public class CephDeleteVolumeGC extends TimeBasedGarbageCollector {
     public String primaryStorageUuid;
     @GC
     public VolumeInventory volume;
+
+    private static final CLogger logger = Utils.getLogger(CephDeleteVolumeGC.class);
 
     @Override
     protected void triggerNow(GCCompletion completion) {
@@ -36,6 +40,11 @@ public class CephDeleteVolumeGC extends TimeBasedGarbageCollector {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
+                    if (reply.getError().isError(VolumeErrors.VOLUME_IN_USE)) {
+                        logger.warn(String.format("unable to delete path:%s right now, cancel this GC job because it's in use", msg.getInstallPath()));
+                        completion.cancel();
+                        return;
+                    }
                     completion.fail(reply.getError());
                     return;
                 }

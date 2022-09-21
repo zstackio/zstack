@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -54,6 +55,7 @@ import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.storage.snapshot.VolumeSnapshotSystemTags;
+import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
@@ -131,6 +133,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         public void setAvailableCapacity(Long availableCapacity) {
             this.availableCapacity = availableCapacity;
+        }
+
+        protected ErrorCode buildErrorCode() {
+            if (success) {
+                return null;
+            }
+            return operr("operation error, because:%s", error);
         }
     }
 
@@ -345,6 +354,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class DeleteBitsRsp extends AgentResponse {
+        public boolean inUse;
+        public ErrorCode buildErrorCode() {
+            if (inUse) {
+                return Platform.err(VolumeErrors.VOLUME_IN_USE, getError());
+            }
+            return super.buildErrorCode();
+        }
     }
 
     public static class ListPathCmd extends AgentCommand {
@@ -1013,8 +1029,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 T rsp = r.toResponse(rspType);
-                if (!rsp.isSuccess()) {
-                    completion.fail(operr("operation error, because:%s", rsp.getError()));
+                ErrorCode errorCode = rsp.buildErrorCode();
+                if (errorCode != null) {
+                    completion.fail(errorCode);
                     return;
                 }
 
@@ -1621,6 +1638,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void fail(ErrorCode errorCode) {
                 if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
+                    completion.fail(errorCode);
+                    return;
+                }
+                if (errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
+                    logger.debug(String.format("unable to delete path:%s right now, skip this GC job because it's in use", path));
                     completion.fail(errorCode);
                     return;
                 }

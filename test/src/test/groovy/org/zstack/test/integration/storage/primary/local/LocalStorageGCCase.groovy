@@ -1,24 +1,17 @@
 package org.zstack.test.integration.storage.primary.local
 
+import org.zstack.core.db.Q
 import org.zstack.core.gc.GCStatus
 import org.zstack.header.volume.VolumeDeletionPolicyManager
-import org.zstack.sdk.DiskOfferingInventory
-import org.zstack.sdk.GarbageCollectorInventory
-import org.zstack.sdk.HostInventory
-import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.VolumeInventory
+import org.zstack.sdk.*
+import org.zstack.storage.primary.local.LocalStorageDeleteBitsGC
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO_
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
-import org.zstack.testlib.ClusterSpec
-import org.zstack.testlib.DiskOfferingSpec
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HostSpec
-import org.zstack.testlib.HttpError
-import org.zstack.testlib.PrimaryStorageSpec
-import org.zstack.testlib.SubCase
-
+import org.zstack.testlib.*
 /**
  * Created by xing5 on 2017/3/6.
  */
@@ -170,6 +163,56 @@ class LocalStorageGCCase extends SubCase {
         }
     }
 
+    void testSkipVolumeGCWhenVolumeInUse() {
+        def call
+        env.afterSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH) { LocalStorageKvmBackend.DeleteBitsRsp rsp ->
+            call = true
+            rsp.setError("volume in use")
+            rsp.inUse = true
+            return rsp
+        }
+
+        VolumeInventory vol = createDataVolume {
+            name = "test-volume-in-use"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = local.uuid
+            systemTags = ["localStorage::hostUuid::${host.uuid}".toString()]
+        } as VolumeInventory
+
+        deleteDataVolume {
+            uuid = vol.uuid
+        }
+
+        expungeDataVolume {
+            uuid = vol.uuid
+        }
+
+        assert call
+        assert queryGCJob {
+            conditions = ["context~=%${vol.uuid}%"]
+        }[0] == null
+
+        call = false
+        LocalStorageDeleteBitsGC gc = new LocalStorageDeleteBitsGC()
+        gc.isDir = false
+        gc.primaryStorageUuid = local.uuid
+        gc.hostUuid = host.uuid
+        gc.installPath = vol.getInstallPath()
+        gc.NAME = String.format("gc-local-storage-%s-delete-bits-on-host-%s", local.uuid, host.uuid)
+        gc.submit()
+
+        triggerGCJob {
+            uuid = gc.uuid
+        }
+        retryInSecs {
+            assert call
+            assert queryGCJob {
+                conditions = ["context~=%${vol.uuid}%"]
+            }[0].status == GCStatus.Done.toString()
+        }
+        env.cleanSimulatorAndMessageHandlers()
+    }
+
     @Override
     void test() {
         env.create {
@@ -179,6 +222,7 @@ class LocalStorageGCCase extends SubCase {
             diskOffering = (env.specByName("diskOffering") as DiskOfferingSpec).inventory
             host = (env.specByName("kvm") as HostSpec).inventory
 
+            testSkipVolumeGCWhenVolumeInUse()
             testGCSuccess()
             testGCCancelledAfterHostDeleted()
 
