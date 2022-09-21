@@ -6541,6 +6541,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    protected void provisionAfterStartVm(VmInstanceSpec spec, NoErrorCompletion completion) {
+        completion.done();
+    }
+
     protected void startVm(final Message msg, final Completion completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
@@ -6628,27 +6632,32 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(final Map data) {
-                VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                self = changeVmStateInDb(VmInstanceStateEvent.running, () -> new SQLBatch() {
+                provisionAfterStartVm(spec, new NoErrorCompletion(completion) {
                     @Override
-                    protected void scripts() {
-                        // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
-                        // reload to avoid JPA EntityNotFoundException
-                        self = findByUuid(self.getUuid(), VmInstanceVO.class);
-                        if (q(HostVO.class).eq(HostVO_.uuid, recentHostUuid).isExists()) {
-                            self.setLastHostUuid(recentHostUuid);
-                        } else {
-                            self.setLastHostUuid(null);
-                        }
-                        self.setHostUuid(spec.getDestHost().getUuid());
-                        self.setClusterUuid(spec.getDestHost().getClusterUuid());
-                        self.setZoneUuid(spec.getDestHost().getZoneUuid());
+                    public void done() {
+                        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+                        self = changeVmStateInDb(VmInstanceStateEvent.running, () -> new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
+                                // reload to avoid JPA EntityNotFoundException
+                                self = findByUuid(self.getUuid(), VmInstanceVO.class);
+                                if (q(HostVO.class).eq(HostVO_.uuid, recentHostUuid).isExists()) {
+                                    self.setLastHostUuid(recentHostUuid);
+                                } else {
+                                    self.setLastHostUuid(null);
+                                }
+                                self.setHostUuid(spec.getDestHost().getUuid());
+                                self.setClusterUuid(spec.getDestHost().getClusterUuid());
+                                self.setZoneUuid(spec.getDestHost().getZoneUuid());
+                            }
+                        }.execute());
+                        logger.debug(String.format("vm[uuid:%s] is running ..", self.getUuid()));
+                        VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+                        extEmitter.afterStartVm(inv);
+                        completion.success();
                     }
-                }.execute());
-                logger.debug(String.format("vm[uuid:%s] is running ..", self.getUuid()));
-                VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-                extEmitter.afterStartVm(inv);
-                completion.success();
+                });
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
@@ -7277,6 +7286,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         return dataVols;
     }
 
+    protected void provisionAfterRebootVm(VmInstanceSpec spec, NoErrorCompletion completion) {
+        completion.done();
+    }
+
     protected void rebootVm(final Message msg, final Completion completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
@@ -7312,11 +7325,16 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                self = changeVmStateInDb(VmInstanceStateEvent.running);
-                VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-                extEmitter.afterRebootVm(inv);
-                new StaticIpOperator().deleteIpChange(self.getUuid());
-                completion.success();
+                provisionAfterRebootVm(spec, new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        self = changeVmStateInDb(VmInstanceStateEvent.running);
+                        VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+                        extEmitter.afterRebootVm(inv);
+                        new StaticIpOperator().deleteIpChange(self.getUuid());
+                        completion.success();
+                    }
+                });
             }
         }).error(new FlowErrorHandler(completion) {
             @Override

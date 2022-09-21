@@ -26,4 +26,7 @@ public class ApplianceVmGlobalConfig {
     public static GlobalConfig DELETE_TIMEOUT = new GlobalConfig(CATEGORY, "deletion.timeout");
     @GlobalConfigValidation
     public static GlobalConfig APPLIANCENUMA = new GlobalConfig(CATEGORY, "applianceVmNuma");
+
+    @GlobalConfigValidation
+    public static GlobalConfig AUTO_ROLLBACK = new GlobalConfig(CATEGORY, "auto.rollback");
 }

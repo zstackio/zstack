@@ -12,6 +12,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
@@ -540,8 +541,161 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         return chain;
     }
 
+    protected void provisionAfterRebootVm(VmInstanceSpec spec, NoErrorCompletion completion) {
+        if (ApplianceVmGlobalConfig.AUTO_ROLLBACK.value(Boolean.class)) {
+            completion.done();
+            return;
+        }
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.setName(String.format("provision-appliancevm-after-reboot-%s", spec.getVmInventory().getUuid()));
+        chain.insert(new Flow() {
+            String __name__ = "change-appliancevm-status-to-disconnected";
+            ApplianceVmStatus originStatus = getSelf().getStatus();
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                changeApplianceVmStatus(ApplianceVmStatus.Connecting);
+                if (originStatus.equals(ApplianceVmStatus.Connected)) {
+                    fireDisconnectedCanonicalEvent(operr("appliance vm %s reboot",
+                            getSelf().getUuid()));
+                }
+                trigger.next();
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                if (originStatus.equals(ApplianceVmStatus.Connected)) {
+                    fireDisconnectedCanonicalEvent(operr("appliance vm %s reboot failed",
+                            getSelf().getUuid()));
+                }
+                trigger.rollback();
+            }
+        });
+
+        prepareLifeCycleInfo(chain);
+        prepareFirewallInfo(chain);
+
+        chain.then(setApplianceStateRunningFlow());
+        addBootstrapFlows(chain, HypervisorType.valueOf(spec.getVmInventory().getHypervisorType()));
+
+        List<Flow> subRebootFlows = getPostRebootFlows();
+        if (subRebootFlows != null) {
+            for (Flow f : subRebootFlows) {
+                chain.then(f);
+            }
+        }
+
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "change-appliancevm-status-to-connected";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                changeApplianceVmStatus(ApplianceVmStatus.Connected);
+                trigger.next();
+            }
+        });
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.done();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                logger.debug(String.format("provision applianceVm[uuid:%s, name:%s] failed because %s",
+                        spec.getVmInventory().getUuid(),
+                        spec.getVmInventory().getName(), errCode.getDetails()));
+                completion.done();
+            }
+        }).start();
+    }
+
+    protected void provisionAfterStartVm(VmInstanceSpec spec, NoErrorCompletion completion) {
+        if (ApplianceVmGlobalConfig.AUTO_ROLLBACK.value(Boolean.class)) {
+            completion.done();
+            return;
+        }
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.setName(String.format("provision-appliancevm-after-start-%s", spec.getVmInventory().getUuid()));
+        chain.insert(new ApplianceVmSyncConfigToHaGroupFlow());
+        chain.insert(new Flow() {
+            String __name__ = "change-appliancevm-status-to-connecting";
+            ApplianceVmStatus originStatus = getSelf().getStatus();
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                changeApplianceVmStatus(ApplianceVmStatus.Connecting);
+                trigger.next();
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                if (originStatus.equals(ApplianceVmStatus.Connected)) {
+                    fireDisconnectedCanonicalEvent(operr("appliance vm %s start failed",
+                            getSelf().getUuid()));
+                }
+                trigger.rollback();
+            }
+        });
+
+        chain.then(setApplianceStateRunningFlow());
+        prepareLifeCycleInfo(chain);
+        prepareFirewallInfo(chain);
+
+        addBootstrapFlows(chain, HypervisorType.valueOf(spec.getVmInventory().getHypervisorType()));
+
+        List<Flow> subStartFlows = getPostStartFlows();
+        if (subStartFlows != null) {
+            for (Flow f : subStartFlows) {
+                chain.then(f);
+            }
+        }
+
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "change-appliancevm-status-to-connected";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                changeApplianceVmStatus(ApplianceVmStatus.Connected);
+                trigger.next();
+            }
+        });
+        chain.then(new ApplianceVmSyncConfigAfterAddToHaGroupFlow());
+
+        boolean noRollbackOnFailure = ApplianceVmGlobalProperty.NO_ROLLBACK_ON_POST_FAILURE;
+        chain.noRollback(noRollbackOnFailure);
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.done();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                logger.debug(String.format("provision applianceVm[uuid:%s, name:%s] failed because %s",
+                        spec.getVmInventory().getUuid(),
+                        spec.getVmInventory().getName(), errCode.getDetails()));
+                completion.done();
+            }
+        }).start();
+    }
+
     @Override
     protected FlowChain getRebootVmWorkFlowChain(VmInstanceInventory inv) {
+        if (!ApplianceVmGlobalConfig.AUTO_ROLLBACK.value(Boolean.class)) {
+            FlowChain chain = super.getRebootVmWorkFlowChain(inv);
+            chain.setName(String.format("reboot-appliancevm-%s", inv.getUuid()));
+            boolean noRollbackOnFailure = ApplianceVmGlobalProperty.NO_ROLLBACK_ON_POST_FAILURE;
+            chain.noRollback(noRollbackOnFailure);
+            return chain;
+        }
+
         FlowChain chain = super.getRebootVmWorkFlowChain(inv);
         chain.setName(String.format("reboot-appliancevm-%s", inv.getUuid()));
         chain.insert(new Flow() {
@@ -599,6 +753,14 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
     @Override
     protected FlowChain getStartVmWorkFlowChain(VmInstanceInventory inv) {
+        if (!ApplianceVmGlobalConfig.AUTO_ROLLBACK.value(Boolean.class)) {
+            FlowChain chain = super.getStartVmWorkFlowChain(inv);
+            chain.setName(String.format("start-appliancevm-%s", inv.getUuid()));
+            boolean noRollbackOnFailure = ApplianceVmGlobalProperty.NO_ROLLBACK_ON_POST_FAILURE;
+            chain.noRollback(noRollbackOnFailure);
+            return chain;
+        }
+
         FlowChain chain = super.getStartVmWorkFlowChain(inv);
         chain.setName(String.format("start-appliancevm-%s", inv.getUuid()));
         chain.insert(new ApplianceVmSyncConfigToHaGroupFlow());
@@ -667,6 +829,59 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
         return chain;
     }
+
+    protected void provisionApplianceVmAfterCreate(VmInstanceSpec spec, ApplianceVmSpec aspec, HypervisorType htype, NoErrorCompletion completion) {
+        if (ApplianceVmGlobalConfig.AUTO_ROLLBACK.value(Boolean.class)) {
+            completion.done();
+            return;
+        }
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+
+        chain.setName(String.format("provision-appliancevm-after-create-%s", spec.getVmInventory().getUuid()));
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.getData().put(ApplianceVmConstant.Params.applianceVmFirewallRules.toString(), aspec.getFirewallRules());
+
+        addBootstrapFlows(chain, htype);
+
+        List<Flow> subCreateFlows = getPostCreateFlows();
+        if (subCreateFlows != null) {
+            for (Flow f : subCreateFlows) {
+                chain.then(f);
+            }
+        }
+
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "change-appliancevm-status-to-connected";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                // must reload here, otherwise it will override changes created by previous flows
+                changeApplianceVmStatus(ApplianceVmStatus.Connected);
+                trigger.next();
+            }
+        });
+
+        addAfterConnectNewCreatedVirtualRouterFlows(chain);
+
+        boolean noRollbackOnFailure = ApplianceVmGlobalProperty.NO_ROLLBACK_ON_POST_FAILURE;
+        chain.noRollback(noRollbackOnFailure);
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.done();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                logger.debug(String.format("provision applianceVm[uuid:%s, name:%s] failed because %s",
+                        spec.getVmInventory().getUuid(),
+                        spec.getVmInventory().getName(), errCode.getDetails()));
+                completion.done();
+            }
+        }).start();
+    }
+
 
     @Override
     protected void instantiateVmFromNewCreate(final InstantiateNewCreatedVmInstanceMsg msg, final SyncTaskChain taskChain) {
@@ -740,6 +955,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             changeVmStateInDb(VmInstanceStateEvent.starting);
 
+            HypervisorType htype = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(imvo.getFormat());
             extEmitter.beforeStartNewCreatedVm(VmInstanceInventory.valueOf(self));
             FlowChain chain = apvmf.getCreateApplianceVmWorkFlowBuilder().build();
             setFlowMarshaller(chain);
@@ -749,54 +965,61 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             chain.getData().put(ApplianceVmConstant.Params.applianceVmFirewallRules.toString(), aspec.getFirewallRules());
 
             chain.then(setApplianceStateRunningFlow());
-            addBootstrapFlows(chain, VolumeFormat.getMasterHypervisorTypeByVolumeFormat(imvo.getFormat()));
+            if (ApplianceVmGlobalConfig.AUTO_ROLLBACK.value(Boolean.class)) {
+                addBootstrapFlows(chain, VolumeFormat.getMasterHypervisorTypeByVolumeFormat(imvo.getFormat()));
 
-            List<Flow> subCreateFlows = getPostCreateFlows();
-            if (subCreateFlows != null) {
-                for (Flow f : subCreateFlows) {
-                    chain.then(f);
+                List<Flow> subCreateFlows = getPostCreateFlows();
+                if (subCreateFlows != null) {
+                    for (Flow f : subCreateFlows) {
+                        chain.then(f);
+                    }
                 }
+
+                chain.then(new NoRollbackFlow() {
+                    String __name__ = "change-appliancevm-status-to-connected";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        // must reload here, otherwise it will override changes created by previous flows
+                        changeApplianceVmStatus(ApplianceVmStatus.Connected);
+                        trigger.next();
+                    }
+                });
+
+                addAfterConnectNewCreatedVirtualRouterFlows(chain);
             }
-
-            chain.then(new NoRollbackFlow() {
-                String __name__ = "change-appliancevm-status-to-connected";
-
-                @Override
-                public void run(FlowTrigger trigger, Map data) {
-                    // must reload here, otherwise it will override changes created by previous flows
-                    changeApplianceVmStatus(ApplianceVmStatus.Connected);
-                    trigger.next();
-                }
-            });
-
-            addAfterConnectNewCreatedVirtualRouterFlows(chain);
 
             boolean noRollbackOnFailure = ApplianceVmGlobalProperty.NO_ROLLBACK_ON_POST_FAILURE;
             chain.noRollback(noRollbackOnFailure);
             chain.done(new FlowDoneHandler(msg, taskChain) {
                 @Override
                 public void handle(Map data) {
-                    VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                    changeVmStateInDb(VmInstanceStateEvent.running, () -> new SQLBatch() {
+                    provisionApplianceVmAfterCreate(spec, aspec, htype, new NoErrorCompletion(taskChain) {
                         @Override
-                        protected void scripts() {
-                            self.setLastHostUuid(spec.getDestHost().getUuid());
-                            self.setHostUuid(spec.getDestHost().getUuid());
-                            self.setClusterUuid(spec.getDestHost().getClusterUuid());
-                            self.setZoneUuid(spec.getDestHost().getZoneUuid());
-                            self.setHypervisorType(spec.getDestHost().getHypervisorType());
-                            self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
-                        }
-                    }.execute());
+                        public void done() {
+                            VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+                            changeVmStateInDb(VmInstanceStateEvent.running, () -> new SQLBatch() {
+                                @Override
+                                protected void scripts() {
+                                    self.setLastHostUuid(spec.getDestHost().getUuid());
+                                    self.setHostUuid(spec.getDestHost().getUuid());
+                                    self.setClusterUuid(spec.getDestHost().getClusterUuid());
+                                    self.setZoneUuid(spec.getDestHost().getZoneUuid());
+                                    self.setHypervisorType(spec.getDestHost().getHypervisorType());
+                                    self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
+                                }
+                            }.execute());
 
-                    logger.debug(String.format("appliance vm[uuid:%s, name: %s, type:%s] is running ..",
-                            self.getUuid(), self.getName(), getSelf().getApplianceVmType()));
-                    VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
-                    extEmitter.afterStartNewCreatedVm(inv);
-                    InstantiateNewCreatedVmInstanceReply reply = new InstantiateNewCreatedVmInstanceReply();
-                    reply.setVmInventory(inv);
-                    bus.reply(msg, reply);
-                    taskChain.next();
+                            logger.debug(String.format("appliance vm[uuid:%s, name: %s, type:%s] is running ..",
+                                    self.getUuid(), self.getName(), getSelf().getApplianceVmType()));
+                            VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+                            extEmitter.afterStartNewCreatedVm(inv);
+                            InstantiateNewCreatedVmInstanceReply reply = new InstantiateNewCreatedVmInstanceReply();
+                            reply.setVmInventory(inv);
+                            bus.reply(msg, reply);
+                            taskChain.next();
+                        }
+                    });
                 }
             }).error(new FlowErrorHandler(msg, taskChain) {
                 @Override
