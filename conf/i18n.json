@@ -15830,14 +15830,6 @@
     "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
   },
   {
-    "raw": "username is not set while password is set",
-    "en_US": "username is not set while password is set",
-    "zh_CN": "设置了密码但未设置用户名",
-    "arguments": [],
-    "line": 103,
-    "fileName": "src/main/java/org/zstack/sns/SNSApiInterceptor.java"
-  },
-  {
     "raw": "phone number[%s] already exists",
     "en_US": "phone number[{0}] already exists",
     "zh_CN": "手机号码[{0}]已存在",
