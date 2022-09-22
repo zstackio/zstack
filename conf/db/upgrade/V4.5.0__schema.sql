@@ -148,3 +148,31 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ExternalManagementNodeVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`MirrorCdpTaskVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `name` varchar(128) NOT NULL,
+    `peerExternalManagementNodeUuid` varchar(32) NOT NULL,
+    `peerCdpTaskUuid` varchar(32) NOT NULL,
+    `mode` varchar(128) NOT NULL,
+    `peerHostName` varchar(128) NOT NULL,
+    `mirrorResourceUuid` varchar(128) DEFAULT NULL,
+    `mirrorResourceType` varchar(255) DEFAULT NULL,
+    `status` varchar(128) DEFAULT NULL,
+    `state` varchar(255) DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`TwinManagementNodeResourceMapVO` (
+    `uuid` varchar(32) NOT NULL,
+    `externalResourceUuid` varchar(32) NOT NULL,
+    `resourceUuid` varchar(32) NOT NULL,
+    `type` varchar(32) NOT NULL,
+    `externalManagementNodeUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `uuid` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

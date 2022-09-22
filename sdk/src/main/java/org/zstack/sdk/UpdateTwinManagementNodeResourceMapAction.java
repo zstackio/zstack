@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RefreshExternalManagementNodeAction extends AbstractAction {
+public class UpdateTwinManagementNodeResourceMapAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RefreshExternalManagementNodeResult value;
+        public org.zstack.sdk.UpdateTwinManagementNodeResourceMapResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,8 +25,20 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String externalManagementNodeUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String externalResourceUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +72,8 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RefreshExternalManagementNodeResult value = res.getResult(org.zstack.sdk.RefreshExternalManagementNodeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RefreshExternalManagementNodeResult() : value; 
+        org.zstack.sdk.UpdateTwinManagementNodeResourceMapResult value = res.getResult(org.zstack.sdk.UpdateTwinManagementNodeResourceMapResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateTwinManagementNodeResourceMapResult() : value; 
 
         return ret;
     }
@@ -91,10 +103,10 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/externalmanagement/{uuid}/actions";
+        info.path = "/externalmanagement/twinsresourcemap/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "refreshExternalManagementNode";
+        info.parameterName = "updateTwinManagementNodeResourceMap";
         return info;
     }
 

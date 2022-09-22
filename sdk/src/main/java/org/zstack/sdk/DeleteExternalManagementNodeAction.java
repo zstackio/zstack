@@ -12,7 +12,7 @@ public class DeleteExternalManagementNodeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddExternalManagementNodeResult value;
+        public org.zstack.sdk.DeleteExternalManagementNodeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -63,8 +63,8 @@ public class DeleteExternalManagementNodeAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddExternalManagementNodeResult value = res.getResult(org.zstack.sdk.AddExternalManagementNodeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddExternalManagementNodeResult() : value; 
+        org.zstack.sdk.DeleteExternalManagementNodeResult value = res.getResult(org.zstack.sdk.DeleteExternalManagementNodeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteExternalManagementNodeResult() : value; 
 
         return ret;
     }
