@@ -4,7 +4,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>4.4.0</version>
+        <version>4.5.0</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>plugin</artifactId>
