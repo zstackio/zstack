@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateIPsecConnectionAction extends AbstractAction {
+public class QueryExternalManagementNodeAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateIPsecConnectionResult value;
+        public org.zstack.sdk.QueryExternalManagementNodeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-    
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateIPsecConnectionResult value = res.getResult(org.zstack.sdk.UpdateIPsecConnectionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateIPsecConnectionResult() : value; 
+        org.zstack.sdk.QueryExternalManagementNodeResult value = res.getResult(org.zstack.sdk.QueryExternalManagementNodeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryExternalManagementNodeResult() : value; 
 
         return ret;
     }
@@ -96,11 +64,11 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/ipsec/{uuid}";
+        info.httpMethod = "GET";
+        info.path = "/externalmanagement";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "updateIPsecConnection";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

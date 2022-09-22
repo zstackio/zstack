@@ -190,6 +190,8 @@ public class SourceClassMap {
 			put("org.zstack.header.datacenter.DataCenterProperty", "org.zstack.sdk.DataCenterProperty");
 			put("org.zstack.header.errorcode.ErrorCode", "org.zstack.sdk.ErrorCode");
 			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
+			put("org.zstack.header.externalmanagement.ExternalManagementNodeInventory", "org.zstack.sdk.ExternalManagementNodeInventory");
+			put("org.zstack.header.externalmanagement.ExternalManagementNodeStatus", "org.zstack.sdk.ExternalManagementNodeStatus");
 			put("org.zstack.header.flowMeter.FlowCollectorInventory", "org.zstack.sdk.FlowCollectorInventory");
 			put("org.zstack.header.flowMeter.FlowCounter", "org.zstack.sdk.FlowCounter");
 			put("org.zstack.header.flowMeter.FlowMeterInventory", "org.zstack.sdk.FlowMeterInventory");
@@ -813,6 +815,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EventLogInventory", "org.zstack.core.eventlog.EventLogInventory");
 			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
 			put("org.zstack.sdk.ExternalBackupState", "org.zstack.externalbackup.ExternalBackupState");
+			put("org.zstack.sdk.ExternalManagementNodeInventory", "org.zstack.header.externalmanagement.ExternalManagementNodeInventory");
+			put("org.zstack.sdk.ExternalManagementNodeStatus", "org.zstack.header.externalmanagement.ExternalManagementNodeStatus");
 			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
