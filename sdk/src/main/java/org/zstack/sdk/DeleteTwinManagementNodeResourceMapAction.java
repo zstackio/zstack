@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RefreshExternalManagementNodeAction extends AbstractAction {
+public class DeleteTwinManagementNodeResourceMapAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RefreshExternalManagementNodeResult value;
+        public org.zstack.sdk.DeleteTwinManagementNodeResourceMapResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,7 +25,7 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
     @Param(required = false)
@@ -60,8 +60,8 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RefreshExternalManagementNodeResult value = res.getResult(org.zstack.sdk.RefreshExternalManagementNodeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RefreshExternalManagementNodeResult() : value; 
+        org.zstack.sdk.DeleteTwinManagementNodeResourceMapResult value = res.getResult(org.zstack.sdk.DeleteTwinManagementNodeResourceMapResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteTwinManagementNodeResourceMapResult() : value; 
 
         return ret;
     }
@@ -90,11 +90,11 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/externalmanagement/{uuid}/actions";
+        info.httpMethod = "DELETE";
+        info.path = "/externalmanagement/deletetwinsresourcemap/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "refreshExternalManagementNode";
+        info.parameterName = "";
         return info;
     }
 

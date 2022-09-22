@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.disastertolerance;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RefreshExternalManagementNodeAction extends AbstractAction {
+public class DisableMirrorCdpTaskAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RefreshExternalManagementNodeResult value;
+        public org.zstack.sdk.disastertolerance.DisableMirrorCdpTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,7 +25,7 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
     @Param(required = false)
@@ -60,8 +60,8 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RefreshExternalManagementNodeResult value = res.getResult(org.zstack.sdk.RefreshExternalManagementNodeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RefreshExternalManagementNodeResult() : value; 
+        org.zstack.sdk.disastertolerance.DisableMirrorCdpTaskResult value = res.getResult(org.zstack.sdk.disastertolerance.DisableMirrorCdpTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.disastertolerance.DisableMirrorCdpTaskResult() : value; 
 
         return ret;
     }
@@ -91,10 +91,10 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/externalmanagement/{uuid}/actions";
+        info.path = "/mirror/cdptask/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "refreshExternalManagementNode";
+        info.parameterName = "disableMirrorCdpTask";
         return info;
     }
 

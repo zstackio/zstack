@@ -148,7 +148,7 @@ public class ZSClient {
         private ApiResult resultFromWebHook;
 
         Api(AbstractAction action) {
-            new Api(action, ZSClient.config);
+            this(action, ZSClient.config);
         }
 
         Api(AbstractAction action, ZSConfig config) {
