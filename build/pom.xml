@@ -78,27 +78,6 @@
                                         <include>context.xml</include>
                                     </includes>
                                 </resource>
-                                <resource>
-                                    <directory>../premium/plugin-premium/externalapiadapter/ext-libs</directory>
-                                    <targetPath>WEB-INF/lib</targetPath>
-                                    <includes>
-                                        <include>*.jar</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>../premium/plugin-premium/cas-plugin/ext-libs</directory>
-                                    <targetPath>WEB-INF/lib</targetPath>
-                                    <includes>
-                                        <include>*.jar</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>../premium/crypto/ext-libs</directory>
-                                    <targetPath>WEB-INF/lib</targetPath>
-                                    <includes>
-                                        <include>*.jar</include>
-                                    </includes>
-                                </resource>
                             </webResources>
                         </configuration>
                     </plugin>
