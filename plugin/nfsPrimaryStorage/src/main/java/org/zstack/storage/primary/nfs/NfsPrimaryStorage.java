@@ -755,6 +755,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 PrimaryStorageInventory primaryStorage = getSelfInventory();
                 ImageCacheInventory imageCache;
                 String volumeInstallPath;
+                Long actualSize;
 
                 @Override
                 public void setup() {
@@ -786,10 +787,11 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             NfsPrimaryStorageBackend backend = factory.getHypervisorBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getFormat(), self.getUuid()));
-                            backend.createVolumeFromImageCache(primaryStorage, image, imageCache, volume, new ReturnValueCompletion<String>(trigger) {
+                            backend.createVolumeFromImageCache(primaryStorage, image, imageCache, volume, new ReturnValueCompletion<VolumeInfo>(trigger) {
                                 @Override
-                                public void success(String returnValue) {
-                                    volumeInstallPath = returnValue;
+                                public void success(VolumeInfo returnValue) {
+                                    volumeInstallPath = returnValue.getInstallPath();
+                                    actualSize = returnValue.getActualSize();
                                     trigger.next();
                                 }
 
@@ -806,6 +808,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                         public void handle(Map data) {
                             volume.setInstallPath(volumeInstallPath);
                             volume.setFormat(image.getFormat());
+                            volume.setActualSize(actualSize);
                             reply.setVolume(volume);
                             bus.reply(msg, reply);
                         }

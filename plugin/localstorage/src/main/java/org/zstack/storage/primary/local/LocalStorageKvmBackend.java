@@ -255,6 +255,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CreateEmptyVolumeRsp extends AgentResponse {
+        public Long actualSize;
     }
 
     public static class GetPhysicalCapacityCmd extends AgentCommand {
@@ -309,7 +310,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CreateVolumeFromCacheRsp extends AgentResponse {
-
+        public Long actualSize;
     }
 
     public static class CreateVolumeWithBackingCmd extends AgentCommand {
@@ -1155,12 +1156,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     private void createEmptyVolume(InstantiateVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
-        createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<String>(completion) {
+        createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<VolumeInfo>(completion) {
             @Override
-            public void success(String returnValue) {
+            public void success(VolumeInfo returnValue) {
                 InstantiateVolumeOnPrimaryStorageReply r = new InstantiateVolumeOnPrimaryStorageReply();
                 VolumeInventory vol = msg.getVolume();
-                vol.setInstallPath(returnValue);
+                vol.setInstallPath(returnValue.getInstallPath());
+                vol.setActualSize(returnValue.getActualSize());
                 vol.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
                 r.setVolume(vol);
                 completion.success(r);
@@ -1173,11 +1175,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         });
     }
 
-    private void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final ReturnValueCompletion<String> completion) {
+    private void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final ReturnValueCompletion<VolumeInfo> completion) {
         createEmptyVolume(volume, hostUuid, null, completion);
     }
 
-    private void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final String backingFile, final ReturnValueCompletion<String> completion) {
+    private void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final String backingFile, final ReturnValueCompletion<VolumeInfo> completion) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         cmd.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(volume.getUuid()));
         if (volume.getInstallPath() != null && !volume.getInstallPath().equals("")) {
@@ -1201,7 +1203,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         httpCall(CREATE_EMPTY_VOLUME_PATH, hostUuid, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<CreateEmptyVolumeRsp>(completion) {
             @Override
             public void success(CreateEmptyVolumeRsp returnValue) {
-                completion.success(cmd.getInstallUrl());
+                completion.success(new VolumeInfo(cmd.getInstallUrl(), returnValue.actualSize));
             }
 
             @Override
@@ -1211,7 +1213,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             }
         });
     }
-
     private String getHostUuidByResourceUuid(String resUuid, String resType) {
         SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
         q.select(LocalStorageResourceRefVO_.hostUuid);
@@ -1509,12 +1510,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         final ImageInventory image = ispec.getInventory();
 
         if (!ImageMediaType.RootVolumeTemplate.toString().equals(image.getMediaType())) {
-            createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<String>(completion) {
+            createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<VolumeInfo>(completion) {
                 @Override
-                public void success(String returnValue) {
+                public void success(VolumeInfo returnValue) {
                     InstantiateVolumeOnPrimaryStorageReply r = new InstantiateVolumeOnPrimaryStorageReply();
                     VolumeInventory vol = msg.getVolume();
-                    vol.setInstallPath(returnValue);
+                    vol.setInstallPath(returnValue.getInstallPath());
+                    vol.setActualSize(returnValue.getActualSize());
                     vol.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
                     r.setVolume(vol);
                     completion.success(r);
@@ -1538,6 +1540,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             String pathInCache = makeCachedImageInstallUrl(image);
             String installPath = StringUtils.isNotEmpty(volume.getInstallPath()) ? volume.getInstallPath() :
                     makeRootVolumeInstallUrl(volume) ;
+            Long actualSize;
 
             @Override
             public void setup() {
@@ -1581,6 +1584,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         httpCall(CREATE_VOLUME_FROM_CACHE_PATH, hostUuid, cmd, CreateVolumeFromCacheRsp.class, new ReturnValueCompletion<CreateVolumeFromCacheRsp>(trigger) {
                             @Override
                             public void success(CreateVolumeFromCacheRsp returnValue) {
+                                actualSize = returnValue.actualSize;
                                 trigger.next();
                             }
 
@@ -1597,6 +1601,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     public void handle(Map data) {
                         InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
                         volume.setInstallPath(installPath);
+                        volume.setActualSize(actualSize);
                         reply.setVolume(volume);
                         completion.success(reply);
                     }
@@ -2156,9 +2161,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void handle(LocalStorageCreateEmptyVolumeMsg msg, final ReturnValueCompletion<LocalStorageCreateEmptyVolumeReply> completion) {
-        createEmptyVolume(msg.getVolume(), msg.getHostUuid(), msg.getBackingFile(), new ReturnValueCompletion<String>(completion) {
+        createEmptyVolume(msg.getVolume(), msg.getHostUuid(), msg.getBackingFile(), new ReturnValueCompletion<VolumeInfo>(completion) {
             @Override
-            public void success(String returnValue) {
+            public void success(VolumeInfo returnValue) {
                 LocalStorageCreateEmptyVolumeReply reply = new LocalStorageCreateEmptyVolumeReply();
                 completion.success(reply);
             }

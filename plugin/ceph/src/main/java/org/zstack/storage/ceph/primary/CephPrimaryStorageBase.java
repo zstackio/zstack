@@ -384,6 +384,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     public static class CreateEmptyVolumeRsp extends AgentResponse {
         public String installPath;
+        public Long actualSize;
 
         public String getInstallPath() {
             return installPath;
@@ -1666,6 +1667,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 VolumeInventory vol = msg.getVolume();
                 vol.setInstallPath(buildEmptyVolumeInstallPath(finalPoolName, cmd.installPath, ret.getInstallPath()));
                 vol.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+                vol.setActualSize(ret.actualSize);
                 reply.setVolume(vol);
                 bus.reply(msg, reply);
             }
@@ -2365,6 +2367,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             String cloneInstallPath;
             String volumePath = makeVolumeInstallPathByTargetPool(msg.getVolume().getUuid(), targetCephPoolName);
             ImageCacheInventory cache;
+            Long actualSize;
 
             @Override
             public void setup() {
@@ -2412,6 +2415,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                             @Override
                             public void success(CloneRsp ret) {
+                                actualSize = ret.actualSize;
                                 trigger.next();
                             }
                         });
@@ -2454,6 +2458,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         VolumeInventory vol = msg.getVolume();
                         vol.setInstallPath(volumePath);
                         vol.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+                        vol.setActualSize(actualSize);
                         reply.setVolume(vol);
 
                         ImageCacheVolumeRefVO ref = new ImageCacheVolumeRefVO();
