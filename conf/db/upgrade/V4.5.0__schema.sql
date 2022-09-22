@@ -135,3 +135,16 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SSORedirectTemplateVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`V2VConversionCacheVO` ADD COLUMN  `deviceAddress` varchar(128) DEFAULT NULL;
+CREATE TABLE IF NOT EXISTS `zstack`.`ExternalManagementNodeVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `name` varchar(128) NOT NULL,
+    `description` varchar(2048) DEFAULT NULL,
+    `hostName` varchar(255) NOT NULL,
+    `port` int unsigned NOT NULL,
+    `status` varchar(32) NOT NULL,
+    `accessKeyID` VARCHAR(128) NOT NULL,
+    `accessKeySecret` VARCHAR(128) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

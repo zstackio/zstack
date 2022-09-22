@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateIPsecConnectionAction extends AbstractAction {
+public class AddExternalManagementNodeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateIPsecConnectionResult value;
+        public org.zstack.sdk.AddExternalManagementNodeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,14 +26,29 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
-    
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostName;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public int port = 8080;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String externalAccessKeyID;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String externalAccessKeySecret;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
+
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -66,8 +81,8 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateIPsecConnectionResult value = res.getResult(org.zstack.sdk.UpdateIPsecConnectionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateIPsecConnectionResult() : value; 
+        org.zstack.sdk.AddExternalManagementNodeResult value = res.getResult(org.zstack.sdk.AddExternalManagementNodeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddExternalManagementNodeResult() : value; 
 
         return ret;
     }
@@ -96,11 +111,11 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/ipsec/{uuid}";
+        info.httpMethod = "POST";
+        info.path = "/externalmanagement";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateIPsecConnection";
+        info.parameterName = "params";
         return info;
     }
 
