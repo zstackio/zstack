@@ -801,7 +801,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GlobalConfigOptions", "org.zstack.core.config.GlobalConfigOptions");
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
 			put("org.zstack.sdk.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
-			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");
 			put("org.zstack.sdk.HostIommuStateType", "org.zstack.pciDevice.HostIommuStateType");
@@ -1015,6 +1014,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ScsiLunHostRefInventory", "org.zstack.header.storageDevice.ScsiLunHostRefInventory");
 			put("org.zstack.sdk.ScsiLunInventory", "org.zstack.header.storageDevice.ScsiLunInventory");
 			put("org.zstack.sdk.ScsiLunVmInstanceRefInventory", "org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory");
+			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.SdnControllerInventory", "org.zstack.sdnController.header.SdnControllerInventory");
 			put("org.zstack.sdk.SdnVniRange", "org.zstack.sdnController.header.SdnVniRange");
 			put("org.zstack.sdk.SecretResourcePoolInventory", "org.zstack.header.securitymachine.SecretResourcePoolInventory");
