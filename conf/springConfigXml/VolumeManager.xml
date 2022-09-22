@@ -21,6 +21,7 @@
             <zstack:extension interface="org.zstack.header.vm.VmStateChangedExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.vm.VmDetachVolumeExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.vm.VmAttachVolumeExtensionPoint" order="-1"/>
+            <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" order="10"/>
         </zstack:plugin>
     </bean>
 

@@ -28,9 +28,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostConstant;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostVO;
+import org.zstack.header.host.*;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
@@ -1765,6 +1763,10 @@ public class VolumeBase implements Volume {
             handle((APISyncVolumeSizeMsg) msg);
         } else if (msg instanceof APIGetVolumeCapabilitiesMsg) {
             handle((APIGetVolumeCapabilitiesMsg) msg);
+        } else if (msg instanceof APIAttachDataVolumeToHostMsg) {
+            handle((APIAttachDataVolumeToHostMsg) msg);
+        } else if (msg instanceof APIDetachDataVolumeFromHostMsg) {
+            handle((APIDetachDataVolumeFromHostMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -2821,5 +2823,49 @@ public class VolumeBase implements Volume {
     class VolumeSize {
         long size;
         long actualSize;
+    }
+
+    private void handle(APIAttachDataVolumeToHostMsg msg) {
+        APIAttachDataVolumeToHostEvent evt = new APIAttachDataVolumeToHostEvent(msg.getId());
+        AttachDataVolumeToHostMsg mmsg = new AttachDataVolumeToHostMsg();
+        mmsg.setHostUuid(msg.getHostUuid());
+        mmsg.setVolumeUuid(msg.getVolumeUuid());
+        mmsg.setMountPath(msg.getMountPath());
+        bus.makeTargetServiceIdByResourceUuid(mmsg, HostConstant.SERVICE_ID, mmsg.getHostUuid());
+        bus.send(mmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                    return;
+                }
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(APIDetachDataVolumeFromHostMsg msg) {
+        APIDetachDataVolumeFromHostEvent evt = new APIDetachDataVolumeFromHostEvent(msg.getId());
+        VolumeHostRefVO ref = Q.New(VolumeHostRefVO.class).eq(VolumeHostRefVO_.volumeUuid, msg.getVolumeUuid()).find();
+        String hostUuid = msg.getHostUuid() != null ? msg.getHostUuid() : ref.getHostUuid();
+
+        DetachDataVolumeFromHostMsg dmsg = new DetachDataVolumeFromHostMsg();
+        dmsg.setVolumeInstallPath(self.getInstallPath());
+        dmsg.setMountPath(ref.getMountPath());
+        dmsg.setDevice(ref.getDevice());
+        dmsg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, dmsg.getHostUuid());
+        bus.send(dmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                    return;
+                }
+                bus.publish(evt);
+            }
+        });
     }
 }
