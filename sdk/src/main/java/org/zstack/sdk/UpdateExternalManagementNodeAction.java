@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RefreshExternalManagementNodeAction extends AbstractAction {
+public class UpdateExternalManagementNodeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RefreshExternalManagementNodeResult value;
+        public org.zstack.sdk.UpdateExternalManagementNodeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,6 +27,21 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public java.lang.Integer port;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String externalAccessKeyID;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String externalAccessKeySecret;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +75,8 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RefreshExternalManagementNodeResult value = res.getResult(org.zstack.sdk.RefreshExternalManagementNodeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RefreshExternalManagementNodeResult() : value; 
+        org.zstack.sdk.UpdateExternalManagementNodeResult value = res.getResult(org.zstack.sdk.UpdateExternalManagementNodeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateExternalManagementNodeResult() : value; 
 
         return ret;
     }
@@ -91,10 +106,10 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/externalmanagement/{uuid}/actions";
+        info.path = "/externalmanagement/update/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "refreshExternalManagementNode";
+        info.parameterName = "updateExternalManagementNode";
         return info;
     }
 

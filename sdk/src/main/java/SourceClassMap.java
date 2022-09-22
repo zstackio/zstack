@@ -197,10 +197,12 @@ public class SourceClassMap {
 			put("org.zstack.header.core.webhooks.WebhookInventory", "org.zstack.sdk.WebhookInventory");
 			put("org.zstack.header.datacenter.DataCenterInventory", "org.zstack.sdk.DataCenterInventory");
 			put("org.zstack.header.datacenter.DataCenterProperty", "org.zstack.sdk.DataCenterProperty");
+			put("org.zstack.header.disastertolerance.MirrorCdpTaskInventory", "org.zstack.sdk.disastertolerance.MirrorCdpTaskInventory");
 			put("org.zstack.header.errorcode.ErrorCode", "org.zstack.sdk.ErrorCode");
 			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
 			put("org.zstack.header.externalmanagement.ExternalManagementNodeInventory", "org.zstack.sdk.ExternalManagementNodeInventory");
 			put("org.zstack.header.externalmanagement.ExternalManagementNodeStatus", "org.zstack.sdk.ExternalManagementNodeStatus");
+			put("org.zstack.header.externalmanagement.TwinManagementNodeResourceMapInventory", "org.zstack.sdk.TwinManagementNodeResourceMapInventory");
 			put("org.zstack.header.flowMeter.FlowCollectorInventory", "org.zstack.sdk.FlowCollectorInventory");
 			put("org.zstack.header.flowMeter.FlowCounter", "org.zstack.sdk.FlowCounter");
 			put("org.zstack.header.flowMeter.FlowMeterInventory", "org.zstack.sdk.FlowMeterInventory");
@@ -1148,6 +1150,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TemplateConfigInventory", "org.zstack.templateConfig.TemplateConfigInventory");
 			put("org.zstack.sdk.Threshold", "org.zstack.drs.api.Threshold");
 			put("org.zstack.sdk.TrashCleanupResult", "org.zstack.header.core.trash.TrashCleanupResult");
+			put("org.zstack.sdk.TwinManagementNodeResourceMapInventory", "org.zstack.header.externalmanagement.TwinManagementNodeResourceMapInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretStatus", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus");
@@ -1263,6 +1266,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStruct", "org.zstack.header.storage.database.backup.DatabaseBackupStruct");
 			put("org.zstack.sdk.databasebackup.DatabaseType", "org.zstack.header.storage.database.backup.DatabaseType");
+			put("org.zstack.sdk.disastertolerance.MirrorCdpTaskInventory", "org.zstack.header.disastertolerance.MirrorCdpTaskInventory");
 			put("org.zstack.sdk.iam2.api.APIPermissionStruct", "org.zstack.iam2.api.APIGetIAM2VirtualIDAPIPermissionMsg$APIPermissionStruct");
 			put("org.zstack.sdk.iam2.api.Attribute", "org.zstack.iam2.api.Attribute");
 			put("org.zstack.sdk.iam2.api.ErrorResult", "org.zstack.iam2.api.ErrorResult");

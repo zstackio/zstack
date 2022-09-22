@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.disastertolerance;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RefreshExternalManagementNodeAction extends AbstractAction {
+public class UpgradeCdpTaskToMirrorTaskAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RefreshExternalManagementNodeResult value;
+        public org.zstack.sdk.disastertolerance.UpgradeCdpTaskToMirrorTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,25 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String cdpTaskUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String peerCdpTaskUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String peerManagementNodeUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String mirrorBackupStorageUuid;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +78,8 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RefreshExternalManagementNodeResult value = res.getResult(org.zstack.sdk.RefreshExternalManagementNodeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RefreshExternalManagementNodeResult() : value; 
+        org.zstack.sdk.disastertolerance.UpgradeCdpTaskToMirrorTaskResult value = res.getResult(org.zstack.sdk.disastertolerance.UpgradeCdpTaskToMirrorTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.disastertolerance.UpgradeCdpTaskToMirrorTaskResult() : value; 
 
         return ret;
     }
@@ -90,11 +108,11 @@ public class RefreshExternalManagementNodeAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/externalmanagement/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/mirror/cdptask/upgrade";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "refreshExternalManagementNode";
+        info.parameterName = "params";
         return info;
     }
 
