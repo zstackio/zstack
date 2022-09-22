@@ -69,19 +69,19 @@ public class BareMetal2InstanceInventory extends org.zstack.sdk.VmInstanceInvent
     }
 
     public java.lang.String agentVersion;
-    public String getAgentVersion() {
-        return agentVersion;
-    }
-    public void setAgentVersion(String agentVersion) {
+    public void setAgentVersion(java.lang.String agentVersion) {
         this.agentVersion = agentVersion;
+    }
+    public java.lang.String getAgentVersion() {
+        return this.agentVersion;
     }
 
     public boolean isLatestAgent;
-    public boolean isLatestAgent() {
-        return isLatestAgent;
+    public void setIsLatestAgent(boolean isLatestAgent) {
+        this.isLatestAgent = isLatestAgent;
     }
-    public void setLatestAgent(boolean latestAgent) {
-        isLatestAgent = latestAgent;
+    public boolean getIsLatestAgent() {
+        return this.isLatestAgent;
     }
 
     public BareMetal2InstanceProvisionNicInventory provisionNic;

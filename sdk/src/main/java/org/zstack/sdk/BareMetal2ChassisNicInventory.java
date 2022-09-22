@@ -29,11 +29,11 @@ public class BareMetal2ChassisNicInventory  {
     }
 
     public java.lang.String nicName;
-    public String getNicName() {
-        return nicName;
-    }
-    public void setNicName(String nicName) {
+    public void setNicName(java.lang.String nicName) {
         this.nicName = nicName;
+    }
+    public java.lang.String getNicName() {
+        return this.nicName;
     }
 
     public java.lang.String speed;

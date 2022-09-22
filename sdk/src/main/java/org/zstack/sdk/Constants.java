@@ -5,7 +5,7 @@ import okhttp3.MediaType;
 /**
  * Created by xing5 on 2016/12/10.
  */
-interface Constants {
+public interface Constants {
     String SESSION_ID = "sessionId";
     String HEADER_AUTHORIZATION = "Authorization";
     String OAUTH = "OAuth";
