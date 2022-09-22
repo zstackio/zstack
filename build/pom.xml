@@ -289,7 +289,7 @@
                     <artifactId>hybrid</artifactId>
                     <version>${project.version}</version>
                 </dependency>
-		<dependency>
+                <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>zwatch</artifactId>
                     <version>${project.version}</version>
@@ -553,6 +553,16 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>sso-plugin</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>external-management</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>disaster-tolerance</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>

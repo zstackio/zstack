@@ -12,7 +12,7 @@ public class SyncVmClockAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncVmClockResult value;
+        public org.zstack.sdk.SyncVmClockResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,7 @@ public class SyncVmClockAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String uuid;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +60,8 @@ public class SyncVmClockAction extends AbstractAction {
             return ret;
         }
         
-        SyncVmClockResult value = res.getResult(SyncVmClockResult.class);
-        ret.value = value == null ? new SyncVmClockResult() : value; 
+        org.zstack.sdk.SyncVmClockResult value = res.getResult(org.zstack.sdk.SyncVmClockResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncVmClockResult() : value; 
 
         return ret;
     }

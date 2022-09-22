@@ -90,15 +90,16 @@ public class SharedBlockInventory  {
     public void setTotalCapacity(java.lang.Long totalCapacity) {
         this.totalCapacity = totalCapacity;
     }
-    public Long getTotalCapacity() {
-        return totalCapacity;
+    public java.lang.Long getTotalCapacity() {
+        return this.totalCapacity;
     }
 
     public java.lang.Long availableCapacity;
     public void setAvailableCapacity(java.lang.Long availableCapacity) {
         this.availableCapacity = availableCapacity;
     }
-    public Long getAvailableCapacity() {
-        return availableCapacity;
+    public java.lang.Long getAvailableCapacity() {
+        return this.availableCapacity;
     }
+
 }
