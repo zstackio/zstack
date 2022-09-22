@@ -25,11 +25,14 @@ public class GetVirtualRouterSoftwareVersionAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
     @Param(required = true, validValues = {"IPsec"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String softwareName;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean needUpdate = false;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -88,7 +91,7 @@ public class GetVirtualRouterSoftwareVersionAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vpc/virtual-routers/{uuid}/softwareversion";
+        info.path = "/vpc/virtual-routers/softwareversion";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

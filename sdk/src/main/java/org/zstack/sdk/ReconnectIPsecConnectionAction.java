@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetVpcVRouterNetworkServiceStateAction extends AbstractAction {
+public class ReconnectIPsecConnectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetVpcVRouterNetworkServiceStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetVpcVRouterNetworkServiceStateResult value;
+        public org.zstack.sdk.ReconnectIPsecConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,15 +27,6 @@ public class SetVpcVRouterNetworkServiceStateAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
-
-    @Param(required = true, validValues = {"SNAT"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String networkService;
-
-    @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String state;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l3NetworkUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -69,8 +60,8 @@ public class SetVpcVRouterNetworkServiceStateAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetVpcVRouterNetworkServiceStateResult value = res.getResult(org.zstack.sdk.SetVpcVRouterNetworkServiceStateResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVpcVRouterNetworkServiceStateResult() : value; 
+        org.zstack.sdk.ReconnectIPsecConnectionResult value = res.getResult(org.zstack.sdk.ReconnectIPsecConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ReconnectIPsecConnectionResult() : value; 
 
         return ret;
     }
@@ -99,11 +90,11 @@ public class SetVpcVRouterNetworkServiceStateAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/vpc/virtual-routers/{uuid}/networkservicestate";
+        info.httpMethod = "PUT";
+        info.path = "/ipsec/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "reconnectIPsecConnection";
         return info;
     }
 
