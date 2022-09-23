@@ -927,6 +927,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             public void fail(ErrorCode errorCode) {
                 if (errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
                     logger.debug(String.format("unable to delete volume[uuid:%s] right now, skip this GC job because it's in use", msg.getVolume().getUuid()));
+                    reply.setError(errorCode);
                     bus.reply(msg, reply);
                     return;
                 }
