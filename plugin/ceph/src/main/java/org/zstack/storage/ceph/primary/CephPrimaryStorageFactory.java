@@ -358,32 +358,21 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             return to;
         }
 
-        SimpleQuery<CephPrimaryStorageMonVO> q = dbf.createQuery(CephPrimaryStorageMonVO.class);
-        q.select(CephPrimaryStorageMonVO_.monAddr, CephPrimaryStorageMonVO_.monPort);
-        q.add(CephPrimaryStorageMonVO_.primaryStorageUuid, Op.EQ, vol.getPrimaryStorageUuid());
-        q.add(CephPrimaryStorageMonVO_.status, Op.EQ, MonStatus.Connected);
-        List<Tuple> ts = q.listTuple();
+        List<CephPrimaryStorageMonVO> monVOs = Q.New(CephPrimaryStorageMonVO.class)
+                .eq(CephPrimaryStorageMonVO_.primaryStorageUuid, vol.getPrimaryStorageUuid()).list();
 
-        if (ts.isEmpty()) {
+        if (monVOs.isEmpty() || monVOs.stream().noneMatch(monVO -> monVO.getStatus() == MonStatus.Connected)) {
             throw new OperationFailureException(operr(
                     "cannot find any Connected ceph mon for the primary storage[uuid:%s]", vol.getPrimaryStorageUuid())
             );
         }
 
-        List<MonInfo> monInfos = CollectionUtils.transformToList(ts, new Function<MonInfo, Tuple>() {
-            @Override
-            public MonInfo call(Tuple t) {
-                String hostname = t.get(0, String.class);
-                DebugUtils.Assert(hostname != null, "hostname cannot be null");
-
-                int port = t.get(1, Integer.class);
-
-                MonInfo info = new MonInfo();
-                info.hostname = hostname;
-                info.port = port;
-                return info;
-            }
-        });
+        List<MonInfo> monInfos = monVOs.stream().map(mon -> {
+            MonInfo info = new MonInfo();
+            info.hostname = mon.getHostname();
+            info.port = mon.getMonPort();
+            return info;
+        }).collect(Collectors.toList());
 
         KVMCephVolumeTO cto = new KVMCephVolumeTO(to);
         cto.setSecretUuid(getCephSecretUuid(vol.getPrimaryStorageUuid()));
