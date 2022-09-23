@@ -173,6 +173,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
                 if (errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
                     logger.debug(String.format("unable to delete path:%s right now, skip this GC job because it's in use", msg.getVolume().getInstallPath()));
+                    reply.setError(errorCode);
                     bus.reply(msg, reply);
                     return;
                 }
