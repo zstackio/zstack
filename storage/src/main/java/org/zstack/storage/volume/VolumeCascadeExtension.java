@@ -350,6 +350,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                     dmsg.setHostUuid(volumeHostRef.refVO.getHostUuid());
                     dmsg.setMountPath(volumeHostRef.refVO.getMountPath());
                     dmsg.setDevice(volumeHostRef.refVO.getDevice());
+                    dmsg.setVolumeUuid(volumeHostRef.refVO.getVolumeUuid());
                     dmsg.setVolumeInstallPath(volumeHostRef.volumeInstallPath);
                     bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, volumeHostRef.refVO.getHostUuid());
                     return dmsg;

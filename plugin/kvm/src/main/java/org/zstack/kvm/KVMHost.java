@@ -4937,11 +4937,14 @@ public class KVMHost extends HostBase implements Host {
                 if (!rsp.isSuccess()) {
                     reply.setError(operr("failed to detach volume from host, because:%s", rsp.getError()));
                 } else {
-                    SQL.New(VolumeHostRefVO.class)
-                            .eq(VolumeHostRefVO_.mountPath, msg.getMountPath())
-                            .eq(VolumeHostRefVO_.hostUuid, msg.getHostUuid())
-                            .eq(VolumeHostRefVO_.device, msg.getDevice())
-                            .delete();
+                    new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            sql(VolumeHostRefVO.class).eq(VolumeHostRefVO_.volumeUuid, msg.getVolumeUuid()).delete();
+                            sql(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                                    .set(VolumeVO_.state, VolumeState.Enabled).update();
+                        }
+                    }.execute();
                 }
 
                 bus.reply(msg, reply);

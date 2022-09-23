@@ -2855,6 +2855,7 @@ public class VolumeBase implements Volume {
         dmsg.setMountPath(ref.getMountPath());
         dmsg.setDevice(ref.getDevice());
         dmsg.setHostUuid(hostUuid);
+        dmsg.setVolumeUuid(msg.getVolumeUuid());
         bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, dmsg.getHostUuid());
         bus.send(dmsg, new CloudBusCallBack(msg) {
             @Override

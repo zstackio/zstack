@@ -8,6 +8,8 @@ public class DetachDataVolumeFromHostMsg extends NeedReplyMessage implements Hos
     private String mountPath;
     private String hostUuid;
     private String device;
+    private String volumeUuid;
+
 
     @Override
     public String getHostUuid() {
@@ -40,5 +42,13 @@ public class DetachDataVolumeFromHostMsg extends NeedReplyMessage implements Hos
 
     public void setDevice(String device) {
         this.device = device;
+    }
+
+    public String getVolumeUuid() {
+        return volumeUuid;
+    }
+
+    public void setVolumeUuid(String volumeUuid) {
+        this.volumeUuid = volumeUuid;
     }
 }
