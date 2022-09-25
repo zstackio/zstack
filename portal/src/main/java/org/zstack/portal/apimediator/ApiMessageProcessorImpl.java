@@ -57,7 +57,10 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     private List<ApiMessageValidator> validators;
 
     private boolean unitTestOn;
+    //    add switch to skip api check for minimal
+    private boolean minimalOn;
     private List<String> configFolders;
+    List<String> supportApis;
 
     private void dump() {
         StringBuilder sb = new StringBuilder();
@@ -80,7 +83,9 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
 
     public ApiMessageProcessorImpl(Map<String, Object> config) {
         this.unitTestOn = CoreGlobalProperty.UNIT_TEST_ON;
+        this.minimalOn = Platform.isMinimalOn();
         this.configFolders = (List <String>)config.get("serviceConfigFolders");
+        this.supportApis = new ArrayList<>();
 
         populateGlobalInterceptors();
 
@@ -122,6 +127,9 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                 ApiMessageInterceptor ic = loader.getComponentByBeanName(name);
                 interceptors.add(ic);
             } catch (NoSuchBeanDefinitionException ne) {
+                if (this.minimalOn) {
+                    continue;
+                }
                 if (!this.unitTestOn) {
                     throw new CloudRuntimeException(String.format("Cannot find ApiMessageInterceptor[%s] for message[%s] described in %s. Make sure the ApiMessageInterceptor is configured in spring bean xml file", name, desc.getName(), desc.getConfigPath()), ne);
                 }
@@ -201,6 +209,10 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
             desc.setClazz(msgClz);
 
             prepareInterceptors(desc, mschema, schema);
+            List<org.zstack.header.Service> services = pluginRgty.getExtensionList(org.zstack.header.Service.class);
+            if (services.stream().anyMatch(it -> it.getId().split(":::")[1].equals(desc.getServiceId()))) {
+                supportApis.add(desc.getClazz().getSimpleName());
+            }
             buildApiParams(desc);
 
             descriptors.put(msgClz, desc);
@@ -288,6 +300,11 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     @Override
     public ApiMessageDescriptor getApiMessageDescriptor(APIMessage msg) {
         return descriptors.get(msg.getClass());
+    }
+
+    @Override
+    public List<String> getSupportApis() {
+        return supportApis;
     }
 
     private void populateGlobalInterceptors() {

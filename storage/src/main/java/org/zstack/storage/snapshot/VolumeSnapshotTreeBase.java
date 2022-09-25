@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -401,7 +402,7 @@ public class VolumeSnapshotTreeBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (CoreGlobalProperty.SIMULATORS_ON) {
+                if (Platform.isSimulatorOn()) {
                     trigger.next();
                     return;
                 }

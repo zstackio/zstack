@@ -10,36 +10,7 @@ import org.zstack.testlib.Test
  * Created by lining on 2017/2/27.
  */
 class ZStackTest extends Test {
-    static SpringSpec springSpec = makeSpring {
-        sftpBackupStorage()
-        localStorage()
-        virtualRouter()
-        securityGroup()
-        kvm()
-        vyos()
-        flatNetwork()
-        ceph()
-        lb()
-        nfsPrimaryStorage()
-        eip()
-        portForwarding()
-        smp()
-        console()
-
-        include("LdapManagerImpl.xml")
-        include("captcha.xml")
-        include("CloudBusAopProxy.xml")
-        include("ZoneManager.xml")
-        include("webhook.xml")
-        include("Progress.xml")
-        include("vip.xml")
-        include("vxlan.xml")
-        include("mediateApiValidator.xml")
-        include("LongJobManager.xml")
-        include("log.xml")
-        include("HostAllocateExtension.xml")
-        include("sdnController.xml")
-    }
+    static SpringSpec springSpec = makeSpring()
 
     public static final String DOMAIN_DSN = "dc=example,dc=com"
 

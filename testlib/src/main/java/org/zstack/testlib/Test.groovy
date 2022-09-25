@@ -38,6 +38,8 @@ import java.util.logging.Logger
  */
 abstract class Test extends ApiHelper implements Retry {
     final CLogger logger = Utils.getLogger(this.getClass())
+    static String DEFAULT_MODE = "default"
+    static String MINIMAL_MODE = "minimal"
 
     static Object deployer
     static Map<String, String> apiPaths = new ConcurrentHashMap<>()
@@ -114,6 +116,40 @@ abstract class Test extends ApiHelper implements Retry {
         setSpringSpec()
         Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINE)
     }
+
+    static SpringSpec makeSpring() {
+        return makeSpring {
+            sftpBackupStorage()
+            localStorage()
+            virtualRouter()
+            securityGroup()
+            kvm()
+            vyos()
+            flatNetwork()
+            ceph()
+            lb()
+            nfsPrimaryStorage()
+            eip()
+            portForwarding()
+            smp()
+            console()
+
+            include("LdapManagerImpl.xml")
+            include("captcha.xml")
+            include("CloudBusAopProxy.xml")
+            include("ZoneManager.xml")
+            include("webhook.xml")
+            include("Progress.xml")
+            include("vip.xml")
+            include("vxlan.xml")
+            include("mediateApiValidator.xml")
+            include("LongJobManager.xml")
+            include("log.xml")
+            include("HostAllocateExtension.xml")
+            include("sdnController.xml")
+        }
+    }
+
 
     static EnvSpec makeEnv(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
         def spec = new EnvSpec()
@@ -905,5 +941,14 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         } else if (skipMNExit.equalsIgnoreCase(Boolean.TRUE.toString())) {
             System.setProperty(Platform.SKIP_STOP, Boolean.TRUE.toString())
         }
+    }
+
+    SpringSpec getSpringSpecByMode(String mode) {
+        return makeSpring()
+    }
+
+    void setupByMode(PreStabilityTest c) {
+        INCLUDE_CORE_SERVICES = c.getCaseMode() != MINIMAL_MODE
+        useSpring(getSpringSpecByMode(c.getCaseMode()))
     }
 }
