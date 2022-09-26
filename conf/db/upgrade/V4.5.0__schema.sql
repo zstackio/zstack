@@ -133,3 +133,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SSORedirectTemplateVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkSSORedirectTemplateClientVO` FOREIGN KEY (`clientUuid`) REFERENCES `SSOClientVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`V2VConversionCacheVO` ADD COLUMN  `deviceAddress` varchar(128) DEFAULT NULL;
