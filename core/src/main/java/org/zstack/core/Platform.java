@@ -716,6 +716,13 @@ public class Platform {
         return Integer.parseInt(System.getProperty("RESTFacade.port", "8080"));
     }
 
+    public static String getManagementServerVip() {
+        if (!ZSha2Helper.isMNHaEnvironment()) {
+            return getManagementServerIp();
+        }
+        return ZSha2Helper.getInfo(false).getDbvip();
+    }
+
     public static String getCanonicalServerIp() {
         if (!ZSha2Helper.isMNHaEnvironment()) {
             return getManagementServerIp();
