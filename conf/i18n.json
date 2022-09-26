@@ -24054,6 +24054,17 @@
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
+    "raw": "account[uuid: %s] has no access to the resource[uuid: %s]",
+    "en_US": "account[uuid: {0}] has no access to the resource[uuid: {1}]",
+    "zh_CN": "账号[uuid:{0}]没有访问资源[uuid:{1}]的权限",
+    "arguments": [
+      "msg.getSession().getAccountUuid()",
+      "opt.get().getValue()"
+    ],
+    "line": 60,
+    "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
+  },
+  {
     "raw": "Normal",
     "en_US": "Normal",
     "zh_CN": "提示",
