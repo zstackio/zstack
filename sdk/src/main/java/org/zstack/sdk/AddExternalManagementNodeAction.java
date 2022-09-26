@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateVmInstanceFromOvfAction extends AbstractAction {
+public class AddExternalManagementNodeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateVmInstanceFromOvfAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateVmInstanceFromOvfResult value;
+        public org.zstack.sdk.AddExternalManagementNodeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,22 +26,22 @@ public class CreateVmInstanceFromOvfAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String xmlBase64;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String jsonImageInfos;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String jsonCreateVmParam;
+    public java.lang.String name;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean deleteImageAfterSuccess = true;
+    public java.lang.String description;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean deleteImageOnFail = false;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostName;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public int port = 8080;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String externalAccessKeyID;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String externalAccessKeySecret;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -81,8 +81,8 @@ public class CreateVmInstanceFromOvfAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateVmInstanceFromOvfResult value = res.getResult(org.zstack.sdk.CreateVmInstanceFromOvfResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateVmInstanceFromOvfResult() : value; 
+        org.zstack.sdk.AddExternalManagementNodeResult value = res.getResult(org.zstack.sdk.AddExternalManagementNodeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddExternalManagementNodeResult() : value; 
 
         return ret;
     }
@@ -112,7 +112,7 @@ public class CreateVmInstanceFromOvfAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/ovf/create-vm-instance";
+        info.path = "/externalmanagement";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

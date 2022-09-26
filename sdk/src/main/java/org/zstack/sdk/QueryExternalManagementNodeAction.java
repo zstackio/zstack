@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetPrimaryStorageCandidatesForVmMigrationAction extends AbstractAction {
+public class QueryExternalManagementNodeAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetPrimaryStorageCandidatesForVmMigrationAction extends AbstractAct
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetPrimaryStorageCandidatesForVmMigrationResult value;
+        public org.zstack.sdk.QueryExternalManagementNodeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,6 @@ public class GetPrimaryStorageCandidatesForVmMigrationAction extends AbstractAct
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean withDataVolumes = true;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean migrateStorageOnly = false;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -60,8 +34,8 @@ public class GetPrimaryStorageCandidatesForVmMigrationAction extends AbstractAct
             return ret;
         }
         
-        org.zstack.sdk.GetPrimaryStorageCandidatesForVmMigrationResult value = res.getResult(org.zstack.sdk.GetPrimaryStorageCandidatesForVmMigrationResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetPrimaryStorageCandidatesForVmMigrationResult() : value; 
+        org.zstack.sdk.QueryExternalManagementNodeResult value = res.getResult(org.zstack.sdk.QueryExternalManagementNodeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryExternalManagementNodeResult() : value; 
 
         return ret;
     }
@@ -91,7 +65,7 @@ public class GetPrimaryStorageCandidatesForVmMigrationAction extends AbstractAct
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vm-instances/{vmInstanceUuid}/storage-migration-candidates";
+        info.path = "/externalmanagement";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
