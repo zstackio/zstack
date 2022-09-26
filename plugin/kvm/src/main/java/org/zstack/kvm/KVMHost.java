@@ -10,8 +10,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
-import org.zstack.core.db.SQL;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
@@ -4902,6 +4900,9 @@ public class KVMHost extends HostBase implements Host {
                     }
                 }
 
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(KVMHostAttachVolumeExtensionPoint.class),
+                        p -> p.afterAttachVolume(self.getUuid()));
+
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -4945,6 +4946,9 @@ public class KVMHost extends HostBase implements Host {
                                     .set(VolumeVO_.state, VolumeState.Enabled).update();
                         }
                     }.execute();
+
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(KVMHostDetachVolumeExtensionPoint.class),
+                            p -> p.afterDetachVolume(self.getUuid()));
                 }
 
                 bus.reply(msg, reply);
