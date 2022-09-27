@@ -932,7 +932,12 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    public void preVmMigration(VmInstanceInventory vm, Completion completion) {
+    public void preVmMigration(VmInstanceInventory vm, VmMigrationType vmMigrationType, Completion completion) {
+        if (!VmMigrationType.HostMigration.equals(vmMigrationType)) {
+            completion.success();
+            return;
+        }
+
         ErrorCode err = checkVmMigrationCapability(vm);
 
         if (err != null) {
