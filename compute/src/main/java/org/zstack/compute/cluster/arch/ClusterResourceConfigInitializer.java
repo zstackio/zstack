@@ -1,4 +1,4 @@
-package org.zstack.resourceconfig;
+package org.zstack.compute.cluster.arch;
 
 import org.zstack.header.cluster.ClusterInventory;
 

@@ -32,12 +32,4 @@
             <zstack:extension interface="org.zstack.header.zql.RestrictByExprExtensionPoint"/>
         </zstack:plugin>
     </bean>
-
-    <bean id="ClusterResourceConfigInitializer" class="org.zstack.resourceconfig.ClusterResourceConfigInitializerImpl">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint"/>
-            <zstack:extension interface="org.zstack.header.Component"/>
-            <zstack:extension interface="org.zstack.resourceconfig.ClusterResourceConfigInitializer"/>
-        </zstack:plugin>
-    </bean>
 </beans>
