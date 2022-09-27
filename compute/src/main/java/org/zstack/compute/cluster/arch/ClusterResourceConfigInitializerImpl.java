@@ -1,9 +1,9 @@
-package org.zstack.resourceconfig;
+package org.zstack.compute.cluster.arch;
 
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.cluster.ClusterInventory;
@@ -11,6 +11,7 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
+import org.zstack.resourceconfig.*;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -24,8 +25,7 @@ import java.util.*;
  */
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class ClusterResourceConfigInitializerImpl implements ClusterResourceConfigInitializer, Component, PrepareDbInitialValueExtensionPoint {
-
+public class ClusterResourceConfigInitializerImpl implements ClusterResourceConfigInitializer, Component {
     protected static final CLogger logger = Utils.getLogger(ClusterResourceConfigInitializerImpl.class);
     protected Map<String, Map<String, String>> architectureClusterConfigValueMap = new HashMap<>();
     protected Map<String, Set<String>>  autoSetClusterResourceConfigs = new HashMap<>();
@@ -35,6 +35,8 @@ public class ClusterResourceConfigInitializerImpl implements ClusterResourceConf
 
     @Override
     public boolean start() {
+        initClusterResourceConfig();
+        autoSetClusterResourceConfigForConfigMissingCluster();
         return true;
     }
 
@@ -43,18 +45,11 @@ public class ClusterResourceConfigInitializerImpl implements ClusterResourceConf
         return true;
     }
 
-    @Override
-    public void prepareDbInitialValue() {
-        initClusterResourceConfig();
-        autoSetClusterResourceConfigForConfigMissingCluster();
-        return;
-    }
-
     private void initClusterResourceConfig() {
-        BeanUtils.reflections.getSubTypesOf(ClusterResourceConfig.class).forEach(clz -> {
+        for (Class<? extends ClusterArchitectureResourceConfig> clz : BeanUtils.reflections.getSubTypesOf(ClusterArchitectureResourceConfig.class)) {
             logger.debug("init cluster resource config: " + clz.toString());
             try {
-                ClusterResourceConfig instance = clz.getConstructor().newInstance();
+                ClusterArchitectureResourceConfig instance = clz.getConstructor().newInstance();
                 String architecture = instance.getArchitecture();
                 Map<String, String> configValueMap = instance.getResourceConfigDefaultValueMap();
                 architectureClusterConfigValueMap.putIfAbsent(architecture, configValueMap);
@@ -69,12 +64,44 @@ public class ClusterResourceConfigInitializerImpl implements ClusterResourceConf
                         autoSetClusterResourceConfigs.get(architecture).add(configName);
                     }
                 });
+
+                Map<String, List<String>> resourceConfigValidValuesMap = instance.getResourceConfigValidValuesMap();
+                if (resourceConfigValidValuesMap != null) {
+                    resourceConfigValidValuesMap.forEach((identity, validValues) ->
+                            registerClusterResourceConfigValidator(instance, identity, validValues));
+                }
             } catch (Exception e) {
                 throw new CloudRuntimeException(e);
             }
-
-        });
+        }
     };
+
+    private void registerClusterResourceConfigValidator(ClusterArchitectureResourceConfig instance, String identity, List<String> validValues) {
+        if (validValues == null) {
+            throw new CloudRuntimeException(String.format("missing validValues for resource config" +
+                    "[identity: %s, architecture: %s]", identity, instance.getArchitecture()));
+        }
+
+        logger.debug(String.format("install validator for resource config[identity: %s]", identity));
+
+        ResourceConfig rf = rcf.getResourceConfig(identity);
+        if (rf == null) {
+            logger.debug(String.format("resource config[identity: %s] not supported, skip validator installation", identity));
+            return;
+        }
+
+        rf.installValidatorExtension((resourceUuid, oldValue, newValue) -> {
+            if (!instance.clusterArchitectureMatched(resourceUuid)) {
+                return;
+            }
+
+            if (!validValues.contains(newValue)) {
+                throw new GlobalConfigException(String.format("cluster[uuid: %s, architecture: %s]" +
+                                " supported values for resource config[identity: %s] are %s",
+                        resourceUuid, instance.getArchitecture(), identity, validValues));
+            }
+        });
+    }
 
     private Map<String, String> getArchitectureClusterConfigValueMap(String architecture) {
         return architectureClusterConfigValueMap.get(architecture);
@@ -131,14 +158,7 @@ public class ClusterResourceConfigInitializerImpl implements ClusterResourceConf
                     continue;
                 }
 
-                String category  = rc.globalConfig.getCategory();
-                boolean alreadySet = Q.New(ResourceConfigVO.class)
-                        .eq(ResourceConfigVO_.name, configName)
-                        .eq(ResourceConfigVO_.resourceUuid, clusterUuid)
-                        .eq(ResourceConfigVO_.category, category)
-                        .isExists();
-
-                if (alreadySet) {
+                if (rc.resourceConfigCreated(clusterUuid)) {
                     continue;
                 }
 

@@ -69,7 +69,7 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
-import org.zstack.resourceconfig.ClusterResourceConfigInitializer;
+import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTag;
