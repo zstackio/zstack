@@ -3,7 +3,7 @@ package org.zstack.testlib
 /**
  * Created by xing5 on 2017/2/22.
  */
-abstract class SubCase extends Test implements Case, PreStabilityTest {
+abstract class SubCase extends Test implements Case {
     final void run() {
         envCreateTime = 0
         testRunTime = 0
@@ -42,10 +42,5 @@ abstract class SubCase extends Test implements Case, PreStabilityTest {
     @Override
     protected void runSubCases() {
         throw new Exception("runSubCases() cannot be called in a SubCase")
-    }
-
-    @Override
-    String getCaseMode() {
-        return DEFAULT_MODE
     }
 }

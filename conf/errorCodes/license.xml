@@ -40,5 +40,10 @@
         <id>1007</id>
         <description>License capacity policy mismatch</description>
     </code>
+
+    <code>
+        <id>1008</id>
+        <description>The current Primary License does not allow using Addon licenses to add plus services</description>
+    </code>
 </error>
 

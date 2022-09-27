@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusImpl3;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -210,7 +211,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
 
             prepareInterceptors(desc, mschema, schema);
             List<org.zstack.header.Service> services = pluginRgty.getExtensionList(org.zstack.header.Service.class);
-            if (services.stream().anyMatch(it -> it.getId().split(":::")[1].equals(desc.getServiceId()))) {
+            if (services.stream().anyMatch(it -> bus.makeLocalServiceId(desc.getServiceId()).equals(it.getId()))) {
                 supportApis.add(desc.getClazz().getSimpleName());
             }
             buildApiParams(desc);

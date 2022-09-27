@@ -2,9 +2,8 @@ package org.zstack.testlib
 
 import okhttp3.OkHttpClient
 import org.apache.commons.lang.StringUtils
-import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
-import org.zstack.core.StartModeConstants
+import org.zstack.core.StartMode
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusImpl2
 import org.zstack.core.componentloader.ComponentLoader
@@ -40,8 +39,8 @@ import java.util.logging.Logger
  */
 abstract class Test extends ApiHelper implements Retry {
     final CLogger logger = Utils.getLogger(this.getClass())
-    static String DEFAULT_MODE = "default"
-    static String MINIMAL_MODE = "minimal"
+    static final String targetSubCaseParamKey = "cases"
+    static final String subCaseExecutionTimesKey = "times"
 
     static Object deployer
     static Map<String, String> apiPaths = new ConcurrentHashMap<>()
@@ -424,8 +423,8 @@ abstract class Test extends ApiHelper implements Retry {
         })
     }
 
-    void buildBeanConstructor(boolean useWeb = true) {
-        beanConstructor = useWeb ? new WebBeanConstructor() : new BeanConstructor()
+    void buildBeanConstructor() {
+        beanConstructor = BeanConstructorFactory.getBeanConstructor(this.getCaseMode())
         if (_springSpec.all) {
             beanConstructor.loadAll = true
         } else {
@@ -434,7 +433,7 @@ abstract class Test extends ApiHelper implements Retry {
                 beanConstructor.addXml(it)
             }
         }
-        
+
         componentLoader = beanConstructor.build()
     }
 
@@ -470,7 +469,7 @@ abstract class Test extends ApiHelper implements Retry {
             deployDB()
         }
 
-        buildBeanConstructor(NEED_WEB_SERVER)
+        buildBeanConstructor()
 
         nextPhase()
 
@@ -954,13 +953,17 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         }
     }
 
-    SpringSpec getSpringSpecByMode(String mode) {
-        return makeSpring()
+    StartMode getStabilityTestStartMode() {
+        String targetCaseList = System.getProperty(targetSubCaseParamKey)
+        List<String> caseClassNameList = targetCaseList.split(",")
+        def count = caseClassNameList.stream().map { it -> Class.forName(it).newInstance().getCaseMode() }.distinct().count()
+        if (count != 1) {
+            throw new Exception("All cases in the case list should use the same mode")
+        }
+        return Class.forName(caseClassNameList[0]).newInstance().getCaseMode()
     }
 
-    void setupByMode(PreStabilityTest c) {
-        INCLUDE_CORE_SERVICES = c.getCaseMode() != MINIMAL_MODE
-        CoreGlobalProperty.START_MODE = c.getCaseMode() == MINIMAL_MODE ? StartModeConstants.MINIMAL_MODE : ""
-        useSpring(getSpringSpecByMode(c.getCaseMode()))
+    StartMode getCaseMode() {
+        return StartMode.DEFAULT
     }
 }

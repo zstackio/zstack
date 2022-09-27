@@ -1116,10 +1116,10 @@ public class Platform {
     }
 
     public static boolean isSimulatorOn() {
-        return StartModeConstants.SIMULATOR_MODE.equals(CoreGlobalProperty.START_MODE) || CoreGlobalProperty.SIMULATORS_ON;
+        return StartMode.SIMULATOR.toString().equals(CoreGlobalProperty.START_MODE) || CoreGlobalProperty.SIMULATORS_ON;
     }
 
     public static boolean isMinimalOn() {
-        return StartModeConstants.MINIMAL_MODE.equals(CoreGlobalProperty.START_MODE);
+        return StartMode.MINIMAL.toString().equals(CoreGlobalProperty.START_MODE);
     }
 }
