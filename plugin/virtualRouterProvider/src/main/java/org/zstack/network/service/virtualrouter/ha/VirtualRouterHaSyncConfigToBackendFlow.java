@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter.ha;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.appliancevm.ApplianceVmConstant;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -38,18 +39,12 @@ public class VirtualRouterHaSyncConfigToBackendFlow implements Flow {
             return;
         }
 
-        /* only when create a new vpc router, vyos ha config need to be updated to peer router */
-        boolean syncPeer = false;
-        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        if (spec != null && spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate) {
-            syncPeer = true;
-        }
-
-        final boolean fSyncPeer = syncPeer;
+        /* sync config to peer all the time to make sure: both vroute has same config */
+        final boolean syncPeer = true;
         List<ErrorCode> errs = new ArrayList<>();
         List<VirtualRouterHaGroupExtensionPoint> exts = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
         new While<>(exts).each((ext, compl) -> {
-            ext.syncVirtualRouterHaConfigToBackend(vr.getUuid(), fSyncPeer, new Completion(compl) {
+            ext.syncVirtualRouterHaConfigToBackend(vr.getUuid(), syncPeer, new Completion(compl) {
                 @Override
                 public void success() {
                     compl.done();
