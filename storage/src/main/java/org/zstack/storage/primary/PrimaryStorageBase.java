@@ -685,6 +685,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
         imsg.setVolume(VolumeInventory.valueOf(dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class)));
         imsg.setSkipIfExisting(false);
+        imsg.setAllocatedInstallUrl(msg.getAllocatedInstallUrl());
         bus.makeLocalServiceId(imsg, PrimaryStorageConstant.SERVICE_ID);
         bus.send(imsg, new CloudBusCallBack(msg) {
             @Override
