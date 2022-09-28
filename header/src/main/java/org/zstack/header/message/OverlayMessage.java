@@ -1,5 +1,6 @@
 package org.zstack.header.message;
 
+import com.google.common.base.CaseFormat;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.log.NoLogging;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -31,5 +32,11 @@ public class OverlayMessage extends NeedReplyMessage {
         } catch (ClassNotFoundException e) {
             throw new CloudRuntimeException(e);
         }
+    }
+
+    public String getTaskName() {
+        String simpleName = messageClassName.substring(
+                messageClassName.lastIndexOf(".") + 1, messageClassName.lastIndexOf("Msg"));
+        return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, simpleName);
     }
 }
