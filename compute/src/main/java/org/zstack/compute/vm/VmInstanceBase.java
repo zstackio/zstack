@@ -6382,7 +6382,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(pluginRgty.getExtensionList(VmPreMigrationExtensionPoint.class))
-                    .each((extension, whileCompletion) -> extension.preVmMigration(inv, new Completion(whileCompletion) {
+                    .each((extension, whileCompletion) -> extension.preVmMigration(inv, VmMigrationType.HostMigration, new Completion(whileCompletion) {
                         @Override
                         public void success() {
                             whileCompletion.done();
