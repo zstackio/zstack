@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 )
 @SkipVmTracer(replyClass = APIMigrateVmEvent.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 1)
-public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, MigrateVmMessage {
+public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, MigrateVmMessage, CheckAttachedVolumesMessage {
     /**
      * @desc vm uuid
      */
