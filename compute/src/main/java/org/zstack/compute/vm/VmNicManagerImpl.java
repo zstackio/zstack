@@ -5,7 +5,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -49,6 +48,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -301,7 +301,7 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
         List<VmNicVO> vmNicVOS = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, snapshotGroup.getVmInstanceUuid()).eq(VmNicVO_.type, VmInstanceConstant.VIRTUAL_NIC_TYPE).list();
         String defaultL3NetworkUuid = Q.New(VmInstanceVO.class).select(VmInstanceVO_.defaultL3NetworkUuid).eq(VmInstanceVO_.uuid, snapshotGroup.getVmInstanceUuid()).findValue();
         if (defaultL3NetworkUuid == null) {
-            completion.fail(Platform.argerr("defaultL3NetworkUuid not exist"));
+            completion.fail(operr("the vm %s doesn't have any nic, please attach a nic and try again", snapshotGroup.getVmInstanceUuid()));
             return;
         }
 
