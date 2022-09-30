@@ -40,10 +40,5 @@
         <id>1007</id>
         <description>License capacity policy mismatch</description>
     </code>
-
-    <code>
-        <id>1008</id>
-        <description>Missing dependent license</description>
-    </code>
 </error>
 
