@@ -2,7 +2,9 @@ package org.zstack.testlib
 
 import okhttp3.OkHttpClient
 import org.apache.commons.lang.StringUtils
+import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
+import org.zstack.core.StartModeConstants
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusImpl2
 import org.zstack.core.componentloader.ComponentLoader
@@ -949,6 +951,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
 
     void setupByMode(PreStabilityTest c) {
         INCLUDE_CORE_SERVICES = c.getCaseMode() != MINIMAL_MODE
+        CoreGlobalProperty.START_MODE = c.getCaseMode() == MINIMAL_MODE ? StartModeConstants.MINIMAL_MODE : ""
         useSpring(getSpringSpecByMode(c.getCaseMode()))
     }
 }
