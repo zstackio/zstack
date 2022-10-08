@@ -83,7 +83,7 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
                 Map<String, List<CephPoolCapacity>> caps = poolCapacities.stream().collect(groupingBy(CephPoolCapacity::getRelatedOsds));
 
                 Set<String> osdGroups = caps.keySet();
-                logger.info(String.format("ceph[%s] primary storage finded osdgroups %s", cephPs.getUuid(), osdGroups));
+                logger.info(String.format("ceph[%s] primary storage found osd groups %s", cephPs.getUuid(), osdGroups));
 
                 List<CephOsdGroupVO> existedOsdGroups = Q.New(CephOsdGroupVO.class).eq(CephOsdGroupVO_.primaryStorageUuid, cephPs.getUuid()).list();
                 List<CephOsdGroupVO> needDeleteOsds = existedOsdGroups.stream()
@@ -92,7 +92,7 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
                         .filter(v -> existedOsdGroups.stream().noneMatch(a -> a.getOsds().equals(v))).collect(Collectors.toList());
 
                 if (!needDeleteOsds.isEmpty()) {
-                    logger.info(String.format("remove %s stale osdgroups", needDeleteOsds.size()));
+                    logger.info(String.format("remove %s stale osd groups", needDeleteOsds.size()));
                     needDeleteOsds.forEach(this::remove);
                 }
 
