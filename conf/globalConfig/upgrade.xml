@@ -7,4 +7,12 @@
         <defaultValue>false</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+
+    <config>
+        <category>upgradeControl</category>
+        <name>allowedApilistGrayscaleUpgrading</name>
+        <description>Allowed operations when grayscale upgrade</description>
+        <defaultValue>null</defaultValue>
+        <type>java.lang.String</type>
+    </config>
 </globalConfig>
