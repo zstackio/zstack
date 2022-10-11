@@ -555,6 +555,7 @@ public class SourceClassMap {
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
 			put("org.zstack.v2v.V2VConversionHostInventory", "org.zstack.sdk.V2VConversionHostInventory");
 			put("org.zstack.vmware.ESXHostInventory", "org.zstack.sdk.ESXHostInventory");
+			put("org.zstack.vmware.SkippedResources", "org.zstack.sdk.SkippedResources");
 			put("org.zstack.vmware.VCenterBackupStorageInventory", "org.zstack.sdk.VCenterBackupStorageInventory");
 			put("org.zstack.vmware.VCenterClusterInventory", "org.zstack.sdk.VCenterClusterInventory");
 			put("org.zstack.vmware.VCenterDatacenterInventory", "org.zstack.sdk.VCenterDatacenterInventory");
@@ -1044,6 +1045,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.ShrinkResult", "org.zstack.header.storage.snapshot.ShrinkResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");
+			put("org.zstack.sdk.SkippedResources", "org.zstack.vmware.SkippedResources");
 			put("org.zstack.sdk.SlbGroupInventory", "org.zstack.network.service.slb.SlbGroupInventory");
 			put("org.zstack.sdk.SlbGroupL3NetworkRefInventory", "org.zstack.network.service.slb.SlbGroupL3NetworkRefInventory");
 			put("org.zstack.sdk.SlbLoadBalancerInventory", "org.zstack.network.service.slb.SlbLoadBalancerInventory");
