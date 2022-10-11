@@ -10,4 +10,7 @@ public class UpgradeGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig GRAYSCALE_UPGRADE = new GlobalConfig(CATEGORY, "grayscaleUpgrade");
+
+    @GlobalConfigValidation
+    public static GlobalConfig ALLOWED_APILISTS_GRAYSCALE_UPGRADING = new GlobalConfig(CATEGORY, "allowedApilistGrayscaleUpgrading");
 }
