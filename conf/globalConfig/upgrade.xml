@@ -10,9 +10,9 @@
 
     <config>
         <category>upgradeControl</category>
-        <name>allowedApilistGrayscaleUpgrading</name>
+        <name>allowedApiListGrayscaleUpgrading</name>
         <description>Allowed operations when grayscale upgrade</description>
-        <defaultValue>null</defaultValue>
+        <defaultValue>APIRequestConsoleAccessMsg</defaultValue>
         <type>java.lang.String</type>
     </config>
 </globalConfig>
