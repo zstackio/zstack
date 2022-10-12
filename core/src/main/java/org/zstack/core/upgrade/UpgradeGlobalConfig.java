@@ -12,5 +12,5 @@ public class UpgradeGlobalConfig {
     public static GlobalConfig GRAYSCALE_UPGRADE = new GlobalConfig(CATEGORY, "grayscaleUpgrade");
 
     @GlobalConfigValidation
-    public static GlobalConfig ALLOWED_APILISTS_GRAYSCALE_UPGRADING = new GlobalConfig(CATEGORY, "allowedApilistGrayscaleUpgrading");
+    public static GlobalConfig ALLOWED_API_LIST_GRAYSCALE_UPGRADING = new GlobalConfig(CATEGORY, "allowedApiListGrayscaleUpgrading");
 }
