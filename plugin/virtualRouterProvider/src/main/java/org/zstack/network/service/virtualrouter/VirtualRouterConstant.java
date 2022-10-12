@@ -68,6 +68,9 @@ public interface VirtualRouterConstant {
 
 	public static final String TC_FOR_VIPQOS = "ConfigTcForVipQos";
 
+	public static final String VR_KERNEL_VERSION = "5.4.80";
+	public static final String VR_OLD_KERNEL_VERSION = "3.13.11";
+
 	public static enum Param {
         VR,
         VR_UUID,
