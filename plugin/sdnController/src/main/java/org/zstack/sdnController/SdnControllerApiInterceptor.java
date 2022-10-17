@@ -52,11 +52,11 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
 
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APICreateL2VxlanNetworkMsg) {
-            handle((APICreateL2VxlanNetworkMsg)msg);
+            validate((APICreateL2VxlanNetworkMsg)msg);
         } else if (msg instanceof APIAttachL2NetworkToClusterMsg){
-            handle((APIAttachL2NetworkToClusterMsg)msg);
+            validate((APIAttachL2NetworkToClusterMsg)msg);
         } else if (msg instanceof APIAddSdnControllerMsg) {
-            handle((APIAddSdnControllerMsg)msg);
+            validate((APIAddSdnControllerMsg)msg);
         }
 
         setServiceId(msg);
@@ -64,13 +64,13 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         return msg;
     }
 
-    private void handle(APICreateL2VxlanNetworkMsg msg) {
+    private void validate(APICreateL2VxlanNetworkMsg msg) {
     }
 
-    private void handle(APIAttachL2NetworkToClusterMsg msg) {
+    private void validate(APIAttachL2NetworkToClusterMsg msg) {
     }
 
-    private void handle(APIAddSdnControllerMsg msg) {
+    private void validate(APIAddSdnControllerMsg msg) {
         if (!SdnControllerType.getAllTypeNames().contains(msg.getVendorType())) {
             throw new ApiMessageInterceptionException(argerr("Sdn controller type: %s in not in the supported list: %s ", msg.getVendorType(), SdnControllerType.getAllTypeNames()));
         }
