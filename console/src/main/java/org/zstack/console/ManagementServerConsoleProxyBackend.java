@@ -215,7 +215,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     runner.setFullDeploy(fullDeploy);
 
                     ConsoleProxyDeployArguments deployArguments = new ConsoleProxyDeployArguments();
-                    deployArguments.setHttpConsoleProxyPort(CoreGlobalProperty.HTTP_CONSOLE_PROXY_PORT);
+                    deployArguments.setHttpConsoleProxyPort(String.valueOf(CoreGlobalProperty.HTTP_CONSOLE_PROXY_PORT));
                     runner.setDeployArguments(deployArguments);
                     runner.run(new ReturnValueCompletion<Boolean>(completion, chain) {
                         @Override

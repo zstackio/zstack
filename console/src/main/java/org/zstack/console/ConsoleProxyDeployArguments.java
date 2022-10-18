@@ -7,18 +7,18 @@ public class ConsoleProxyDeployArguments extends SyncTimeRequestedDeployArgument
     @SerializedName("pkg_consoleproxy")
     private final String packageName = ConsoleGlobalProperty.AGENT_PACKAGE_NAME;
     @SerializedName("http_console_proxy_port")
-    private Integer httpConsoleProxyPort;
+    private String httpConsoleProxyPort;
 
     @Override
     public String getPackageName() {
         return packageName;
     }
 
-    public Integer getHttpConsoleProxyPort() {
+    public String getHttpConsoleProxyPort() {
         return httpConsoleProxyPort;
     }
 
-    public void setHttpConsoleProxyPort(Integer httpConsoleProxyPort) {
+    public void setHttpConsoleProxyPort(String httpConsoleProxyPort) {
         this.httpConsoleProxyPort = httpConsoleProxyPort;
     }
 }
