@@ -39,9 +39,7 @@ public class FourteenDesignatedHostAllocatorFlow extends AbstractHostAllocatorFl
 
         if (rsp.getStatusCode().is2xxSuccessful()) {
             String s = rsp.getBody();
-            if (candidates == null) {
-                candidates = new ArrayList<>();
-            }
+            candidates = new ArrayList<>();
             if (s != null) {
                 HostVO o = Q.New(HostVO.class).eq(HostVO_.uuid, s).find();
                 if (o == null) {

@@ -31,7 +31,7 @@ public class UpdateAutoScalingGroupRemovalInstanceRuleAction extends AbstractAct
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
     public java.lang.Integer adjustmentValue;
 
-    @Param(required = false, validValues = {"OldestInstance","NewestInstance","OldestScalingConfiguration","MinimumCPUUsageInstance","MinimumMemoryUsageInstance"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"OldestInstance","NewestInstance","OldestScalingConfiguration","MinimumCPUUsageInstance","MinimumMemoryUsageInstance","FourteenDesignatedInstance"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String removalPolicy;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
