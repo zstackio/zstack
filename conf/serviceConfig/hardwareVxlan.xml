@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>network.l2</id>
+    <interceptor>VxlanPoolApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.sdnController.header.APICreateL2HardwareVxlanNetworkPoolMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.sdnController.header.APICreateL2HardwareVxlanNetworkMsg</name>
+    </message>
+
+</service>

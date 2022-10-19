@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>SdnController</id>
+    <interceptor>SdnControllerApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.sdnController.header.APIAddSdnControllerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.sdnController.header.APIRemoveSdnControllerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.sdnController.header.APIUpdateSdnControllerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.sdnController.header.APIQuerySdnControllerMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>
