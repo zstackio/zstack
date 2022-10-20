@@ -1,42 +1,38 @@
-package org.zstack.header.host;
+package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.core.APIGetChainTaskReply;
 import org.zstack.header.identity.Action;
+import org.zstack.header.core.APIGetChainTaskMsg;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.core.APIGetChainTaskMsg;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-/**
- * Created by MaJin on 2019/7/3.
- */
-
-@Action(category = HostConstant.ACTION_CATEGORY, adminOnly = true)
+@Action(category = VmInstanceConstant.ACTION_CATEGORY, adminOnly = true)
 @RestRequest(
-        path = "/hosts/task-details",
+        path = "/vm-instances/task-details",
         method = HttpMethod.GET,
         responseClass = APIGetChainTaskReply.class
 )
-public class APIGetHostTaskMsg extends APIGetChainTaskMsg {
-    @APIParam(nonempty = true, resourceType = HostVO.class)
-    private List<String> hostUuids;
+public class APIGetVmTaskMsg extends APIGetChainTaskMsg {
+    @APIParam(nonempty = true, resourceType = VmInstanceVO.class)
+    private List<String> vmInstanceUuids;
 
-    public List<String> getHostUuids() {
-        return hostUuids;
+    public void setVmInstanceUuids(List<String> vmInstanceUuids) {
+        this.vmInstanceUuids = vmInstanceUuids;
     }
 
-    public void setHostUuids(List<String> hostUuids) {
-        this.hostUuids = hostUuids;
+    public List<String> getVmInstanceUuids() {
+        return vmInstanceUuids;
     }
 
     @Override
     public List<String> getSyncSignatures() {
         List<String> syncSignatures = new ArrayList<>();
-        hostUuids.forEach(hostUuid -> syncSignatures.add((HostConstant.HOST_SYNC_SIGNATURE_PREFIX + hostUuid)));
+        vmInstanceUuids.forEach(vmUuid -> syncSignatures.add((VmInstanceConstant.VM_SYNC_SIGNATURE_PREFIX + vmUuid)));
         return syncSignatures;
     }
 

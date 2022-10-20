@@ -1,57 +1,48 @@
-package org.zstack.header.host
+package org.zstack.header.core
 
 import org.zstack.header.core.APIGetChainTaskReply
 
 doc {
-    title "GetHostTask"
+    title "GetChainTask"
 
-    category "host"
+    category "core"
 
-    desc """获取物理机上的任务信息"""
+    desc """获取任务队列详情"""
 
     rest {
         request {
-			url "GET /v1/hosts/task-details"
+			url "GET /v1/core/task-details"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetHostTaskMsg.class
+            clz APIGetChainTaskMsg.class
 
             desc """"""
             
 			params {
 
 				column {
-					name "hostUuids"
+					name "syncSignatures"
 					enclosedIn ""
-					desc "物理机UUIDs"
+					desc ""
 					location "query"
 					type "List"
-					optional false
-					since "3.6.0"
+					optional true
+					since "4.6.0"
 				}
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc ""
+					desc "系统标签"
 					location "query"
 					type "List"
 					optional true
-					since "3.6.0"
+					since "4.6.0"
 				}
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
-					location "query"
-					type "List"
-					optional true
-					since "3.6.0"
-				}
-				column {
-					name "syncSignatures"
-					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "query"
 					type "List"
 					optional true

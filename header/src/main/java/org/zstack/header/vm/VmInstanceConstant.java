@@ -17,6 +17,8 @@ public interface VmInstanceConstant {
 
     String VIRTUAL_NIC_TYPE = "VNIC";
 
+    String VM_SYNC_SIGNATURE_PREFIX = "Vm-";
+
     enum Params {
         VmInstanceSpec,
         AttachingVolumeInventory,
