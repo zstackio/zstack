@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetHostTaskAction extends AbstractAction {
+public class GetChainTaskAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetHostTaskAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetHostTaskResult value;
+        public org.zstack.sdk.GetChainTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,9 +24,6 @@ public class GetHostTaskAction extends AbstractAction {
             return this;
         }
     }
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List hostUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List syncSignatures;
@@ -57,8 +54,8 @@ public class GetHostTaskAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetHostTaskResult value = res.getResult(org.zstack.sdk.GetHostTaskResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetHostTaskResult() : value; 
+        org.zstack.sdk.GetChainTaskResult value = res.getResult(org.zstack.sdk.GetChainTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetChainTaskResult() : value; 
 
         return ret;
     }
@@ -88,7 +85,7 @@ public class GetHostTaskAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hosts/task-details";
+        info.path = "/core/task-details";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
