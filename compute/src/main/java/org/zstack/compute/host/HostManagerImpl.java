@@ -112,8 +112,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             handle((APIAddHostMsg) msg);
         } else if (msg instanceof APIGetHypervisorTypesMsg) {
             handle((APIGetHypervisorTypesMsg) msg);
-        } else if (msg instanceof APIGetHostTaskMsg) {
-            handle((APIGetHostTaskMsg) msg);
         } else if (msg instanceof HostMessage) {
             HostMessage hmsg = (HostMessage) msg;
             passThrough(hmsg);
@@ -126,49 +124,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         APIGetHypervisorTypesReply reply = new APIGetHypervisorTypesReply();
         List<String> res = new ArrayList<>(HypervisorType.getAllTypeNames());
         reply.setHypervisorTypes(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIGetHostTaskMsg msg) {
-        APIGetHostTaskReply reply = new APIGetHostTaskReply();
-        Map<String, List<String>> mnIds = msg.getHostUuids().stream().collect(
-                Collectors.groupingBy(huuid -> destMaker.makeDestination(huuid))
-        );
-        
-        new While<>(mnIds.entrySet()).all((e, compl) -> {
-            GetHostLocalTaskMsg gmsg = new GetHostLocalTaskMsg();
-            gmsg.setHostUuids(e.getValue());
-            bus.makeServiceIdByManagementNodeId(gmsg, HostConstant.SERVICE_ID, e.getKey());
-            bus.send(gmsg, new CloudBusCallBack(compl) {
-                @Override
-                public void run(MessageReply r) {
-                    if (r.isSuccess()) {
-                        GetHostLocalTaskReply gr = r.castReply();
-                        reply.getResults().putAll(gr.getResults());
-                    } else {
-                        logger.error("get host task fail, because " + r.getError().getDetails());
-                    }
-
-                    compl.done();
-                }
-            });
-
-        }).run(new WhileDoneCompletion(msg) {
-            @Override
-            public void done(ErrorCodeList errorCodeList) {
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
-    private void handle(GetHostLocalTaskMsg msg) {
-        GetHostLocalTaskReply reply = new GetHostLocalTaskReply();
-        List<HostVO> vos = Q.New(HostVO.class).in(HostVO_.uuid, msg.getHostUuids()).list();
-        vos.forEach(vo -> {
-            HypervisorFactory factory = this.getHypervisorFactory(HypervisorType.valueOf(vo.getHypervisorType()));
-            Host host = factory.getHost(vo);
-            reply.putResults(vo.getUuid(), thdf.getChainTaskInfo(host.getId()));
-        });
         bus.reply(msg, reply);
     }
 
@@ -208,8 +163,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             passThrough((HostMessage) msg);
         } else if (msg instanceof AddHostMsg){
             handle((AddHostMsg) msg);
-        } else if (msg instanceof GetHostLocalTaskMsg) {
-            handle((GetHostLocalTaskMsg) msg);
         } else if (msg instanceof CancelHostTasksMsg) {
             handle((CancelHostTasksMsg) msg);
         } else {

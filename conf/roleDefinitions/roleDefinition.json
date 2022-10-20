@@ -95,6 +95,8 @@
           "org.zstack.header.host.APIQueryHostMsg",
           "org.zstack.header.host.APIGetHypervisorTypesMsg",
           "org.zstack.header.host.APIGetHostTaskMsg",
+          "org.zstack.header.host.APIGetChainTaskMsg",
+          "org.zstack.header.host.APIGetVmTaskMsg",
           "org.zstack.header.host.APIGetHostNetworkFactsMsg",
           "org.zstack.header.host.APIAddKVMHostFromConfigFileMsg",
           "org.zstack.header.host.APIQueryHostNetworkBondingMsg",

@@ -1,4 +1,4 @@
-package org.zstack.header.host;
+package org.zstack.header.core;
 
 import org.zstack.header.core.progress.ChainInfo;
 import org.zstack.header.message.MessageReply;
@@ -6,10 +6,7 @@ import org.zstack.header.message.MessageReply;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by MaJin on 2019/7/26.
- */
-public class GetHostLocalTaskReply extends MessageReply {
+public class GetLocalTaskReply extends MessageReply {
     private Map<String, ChainInfo> results = new HashMap<>();
 
     public Map<String, ChainInfo> getResults() {
@@ -20,7 +17,7 @@ public class GetHostLocalTaskReply extends MessageReply {
         this.results = results;
     }
 
-    public void putResults(String hostUuid, ChainInfo info) {
-        results.put(hostUuid, info);
+    public void putResults(String uuid, ChainInfo info) {
+        results.put(uuid, info);
     }
 }
