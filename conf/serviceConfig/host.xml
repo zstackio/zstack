@@ -34,5 +34,6 @@
 
     <message>
         <name>org.zstack.header.host.APIGetHostTaskMsg</name>
+        <serviceId>core</serviceId>
     </message>
 </service>

@@ -1,52 +1,55 @@
-package org.zstack.header.host
+package org.zstack.header.vm
 
-import org.zstack.header.host.APIGetHostTaskReply
+import org.zstack.header.vm.APIGetVmTaskReply
 
 doc {
-    title "GetHostTask"
+    title "GetVmTask"
 
-    category "host"
+    category "vmInstance"
 
-    desc """获取物理机上的任务信息"""
+    desc """获取虚拟机上的任务信息"""
 
     rest {
         request {
-			url "GET /v1/hosts/task-details"
+			url "GET /v1/vm-instances/task-details"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIGetHostTaskMsg.class
+            clz APIGetVmTaskMsg.class
 
             desc """"""
             
 			params {
 
 				column {
-					name "hostUuids"
+					name "vmInstanceUuids"
 					enclosedIn ""
-					desc "物理机UUIDs"
+					desc ""
 					location "query"
 					type "List"
 					optional false
-					since "3.6.0"
+					since "4.6.0"
+					
 				}
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc ""
+					desc "系统标签"
 					location "query"
 					type "List"
 					optional true
-					since "3.6.0"
+					since "4.6.0"
+					
 				}
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "query"
 					type "List"
 					optional true
-					since "3.6.0"
+					since "4.6.0"
+					
 				}
 				column {
 					name "syncSignatures"
@@ -56,13 +59,13 @@ doc {
 					type "List"
 					optional true
 					since "4.6.0"
-
+					
 				}
 			}
         }
 
         response {
-            clz APIGetHostTaskReply.class
+            clz APIGetVmTaskReply.class
         }
     }
 }

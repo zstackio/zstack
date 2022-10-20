@@ -45,6 +45,7 @@
     <import resource="springConfigXml/CloudBus.xml"/>
     <import resource="springConfigXml/ClusterManager.xml"/>
     <import resource="springConfigXml/ConfigurationManager.xml"/>
+    <import resource="springConfigXml/core.xml"/>
     <import resource="springConfigXml/ConsoleManager.xml"/>
     <import resource="springConfigXml/DatabaseFacade.xml"/>
     <import resource="springConfigXml/debug.xml"/>
