@@ -8,8 +8,13 @@ import org.zstack.tag.PatternedSystemTag;
 @TagDefinition
 public class LdapSystemTags {
 
+    // clean binding filter, filter to get users who don't need to be synchronized
     public static String LDAP_CLEAN_BINDING_FILTER_TOKEN = "ldapCleanBindingFilter";
     public static PatternedSystemTag LDAP_CLEAN_BINDING_FILTER = new PatternedSystemTag(String.format("ldapCleanBindingFilter::{%s}", LDAP_CLEAN_BINDING_FILTER_TOKEN), LdapServerVO.class);
+
+    // allow list filter, filter to get the users who need to be synchronized
+    public static String LDAP_ALLOW_LIST_FILTER_TOKEN = "ldapAllowListFilter";
+    public static PatternedSystemTag LDAP_ALLOW_LIST_FILTER = new PatternedSystemTag(String.format("ldapAllowListFilter::{%s}", LDAP_ALLOW_LIST_FILTER_TOKEN), LdapServerVO.class);
 
     /**
      *  Support Types：OpenLdap, WindowsAD
