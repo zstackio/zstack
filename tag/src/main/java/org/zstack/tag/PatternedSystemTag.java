@@ -8,6 +8,8 @@ import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.utils.TagUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +20,9 @@ import static org.zstack.utils.StringDSL.s;
 /**
  */
 public class PatternedSystemTag extends SystemTag {
-    List<String> sensitiveTokens;
+    private static final CLogger logger = Utils.getLogger(SystemTag.class);
+
+    public SensitiveTag annotation;
 
     public PatternedSystemTag(String tagFormat, Class resourceClass) {
         super(tagFormat, resourceClass);
@@ -120,17 +124,15 @@ public class PatternedSystemTag extends SystemTag {
     }
 
     public String hideSensitiveInfo(String tag) {
-        if (sensitiveTokens == null) {
-            return tag;
+        Class<? extends SensitiveTagOutputHandler> clz = this.annotation.customizeOutput();
+        String result = tag;
+        try {
+            SensitiveTagOutputHandler sensitiveOutputHandler = clz.newInstance();
+            result = sensitiveOutputHandler.desensitizeTag(this, tag);
+        } catch (InstantiationException | IllegalAccessException e) {
+            logger.warn("exception happened :", e);
         }
-
-        Map<String, String> tokens = TagUtils.parseIfMatch(tagFormat, tag);
-        if (tokens == null) {
-            return tag;
-        }
-
-        sensitiveTokens.forEach(t -> tokens.put(t, "*****"));
-        return instantiateTag(tokens);
+        return result;
     }
 
     public String instantiateTag(Map tokens) {
