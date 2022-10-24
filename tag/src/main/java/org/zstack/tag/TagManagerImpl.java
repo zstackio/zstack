@@ -122,7 +122,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
                 if (f.isAnnotationPresent(SensitiveTag.class) && stag instanceof PatternedSystemTag) {
                     sensitiveTags.add((PatternedSystemTag) stag);
-                    ((PatternedSystemTag) stag).sensitiveTokens = Arrays.asList(f.getAnnotation(SensitiveTag.class).tokens());
+                    ((PatternedSystemTag) stag).annotation = f.getAnnotation(SensitiveTag.class);
                 }
 
                 stag.setTagMgr(this);
