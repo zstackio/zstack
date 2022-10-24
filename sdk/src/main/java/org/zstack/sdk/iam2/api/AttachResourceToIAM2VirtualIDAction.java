@@ -100,7 +100,7 @@ public class AttachResourceToIAM2VirtualIDAction extends AbstractAction {
         info.path = "/iam2/projects/virtual-ids/{virtualIDUuid}/resources";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
