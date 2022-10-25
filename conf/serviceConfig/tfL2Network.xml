@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>network.l2</id>
+    <interceptor>L2NetworkApiInterceptor</interceptor>
+    <message>
+        <name>org.zstack.sugonSdnController.header.APICreateL2TfNetworkMsg</name>
+    </message>
+</service>
