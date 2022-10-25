@@ -102,4 +102,6 @@
     <import resource="springConfigXml/captcha.xml"/>
     <import resource="springConfigXml/log.xml"/>
     <import resource="springConfigXml/sdnController.xml"/>
+    <import resource="springConfigXml/sugonSdnController.xml"/>
+    <import resource="springConfigXml/TfPortAllocator.xml"/>
 </beans>
