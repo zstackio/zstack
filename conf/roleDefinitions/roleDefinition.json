@@ -429,6 +429,7 @@
           "org.zstack.header.configuration.APIDeleteDiskOfferingMsg",
           "org.zstack.tag2.**",
           "org.zstack.sdnController.**",
+          "org.zstack.sugonSdnController.**",
           "org.zstack.header.image.**",
           "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityMsg",
           "org.zstack.storage.primary.local.APILocalStorageMigrateVolumeMsg",
