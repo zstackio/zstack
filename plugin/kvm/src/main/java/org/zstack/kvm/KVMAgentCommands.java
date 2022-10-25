@@ -110,6 +110,7 @@ public class KVMAgentCommands {
     public static class AttachNicCommand extends AgentCommand {
         private String vmUuid;
         private NicTO nic;
+        private String accountUuid;
         private Map addons = new HashMap();
 
         public Map getAddons() {
@@ -135,6 +136,14 @@ public class KVMAgentCommands {
         public void setNic(NicTO nic) {
             this.nic = nic;
         }
+
+        public String getAccountUuid() {
+            return accountUuid;
+        }
+
+        public void setAccountUuid(String accountUuid) {
+            this.accountUuid = accountUuid;
+        }
     }
 
     public static class AttachNicResponse extends AgentResponse {
@@ -153,6 +162,9 @@ public class KVMAgentCommands {
         private String vmInstanceUuid;
         private List<KVMAgentCommands.NicTO> nics;
         private Map<String, Object> addons = new HashMap<>();
+        private String accountUuid;
+        // This api may called after migration
+        private boolean notifySugonSdn;
 
         public List<NicTO> getNics() {
             return nics;
@@ -180,6 +192,22 @@ public class KVMAgentCommands {
 
         public void setVmInstanceUuid(String vmInstanceUuid) {
             this.vmInstanceUuid = vmInstanceUuid;
+        }
+
+        public String getAccountUuid() {
+            return accountUuid;
+        }
+
+        public void setAccountUuid(String accountUuid) {
+            this.accountUuid = accountUuid;
+        }
+
+        public boolean isNotifySugonSdn() {
+            return notifySugonSdn;
+        }
+
+        public void setNotifySugonSdn(boolean notifySugonSdn) {
+            this.notifySugonSdn = notifySugonSdn;
         }
     }
 
@@ -854,6 +882,8 @@ public class KVMAgentCommands {
         // only for vf nic
         private String vlanId;
         private String pciDeviceAddress;
+        // only for tf nic
+        private String l2NetworkUuid;
 
         public List<String> getIps() {
             return ips;
@@ -989,6 +1019,14 @@ public class KVMAgentCommands {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public String getL2NetworkUuid() {
+            return l2NetworkUuid;
+        }
+
+        public void setL2NetworkUuid(String l2NetworkUuid) {
+            this.l2NetworkUuid = l2NetworkUuid;
         }
     }
 
@@ -1631,6 +1669,7 @@ public class KVMAgentCommands {
     }
 
     public static class StartVmCmd extends vdiCmd implements VmAddOnsCmd {
+        private String accountUuid;
         private String vmInstanceUuid;
         private long vmInternalId;
         private String vmName;
@@ -1722,6 +1761,15 @@ public class KVMAgentCommands {
 
         public void setMaxVcpuNum(int maxVcpuNum) {
             this.maxVcpuNum = maxVcpuNum;
+        }
+
+        public String getAccountUuid() {
+            return accountUuid;
+        }
+
+        public void setAccountUuid(String accountUuid) {
+            this.accountUuid = accountUuid;
+
         }
 
         public String getChassisAssetTag() {
@@ -2875,6 +2923,7 @@ public class KVMAgentCommands {
         private boolean autoConverge;
         private boolean xbzrle;
         private List<String> vdpaPaths;
+        private List<NicTO> nics;
         private Map<String, VolumeTO> disks;  // A map from old install path to new volume
 
         public boolean isUseNuma() {
@@ -2963,6 +3012,14 @@ public class KVMAgentCommands {
 
         public void setDestHostManagementIp(String destHostManagementIp) {
             this.destHostManagementIp = destHostManagementIp;
+        }
+
+        public List<NicTO> getNics() {
+            return nics;
+        }
+
+        public void setNics(List<NicTO> nics) {
+            this.nics = nics;
         }
     }
 

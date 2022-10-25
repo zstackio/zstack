@@ -83,5 +83,4 @@
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
-
 </beans>

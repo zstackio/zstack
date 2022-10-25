@@ -34,7 +34,8 @@
             <list>
                 <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateHostAndPrimaryStorageFlow</value>
-                <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
+		<value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
+		<value>org.zstack.compute.vm.VmPreAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateCdRomFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
@@ -86,7 +87,8 @@
                 <value>org.zstack.compute.vm.VmDestroyOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmReturnHostFlow</value>
                 <value>org.zstack.compute.vm.VmReleaseResourceFlow</value>
-                <value>org.zstack.compute.vm.VmReturnReleaseNicFlow</value>
+		<value>org.zstack.compute.vm.VmReturnReleaseNicFlow</value>
+		<value>org.zstack.compute.vm.VmPostReleaseNicFlow</value>
                 <value>org.zstack.compute.vm.VmDeleteVolumeFlow</value>
             </list>
         </property>
@@ -223,6 +225,13 @@
     <bean id="VmNicFactory" class="org.zstack.compute.vm.VmNicFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.VmInstanceNicFactory" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="TfVmNicFactory" class="org.zstack.compute.vm.TfVmNicFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceNicFactory" />
+            <zstack:extension interface="org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
