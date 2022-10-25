@@ -19,6 +19,8 @@ public interface VmInstanceConstant {
 
     String VM_SYNC_SIGNATURE_PREFIX = "Vm-";
 
+    String TF_VIRTUAL_NIC_TYPE = "TFVNIC";
+
     enum Params {
         VmInstanceSpec,
         AttachingVolumeInventory,

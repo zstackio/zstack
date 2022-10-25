@@ -23,4 +23,8 @@ public class L3NetworkSystemTags {
     public static String NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IPRANGE_UUID_TOKEN = "ascDelayAddressPoolNextIpRangeUuid";
     public static String NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IP_TOKEN = "ascDelayAddressPoolNextIp";
     public static PatternedSystemTag NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IP = new PatternedSystemTag(String.format("ascDelayAddressPoolNextIp::{%s}::{%s}", NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IPRANGE_UUID_TOKEN, NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IP_TOKEN), L3NetworkVO.class);
+
+    public static String ENABLE_DHCP_TOKEN = "enableDHCP";
+
+    public static PatternedSystemTag ENABLE_DHCP = new PatternedSystemTag(String.format("enableDHCP::{%s}",ENABLE_DHCP_TOKEN), L3NetworkVO.class);
 }

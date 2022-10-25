@@ -115,6 +115,11 @@ public class AccountBase extends AbstractAccount {
             }
         }
 
+        // execute tf extension point
+        final AccountInventory inventory = AccountInventory.valueOf(account);
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(BeforeUpdateAccountExtensionPoint.class),
+                arg -> arg.beforeUpdateAccount(inventory));
+
         APIUpdateAccountEvent evt = new APIUpdateAccountEvent(msg.getId());
         evt.setInventory(AccountInventory.valueOf(account));
         bus.publish(evt);
@@ -208,6 +213,11 @@ public class AccountBase extends AbstractAccount {
         deleteAccount(new Completion(msg) {
             @Override
             public void success() {
+                // execute tf extension point
+                final AccountInventory inventory = new AccountInventory();
+                inventory.setUuid(msg.getUuid() );
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(BeforeDeleteAccountExtensionPoint.class),
+                        arg -> arg.beforeDeleteAccount(inventory));
                 bus.publish(evt);
             }
 

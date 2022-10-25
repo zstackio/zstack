@@ -50,6 +50,9 @@ public class VmSystemTags {
     public static String MAC_TOKEN = "customMac";
     public static PatternedSystemTag CUSTOM_MAC = new PatternedSystemTag(String.format("customMac::{%s}::{%s}", STATIC_IP_L3_UUID_TOKEN, MAC_TOKEN), VmInstanceVO.class);
 
+    public static String NIC_UUID_TOKEN = "customNicUuid";
+    public static PatternedSystemTag CUSTOM_NIC_UUID = new PatternedSystemTag(String.format("customNicUuid::{%s}::{%s}", STATIC_IP_L3_UUID_TOKEN, NIC_UUID_TOKEN), VmInstanceVO.class);
+
     public static PatternedSystemTag WINDOWS_VOLUME_ON_VIRTIO = new PatternedSystemTag("windows::virtioVolume", VmInstanceVO.class);
 
     public static String USERDATA_TOKEN = "userdata";

@@ -29,6 +29,7 @@
         <module>vxlan</module>
         <module>acl</module>
         <module>sdnController</module>
+        <module>sugonSdnController</module>
         <module>directory</module>
         <module>sshKeyPair</module>
     </modules>
