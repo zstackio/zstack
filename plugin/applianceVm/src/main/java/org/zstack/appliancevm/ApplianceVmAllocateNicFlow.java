@@ -94,7 +94,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
 
         // set vnic type based on enableSRIOV system tag and vSwitchType
-        VSwitchType vSwitchType = new VSwitchType(l2NetworkVO.getvSwitchType());
+        VSwitchType vSwitchType = VSwitchType.valueOf(l2NetworkVO.getvSwitchType());
         boolean enableSriov = Q.New(SystemTagVO.class)
                 .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
                 .eq(SystemTagVO_.resourceUuid, vmSpec.getVmInventory().getUuid())
@@ -170,7 +170,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
             @Override
             protected void scripts() {
                 nics.forEach(nic -> {
-                    VmNicType vmNicType = new VmNicType(nic.getType());
+                    VmNicType vmNicType = VmNicType.valueOf(nic.getType());
                     VmInstanceNicFactory vnicFactory;
                     vnicFactory = vmMgr.getVmInstanceNicFactory(vmNicType);
                     vnicFactory.createVmNic(nic, spec, nic.getUsedIps());

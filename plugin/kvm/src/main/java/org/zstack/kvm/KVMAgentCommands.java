@@ -1627,6 +1627,7 @@ public class KVMAgentCommands {
     }
 
     public static class StartVmCmd extends vdiCmd implements VmAddOnsCmd {
+        private String accountUuid;
         private String vmInstanceUuid;
         private long vmInternalId;
         private String vmName;
@@ -1686,6 +1687,14 @@ public class KVMAgentCommands {
 
         // TODO: only for test
         private boolean useColoBinary;
+
+        public String getAccountUuid() {
+            return accountUuid;
+        }
+
+        public void setAccountUuid(String accountUuid) {
+            this.accountUuid = accountUuid;
+        }
 
         public String getChassisAssetTag() {
             return chassisAssetTag;
