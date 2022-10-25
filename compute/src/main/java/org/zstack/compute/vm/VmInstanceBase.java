@@ -2187,6 +2187,14 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         spec.setL3Networks(list(new VmNicSpec(l3s)));
         spec.setDestNics(new ArrayList<VmNicInventory>());
+        if (msg instanceof APIAttachL3NetworkToVmMsg) {
+            APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
+            for (String systemTag : amsg.getSystemTags()) {
+                if (VmSystemTags.SIMPLE_L2_NETWORK.isMatch(systemTag)) {
+                    spec.setSkipIpAllocation(true);
+                }
+            }
+        }
 
         if (msg instanceof APIAttachL3NetworkToVmMsg) {
             APIAttachL3NetworkToVmMsg msg1 = (APIAttachL3NetworkToVmMsg) msg;
