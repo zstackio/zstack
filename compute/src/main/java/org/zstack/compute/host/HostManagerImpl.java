@@ -41,7 +41,7 @@ import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
 import org.zstack.header.vo.FindSameNodeExtensionPoint;
 import org.zstack.header.vo.ResourceInventory;
 import org.zstack.header.zone.ZoneVO;
-import org.zstack.resourceconfig.ClusterResourceConfigInitializer;
+import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;

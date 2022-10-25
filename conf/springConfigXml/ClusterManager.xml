@@ -12,6 +12,13 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
+    <bean id="ClusterResourceConfigInitializer" class="org.zstack.compute.cluster.arch.ClusterResourceConfigInitializerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" order="100"/>
+            <zstack:extension interface="org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="ClusterManager" class="org.zstack.compute.cluster.ClusterManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
