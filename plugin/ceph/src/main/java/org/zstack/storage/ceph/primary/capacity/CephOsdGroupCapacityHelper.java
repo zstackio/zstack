@@ -198,7 +198,7 @@ public class CephOsdGroupCapacityHelper {
 
         CephOsdGroupVO osdGroupVO = dbf.findByUuid(pool.getOsdGroup().getUuid(), CephOsdGroupVO.class);
         return PrimaryStorageCapacityChecker.New(osdGroupVO.getPrimaryStorageUuid(),
-                osdGroupVO.getAvailableCapacity(), osdGroupVO.getTotalPhysicalCapacity(), osdGroupVO.getAvailableCapacity())
+                osdGroupVO.getAvailableCapacity(), osdGroupVO.getTotalPhysicalCapacity(), osdGroupVO.getAvailablePhysicalCapacity())
                 .checkRequiredSize(requiredSize);
     }
 
