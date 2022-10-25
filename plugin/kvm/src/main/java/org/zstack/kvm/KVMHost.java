@@ -66,6 +66,7 @@ import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
@@ -129,6 +130,8 @@ public class KVMHost extends HostBase implements Host {
     @Autowired
     private VmInstanceDeviceManager vidm;
 
+    @Autowired
+    private AccountManager accountMgr;
     private KVMHostContext context;
 
     // ///////////////////// REST URL //////////////////////////
@@ -1925,7 +1928,6 @@ public class KVMHost extends HostBase implements Host {
         final Long vmInternalId = q.findValue();
 
         List<VmNicVO> nics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, s.vmUuid)
-                .eq(VmNicVO_.type, "vDPA")
                 .list();
         List<NicTO> nicTos = VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList());
         List<NicTO> vDPANics = new ArrayList<NicTO>();
@@ -1951,7 +1953,7 @@ public class KVMHost extends HostBase implements Host {
                         }
                         GenerateVdpaCmd cmd = new GenerateVdpaCmd();
                         cmd.vmUuid = vmUuid;
-                        cmd.setNics(nicTos);
+                        cmd.setNics(vDPANics);
 
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
                         ub.host(dstHostMnIp);
@@ -2004,6 +2006,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setVdpaPaths((List<String>) data.get("vDPA_paths"));
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setTimeout(timeoutManager.getTimeout());
+                        cmd.setNics(nicTos);
 
                         if (s.diskMigrationMap != null) {
                             Map<String, VolumeTO> diskMigrationMap = new HashMap<>();
@@ -2280,6 +2283,8 @@ public class KVMHost extends HostBase implements Host {
         UpdateNicCmd cmd = new UpdateNicCmd();
         cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
         cmd.setNics(VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList()));
+        cmd.setNotifySugonSdn(msg.isNotifySugonSdn());
+        cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmInstanceUuid()));
 
         KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
         for (KVMPreUpdateNicExtensionPoint ext : pluginRgty.getExtensionList(KVMPreUpdateNicExtensionPoint.class)) {
@@ -2327,6 +2332,7 @@ public class KVMHost extends HostBase implements Host {
         AttachNicCommand cmd = new AttachNicCommand();
         cmd.setVmUuid(msg.getNicInventory().getVmInstanceUuid());
         cmd.setNic(to);
+        cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmUuid()));
 
         KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
         for (KvmPreAttachNicExtensionPoint ext : pluginRgty.getExtensionList(KvmPreAttachNicExtensionPoint.class)) {
@@ -3068,6 +3074,8 @@ public class KVMHost extends HostBase implements Host {
         extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
 
         extEmitter.addOn(khinv, spec, cmd);
+        //Set account uuid for kvm agent call vrouter agent api
+        cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmInstanceUuid()));
 
         new Http<>(startVmPath, cmd, StartVmResponse.class).call(new ReturnValueCompletion<StartVmResponse>(msg, completion) {
             @Override
