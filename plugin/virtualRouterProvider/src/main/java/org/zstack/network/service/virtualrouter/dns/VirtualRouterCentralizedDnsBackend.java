@@ -318,10 +318,6 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
             return dns;
         }
 
-        if (!inv.getNetworkServiceTypes().contains(NetworkServiceType.Centralized_DNS.toString())) {
-            return dns;
-        }
-
         /* only virtual router network will add gateway as dns address */
         for (NetworkServiceL3NetworkRefInventory ref : inv.getNetworkServices()) {
             if (!ref.getNetworkServiceType().equals(NetworkServiceType.SNAT.toString())) {
