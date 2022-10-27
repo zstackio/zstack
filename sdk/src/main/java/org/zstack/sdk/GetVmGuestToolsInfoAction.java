@@ -29,6 +29,9 @@ public class GetVmGuestToolsInfoAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = false)
+    public java.util.Set debug;
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
