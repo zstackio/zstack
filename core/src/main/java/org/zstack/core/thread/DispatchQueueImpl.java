@@ -962,19 +962,19 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     private void processTimeoutTask(AbstractTimeStatisticFuture abstractTimeStatisticFuture) {
         long now = System.currentTimeMillis();
         PendingTaskInfo taskInfo = TaskInfoBuilder.buildPendingTaskInfo(abstractTimeStatisticFuture, now, 0);
-        Double timeout = 0.0;
+        long timeout = 0L;
         if (taskInfo.getContext().isEmpty()) {
             return;
         }
 
         for (String c : taskInfo.getContextList()) {
             Map context = JSONObjectUtil.toObject(c, LinkedHashMap.class);
-            timeout = (context.get("timeout") == null) ? 0 : (Double) context.get("timeout");
+            timeout = (context.get("timeout") == null) ? 0 : (long) context.get("timeout");
         }
 
-        if (timeout > 0 && taskInfo.getPendingTime() * 1000 > timeout.longValue()){
+        if (timeout > 0 && taskInfo.getPendingTime() * 1000 > timeout){
             logger.warn(String.format("this task has been pending for %s ms longer than timeout %s ms, cancel it. task info: %s",
-                    taskInfo.getPendingTime()*1000, timeout, taskInfo.toString()));
+                    taskInfo.getPendingTime()*1000, timeout, taskInfo));
             abstractTimeStatisticFuture.cancel(true);
         }
     }
