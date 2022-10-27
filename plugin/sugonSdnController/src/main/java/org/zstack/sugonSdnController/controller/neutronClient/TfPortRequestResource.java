@@ -13,6 +13,16 @@ public class TfPortRequestResource {
 
     private String mac_address;
 
+    private String device_id;
+
+    public String getDeviceId() {
+        return device_id;
+    }
+
+    public void setDeviceId(String device_id) {
+        this.device_id = device_id;
+    }
+
     public String getMacAddress() {
         return mac_address;
     }

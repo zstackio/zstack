@@ -5,12 +5,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import okhttp3.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.sugonSdnController.controller.SugonSdnControllerGlobalProperty;
+import org.zstack.core.db.Q;
+import org.zstack.sdnController.header.SdnControllerConstant;
 import org.zstack.sdnController.header.SdnControllerVO;
+import org.zstack.sdnController.header.SdnControllerVO_;
+import org.zstack.sugonSdnController.controller.SugonSdnControllerGlobalProperty;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -22,9 +23,7 @@ import java.util.concurrent.TimeUnit;
 public class TfPortClient {
     private static final CLogger logger = Utils.getLogger(TfPortClient.class);
 
-    @Autowired
-    private SdnControllerVO sdnControllerVO;
-    public TfPortResponse createPort(String l2Id, String l3Id, String mac, String ip, String accountId) {
+    public TfPortResponse createPort(String l2Id, String l3Id, String mac, String ip, String accountId,String vmInventeryId) {
         TfPortRequestBody portRequestBodyEO = new TfPortRequestBody();
         TfPortRequestData portRequestDataEO = new TfPortRequestData();
         TfPortRequestContext portRequestContextEO = new TfPortRequestContext();
@@ -36,6 +35,7 @@ public class TfPortClient {
         requestPortResourceEntity.setSubnetId(l3Id);
         requestPortResourceEntity.setTenantId(accountId);
         requestPortResourceEntity.setMacAddress(mac);
+        requestPortResourceEntity.setDeviceId(vmInventeryId);
         TfPortIpEntity ipEntity = new TfPortIpEntity();
         ipEntity.setIpAddress(ip);
         ipEntity.setSubnetId(l3Id);
@@ -75,7 +75,8 @@ public class TfPortClient {
                 .build();
         MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
         RequestBody requestBody = RequestBody.create(mediaType, requestStr);
-        String url = "http://"+sdnControllerVO.getIp()+":"+ SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT+"/neutron/port";
+        SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SdnControllerConstant.TF_CONTROLLER).find();
+        String url = "http://" + sdn.getIp() + ":" + SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT + "/neutron/port";
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("Content-Type", "application/json")
@@ -91,7 +92,7 @@ public class TfPortClient {
             return portResponse;
         } catch (IOException e) {
             logger.error(e.getMessage());
-            throw new RuntimeException("failed invoking tf "+portRequestBodyEO.getContext().getOperation().toLowerCase()+" port ");
+            throw new RuntimeException("failed invoking tf " + portRequestBodyEO.getContext().getOperation().toLowerCase() + " port ");
         }
     }
 }
