@@ -1,10 +1,18 @@
 package org.zstack.compute.vm;
 
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.PatternedSystemTag;
+import org.zstack.tag.SensitiveTagOutputHandler;
 import org.zstack.tag.SensitiveTag;
 import org.zstack.tag.SystemTag;
+
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  */
@@ -23,6 +31,7 @@ public class VmSystemTags {
     public static PatternedSystemTag WINDOWS_VOLUME_ON_VIRTIO = new PatternedSystemTag("windows::virtioVolume", VmInstanceVO.class);
 
     public static String USERDATA_TOKEN = "userdata";
+    @SensitiveTag(tokens = {"userdata"}, customizeOutput = UserdataTagOutputHandler.class)
     public static PatternedSystemTag USERDATA = new PatternedSystemTag(String.format("userdata::{%s}", USERDATA_TOKEN), VmInstanceVO.class);
 
     public static String SSHKEY_TOKEN = "sshkey";
@@ -169,4 +178,74 @@ public class VmSystemTags {
     public static PatternedSystemTag L3_NETWORK_SECURITY_GROUP_UUIDS_REF =
             new PatternedSystemTag(String.format("l3::{%s}::SecurityGroupUuids::{%s}", L3_UUID_TOKEN, SECURITY_GROUP_UUIDS_TOKEN),
                     VmInstanceVO.class);
+
+    public static class UserdataTagOutputHandler implements SensitiveTagOutputHandler {
+        private final String chpasswd = "chpasswd";
+        private final String list = "list";
+
+        @Override
+        public String desensitizeTag(SystemTag systemTag, String tag) {
+            if (!(systemTag instanceof PatternedSystemTag)) {
+                return tag;
+            }
+            PatternedSystemTag patternedSystemTag = (PatternedSystemTag) systemTag;
+
+            String[] sensitiveTokens = patternedSystemTag.annotation.tokens();
+            if (sensitiveTokens == null || sensitiveTokens.length == 0) {
+                return tag;
+            }
+
+            Map<String, String> tokens = patternedSystemTag.getTokensByTag(tag);
+            if (tokens == null || tokens.isEmpty()) {
+                return tag;
+            }
+
+            for (String t : sensitiveTokens) {
+                String base64Pattern = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$";
+                String userdata = tokens.get(t);
+                if (Pattern.matches(base64Pattern, userdata)) {
+                    userdata = new String(Base64.getDecoder().decode(userdata.getBytes()));
+                }
+
+                Yaml yaml = new Yaml();
+                Object obj = yaml.load(userdata);
+                if (!(obj instanceof LinkedHashMap)) {
+                    return tag;
+                }
+                LinkedHashMap<String, Object> userdataMap = (LinkedHashMap<String, Object>) obj;
+                if (userdataMap.isEmpty()) {
+                    return tag;
+                }
+
+                Object chpasswdValue = userdataMap.get(chpasswd);
+                if (!(chpasswdValue instanceof LinkedHashMap)) {
+                    return tag;
+                }
+                LinkedHashMap<String, Object> chpasswdMap = (LinkedHashMap<String, Object>) chpasswdValue;
+
+                Object listValue = chpasswdMap.get(list);
+                if (!(listValue instanceof String) || listValue.equals("")) {
+                    return tag;
+                }
+                /*
+                 * #cloud-config
+                 * chpasswd:
+                 *   list: |
+                 *     root:password  ——>  *****:*****
+                 *   expire: False
+                 * */
+                chpasswdMap.replace(list, "*****:*****\n");
+
+                DumperOptions options = new DumperOptions();
+                options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+                options.setDefaultScalarStyle(DumperOptions.ScalarStyle.PLAIN);
+
+                yaml = new Yaml(options);
+                String maskedUserdata = yaml.dump(userdataMap);
+                maskedUserdata = "#cloud-config\n" + maskedUserdata;
+                tokens.put(t, new String(Base64.getEncoder().encode(maskedUserdata.getBytes())));
+            }
+            return patternedSystemTag.instantiateTag(tokens);
+        }
+    }
 }
