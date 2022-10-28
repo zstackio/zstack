@@ -13,4 +13,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SensitiveTag {
     String[] tokens() default {};
+
+    Class<? extends SensitiveTagOutputHandler> customizeOutput() default SensitiveTokenTagOutputHandler.class;
 }
