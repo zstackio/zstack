@@ -129,7 +129,7 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
             name = "range"
             l3NetworkUuid = l3.uuid
             startIp = "192.168.0.2"
-            endIp = "192.168.0.10"
+            endIp = "192.168.0.11"
             gateway = "192.168.0.1"
             netmask = "255.255.255.0"
         }
@@ -209,7 +209,15 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
         }
-        assert(vm_8.vmNics[0].usedIps[0].ip == '192.168.0.4')
+        assert(vm_8.vmNics[0].usedIps[0].ip == '192.168.0.11')
+
+        VmInstanceInventory vm_9 = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+        }
+        assert(vm_9.vmNics[0].usedIps[0].ip == '192.168.0.4')
 
         deleteVmInstance(vm_1)
         deleteVmInstance(vm_4)
@@ -217,6 +225,7 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
         deleteVmInstance(vm_6)
         deleteVmInstance(vm_7)
         deleteVmInstance(vm_8)
+        deleteVmInstance(vm_9)
         deleteIpRange { uuid = range.uuid }
         deleteL3Network { uuid = l3.uuid }
 

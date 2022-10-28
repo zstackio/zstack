@@ -173,7 +173,11 @@ public class AscDelayRecycleIpAllocatorStrategy extends AbstractIpAllocatorStrat
             if (r.getUuid().equals(curUsedIpRangeUuid)) {
                 IpRangeVO cloneRange = new IpRangeVO();
                 cloneRange.setUuid(r.getUuid());
-                cloneRange.setStartIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(curUsedIp)+1));
+                long startIp = NetworkUtils.ipv4StringToLong(curUsedIp)+1;
+                if (startIp > NetworkUtils.ipv4StringToLong(r.getEndIp())) {
+                    continue;
+                }
+                cloneRange.setStartIp(NetworkUtils.longToIpv4String(startIp));
                 cloneRange.setEndIp(r.getEndIp());
                 cloneRange.setIpVersion(r.getIpVersion());
                 ip = allocateIpByAsc(cloneRange, excludeIp);
