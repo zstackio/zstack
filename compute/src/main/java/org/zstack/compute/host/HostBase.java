@@ -880,6 +880,7 @@ public abstract class HostBase extends AbstractHost {
                 checkState();
 
                 if (skipReconnectHost(msg)) {
+                    bus.reply(msg, new ReconnectHostReply());
                     finish(chain);
                     return;
                 }
