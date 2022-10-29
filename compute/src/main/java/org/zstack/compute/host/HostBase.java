@@ -759,6 +759,14 @@ public abstract class HostBase extends AbstractHost {
 
                     changeConnectionState(HostStatusEvent.disconnected);
 
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(PingHostFailedExtensionPoint.class),
+                        new ForEachFunction<PingHostFailedExtensionPoint>() {
+                            @Override
+                            public void run(PingHostFailedExtensionPoint arg) {
+                                arg.afterPingHostFailed(self.getUuid(), errorCode);
+                            }
+                    });
+
                     completion.success(reply);
                 } else {
                     reply.setConnected(true);
