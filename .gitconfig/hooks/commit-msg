@@ -61,7 +61,7 @@ def backup_and_exit(file_path):
 
     lines = []
     useful = ["\n\n"]
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf8') as f:
         lines = f.readlines()
     for l in lines:
             if l.startswith("# Please enter the commit") or \
@@ -87,7 +87,7 @@ def fix_commit_msg(file_path):
     # see: https://superuser.com/questions/1367811/sometimes-git-includes-the-diff-to-commit-message-when-using-verbose
 
     fixed_commit_msg = []
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf8') as f:
         lines = f.readlines()
         for no, line in enumerate(lines):
             if "# Everything below it will be ignored." in line.strip() or \
@@ -96,7 +96,7 @@ def fix_commit_msg(file_path):
                 break
     if len(fixed_commit_msg) == 0:
         return
-    with open(file_path, 'w') as f:
+    with open(file_path, 'w', encoding='utf8') as f:
         f.writelines(fixed_commit_msg)
 
 
@@ -124,7 +124,7 @@ def check_commit_msg(file_path):
 
     jira_patterns = [r"\bZSTAC-\d+\b", r"\bZSTACK-\d+\b", r"\bMINI-\d+\b", 
                      r"\bZOPS-\d+\b", r"\bZHCI-\d+\b"]
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf8') as f:
         lines = f.readlines()
         full_lines = len(lines)
 
