@@ -237,18 +237,19 @@ public class SugonSdnController implements TfSdnController, SdnController {
     public void createAccount(AccountInventory account) {
         try {
             ApiConnector apiConnector = ApiConnectorFactory.build(sdnControllerVO.getIp(), SugonSdnControllerGlobalProperty.TF_CONTROLLER_PORT);
+            Domain domain = (Domain) apiConnector.findByFQN(Domain.class, SugonSdnControllerConstant.TF_DEFAULT_DOMAIN);
             Project project = new Project();
-            project.getDefaultParent();
-            project.getQualifiedName();
+            project.setParent(domain);
             project.setUuid(StringDSL.transToTfUuid(account.getUuid()));
             project.setDisplayName(account.getName());
             project.setName(account.getName());
             Status status = apiConnector.create(project);
             if (!status.isSuccess()) {
-                logger.error("tf sync create account fail");
+                String message = String.format("create tf project[name:%s] failed due to：%s ",account.getName(), "tf api call failed");
+                logger.error(message);
             }
         } catch (Exception e){
-            String message = String.format("tf sync create account occur exception: %s", e.getMessage());
+            String message = String.format("create tf project[name:%s] failed due to：%s ",account.getName(), e.getMessage());
             logger.error(message, e);
         }
     }
@@ -261,10 +262,11 @@ public class SugonSdnController implements TfSdnController, SdnController {
             project.setUuid(StringDSL.transToTfUuid(account.getUuid()));
             Status status = apiConnector.delete(project);
             if (!status.isSuccess()) {
-                logger.error("tf sync delete account fail");
+                String message = String.format("delete tf project[name:%s] failed due to：%s ",account.getName(), "tf api call failed");
+                logger.error(message);
             }
         } catch (Exception e){
-            String message = String.format("tf sync delete account occur exception: %s", e.getMessage());
+            String message = String.format("delete tf project[name:%s] failed due to：%s ",account.getName(), e.getMessage());
             logger.error(message, e);
         }
     }
@@ -278,10 +280,11 @@ public class SugonSdnController implements TfSdnController, SdnController {
             project.setDisplayName(account.getName());
             Status status = apiConnector.update(project);
             if (!status.isSuccess()) {
-                logger.error("tf sync update account fail");
+                String message = String.format("update tf project[name:%s] failed due to：%s ",account.getName(), "tf api call failed");
+                logger.error(message);
             }
         } catch (Exception e){
-            String message = String.format("tf sync update account occur exception: %s", e.getMessage());
+            String message = String.format("update tf project[name:%s] failed due to：%s ",account.getName(), e.getMessage());
             logger.error(message, e);
         }
     }
@@ -305,7 +308,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                     // 更新 tf 网络信息
                     Status status = apiConnector.update(vn);
                     if(!status.isSuccess()){
-                        completion.fail(operr("call tf api failed"));
+                        completion.fail(operr("delete tf l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                     } else{
                         completion.success();
                     }
@@ -353,7 +356,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                         // 更新 tf 网络信息
                         Status status = apiConnector.update(vn);
                         if(!status.isSuccess()){
-                            completion.fail(operr("call tf api failed"));
+                            completion.fail(operr("update tf l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                         } else{
                             completion.success();
                         }
@@ -361,17 +364,17 @@ public class SugonSdnController implements TfSdnController, SdnController {
                     // 未找到指定的子网，继续执行后续的zstack逻辑
                     completion.success();
                 } else{
-                    String message = String.format("update l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), "tf network-ipam is missing");
+                    String message = String.format("update tf l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), "tf network-ipam is missing");
                     logger.info(message);
                     completion.success();
                 }
             } else{
-                String message = String.format("update l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), "tf virtual network is missing");
+                String message = String.format("update tf l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), "tf virtual network is missing");
                 logger.error(message);
                 completion.fail(operr(message));
             }
         } catch (Exception e){
-            String message = String.format("update l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), e.getMessage());
+            String message = String.format("update tf l3 network[name:%s] on tf controller failed due to: %s ",l3NetworkVO.getName(), e.getMessage());
             logger.error(message, e);
             completion.fail(operr(message));
         }
@@ -423,7 +426,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                 // 更新 tf 网络信息
                 Status status = apiConnector.update(vn);
                 if(!status.isSuccess()){
-                    completion.fail(operr("call tf api failed"));
+                    completion.fail(operr("add tf l3 subnet[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                 } else{
                     completion.success();
                 }
@@ -467,7 +470,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                         // 更新 tf 网络信息
                         Status status = apiConnector.update(vn);
                         if(!status.isSuccess()){
-                            completion.fail(operr("call tf api failed"));
+                            completion.fail(operr("add host router to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                         } else{
                             completion.success();
                         }
@@ -520,7 +523,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                         // 更新 tf 网络信息
                         Status status = apiConnector.update(vn);
                         if(!status.isSuccess()){
-                            completion.fail(operr("call tf api failed"));
+                            completion.fail(operr("delete host route from l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                         } else{
                             completion.success();
                         }
@@ -562,7 +565,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                         // 更新 tf 网络信息
                         Status status = apiConnector.update(vn);
                         if(!status.isSuccess()){
-                            completion.fail(operr("call tf api failed"));
+                            completion.fail(operr("add dns to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                         } else{
                             completion.success();
                         }
@@ -608,12 +611,12 @@ public class SugonSdnController implements TfSdnController, SdnController {
                             // 更新 tf 网络信息
                             Status status = apiConnector.update(vn);
                             if (!status.isSuccess()) {
-                                completion.fail(operr("call tf api failed"));
+                                completion.fail(operr("delete dns from to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
                             } else {
                                 completion.success();
                             }
                         } else{
-                            completion.fail(operr("error dns address"));
+                            completion.fail(operr("delete dns from to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"error dns address"));
                         }
                     }
                     // 未找到指定的子网，继续执行后续的zstack逻辑

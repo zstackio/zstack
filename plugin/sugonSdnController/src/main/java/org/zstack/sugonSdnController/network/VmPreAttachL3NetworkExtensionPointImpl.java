@@ -46,9 +46,9 @@ public class VmPreAttachL3NetworkExtensionPointImpl implements VmPreAttachL3Netw
         TfPortClient tfPortClient = new TfPortClient();
         String tfL2NetworkId = StringDSL.transToTfUuid(l3.getL2NetworkUuid());
         String tfL3NetworkId = StringDSL.transToTfUuid(l3.getUuid());
-        String accountId = acntMgr.getOwnerAccountUuidOfResource(vm.getUuid());
-        TfPortResponse port = tfPortClient.createPort(tfL2NetworkId, tfL3NetworkId, customMac, customIp, accountId);
-
+        String accountId = StringDSL.transToTfUuid(acntMgr.getOwnerAccountUuidOfResource(vm.getUuid()));
+        String vmiUuid = StringDSL.transToTfUuid(vm.getUuid());
+        TfPortResponse port = tfPortClient.createPort(tfL2NetworkId, tfL3NetworkId, customMac, customIp, accountId, vmiUuid);
         String finalMac = port.getMacAddress();
         String finalIp = port.getFixedIps().get(0).getIpAddress();
         String nicUuid = StringDSL.transToZstackUuid(port.getPortId());

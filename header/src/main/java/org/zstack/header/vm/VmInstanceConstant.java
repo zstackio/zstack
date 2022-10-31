@@ -17,7 +17,7 @@ public interface VmInstanceConstant {
 
     String VIRTUAL_NIC_TYPE = "VNIC";
 
-    String TF_VIRTUAL_NIC_TYPE = "ethernet";
+    String TF_VIRTUAL_NIC_TYPE = "TFVNIC";
 
     enum Params {
         VmInstanceSpec,

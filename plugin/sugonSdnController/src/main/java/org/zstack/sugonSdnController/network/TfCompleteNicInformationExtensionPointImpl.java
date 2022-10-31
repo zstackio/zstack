@@ -22,12 +22,12 @@ public class TfCompleteNicInformationExtensionPointImpl implements KVMCompleteNi
         NicTO to = new NicTO();
         to.setMac(nic.getMac());
         to.setUuid(nic.getUuid());
-        to.setDeviceId(nic.getDeviceId());
         to.setNicInternalName(nic.getInternalName());
         to.setType(nic.getType());
         to.setIps(new ArrayList<String>(Arrays.asList(nic.getIp())));
         VmGlobalConfig.VM_CLEAN_TRAFFIC.updateValue(true);
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
+        to.setL2NetworkUuid(l2Network.getUuid());
         logger.debug("Complete nic information for TfL2Network");
         return to;
     }
