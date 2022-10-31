@@ -212,6 +212,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         evt.setInventory(inv);
 
         this.saveLdapCleanBindingFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
+        this.saveLdapAllowListFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
         this.saveLdapServerTypeTag(msg.getSystemTags(), ldapServerVO.getUuid());
         this.saveLdapUseAsLoginNameTag(msg.getSystemTags(), ldapServerVO.getUuid());
 
@@ -229,6 +230,25 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
         PatternedSystemTag tag =  LdapSystemTags.LDAP_CLEAN_BINDING_FILTER;
         String token = LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN;
+
+        String tagValue = SystemTagUtils.findTagValue(systemTags, tag, token);
+        if(StringUtils.isEmpty(tagValue)){
+            return;
+        }
+
+        SystemTagCreator creator = tag.newSystemTagCreator(uuid);
+        creator.recreate = true;
+        creator.setTagByTokens(map(CollectionDSL.e(token, tagValue)));
+        creator.create();
+    }
+
+    private void saveLdapAllowListFilterTag(List<String> systemTags, String uuid){
+        if(systemTags == null || systemTags.isEmpty()){
+            return;
+        }
+
+        PatternedSystemTag tag = LdapSystemTags.LDAP_ALLOW_LIST_FILTER;
+        String token = LdapSystemTags.LDAP_ALLOW_LIST_FILTER_TOKEN;
 
         String tagValue = SystemTagUtils.findTagValue(systemTags, tag, token);
         if(StringUtils.isEmpty(tagValue)){
@@ -439,14 +459,21 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
             // filter
             String filter = LdapSystemTags.LDAP_CLEAN_BINDING_FILTER.getTokenByResourceUuid(ldapAccRefVO.getLdapServerUuid(), LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN);
-            if(StringUtils.isEmpty(filter)){
-                continue;
+            if(StringUtils.isNotEmpty(filter)){
+                HardcodedFilter hardcodedFilter = new HardcodedFilter(filter);
+                if(ldapUtil.validateDnExist(ldapTemplateContextSource, ldapDn, hardcodedFilter)){
+                    accountUuidList.add(ldapAccRefVO.getAccountUuid());
+                    ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
+                }
             }
-
-            HardcodedFilter hardcodedFilter = new HardcodedFilter(filter);
-            if(ldapUtil.validateDnExist(ldapTemplateContextSource, ldapDn, hardcodedFilter)){
-                accountUuidList.add(ldapAccRefVO.getAccountUuid());
-                ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
+            // allow list filter
+            String allowListFilter = LdapSystemTags.LDAP_ALLOW_LIST_FILTER.getTokenByResourceUuid(ldapAccRefVO.getLdapServerUuid(), LdapSystemTags.LDAP_ALLOW_LIST_FILTER_TOKEN);
+            if(StringUtils.isNotEmpty(allowListFilter)){
+                HardcodedFilter hardcodedAllowListFilter = new HardcodedFilter(allowListFilter);
+                if(!ldapUtil.validateDnExist(ldapTemplateContextSource, ldapDn, hardcodedAllowListFilter)){
+                    accountUuidList.add(ldapAccRefVO.getAccountUuid());
+                    ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
+                }
             }
         }
 
@@ -501,6 +528,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         evt.setInventory(LdapServerInventory.valueOf(ldapServerVO));
 
         this.saveLdapCleanBindingFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
+        this.saveLdapAllowListFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
         this.saveLdapServerTypeTag(msg.getSystemTags(), ldapServerVO.getUuid());
         this.saveLdapUseAsLoginNameTag(msg.getSystemTags(), ldapServerVO.getUuid());
         for (UpdateLdapServerExtensionPoint ext : pluginRgty.getExtensionList(UpdateLdapServerExtensionPoint.class)) {
