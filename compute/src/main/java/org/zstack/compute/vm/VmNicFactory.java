@@ -51,15 +51,16 @@ public class VmNicFactory implements VmInstanceNicFactory {
             throw new FlowException(err(VmErrors.ALLOCATE_MAC_ERROR, "unable to find an available mac address after re-try 5 times, too many collisions"));
         }
 
-        List<UsedIpVO> ipVOS = new ArrayList<>();
-        for (UsedIpInventory ip : ips) {
-            /* update usedIpVo */
-            UsedIpVO ipVO = dbf.findByUuid(ip.getUuid(), UsedIpVO.class);
-            ipVO.setVmNicUuid(vnic.getUuid());
-            ipVOS.add(ipVO);
+        if (ips != null) {
+            List<UsedIpVO> ipVOS = new ArrayList<>();
+            for (UsedIpInventory ip : ips) {
+                /* update usedIpVo */
+                UsedIpVO ipVO = dbf.findByUuid(ip.getUuid(), UsedIpVO.class);
+                ipVO.setVmNicUuid(vnic.getUuid());
+                ipVOS.add(ipVO);
+            }
+            dbf.updateCollection(ipVOS);
         }
-        dbf.updateCollection(ipVOS);
-
         vnic = dbf.reload(vnic);
         spec.getDestNics().add(VmNicInventory.valueOf(vnic));
         return vnic;
