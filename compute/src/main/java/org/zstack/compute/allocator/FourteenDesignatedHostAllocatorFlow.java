@@ -15,10 +15,13 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FourteenDesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
     @Autowired
@@ -28,7 +31,9 @@ public class FourteenDesignatedHostAllocatorFlow extends AbstractHostAllocatorFl
     private void allocate(String url) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json;charset=utf-8");
-        HttpEntity<String> req = new HttpEntity<>("Host", headers);
+        Map<String, String> body = new HashMap<>();
+        body.put("instanceOfferingUuid", spec.getVmInstance().getInstanceOfferingUuid());
+        HttpEntity<String> req = new HttpEntity<>(JSONObjectUtil.toJsonString(body), headers);
         ResponseEntity<String> rsp = new Retry<ResponseEntity<String>>() {
             @Override
             @RetryCondition(onExceptions = {IOException.class, HttpStatusCodeException.class})
