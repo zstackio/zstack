@@ -673,7 +673,7 @@ public class L3BasicNetwork implements L3Network {
                     }
                 });
 
-                if (!self.getNetworkServices().isEmpty()) {
+                if (L3NetworkConstant.L3_BASIC_NETWORK_TYPE.equals(self.getType()) && !self.getNetworkServices().isEmpty()) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "remove-dns-from-backend";
 
@@ -749,7 +749,7 @@ public class L3BasicNetwork implements L3Network {
                     }
                 });
 
-                if (!self.getNetworkServices().isEmpty()) {
+                if (L3NetworkConstant.L3_BASIC_NETWORK_TYPE.equals(self.getType()) && !self.getNetworkServices().isEmpty()) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "apply-to-backend";
 
