@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 public class AllocateHostMsg extends NeedReplyMessage {
+    private String autoScalingGroupUuid;
     private long cpuCapacity;
     private long memoryCapacity;
     private long diskSize;
@@ -31,6 +32,14 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
     private String architecture;
+
+    public String getAutoScalingGroupUuid() {
+        return autoScalingGroupUuid;
+    }
+
+    public void setAutoScalingGroupUuid(String autoScalingGroupUuid) {
+        this.autoScalingGroupUuid = autoScalingGroupUuid;
+    }
 
     public AllocationScene getAllocationScene() {
         return allocationScene;

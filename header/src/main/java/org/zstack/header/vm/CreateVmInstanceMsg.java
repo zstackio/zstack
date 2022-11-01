@@ -8,6 +8,7 @@ import java.util.List;
  * Created by david on 8/4/16.
  */
 public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmInstanceMessage {
+    private String autoScalingGroupUuid;
     private String accountUuid;
     private String name;
     private String imageUuid;
@@ -32,6 +33,14 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String strategy;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
+
+    public String getAutoScalingGroupUuid() {
+        return autoScalingGroupUuid;
+    }
+
+    public void setAutoScalingGroupUuid(String autoScalingGroupUuid) {
+        this.autoScalingGroupUuid = autoScalingGroupUuid;
+    }
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;

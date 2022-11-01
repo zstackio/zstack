@@ -5678,6 +5678,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private VmInstanceSpec buildVmInstanceSpecFromStruct(InstantiateVmFromNewCreatedStruct struct) {
         final VmInstanceSpec spec = new VmInstanceSpec();
+        spec.setAutoScalingGroupUuid(struct.getAutoScalingGroupUuid());
         spec.setRequiredPrimaryStorageUuidForRootVolume(struct.getPrimaryStorageUuidForRootVolume());
         spec.setRequiredPrimaryStorageUuidForDataVolume(struct.getPrimaryStorageUuidForDataVolume());
         spec.setDataVolumeSystemTags(struct.getDataVolumeSystemTags());

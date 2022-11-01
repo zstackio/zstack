@@ -234,6 +234,7 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
         }
     }
 
+    private String autoScalingGroupUuid;
     private VmInstanceInventory vmInventory;
     private List<VmNicSpec> l3Networks;
     private List<DiskOfferingInventory> dataDiskOfferings;
@@ -283,6 +284,14 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private boolean skipIpAllocation = false;
+
+    public String getAutoScalingGroupUuid() {
+        return autoScalingGroupUuid;
+    }
+
+    public void setAutoScalingGroupUuid(String autoScalingGroupUuid) {
+        this.autoScalingGroupUuid = autoScalingGroupUuid;
+    }
 
     public boolean isSkipIpAllocation() {
         return skipIpAllocation;

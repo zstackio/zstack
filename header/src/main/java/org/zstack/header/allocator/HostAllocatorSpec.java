@@ -9,6 +9,7 @@ import java.util.*;
 /**
  */
 public class HostAllocatorSpec {
+    private String autoScalingGroupUuid;
     private List<String> avoidHostUuids;
     private List<String> softAvoidHostUuids;
     private long cpuCapacity;
@@ -34,6 +35,14 @@ public class HostAllocatorSpec {
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
     private String architecture;
+
+    public String getAutoScalingGroupUuid() {
+        return autoScalingGroupUuid;
+    }
+
+    public void setAutoScalingGroupUuid(String autoScalingGroupUuid) {
+        this.autoScalingGroupUuid = autoScalingGroupUuid;
+    }
 
     public AllocationScene getAllocationScene() {
         return allocationScene;
@@ -211,6 +220,7 @@ public class HostAllocatorSpec {
 
     public static HostAllocatorSpec fromAllocationMsg(AllocateHostMsg msg) {
         HostAllocatorSpec spec = new HostAllocatorSpec();
+        spec.setAutoScalingGroupUuid(msg.getAutoScalingGroupUuid());
         spec.setAllocatorStrategy(msg.getAllocatorStrategy());
         spec.setAvoidHostUuids(msg.getAvoidHostUuids());
         spec.setSoftAvoidHostUuids(msg.getSoftAvoidHostUuids());
