@@ -10,6 +10,7 @@ import java.util.Map;
  * Created by xing5 on 2016/9/13.
  */
 public class InstantiateVmFromNewCreatedStruct {
+    private String autoScalingGroupUuid;
     private List<String> dataDiskOfferingUuids;
     private List<String> dataVolumeTemplateUuids;
     private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
@@ -23,6 +24,14 @@ public class InstantiateVmFromNewCreatedStruct {
     private String requiredHostUuid;
     private List<String> softAvoidHostUuids;
     private List<String> avoidHostUuids;
+
+    public String getAutoScalingGroupUuid() {
+        return autoScalingGroupUuid;
+    }
+
+    public void setAutoScalingGroupUuid(String autoScalingGroupUuid) {
+        this.autoScalingGroupUuid = autoScalingGroupUuid;
+    }
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -86,6 +95,7 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public static InstantiateVmFromNewCreatedStruct fromMessage(InstantiateNewCreatedVmInstanceMsg msg) {
         InstantiateVmFromNewCreatedStruct struct = new InstantiateVmFromNewCreatedStruct();
+        struct.setAutoScalingGroupUuid(msg.getAutoScalingGroupUuid());
         struct.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         struct.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
         struct.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
