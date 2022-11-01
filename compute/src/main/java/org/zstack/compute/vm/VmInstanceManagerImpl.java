@@ -941,6 +941,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
 
         InstantiateNewCreatedVmInstanceMsg smsg = new InstantiateNewCreatedVmInstanceMsg();
+        smsg.setAutoScalingGroupUuid(msg.getAutoScalingGroupUuid());
         if (VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy())) {
             VmInstanceInventory inv = VmInstanceInventory.valueOf(vo);
             createVmButNotStart(msg, inv);

@@ -33,6 +33,13 @@ public class FourteenDesignatedHostAllocatorFlow extends AbstractHostAllocatorFl
         headers.set("Content-Type", "application/json;charset=utf-8");
         Map<String, String> body = new HashMap<>();
         body.put("instanceOfferingUuid", spec.getVmInstance().getInstanceOfferingUuid());
+        String groupUuid = spec.getAutoScalingGroupUuid();
+        if (groupUuid != null && !groupUuid.isEmpty()) {
+            body.put("groupUuid", groupUuid);
+        }
+        if (spec.getVmInstance().getUuid() != null || !spec.getVmInstance().getUuid().isEmpty()) {
+            body.put("vmUuid", spec.getVmInstance().getUuid());
+        }
         HttpEntity<String> req = new HttpEntity<>(JSONObjectUtil.toJsonString(body), headers);
         ResponseEntity<String> rsp = new Retry<ResponseEntity<String>>() {
             @Override
