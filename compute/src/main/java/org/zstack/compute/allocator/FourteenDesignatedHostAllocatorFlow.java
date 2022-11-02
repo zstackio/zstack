@@ -32,7 +32,12 @@ public class FourteenDesignatedHostAllocatorFlow extends AbstractHostAllocatorFl
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json;charset=utf-8");
         Map<String, String> body = new HashMap<>();
+        body.put("type", "Host");
         body.put("instanceOfferingUuid", spec.getVmInstance().getInstanceOfferingUuid());
+        String lastHostUuid = spec.getVmInstance().getLastHostUuid();
+        if (lastHostUuid != null && !lastHostUuid.isEmpty()) {
+            body.put("lastHostUuid", lastHostUuid);
+        }
         String groupUuid = spec.getAutoScalingGroupUuid();
         if (groupUuid != null && !groupUuid.isEmpty()) {
             body.put("groupUuid", groupUuid);
