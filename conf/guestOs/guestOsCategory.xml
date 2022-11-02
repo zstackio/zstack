@@ -128,6 +128,18 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>SUSE</name>
+        <version>12</version>
+        <osRelease>SUSE Linux 12</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>SUSE</name>
+        <version>15</version>
+        <osRelease>SUSE Linux 15</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>Linux</name>
         <version></version>
         <osRelease>Linux</osRelease>
