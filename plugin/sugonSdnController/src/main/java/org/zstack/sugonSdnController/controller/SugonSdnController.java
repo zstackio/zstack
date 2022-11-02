@@ -411,6 +411,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                     });
                     ipamSubnetType.setHostRoutes(routeTableType);
                 }
+                ipamSubnetType.setEnableDhcp(msg.isEnableDhcp());
                 // 封装实体 -> ObjectReference<VnSubnetsType>
                 IpamSubnets ipamSubnets = new IpamSubnets();
                 ipamSubnets.addSubnets(ipamSubnetType);

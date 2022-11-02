@@ -104,7 +104,8 @@ public class VmAllocateNicFlow implements Flow {
                 customMac = NetworkUtils.generateMacWithDeviceId((short) deviceId);
             }
             final String mac = customMac;
-            final String customNicUuid = getCustomNicId(spec.getVmInventory().getUuid(), nw.getUuid());
+            CustomNicOperator nicOperator = new CustomNicOperator();
+            final String customNicUuid = nicOperator.getCustomNicId(spec.getVmInventory().getUuid(), nw.getUuid());
 
             // choose vnic factory based on enableSRIOV system tag
             VmInstanceNicFactory vnicFactory;
@@ -264,15 +265,5 @@ public class VmAllocateNicFlow implements Flow {
                 chain.rollback();
             }
         });
-    }
-
-    private String getCustomNicId(String vmUuid, String l3Uuid) {
-        List<Map<String, String>> tokenList = VmSystemTags.CUSTOM_NIC_UUID.getTokensOfTagsByResourceUuid(vmUuid);
-        for (Map<String, String> tokens : tokenList) {
-            if (StringUtils.equals(tokens.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN), l3Uuid)) {
-                return tokens.get(VmSystemTags.NIC_UUID_TOKEN);
-            }
-        }
-        return null;
     }
 }

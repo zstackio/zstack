@@ -44,4 +44,9 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="TfAfterMigrateExtensionPointImpl" class="org.zstack.sugonSdnController.network.TfAfterMigrateExtensionPointImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>

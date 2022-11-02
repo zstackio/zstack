@@ -9,10 +9,7 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicSpec;
-import org.zstack.header.vm.VmPreAttachL3NetworkExtensionPoint;
+import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -43,6 +40,12 @@ public class VmPreAllocateNicFlow implements Flow {
 
     @Override
     public void rollback(FlowRollback trigger, Map data) {
+        final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        for (VmNicInventory vmNic : spec.getVmInventory().getVmNics()) {
+            for (VmDetachNicExtensionPoint ext : pluginRgty.getExtensionList(VmDetachNicExtensionPoint.class)) {
+                ext.afterDetachNic(vmNic);
+            }
+        }
         trigger.rollback();
     }
 }

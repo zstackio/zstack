@@ -1,6 +1,8 @@
 package org.zstack.sugonSdnController.network;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.zstack.compute.vm.CustomNicOperator;
 import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant;
 import org.zstack.compute.vm.MacOperator;
 import org.zstack.compute.vm.StaticIpOperator;
@@ -29,6 +31,7 @@ public class VmPreAttachL3NetworkExtensionPointImpl implements VmPreAttachL3Netw
     private static final CLogger logger = Utils.getLogger(VmPreAttachL3NetworkExtensionPointImpl.class);
     @Autowired
     protected AccountManager acntMgr;
+
     @Override
     public void vmPreAttachL3Network(VmInstanceInventory vm, L3NetworkInventory l3) {
         if (!SugonSdnControllerConstant.L3_TF_NETWORK_TYPE.equals(l3.getType())) {
@@ -49,9 +52,17 @@ public class VmPreAttachL3NetworkExtensionPointImpl implements VmPreAttachL3Netw
         String accountId = StringDSL.transToTfUuid(acntMgr.getOwnerAccountUuidOfResource(vm.getUuid()));
         String vmiUuid = StringDSL.transToTfUuid(vm.getUuid());
         TfPortResponse port = tfPortClient.createPort(tfL2NetworkId, tfL3NetworkId, customMac, customIp, accountId, vmiUuid);
+        if (port.getCode() != HttpStatus.OK.value()) {
+            // fail  to rollback the flowchain
+            throw new RuntimeException("failed to invoke creating tf port: " + port);
+        }
+
         String finalMac = port.getMacAddress();
         String finalIp = port.getFixedIps().get(0).getIpAddress();
         String nicUuid = StringDSL.transToZstackUuid(port.getPortId());
+
+        CustomNicOperator nicOperator = new CustomNicOperator();
+        nicOperator.deleteNicTags(vm.getUuid(),l3.getUuid());
 
         // set the results to system tag
         // because MacOperator doesn't provide a set mac method , so we set it here using SystemTagCreator
