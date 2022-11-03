@@ -179,7 +179,7 @@ public class KVMAgentCommands {
         private Map<String, Object> addons = new HashMap<>();
         private String accountUuid;
         // This api may called after migration
-        private boolean migration;
+        private boolean notifySugonSdn;
 
         public List<NicTO> getNics() {
             return nics;
@@ -217,12 +217,12 @@ public class KVMAgentCommands {
             this.accountUuid = accountUuid;
         }
 
-        public boolean isMigration() {
-            return migration;
+        public boolean isNotifySugonSdn() {
+            return notifySugonSdn;
         }
 
-        public void setMigration(boolean migration) {
-            this.migration = migration;
+        public void setNotifySugonSdn(boolean notifySugonSdn) {
+            this.notifySugonSdn = notifySugonSdn;
         }
     }
 
