@@ -19,6 +19,7 @@
     <bean id="VmDetachNicExtensionPointImpl" class="org.zstack.sugonSdnController.network.VmDetachNicExtensionPointImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.VmDetachNicExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmFailToAttachL3NetworkExtensionPoint" />
         </zstack:plugin>
     </bean>
 </beans>

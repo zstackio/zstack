@@ -109,6 +109,7 @@ public class KVMAgentCommands {
     public static class AttachNicCommand extends AgentCommand {
         private String vmUuid;
         private NicTO nic;
+        private String accountUuid;
         private Map addons = new HashMap();
 
         public Map getAddons() {
@@ -133,6 +134,14 @@ public class KVMAgentCommands {
 
         public void setNic(NicTO nic) {
             this.nic = nic;
+        }
+
+        public String getAccountUuid() {
+            return accountUuid;
+        }
+
+        public void setAccountUuid(String accountUuid) {
+            this.accountUuid = accountUuid;
         }
     }
 
@@ -168,6 +177,9 @@ public class KVMAgentCommands {
         private String vmInstanceUuid;
         private List<KVMAgentCommands.NicTO> nics;
         private Map<String, Object> addons = new HashMap<>();
+        private String accountUuid;
+        // This api may called after migration
+        private boolean notifySugonSdn;
 
         public List<NicTO> getNics() {
             return nics;
@@ -195,6 +207,22 @@ public class KVMAgentCommands {
 
         public void setVmInstanceUuid(String vmInstanceUuid) {
             this.vmInstanceUuid = vmInstanceUuid;
+        }
+
+        public String getAccountUuid() {
+            return accountUuid;
+        }
+
+        public void setAccountUuid(String accountUuid) {
+            this.accountUuid = accountUuid;
+        }
+
+        public boolean isNotifySugonSdn() {
+            return notifySugonSdn;
+        }
+
+        public void setNotifySugonSdn(boolean notifySugonSdn) {
+            this.notifySugonSdn = notifySugonSdn;
         }
     }
 
@@ -2674,6 +2702,7 @@ public class KVMAgentCommands {
         private boolean autoConverge;
         private boolean xbzrle;
         private List<String> vdpaPaths;
+        private List<NicTO> nics;
         private Long timeout; // in seconds
 
         public boolean isUseNuma() {
@@ -2754,6 +2783,14 @@ public class KVMAgentCommands {
 
         public void setTimeout(Long timeout) {
             this.timeout = timeout;
+        }
+
+        public List<NicTO> getNics() {
+            return nics;
+        }
+
+        public void setNics(List<NicTO> nics) {
+            this.nics = nics;
         }
     }
 

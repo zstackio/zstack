@@ -1823,7 +1823,6 @@ public class KVMHost extends HostBase implements Host {
         final Long vmInternalId = q.findValue();
 
         List<VmNicVO> nics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, s.vmUuid)
-                .eq(VmNicVO_.type, "vDPA")
                 .list();
         List<NicTO> nicTos = VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList());
         List<NicTO> vDPANics = new ArrayList<NicTO>();
@@ -1849,7 +1848,7 @@ public class KVMHost extends HostBase implements Host {
                         }
                         GenerateVdpaCmd cmd = new GenerateVdpaCmd();
                         cmd.vmUuid = vmUuid;
-                        cmd.setNics(nicTos);
+                        cmd.setNics(vDPANics);
 
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
                         ub.host(dstHostMnIp);
@@ -1901,6 +1900,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setVdpaPaths((List<String>) data.get("vDPA_paths"));
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setTimeout(timeoutManager.getTimeout());
+                        cmd.setNics(nicTos);
 
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
                         ub.host(migrateFromDestination ? dstHostMnIp : srcHostMnIp);
@@ -2153,6 +2153,8 @@ public class KVMHost extends HostBase implements Host {
         UpdateNicCmd cmd = new UpdateNicCmd();
         cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
         cmd.setNics(VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList()));
+        cmd.setNotifySugonSdn(msg.isNotifySugonSdn());
+        cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmInstanceUuid()));
 
         KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
         for (KVMPreUpdateNicExtensionPoint ext : pluginRgty.getExtensionList(KVMPreUpdateNicExtensionPoint.class)) {
@@ -2200,6 +2202,7 @@ public class KVMHost extends HostBase implements Host {
         AttachNicCommand cmd = new AttachNicCommand();
         cmd.setVmUuid(msg.getNicInventory().getVmInstanceUuid());
         cmd.setNic(to);
+        cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmUuid()));
 
         KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
         for (KvmPreAttachNicExtensionPoint ext : pluginRgty.getExtensionList(KvmPreAttachNicExtensionPoint.class)) {

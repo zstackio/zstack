@@ -100,7 +100,7 @@ public class TfVmNicFactory extends VmNicFactory implements VmJustBeforeDeleteFr
             bus.send(msg, new CloudBusCallBack(wcompl) {
                 @Override
                 public void run(MessageReply reply) {
-                    if (reply.isSuccess()) {
+                    if (!reply.isSuccess()) {
                         wcompl.addError(reply.getError());
                         return;
                     }
