@@ -223,3 +223,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`RegisterLicenseApplicationVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`appId`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+ALTER TABLE LicenseHistoryVO ADD COLUMN capacity int(10) NOT NULL;
