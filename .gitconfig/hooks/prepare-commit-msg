@@ -31,6 +31,13 @@ import traceback
 from collections import Counter
 
 
+# default open function(python3)
+open = open
+# using python2 codecs.open func if python version is 2
+if sys.version_info.major == 2:
+    import codecs
+    open = codecs.open
+
 def main():
     try:
         if not auto_commit_msg_enabled():
@@ -73,7 +80,7 @@ def write_commit_msg(commit_msg_filepath, type, scope, tags, jiras):
 # 3. Are there any side effects?\n
 '''
 
-    with open(commit_msg_filepath, 'r+') as msg:
+    with open(commit_msg_filepath, 'r+', encoding='utf8') as msg:
         in_usable_content = False
         useable_contents = []
         for line in msg.readlines():
@@ -102,7 +109,7 @@ def write_commit_msg(commit_msg_filepath, type, scope, tags, jiras):
         
         real_commit_msg.append("\nChange-Id: %s\n" % get_change_id())
 
-    with open(commit_msg_filepath, 'w') as msg:
+    with open(commit_msg_filepath, 'w', encoding='utf8') as msg:
         real_commit_msg.extend(useable_contents)
         msg.writelines(real_commit_msg)
 
@@ -118,7 +125,7 @@ def process_metadata(commit_msg_filepath):
 
     changed_folders = []
     changed_paths = {}
-    with open(commit_msg_filepath, 'r+') as msg:
+    with open(commit_msg_filepath, 'r+', encoding='utf8') as msg:
         content = msg.readlines()
         for no, line in enumerate(content):
             line = line.strip()
