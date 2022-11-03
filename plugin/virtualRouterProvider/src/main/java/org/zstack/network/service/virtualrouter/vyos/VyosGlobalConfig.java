@@ -29,4 +29,8 @@ public class VyosGlobalConfig {
     @GlobalConfigValidation
     @BindResourceConfig({LoadBalancerVO.class})
     public static GlobalConfig ENABLE_HAPROXY_LOG = new GlobalConfig(CATEGORY, "enable.haproxy.log");
+
+    @GlobalConfigValidation
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig ENABLE_VYOS_CMD = new GlobalConfig(CATEGORY, "enable.vyos.cmd");
 }
