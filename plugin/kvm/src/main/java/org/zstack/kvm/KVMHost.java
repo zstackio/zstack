@@ -2153,7 +2153,7 @@ public class KVMHost extends HostBase implements Host {
         UpdateNicCmd cmd = new UpdateNicCmd();
         cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
         cmd.setNics(VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList()));
-        cmd.setMigration(msg.isMigration());
+        cmd.setMigration(msg.isNotifySugonSdn());
         cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmInstanceUuid()));
 
         KVMHostInventory inv = (KVMHostInventory) getSelfInventory();

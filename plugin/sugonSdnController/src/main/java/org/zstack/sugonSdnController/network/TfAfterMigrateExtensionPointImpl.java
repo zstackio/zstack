@@ -12,8 +12,6 @@ import org.zstack.header.vm.VmUpdateNicOnHypervisorMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class TfAfterMigrateExtensionPointImpl implements VmInstanceMigrateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(TfAfterMigrateExtensionPointImpl.class);
@@ -35,7 +33,7 @@ public class TfAfterMigrateExtensionPointImpl implements VmInstanceMigrateExtens
         VmUpdateNicOnHypervisorMsg cmsg = new VmUpdateNicOnHypervisorMsg();
         cmsg.setVmInstanceUuid(inv.getUuid());
         cmsg.setHostUuid(inv.getHostUuid());
-        cmsg.setMigration(true);
+        cmsg.setNotifySugonSdn(true);
         bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, inv.getUuid());
         bus.send(cmsg, new CloudBusCallBack(null) {
             @Override

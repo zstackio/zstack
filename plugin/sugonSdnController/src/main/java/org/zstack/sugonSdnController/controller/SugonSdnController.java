@@ -12,6 +12,7 @@ import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
+import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.header.*;
 import org.zstack.sugonSdnController.controller.api.ApiConnector;
@@ -411,7 +412,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
                     });
                     ipamSubnetType.setHostRoutes(routeTableType);
                 }
-                ipamSubnetType.setEnableDhcp(msg.isEnableDhcp());
+                ipamSubnetType.setEnableDhcp(getEnableDHCPFlag(l3NetworkVO.getUuid()));
                 // 封装实体 -> ObjectReference<VnSubnetsType>
                 IpamSubnets ipamSubnets = new IpamSubnets();
                 ipamSubnets.addSubnets(ipamSubnetType);
@@ -637,5 +638,10 @@ public class SugonSdnController implements TfSdnController, SdnController {
             logger.error(message, e);
             completion.fail(operr(message));
         }
+    }
+
+    private boolean getEnableDHCPFlag(String l3Uuid){
+        String enableDHCP = L3NetworkSystemTags.ENABLE_DHCP.getTokenByResourceUuid(l3Uuid, L3NetworkSystemTags.ENABLE_DHCP_TOKEN);
+        return Boolean.parseBoolean(enableDHCP);
     }
 }
