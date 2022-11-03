@@ -1,0 +1,1 @@
+ALTER TABLE LicenseHistoryVO ADD COLUMN capacity int(10) NOT NULL;

@@ -52,6 +52,14 @@ public class LicenseInventory  {
         return this.vmNum;
     }
 
+    public java.lang.Integer capacity;
+    public void setCapacity(java.lang.Integer capacity) {
+        this.capacity = capacity;
+    }
+    public java.lang.Integer getCapacity() {
+        return this.capacity;
+    }
+
     public java.lang.String licenseType;
     public void setLicenseType(java.lang.String licenseType) {
         this.licenseType = licenseType;
