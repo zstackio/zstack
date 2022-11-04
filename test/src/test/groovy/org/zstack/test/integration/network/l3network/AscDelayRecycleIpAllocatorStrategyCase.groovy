@@ -558,6 +558,15 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
         }
         assert(vip_13.ip == '192.168.8.6')
 
+        deleteVip { uuid = vip_12.uuid }
+
+        vip_12 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+            ipRangeUuid = range_4.uuid
+        }
+        assert(vip_12.ip == '192.168.8.7')
+
         deleteIpRange { uuid = range_4.uuid }
 
         VipInventory vip_14 = createVip {

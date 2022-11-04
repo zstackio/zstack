@@ -255,10 +255,11 @@ public class IPv6NetworkUtils {
     }
 
     public static boolean isIpv6RangeFull(String startIp, String endIp, long used) {
-        BigInteger start = IPv6Address.fromString(startIp).toBigInteger();
-        BigInteger end = IPv6Address.fromString(endIp).toBigInteger();
-
-        return end.subtract(start).compareTo(new BigInteger(String.valueOf(used))) <= 0;
+        IPv6Address start = IPv6Address.fromString(startIp);
+        IPv6Address end = IPv6Address.fromString(endIp);
+        IPv6AddressRange range = IPv6AddressRange.fromFirstAndLast(start, end);
+        
+        return range.size().compareTo(new BigInteger(String.valueOf(used))) <= 0;
     }
 
     public static BigInteger getBigIntegerFromString(String ip) {

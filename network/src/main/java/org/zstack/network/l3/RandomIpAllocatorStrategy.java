@@ -9,6 +9,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -69,11 +70,7 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
             // have to count the used IP every time allocating a IP, and count operation
             // is a full scan in DB, which is very costly
             if (failureCheckPoint == failureCount++) {
-                SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
-                q.select(UsedIpVO_.ipInLong);
-                q.add(UsedIpVO_.ipRangeUuid, Op.EQ, rangeUuid);
-                List<Long> used = q.listValue();
-                used = used.stream().distinct().collect(Collectors.toList());
+                List<BigInteger> used = IpRangeHelper.getUsedIpInRange(rangeUuid, IPv6Constants.IPv4);
                 long count = used.size();
                 if (count == total) {
                     logger.debug(String.format("ip range[uuid:%s] has no ip available, try next one", rangeUuid));

@@ -35,14 +35,9 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private String getIpRangeType(String ipRangeUuid) {
-        List<IpRangeVO> normalRanges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ipRangeUuid).list();
-        return normalRanges.size() > 0 ? IpRangeType.Normal.toString() : IpRangeType.AddressPool.toString();
-    }
-
     protected String getReqIpRangeType(IpAllocateMessage msg) {
         if (msg.getIpRangeUuid() != null) {
-            return getIpRangeType(msg.getIpRangeUuid());
+            return IpRangeHelper.getIpRangeType(msg.getIpRangeUuid());
         } else {
             return IpRangeType.Normal.toString();
         }
