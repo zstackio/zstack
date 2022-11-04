@@ -85,7 +85,7 @@
                                     </includes>
                                 </resource>
                                 <resource>
-                                    <directory>../premium/plugin-premium/cas-plugin/ext-libs</directory>
+                                    <directory>../premium/plugin-premium/thirdAuth-plugin/ext-libs</directory>
                                     <targetPath>WEB-INF/lib</targetPath>
                                     <includes>
                                         <include>*.jar</include>
@@ -555,7 +555,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
-                    <artifactId>cas-plugin</artifactId>
+                    <artifactId>thirdAuth-plugin</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
