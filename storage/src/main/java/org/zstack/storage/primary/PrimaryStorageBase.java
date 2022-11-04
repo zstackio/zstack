@@ -391,15 +391,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((UnlinkBitsOnPrimaryStorageMsg) msg);
         } else if (msg instanceof GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) {
             handle((GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof CleanUpImageCacheOnPrimaryStorageMsg) {
-            handle((CleanUpImageCacheOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
-    }
-
-    protected void handle(final CleanUpImageCacheOnPrimaryStorageMsg msg) {
-        throw new OperationFailureException(operr("operation not supported"));
     }
 
     protected void handle(final CleanUpTrashOnPrimaryStroageMsg msg) {
