@@ -2,7 +2,6 @@ package org.zstack.network.service.lb;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -28,14 +27,13 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.APIChangeResourceOwnerMsg;
 import org.zstack.header.identity.Quota;
-import org.zstack.header.identity.Quota.QuotaOperator;
-import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
@@ -45,7 +43,8 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.identity.Account;
-import org.zstack.identity.QuotaUtil;
+import org.zstack.network.service.lb.quota.LoadBalanceListenerNumQuotaDefinition;
+import org.zstack.network.service.lb.quota.LoadBalanceNumQuotaDefinition;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -56,7 +55,6 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -788,101 +786,25 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
     @Override
     public List<Quota> reportQuota() {
-        QuotaOperator checker = new QuotaOperator() {
-            @Override
-            public void checkQuota(APIMessage msg, Map<String, QuotaPair> pairs) {
-                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                    if (msg instanceof APICreateLoadBalancerMsg) {
-                        check((APICreateLoadBalancerMsg) msg, pairs);
-                    } else if (msg instanceof APICreateLoadBalancerListenerMsg) {
-                        check((APICreateLoadBalancerListenerMsg) msg, pairs);
-                    }
-                }
-            }
-
-            @Override
-            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, QuotaPair> pairs) {
-
-            }
-
-            @Override
-            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
-                List<Quota.QuotaUsage> usages = new ArrayList<>();
-
-                Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(LoadBalanceQuotaConstant.LOAD_BALANCER_NUM);
-                usage.setUsed(getUsedLb(accountUuid));
-                usages.add(usage);
-
-                Quota.QuotaUsage listenerUsage = new Quota.QuotaUsage();
-                listenerUsage.setName(LoadBalanceQuotaConstant.LOAD_BALANCER_LISTENER_NUM);
-                listenerUsage.setUsed(getUsedLbListener(accountUuid));
-                usages.add(listenerUsage);
-
-                return usages;
-            }
-
-            @Transactional(readOnly = true)
-            private long getUsedLb(String accountUuid) {
-                String sql = "select count(lb.uuid) from LoadBalancerVO lb, AccountResourceRefVO ref where ref.resourceUuid = lb.uuid and " +
-                        "ref.accountUuid = :auuid and ref.resourceType = :rtype";
-
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", accountUuid);
-                q.setParameter("rtype", LoadBalancerVO.class.getSimpleName());
-                Long en = q.getSingleResult();
-                en = en == null ? 0 : en;
-                return en;
-            }
-
-            @Transactional(readOnly = true)
-            private long getUsedLbListener(String accountUuid) {
-                String sql = "select count(lb.uuid) from LoadBalancerListenerVO lb, AccountResourceRefVO ref where ref.resourceUuid = lb.uuid and " +
-                        "ref.accountUuid = :auuid and ref.resourceType = :rtype";
-
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("auuid", accountUuid);
-                q.setParameter("rtype", LoadBalancerListenerVO.class.getSimpleName());
-                Long en = q.getSingleResult();
-                en = en == null ? 0 : en;
-                return en;
-            }
-
-            private void check(APICreateLoadBalancerListenerMsg msg, Map<String, QuotaPair> pairs) {
-                long lbNum = pairs.get(LoadBalanceQuotaConstant.LOAD_BALANCER_LISTENER_NUM).getValue();
-                long en = getUsedLbListener(msg.getSession().getAccountUuid());
-
-                if (en + 1 > lbNum) {
-                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                    msg.getSession().getAccountUuid(), LoadBalanceQuotaConstant.LOAD_BALANCER_LISTENER_NUM, lbNum));
-                }
-            }
-
-            private void check(APICreateLoadBalancerMsg msg, Map<String, QuotaPair> pairs) {
-                long lbNum = pairs.get(LoadBalanceQuotaConstant.LOAD_BALANCER_NUM).getValue();
-                long en = getUsedLb(msg.getSession().getAccountUuid());
-
-                if (en + 1 > lbNum) {
-                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                    msg.getSession().getAccountUuid(), LoadBalanceQuotaConstant.LOAD_BALANCER_NUM, lbNum));
-                }
-            }
-        };
-
         Quota quota = new Quota();
-        quota.addMessageNeedValidation(APICreateLoadBalancerMsg.class);
-        quota.addMessageNeedValidation(APICreateLoadBalancerListenerMsg.class);
-        quota.setOperator(checker);
+        quota.defineQuota(new LoadBalanceNumQuotaDefinition());
+        quota.defineQuota(new LoadBalanceListenerNumQuotaDefinition());
 
-        QuotaPair p = new QuotaPair();
-        p.setName(LoadBalanceQuotaConstant.LOAD_BALANCER_NUM);
-        p.setValue(LoadBalanceQuotaGlobalConfig.LOAD_BALANCER_NUM.defaultValue(Long.class));
-        quota.addPair(p);
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateLoadBalancerMsg.class)
+                .addCounterQuota(LoadBalanceQuotaConstant.LOAD_BALANCER_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateLoadBalancerListenerMsg.class)
+                .addCounterQuota(LoadBalanceQuotaConstant.LOAD_BALANCER_LISTENER_NUM));
 
-        QuotaPair listener = new QuotaPair();
-        listener.setName(LoadBalanceQuotaConstant.LOAD_BALANCER_LISTENER_NUM);
-        listener.setValue(LoadBalanceQuotaGlobalConfig.LOAD_BALANCER_LISTENER_NUM.defaultValue(Long.class));
-        quota.addPair(listener);
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
+                .addCheckCondition((msg) -> Q.New(LoadBalancerVO.class)
+                        .eq(LoadBalancerVO_.uuid, msg.getResourceUuid())
+                        .isExists())
+                .addCounterQuota(LoadBalanceQuotaConstant.LOAD_BALANCER_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
+                .addCheckCondition((msg) -> Q.New(LoadBalancerListenerVO.class)
+                        .eq(LoadBalancerListenerVO_.uuid, msg.getResourceUuid())
+                        .isExists())
+                .addCounterQuota(LoadBalanceQuotaConstant.LOAD_BALANCER_LISTENER_NUM));
 
         return list(quota);
     }

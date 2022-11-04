@@ -4,10 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountVO;
-import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.QuotaVO;
+import org.zstack.header.identity.quota.QuotaDefinition;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -40,20 +41,18 @@ public class AccountQuotaUpdateChecker implements QuotaUpdateChecker {
      * TODO duplicate code with APIGetAccountQuotaUsageMsg's implement refactor requested
      */
     private ErrorCode checkQuotaChangeForAccount(String accountUuid, String quotaName, long updatedValue) {
-        List<Quota> quotas = accountManager.getQuotas();
-        Quota.QuotaUsage usage = quotas.stream()
-                .map(q -> q.getOperator().getQuotaUsageByAccount(accountUuid))
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .filter(u -> quotaName.equals(u.getName()))
-                .findAny().orElse(null);
-        if (usage == null) {
+        QuotaDefinition quota = accountManager.getQuotasDefinitions().get(quotaName);
+        if (quota == null) {
             throw new CloudRuntimeException(String.format("cannot find usage[name:%s]", quotaName));
         }
+        Long used = quota.getQuotaUsage(accountUuid);
+        if (used == null) {
+            used = 0L;
+        }
 
-        if (usage.getUsed() > updatedValue) {
+        if (used > updatedValue) {
             return argerr("the account[uuid:%s] used [name:%s, usedValue:%s] exceeds request quota: %d",
-                    accountUuid, quotaName, usage.getUsed(), updatedValue);
+                    accountUuid, quotaName, used, updatedValue);
         }
 
         return null;

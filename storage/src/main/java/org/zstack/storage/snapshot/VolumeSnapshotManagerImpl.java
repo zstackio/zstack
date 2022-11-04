@@ -27,10 +27,9 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HypervisorFactory;
 import org.zstack.header.identity.*;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.message.*;
-import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
@@ -38,10 +37,6 @@ import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO_;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -56,7 +51,6 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
 
@@ -1365,164 +1359,32 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     @Override
     public List<Quota> reportQuota() {
-        Quota.QuotaOperator checker = new Quota.QuotaOperator() {
-            @Override
-            public void checkQuota(APIMessage msg, Map<String, Quota.QuotaPair> pairs) {
-                if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                    if (msg instanceof APICreateVolumeSnapshotMsg) {
-                        check((APICreateVolumeSnapshotMsg) msg, pairs);
-                    } else if (msg instanceof APICreateVolumeSnapshotGroupMsg) {
-                        check((APICreateVolumeSnapshotGroupMsg) msg, pairs);
-                    } else if (msg instanceof APIChangeResourceOwnerMsg) {
-                        check((APIChangeResourceOwnerMsg) msg, pairs);
-                    } else if (msg instanceof APIRecoverDataVolumeMsg) {
-                        check((APIRecoverDataVolumeMsg) msg, pairs);
-                    }
-                } else {
-                    if (msg instanceof APIChangeResourceOwnerMsg) {
-                        check((APIChangeResourceOwnerMsg) msg, pairs);
-                    }
-                }
-            }
-
-            @Override
-            public void checkQuota(NeedQuotaCheckMessage msg, Map<String, Quota.QuotaPair> pairs) {
-                if (!new QuotaUtil().isAdminAccount(msg.getAccountUuid())) {
-                    if (msg instanceof VolumeCreateSnapshotMsg) {
-                        check((VolumeCreateSnapshotMsg) msg, pairs);
-                    } else if (msg instanceof CreateVolumeSnapshotMsg) {
-                        check((CreateVolumeSnapshotMsg) msg, pairs);
-                    }
-                }
-            }
-
-            @Override
-            public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
-                List<Quota.QuotaUsage> usages = new ArrayList<>();
-
-                Quota.QuotaUsage usage;
-
-                usage = new Quota.QuotaUsage();
-                usage.setName(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM);
-                usage.setUsed(getUsedVolumeSnapshotNum(accountUuid));
-                usages.add(usage);
-
-                return usages;
-            }
-
-            private long getUsedVolumeSnapshotNum(String accountUuid) {
-                SimpleQuery<AccountResourceRefVO> queryVolumeSnapshotNum = dbf.createQuery(AccountResourceRefVO.class);
-                queryVolumeSnapshotNum.add(AccountResourceRefVO_.accountUuid, Op.EQ, accountUuid);
-                queryVolumeSnapshotNum.add(AccountResourceRefVO_.resourceType, Op.EQ, VolumeSnapshotVO.class.getSimpleName());
-                return queryVolumeSnapshotNum.count();
-            }
-
-            @Transactional(readOnly = true)
-            private void check(APIChangeResourceOwnerMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                String currentAccountUuid = msg.getSession().getAccountUuid();
-                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
-                if (new QuotaUtil().isAdminAccount(resourceTargetOwnerAccountUuid)) {
-                    return;
-                }
-
-                String resourceType = new QuotaUtil().getResourceType(msg.getResourceUuid());
-                long volumeSnapshotNumAsked;
-                if (resourceType.equals(VmInstanceVO.class.getSimpleName())) {
-                    String sql = "select count(s)" +
-                            " from VolumeVO v, VolumeSnapshotVO s" +
-                            " where s.volumeUuid = v.uuid" +
-                            " and v.vmInstanceUuid = :vmInstanceUuid";
-                    TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                    q.setParameter("vmInstanceUuid", msg.getResourceUuid());
-                    volumeSnapshotNumAsked = q.getSingleResult();
-                } else if (resourceType.equals(VolumeVO.class.getSimpleName())) {
-                    String sql = "select count(s)" +
-                            " from VolumeSnapshotVO s" +
-                            " where s.volumeUuid = :volumeUuid";
-                    TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                    q.setParameter("volumeUuid", msg.getResourceUuid());
-                    volumeSnapshotNumAsked = q.getSingleResult();
-                } else if (resourceType.equals(VolumeSnapshotVO.class.getSimpleName())) {
-                    volumeSnapshotNumAsked = 1;
-                } else {
-                    return;
-                }
-                checkVolumeSnapshotNumQuota(currentAccountUuid,
-                        resourceTargetOwnerAccountUuid,
-                        volumeSnapshotNumAsked,
-                        pairs);
-            }
-
-            private void check(VolumeCreateSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                checkVolumeSnapshotNumQuota(msg.getAccountUuid(), msg.getAccountUuid(), 1, pairs);
-            }
-
-            private void check(CreateVolumeSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                checkVolumeSnapshotNumQuota(msg.getAccountUuid(), msg.getAccountUuid(), 1, pairs);
-            }
-
-            private void check(CreateVolumesSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                checkVolumeSnapshotNumQuota(msg.getAccountUuid(), msg.getAccountUuid(), msg.getVolumeSnapshotJobs().size(), pairs);
-            }
-
-            private void check(APICreateVolumeSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
-                checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, 1, pairs);
-            }
-
-            private void check(APICreateVolumeSnapshotGroupMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
-                long snapCount = SQL.New("select count(vol) from VolumeVO vol" +
-                        " where vol.vmInstanceUuid =" +
-                        " (select v.vmInstanceUuid from VolumeVO v where v.uuid = :uuid)", Long.class)
-                        .param("uuid", msg.getRootVolumeUuid())
-                        .find();
-                checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, snapCount, pairs);
-            }
-
-            private void check(APIRecoverDataVolumeMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
-                long cnt = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, msg.getVolumeUuid()).count();
-                checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, cnt, pairs);
-            }
-
-            private void checkVolumeSnapshotNumQuota(String currentAccountUuid,
-                                                     String resourceTargetOwnerAccountUuid,
-                                                     long volumeSnapshotNumAsked,
-                                                     Map<String, Quota.QuotaPair> pairs) {
-                long volumeSnapshotNumQuota = pairs.get(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM).getValue();
-                long volumeSnapshotNumUsed = getUsedVolumeSnapshotNum(resourceTargetOwnerAccountUuid);
-                {
-                    QuotaUtil.QuotaCompareInfo quotaCompareInfo;
-                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
-                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
-                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM;
-                    quotaCompareInfo.quotaValue = volumeSnapshotNumQuota;
-                    quotaCompareInfo.currentUsed = volumeSnapshotNumUsed;
-                    quotaCompareInfo.request = volumeSnapshotNumAsked;
-                    new QuotaUtil().CheckQuota(quotaCompareInfo);
-                }
-            }
-        };
-
-
         Quota quota = new Quota();
-        Quota.QuotaPair p;
-
-        p = new Quota.QuotaPair();
-        p.setName(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM);
-        p.setValue(VolumeSnapshotQuotaGlobalConfig.VOLUME_SNAPSHOT_NUM.defaultValue(Long.class));
-        quota.addPair(p);
-
-        quota.addMessageNeedValidation(APICreateVolumeSnapshotMsg.class);
-        quota.addMessageNeedValidation(APICreateVolumeSnapshotGroupMsg.class);
-        quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
-        quota.addMessageNeedValidation(APIRecoverDataVolumeMsg.class);
-        quota.addMessageNeedValidation(VolumeCreateSnapshotMsg.class);
-        quota.addMessageNeedValidation(CreateVolumeSnapshotMsg.class);
-        quota.addMessageNeedValidation(CreateVolumesSnapshotMsg.class);
-        quota.setOperator(checker);
+        quota.defineQuota(new VolumeSnapshotNumQuotaDefinition());
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateVolumeSnapshotMsg.class)
+                .addCounterQuota(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APICreateVolumeSnapshotGroupMsg.class)
+                .addMessageRequiredQuotaHandler(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM, (msg) -> SQL.New("select count(vol) from VolumeVO vol" +
+                                " where vol.vmInstanceUuid =" +
+                                " (select v.vmInstanceUuid from VolumeVO v where v.uuid = :uuid)", Long.class)
+                        .param("uuid", msg.getRootVolumeUuid())
+                        .find()));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIRecoverDataVolumeMsg.class)
+                .addMessageRequiredQuotaHandler(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM, (msg) -> Q.New(VolumeSnapshotVO.class)
+                        .eq(VolumeSnapshotVO_.volumeUuid, msg.getVolumeUuid())
+                        .count()));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(VolumeCreateSnapshotMsg.class)
+                .addCounterQuota(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(CreateVolumeSnapshotMsg.class)
+                .addCounterQuota(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(CreateVolumesSnapshotMsg.class)
+                .addMessageRequiredQuotaHandler(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM, (msg)
+                        -> (long) msg.getVolumeSnapshotJobs().size()));
+        quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIChangeResourceOwnerMsg.class)
+                .addCheckCondition((msg) -> Q.New(VolumeSnapshotVO.class)
+                        .eq(VolumeSnapshotVO_.uuid, msg.getResourceUuid())
+                        .isExists())
+                .addCounterQuota(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM));
 
         return list(quota);
     }

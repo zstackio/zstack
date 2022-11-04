@@ -1,7 +1,10 @@
 package org.zstack.identity;
 
 import org.zstack.header.identity.*;
+import org.zstack.header.identity.quota.QuotaDefinition;
+import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
 
 import java.util.List;
 import java.util.Map;
@@ -15,7 +18,9 @@ public interface AccountManager {
 
     Map<Class, List<Quota>> getMessageQuotaMap();
 
-    List<Quota> getQuotas();
+    Map<Class, List<QuotaMessageHandler<? extends Message>>> getQuotaMessageHandlerMap();
+
+    Map<String, QuotaDefinition> getQuotasDefinitions();
 
     AccountResourceRefInventory changeResourceOwner(String resourceUuid, String newOwnerUuid);
 
