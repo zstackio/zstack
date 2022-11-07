@@ -35,11 +35,11 @@ public class TfPortResponse {
         this.portId = portId;
     }
 
-    TfPortResponse(String msg){
+    public TfPortResponse(String msg){
         this.msg = msg;
     }
 
-    TfPortResponse(){}
+    public TfPortResponse(){}
 
     public String getMsg() {
         return msg;
