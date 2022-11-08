@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
+    private String autoScalingGroupUuid;
     private VmInstanceInventory vmInstanceInventory;
     private List<VmNicSpec> l3NetworkUuids;
     private List<String> dataDiskOfferingUuids;
@@ -20,6 +21,14 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     private List<String> dataVolumeSystemTags;
     private List<String> softAvoidHostUuids;
     private List<String> avoidHostUuids;
+
+    public String getAutoScalingGroupUuid() {
+        return autoScalingGroupUuid;
+    }
+
+    public void setAutoScalingGroupUuid(String autoScalingGroupUuid) {
+        this.autoScalingGroupUuid = autoScalingGroupUuid;
+    }
 
     public List<String> getSoftAvoidHostUuids() {
         return softAvoidHostUuids;

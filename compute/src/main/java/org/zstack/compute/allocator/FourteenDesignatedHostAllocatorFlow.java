@@ -15,10 +15,13 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FourteenDesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
     @Autowired
@@ -28,7 +31,21 @@ public class FourteenDesignatedHostAllocatorFlow extends AbstractHostAllocatorFl
     private void allocate(String url) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json;charset=utf-8");
-        HttpEntity<String> req = new HttpEntity<>("Host", headers);
+        Map<String, String> body = new HashMap<>();
+        body.put("type", "Host");
+        body.put("instanceOfferingUuid", spec.getVmInstance().getInstanceOfferingUuid());
+        String lastHostUuid = spec.getVmInstance().getLastHostUuid();
+        if (lastHostUuid != null && !lastHostUuid.isEmpty()) {
+            body.put("lastHostUuid", lastHostUuid);
+        }
+        String groupUuid = spec.getAutoScalingGroupUuid();
+        if (groupUuid != null && !groupUuid.isEmpty()) {
+            body.put("groupUuid", groupUuid);
+        }
+        if (spec.getVmInstance().getUuid() != null || !spec.getVmInstance().getUuid().isEmpty()) {
+            body.put("vmUuid", spec.getVmInstance().getUuid());
+        }
+        HttpEntity<String> req = new HttpEntity<>(JSONObjectUtil.toJsonString(body), headers);
         ResponseEntity<String> rsp = new Retry<ResponseEntity<String>>() {
             @Override
             @RetryCondition(onExceptions = {IOException.class, HttpStatusCodeException.class})
@@ -39,9 +56,7 @@ public class FourteenDesignatedHostAllocatorFlow extends AbstractHostAllocatorFl
 
         if (rsp.getStatusCode().is2xxSuccessful()) {
             String s = rsp.getBody();
-            if (candidates == null) {
-                candidates = new ArrayList<>();
-            }
+            candidates = new ArrayList<>();
             if (s != null) {
                 HostVO o = Q.New(HostVO.class).eq(HostVO_.uuid, s).find();
                 if (o == null) {
