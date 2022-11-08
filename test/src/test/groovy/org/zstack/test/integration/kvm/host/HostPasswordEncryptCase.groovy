@@ -83,7 +83,7 @@ class HostPasswordEncryptCase extends SubCase {
                 return;
             }
 
-            String entityName = ec.getDeclaringClass().getCanonicalName();
+            String entityName = ec.getDeclaringClass().getSimpleName();
             String columnName = ec.getName();
             assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, entityName).eq(EncryptEntityMetadataVO_.columnName, columnName).findValue() == EncryptEntityState.NewAdded
         })
@@ -108,24 +108,24 @@ class HostPasswordEncryptCase extends SubCase {
                 return;
             }
 
-            String entityName = ec.getDeclaringClass().getCanonicalName();
+            String entityName = ec.getDeclaringClass().getSimpleName();
             String columnName = ec.getName();
             retryInSecs {
                 assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, entityName).eq(EncryptEntityMetadataVO_.columnName, columnName).findValue() == EncryptEntityState.Encrypted
             }
         })
 
-        assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getCanonicalName()).findValue() == EncryptEntityState.Encrypted
+        assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getSimpleName()).findValue() == EncryptEntityState.Encrypted
 
         //  test for unencrypted strings Decryption failures
         SQL.New(EncryptEntityMetadataVO.class)
-                .eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getCanonicalName())
+                .eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getSimpleName())
                 .set(EncryptEntityMetadataVO_.state, EncryptEntityState.NewAdded)
                 .update()
 
         ((EncryptFacadeImpl) encryptFacade).handleNewAddedEncryptEntity()
 
-        assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getCanonicalName()).findValue() == EncryptEntityState.Encrypted
+        assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getSimpleName()).findValue() == EncryptEntityState.Encrypted
 
         retryInSecs {
             password = Q.New(KVMHostVO.class).select(KVMHostVO_.password).eq(KVMHostVO_.uuid, host.uuid).findValue()
@@ -135,13 +135,13 @@ class HostPasswordEncryptCase extends SubCase {
 
         //  test handleNewAddedEncryptEntity again, result unchanged
         SQL.New(EncryptEntityMetadataVO.class)
-                .eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getCanonicalName())
+                .eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getSimpleName())
                 .set(EncryptEntityMetadataVO_.state, EncryptEntityState.NewAdded)
                 .update()
 
         ((EncryptFacadeImpl) encryptFacade).handleNewAddedEncryptEntity()
 
-        assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getCanonicalName()).findValue() == EncryptEntityState.Encrypted
+        assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getSimpleName()).findValue() == EncryptEntityState.Encrypted
 
         retryInSecs {
             password = Q.New(KVMHostVO.class).select(KVMHostVO_.password).eq(KVMHostVO_.uuid, host.uuid).findValue()
@@ -183,17 +183,17 @@ class HostPasswordEncryptCase extends SubCase {
                 return;
             }
 
-            String entityName = ec.getDeclaringClass().getCanonicalName();
+            String entityName = ec.getDeclaringClass().getSimpleName();
             String columnName = ec.getName();
             assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, entityName).eq(EncryptEntityMetadataVO_.columnName, columnName).findValue() == EncryptEntityState.NewAdded
 
         })
 
-        assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getCanonicalName()).findValue() == EncryptEntityState.NewAdded
+        assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getSimpleName()).findValue() == EncryptEntityState.NewAdded
 
         ((EncryptFacadeImpl) encryptFacade).handleNewAddedEncryptEntity()
 
-        assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getCanonicalName()).findValue() == EncryptEntityState.NewAdded
+        assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getSimpleName()).findValue() == EncryptEntityState.NewAdded
 
         retryInSecs {
             password = Q.New(KVMHostVO.class).select(KVMHostVO_.password).eq(KVMHostVO_.uuid, host.uuid).findValue()
