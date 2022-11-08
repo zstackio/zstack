@@ -239,7 +239,7 @@ public class AscDelayRecycleIpAllocatorStrategy extends AbstractIpAllocatorStrat
         UsedIpInventory ret;
 
         IpCursorStruct ipCursorStruct = getIpCursorStruct(msg.getL3NetworkUuid(), getReqIpRangeType(msg));
-        List<IpRangeVO> ranges = null;
+        List<IpRangeVO> ranges;
         boolean needToUpdateIpCursor = true;
 
         if (msg.getRequiredIp() != null) {
@@ -247,14 +247,17 @@ public class AscDelayRecycleIpAllocatorStrategy extends AbstractIpAllocatorStrat
             if (ret == null || !ret.getIp().equals(ipCursorStruct.getNextIp())) {
                 return ret;
             }
+            ranges = getReqIpRanges(msg, IPv6Constants.IPv4);
         } else if ( msg.getIpRangeUuid() != null) {
+            ranges = getReqIpRanges(msg, IPv6Constants.IPv4);
             if (ipCursorStruct.getIpRangeUuid().equals(msg.getIpRangeUuid())) {
                 msg.setRequiredIp(ipCursorStruct.getNextIp());
                 ret = allocateRequiredIp(msg);
             } else {
-                ranges = getReqIpRanges(msg, IPv6Constants.IPv4);
                 ret = allocateIpByAsc(msg, ranges);
-                needToUpdateIpCursor = false;
+                if (!ipCursorStruct.getIpRangeUuid().equals(IpCursorStruct.NULL_VALUE)) {
+                    needToUpdateIpCursor = false;
+                }
             }
         } else {
             ranges = getReqIpRanges(msg, IPv6Constants.IPv4);
