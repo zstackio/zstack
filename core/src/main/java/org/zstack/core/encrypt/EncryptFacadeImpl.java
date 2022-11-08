@@ -1,12 +1,11 @@
 package org.zstack.core.encrypt;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigBeforeUpdateExtensionPoint;
-import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.*;
 import org.zstack.core.convert.PasswordConverter;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -340,19 +339,22 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
     }
 
     private void collectEncryptEntityMetadata() {
-        BeanUtils.reflections.getFieldsAnnotatedWith(Convert.class).forEach(ec -> {
-            if (ec.getDeclaringClass().getAnnotation(Entity.class) == null || ec.getDeclaringClass().getAnnotation(Table.class) == null) {
-                return;
+        for (Field field : encryptedFields) {
+            List<String> classNames = new ArrayList<>();
+
+            if (field.getDeclaringClass().getAnnotation(Entity.class) != null && field.getDeclaringClass().getAnnotation(Table.class) != null) {
+                classNames.add(field.getDeclaringClass().getSimpleName());
+            } else {
+                classNames.addAll(BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
+                        .filter(aClass -> aClass.getAnnotation(Entity.class) != null && aClass.getAnnotation(Table.class) != null)
+                        .map(Class::getSimpleName)
+                        .collect(Collectors.toList()));
             }
 
-            if (!ec.getAnnotation(Convert.class).converter().equals(PasswordConverter.class)) {
-                return;
+            for (String className : classNames) {
+                createIfNotExists(className, field.getName());
             }
-
-            String entityName = ec.getDeclaringClass().getCanonicalName();
-            String columnName = ec.getName();
-            createIfNotExists(entityName, columnName);
-        });
+        }
     }
 
     private void createIfNotExists(String entity, String column) {
@@ -371,12 +373,27 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
     }
 
     public void updateEncryptDataStateIfExists(String entity, String column, EncryptEntityState state) {
-        String sql = String.format("update EncryptEntityMetadataVO set state = :state where columnName = :columnName and entityName like :entityName");
+        String sql = String.format("update EncryptEntityMetadataVO set state = :state where columnName = :columnName and entityName = :entityName");
         Query query = dbf.getEntityManager().createQuery(sql);
         query.setParameter("state", state);
-        query.setParameter("entityName", String.format("%%%s%%", entity));
+        query.setParameter("entityName", entity);
         query.setParameter("columnName", column);
         query.executeUpdate();
+    }
+
+    @Transactional
+    public void removeConvertRecoverData() {
+        if (Q.New(EncryptEntityMetadataVO.class)
+                .isExists()) {
+            return;
+        }
+
+        if (PasswordEncryptType.None.toString().equals(EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value())) {
+            return;
+        }
+
+        decryptAllPassword();
+        encryptAllPassword();
     }
 
     @Override
@@ -384,6 +401,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         initEncryptDriver();
         collectAllEncryptPassword();
         installGlobalConfigUpdateHooks();
+        removeConvertRecoverData();
         collectEncryptEntityMetadata();
         handleNewAddedEncryptEntity();
 
