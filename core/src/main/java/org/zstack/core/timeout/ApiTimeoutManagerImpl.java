@@ -382,24 +382,8 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
             return mtd;
         }
 
-        // if no message timeout from context or context contains same timeout
-        // no need to get a new message deadline
-        boolean skipDeadlineCalculation = !TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_TIMEOUT)
-                || Long.parseLong((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_TIMEOUT)) == messageTimeout;
-        if (skipDeadlineCalculation) {
-            mtd.setMessageTimeout(getTimeout());
-            mtd.setMessageDeadline(calculateMessageDeadline(mtd.getMessageTimeout()));
-            return mtd;
-        }
-
-        // in most cases message deadline is shared
-        // only if message manually set a different message timeout, in this case choose a smaller timeout
-        // to make sure all related messages will become timeout before deadline
-        long originalMessageDeadline = Long.parseLong((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_DEADLINE));
-        long newMessageDeadline = timer.getCurrentTimeMillis() + messageTimeout;
-
-        mtd.setMessageTimeout(messageTimeout);
-        mtd.setMessageDeadline(Math.min(originalMessageDeadline, newMessageDeadline));
+        mtd.setMessageTimeout(getTimeout());
+        mtd.setMessageDeadline(calculateMessageDeadline(mtd.getMessageTimeout()));
         return mtd;
     }
 }
