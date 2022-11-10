@@ -49,6 +49,8 @@ public class LoadBalancerConstants {
 
     public static final String HEALTH_CHECK_URI_REGEX = "^/[A-Za-z0-9-/.%?#&]*";
 
+    public static final String COOKIE_NAME_REGEX = "[A-Za-z0-9_-]+";
+
     public static final List<String> HEALTH_CHECK_TARGET_PROTOCOLS = new ArrayList<String>();
 
     public static final String ACTION_CATEGORY = "loadBalancer";
@@ -102,6 +104,12 @@ public class LoadBalancerConstants {
 
     public static final int NUMBER_OF_PROCESS_MIN = 1;
     public static final int NUMBER_OF_PROCESS_MAX = 64;
+
+    public static final int SESSION_IDLE_TIMEOUT_MIN = 30;
+    public static final int SESSION_IDLE_TIMEOUT_MAX = 3600;
+    public static final int SESSION_IDLE_TIMEOUT_DEFAULT = 60;
+
+    public static final int COOKIE_NAME_MAX = 20;
 
     public static final String HEALTH_CHECK_TARGET_DEFAULT = "default";
 

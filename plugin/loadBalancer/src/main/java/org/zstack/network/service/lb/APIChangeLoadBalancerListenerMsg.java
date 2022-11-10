@@ -63,6 +63,15 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(validValues = {"http-keep-alive", "http-server-close", "http-tunnel", "httpclose", "forceclose"}, required = false)
     private String httpMode;
 
+    @APIParam(validValues = {"disable", "iphash", "insert", "rewrite"}, required = false)
+    private String sessionPersistence;
+
+    @APIParam(numberRange = {LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX}, required = false)
+    private Integer sessionIdleTimeout;
+
+    @APIParam(validRegexValues = LoadBalancerConstants.COOKIE_NAME_REGEX, maxLength = LoadBalancerConstants.COOKIE_NAME_MAX, required = false)
+    private String cookieName;
+
     @APINoSee
     private String loadBalancerUuid;
 
@@ -212,6 +221,8 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
 
         msg.setUuid(uuid());
         msg.setBalancerAlgorithm("roundrobin");
+        msg.setSessionPersistence(LoadBalancerSessionPersistence.insert.toString());
+        msg.setSessionIdleTimeout(60);
         msg.setConnectionIdleTimeout(300);
         msg.setHealthCheckInterval(5);
         msg.setHealthCheckTarget("default");
@@ -222,5 +233,29 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
         msg.setHttpMode("http-keep-alive");
 
         return msg;
+    }
+
+    public String getSessionPersistence() {
+        return sessionPersistence;
+    }
+
+    public void setSessionPersistence(String sessionPersistence) {
+        this.sessionPersistence = sessionPersistence;
+    }
+
+    public Integer getSessionIdleTimeout() {
+        return sessionIdleTimeout;
+    }
+
+    public void setSessionIdleTimeout(Integer sessionIdleTimeout) {
+        this.sessionIdleTimeout = sessionIdleTimeout;
+    }
+
+    public String getCookieName() {
+        return cookieName;
+    }
+
+    public void setCookieName(String cookieName) {
+        this.cookieName = cookieName;
     }
 }
