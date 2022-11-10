@@ -173,5 +173,6 @@
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO</class>
+        <class>org.zstack.header.agent.versionControl.AgentVersionVO</class>
     </persistence-unit>
 </persistence>

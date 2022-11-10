@@ -19,8 +19,14 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.*;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.*;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.agent.versionControl.AgentVersionVO;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.Completion;
@@ -757,6 +763,14 @@ public abstract class HostBase extends AbstractHost {
 
                     changeConnectionState(HostStatusEvent.disconnected);
 
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(PingHostFailedExtensionPoint.class),
+                            new ForEachFunction<PingHostFailedExtensionPoint>() {
+                                @Override
+                                public void run(PingHostFailedExtensionPoint arg) {
+                                    arg.afterPingHostFailed(self.getUuid(), errorCode);
+                                }
+                            });
+
                     completion.success(reply);
                 } else {
                     reply.setConnected(true);
@@ -836,6 +850,31 @@ public abstract class HostBase extends AbstractHost {
             }
         });
     }
+    private boolean skipReconnectHost(ReconnectHostMsg msg) {
+        if (msg.isSkipIfHostConnected() && HostStatus.Connected == self.getStatus()) {
+            return true;
+        }
+
+        if (skipConnectHost()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean skipConnectHost() {
+
+        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            return false;
+        }
+
+        AgentVersionVO agentVersionVO = dbf.findByUuid(self.getUuid(), AgentVersionVO.class);
+        if (agentVersionVO == null) {
+            return true;
+        }
+
+        return false;
+    }
 
     private void reconnectHost(final ReconnectHostMsg msg, final NoErrorCompletion completion) {
         thdf.chainSubmit(new ChainTask(msg, completion) {
@@ -852,7 +891,8 @@ public abstract class HostBase extends AbstractHost {
             @Override
             public void run(final SyncTaskChain chain) {
                 checkState();
-                if (msg.isSkipIfHostConnected() && HostStatus.Connected == self.getStatus()) {
+                if (skipReconnectHost(msg)) {
+                    bus.reply(msg, new ReconnectHostReply());
                     finish(chain);
                     return;
                 }
@@ -1054,6 +1094,15 @@ public abstract class HostBase extends AbstractHost {
             @Override
             public void run(SyncTaskChain chain) {
                 checkState();
+
+                if (skipConnectHost()) {
+                    completion.success();
+                    chain.next();
+                    return;
+                }
+
+                final ConnectHostReply reply = new ConnectHostReply();
+
 
                 final FlowChain flowChain = FlowChainBuilder.newShareFlowChain();
                 flowChain.setName(String.format("connect-host-%s", self.getUuid()));

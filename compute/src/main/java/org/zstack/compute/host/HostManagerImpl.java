@@ -382,8 +382,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 HostVO h = dbf.findByUuid(vo.getUuid(), HostVO.class);
+                logger.info(String.format("host info is %s", h));
                 String arch = h.getArchitecture();
                 inv.setArchitecture(arch);
+                logger.info(String.format("inv info is %s", inv));
 
                 if (arch == null) {
                     trigger.fail(operr("after connecting, host[name:%s, ip:%s] returns a null architecture", vo.getName(), vo.getManagementIp()));
