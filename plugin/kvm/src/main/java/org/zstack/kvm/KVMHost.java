@@ -1903,6 +1903,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setXbzrle(xbzrle);
                         cmd.setVdpaPaths((List<String>) data.get("vDPA_paths"));
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
+                        cmd.setUseTls(KVMGlobalConfig.ENABLE_QEMU_NATIVE_TLS.value(Boolean.class));
                         cmd.setTimeout(timeoutManager.getTimeout());
 
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
@@ -4047,7 +4048,7 @@ public class KVMHost extends HostBase implements Host {
                         }
                     });
 
-                    flow(new NoRollbackFlow() {
+                    Flow echoFlow = new NoRollbackFlow() {
                         String __name__ = "echo-host";
 
                         @Override
@@ -4098,7 +4099,9 @@ public class KVMHost extends HostBase implements Host {
                                 }
                             });
                         }
-                    });
+                    };
+
+                    flow(echoFlow);
 
                     flow(new NoRollbackFlow() {
                         String __name__ = "update-kvmagent-dependencies";
@@ -4179,12 +4182,11 @@ public class KVMHost extends HostBase implements Host {
                                     createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
+                                    createTagWithoutNonValue(HostSystemTags.HOSTNAME, HostSystemTags.HOSTNAME_TOKEN, ret.getHostname(), true);
 
                                     if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
                                         recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
                                     }
-
-
 
                                     List<String> ips = ret.getIpAddresses();
                                     if (ips != null) {
@@ -4214,6 +4216,53 @@ public class KVMHost extends HostBase implements Host {
                             });
                         }
                     });
+
+                    flow(new NoRollbackFlow() {
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            FlowChain prepareChain = FlowChainBuilder.newSimpleFlowChain();
+
+                            for (PrepareKVMHostExtensionPoint extp : factory.getPrepareExtensions()) {
+                                KVMHostConnectedContext ctx = new KVMHostConnectedContext();
+                                ctx.setInventory((KVMHostInventory) getSelfInventory());
+                                ctx.setNewAddedHost(info.isNewAdded());
+                                ctx.setBaseUrl(baseUrl);
+                                ctx.setSkipPackages(info.getSkipPackages());
+
+                                prepareChain.then(extp.createPrepareKvmHostFlow(ctx));
+                            }
+                            prepareChain.error(new FlowErrorHandler(trigger) {
+                                @Override
+                                public void handle(ErrorCode errCode, Map data) {
+                                    trigger.fail(errCode);
+                                }
+                            }).done(new FlowDoneHandler(trigger) {
+                                @Override
+                                public void handle(Map data) {
+                                    if (KVMSystemTags.RESTART_LIBVIRT_REQUESTED.hasTag(self.getUuid())) {
+                                        SshResult ret = new Ssh().shell(String.format("sudo systemctl restart libvirtd; sudo bash /etc/init.d/%s restart", AnsibleConstant.KVM_AGENT_NAME))
+                                                .setTimeout(20)
+                                                .setPrivateKey(asf.getPrivateKey())
+                                                .setUsername(getSelf().getUsername())
+                                                .setHostname(self.getManagementIp())
+                                                .setPort(getSelf().getPort())
+                                                .runAndClose();
+
+                                        if (ret.getReturnCode() != 0) {
+                                            trigger.fail(operr("Failed to restart agent, because %s",ret.getStderr()));
+                                            return;
+                                        }
+
+                                        KVMSystemTags.RESTART_LIBVIRT_REQUESTED.delete(self.getUuid());
+                                    }
+
+                                    trigger.next();
+                                }
+                            }).start();
+                        }
+                    });
+
+                    flow(echoFlow);
 
                     if (info.isNewAdded()) {
                         flow(new NoRollbackFlow() {

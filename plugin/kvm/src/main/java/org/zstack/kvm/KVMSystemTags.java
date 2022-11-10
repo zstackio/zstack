@@ -33,6 +33,8 @@ public class KVMSystemTags {
     public static PatternedSystemTag CHECK_CLUSTER_CPU_MODEL = new PatternedSystemTag(String.format("check::cluster::cpu::model::{%s}", CHECK_CLUSTER_CPU_MODEL_TOKEN), ClusterVO.class);
 
     public static SystemTag VIRTIO_SCSI = new SystemTag("capability:virtio-scsi", HostVO.class);
+    public static SystemTag QEMU_TLS_DEPLOYED = new SystemTag("qemuTlsDeployed", HostVO.class);
+    public static SystemTag RESTART_LIBVIRT_REQUESTED = new SystemTag("restartLibvirtRequested", HostVO.class);
 
     public static final String L2_BRIDGE_NAME_TOKEN = "name";
     public static PatternedSystemTag L2_BRIDGE_NAME = new PatternedSystemTag(String.format("kvm::bridge::{%s}", L2_BRIDGE_NAME_TOKEN), L2NetworkVO.class);
