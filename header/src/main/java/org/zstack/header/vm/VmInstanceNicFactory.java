@@ -1,11 +1,13 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.UsedIpInventory;
 
 import java.util.List;
 
 public interface VmInstanceNicFactory {
     VmNicType getType();
+    VSwitchType getVSwitchType();
     VmNicVO createVmNic(VmNicInventory inv, VmInstanceSpec spec, List<UsedIpInventory> ips);
 
     static VmNicVO createVmNic(VmNicInventory nic) {

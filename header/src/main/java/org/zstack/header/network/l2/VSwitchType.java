@@ -1,10 +1,14 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.header.vm.VmNicType;
+import org.zstack.header.vm.VmOvsNicConstant;
+
 import java.util.*;
 
 public class VSwitchType {
     private static Map<String, VSwitchType> types = Collections.synchronizedMap(new HashMap<String, VSwitchType>());
     private final String typeName;
+    private static Map<String, List<VmNicType>> vSwitchSupportNicTypesMap = Collections.synchronizedMap(new HashMap<String, List<VmNicType>>());
     private boolean exposed = true;
 
     public static boolean hasType(String typeName) {
@@ -21,12 +25,45 @@ public class VSwitchType {
         this.exposed = exposed;
     }
 
+    public VSwitchType(String typeName, VmNicType nicType) {
+        this.typeName = typeName;
+        types.put(typeName, this);
+        if (vSwitchSupportNicTypesMap.get(typeName) == null) {
+            vSwitchSupportNicTypesMap.put(typeName, new ArrayList<VmNicType>());
+        }
+        vSwitchSupportNicTypesMap.get(typeName).add(nicType);
+    }
+
     public boolean isExposed() {
         return exposed;
     }
 
     public void setExposed(boolean exposed) {
         this.exposed = exposed;
+    }
+
+    public List<VmNicType> getSupVmNicTypes() {
+        return vSwitchSupportNicTypesMap.get(typeName);
+    }
+
+    public VmNicType getVmNicTypeWithCondition(boolean enableSRIOV, boolean enableVhostUser) {
+        List<VmNicType> types = getSupVmNicTypes();
+
+        if (typeName.equals(L2NetworkConstant.VSWITCH_TYPE_OVS_DPDK)) {
+            if (enableVhostUser && types.contains(VmNicType.valueOf(VmOvsNicConstant.ACCEL_TYPE_VHOST_USER_SPACE))) {
+                return VmNicType.valueOf(VmOvsNicConstant.ACCEL_TYPE_VHOST_USER_SPACE);
+            } else if (types.contains(VmNicType.valueOf(VmOvsNicConstant.ACCEL_TYPE_VDPA))){
+                return VmNicType.valueOf(VmOvsNicConstant.ACCEL_TYPE_VDPA);
+            }
+        } else if (typeName.equals(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE)){
+            for (VmNicType type : types) {
+                if (type.isUseSRIOV() == enableSRIOV) {
+                    return type;
+                }
+            }
+        }
+
+        return null;
     }
 
     public static VSwitchType valueOf(String typeName) {

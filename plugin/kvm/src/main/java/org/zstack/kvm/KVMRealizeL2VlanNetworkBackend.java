@@ -7,6 +7,8 @@ import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
@@ -23,6 +25,8 @@ import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.List;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -254,8 +258,25 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
             // vlan bridges and novlan bridge use the same bridge name
             // in ovs, so before delete l2 network we should check if
             // the PhysicalInterface is using by another l2 network.
-            boolean noNeedDelete = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.physicalInterface, l2Network.getPhysicalInterface())
-                    .notEq(L2NetworkVO_.uuid, l2Network.getUuid()).isExists();
+            //if another l2 attach l2,need to delete l2 in host
+            List<L2NetworkVO> l2NetworkVOs = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.physicalInterface, l2Network.getPhysicalInterface())
+                    .notEq(L2NetworkVO_.uuid, l2Network.getUuid()).list();
+
+            if (l2NetworkVOs.isEmpty()) {
+                delete(l2Network, hostUuid, completion, KVMConstant.KVM_DELETE_OVSDPDK_NETWORK_PATH);
+                return;
+            }
+
+            boolean noNeedDelete = false;
+            String clusterUuid = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).select(HostVO_.clusterUuid).findValue();
+            for (L2NetworkVO l2 : l2NetworkVOs) {
+                boolean anotherl2AttachCluster = l2.getAttachedClusterRefs().stream().anyMatch(ref -> ref.getClusterUuid().equals(clusterUuid));
+                if (anotherl2AttachCluster) {
+                    noNeedDelete = true;
+                    break;
+                }
+            }
+
             if (noNeedDelete) {
                 completion.success();
                 return;
