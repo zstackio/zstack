@@ -52,7 +52,7 @@ import static org.zstack.core.Platform.*;
 
 public class RESTFacadeImpl implements RESTFacade {
     private static final CLogger logger = Utils.getSafeLogger(RESTFacadeImpl.class);
-    
+
     @Autowired
     private ThreadFacade thdf;
     @Autowired
@@ -587,7 +587,7 @@ public class RESTFacadeImpl implements RESTFacade {
         if (!valid) {
             throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
         }
-        
+
         if (rsp.getBody() != null && returnClass != Void.class) {
 
             if (logger.isTraceEnabled()) {
