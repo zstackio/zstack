@@ -103,6 +103,9 @@ public class LoadBalancerConstants {
     public static final int NUMBER_OF_PROCESS_MIN = 1;
     public static final int NUMBER_OF_PROCESS_MAX = 64;
 
+    public static final int SESSION_IDLE_TIMEOUT_MIN = 30;
+    public static final int SESSION_IDLE_TIMEOUT_MAX = 3600;
+
     public static final String HEALTH_CHECK_TARGET_DEFAULT = "default";
 
     public static final List<VmInstanceConstant.VmOperation> vmOperationForDetachListener = asList(
