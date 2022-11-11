@@ -403,6 +403,11 @@ abstract class Test extends ApiHelper implements Retry {
 
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
+            int orderOfBeforeDeliveryMessageInterceptor() {
+                return 999
+            }
+
+            @Override
             void beforeDeliveryMessage(Message msg) {
                 if (currentEnvSpec?.notifiersOfReceivedMessages != null) {
                     currentEnvSpec.notifiersOfReceivedMessages.each { msgClz, cs ->

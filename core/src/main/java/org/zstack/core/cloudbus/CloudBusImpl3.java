@@ -1028,7 +1028,9 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             int order = 0;
             for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
                 if (i.orderOfBeforeDeliveryMessageInterceptor() <= interceptor.orderOfBeforeDeliveryMessageInterceptor()) {
-                    order = beforeDeliveryMessageInterceptorsForAll.indexOf(i);
+                    // move new interceptor's position
+                    order = beforeDeliveryMessageInterceptorsForAll.indexOf(i) + 1;
+                } else {
                     break;
                 }
             }
