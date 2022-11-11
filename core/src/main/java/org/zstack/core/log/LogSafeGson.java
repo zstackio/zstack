@@ -115,7 +115,7 @@ public class LogSafeGson {
             public boolean shouldSkipClass(Class<?> clazz) {
                 return false;
             }
-        }).create();
+        }).enableComplexMapKeySerialization().create();
 
         for (Class<?> baseClz : searchClasses) {
             for (Class<?> clz : BeanUtils.reflections.getSubTypesOf(baseClz)) {
@@ -150,7 +150,11 @@ public class LogSafeGson {
 
     private static <T> JsonSerializer<T> getSerializer() {
         return (o, type, jsonSerializationContext) -> {
-            JsonObject jObj = logSafeGson.toJsonTree(o).getAsJsonObject();
+            JsonElement jsonElement = logSafeGson.toJsonTree(o);
+            if (!jsonElement.isJsonObject()) {
+                return jsonElement;
+            }
+            JsonObject jObj = jsonElement.getAsJsonObject();
             maskFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
                 Object obj = f.getValue(o);
                 if (obj instanceof Collection) {
@@ -183,7 +187,6 @@ public class LogSafeGson {
                     jObj.add(f.getName(), array);
                 }
             });
-
             return jObj;
         };
     }
