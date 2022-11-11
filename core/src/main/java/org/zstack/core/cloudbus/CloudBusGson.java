@@ -82,7 +82,7 @@ public class CloudBusGson {
         public boolean shouldSkipClass(Class<?> clazz) {
             return false;
         }
-    }).create();
+    }).enableComplexMapKeySerialization().create();
 
     private static Gson httpGson = new GsonUtil().setCoder(Message.class, new GsonTypeCoder<Message>() {
 
