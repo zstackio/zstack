@@ -1,15 +1,14 @@
 package org.zstack.test.integration.network.l3network
 
+import org.zstack.network.l3.L3NetworkSystemTags
+import org.zstack.network.l3.L3NetworkGlobalConfig
+import org.zstack.tag.PatternedSystemTag
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.L3NetworkSpec
 import org.zstack.sdk.*
 import org.zstack.testlib.SubCase
-import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.data.SizeUnit
 import org.zstack.header.network.l3.L3NetworkConstant
-import org.zstack.header.network.l3.L3NetworkVO
-import org.zstack.sdk.VmInstanceInventory
 
 class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
     EnvSpec env
@@ -98,6 +97,7 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
             testAscDelayRecycleOneIpRange();
             testAscDelayRecycleMultiIpRange();
             testAscDelayRecycleMultiIpRangeWithAddressPool();
+            testAscDelayRecycleSwitchStrategy();
         }
     }
 
@@ -598,6 +598,205 @@ class AscDelayRecycleIpAllocatorStrategyCase extends SubCase {
         deleteIpRange { uuid = range_2.uuid }
         deleteIpRange { uuid = range_1.uuid }
         deleteL3Network { uuid = l3.uuid }
+    }
+
+    void testAscDelayRecycleSwitchStrategy() {
+        def l2 = env.inventoryByName("l2") as L2NetworkInventory
+
+        def l3 = createL3Network {
+            category = "Public"
+            system = false
+            l2NetworkUuid = l2.uuid
+            name = "l3_1"
+            systemTags = ["resourceConfig::l3Network::ipAllocateStrategy::AscDelayRecycleIpAllocatorStrategy"]
+        } as L3NetworkInventory
+
+        def flatProvider = queryNetworkServiceProvider {
+            delegate.conditions = ["type=Flat"]
+        }[0] as NetworkServiceProviderInventory
+
+        def netServices = ["${flatProvider.uuid}":["DHCP"]]
+
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3.uuid
+            networkServices = netServices
+        }
+
+        def range_1 = addIpRange {
+            name = "range"
+            l3NetworkUuid = l3.uuid
+            startIp = "192.168.0.5"
+            endIp = "192.168.0.11"
+            gateway = "192.168.0.1"
+            netmask = "255.255.255.0"
+        } as IpRangeInventory
+
+        def vip_1 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+        } as VipInventory
+        assert(vip_1.ip == '192.168.0.5')
+
+        updateResourceConfig {
+            name = L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.name
+            category= L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.category
+            resourceUuid= l3.uuid
+            value = L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY
+        }
+
+        def vip_2 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+        } as VipInventory
+
+        def pst = L3NetworkSystemTags.NETWORK_ASC_DELAY_NORMAL_NEXT_IP as PatternedSystemTag;
+        assert pst.getTagInventory(l3.uuid) == null
+
+        def vip_3 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+        } as VipInventory
+
+        updateResourceConfig {
+            name = L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.name
+            category= L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.category
+            resourceUuid= l3.uuid
+            value = L3NetworkConstant.ASC_DELAY_RECYCLE_IP_ALLOCATOR_STRATEGY
+        }
+
+        def vip_4 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+        } as VipInventory
+
+        assert pst.getTagInventory(l3.uuid) != null
+
+        updateResourceConfig {
+            name = L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.name
+            category= L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.category
+            resourceUuid= l3.uuid
+            value = L3NetworkConstant.FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY
+        }
+
+        def vip_5 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+        } as VipInventory
+
+        assert pst.getTagInventory(l3.uuid) == null
+
+        updateResourceConfig {
+            name = L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.name
+            category= L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.category
+            resourceUuid= l3.uuid
+            value = L3NetworkConstant.ASC_DELAY_RECYCLE_IP_ALLOCATOR_STRATEGY
+        }
+
+        def vip_6 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+        } as VipInventory
+
+        assert pst.getTagInventory(l3.uuid) != null
+
+        def range_2 = addIpRange {
+            name = "address-pool"
+            l3NetworkUuid = l3.uuid
+            startIp = "192.168.4.5"
+            endIp = "192.168.4.11"
+            netmask = "255.255.255.0"
+            ipRangeType = IpRangeType.AddressPool.toString()
+        } as IpRangeInventory
+
+        def vip_7 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+            ipRangeUuid = range_2.uuid
+        } as VipInventory
+        assert(vip_7.ip == '192.168.4.5')
+
+        updateResourceConfig {
+            name = L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.name
+            category= L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.category
+            resourceUuid= l3.uuid
+            value = L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY
+        }
+
+        def vip_8 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+            ipRangeUuid = range_2.uuid
+        } as VipInventory
+
+        pst = L3NetworkSystemTags.NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IP as PatternedSystemTag;
+        assert pst.getTagInventory(l3.uuid) == null
+
+        def vip_9 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+            ipRangeUuid = range_2.uuid
+        } as VipInventory
+
+        updateResourceConfig {
+            name = L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.name
+            category= L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.category
+            resourceUuid= l3.uuid
+            value = L3NetworkConstant.ASC_DELAY_RECYCLE_IP_ALLOCATOR_STRATEGY
+        }
+
+        def vip_10 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+            ipRangeUuid = range_2.uuid
+        } as VipInventory
+
+        assert pst.getTagInventory(l3.uuid) != null
+
+        updateResourceConfig {
+            name = L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.name
+            category= L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.category
+            resourceUuid= l3.uuid
+            value = L3NetworkConstant.FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY
+        }
+
+        def vip_11 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+            ipRangeUuid = range_2.uuid
+        } as VipInventory
+
+        assert pst.getTagInventory(l3.uuid) == null
+
+        updateResourceConfig {
+            name = L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.name
+            category= L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.category
+            resourceUuid= l3.uuid
+            value = L3NetworkConstant.ASC_DELAY_RECYCLE_IP_ALLOCATOR_STRATEGY
+        }
+
+        def vip_12 = createVip {
+            name = "vip"
+            l3NetworkUuid = l3.uuid
+            ipRangeUuid = range_2.uuid
+        } as VipInventory
+
+        assert pst.getTagInventory(l3.uuid) != null
+
+        deleteVip { uuid = vip_1.uuid }
+        deleteVip { uuid = vip_2.uuid }
+        deleteVip { uuid = vip_3.uuid }
+        deleteVip { uuid = vip_4.uuid }
+        deleteVip { uuid = vip_5.uuid }
+        deleteVip { uuid = vip_6.uuid }
+        deleteVip { uuid = vip_7.uuid }
+        deleteVip { uuid = vip_8.uuid }
+        deleteVip { uuid = vip_9.uuid }
+        deleteVip { uuid = vip_10.uuid }
+        deleteVip { uuid = vip_11.uuid }
+        deleteVip { uuid = vip_12.uuid }
+        deleteIpRange { uuid = range_2.uuid }
+        deleteIpRange { uuid = range_1.uuid }
+        deleteL3Network { uuid = l3.uuid}
     }
 
 	void deleteVmInstance(vm) {
