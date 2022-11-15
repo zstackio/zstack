@@ -1928,6 +1928,14 @@ public class LoadBalancerBase {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.BALANCER_ALGORITHM, msg.getUuid(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, msg.getBalancerAlgorithm());
                 }
 
+                if (msg.getSessionPersistence() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.SESSION_PERSISTENCE, msg.getUuid(), LoadBalancerSystemTags.SESSION_PERSISTENCE_TOKEN, msg.getSessionPersistence());
+                }
+
+                if (msg.getSessionIdleTimeout() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT_TOKEN, msg.getSessionIdleTimeout());
+                }
+
                 if (msg.getConnectionIdleTimeout() != null) {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN, msg.getConnectionIdleTimeout());
                 }
