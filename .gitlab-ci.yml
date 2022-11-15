@@ -1,7 +1,0 @@
-dependency-check:
-  only:
-    - schedules
-  script:
-    - dependency-check
-  tags:
-    - dependency-check
