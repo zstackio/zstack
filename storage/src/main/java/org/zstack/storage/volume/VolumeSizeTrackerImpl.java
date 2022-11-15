@@ -6,12 +6,14 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.db.Q;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.ExceptionSafe;
-import org.zstack.header.core.NopeNoErrorCompletion;
 import org.zstack.header.core.NopeWhileDoneCompletion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.volume.*;
@@ -79,24 +81,60 @@ public class VolumeSizeTrackerImpl implements VolumeSizeTracker, Component {
         return true;
     }
 
-    private void setupTracker(){
-        VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> startTracker());
-        startTracker();
+    private void setupTracker() {
+        VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL.installUpdateExtension(this::startIntervalTracker);
+        VolumeGlobalConfig.AUTO_REFRESH_ALL_ACTIVE_VOLUME.installUpdateExtension(this::startRefreshTypeTracker);
+        startIntervalTracker(null, VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL);
     }
 
-    private synchronized void startTracker(){
+    private synchronized void startIntervalTracker(GlobalConfig oldConfig, GlobalConfig newConfig) {
+        final long oldValue = oldConfig == null ? 0L : oldConfig.value(Long.class);
+        final long newValue = newConfig.value(Long.class);
+
+        if (oldValue == newValue) {
+            return;
+        }
+
+        boolean refreshAll = VolumeGlobalConfig.AUTO_REFRESH_ALL_ACTIVE_VOLUME.value(Boolean.class);
+        submitTrackerTask(refreshAll, newValue);
+    }
+
+    private synchronized void startRefreshTypeTracker(GlobalConfig oldConfig, GlobalConfig newConfig) {
+        final boolean oldValue = oldConfig.value(Boolean.class);
+        final boolean newValue = newConfig.value(Boolean.class);
+
+        if (oldValue == newValue) {
+            return;
+        }
+
+        long interval = VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL.value(Long.class);
+        submitTrackerTask(newValue, interval);
+    }
+
+    private void submitTrackerTask(boolean refreshAll, long interval) {
         if (trackerThread != null) {
             trackerThread.cancel(true);
         }
 
-        final long interval = VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL.value(Long.class);
         trackerThread = thdf.submitPeriodicTask(new PeriodicTask() {
 
             @Override
             @ExceptionSafe
             public void run() {
-                reScanVolume();
-                syncVolumeSize();
+                if (refreshAll) {
+                    logger.info("begin to sync all online volumes");
+                    List<String> clusterUuids = Q.New(ClusterVO.class).select(ClusterVO_.uuid).listValues();
+                    new While<>(clusterUuids).each((clusterUuid, completion) -> {
+                        LocalBatchSyncVolumeSizeMsg msg = new LocalBatchSyncVolumeSizeMsg();
+                        msg.setClusterUuid(clusterUuid);
+                        bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
+                        bus.send(msg);
+                    }).run(new NopeWhileDoneCompletion());
+                } else {
+                    logger.info("begin to sync all monitored volumes");
+                    reScanVolume();
+                    syncVolumeSize();
+                }
             }
 
             @Override

@@ -7,6 +7,7 @@ import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 
 import java.util.List;
+import java.util.Map;
 
 
 public class NfsPrimaryStorageKVMBackendCommands {
@@ -743,9 +744,17 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String installPath;
     }
 
+    public static class GetBatchVolumeActualSizeCmd extends NfsPrimaryStorageAgentCommand {
+        public Map<String, String> volumeUuidInstallPaths;
+    }
+
     public static class GetVolumeActualSizeRsp extends NfsPrimaryStorageAgentResponse {
         public long actualSize;
         public long size;
+    }
+
+    public static class GetBatchVolumeActualSizeRsp extends NfsPrimaryStorageAgentResponse {
+        public Map<String, Long> actualSizes;
     }
 
     public static class PingCmd extends NfsPrimaryStorageAgentCommand {

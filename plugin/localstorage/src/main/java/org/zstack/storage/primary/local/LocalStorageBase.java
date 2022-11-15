@@ -11,7 +11,6 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.MergeQueue;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -60,7 +59,6 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -2571,6 +2569,29 @@ public class LocalStorageBase extends PrimaryStorageBase {
             public void fail(ErrorCode errorCode) {
                 SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
                 reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg) {
+        String volumeSimpleClassName = VolumeVO.class.getSimpleName();
+        String storagePath = Q.New(PrimaryStorageVO.class)
+                .select(PrimaryStorageVO_.url)
+                .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
+                .findValue();
+
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getVolumeUuidInstallPaths().keySet().iterator().next(), volumeSimpleClassName);
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, msg.getHostUuid(), storagePath, new ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(BatchSyncVolumeSizeOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+            @Override
+            public void fail(ErrorCode errorCode) {
+                BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
                 bus.reply(msg, reply);
             }
         });

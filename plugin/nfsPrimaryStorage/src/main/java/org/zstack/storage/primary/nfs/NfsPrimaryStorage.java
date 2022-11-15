@@ -1327,6 +1327,27 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
+    @Override
+    protected void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg) {
+        BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
+
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            bus.reply(msg, reply);
+            return;
+        }
+        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(BatchSyncVolumeSizeOnPrimaryStorageReply returnedReply) {
+                bus.reply(msg, returnedReply);
+            }
+            @Override
+            public void fail(ErrorCode errorCode) {
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     protected void saveVolumeProvisioningStrategy(String volumeUuid, VolumeProvisioningStrategy strategy) {
         if (!VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.hasTag(volumeUuid)) {
             SystemTagCreator tagCreator = VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.newSystemTagCreator(volumeUuid);

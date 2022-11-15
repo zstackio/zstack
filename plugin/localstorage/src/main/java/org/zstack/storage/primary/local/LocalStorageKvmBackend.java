@@ -719,6 +719,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public long size;
     }
 
+    public static class GetBatchVolumeSizeCmd extends AgentCommand {
+        public Map<String, String> volumeUuidInstallPaths;
+    }
+
+    public static class GetBatchVolumeSizeRsp extends AgentResponse {
+        public Map<String, Long> actualSizes;
+    }
+
     public static class GetQCOW2ReferenceCmd extends AgentCommand {
         public String path;
         public String searchingDir;
@@ -832,6 +840,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CHECK_MD5_PATH = "/localstorage/checkmd5";
     public static final String GET_BACKING_FILE_PATH = "/localstorage/volume/getbackingfile";
     public static final String GET_VOLUME_SIZE = "/localstorage/volume/getsize";
+    public static final String BATCH_GET_VOLUME_SIZE = "/localstorage/volume/batchgetsize";
     public static final String HARD_LINK_VOLUME = "/localstorage/volume/hardlink";
     public static final String GET_BASE_IMAGE_PATH = "/localstorage/volume/getbaseimagepath";
     public static final String GET_QCOW2_REFERENCE = "/localstorage/getqcow2reference";
@@ -2248,6 +2257,30 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg, String hostUuid, String storagePath, ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply> completion) {
+        final BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
+        GetBatchVolumeSizeCmd cmd = new GetBatchVolumeSizeCmd();
+        cmd.volumeUuidInstallPaths = msg.getVolumeUuidInstallPaths();
+        cmd.storagePath = storagePath;
+
+        KvmCommandSender sender = new KvmCommandSender(hostUuid);
+        sender.send(cmd, BATCH_GET_VOLUME_SIZE, wrapper -> null, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper returnValue) {
+                GetBatchVolumeSizeRsp rsp = returnValue.getResponse(GetBatchVolumeSizeRsp.class);
+                reply.setActualSizes(rsp.actualSizes);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("Get local storage's host [uuid: %s] volume size fail, the reason is as followed : %s", hostUuid, errorCode.getDescription()));
                 completion.fail(errorCode);
             }
         });

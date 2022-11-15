@@ -41,10 +41,7 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeInfo;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
@@ -118,6 +115,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String OFFLINE_SNAPSHOT_MERGE = "/nfsprimarystorage/offlinesnapshotmerge";
     public static final String REMOUNT_PATH = "/nfsprimarystorage/remount";
     public static final String GET_VOLUME_SIZE_PATH = "/nfsprimarystorage/getvolumesize";
+    public static final String BATCH_GET_VOLUME_SIZE_PATH = "/nfsprimarystorage/batchgetvolumesize";
     public static final String HARD_LINK_VOLUME = "/nfsprimarystorage/volume/hardlink";
     public static final String PING_PATH = "/nfsprimarystorage/ping";
     public static final String GET_VOLUME_BASE_IMAGE_PATH = "/nfsprimarystorage/getvolumebaseimage";
@@ -746,6 +744,31 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory inv, BatchSyncVolumeSizeOnPrimaryStorageMsg msg, ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply> completion) {
+        BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
+
+        KvmCommandSender sender = new KvmCommandSender(msg.getHostUuid());
+        GetBatchVolumeActualSizeCmd cmd = new GetBatchVolumeActualSizeCmd();
+        cmd.volumeUuidInstallPaths = msg.getVolumeUuidInstallPaths();
+        cmd.setUuid(inv.getUuid());
+
+        sender.send(cmd, BATCH_GET_VOLUME_SIZE_PATH, wrapper -> null, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper returnValue) {
+                GetBatchVolumeActualSizeRsp rsp = returnValue.getResponse(GetBatchVolumeActualSizeRsp.class);
+                reply.setActualSizes(rsp.actualSizes);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("Get nfs primary storage [uuid: %s] volume size fail, the reason is as followed : %s", cmd.getUuid(), errorCode.getDescription()));
+                completion.success(reply);
             }
         });
     }

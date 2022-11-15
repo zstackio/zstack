@@ -46,4 +46,21 @@
 		<defaultValue>false</defaultValue>
 		<type>java.lang.Boolean</type>
 	</config>
+
+	<config>
+		<name>autoRefreshAllActiveVolume</name>
+		<description>true means sync all online volumes, false means sync all monitored volumes</description>
+		<category>volume</category>
+		<defaultValue>true</defaultValue>
+		<type>java.lang.Boolean</type>
+	</config>
+
+	<config>
+		<name>batchRefreshVolumeHostParallelismDegree</name>
+		<description>the host group size per batch for batching refresh volumes</description>
+		<category>volume</category>
+		<defaultValue>10</defaultValue>
+		<type>java.lang.Integer</type>
+	</config>
+
 </globalConfig>
