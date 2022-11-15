@@ -41,6 +41,8 @@ import org.zstack.header.storage.snapshot.group.MemorySnapshotGroupExtensionPoin
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.storage.snapshot.group.DeleteVolumeSnapshotGroupInnerMsg;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupOverlayMsg;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
@@ -2610,7 +2612,7 @@ public class VolumeBase implements Volume {
                     }
                 });
             }
-        }).then(new NoRollbackFlow() {
+        }).then(new Flow() {
             String __name__ = "take-snapshots";
 
             @Override
@@ -2626,6 +2628,32 @@ public class VolumeBase implements Volume {
                     @Override
                     public void fail(ErrorCode errorCode) {
                         trigger.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                if (data.get(SNAPSHOT_GROUP_INV) == null) {
+                    trigger.rollback();
+                    return;
+                }
+                DeleteVolumeSnapshotGroupInnerMsg imsg = new DeleteVolumeSnapshotGroupInnerMsg();
+                imsg.setUuid(((VolumeSnapshotGroupInventory) data.get(SNAPSHOT_GROUP_INV)).getUuid());
+                imsg.setDeletionMode(DeletionMode.Permissive);
+                bus.makeTargetServiceIdByResourceUuid(imsg, VolumeSnapshotConstant.SERVICE_ID, imsg.getUuid());
+                VolumeSnapshotGroupOverlayMsg omsg = new VolumeSnapshotGroupOverlayMsg();
+                omsg.setVmInstanceUuid(self.getVmInstanceUuid());
+                omsg.setMessage((NeedReplyMessage) imsg);
+                bus.makeTargetServiceIdByResourceUuid(omsg, VmInstanceConstant.SERVICE_ID, self.getVmInstanceUuid());
+                bus.send(omsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.debug(String.format("failed to delete VolumeSnapshotGroup[uuid: %s]: %s", imsg.getUuid(), reply.getError()));
+                        }
+
+                        trigger.rollback();
                     }
                 });
             }
@@ -2687,6 +2715,10 @@ public class VolumeBase implements Volume {
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "sync-vm-status-for-memory-snapshot-group";
+
+            public boolean skip(Map data) {
+                return msg.getConsistentType() != ConsistentType.Application;
+            }
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
