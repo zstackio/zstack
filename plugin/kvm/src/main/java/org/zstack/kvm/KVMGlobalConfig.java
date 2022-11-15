@@ -75,6 +75,6 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig CONNECTION_SERVER_UPDATE_INTERVAL = new GlobalConfig(CATEGORY, "connection.server.update.interval");
     @GlobalConfigValidation(validValues = {"true", "false"})
-    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "enable QEMU native TLS")
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable QEMU native TLS")
     public static GlobalConfig ENABLE_QEMU_NATIVE_TLS = new GlobalConfig(CATEGORY, "enableQemuNativeTLS");
 }
