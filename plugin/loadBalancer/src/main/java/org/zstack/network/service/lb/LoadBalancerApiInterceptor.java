@@ -796,14 +796,6 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 }
             }
         }
-        if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(algorithm)) {
-            insertTagIfNotExisting(
-                    msg, LoadBalancerSystemTags.SESSION_PERSISTENCE,
-                    LoadBalancerSystemTags.SESSION_PERSISTENCE.instantiateTag(
-                            map(e(LoadBalancerSystemTags.SESSION_PERSISTENCE_TOKEN, LoadBalancerSessionPersistence.iphash.toString()))
-                    )
-            );
-        }
 
         /*modify session persistence when the listener algorithm is roundrobin or weightroundrobin*/
         if (LB_PROTOCOL_HTTP.equals(msg.getProtocol()) || LB_PROTOCOL_HTTPS.equals(msg.getProtocol())) {
@@ -825,7 +817,6 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
                 /*can not assign session idle timeout without specifying session persistence*/
                 if (enableSession == null && timeout != null) {
-
                     throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning idle timeout when the session persistence has been disabled  ", msg.getLoadBalancerUuid(), msg.getName()));
                 }
 
