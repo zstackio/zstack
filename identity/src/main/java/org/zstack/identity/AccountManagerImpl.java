@@ -19,6 +19,7 @@ import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.APIIsOpensourceVersionMsg;
 import org.zstack.header.APIIsOpensourceVersionReply;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.core.NoErrorCompletion;
@@ -32,10 +33,7 @@ import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.quota.QuotaDefinition;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
-import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.*;
 import org.zstack.header.rest.RestAuthenticationBackend;
 import org.zstack.header.rest.RestAuthenticationParams;
 import org.zstack.header.rest.RestAuthenticationType;
@@ -699,10 +697,43 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 accountApiControlInternal.addAll(apis);
             }
 
+            installNeedQuotaCheckMessageHandlers();
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
         return true;
+    }
+
+    private void installNeedQuotaCheckMessageHandlers() {
+        bus.installBeforeDeliveryMessageInterceptor(new BeforeDeliveryMessageInterceptor() {
+            @Override
+            public int orderOfBeforeDeliveryMessageInterceptor() {
+                return -100;
+            }
+
+            @Override
+            public void beforeDeliveryMessage(Message msg) {
+                if (msg.getServiceId().equals(ApiMediatorConstant.SERVICE_ID)) {
+                    // the API message will be routed by ApiMediator,
+                    // filter out this message to avoid reporting the same
+                    // API message twice
+                    return;
+                }
+
+                if (!(msg instanceof NeedQuotaCheckMessage)) {
+                    return;
+                }
+
+                String accountUuid = ((NeedQuotaCheckMessage) msg).getAccountUuid();
+                if (accountUuid == null) {
+                    logger.warn(String.format("missing accountUuid of message[id: %s]," +
+                            " skip quota check to keep compatible", msg.getId()));
+                    return;
+                }
+
+                new QuotaUtil().checkQuota(msg, accountUuid, accountUuid);
+            }
+        }, new ArrayList<>());
     }
 
     private void updateResourceVONameOnEntityUpdate() {
