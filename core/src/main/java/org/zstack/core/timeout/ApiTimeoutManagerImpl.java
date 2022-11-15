@@ -105,6 +105,13 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     }
 
     private long getNotApiMessageTimeout(ConfigurableTimeoutMessage msg) {
+        for (ApiTimeoutExtensionPoint apiTimeoutExt : apiTimeoutExts) {
+            Long timeout = apiTimeoutExt.getApiTimeout();
+            if (timeout != null) {
+                return timeout;
+            }
+        }
+
         String s = gcf.getConfigValue(CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE, msg.getClass().getName(), String.class);
         return parseTimeout(s);
     }
@@ -125,13 +132,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
 
     @Override
     public void beforeDeliveryMessage(Message msg) {
-        if (TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_DEADLINE)) {
-            return;
-        }
-
-        MessageTimeoutDsc mtd = getMessageTimeoutDscFromMessage(msg);
-        TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT, String.valueOf(mtd.getMessageTimeout()));
-        TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_DEADLINE, String.valueOf(mtd.getMessageDeadline()));
+        setTaskLoggingContext(getMessageTimeoutDscFromMessage(msg));
     }
 
     private long calculateMessageDeadline(long timeout) {
@@ -351,7 +352,16 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
         }
     }
 
-    class MessageTimeoutDsc {
+    private void setTaskLoggingContext(MessageTimeoutDsc mtd) {
+        if (mtd == null) {
+            return;
+        }
+
+        TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT, String.valueOf(mtd.getMessageTimeout()));
+        TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_DEADLINE, String.valueOf(mtd.getMessageDeadline()));
+    }
+
+    static class MessageTimeoutDsc {
         private long messageTimeout = -1;
         private long messageDeadline = -1;
 
