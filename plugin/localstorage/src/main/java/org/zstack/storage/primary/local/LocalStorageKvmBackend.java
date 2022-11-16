@@ -2263,24 +2263,20 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg, String hostUuid, String storagePath, ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply> completion) {
+    void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply> completion) {
         final BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
         GetBatchVolumeSizeCmd cmd = new GetBatchVolumeSizeCmd();
         cmd.volumeUuidInstallPaths = msg.getVolumeUuidInstallPaths();
-        cmd.storagePath = storagePath;
 
-        KvmCommandSender sender = new KvmCommandSender(hostUuid);
-        sender.send(cmd, BATCH_GET_VOLUME_SIZE, wrapper -> null, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+        httpCall(BATCH_GET_VOLUME_SIZE, msg.getHostUuid(), cmd, GetBatchVolumeSizeRsp.class, new ReturnValueCompletion<GetBatchVolumeSizeRsp>(completion) {
             @Override
-            public void success(KvmResponseWrapper returnValue) {
-                GetBatchVolumeSizeRsp rsp = returnValue.getResponse(GetBatchVolumeSizeRsp.class);
+            public void success(GetBatchVolumeSizeRsp rsp) {
                 reply.setActualSizes(rsp.actualSizes);
                 completion.success(reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("Get local storage's host [uuid: %s] volume size fail, the reason is as followed : %s", hostUuid, errorCode.getDescription()));
                 completion.fail(errorCode);
             }
         });

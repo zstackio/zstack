@@ -76,6 +76,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -3085,29 +3086,20 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         httpCall(BATCH_GET_VOLUME_SIZE_PATH, cmd, GetBatchVolumeSizeRsp.class, new ReturnValueCompletion<GetBatchVolumeSizeRsp>(msg) {
             @Override
             public void success(GetBatchVolumeSizeRsp rsp) {
-                Map<String, Long> actualSizes = rsp.actualSizes;
-
-                List<VolumeVO> volumeVOs = Q.New(VolumeVO.class).in(VolumeVO_.uuid, actualSizes.keySet()).list();
-                Map<String, VolumeVO> volumeVOMap = volumeVOs.stream().collect(Collectors.toMap(ResourceVO::getUuid, volumeVO -> volumeVO));
-
-                for (Map.Entry<String, Long> e : actualSizes.entrySet()) {
+                for (Map.Entry<String, Long> e : rsp.actualSizes.entrySet()) {
                     String volumeUuid = e.getKey();
                     Long actualSize = e.getValue();
                     markVolumeActualSize(volumeUuid, actualSize);
-
-                    VolumeVO volumeVO = volumeVOMap.get(volumeUuid);
-                    Long trueActualSize = actualSize == null ? volumeVO.getActualSize() : actualSize;
-                    rsp.actualSizes.put(volumeUuid, trueActualSize);
                 }
 
-                reply.setActualSizes(actualSizes);
+                reply.setActualSizes(rsp.actualSizes);
                 bus.reply(msg, reply);
                 completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("Get ceph primary storage [uuid: %s] volume size fail, the reason is as followed : %s", cmd.getUuid(), errorCode.getDescription()));
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
                 completion.done();
             }

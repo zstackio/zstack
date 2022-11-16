@@ -752,23 +752,20 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public void handle(PrimaryStorageInventory inv, BatchSyncVolumeSizeOnPrimaryStorageMsg msg, ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply> completion) {
         BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
 
-        KvmCommandSender sender = new KvmCommandSender(msg.getHostUuid());
         GetBatchVolumeActualSizeCmd cmd = new GetBatchVolumeActualSizeCmd();
         cmd.volumeUuidInstallPaths = msg.getVolumeUuidInstallPaths();
         cmd.setUuid(inv.getUuid());
 
-        sender.send(cmd, BATCH_GET_VOLUME_SIZE_PATH, wrapper -> null, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+        asyncHttpCall(BATCH_GET_VOLUME_SIZE_PATH, msg.getHostUuid(), cmd, GetBatchVolumeActualSizeRsp.class, inv, new ReturnValueCompletion<GetBatchVolumeActualSizeRsp>(completion) {
             @Override
-            public void success(KvmResponseWrapper returnValue) {
-                GetBatchVolumeActualSizeRsp rsp = returnValue.getResponse(GetBatchVolumeActualSizeRsp.class);
+            public void success(GetBatchVolumeActualSizeRsp rsp) {
                 reply.setActualSizes(rsp.actualSizes);
                 completion.success(reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("Get nfs primary storage [uuid: %s] volume size fail, the reason is as followed : %s", cmd.getUuid(), errorCode.getDescription()));
-                completion.success(reply);
+                completion.fail(errorCode);
             }
         });
     }

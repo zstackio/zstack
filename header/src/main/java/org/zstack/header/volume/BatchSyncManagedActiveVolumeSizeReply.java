@@ -1,10 +1,8 @@
 package org.zstack.header.volume;
 
-import org.zstack.header.message.APIReply;
-import org.zstack.header.rest.RestResponse;
+import org.zstack.header.message.MessageReply;
 
-@RestResponse(fieldsTo = "all")
-public class APIBatchSyncVolumeSizeReply extends APIReply {
+public class BatchSyncManagedActiveVolumeSizeReply extends MessageReply {
     private int successCount;
 
     private int failCount;

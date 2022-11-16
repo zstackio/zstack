@@ -68,7 +68,7 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
 
     abstract void handle(SyncVolumeSizeOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<SyncVolumeSizeOnPrimaryStorageReply> completion);
 
-    abstract void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg, String hostUuid, String storagePath, ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply> completion);
+    abstract void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply> completion);
 
     abstract void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<CreateImageCacheFromVolumeOnPrimaryStorageReply> completion);
 

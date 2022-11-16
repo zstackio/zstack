@@ -2576,15 +2576,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg) {
-        String volumeSimpleClassName = VolumeVO.class.getSimpleName();
-        String storagePath = Q.New(PrimaryStorageVO.class)
-                .select(PrimaryStorageVO_.url)
-                .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
-                .findValue();
-
-        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getVolumeUuidInstallPaths().keySet().iterator().next(), volumeSimpleClassName);
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, msg.getHostUuid(), storagePath, new ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply>(msg) {
+        bkd.handle(msg, msg.getHostUuid(), new ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply>(msg) {
             @Override
             public void success(BatchSyncVolumeSizeOnPrimaryStorageReply returnValue) {
                 bus.reply(msg, returnValue);
@@ -2592,6 +2586,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
         });

@@ -83,7 +83,6 @@ public class VolumeSizeTrackerImpl implements VolumeSizeTracker, Component {
 
     private void setupTracker() {
         VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL.installUpdateExtension(this::startIntervalTracker);
-        VolumeGlobalConfig.AUTO_REFRESH_ALL_ACTIVE_VOLUME.installUpdateExtension(this::startRefreshTypeTracker);
         startIntervalTracker(null, VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL);
     }
 
@@ -95,42 +94,34 @@ public class VolumeSizeTrackerImpl implements VolumeSizeTracker, Component {
             return;
         }
 
-        boolean refreshAll = VolumeGlobalConfig.AUTO_REFRESH_ALL_ACTIVE_VOLUME.value(Boolean.class);
-        submitTrackerTask(refreshAll, newValue);
+        submitTrackerTask(newValue);
     }
 
-    private synchronized void startRefreshTypeTracker(GlobalConfig oldConfig, GlobalConfig newConfig) {
-        final boolean oldValue = oldConfig.value(Boolean.class);
-        final boolean newValue = newConfig.value(Boolean.class);
-
-        if (oldValue == newValue) {
-            return;
-        }
-
-        long interval = VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL.value(Long.class);
-        submitTrackerTask(newValue, interval);
-    }
-
-    private void submitTrackerTask(boolean refreshAll, long interval) {
+    private void submitTrackerTask(long interval) {
         if (trackerThread != null) {
             trackerThread.cancel(true);
         }
 
         trackerThread = thdf.submitPeriodicTask(new PeriodicTask() {
-
             @Override
             @ExceptionSafe
             public void run() {
-                if (refreshAll) {
+                String scope = VolumeGlobalConfig.AUTO_REFRESH_VOLUME_SCOPE.value(String.class);
+                if ("AllActive".equals(scope)) {
                     logger.info("begin to sync all online volumes");
                     List<String> clusterUuids = Q.New(ClusterVO.class).select(ClusterVO_.uuid).listValues();
                     new While<>(clusterUuids).each((clusterUuid, completion) -> {
-                        LocalBatchSyncVolumeSizeMsg msg = new LocalBatchSyncVolumeSizeMsg();
+                        BatchSyncManagedActiveVolumeSizeMsg msg = new BatchSyncManagedActiveVolumeSizeMsg();
                         msg.setClusterUuid(clusterUuid);
                         bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
-                        bus.send(msg);
+                        bus.send(msg, new CloudBusCallBack(null) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                completion.done();
+                            }
+                        });
                     }).run(new NopeWhileDoneCompletion());
-                } else {
+                } else if ("Monitored".equals(scope)) {
                     logger.info("begin to sync all monitored volumes");
                     reScanVolume();
                     syncVolumeSize();

@@ -667,7 +667,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
 
     @Transactional(readOnly = true)
-    private NfsPrimaryStorageBackend getUsableBackend() {
+    protected NfsPrimaryStorageBackend getUsableBackend() {
         List<String> cuuids = CollectionUtils.transformToList(self.getAttachedClusterRefs(), new Function<String, PrimaryStorageClusterRefVO>() {
             @Override
             public String call(PrimaryStorageClusterRefVO arg) {
@@ -697,6 +697,13 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         query.select(ClusterVO_.hypervisorType);
         query.add(ClusterVO_.uuid, Op.EQ, clusterUuid);
         String hvType = query.findValue();
+        return getBackend(HypervisorType.valueOf(hvType));
+    }
+
+    private NfsPrimaryStorageBackend getBackendByHostUuid(String hostUuid) {
+        String hvType = Q.New(HostVO.class).select(HostVO_.hypervisorType)
+                .eq(HostVO_.uuid, hostUuid)
+                .findValue();
         return getBackend(HypervisorType.valueOf(hvType));
     }
 
@@ -1329,20 +1336,16 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg) {
-        BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
-
-        NfsPrimaryStorageBackend backend = getUsableBackend();
-        if (backend == null) {
-            bus.reply(msg, reply);
-            return;
-        }
+        NfsPrimaryStorageBackend backend = getBackendByHostUuid(msg.getHostUuid());
         backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply>(msg) {
             @Override
-            public void success(BatchSyncVolumeSizeOnPrimaryStorageReply returnedReply) {
-                bus.reply(msg, returnedReply);
+            public void success(BatchSyncVolumeSizeOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
             }
             @Override
             public void fail(ErrorCode errorCode) {
+                BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
         });

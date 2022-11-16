@@ -2,7 +2,7 @@ package org.zstack.header.volume;
 
 import org.zstack.header.message.MessageReply;
 
-public class BatchSyncVolumeSizeOnHostReply extends MessageReply {
+public class BatchSyncActiveVolumeSizeOnHostReply extends MessageReply {
     private Integer successCount = 0;
 
     private Integer failCount = 0;
