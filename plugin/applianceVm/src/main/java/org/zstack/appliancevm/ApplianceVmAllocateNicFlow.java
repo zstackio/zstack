@@ -109,13 +109,6 @@ public class ApplianceVmAllocateNicFlow implements Flow {
             List<Integer> ipVersions = l3NetworkVO.getIpVersions();
             for (Integer version : ipVersions) {
                 String strategy = nicSpec.getAllocatorStrategy();
-                if (strategy == null) {
-                    if (version == IPv6Constants.IPv4) {
-                        strategy = L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY;
-                    } else {
-                        strategy = L3NetworkConstant.RANDOM_IPV6_ALLOCATOR_STRATEGY;
-                    }
-                }
                 UsedIpInventory ip = acquireIp(nicSpec.getL3NetworkUuid(), inv.getMac(), version, nicSpec.getStaticIp().get(version), strategy, nicSpec.isAllowDuplicatedAddress());
                 /* save first ip to nic */
                 if (inv.getGateway() == null) {
