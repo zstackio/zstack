@@ -719,6 +719,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public long size;
     }
 
+    public static class GetBatchVolumeSizeCmd extends AgentCommand {
+        public Map<String, String> volumeUuidInstallPaths;
+    }
+
+    public static class GetBatchVolumeSizeRsp extends AgentResponse {
+        public Map<String, Long> actualSizes;
+    }
+
     public static class GetQCOW2ReferenceCmd extends AgentCommand {
         public String path;
         public String searchingDir;
@@ -832,6 +840,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CHECK_MD5_PATH = "/localstorage/checkmd5";
     public static final String GET_BACKING_FILE_PATH = "/localstorage/volume/getbackingfile";
     public static final String GET_VOLUME_SIZE = "/localstorage/volume/getsize";
+    public static final String BATCH_GET_VOLUME_SIZE = "/localstorage/volume/batchgetsize";
     public static final String HARD_LINK_VOLUME = "/localstorage/volume/hardlink";
     public static final String GET_BASE_IMAGE_PATH = "/localstorage/volume/getbaseimagepath";
     public static final String GET_QCOW2_REFERENCE = "/localstorage/getqcow2reference";
@@ -2243,6 +2252,26 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 GetVolumeSizeRsp rsp = returnValue.getResponse(GetVolumeSizeRsp.class);
                 reply.setActualSize(rsp.actualSize);
                 reply.setSize(rsp.size);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply> completion) {
+        final BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
+        GetBatchVolumeSizeCmd cmd = new GetBatchVolumeSizeCmd();
+        cmd.volumeUuidInstallPaths = msg.getVolumeUuidInstallPaths();
+
+        httpCall(BATCH_GET_VOLUME_SIZE, msg.getHostUuid(), cmd, GetBatchVolumeSizeRsp.class, new ReturnValueCompletion<GetBatchVolumeSizeRsp>(completion) {
+            @Override
+            public void success(GetBatchVolumeSizeRsp rsp) {
+                reply.setActualSizes(rsp.actualSizes);
                 completion.success(reply);
             }
 

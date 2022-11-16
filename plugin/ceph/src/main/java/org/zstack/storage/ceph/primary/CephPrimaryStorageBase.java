@@ -52,6 +52,7 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
@@ -75,6 +76,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -255,6 +257,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String installPath;
     }
 
+    public static class GetBatchVolumeSizeCmd extends AgentCommand {
+        public Map<String, String> volumeUuidInstallPaths;
+    }
+
     public static class GetVolumeSnapshotSizeCmd extends AgentCommand {
         public String volumeSnapshotUuid;
         public String installPath;
@@ -263,6 +269,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class GetVolumeSizeRsp extends AgentResponse {
         public Long size;
         public Long actualSize;
+    }
+
+    public static class GetBatchVolumeSizeRsp extends AgentResponse {
+        public Map<String, Long> actualSizes;
     }
 
     public static class GetVolumeSnapshotSizeRsp extends AgentResponse {
@@ -1231,6 +1241,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String CHECK_HOST_STORAGE_CONNECTION_PATH = "/ceph/primarystorage/check/host/connection";
     public static final String DELETE_POOL_PATH = "/ceph/primarystorage/deletepool";
     public static final String GET_VOLUME_SIZE_PATH = "/ceph/primarystorage/getvolumesize";
+    public static final String BATCH_GET_VOLUME_SIZE_PATH = "/ceph/primarystorage/batchgetvolumesize";
     public static final String GET_VOLUME_SNAPSHOT_SIZE_PATH = "/ceph/primarystorage/getvolumesnapshotsize";
     public static final String KVM_HA_SETUP_SELF_FENCER = "/ha/ceph/setupselffencer";
     public static final String KVM_HA_CANCEL_SELF_FENCER = "/ha/ceph/cancelselffencer";
@@ -3019,6 +3030,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 }));
     }
 
+    @Override
+    protected void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg) {
+        inQueue().name(String.format("batch-sync-volume-size-on-primarystorage-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> BatchSyncVolumeSizeOnPrimaryStorage(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
     protected void syncVolumeSizeOnPrimaryStorage(final SyncVolumeSizeOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
         final VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
@@ -3050,6 +3073,38 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 completion.done();
             }
         });
+    }
+
+    private void BatchSyncVolumeSizeOnPrimaryStorage(BatchSyncVolumeSizeOnPrimaryStorageMsg msg, NoErrorCompletion completion) {
+        BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
+
+        GetBatchVolumeSizeCmd cmd = new GetBatchVolumeSizeCmd();
+        cmd.volumeUuidInstallPaths = msg.getVolumeUuidInstallPaths();
+        cmd.fsId = getSelf().getFsid();
+        cmd.uuid = self.getUuid();
+
+        httpCall(BATCH_GET_VOLUME_SIZE_PATH, cmd, GetBatchVolumeSizeRsp.class, new ReturnValueCompletion<GetBatchVolumeSizeRsp>(msg) {
+            @Override
+            public void success(GetBatchVolumeSizeRsp rsp) {
+                for (Map.Entry<String, Long> e : rsp.actualSizes.entrySet()) {
+                    String volumeUuid = e.getKey();
+                    Long actualSize = e.getValue();
+                    markVolumeActualSize(volumeUuid, actualSize);
+                }
+
+                reply.setActualSizes(rsp.actualSizes);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+
     }
 
     private void markVolumeActualSize(String volumeUuid, Long actualSize) {

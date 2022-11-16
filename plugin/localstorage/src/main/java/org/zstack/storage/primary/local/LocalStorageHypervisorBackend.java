@@ -6,6 +6,8 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageMsg;
+import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageReply;
 
 import java.util.List;
 
@@ -65,6 +67,8 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
     abstract void handle(CreateTemporaryVolumeFromSnapshotMsg msg, String hostUuid, ReturnValueCompletion<CreateTemporaryVolumeFromSnapshotReply> completion);
 
     abstract void handle(SyncVolumeSizeOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<SyncVolumeSizeOnPrimaryStorageReply> completion);
+
+    abstract void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply> completion);
 
     abstract void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<CreateImageCacheFromVolumeOnPrimaryStorageReply> completion);
 

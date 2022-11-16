@@ -421,6 +421,13 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
+    @Override
+    protected void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg) {
+        BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
+        bus.reply(msg, reply);
+        logger.warn("Not supported at current edition");
+    }
+
     protected void saveVolumeProvisioningStrategy(String volumeUuid, VolumeProvisioningStrategy strategy) {
         if (!VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.hasTag(volumeUuid)) {
             SystemTagCreator tagCreator = VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.newSystemTagCreator(volumeUuid);
