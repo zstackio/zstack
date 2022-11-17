@@ -173,7 +173,6 @@
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO</class>
-        <class>org.zstack.header.core.encrypt.EncryptEntityMetadataVO</class>
         <class>org.zstack.storage.ceph.primary.CephOsdGroupVO</class>
         <class>org.zstack.sdnController.header.SdnControllerVO</class>
         <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO</class>
