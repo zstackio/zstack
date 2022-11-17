@@ -4,7 +4,10 @@ import com.google.gson.Gson
 import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.config.GlobalConfigVO
+import org.zstack.core.config.GlobalConfigVO_
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.image.APIAddImageMsg
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImagePlatform
@@ -26,6 +29,8 @@ import org.zstack.utils.SizeUtils
 import org.zstack.utils.TimeUtils
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
+
+import javax.persistence.metamodel.SingularAttribute
 
 /**
  * Created by camile on 2/5/18.
@@ -59,6 +64,7 @@ class AddImageLongJobCase extends SubCase {
             testAddImageAppointResourceUuid()
             testAddImageTimeout()
             testUpdateLongJobApiTimeout()
+            testLongJobTimeout()
         }
     }
 
@@ -276,5 +282,57 @@ class AddImageLongJobCase extends SubCase {
         assert timeout + TimeUtils.parseTimeInMillis("1m") > 38000000
 
         env.cleanMessageHandlers()
+    }
+
+    void testLongJobTimeout() {
+        myDescription = "my-test5"
+
+        String uuid = Platform.uuid
+
+        def validators = new ArrayList<>(LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.validators)
+        LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.validators.clear()
+        LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.updateValue("1")
+
+        APIAddImageMsg msg = new APIAddImageMsg()
+        msg.setName("TinyLinux")
+        msg.setBackupStorageUuids(Collections.singletonList(bs.uuid))
+        msg.setUrl("http://192.168.1.20/share/images/222.qcow2")
+        msg.setFormat(ImageConstant.RAW_FORMAT_STRING)
+        msg.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString())
+        msg.setPlatform(ImagePlatform.Linux.toString())
+        msg.setResourceUuid(uuid)
+
+        def timeout = 0
+        env.message(DownloadImageMsg.class) { DownloadImageMsg dmsg, CloudBus bus ->
+            timeout = dmsg.getTimeout()
+
+            sleep(1200)
+
+            def reply = new DownloadImageReply()
+            reply.setSize(SizeUnit.GIGABYTE.toByte(8))
+            reply.setActualSize(SizeUnit.GIGABYTE.toByte(8))
+            reply.setFormat("qcow2")
+            reply.setInstallPath("test/test")
+            reply.setMd5sum("testmd5")
+
+            bus.reply(dmsg, reply)
+        }
+
+        LongJobInventory jobInv = submitLongJob {
+            jobName = msg.getClass().getSimpleName()
+            jobData = gson.toJson(msg)
+            description = myDescription
+        } as LongJobInventory
+
+        assert jobInv.getJobName() == msg.getClass().getSimpleName()
+        assert jobInv.state == org.zstack.sdk.LongJobState.Running
+
+        // confirm long job timeout
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state.toString() == LongJobState.Failed.toString()
+        }
+        env.cleanMessageHandlers()
+        LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.validators = validators
     }
 }
