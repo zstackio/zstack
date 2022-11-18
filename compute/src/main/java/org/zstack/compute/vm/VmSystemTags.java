@@ -166,4 +166,7 @@ public class VmSystemTags {
     public static PatternedSystemTag L3_NETWORK_SECURITY_GROUP_UUIDS_REF =
             new PatternedSystemTag(String.format("l3::{%s}::SecurityGroupUuids::{%s}", L3_UUID_TOKEN, SECURITY_GROUP_UUIDS_TOKEN),
                     VmInstanceVO.class);
+
+    public static String BIND_HOST_UUID_TOKEN = "bindHostUuid";
+    public static PatternedSystemTag BIND_HOST_UUID = new PatternedSystemTag(String.format("bindHostUuid::{%s}", BIND_HOST_UUID_TOKEN), VmInstanceVO.class);
 }
