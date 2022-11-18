@@ -642,7 +642,7 @@ public class VolumeBase implements Volume {
 
             @Override
             public String getName() {
-                return "overlay-message";
+                return msg.getTaskName();
             }
         });
     }
