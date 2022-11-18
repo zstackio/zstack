@@ -118,7 +118,7 @@
 
         <Logger name="org.zstack.core.db" level="TRACE" />
 
-        <Logger name="org.zstack.identity" level="TRACE" />
+        <Logger name="org.zstack.identity" level="DEBUG" />
 
         <Logger name="org.zstack.cassandra" level="TRACE" />
 
@@ -155,6 +155,8 @@
         <Logger name="org.zstack.core.ansible" level="TRACE"/>
 
         <Logger name="org.springframework.data.cassandra.core" level="TRACE" />
+
+        <Logger name="oorg.zstack.zwatch.namespace" level="TRACE"/>
 
         <Logger name="org.hibernate" level="WARN">
             <AppenderRef ref="RollingFile" />

@@ -17,6 +17,7 @@ class SpringSpec {
             "NetworkManager.xml",
             "VmInstanceManager.xml",
             "AccountManager.xml",
+            "identity.xml",
             "NetworkService.xml",
             "volumeSnapshot.xml",
             "tag.xml",

@@ -59,4 +59,19 @@ public class APILogOutMsg extends APISessionMessage implements APILoginAuditor {
         }
         return new LoginResult(clientIp, clientBrowser, amsg.getSessionUuid(), SessionVO.class);
     }
+
+    @Override
+    public String getUsername() {
+        return null;
+    }
+
+    @Override
+    public String getPassword() {
+        return null;
+    }
+
+    @Override
+    public String getLoginType() {
+        return null;
+    }
 }

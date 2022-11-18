@@ -429,9 +429,12 @@ abstract class Test extends ApiHelper implements Retry {
         if (_springSpec.all) {
             beanConstructor.loadAll = true
         } else {
-            _springSpec.xmls.each { beanConstructor.addXml(it) }
+            _springSpec.xmls.each {it ->
+                logger.debug("add xml to bean constructor ${it}")
+                beanConstructor.addXml(it)
+            }
         }
-
+        
         componentLoader = beanConstructor.build()
     }
 
@@ -453,6 +456,7 @@ abstract class Test extends ApiHelper implements Retry {
                 include("ManagementNodeManager.xml")
                 include("ApiMediator.xml")
                 include("AccountManager.xml")
+                include("identity.xml")
             }
         }
 

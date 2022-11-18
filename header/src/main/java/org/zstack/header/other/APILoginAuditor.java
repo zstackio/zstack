@@ -9,8 +9,6 @@ import org.zstack.header.message.APIReply;
  */
 public interface APILoginAuditor {
     class LoginResult {
-
-
         public String clientIp;
         public String clientBrowser;
         public String resourceUuid;

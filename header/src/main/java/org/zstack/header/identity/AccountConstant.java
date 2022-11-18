@@ -33,6 +33,9 @@ public interface AccountConstant {
 
     IdentityType identityType = new IdentityType("IAM");
 
+    // login property accountType
+    String ACCOUNT_TYPE = "accountType";
+
     static boolean isAdminPermission(SessionInventory session) {
         return isAdminPermission(session.getAccountUuid());
     }

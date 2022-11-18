@@ -2,6 +2,7 @@ package org.zstack.header.identity;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.http.HttpMethod;
+import org.zstack.header.identity.login.APICaptchaMessage;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -18,7 +19,7 @@ import java.util.Map;
         method = HttpMethod.PUT,
         responseClass = APILogInReply.class
 )
-public class APILogInByAccountMsg extends APISessionMessage implements APILoginAuditor {
+public class APILogInByAccountMsg extends APISessionMessage implements APILoginAuditor, APICaptchaMessage {
     @APIParam
     private String accountName;
     @APIParam(password = true)
@@ -33,17 +34,12 @@ public class APILogInByAccountMsg extends APISessionMessage implements APILoginA
     @APIParam(required = false)
     private Map<String, String> clientInfo;
 
-
     public String getAccountName() {
         return accountName;
     }
 
     public void setAccountName(String accountName) {
         this.accountName = accountName;
-    }
-
-    public String getPassword() {
-        return password;
     }
 
     public void setPassword(String password) {
@@ -106,7 +102,22 @@ public class APILogInByAccountMsg extends APISessionMessage implements APILoginA
             clientIp = StringUtils.isNotEmpty(clientInfo.get("clientIp")) ? clientInfo.get("clientIp") : "";
             clientBrowser = StringUtils.isNotEmpty(clientInfo.get("clientBrowser")) ? clientInfo.get("clientBrowser") : "";
         }
-        String resourceUuid = reply.isSuccess() ? amsg.getSession().getUuid() : "";
+        String resourceUuid = reply.isSuccess() ? ((APILogInReply) reply).getInventory().getUuid() : "";
         return new LoginResult(clientIp, clientBrowser, resourceUuid, SessionVO.class);
+    }
+
+    @Override
+    public String getUsername() {
+        return accountName;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getLoginType() {
+        return AccountConstant.LOGIN_TYPE;
     }
 }
