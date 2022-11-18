@@ -171,4 +171,7 @@ public class VmSystemTags {
                     VmInstanceVO.class);
 
     public static PatternedSystemTag VM_STATE_PAUSED_AFTER_MIGRATE = new PatternedSystemTag(("vmPausedAfterMigrate"), VmInstanceVO.class);
+
+    public static String BIND_HOST_UUID_TOKEN = "bindHostUuid";
+    public static PatternedSystemTag BIND_HOST_UUID = new PatternedSystemTag(String.format("bindHostUuid::{%s}", BIND_HOST_UUID_TOKEN), VmInstanceVO.class);
 }
