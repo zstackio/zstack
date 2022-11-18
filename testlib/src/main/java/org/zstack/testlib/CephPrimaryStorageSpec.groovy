@@ -427,7 +427,11 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 vfs.Assert(vfs.isFile(cephPathToVFSPath(cmd.installPath)), "cannot find the volume[${cmd.installPath}]")
                 CephRaw f = vfs.getFile(cephPathToVFSPath(cmd.installPath))
                 rsp.size = f.getVirtualSize()
-                rsp.actualSize = f.getActualSize()
+                if (rsp.type == CephConstants.CEPH_MANUFACTURER_OPENSOURCE) {
+                    rsp.actualSize = null
+                } else {
+                    rsp.actualSize = f.getActualSize()
+                }
                 return rsp
             }
 

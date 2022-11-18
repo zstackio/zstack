@@ -198,8 +198,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String type;
 
         public AgentResponse() {
-            boolean unitTestOn = CoreGlobalProperty.UNIT_TEST_ON;
-            if (unitTestOn && type == null) {
+            if (CoreGlobalProperty.UNIT_TEST_ON) {
                 type = CephConstants.CEPH_MANUFACTURER_OPENSOURCE;
             }
         }
