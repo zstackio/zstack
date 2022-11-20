@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BlockScsiLunVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`HostInitiatorRefVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
-    `hostUuid` varchar(32) NOT NULL,
-    `initiatorName` varchar(256) NOT NULL,
+    `hostUuid` varchar(32) NOT NULL UNIQUE,
+    `initiatorName` varchar(256) NOT NULL UNIQUE,
     `metadata` text DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
