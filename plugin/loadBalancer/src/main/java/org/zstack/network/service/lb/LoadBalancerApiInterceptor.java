@@ -810,7 +810,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                         timeout = LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT.getTokenByTag(tag,
                                 LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT_TOKEN);
                         if (Long.parseLong(timeout) < LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN || Long.parseLong(timeout) > LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX) {
-                            throw new ApiMessageInterceptionException(argerr("invalid session idle timeout[%s], it must be the number between[%s~%s] ", tag, timeout, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX));
+                            throw new ApiMessageInterceptionException(argerr("invalid session idle timeout[%s], it must be the number between[%s~%s] ", timeout, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX));
                         }
                     }
                 }
