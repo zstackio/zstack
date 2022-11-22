@@ -45,6 +45,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     private Map<Class, ApiMessageDescriptor> descriptors = new HashMap<Class, ApiMessageDescriptor>();
     private Map<Class, Set<GlobalApiMessageInterceptor>> globalInterceptors = new HashMap<Class, Set<GlobalApiMessageInterceptor>>();
     private Set<GlobalApiMessageInterceptor> globalInterceptorsForAllMsg = new HashSet<GlobalApiMessageInterceptor>();
+    private Comparator<ApiMessageInterceptor> msgInterceptorComparator = Comparator.comparingInt(ApiMessageInterceptor::getPriority);
 
     @Autowired
     private PluginRegistry pluginRgty;
@@ -54,8 +55,6 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private List<ApiMessageValidator> validators;
 
     private boolean unitTestOn;
     //    add switch to skip api check for minimal
@@ -145,45 +144,26 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
             }
         }
 
-        List<GlobalApiMessageInterceptor> system = new ArrayList<GlobalApiMessageInterceptor>();
-        List<GlobalApiMessageInterceptor> front = new ArrayList<GlobalApiMessageInterceptor>();
-        List<GlobalApiMessageInterceptor> end = new ArrayList<GlobalApiMessageInterceptor>();
+        List<ApiMessageInterceptor> globalInterceptors = new ArrayList<>();
 
         for (GlobalApiMessageInterceptor gi : gis) {
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
             }
-
-            if (gi.getPosition() == InterceptorPosition.FRONT) {
-                front.add(gi);
-            } else if (gi.getPosition() == InterceptorPosition.END){
-                end.add(gi);
-            } else if (gi.getPosition() == InterceptorPosition.SYSTEM) {
-                system.add(gi);
-            }
+            globalInterceptors.add(gi);
         }
 
         for (GlobalApiMessageInterceptor gi : globalInterceptorsForAllMsg) {
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
             }
-
-            if (gi.getPosition() == GlobalApiMessageInterceptor.InterceptorPosition.FRONT) {
-                front.add(gi);
-            } else if (gi.getPosition() == InterceptorPosition.END){
-                end.add(gi);
-            } else if (gi.getPosition() == InterceptorPosition.SYSTEM) {
-                system.add(gi);
-            }
+            globalInterceptors.add(gi);
         }
 
-        List<ApiMessageInterceptor> all = new ArrayList<ApiMessageInterceptor>();
-        all.addAll(system);
-        all.addAll(front);
-        all.addAll(interceptors);
-        all.addAll(end);
+        globalInterceptors.addAll(interceptors);
+        globalInterceptors.sort(this.msgInterceptorComparator);
 
-        desc.setInterceptors(all);
+        desc.setInterceptors(globalInterceptors);
     }
 
 
@@ -263,30 +243,9 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         }
     }
 
-    private void apiParamValidation(APIMessage msg) {
-        try {
-            msg.validate(validators);
-        } catch (ApiMessageInterceptionException | StopRoutingException ae) {
-            if (logger.isTraceEnabled()) {
-                logger.trace(ae.getMessage(), ae);
-            }
-            throw ae;
-        } catch (APIMessage.InvalidApiMessageException ie) {
-            if (logger.isTraceEnabled()) {
-                logger.trace(ie.getMessage(), ie);
-            }
-            throw new ApiMessageInterceptionException(argerr(ie.getMessage(), ie.getArguments()));
-        } catch (Exception e) {
-            logger.warn(e.getMessage(), e);
-            throw new ApiMessageInterceptionException(inerr(e.getMessage()));
-        }
-    }
-
     @Override
     public APIMessage process(APIMessage msg) throws ApiMessageInterceptionException {
         ApiMessageDescriptor desc = descriptors.get(msg.getClass());
-
-        apiParamValidation(msg);
         if (desc == null) {
             throw new CloudRuntimeException(String.format("Message[%s] has no ApiMessageDescriptor", msg.getClass().getName()));
         }

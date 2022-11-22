@@ -86,8 +86,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     @Override
-    public InterceptorPosition getPosition() {
-        return InterceptorPosition.END;
+    public int getPriority() {
+        return InterceptorPosition.END.priority - 1;
     }
 
     @Override
