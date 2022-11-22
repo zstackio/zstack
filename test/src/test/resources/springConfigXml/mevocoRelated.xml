@@ -19,6 +19,7 @@
     <import resource="hybrid/hybridaccount.xml"/>
     <import resource="mevoco.xml"/>
     <import resource="license.xml"/>
+    <import resource="encryptPremium.xml"/>
     <import resource="localStorage.xml"/>
     <import resource="localStorageSimulator.xml"/>
     <import resource="flatNetworkServiceSimulator.xml"/>
