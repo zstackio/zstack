@@ -574,12 +574,10 @@ public class VirtualRouter extends ApplianceVmBase {
 
     private boolean skipConnectVirtualRouter(ReconnectVirtualRouterVmMsg msg) {
         if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            return false;
-        }
-
-        AgentVersionVO agentVersionVO = dbf.findByUuid(msg.getVmInstanceUuid(), AgentVersionVO.class);
-        if (agentVersionVO == null) {
-            return true;
+            AgentVersionVO agentVersionVO = dbf.findByUuid(msg.getVmInstanceUuid(), AgentVersionVO.class);
+            if (agentVersionVO == null) {
+                return true;
+            }
         }
 
         return false;
