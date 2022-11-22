@@ -5,8 +5,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.util.Arrays.asList;
-
 /**
  * Created by xing5 on 2016/12/9.
  */
@@ -109,6 +107,7 @@ public abstract class AbstractAction {
             boolean accessKeyIdFound = false;
             boolean accessKeySecretFound = false;
             boolean isSuppressCredentialCheck = getNonAPIParameterMap().get(Constants.IS_SUPPRESS_CREDENTIAL_CHECK) != null;
+            boolean useEncryptParam = checkIfUseEncryptParam();
             for (Parameter p : getParameterMap().values()) {
                 Object value = p.field.get(this);
                 Param at = p.annotation;
@@ -125,7 +124,7 @@ public abstract class AbstractAction {
                     accessKeySecretFound = true;
                 }
 
-                if (at.required() && value == null) {
+                if (!useEncryptParam && at.required() && value == null) {
                     throw new ApiException(String.format("missing mandatory field[%s]", p.field.getName()));
                 }
 
@@ -225,6 +224,20 @@ public abstract class AbstractAction {
         } catch (Exception e) {
             throw new ApiException(e);
         }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private boolean checkIfUseEncryptParam() {
+        Object systemTags = getParameterValue("systemTags", false);
+        if (!(systemTags instanceof Collection) || ((Collection) systemTags).isEmpty()) {
+            return false;
+        }
+        for (Object val: (Collection) systemTags) {
+            if (val.toString().startsWith("encryptionParam::")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void validateValue(String[] validValues, String value, String fieldName) {
