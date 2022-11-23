@@ -229,6 +229,10 @@ def get_scope(changed_folders, changed_paths):
                 break
             if not found_magic:
                 scopes.append("conf")
+        elif "pom.xml" in p:
+            # eg. header/pom.xml
+            # eg. pom.xml
+            scopes.append("dependencies")
 
     scope_counter = Counter(scopes)
     most_common = scope_counter.most_common(1)[0][0]
