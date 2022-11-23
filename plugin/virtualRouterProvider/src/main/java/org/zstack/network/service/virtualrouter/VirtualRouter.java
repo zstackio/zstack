@@ -16,7 +16,9 @@ import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.agent.versionControl.AgentVersionVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -570,6 +572,17 @@ public class VirtualRouter extends ApplianceVmBase {
         });
     }
 
+    private boolean skipConnectVirtualRouter(ReconnectVirtualRouterVmMsg msg) {
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            AgentVersionVO agentVersionVO = dbf.findByUuid(msg.getVmInstanceUuid(), AgentVersionVO.class);
+            if (agentVersionVO == null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void handle(final ReconnectVirtualRouterVmMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -588,6 +601,12 @@ public class VirtualRouter extends ApplianceVmBase {
                         changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
                     }
                     reply.setError(allowed);
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                if (skipConnectVirtualRouter(msg)) {
                     bus.reply(msg, reply);
                     chain.next();
                     return;
