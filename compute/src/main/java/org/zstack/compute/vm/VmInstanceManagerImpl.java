@@ -1061,6 +1061,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             return;
         }
 
+        smsg.setDisableL3Networks(msg.getDisableL3Networks());
         smsg.setHostUuid(msg.getHostUuid());
         List<String> temporaryDiskOfferingUuids = createDiskOfferingUuidsFromDataDiskSizes(msg, finalVo.getUuid());
         smsg.setDataDiskOfferingUuids(merge(msg.getDataDiskOfferingUuids(), temporaryDiskOfferingUuids));

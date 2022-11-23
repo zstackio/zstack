@@ -24,6 +24,7 @@ public class InstantiateVmFromNewCreatedStruct {
     private List<String> softAvoidHostUuids;
     private List<String> avoidHostUuids;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
+    private List<String> disableL3Networks;
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -101,6 +102,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setSoftAvoidHostUuids(msg.getSoftAvoidHostUuids());
         struct.setAvoidHostUuids(msg.getAvoidHostUuids());
         struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
+        struct.setDisableL3Networks(msg.getDisableL3Networks());
         return struct;
     }
 
@@ -118,6 +120,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         struct.setRequiredHostUuid(msg.getHostUuid());
         struct.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
+        struct.setDisableL3Networks(msg.getDisableL3Networks());
         return struct;
     }
 
@@ -176,5 +179,13 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
         this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
+    }
+
+    public List<String> getDisableL3Networks() {
+        return disableL3Networks;
+    }
+
+    public void setDisableL3Networks(List<String> disableL3Networks) {
+        this.disableL3Networks = disableL3Networks;
     }
 }

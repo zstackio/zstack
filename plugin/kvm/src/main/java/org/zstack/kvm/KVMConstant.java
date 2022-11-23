@@ -52,6 +52,7 @@ public interface KVMConstant {
     String KVM_DETACH_VOLUME = "/vm/detachdatavolume";
     String KVM_ATTACH_NIC_PATH = "/vm/attachnic";
     String KVM_DETACH_NIC_PATH = "/vm/detachnic";
+    String KVM_CHANGE_NIC_STATE_PATH = "/vm/changenicstate";
     String KVM_UPDATE_NIC_PATH = "/vm/updatenic";
     String KVM_VM_CHECK_STATE = "/vm/checkstate";
     String KVM_VM_UPDATE_PRIORITY_PATH = "/vm/priority";

@@ -1,6 +1,5 @@
 package org.zstack.network.service.virtualrouter;
 
-import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -61,7 +60,6 @@ import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.image.ImageSystemTags;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.NetworkServiceManager;
@@ -2402,6 +2400,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         VirtualRouterCommands.NicInfo newNicInfo  = new VirtualRouterCommands.NicInfo();
         newNicInfo.setMac(newNic.getMac());
+        newNicInfo.setState(newNic.getState().toString());
         for (UsedIpVO ip : newNic.getUsedIps()) {
             if (ip.getIpVersion() == IPv6Constants.IPv4) {
                 newNicInfo.setGateway(ip.getGateway());

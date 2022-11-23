@@ -42,6 +42,7 @@ public class VmNicInventory implements Serializable {
     private String internalName;
     private Integer deviceId;
     private String type;
+    private String state = VmNicState.enable.toString();
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -66,6 +67,7 @@ public class VmNicInventory implements Serializable {
         this.setUsedIps(UsedIpInventory.valueOf(vo.getUsedIps()));
         this.setDriverType(vo.getDriverType());
         this.setType(vo.getType());
+        this.setState(vo.getState().toString());
     }
 
     public static VmNicInventory valueOf(VmNicVO vo) {
@@ -232,5 +234,13 @@ public class VmNicInventory implements Serializable {
 
     public boolean isIpv4OnlyNic() {
         return this.usedIps.size() == 1 && this.usedIps.get(0).getIpVersion() == IPv6Constants.IPv4;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }
