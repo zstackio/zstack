@@ -79,6 +79,9 @@
         <name>org.zstack.header.vm.APIDetachL3NetworkFromVmMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APIChangeVmNicStateMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIGetVmAttachableL3NetworkMsg</name>
     </message>
     <message>
