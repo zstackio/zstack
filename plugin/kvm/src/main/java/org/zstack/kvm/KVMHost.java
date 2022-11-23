@@ -1769,6 +1769,7 @@ public class KVMHost extends HostBase implements Host {
                 }
             }
 
+            cmd.setOnline(vmState != VmInstanceState.Stopped);
             cmd.setVmUuid(msg.getVmUuid());
             cmd.setVolume(VolumeTO.valueOf(msg.getVolume(), (KVMHostInventory) getSelfInventory()));
         }
