@@ -3257,6 +3257,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIChangeInstanceOfferingMsg) msg);
         } else if (msg instanceof APIDetachL3NetworkFromVmMsg) {
             handle((APIDetachL3NetworkFromVmMsg) msg);
+        } else if (msg instanceof APIChangeVmNicStateMsg) {
+            handle((APIChangeVmNicStateMsg) msg);
         } else if (msg instanceof APIGetVmAttachableL3NetworkMsg) {
             handle((APIGetVmAttachableL3NetworkMsg) msg);
         } else if (msg instanceof APIGetCandidateL3NetworksForChangeVmNicNetworkMsg) {
@@ -4850,6 +4852,49 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public String getName() {
                 return "detach-nic";
+            }
+        });
+    }
+
+    private void handle(final APIChangeVmNicStateMsg msg) {
+        final APIChangeVmNicStateEvent evt = new APIChangeVmNicStateEvent(msg.getId());
+        final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.ChangeNicState);
+
+        if (VmInstanceState.Stopped.toString().equals(spec.getVmInventory().getState())) {
+            if (msg.getState().equals(VmNicState.enable.toString())) {
+                SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).set(VmNicVO_.state, VmNicState.enable).update();
+            } else {
+                SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).set(VmNicVO_.state, VmNicState.disable).update();
+            }
+            self = dbf.reload(self);
+            evt.setInventory(VmInstanceInventory.valueOf(self));
+            bus.publish(evt);
+            return;
+        }
+
+        ChangeVmNicStateOnHypervisorMsg dmsg = new ChangeVmNicStateOnHypervisorMsg();
+        dmsg.setHostUuid(spec.getVmInventory().getHostUuid());
+        dmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
+        dmsg.setNic(spec.getDestNics().stream().filter(nic -> nic.getUuid().equals(msg.getVmNicUuid())).collect(Collectors.toList()).get(0));
+        dmsg.setState(msg.getState());
+        bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, spec.getVmInventory().getHostUuid());
+        bus.send(dmsg, new CloudBusCallBack(null) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    if (msg.getState().equals(VmNicState.enable.toString())) {
+                        SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).set(VmNicVO_.state, VmNicState.enable).update();
+                    } else {
+                        SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).set(VmNicVO_.state, VmNicState.disable).update();
+                    }
+                    self = dbf.reload(self);
+                    extEmitter.afterChangeVmNicState(msg.getVmNicUuid(), msg.getState());
+                    evt.setInventory(VmInstanceInventory.valueOf(self));
+                    bus.publish(evt);
+                } else {
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                }
             }
         });
     }
@@ -6706,6 +6751,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setRootVolumeSystemTags(struct.getRootVolumeSystemTags());
         spec.setRequiredHostUuid(struct.getRequiredHostUuid());
         spec.setDataVolumeSystemTagsOnIndex(struct.getDataVolumeSystemTagsOnIndex());
+        spec.setDisableL3Networks(struct.getDisableL3Networks());
 
         spec.setVmInventory(getSelfInventory());
         if (struct.getL3NetworkUuids() != null && !struct.getL3NetworkUuids().isEmpty()) {

@@ -24,6 +24,7 @@ public interface VmInstanceNicFactory {
         vnic.setInternalName(nic.getInternalName());
         vnic.setDriverType(nic.getDriverType());
         vnic.setMetaData(nic.getMetaData());
+        vnic.setState(VmNicState.fromState(nic.getState()));
         return vnic;
     }
 

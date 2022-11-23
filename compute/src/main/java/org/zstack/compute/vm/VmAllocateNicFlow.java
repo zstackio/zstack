@@ -67,6 +67,11 @@ public class VmAllocateNicFlow implements Flow {
             return;
         }
 
+        final List<String> disableL3Networks = new ArrayList<>();
+        if (spec.getDisableL3Networks() != null && !spec.getDisableL3Networks().isEmpty()) {
+            disableL3Networks.addAll(spec.getDisableL3Networks());
+        }
+
         Boolean allowDuplicatedAddress = (Boolean)data.get(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString());
 
         // it's unlikely a vm having more than 512 nics
@@ -91,6 +96,7 @@ public class VmAllocateNicFlow implements Flow {
                     }
                 })
                 .collect(Collectors.toList());
+
         new While<>(firstL3s).each((nicSpec, wcomp) -> {
             L3NetworkInventory nw = nicSpec.getL3Invs().get(0);
             int deviceId = deviceIdBitmap.nextClearBit(0);
@@ -202,7 +208,7 @@ public class VmAllocateNicFlow implements Flow {
                         nic.setNetmask(ip.getNetmask());
                         nic.setGateway(ip.getGateway());
                         nic.setInternalName(VmNicVO.generateNicInternalName(spec.getVmInventory().getInternalId(), nic.getDeviceId()));
-
+                        nic.setState(disableL3Networks.contains(nic.getL3NetworkUuid()) ? VmNicState.disable.toString() : VmNicState.enable.toString());
                         new SQLBatch() {
                             @Override
                             protected void scripts() {
