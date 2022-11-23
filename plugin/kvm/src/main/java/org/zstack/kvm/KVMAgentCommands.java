@@ -1,10 +1,9 @@
 package org.zstack.kvm;
 
-import org.zstack.header.vm.devices.DeviceAddress;
-import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
+import org.zstack.header.agent.ReloadableCommand;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.host.VmNicRedirectConfig;
@@ -12,6 +11,8 @@ import org.zstack.header.log.NoLogging;
 import org.zstack.header.vm.PriorityConfigStruct;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.vm.VmPriorityConfigVO;
+import org.zstack.header.vm.devices.DeviceAddress;
+import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 
@@ -2868,6 +2869,15 @@ public class KVMAgentCommands {
         private List<String> vdpaPaths;
         private Long timeout; // in seconds
         private Map<String, VolumeTO> disks;  // A map from old install path to new volume
+        private boolean reload;
+
+        public boolean isReload() {
+            return reload;
+        }
+
+        public void setReload(boolean reload) {
+            this.reload = reload;
+        }
 
         public boolean isUseNuma() {
             return useNuma;
