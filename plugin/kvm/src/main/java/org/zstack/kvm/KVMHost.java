@@ -1964,6 +1964,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setXbzrle(xbzrle);
                         cmd.setVdpaPaths((List<String>) data.get("vDPA_paths"));
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
+                        cmd.setRecovery(s.isRecovery);
                         cmd.setTimeout(timeoutManager.getTimeout());
 
                         if (s.diskMigrationMap != null) {
@@ -2128,6 +2129,7 @@ public class KVMHost extends HostBase implements Host {
         String srcHostMnIp;
         String srcHostUuid;
         Map<String, String> diskMigrationMap;
+        boolean isRecovery;
     }
 
     private MigrateStruct buildMigrateStuct(final MigrateVmOnHypervisorMsg msg){
@@ -2139,6 +2141,7 @@ public class KVMHost extends HostBase implements Host {
         s.migrateFromDestition = msg.isMigrateFromDestination();
         s.strategy = msg.getStrategy();
         s.diskMigrationMap = msg.getDiskMigrationMap();
+        s.isRecovery = msg.isRecovery();
 
         MigrateNetworkExtensionPoint.MigrateInfo migrateIpInfo = null;
         for (MigrateNetworkExtensionPoint ext: pluginRgty.getExtensionList(MigrateNetworkExtensionPoint.class)) {

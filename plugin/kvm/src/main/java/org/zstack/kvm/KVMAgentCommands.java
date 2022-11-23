@@ -2868,6 +2868,15 @@ public class KVMAgentCommands {
         private List<String> vdpaPaths;
         private Long timeout; // in seconds
         private Map<String, VolumeTO> disks;  // A map from old install path to new volume
+        private boolean isRecovery;
+
+        public boolean isRecovery() {
+            return isRecovery;
+        }
+
+        public void setRecovery(boolean recovery) {
+            isRecovery = recovery;
+        }
 
         public boolean isUseNuma() {
             return useNuma;
