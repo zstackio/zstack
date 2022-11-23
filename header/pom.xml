@@ -83,6 +83,11 @@
             <artifactId>hibernate-search-backend-jgroups</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.21.9</version>
+        </dependency>
+        <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-directory-provider</artifactId>
         </dependency>
