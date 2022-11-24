@@ -177,4 +177,10 @@
         <platform>Windows</platform>
         <osRelease>Windows</osRelease>
     </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Other</platform>
+        <osRelease>Solaris 10</osRelease>
+        <x2apic>false</x2apic>
+    </osInfo>
 </character>
