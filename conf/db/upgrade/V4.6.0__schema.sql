@@ -10,3 +10,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmVdpaNicVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkVmVdpaNicVOPciDeviceVO` FOREIGN KEY (`pciDeviceUuid`) REFERENCES `zstack`.`PciDeviceVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`VmNicVO` ADD COLUMN `state` varchar(255) NOT NULL DEFAULT "enable";

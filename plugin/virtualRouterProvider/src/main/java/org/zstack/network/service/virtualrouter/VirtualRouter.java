@@ -1103,6 +1103,7 @@ public class VirtualRouter extends ApplianceVmBase {
                 }
             }
             info.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
+            info.setState(nicInventory.getState());
             cmd.setNics(Arrays.asList(info));
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();

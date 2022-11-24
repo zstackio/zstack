@@ -146,6 +146,7 @@ public class KVMHost extends HostBase implements Host {
     private String echoPath;
     private String attachNicPath;
     private String detachNicPath;
+    private String changeNicStatePath;
     private String migrateVmPath;
     private String snapshotPath;
     private String checkSnapshotPath;
@@ -247,6 +248,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DETACH_NIC_PATH);
         detachNicPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_CHANGE_NIC_STATE_PATH);
+        changeNicStatePath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_MIGRATE_VM_PATH);
@@ -525,6 +530,8 @@ public class KVMHost extends HostBase implements Host {
             handle((KVMHostSyncHttpCallMsg) msg);
         } else if (msg instanceof DetachNicFromVmOnHypervisorMsg) {
             handle((DetachNicFromVmOnHypervisorMsg) msg);
+        } else if (msg instanceof ChangeVmNicStateOnHypervisorMsg) {
+            handle((ChangeVmNicStateOnHypervisorMsg) msg);
         } else if (msg instanceof AttachIsoOnHypervisorMsg) {
             handle((AttachIsoOnHypervisorMsg) msg);
         } else if (msg instanceof DetachIsoOnHypervisorMsg) {
@@ -1361,6 +1368,42 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(final ChangeVmNicStateOnHypervisorMsg msg) {
+        inQueue().name("set-nic-state-on-kvm-host-" + self.getUuid())
+                .asyncBackup(msg)
+                .run(chain -> changeVmNicState(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+    protected void changeVmNicState(final ChangeVmNicStateOnHypervisorMsg msg, final NoErrorCompletion completion) {
+        final ChangeVmNicStateOnHypervisorReply reply = new ChangeVmNicStateOnHypervisorReply();
+        NicTO to = completeNicInfo(msg.getNic());
+        ChangeVmNicStateCommand cmd = new ChangeVmNicStateCommand();
+        cmd.setVmUuid(msg.getVmInstanceUuid());
+        cmd.setNic(to);
+        cmd.setState(msg.getState());
+        new Http<>(changeNicStatePath, cmd, ChangeVmNicStateRsp.class).call(new ReturnValueCompletion<ChangeVmNicStateRsp>(msg, completion) {
+            @Override
+            public void success(ChangeVmNicStateRsp ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                }
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -2712,7 +2755,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         to.setResourceUuid(nic.getUuid());
-
+        to.setState(nic.getState());
         return to;
     }
 

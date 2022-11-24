@@ -155,6 +155,7 @@ public class VirtualRouterCommands {
 		private Integer prefixLength;
 		private String gateway6;
 		private String addressMode;
+		private String state;
 		
 		public String getIp() {
 			return ip;
@@ -265,6 +266,14 @@ public class VirtualRouterCommands {
 
 		public void setAddressMode(String addressMode) {
 			this.addressMode = addressMode;
+		}
+
+		public String getState() {
+			return state;
+		}
+
+		public void setState(String state) {
+			this.state = state;
 		}
 	}
 	

@@ -74,6 +74,10 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
     private String type;
 
     @Column
+    @Enumerated(EnumType.STRING)
+    private VmNicState state = VmNicState.enable;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -253,5 +257,13 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public VmNicState getState() {
+        return state;
+    }
+
+    public void setState(VmNicState enable) {
+        this.state = enable;
     }
 }
