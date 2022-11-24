@@ -1743,6 +1743,7 @@ public class KVMAgentCommands {
         private boolean coloSecondary;
         private boolean consoleLogToFile;
         private boolean acpi;
+        private boolean x2apic = true;
 
         // TODO: only for test
         private boolean useColoBinary;
@@ -2164,6 +2165,14 @@ public class KVMAgentCommands {
 
         public void setAcpi(boolean acpi) {
             this.acpi = acpi;
+        }
+
+        public boolean getX2apic() {
+            return x2apic;
+        }
+
+        public void setX2apic(boolean x2apic) {
+            this.x2apic = x2apic;
         }
 
         public String getVendorId() {
