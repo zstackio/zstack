@@ -1,5 +1,7 @@
 package org.zstack.core.encrypt;
 
+import org.zstack.header.errorcode.ErrorableValue;
+
 /**
  * Created by kayo on 2018/9/7.
  */
@@ -8,7 +10,7 @@ public interface EncryptFacade {
 
     String decrypt(String encryptString);
 
-    EncryptFacadeResult<String> encrypt(String data, String algType);
+    ErrorableValue<String> encrypt(String data, String algType);
 
-    EncryptFacadeResult<String> decrypt(String data, String algType);
+    ErrorableValue<String> decrypt(String data, String algType);
 }

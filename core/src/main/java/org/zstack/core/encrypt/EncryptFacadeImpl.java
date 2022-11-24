@@ -12,6 +12,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
 import org.zstack.header.core.encrypt.PasswordEncryptType;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.BeanUtils;
@@ -58,12 +59,12 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
     }
 
     @Override
-    public EncryptFacadeResult<String> encrypt(String data, String algType) {
+    public ErrorableValue<String> encrypt(String data, String algType) {
         return encryptDriver.encrypt(data, algType);
     }
 
     @Override
-    public EncryptFacadeResult<String> decrypt(String data, String algType) {
+    public ErrorableValue<String> decrypt(String data, String algType) {
         return encryptDriver.decrypt(data, algType);
     }
 
@@ -173,7 +174,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
 
                             try {
                                 String decryptedString = decrypt(encryptedString);
-                                EncryptFacadeResult<String> encrypt = encrypt(decryptedString, key);
+                                ErrorableValue<String> encrypt = encrypt(decryptedString, key);
                                 if (encrypt.error != null) {
                                     logger.error(String.format("Encryption error : %s", encrypt.error));
                                     throw new OperationFailureException(operr("Encryption error : %s", encrypt.error));
@@ -182,7 +183,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                                 String sql = String.format("update %s set %s = :encrypted where uuid = :uuid", className, field.getName());
 
                                 Query query = dbf.getEntityManager().createQuery(sql);
-                                query.setParameter("encrypted", encrypt.getResult());
+                                query.setParameter("encrypted", encrypt.result);
                                 query.setParameter("uuid", uuid);
                                 query.executeUpdate();
                             } catch (Exception e) {
