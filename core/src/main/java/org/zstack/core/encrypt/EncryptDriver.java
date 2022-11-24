@@ -1,5 +1,7 @@
 package org.zstack.core.encrypt;
 
+import org.zstack.header.errorcode.ErrorableValue;
+
 public interface EncryptDriver {
     EncryptDriverType getDriverType();
 
@@ -7,7 +9,7 @@ public interface EncryptDriver {
 
     String decrypt(String data);
 
-    EncryptFacadeResult<String> encrypt(String data, String algType);
+    ErrorableValue<String> encrypt(String data, String algType);
 
-    EncryptFacadeResult<String> decrypt(String data, String algType);
+    ErrorableValue<String> decrypt(String data, String algType);
 }
