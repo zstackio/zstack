@@ -1,6 +1,7 @@
 package org.zstack.sugonSdnController.controller;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.net.util.SubnetUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.Q;
@@ -23,14 +24,13 @@ import org.zstack.sugonSdnController.header.APICreateL2TfNetworkMsg;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.network.NetworkUtils.getSubnetInfo;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SugonSdnController implements TfSdnController, SdnController {
@@ -305,6 +305,9 @@ public class SugonSdnController implements TfSdnController, SdnController {
                     if (opCheck.isPresent()) {
                         // 移除指定的三层子网
                         vn.getNetworkIpam().get(0).getAttr().getIpamSubnets().remove(opCheck.get());
+                        if(vn.getNetworkIpam().get(0).getAttr().getIpamSubnets()==null||vn.getNetworkIpam().get(0).getAttr().getIpamSubnets().size()==0){
+                            vn.getNetworkIpam().clear();
+                        }
                     }
                     // 更新 tf 网络信息
                     Status status = apiConnector.update(vn);
@@ -398,10 +401,19 @@ public class SugonSdnController implements TfSdnController, SdnController {
                 ipamSubnetType.setSubnet(subnetType);
                 // subnet_name
                 ipamSubnetType.setSubnetName(l3NetworkVO.getName());
+                // 特殊IP定义
+                SubnetUtils.SubnetInfo subnetInfo = getSubnetInfo(new SubnetUtils(msg.getNetworkCidr()));
+                String gatewayIp = subnetInfo.getLowAddress();
+                String serviceIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnetInfo.getLowAddress())+1);
+                String startIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnetInfo.getLowAddress())+2);
+                String endIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnetInfo.getHighAddress())-1);
                 // DNS -> 查询zstack数据库
                 List<L3NetworkDnsVO> dns = Q.New(L3NetworkDnsVO.class).eq(L3NetworkDnsVO_.l3NetworkUuid, l3NetworkVO.getUuid()).list();
                 if(dns!=null&&dns.size()>0){
                     ipamSubnetType.setDnsServerAddress(dns.get(0).getDns());
+                } else{
+                    // 设置默认DnsServerAddress
+                    ipamSubnetType.setDnsServerAddress(serviceIp);
                 }
                 // host_route -> 查询zstack数据库
                 List<L3NetworkHostRouteVO> hostRoutes = Q.New(L3NetworkHostRouteVO.class).eq(L3NetworkHostRouteVO_.l3NetworkUuid, l3NetworkVO.getUuid()).list();
@@ -413,6 +425,12 @@ public class SugonSdnController implements TfSdnController, SdnController {
                     ipamSubnetType.setHostRoutes(routeTableType);
                 }
                 ipamSubnetType.setEnableDhcp(getEnableDHCPFlag(l3NetworkVO.getUuid()));
+
+                // 设置默认网关
+                ipamSubnetType.setDefaultGateway(gatewayIp);
+                // 设置可分配IP池范围
+                AllocationPoolType allocationPoolType = new AllocationPoolType(startIp,endIp);
+                ipamSubnetType.addAllocationPools(allocationPoolType);
                 // 封装实体 -> ObjectReference<VnSubnetsType>
                 IpamSubnets ipamSubnets = new IpamSubnets();
                 ipamSubnets.addSubnets(ipamSubnetType);
@@ -563,7 +581,22 @@ public class SugonSdnController implements TfSdnController, SdnController {
                             .filter(m->StringDSL.transToTfUuid(l3NetworkVO.getUuid()).equals(m.getSubnetUuid()))
                             .findFirst();
                     if(checkOp.isPresent()){
-                        checkOp.get().setDnsServerAddress(msg.getDns());
+                        DhcpOptionsListType type = checkOp.get().getDhcpOptionList();
+                        if(type!=null){
+                            String currDhcpValue = type.getDhcpOption().get(0).getDhcpOptionValue();
+                            if(StringUtils.isNotEmpty(currDhcpValue)){
+                                type.getDhcpOption().get(0).setDhcpOptionValue(currDhcpValue+" "+ msg.getDns());
+                            } else{
+                                type.getDhcpOption().get(0).setDhcpOptionValue(msg.getDns());
+                            }
+                        } else{
+                            DhcpOptionsListType dhcpOptionsListType = new DhcpOptionsListType();
+                            DhcpOptionType dhcpOptionType = new DhcpOptionType();
+                            dhcpOptionType.setDhcpOptionValue(msg.getDns());
+                            dhcpOptionType.setDhcpOptionName("6");
+                            dhcpOptionsListType.addDhcpOption(dhcpOptionType);
+                            checkOp.get().setDhcpOptionList(dhcpOptionsListType);
+                        }
                         // 更新 tf 网络信息
                         Status status = apiConnector.update(vn);
                         if(!status.isSuccess()){
@@ -605,20 +638,16 @@ public class SugonSdnController implements TfSdnController, SdnController {
                             .findFirst();
                     if(checkOp.isPresent()){
                         // 子网存在
-                        IpamSubnetType type = checkOp.get();
-                        // 判断删除的dns和子网的dns是否一致
-                        if(type.getDnsServerAddress().equals(msg.getDns())) {
-                            String defaultDns = type.getDefaultGateway().substring(0, type.getDefaultGateway().lastIndexOf(".")) + ".253";
-                            checkOp.get().setDnsServerAddress(defaultDns);
-                            // 更新 tf 网络信息
-                            Status status = apiConnector.update(vn);
-                            if (!status.isSuccess()) {
-                                completion.fail(operr("delete dns from to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
-                            } else {
-                                completion.success();
-                            }
-                        } else{
-                            completion.fail(operr("delete dns from to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"error dns address"));
+                        String dnsValue = checkOp.get().getDhcpOptionList().getDhcpOption().get(0).getDhcpOptionValue();
+                        List<String> dnsValues = new ArrayList<>(Arrays.asList(dnsValue.split(" ")));
+                        dnsValues.remove(msg.getDns());
+                        checkOp.get().getDhcpOptionList().getDhcpOption().get(0).setDhcpOptionValue(StringUtils.join(dnsValues, " "));
+                        // 更新 tf 网络信息
+                        Status status = apiConnector.update(vn);
+                        if (!status.isSuccess()) {
+                            completion.fail(operr("delete dns from to l3 network[name:%s] on tf controller failed due to：%s", l3NetworkVO.getName(),"tf api call failed"));
+                        } else {
+                            completion.success();
                         }
                     }
                     // 未找到指定的子网，继续执行后续的zstack逻辑
