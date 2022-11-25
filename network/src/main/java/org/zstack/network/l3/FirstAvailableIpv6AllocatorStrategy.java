@@ -6,9 +6,11 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.math.BigInteger;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class FirstAvailableIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy{
@@ -22,7 +24,9 @@ public class FirstAvailableIpv6AllocatorStrategy extends AbstractIpAllocatorStra
 
     private String allocateIp(IpRangeVO vo, String excludeIp) {
         List<BigInteger> used = l3NwMgr.getUsedIpInRange(vo);
-        used.add(new BigInteger(String.valueOf(IPv6NetworkUtils.ipv6AddressToBigInteger(excludeIp))));
+        if (excludeIp != null) {
+            used.add(new BigInteger(String.valueOf(IPv6NetworkUtils.ipv6AddressToBigInteger(excludeIp))));
+        }
         BigInteger start = IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getStartIp());
         BigInteger end = IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getEndIp());
         Collections.sort(used);
@@ -41,18 +45,7 @@ public class FirstAvailableIpv6AllocatorStrategy extends AbstractIpAllocatorStra
         }
 
         String excludeIp = msg.getExcludedIp();
-        List<IpRangeVO> ranges;
-        /* when allocate ip address from address pool, ipRangeUuid is not null  except for vip */
-        if (msg.getIpRangeUuid() != null) {
-            ranges = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
-        } else {
-            ranges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                    .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
-            if (msg.isUseAddressPoolIfNotRequiredIpRange()) /* for vip */ {
-                ranges.addAll(Q.New(AddressPoolVO.class).eq(AddressPoolVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                        .eq(AddressPoolVO_.ipVersion, IPv6Constants.IPv6).list());
-            }
-        }
+        List<IpRangeVO> ranges = getReqIpRanges(msg, IPv6Constants.IPv6);
 
         do {
             String ip = null;
