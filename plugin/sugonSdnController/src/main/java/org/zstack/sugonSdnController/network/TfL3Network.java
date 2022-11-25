@@ -1,6 +1,10 @@
 package org.zstack.sugonSdnController.network;
 
+import org.apache.commons.net.util.SubnetUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.sugonSdnController.controller.SugonSdnController;
 import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant;
 import org.zstack.core.db.Q;
@@ -16,8 +20,11 @@ import org.zstack.sdnController.header.SdnControllerVO;
 import org.zstack.sdnController.header.SdnControllerVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.network.NetworkUtils.getSubnetInfo;
 
 /**
  * @description:
@@ -28,6 +35,9 @@ public class TfL3Network extends L3BasicNetwork {
     private static final CLogger logger = Utils.getLogger(TfL3Network.class);
     @Autowired
     SdnControllerManager sdnControllerManager;
+
+    @Autowired
+    protected DatabaseFacade dbf;
 
     public TfL3Network(L3NetworkVO self) {
         super(self);
@@ -58,7 +68,7 @@ public class TfL3Network extends L3BasicNetwork {
 
     private void handle(APIDeleteL3NetworkMsg msg){
         APIDeleteL3NetworkEvent evt = new APIDeleteL3NetworkEvent(msg.getId());
-        // 查询zstack数据库获取三层网络信息
+        // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getUuid()).find();
         if(l3Network!=null){
             SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
@@ -67,7 +77,7 @@ public class TfL3Network extends L3BasicNetwork {
             sugonSdnController.deleteL3Network(l3Network, new Completion(msg){
                 @Override
                 public void success() {
-                    // 执行zstack逻辑
+                    // zstack business processing
                     TfL3Network.super.handleMessage(msg);
                 }
 
@@ -86,7 +96,7 @@ public class TfL3Network extends L3BasicNetwork {
 
     private void handle(APIUpdateL3NetworkMsg msg){
         APIUpdateL3NetworkEvent evt = new APIUpdateL3NetworkEvent(msg.getId());
-        // 查询zstack数据库获取三层网络信息
+        // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getUuid()).find();
         if(l3Network!=null){
             SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
@@ -95,7 +105,7 @@ public class TfL3Network extends L3BasicNetwork {
             sugonSdnController.updateL3Network(l3Network,msg, new Completion(msg){
                 @Override
                 public void success() {
-                    // 执行zstack逻辑
+                    // zstack business processing
                     TfL3Network.super.handleMessage(msg);
                 }
 
@@ -115,7 +125,7 @@ public class TfL3Network extends L3BasicNetwork {
 
     private void handle(APIAddIpRangeByNetworkCidrMsg msg){
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
-        // 查询zstack数据库获取三层网络信息
+        // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if(l3Network!=null){
             SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
@@ -124,8 +134,9 @@ public class TfL3Network extends L3BasicNetwork {
             sugonSdnController.addL3IpRangeByCidr(l3Network,msg, new Completion(msg){
                 @Override
                 public void success() {
-                    // 执行zstack逻辑
+                    // zstack business processing
                     TfL3Network.super.handleMessage(msg);
+                    procReservedIP(msg);
                 }
 
                 @Override
@@ -142,7 +153,7 @@ public class TfL3Network extends L3BasicNetwork {
 
     private void handle(APIDeleteIpRangeMsg msg){
         APIDeleteIpRangeEvent evt = new APIDeleteIpRangeEvent(msg.getId());
-        // 查询zstack数据库获取三层网络信息
+        // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if(l3Network!=null){
             SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
@@ -151,7 +162,7 @@ public class TfL3Network extends L3BasicNetwork {
             sugonSdnController.deleteL3Network(l3Network, new Completion(msg){
                 @Override
                 public void success() {
-                    // 执行zstack逻辑
+                    // zstack business processing
                     TfL3Network.super.handleMessage(msg);
                 }
 
@@ -170,7 +181,7 @@ public class TfL3Network extends L3BasicNetwork {
 
     private void handle(APIAddDnsToL3NetworkMsg msg){
         APIAddDnsToL3NetworkEvent evt = new APIAddDnsToL3NetworkEvent(msg.getId());
-        // 查询zstack数据库获取三层网络信息
+        // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if(l3Network!=null){
             SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
@@ -179,7 +190,7 @@ public class TfL3Network extends L3BasicNetwork {
             sugonSdnController.addL3Dns(l3Network, msg,new Completion(msg){
                 @Override
                 public void success() {
-                    // 执行zstack逻辑
+                    // zstack business processing
                     TfL3Network.super.handleMessage(msg);
                 }
 
@@ -198,7 +209,7 @@ public class TfL3Network extends L3BasicNetwork {
 
     private void handle(APIRemoveDnsFromL3NetworkMsg msg){
         APIRemoveDnsFromL3NetworkEvent evt = new APIRemoveDnsFromL3NetworkEvent(msg.getId());
-        // 查询zstack数据库获取三层网络信息
+        // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if(l3Network!=null){
             SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
@@ -207,7 +218,7 @@ public class TfL3Network extends L3BasicNetwork {
             sugonSdnController.deleteL3Dns(l3Network, msg,new Completion(msg){
                 @Override
                 public void success() {
-                    // 执行zstack逻辑
+                    // zstack business processing
                     TfL3Network.super.handleMessage(msg);
                 }
 
@@ -226,7 +237,7 @@ public class TfL3Network extends L3BasicNetwork {
 
     private void handle(APIAddHostRouteToL3NetworkMsg msg){
         APIAddHostRouteToL3NetworkEvent evt = new APIAddHostRouteToL3NetworkEvent(msg.getId());
-        // 查询zstack数据库获取三层网络信息
+        // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if(l3Network!=null){
             SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
@@ -235,7 +246,7 @@ public class TfL3Network extends L3BasicNetwork {
             sugonSdnController.addL3HostRoute(l3Network, msg,new Completion(msg){
                 @Override
                 public void success() {
-                    // 执行zstack逻辑
+                    // zstack business processing
                     TfL3Network.super.handleMessage(msg);
                 }
 
@@ -254,7 +265,7 @@ public class TfL3Network extends L3BasicNetwork {
 
     private void handle(APIRemoveHostRouteFromL3NetworkMsg msg){
         APIRemoveHostRouteFromL3NetworkEvent evt = new APIRemoveHostRouteFromL3NetworkEvent(msg.getId());
-        // 查询zstack数据库获取三层网络信息
+        // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if(l3Network!=null){
             SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
@@ -263,7 +274,7 @@ public class TfL3Network extends L3BasicNetwork {
             sugonSdnController.deleteL3HostRoute(l3Network, msg,new Completion(msg){
                 @Override
                 public void success() {
-                    // 执行zstack逻辑
+                    // zstack business processing
                     TfL3Network.super.handleMessage(msg);
 //                    bus.publish(evt);
                 }
@@ -279,6 +290,35 @@ public class TfL3Network extends L3BasicNetwork {
             evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, "L3 Network is missing"));
             bus.publish(evt);
         }
+    }
+
+    private void procReservedIP(APIAddIpRangeByNetworkCidrMsg msg){
+        SubnetUtils.SubnetInfo subnetInfo = getSubnetInfo(new SubnetUtils(msg.getNetworkCidr()));
+        // Reserved for service
+        String servIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnetInfo.getLowAddress())+1);
+        // Reserved for edge
+        String edgeIp = subnetInfo.getHighAddress();
+        // Get IP Range
+        IpRangeVO ipRangeVO = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).find();
+        // Set Used Ip
+        UsedIpVO servIpInfo = new UsedIpVO();
+        servIpInfo.setUuid(Platform.getUuid());
+        servIpInfo.setIpRangeUuid(ipRangeVO.getUuid());
+        servIpInfo.setL3NetworkUuid(ipRangeVO.getL3NetworkUuid());
+        servIpInfo.setIp(servIp);
+        servIpInfo.setIpInLong(NetworkUtils.ipv4StringToLong(servIp));
+        servIpInfo.setGateway(ipRangeVO.getGateway());
+        servIpInfo.setNetmask(ipRangeVO.getNetmask());
+        servIpInfo.setIpVersion(IPv6Constants.IPv4);
+        servIpInfo.setLastOpDate(ipRangeVO.getLastOpDate());
+        servIpInfo.setCreateDate(ipRangeVO.getCreateDate());
+        dbf.persist(servIpInfo);
+        UsedIpVO edgeIpInfo = new UsedIpVO();
+        BeanUtils.copyProperties(servIpInfo,edgeIpInfo);
+        edgeIpInfo.setUuid(Platform.getUuid());
+        edgeIpInfo.setIp(edgeIp);
+        edgeIpInfo.setIpInLong(NetworkUtils.ipv4StringToLong(edgeIp));
+        dbf.persist(edgeIpInfo);
     }
 
 }
