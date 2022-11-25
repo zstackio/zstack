@@ -30,5 +30,10 @@
         <id>3006</id>
         <description>The crypto service is not enabled</description>
     </code>
+
+    <code>
+        <id>3007</id>
+        <description>Operation not supported</description>
+    </code>
 </error>
 
