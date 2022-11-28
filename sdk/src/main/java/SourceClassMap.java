@@ -425,7 +425,6 @@ public class SourceClassMap {
 			put("org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory", "org.zstack.sdk.VipPortRangeInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory", "org.zstack.sdk.VirtualRouterOfferingInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionInventory", "org.zstack.sdk.VirtualRouterSoftwareVersionInventory");
-			put("org.zstack.network.service.virtualrouter.VirtualRouterMetadataInventory", "org.zstack.sdk.VirtualRouterMetadataInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterVmInventory", "org.zstack.sdk.VirtualRouterVmInventory");
 			put("org.zstack.ovf.datatype.ImagePackageInventory", "org.zstack.sdk.ImagePackageInventory");
 			put("org.zstack.ovf.datatype.ImagePackageState", "org.zstack.sdk.ImagePackageState");
@@ -497,7 +496,9 @@ public class SourceClassMap {
 			put("org.zstack.sso.header.CasClientInventory", "org.zstack.sdk.CasClientInventory");
 			put("org.zstack.sso.header.CasState", "org.zstack.sdk.CasState");
 			put("org.zstack.sso.header.OAuth2ClientInventory", "org.zstack.sdk.OAuth2ClientInventory");
+			put("org.zstack.sso.header.RedirectUrlTemplate", "org.zstack.sdk.RedirectUrlTemplate");
 			put("org.zstack.sso.header.SSOClientInventory", "org.zstack.sdk.SSOClientInventory");
+			put("org.zstack.sso.header.SSORedirectTemplateInventory", "org.zstack.sdk.SSORedirectTemplateInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreBackupStorageInventory", "org.zstack.sdk.ImageStoreBackupStorageInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreGcResult", "org.zstack.sdk.ImageStoreGcResult");
 			put("org.zstack.storage.backup.imagestore.ImageStoreImageStruct", "org.zstack.sdk.ImageStoreImageStruct");
@@ -560,6 +561,7 @@ public class SourceClassMap {
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
 			put("org.zstack.v2v.V2VConversionHostInventory", "org.zstack.sdk.V2VConversionHostInventory");
 			put("org.zstack.vmware.ESXHostInventory", "org.zstack.sdk.ESXHostInventory");
+			put("org.zstack.vmware.SkippedResources", "org.zstack.sdk.SkippedResources");
 			put("org.zstack.vmware.VCenterBackupStorageInventory", "org.zstack.sdk.VCenterBackupStorageInventory");
 			put("org.zstack.vmware.VCenterClusterInventory", "org.zstack.sdk.VCenterClusterInventory");
 			put("org.zstack.vmware.VCenterDatacenterInventory", "org.zstack.sdk.VCenterDatacenterInventory");
@@ -810,6 +812,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GlobalConfigOptions", "org.zstack.core.config.GlobalConfigOptions");
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
 			put("org.zstack.sdk.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
+			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");
 			put("org.zstack.sdk.HostIommuStateType", "org.zstack.pciDevice.HostIommuStateType");
@@ -991,6 +994,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
 			put("org.zstack.sdk.RaidControllerInventory", "org.zstack.storage.device.localRaid.RaidControllerInventory");
 			put("org.zstack.sdk.RaidPhysicalDriveInventory", "org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory");
+			put("org.zstack.sdk.RedirectUrlTemplate", "org.zstack.sso.header.RedirectUrlTemplate");
 			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
 			put("org.zstack.sdk.ReplicationDiskStatus", "org.zstack.storage.primary.ministorage.ReplicationDiskStatus");
 			put("org.zstack.sdk.ReplicationGroupState", "org.zstack.imagereplicator.ReplicationGroupState");
@@ -1014,6 +1018,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RunningState", "org.zstack.storage.device.localRaid.RunningState");
 			put("org.zstack.sdk.RunningTaskInfo", "org.zstack.header.core.progress.RunningTaskInfo");
 			put("org.zstack.sdk.SSOClientInventory", "org.zstack.sso.header.SSOClientInventory");
+			put("org.zstack.sdk.SSORedirectTemplateInventory", "org.zstack.sso.header.SSORedirectTemplateInventory");
 			put("org.zstack.sdk.SchedulerJobGroupInventory", "org.zstack.header.scheduler.SchedulerJobGroupInventory");
 			put("org.zstack.sdk.SchedulerJobGroupJobRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupJobRefInventory");
 			put("org.zstack.sdk.SchedulerJobGroupSchedulerTriggerRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefInventory");
@@ -1025,7 +1030,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ScsiLunHostRefInventory", "org.zstack.header.storageDevice.ScsiLunHostRefInventory");
 			put("org.zstack.sdk.ScsiLunInventory", "org.zstack.header.storageDevice.ScsiLunInventory");
 			put("org.zstack.sdk.ScsiLunVmInstanceRefInventory", "org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory");
-			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.SdnControllerInventory", "org.zstack.sdnController.header.SdnControllerInventory");
 			put("org.zstack.sdk.SdnVniRange", "org.zstack.sdnController.header.SdnVniRange");
 			put("org.zstack.sdk.SecretResourcePoolInventory", "org.zstack.header.securitymachine.SecretResourcePoolInventory");
@@ -1050,6 +1054,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.ShrinkResult", "org.zstack.header.storage.snapshot.ShrinkResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");
+			put("org.zstack.sdk.SkippedResources", "org.zstack.vmware.SkippedResources");
 			put("org.zstack.sdk.SlbGroupInventory", "org.zstack.network.service.slb.SlbGroupInventory");
 			put("org.zstack.sdk.SlbGroupL3NetworkRefInventory", "org.zstack.network.service.slb.SlbGroupL3NetworkRefInventory");
 			put("org.zstack.sdk.SlbLoadBalancerInventory", "org.zstack.network.service.slb.SlbLoadBalancerInventory");
@@ -1105,7 +1110,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VirtualBorderRouterInventory", "org.zstack.header.aliyun.network.connection.VirtualBorderRouterInventory");
 			put("org.zstack.sdk.VirtualRouterOfferingInventory", "org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory");
 			put("org.zstack.sdk.VirtualRouterSoftwareVersionInventory", "org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionInventory");
-			put("org.zstack.sdk.VirtualRouterMetadataInventory", "org.zstack.network.service.virtualrouter.VirtualRouterMetadataInventory");
 			put("org.zstack.sdk.VirtualRouterVRouterRouteTableRefInventory", "org.zstack.vrouterRoute.VirtualRouterVRouterRouteTableRefInventory");
 			put("org.zstack.sdk.VirtualRouterVmInventory", "org.zstack.network.service.virtualrouter.VirtualRouterVmInventory");
 			put("org.zstack.sdk.VmCPUBillingInventory", "org.zstack.billing.generator.vm.cpu.VmCPUBillingInventory");

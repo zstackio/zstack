@@ -21,11 +21,11 @@ public class CephOsdGroupInventory  {
     }
 
     public long availableCapacity;
-    public long getAvailableCapacity() {
-        return availableCapacity;
-    }
     public void setAvailableCapacity(long availableCapacity) {
         this.availableCapacity = availableCapacity;
+    }
+    public long getAvailableCapacity() {
+        return this.availableCapacity;
     }
 
     public long availablePhysicalCapacity;

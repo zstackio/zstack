@@ -97,7 +97,7 @@ public class DetachDataVolumeFromHostAction extends AbstractAction {
         info.path = "/volumes/{volumeUuid}/hosts";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
