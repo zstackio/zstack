@@ -1,10 +1,10 @@
-package org.zstack.sdk.disastertolerance;
+package org.zstack.sdk.disasterrecovery;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class EnableMirrorCdpTaskAction extends AbstractAction {
+public class QueryDisasterRecoveryVmTemplateAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class EnableMirrorCdpTaskAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.disastertolerance.DisableMirrorCdpTaskResult value;
+        public org.zstack.sdk.disasterrecovery.QueryDisasterRecoveryVmTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,6 @@ public class EnableMirrorCdpTaskAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -60,8 +34,8 @@ public class EnableMirrorCdpTaskAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.disastertolerance.DisableMirrorCdpTaskResult value = res.getResult(org.zstack.sdk.disastertolerance.DisableMirrorCdpTaskResult.class);
-        ret.value = value == null ? new org.zstack.sdk.disastertolerance.DisableMirrorCdpTaskResult() : value; 
+        org.zstack.sdk.disasterrecovery.QueryDisasterRecoveryVmTemplateResult value = res.getResult(org.zstack.sdk.disasterrecovery.QueryDisasterRecoveryVmTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.disasterrecovery.QueryDisasterRecoveryVmTemplateResult() : value; 
 
         return ret;
     }
@@ -90,11 +64,11 @@ public class EnableMirrorCdpTaskAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/mirror/cdptask/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/disasterrecovery/vm/template/";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "enableMirrorCdpTask";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

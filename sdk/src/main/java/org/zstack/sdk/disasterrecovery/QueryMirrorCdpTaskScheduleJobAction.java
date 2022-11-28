@@ -1,10 +1,10 @@
-package org.zstack.sdk.disastertolerance;
+package org.zstack.sdk.disasterrecovery;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteMirrorCdpTaskAction extends AbstractAction {
+public class QueryMirrorCdpTaskScheduleJobAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteMirrorCdpTaskAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.disastertolerance.DeleteMirrorCdpTaskResult value;
+        public org.zstack.sdk.disasterrecovery.QueryMirrorCdpTaskScheduleJobResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,35 +25,6 @@ public class DeleteMirrorCdpTaskAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -63,8 +34,8 @@ public class DeleteMirrorCdpTaskAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.disastertolerance.DeleteMirrorCdpTaskResult value = res.getResult(org.zstack.sdk.disastertolerance.DeleteMirrorCdpTaskResult.class);
-        ret.value = value == null ? new org.zstack.sdk.disastertolerance.DeleteMirrorCdpTaskResult() : value; 
+        org.zstack.sdk.disasterrecovery.QueryMirrorCdpTaskScheduleJobResult value = res.getResult(org.zstack.sdk.disasterrecovery.QueryMirrorCdpTaskScheduleJobResult.class);
+        ret.value = value == null ? new org.zstack.sdk.disasterrecovery.QueryMirrorCdpTaskScheduleJobResult() : value; 
 
         return ret;
     }
@@ -93,10 +64,10 @@ public class DeleteMirrorCdpTaskAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/mirror/cdptask/{uuid}";
+        info.httpMethod = "GET";
+        info.path = "/mirror/cdptask/schedulejob";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }
