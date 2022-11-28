@@ -1,4 +1,4 @@
-package org.zstack.sdk.disastertolerance;
+package org.zstack.sdk.disasterrecovery;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ public class DisableMirrorCdpTaskAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.disastertolerance.DisableMirrorCdpTaskResult value;
+        public org.zstack.sdk.disasterrecovery.DisableMirrorCdpTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -60,8 +60,8 @@ public class DisableMirrorCdpTaskAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.disastertolerance.DisableMirrorCdpTaskResult value = res.getResult(org.zstack.sdk.disastertolerance.DisableMirrorCdpTaskResult.class);
-        ret.value = value == null ? new org.zstack.sdk.disastertolerance.DisableMirrorCdpTaskResult() : value; 
+        org.zstack.sdk.disasterrecovery.DisableMirrorCdpTaskResult value = res.getResult(org.zstack.sdk.disasterrecovery.DisableMirrorCdpTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.disasterrecovery.DisableMirrorCdpTaskResult() : value; 
 
         return ret;
     }

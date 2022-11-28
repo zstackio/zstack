@@ -1,5 +1,8 @@
-package org.zstack.sdk.disastertolerance;
+package org.zstack.sdk.disasterrecovery;
 
+import org.zstack.sdk.disasterrecovery.MirrorCdpTaskMode;
+import org.zstack.sdk.disasterrecovery.MirrorCdpTaskStatus;
+import org.zstack.sdk.disasterrecovery.MirrorCdpTaskState;
 import org.zstack.sdk.CdpTaskInventory;
 
 public class MirrorCdpTaskInventory  {
@@ -20,6 +23,14 @@ public class MirrorCdpTaskInventory  {
         return this.name;
     }
 
+    public java.lang.String description;
+    public void setDescription(java.lang.String description) {
+        this.description = description;
+    }
+    public java.lang.String getDescription() {
+        return this.description;
+    }
+
     public java.lang.String peerExternalManagementNodeUuid;
     public void setPeerExternalManagementNodeUuid(java.lang.String peerExternalManagementNodeUuid) {
         this.peerExternalManagementNodeUuid = peerExternalManagementNodeUuid;
@@ -36,11 +47,11 @@ public class MirrorCdpTaskInventory  {
         return this.peerCdpTaskUuid;
     }
 
-    public java.lang.String mode;
-    public void setMode(java.lang.String mode) {
+    public MirrorCdpTaskMode mode;
+    public void setMode(MirrorCdpTaskMode mode) {
         this.mode = mode;
     }
-    public java.lang.String getMode() {
+    public MirrorCdpTaskMode getMode() {
         return this.mode;
     }
 
@@ -68,19 +79,19 @@ public class MirrorCdpTaskInventory  {
         return this.mirrorResourceType;
     }
 
-    public java.lang.String status;
-    public void setStatus(java.lang.String status) {
+    public MirrorCdpTaskStatus status;
+    public void setStatus(MirrorCdpTaskStatus status) {
         this.status = status;
     }
-    public java.lang.String getStatus() {
+    public MirrorCdpTaskStatus getStatus() {
         return this.status;
     }
 
-    public java.lang.String state;
-    public void setState(java.lang.String state) {
+    public MirrorCdpTaskState state;
+    public void setState(MirrorCdpTaskState state) {
         this.state = state;
     }
-    public java.lang.String getState() {
+    public MirrorCdpTaskState getState() {
         return this.state;
     }
 

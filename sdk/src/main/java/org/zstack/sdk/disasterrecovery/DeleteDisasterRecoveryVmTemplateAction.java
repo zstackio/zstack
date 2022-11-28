@@ -1,10 +1,10 @@
-package org.zstack.sdk.disastertolerance;
+package org.zstack.sdk.disasterrecovery;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpgradeCdpTaskToMirrorTaskAction extends AbstractAction {
+public class DeleteDisasterRecoveryVmTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpgradeCdpTaskToMirrorTaskAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.disastertolerance.UpgradeCdpTaskToMirrorTaskResult value;
+        public org.zstack.sdk.disasterrecovery.DeleteMirrorCdpTaskScheduleJobResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,25 +26,10 @@ public class UpgradeCdpTaskToMirrorTaskAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String cdpTaskUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String peerCdpTaskUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String peerManagementNodeUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String mirrorBackupStorageUuid;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +63,8 @@ public class UpgradeCdpTaskToMirrorTaskAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.disastertolerance.UpgradeCdpTaskToMirrorTaskResult value = res.getResult(org.zstack.sdk.disastertolerance.UpgradeCdpTaskToMirrorTaskResult.class);
-        ret.value = value == null ? new org.zstack.sdk.disastertolerance.UpgradeCdpTaskToMirrorTaskResult() : value; 
+        org.zstack.sdk.disasterrecovery.DeleteMirrorCdpTaskScheduleJobResult value = res.getResult(org.zstack.sdk.disasterrecovery.DeleteMirrorCdpTaskScheduleJobResult.class);
+        ret.value = value == null ? new org.zstack.sdk.disasterrecovery.DeleteMirrorCdpTaskScheduleJobResult() : value; 
 
         return ret;
     }
@@ -108,11 +93,11 @@ public class UpgradeCdpTaskToMirrorTaskAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/mirror/cdptask/upgrade";
+        info.httpMethod = "DELETE";
+        info.path = "/disasterrecovery/vm/template/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
