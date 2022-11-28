@@ -1,0 +1,1 @@
+UPDATE IAM2VirtualIDVO SET type = "OAuth2" where type = "Cas";

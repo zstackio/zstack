@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class LoginByCasAction extends AbstractAction {
+public class LoginByThirdAuthAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class LoginByCasAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.LoginByCasResult value;
+        public org.zstack.sdk.LoginByThirdAuthResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +57,8 @@ public class LoginByCasAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.LoginByCasResult value = res.getResult(org.zstack.sdk.LoginByCasResult.class);
-        ret.value = value == null ? new org.zstack.sdk.LoginByCasResult() : value; 
+        org.zstack.sdk.LoginByThirdAuthResult value = res.getResult(org.zstack.sdk.LoginByThirdAuthResult.class);
+        ret.value = value == null ? new org.zstack.sdk.LoginByThirdAuthResult() : value; 
 
         return ret;
     }
@@ -88,10 +88,10 @@ public class LoginByCasAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/cas/login/";
+        info.path = "/thirdAuth/login/";
         info.needSession = false;
         info.needPoll = false;
-        info.parameterName = "loginByCas";
+        info.parameterName = "loginByThirdAuth";
         return info;
     }
 

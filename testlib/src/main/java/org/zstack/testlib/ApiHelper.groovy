@@ -21725,8 +21725,8 @@ abstract class ApiHelper {
     }
 
 
-    def loginByCas(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.LoginByCasAction.class) Closure c) {
-        def a = new org.zstack.sdk.LoginByCasAction()
+    def loginByThirdAuth(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.LoginByThirdAuthAction.class) Closure c) {
+        def a = new org.zstack.sdk.LoginByThirdAuthAction()
         
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
