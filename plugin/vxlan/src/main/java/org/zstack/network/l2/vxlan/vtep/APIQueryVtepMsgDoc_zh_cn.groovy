@@ -2,7 +2,6 @@ package org.zstack.network.l2.vxlan.vtep
 
 import org.zstack.network.l2.vxlan.vtep.APIQueryVtepReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryVtep"

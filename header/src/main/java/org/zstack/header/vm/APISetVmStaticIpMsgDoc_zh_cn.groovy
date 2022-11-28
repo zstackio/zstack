@@ -32,7 +32,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "l3NetworkUuid"
@@ -42,7 +41,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "ip"
@@ -50,9 +48,8 @@ doc {
 					desc "指定IP地址"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "ip6"
@@ -62,7 +59,6 @@ doc {
 					type "String"
 					optional true
 					since "3.10"
-					
 				}
 				column {
 					name "systemTags"
@@ -72,7 +68,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -82,7 +77,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

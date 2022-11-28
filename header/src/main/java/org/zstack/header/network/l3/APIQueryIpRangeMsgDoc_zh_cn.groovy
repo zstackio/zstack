@@ -2,7 +2,6 @@ package org.zstack.header.network.l3
 
 import org.zstack.header.network.l3.APIQueryIpRangeReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询IP地址范围(QueryIpRange)"

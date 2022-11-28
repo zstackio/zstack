@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "description"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "url"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "mediaType"
@@ -69,7 +66,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "system"
@@ -79,7 +75,6 @@ doc {
 					type "boolean"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "format"
@@ -89,7 +84,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "platform"
@@ -109,7 +103,6 @@ doc {
 					type "List"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "type"
@@ -119,7 +112,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "resourceUuid"
@@ -129,7 +121,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -139,7 +130,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -149,7 +139,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "architecture"
@@ -168,8 +157,16 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
-					
+					since "3.4.0"
+				}
+				column {
+					name "virtio"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "boolean"
+					optional true
+					since "4.1.2"
 				}
 			}
         }

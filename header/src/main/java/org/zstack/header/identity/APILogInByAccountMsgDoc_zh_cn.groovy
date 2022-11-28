@@ -15,7 +15,6 @@ doc {
 
 
 
-
             clz APILogInByAccountMsg.class
 
             desc """使用账户身份登录"""
@@ -30,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "password"
@@ -40,7 +38,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "captchaUuid"
@@ -50,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-
 				}
 				column {
 					name "verifyCode"
@@ -60,7 +56,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-
 				}
 				column {
 					name "clientInfo"
@@ -70,7 +65,6 @@ doc {
 					type "Map"
 					optional true
 					since "3.5.0"
-
 				}
 				column {
 					name "systemTags"
@@ -80,7 +74,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -90,7 +83,15 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+				}
+				column {
+					name "accountType"
+					enclosedIn "logInByAccount"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "3.4.0"
 				}
 			}
         }

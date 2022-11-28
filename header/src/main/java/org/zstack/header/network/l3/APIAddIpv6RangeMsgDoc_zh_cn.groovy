@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "3.1"
-					
 				}
 				column {
 					name "name"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional false
 					since "3.1"
-					
 				}
 				column {
 					name "description"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "3.1"
-					
 				}
 				column {
 					name "startIp"
@@ -59,7 +56,6 @@ doc {
 					type "String"
 					optional false
 					since "3.1"
-					
 				}
 				column {
 					name "endIp"
@@ -69,7 +65,6 @@ doc {
 					type "String"
 					optional false
 					since "3.1"
-					
 				}
 				column {
 					name "gateway"
@@ -79,7 +74,6 @@ doc {
 					type "String"
 					optional false
 					since "3.1"
-					
 				}
 				column {
 					name "prefixLen"
@@ -89,7 +83,6 @@ doc {
 					type "Integer"
 					optional false
 					since "3.1"
-					
 				}
 				column {
 					name "addressMode"
@@ -119,7 +112,6 @@ doc {
 					type "String"
 					optional true
 					since "3.1"
-					
 				}
 				column {
 					name "systemTags"
@@ -129,7 +121,6 @@ doc {
 					type "List"
 					optional true
 					since "3.1"
-					
 				}
 				column {
 					name "userTags"
@@ -139,7 +130,15 @@ doc {
 					type "List"
 					optional true
 					since "3.1"
-					
+				}
+				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
+					location "body"
+					type "List"
+					optional true
+					since "3.4.0"
 				}
 			}
         }

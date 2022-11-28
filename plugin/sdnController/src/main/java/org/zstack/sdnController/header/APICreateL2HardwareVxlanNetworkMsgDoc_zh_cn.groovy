@@ -1,5 +1,7 @@
 package org.zstack.sdnController.header
 
+import org.zstack.sdnController.header.APICreateL2HardwareVxlanNetworkEvent
+
 doc {
     title "CreateL2HardwareVxlanNetwork"
 
@@ -27,7 +29,6 @@ doc {
 					type "Integer"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "poolUuid"
@@ -37,7 +38,6 @@ doc {
 					type "String"
 					optional false
 					since "3.7"
-					
 				}
 				column {
 					name "name"
@@ -47,7 +47,6 @@ doc {
 					type "String"
 					optional false
 					since "3.7"
-					
 				}
 				column {
 					name "description"
@@ -57,7 +56,6 @@ doc {
 					type "String"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "zoneUuid"
@@ -67,7 +65,6 @@ doc {
 					type "String"
 					optional false
 					since "3.7"
-					
 				}
 				column {
 					name "physicalInterface"
@@ -77,7 +74,6 @@ doc {
 					type "String"
 					optional false
 					since "3.7"
-					
 				}
 				column {
 					name "type"
@@ -87,7 +83,6 @@ doc {
 					type "String"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "resourceUuid"
@@ -97,7 +92,6 @@ doc {
 					type "String"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "tagUuids"
@@ -107,7 +101,6 @@ doc {
 					type "List"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "systemTags"
@@ -117,7 +110,6 @@ doc {
 					type "List"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "userTags"
@@ -127,7 +119,16 @@ doc {
 					type "List"
 					optional true
 					since "3.7"
-					
+				}
+				column {
+					name "vSwitchType"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					values ("LinuxBridge","OvsDpdk")
 				}
 			}
         }

@@ -31,7 +31,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "ipRangeUuid"
@@ -41,7 +40,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "start"
@@ -51,7 +49,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "ipRangeType"
@@ -81,7 +78,6 @@ doc {
 					type "int"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -91,7 +87,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -101,7 +96,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

@@ -2,7 +2,6 @@ package org.zstack.header.storage.snapshot
 
 import org.zstack.header.storage.snapshot.APIQueryVolumeSnapshotReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询云盘快照(QueryVolumeSnapshot)"

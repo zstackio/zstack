@@ -32,7 +32,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -42,7 +41,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -52,7 +50,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

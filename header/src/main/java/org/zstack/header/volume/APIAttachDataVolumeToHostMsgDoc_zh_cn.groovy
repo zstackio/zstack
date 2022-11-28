@@ -23,33 +23,30 @@ doc {
 
 				column {
 					name "volumeUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "云盘UUID"
 					location "url"
 					type "String"
 					optional false
 					since "4.5.0"
-					
 				}
 				column {
 					name "hostUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "物理机UUID"
 					location "url"
 					type "String"
 					optional false
 					since "4.5.0"
-					
 				}
 				column {
 					name "mountPath"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "物理机上的挂载路径"
 					location "body"
 					type "String"
 					optional false
 					since "4.5.0"
-					
 				}
 				column {
 					name "systemTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "4.5.0"
-					
 				}
 				column {
 					name "userTags"
@@ -69,7 +65,6 @@ doc {
 					type "List"
 					optional true
 					since "4.5.0"
-					
 				}
 			}
         }

@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "name"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "description"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "guestOsType"
@@ -59,7 +56,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "mediaType"
@@ -89,7 +85,6 @@ doc {
 					type "Boolean"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "platform"
@@ -109,7 +104,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -119,7 +113,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "architecture"
@@ -130,6 +123,15 @@ doc {
 					optional true
 					since "4.0"
 					values ("x86_64","aarch64","mips64el","loongarch64")
+				}
+				column {
+					name "virtio"
+					enclosedIn "updateImage"
+					desc ""
+					location "body"
+					type "Boolean"
+					optional true
+					since "4.1.2"
 				}
 			}
         }

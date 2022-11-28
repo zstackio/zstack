@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "3.9"
-					
 				}
 				column {
 					name "description"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "3.9"
-					
 				}
 				column {
 					name "ipVersion"
@@ -59,7 +57,6 @@ doc {
 					type "String"
 					optional true
 					since "3.9"
-					
 				}
 				column {
 					name "tagUuids"
@@ -69,7 +66,6 @@ doc {
 					type "List"
 					optional true
 					since "3.9"
-					
 				}
 				column {
 					name "systemTags"
@@ -79,7 +75,6 @@ doc {
 					type "List"
 					optional true
 					since "3.9"
-					
 				}
 				column {
 					name "userTags"
@@ -89,7 +84,6 @@ doc {
 					type "List"
 					optional true
 					since "3.9"
-					
 				}
 			}
         }

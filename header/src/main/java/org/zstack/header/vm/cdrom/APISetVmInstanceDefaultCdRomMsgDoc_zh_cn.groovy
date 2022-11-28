@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "3.3"
-					
 				}
 				column {
 					name "vmInstanceUuid"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional false
 					since "3.3"
-					
 				}
 				column {
 					name "systemTags"
@@ -49,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "3.3"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "3.3"
-					
 				}
 			}
         }

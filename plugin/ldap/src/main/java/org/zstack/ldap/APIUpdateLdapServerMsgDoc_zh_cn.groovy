@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "name"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "description"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "url"
@@ -59,7 +56,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "base"
@@ -69,7 +65,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "username"
@@ -79,7 +74,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "password"
@@ -89,7 +83,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "encryption"
@@ -109,7 +102,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -119,7 +111,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

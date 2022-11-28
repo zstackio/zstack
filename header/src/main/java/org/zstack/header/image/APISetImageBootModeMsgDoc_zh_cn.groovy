@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "3.9.0"
-					
 				}
 				column {
 					name "bootMode"
@@ -49,7 +48,6 @@ doc {
 					type "List"
 					optional true
 					since "3.9.0"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +57,6 @@ doc {
 					type "List"
 					optional true
 					since "3.9.0"
-					
 				}
 			}
         }

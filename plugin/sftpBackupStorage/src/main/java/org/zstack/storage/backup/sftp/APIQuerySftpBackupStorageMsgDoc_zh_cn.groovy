@@ -2,7 +2,6 @@ package org.zstack.storage.backup.sftp
 
 import org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询Sftp镜像服务器(QuerySftpBackupStorage)"

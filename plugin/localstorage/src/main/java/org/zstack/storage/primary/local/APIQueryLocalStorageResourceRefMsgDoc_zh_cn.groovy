@@ -2,7 +2,6 @@ package org.zstack.storage.primary.local
 
 import org.zstack.storage.primary.local.APIQueryLocalStorageResourceRefReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询本地存储资源引用(QueryLocalStorageResourceRef)"

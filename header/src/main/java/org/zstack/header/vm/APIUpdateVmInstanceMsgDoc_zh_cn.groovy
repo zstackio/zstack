@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "name"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "description"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "state"
@@ -69,7 +66,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "platform"
@@ -89,7 +85,6 @@ doc {
 					type "Integer"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "memorySize"
@@ -99,7 +94,6 @@ doc {
 					type "Long"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -109,7 +103,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -119,7 +112,15 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+				}
+				column {
+					name "guestOsType"
+					enclosedIn "updateVmInstance"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.1.2"
 				}
 			}
         }

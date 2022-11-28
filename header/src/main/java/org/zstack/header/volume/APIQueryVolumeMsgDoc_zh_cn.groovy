@@ -2,7 +2,6 @@ package org.zstack.header.volume
 
 import org.zstack.header.volume.APIQueryVolumeReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "获取云盘清单(QueryVolume)"

@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIExpungeImageMsg.class
 
             desc """"""
@@ -30,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "backupStorageUuids"
@@ -40,7 +38,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -50,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -60,7 +56,15 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+				}
+				column {
+					name "uuid"
+					enclosedIn "expungeImage"
+					desc "资源的UUID，唯一标示该资源"
+					location "body"
+					type "String"
+					optional true
+					since "3.2.0"
 				}
 			}
         }

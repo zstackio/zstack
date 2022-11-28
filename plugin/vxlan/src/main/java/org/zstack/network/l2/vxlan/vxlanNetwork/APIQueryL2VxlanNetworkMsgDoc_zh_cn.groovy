@@ -2,7 +2,6 @@ package org.zstack.network.l2.vxlan.vxlanNetwork
 
 import org.zstack.network.l2.vxlan.vxlanNetwork.APIQueryL2VxlanNetworkReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryL2VxlanNetwork"

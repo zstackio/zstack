@@ -29,7 +29,6 @@ doc {
 					type "List"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "accountUuids"
@@ -39,7 +38,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "toPublic"
@@ -49,7 +47,6 @@ doc {
 					type "boolean"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -69,7 +65,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

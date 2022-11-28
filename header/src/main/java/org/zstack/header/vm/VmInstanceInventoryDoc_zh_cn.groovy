@@ -11,7 +11,7 @@ import org.zstack.header.vm.cdrom.VmCdRomInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "云主机实例清单"
 
 	field {
 		name "uuid"
@@ -81,9 +81,9 @@ doc {
 	}
 	field {
 		name "architecture"
-		desc "架构类型"
+		desc ""
 		type "String"
-		since "4.1.1"
+		since "0.6"
 	}
 	field {
 		name "defaultL3NetworkUuid"
@@ -164,14 +164,14 @@ doc {
 	ref {
 		name "vmCdRoms"
 		path "org.zstack.header.vm.VmInstanceInventory.vmCdRoms"
-		desc ""
+		desc "null"
 		type "List"
-		since ""
+		since "0.6"
 		clz VmCdRomInventory.class
 	}
 	field {
 		name "guestOsType"
-		desc "操作系统类型"
+		desc ""
 		type "String"
 		since "4.1.2"
 	}

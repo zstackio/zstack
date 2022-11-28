@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "3.2.0"
-					
 				}
 				column {
 					name "resourceUuid"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "3.5.0"
-
 				}
 				column {
 					name "resourceType"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "3.5.0"
-
 				}
 				column {
 					name "trashType"
@@ -69,7 +66,6 @@ doc {
 					type "List"
 					optional true
 					since "3.2.0"
-					
 				}
 				column {
 					name "userTags"
@@ -79,7 +75,6 @@ doc {
 					type "List"
 					optional true
 					since "3.2.0"
-					
 				}
 			}
         }

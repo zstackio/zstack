@@ -2,7 +2,6 @@ package org.zstack.header.identity
 
 import org.zstack.header.identity.APIQueryAccountReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryAccount"

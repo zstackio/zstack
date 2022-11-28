@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "3.7"
-					
 				}
 				column {
 					name "cpuShares"
@@ -39,7 +38,6 @@ doc {
 					type "Integer"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "oomScoreAdj"
@@ -49,7 +47,6 @@ doc {
 					type "Integer"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "systemTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "userTags"
@@ -69,7 +65,6 @@ doc {
 					type "List"
 					optional true
 					since "3.7"
-					
 				}
 			}
         }

@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional true
 					since "3.3.0"
-					
 				}
 				column {
 					name "regex"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "3.3.0"
-					
 				}
 				column {
 					name "code"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "3.6.0"
-
 				}
 				column {
 					name "systemTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "3.3.0"
-					
 				}
 				column {
 					name "userTags"
@@ -69,7 +65,6 @@ doc {
 					type "List"
 					optional true
 					since "3.3.0"
-					
 				}
 			}
         }

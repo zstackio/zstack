@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "l3NetworkUuid"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -49,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "deleteMode"
@@ -69,7 +65,15 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
+				}
+				column {
+					name "staticIp"
+					enclosedIn ""
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "3.10.0"
 				}
 			}
         }

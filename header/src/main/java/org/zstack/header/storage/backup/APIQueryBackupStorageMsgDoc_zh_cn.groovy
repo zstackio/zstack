@@ -2,7 +2,6 @@ package org.zstack.header.storage.backup
 
 import org.zstack.header.storage.backup.APIQueryBackupStorageReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询镜像服务器(QueryBackupStorage)"

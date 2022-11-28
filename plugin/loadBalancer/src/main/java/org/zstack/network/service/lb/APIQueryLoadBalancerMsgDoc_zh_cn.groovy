@@ -2,7 +2,6 @@ package org.zstack.network.service.lb
 
 import org.zstack.network.service.lb.APIQueryLoadBalancerReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询负载均衡器(QueryLoadBalancer)"

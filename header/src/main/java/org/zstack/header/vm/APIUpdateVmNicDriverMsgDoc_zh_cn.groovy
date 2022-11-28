@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "PUT /vm-instances/{vmInstanceUuid}/actions"
+			url "PUT /v1/vm-instances/{vmInstanceUuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -23,27 +23,25 @@ doc {
 
 				column {
 					name "vmInstanceUuid"
-					enclosedIn "params"
+					enclosedIn "updateVmNicDriver"
 					desc "云主机UUID"
 					location "url"
 					type "String"
 					optional false
 					since "3.9"
-					
 				}
 				column {
 					name "vmNicUuid"
-					enclosedIn "params"
+					enclosedIn "updateVmNicDriver"
 					desc "云主机网卡UUID"
-					location "url"
+					location "body"
 					type "String"
 					optional false
 					since "3.9"
-					
 				}
 				column {
 					name "driverType"
-					enclosedIn "params"
+					enclosedIn "updateVmNicDriver"
 					desc ""
 					location "body"
 					type "String"
@@ -58,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "3.9"
-					
 				}
 				column {
 					name "userTags"
@@ -68,7 +65,6 @@ doc {
 					type "List"
 					optional true
 					since "3.9"
-					
 				}
 			}
         }
