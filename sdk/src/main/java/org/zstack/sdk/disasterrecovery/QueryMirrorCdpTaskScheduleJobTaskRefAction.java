@@ -1,10 +1,10 @@
-package org.zstack.sdk.disastertolerance;
+package org.zstack.sdk.disasterrecovery;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryMirrorCdpTaskAction extends QueryAction {
+public class QueryMirrorCdpTaskScheduleJobTaskRefAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryMirrorCdpTaskAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.disastertolerance.QueryMirrorCdpTaskResult value;
+        public org.zstack.sdk.disasterrecovery.QueryMirrorCdpTaskScheduleJobResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryMirrorCdpTaskAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.disastertolerance.QueryMirrorCdpTaskResult value = res.getResult(org.zstack.sdk.disastertolerance.QueryMirrorCdpTaskResult.class);
-        ret.value = value == null ? new org.zstack.sdk.disastertolerance.QueryMirrorCdpTaskResult() : value; 
+        org.zstack.sdk.disasterrecovery.QueryMirrorCdpTaskScheduleJobResult value = res.getResult(org.zstack.sdk.disasterrecovery.QueryMirrorCdpTaskScheduleJobResult.class);
+        ret.value = value == null ? new org.zstack.sdk.disasterrecovery.QueryMirrorCdpTaskScheduleJobResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QueryMirrorCdpTaskAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/mirror/cdptask";
+        info.path = "/mirror/cdptask/schedulejob/taskref";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

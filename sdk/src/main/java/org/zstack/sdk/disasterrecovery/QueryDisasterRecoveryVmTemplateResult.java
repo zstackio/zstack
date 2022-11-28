@@ -1,8 +1,8 @@
-package org.zstack.sdk.disastertolerance;
+package org.zstack.sdk.disasterrecovery;
 
 
 
-public class QueryMirrorCdpTaskResult {
+public class QueryDisasterRecoveryVmTemplateResult {
     public java.util.List inventories;
     public void setInventories(java.util.List inventories) {
         this.inventories = inventories;

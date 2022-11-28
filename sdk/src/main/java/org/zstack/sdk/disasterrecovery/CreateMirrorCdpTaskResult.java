@@ -1,8 +1,8 @@
-package org.zstack.sdk.disastertolerance;
+package org.zstack.sdk.disasterrecovery;
 
-import org.zstack.sdk.disastertolerance.MirrorCdpTaskInventory;
+import org.zstack.sdk.disasterrecovery.MirrorCdpTaskInventory;
 
-public class UpgradeCdpTaskToMirrorTaskResult {
+public class CreateMirrorCdpTaskResult {
     public MirrorCdpTaskInventory inventory;
     public void setInventory(MirrorCdpTaskInventory inventory) {
         this.inventory = inventory;

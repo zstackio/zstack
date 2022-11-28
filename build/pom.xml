@@ -562,7 +562,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
-                    <artifactId>disaster-tolerance</artifactId>
+                    <artifactId>disaster-recovery</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>

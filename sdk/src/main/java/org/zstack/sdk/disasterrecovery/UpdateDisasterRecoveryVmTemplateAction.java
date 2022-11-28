@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.disasterrecovery;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateVmFromCdpBackupAction extends AbstractAction {
+public class UpdateDisasterRecoveryVmTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateVmFromCdpBackupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateVmFromCdpBackupResult value;
+        public org.zstack.sdk.disasterrecovery.UpdateDisasterRecoveryVmTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,26 @@ public class CreateVmFromCdpBackupAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
-    public long groupId = 0L;
-
-    @Param(required = true, maxLength = 32, minLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String cdpTaskUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String instanceOfferingUuid;
 
-    @Param(required = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String imageUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String defaultL3NetworkUuid;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List l3NetworkUuids;
+
+    @Param(required = false, validValues = {"FailBack","FastRecover"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String templateType;
 
     @Param(required = false, validValues = {"UserVm","ApplianceVm"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
@@ -56,25 +59,40 @@ public class CreateVmFromCdpBackupAction extends AbstractAction {
     public java.lang.String hostUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String rootDiskOfferingUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List dataDiskOfferingUuids;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer cpuNum;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Long memorySize;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String primaryStorageUuidForRootVolume;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String primaryStorageUuidForDataVolume;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long recoverBandwidth = 0L;
-
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = false, validValues = {"InstantStart","JustCreate","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String strategy;
+
+    @Param(required = false, validValues = {"Create","Revert"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String failbackMode;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean useExistingVolume;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List rootVolumeSystemTags;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataVolumeSystemTags;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean isDisasterRecovery;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -114,8 +132,8 @@ public class CreateVmFromCdpBackupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateVmFromCdpBackupResult value = res.getResult(org.zstack.sdk.CreateVmFromCdpBackupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateVmFromCdpBackupResult() : value; 
+        org.zstack.sdk.disasterrecovery.UpdateDisasterRecoveryVmTemplateResult value = res.getResult(org.zstack.sdk.disasterrecovery.UpdateDisasterRecoveryVmTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.disasterrecovery.UpdateDisasterRecoveryVmTemplateResult() : value; 
 
         return ret;
     }
@@ -145,10 +163,10 @@ public class CreateVmFromCdpBackupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/cdp-backups/actions";
+        info.path = "/disasterrecovery/vm/template/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "createVmFromCdpBackup";
+        info.parameterName = "updateDisasterRecoveryVmTemplate";
         return info;
     }
 

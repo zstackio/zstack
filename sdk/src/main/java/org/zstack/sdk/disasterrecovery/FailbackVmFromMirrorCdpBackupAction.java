@@ -1,4 +1,4 @@
-package org.zstack.sdk.disastertolerance;
+package org.zstack.sdk.disasterrecovery;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ public class FailbackVmFromMirrorCdpBackupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.disastertolerance.FailbackVmFromMirrorCdpBackupResult value;
+        public org.zstack.sdk.disasterrecovery.FailbackVmFromMirrorCdpBackupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -73,6 +73,12 @@ public class FailbackVmFromMirrorCdpBackupAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataVolumeSystemTags;
 
+    @Param(required = false, validValues = {"Create","Revert"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String failbackMode;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean useExistingVolume;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
@@ -111,8 +117,8 @@ public class FailbackVmFromMirrorCdpBackupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.disastertolerance.FailbackVmFromMirrorCdpBackupResult value = res.getResult(org.zstack.sdk.disastertolerance.FailbackVmFromMirrorCdpBackupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.disastertolerance.FailbackVmFromMirrorCdpBackupResult() : value; 
+        org.zstack.sdk.disasterrecovery.FailbackVmFromMirrorCdpBackupResult value = res.getResult(org.zstack.sdk.disasterrecovery.FailbackVmFromMirrorCdpBackupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.disasterrecovery.FailbackVmFromMirrorCdpBackupResult() : value; 
 
         return ret;
     }
