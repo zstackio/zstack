@@ -108,6 +108,14 @@ public class VolumeSnapshotInventory  {
         return this.size;
     }
 
+    public int distance;
+    public void setDistance(int distance) {
+        this.distance = distance;
+    }
+    public int getDistance() {
+        return this.distance;
+    }
+
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;

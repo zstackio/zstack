@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.zstack.sdk.*;
 
 public class AttachDataVolumeToHostAction extends AbstractAction {
@@ -18,10 +17,10 @@ public class AttachDataVolumeToHostAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                        String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
+                    String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
-
+            
             return this;
         }
     }
@@ -66,9 +65,9 @@ public class AttachDataVolumeToHostAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.AttachDataVolumeToHostResult value = res.getResult(org.zstack.sdk.AttachDataVolumeToHostResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachDataVolumeToHostResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.AttachDataVolumeToHostResult() : value; 
 
         return ret;
     }

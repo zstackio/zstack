@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.SSORedirectTemplateInventory;
+
 
 public class SSOClientInventory  {
 
@@ -74,14 +74,6 @@ public class SSOClientInventory  {
     }
     public java.lang.String getAccountUuid() {
         return this.accountUuid;
-    }
-
-    public SSORedirectTemplateInventory templateInventory;
-    public void setTemplateInventory(SSORedirectTemplateInventory templateInventory) {
-        this.templateInventory = templateInventory;
-    }
-    public SSORedirectTemplateInventory getTemplateInventory() {
-        return this.templateInventory;
     }
 
 }
