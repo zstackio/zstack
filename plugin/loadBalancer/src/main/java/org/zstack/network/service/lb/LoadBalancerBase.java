@@ -1936,6 +1936,10 @@ public class LoadBalancerBase {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT_TOKEN, msg.getSessionIdleTimeout());
                 }
 
+                if (msg.getCookieName() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.COOKIE_NAME, msg.getUuid(), LoadBalancerSystemTags.COOKIE_NAME_TOKEN, msg.getCookieName());
+                }
+
                 if (msg.getConnectionIdleTimeout() != null) {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN, msg.getConnectionIdleTimeout());
                 }

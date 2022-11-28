@@ -69,8 +69,7 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(numberRange = {LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MIN, LoadBalancerConstants.SESSION_IDLE_TIMEOUT_MAX}, required = false)
     private Integer sessionIdleTimeout;
 
-    @APINoSee
-    @APIParam(required = false)
+    @APIParam(validRegexValues = LoadBalancerConstants.COOKIE_NAME_REGEX, maxLength = LoadBalancerConstants.COOKIE_NAME_MAX, required = false)
     private String cookieName;
 
     @APINoSee

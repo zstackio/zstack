@@ -208,7 +208,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "4.4"
+					since "4.6"
 					values ("disable","iphash","insert","rewrite")
 				}
 				column {
@@ -218,7 +218,16 @@ doc {
 					location "body"
 					type "Integer"
 					optional true
-					since "4.4"
+					since "4.6"
+				}
+				column {
+					name "cookieName"
+					enclosedIn "changeLoadBalancerListener"
+					desc "Cookie名称"
+					location "body"
+					type "String"
+					optional true
+					since "4.6"
 				}
 			}
         }
