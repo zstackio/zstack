@@ -121,6 +121,7 @@ public class SourceClassMap {
 			put("org.zstack.header.acl.AccessControlListEntryInventory", "org.zstack.sdk.AccessControlListEntryInventory");
 			put("org.zstack.header.acl.AccessControlListInventory", "org.zstack.sdk.AccessControlListInventory");
 			put("org.zstack.header.affinitygroup.AffinityGroupInventory", "org.zstack.sdk.AffinityGroupInventory");
+			put("org.zstack.header.vmscheduling.VmSchedulingRuleInventory", "org.zstack.sdk.VmSchedulingRuleInventory");
 			put("org.zstack.header.affinitygroup.AffinityGroupUsageInventory", "org.zstack.sdk.AffinityGroupUsageInventory");
 			put("org.zstack.header.aliyun.AliyunOssException", "org.zstack.sdk.AliyunOssException");
 			put("org.zstack.header.aliyun.ebs.AliyunEbsBackupStorageInventory", "org.zstack.sdk.AliyunEbsBackupStorageInventory");
@@ -672,6 +673,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AdditionalLicenseType", "org.zstack.license.AdditionalLicenseType");
 			put("org.zstack.sdk.AddressPoolInventory", "org.zstack.header.network.l3.AddressPoolInventory");
 			put("org.zstack.sdk.AffinityGroupInventory", "org.zstack.header.affinitygroup.AffinityGroupInventory");
+			put("org.zstack.header.vmscheduling.VmSchedulingRuleInventory", "org.zstack.sdk.VmSchedulingRuleInventory");
 			put("org.zstack.sdk.AffinityGroupUsageInventory", "org.zstack.header.affinitygroup.AffinityGroupUsageInventory");
 			put("org.zstack.sdk.AiSiNoSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
