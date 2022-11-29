@@ -2,7 +2,6 @@ package org.zstack.core.config
 
 import org.zstack.core.config.APIQueryGlobalConfigReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryGlobalConfig"

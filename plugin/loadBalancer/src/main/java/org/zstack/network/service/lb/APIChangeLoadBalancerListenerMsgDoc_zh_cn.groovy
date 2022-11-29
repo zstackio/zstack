@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "3.4"
-					
 				}
 				column {
 					name "connectionIdleTimeout"
@@ -39,7 +38,6 @@ doc {
 					type "Integer"
 					optional true
 					since "3.4"
-					
 				}
 				column {
 					name "maxConnection"
@@ -49,7 +47,6 @@ doc {
 					type "Integer"
 					optional true
 					since "3.4"
-					
 				}
 				column {
 					name "balancerAlgorithm"
@@ -69,7 +66,6 @@ doc {
 					type "String"
 					optional true
 					since "3.4"
-					
 				}
 				column {
 					name "healthyThreshold"
@@ -79,7 +75,6 @@ doc {
 					type "Integer"
 					optional true
 					since "3.4"
-					
 				}
 				column {
 					name "unhealthyThreshold"
@@ -89,7 +84,6 @@ doc {
 					type "Integer"
 					optional true
 					since "3.4"
-					
 				}
 				column {
 					name "healthCheckInterval"
@@ -99,7 +93,6 @@ doc {
 					type "Integer"
 					optional true
 					since "3.4"
-					
 				}
 				column {
 					name "systemTags"
@@ -109,7 +102,6 @@ doc {
 					type "List"
 					optional true
 					since "3.4"
-					
 				}
 				column {
 					name "userTags"
@@ -119,7 +111,6 @@ doc {
 					type "List"
 					optional true
 					since "3.4"
-					
 				}
 				column {
 					name "healthCheckProtocol"
@@ -149,7 +140,6 @@ doc {
 					type "String"
 					optional true
 					since "3.9"
-					
 				}
 				column {
 					name "healthCheckHttpCode"
@@ -159,7 +149,6 @@ doc {
 					type "String"
 					optional true
 					since "3.9"
-					
 				}
 				column {
 					name "aclStatus"
@@ -179,7 +168,6 @@ doc {
 					type "Integer"
 					optional true
 					since "4.1"
-					
 				}
 				column {
 					name "httpMode"

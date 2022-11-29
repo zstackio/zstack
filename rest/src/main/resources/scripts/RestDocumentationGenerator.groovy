@@ -510,14 +510,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
         rootPath = scanPath
         scanJavaSourceFiles()
 
-        String classes = System.getProperty("classes")
-        def apiClasses
-        if (classes != null) {
-            apiClasses = classes.split(",").collect { Class.forName(it) }
-        } else {
-            apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class).findAll { it.isAnnotationPresent(RestRequest.class) }
-        }
-
+        Set<Class> apiClasses = getRequestRequestApiSet()
         apiClasses.each {
             println("generating doc template for class ${it}")
             def tmp = new ApiRequestDocTemplate(it)
@@ -532,17 +525,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
         generateResponseDocTemplate(apiClasses as List, mode)
     }
 
-    @Override
-    void generateMarkDown(String scanPath, String resultDir) {
-        rootPath = scanPath
-
-        scanJavaSourceFiles()
-
-        File dir = new File(resultDir)
-        if (!dir.exists()) {
-            dir.mkdirs()
-        }
-
+    Set<Class> getRequestRequestApiSet() {
         Set<Class> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class).findAll { it.isAnnotationPresent(RestRequest.class) }
         Set<String> noDocClasses = Platform.getReflections().getTypesAnnotatedWith(NoDoc.class)
                 .stream().map{ c -> c.getSimpleName() }.collect(Collectors.toSet())
@@ -563,8 +546,22 @@ class RestDocumentationGenerator implements DocumentGenerator {
             }
         }
 
+        return apiClasses
+    }
+
+    @Override
+    void generateMarkDown(String scanPath, String resultDir) {
+        rootPath = scanPath
+
+        scanJavaSourceFiles()
+
+        File dir = new File(resultDir)
+        if (!dir.exists()) {
+            dir.mkdirs()
+        }
+
         def errInfo = []
-        apiClasses.each {
+        getRequestRequestApiSet().each {
             def docPath = getDocTemplatePathFromClass(it)
             logger.info("processing ${docPath}")
             try {
@@ -1984,7 +1981,7 @@ ${txt}
         Class responseClass
         RestResponse at
 
-        List<String> imports = []
+        Set<String> imports = []
         Map<String, Object> fsToAdd = [:]
         List<String> fieldStrings = []
 
@@ -2168,7 +2165,7 @@ ${fieldStr}
         File sourceFile
         RestRequest at
 
-        List<String> imports = []
+        Set<String> imports = []
         static Map<String, String> apiCategories = [:]
         static List<File> xmlConfigFiles = []
 
@@ -2277,8 +2274,12 @@ ${fieldStr}
 \t\t\t\t\ttype "${af.type.simpleName}"
 \t\t\t\t\toptional ${ap == null ? true : !ap.required()}
 \t\t\t\t\tsince "0.6"
-\t\t\t\t\t${values == null ? "" : values}
-\t\t\t\t}""")
+""")
+                if (values != null) {
+                    cols.add("\t\t\t\t\t${values}")
+                }
+
+                cols.add("\t\t\t\t}")
             }
 
             if (cols.isEmpty()) {
@@ -2318,8 +2319,20 @@ ${cols.join("\n")}
                 paramString = "\t\t\tparams ${doc._rest._request._params.refClass.simpleName}.class"
             } else {
                 List cols = doc._rest._request._params._cloumns.collect {
-                    String values = it._values != null && !it._values.isEmpty() ? "values (${it._values.collect { "\"$it\"" }.join(",")})" : ""
-                    return """\t\t\t\tcolumn {
+                    String values = it._values != null && !it._values.isEmpty() ? "values (${it._values.collect { "\"$it\"" }.join(",")})" : null
+
+                    if (values == null) {
+                        return """\t\t\t\tcolumn {
+\t\t\t\t\tname "${it._name}"
+\t\t\t\t\tenclosedIn "${it._enclosedIn}"
+\t\t\t\t\tdesc "${it._desc}"
+\t\t\t\t\tlocation "${it._location}"
+\t\t\t\t\ttype "${it._type}"
+\t\t\t\t\toptional ${it._optional}
+\t\t\t\t\tsince "${it._since}"
+\t\t\t\t}"""
+                    } else {
+                        return """\t\t\t\tcolumn {
 \t\t\t\t\tname "${it._name}"
 \t\t\t\t\tenclosedIn "${it._enclosedIn}"
 \t\t\t\t\tdesc "${it._desc}"
@@ -2329,6 +2342,7 @@ ${cols.join("\n")}
 \t\t\t\t\tsince "${it._since}"
 \t\t\t\t\t${values}
 \t\t\t\t}"""
+                    }
                 }
 
                 paramString = """\t\t\tparams {
@@ -2411,14 +2425,15 @@ ${paramString}
         }
 
         void repair(String docFilePath) {
+            Doc oldDoc
             if (!new File(docFilePath).exists()) {
-                logger.info("cannot find ${docFilePath}, not way to repair, you need to generate it first")
-                return
+                logger.info("cannot find ${docFilePath}, generate a doc template as repairing result")
+                oldDoc = createDocFromString(generate())
+            } else {
+                oldDoc = createDoc(docFilePath)
+                Doc newDoc = createDocFromString(generate())
+                oldDoc.merge(newDoc)
             }
-
-            Doc oldDoc = createDoc(docFilePath)
-            Doc newDoc = createDocFromString(generate())
-            oldDoc.merge(newDoc)
 
             new File(docFilePath).write generate(oldDoc)
             logger.info("re-written a request doc template ${docFilePath}")

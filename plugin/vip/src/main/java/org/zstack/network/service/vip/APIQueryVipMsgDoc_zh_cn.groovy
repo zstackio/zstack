@@ -2,7 +2,6 @@ package org.zstack.network.service.vip
 
 import org.zstack.network.service.vip.APIQueryVipReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryVip"

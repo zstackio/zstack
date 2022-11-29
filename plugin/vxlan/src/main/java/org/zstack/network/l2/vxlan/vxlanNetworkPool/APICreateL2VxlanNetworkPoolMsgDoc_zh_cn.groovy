@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "description"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "zoneUuid"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "physicalInterface"
@@ -59,7 +56,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "type"
@@ -69,7 +65,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "resourceUuid"
@@ -79,7 +74,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-
 				}
 				column {
 					name "systemTags"
@@ -89,7 +83,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -99,7 +92,25 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+				}
+				column {
+					name "vSwitchType"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.1.2"
+					values ("LinuxBridge","OvsDpdk")
+				}
+				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
+					location "body"
+					type "List"
+					optional true
+					since "3.4.0"
 				}
 			}
         }

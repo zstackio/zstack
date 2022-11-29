@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "3.10.0"
-					
 				}
 				column {
 					name "description"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "3.10.0"
-					
 				}
 				column {
 					name "instanceOfferingUuid"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "3.10.0"
-					
 				}
 				column {
 					name "cpuNum"
@@ -59,7 +56,6 @@ doc {
 					type "Integer"
 					optional true
 					since "3.10.0"
-					
 				}
 				column {
 					name "memorySize"
@@ -69,7 +65,6 @@ doc {
 					type "Long"
 					optional true
 					since "3.10.0"
-					
 				}
 				column {
 					name "l3NetworkUuids"
@@ -79,7 +74,6 @@ doc {
 					type "List"
 					optional false
 					since "3.10.0"
-					
 				}
 				column {
 					name "type"
@@ -99,7 +93,6 @@ doc {
 					type "String"
 					optional false
 					since "3.10.0"
-					
 				}
 				column {
 					name "platform"
@@ -119,7 +112,6 @@ doc {
 					type "String"
 					optional true
 					since "3.10.0"
-					
 				}
 				column {
 					name "clusterUuid"
@@ -129,7 +121,6 @@ doc {
 					type "String"
 					optional true
 					since "3.10.0"
-					
 				}
 				column {
 					name "hostUuid"
@@ -139,7 +130,6 @@ doc {
 					type "String"
 					optional true
 					since "3.10.0"
-					
 				}
 				column {
 					name "primaryStorageUuid"
@@ -149,7 +139,6 @@ doc {
 					type "String"
 					optional true
 					since "3.10.0"
-					
 				}
 				column {
 					name "defaultL3NetworkUuid"
@@ -159,7 +148,6 @@ doc {
 					type "String"
 					optional true
 					since "3.10.0"
-					
 				}
 				column {
 					name "strategy"
@@ -179,7 +167,6 @@ doc {
 					type "String"
 					optional true
 					since "3.10.0"
-					
 				}
 				column {
 					name "tagUuids"
@@ -189,7 +176,6 @@ doc {
 					type "List"
 					optional true
 					since "3.10.0"
-					
 				}
 				column {
 					name "systemTags"
@@ -199,7 +185,6 @@ doc {
 					type "List"
 					optional true
 					since "3.10.0"
-					
 				}
 				column {
 					name "userTags"
@@ -209,7 +194,6 @@ doc {
 					type "List"
 					optional true
 					since "3.10.0"
-					
 				}
 			}
         }

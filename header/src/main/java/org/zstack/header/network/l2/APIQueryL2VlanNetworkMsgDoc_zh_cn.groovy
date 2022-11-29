@@ -2,7 +2,6 @@ package org.zstack.header.network.l2
 
 import org.zstack.header.network.l2.APIQueryL2VlanNetworkReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询二层Vlan网络(QueryL2VlanNetwork)"

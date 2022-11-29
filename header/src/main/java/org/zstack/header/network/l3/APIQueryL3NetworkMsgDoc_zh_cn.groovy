@@ -2,7 +2,6 @@ package org.zstack.header.network.l3
 
 import org.zstack.header.network.l3.APIQueryL3NetworkReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询三层网络(QueryL3Network)"

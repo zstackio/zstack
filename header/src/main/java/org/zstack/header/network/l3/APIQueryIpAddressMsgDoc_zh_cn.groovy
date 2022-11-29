@@ -2,7 +2,6 @@ package org.zstack.header.network.l3
 
 import org.zstack.header.network.l3.APIQueryIpAddressReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryIpAddress"

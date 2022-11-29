@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "3.1"
-					
 				}
 				column {
 					name "description"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "3.1"
-					
 				}
 				column {
 					name "l3NetworkUuid"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional false
 					since "3.1"
-					
 				}
 				column {
 					name "networkCidr"
@@ -59,7 +56,6 @@ doc {
 					type "String"
 					optional false
 					since "3.1"
-					
 				}
 				column {
 					name "addressMode"
@@ -89,7 +85,6 @@ doc {
 					type "String"
 					optional true
 					since "3.1"
-					
 				}
 				column {
 					name "systemTags"
@@ -99,7 +94,6 @@ doc {
 					type "List"
 					optional true
 					since "3.1"
-					
 				}
 				column {
 					name "userTags"
@@ -109,7 +103,15 @@ doc {
 					type "List"
 					optional true
 					since "3.1"
-					
+				}
+				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
+					location "body"
+					type "List"
+					optional true
+					since "3.4.0"
 				}
 			}
         }

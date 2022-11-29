@@ -2,7 +2,6 @@ package org.zstack.header.network.l2
 
 import org.zstack.header.network.l2.APIQueryL2NetworkReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询二层网络(QueryL2Network)"

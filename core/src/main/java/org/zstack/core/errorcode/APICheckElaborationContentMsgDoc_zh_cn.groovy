@@ -27,9 +27,8 @@ doc {
 					desc "要检查的文件内容，可以为一个目录"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "3.3.0"
-					
 				}
 				column {
 					name "elaborateContent"
@@ -37,9 +36,8 @@ doc {
 					desc "要检查的文件内容，格式为json"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "3.6.0"
-
 				}
 				column {
 					name "systemTags"
@@ -49,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "3.3.0"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "3.3.0"
-					
 				}
 			}
         }

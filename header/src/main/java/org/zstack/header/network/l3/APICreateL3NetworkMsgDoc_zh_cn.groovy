@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APICreateL3NetworkMsg.class
 
             desc """"""
@@ -30,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "description"
@@ -40,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "type"
@@ -50,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "l2NetworkUuid"
@@ -60,14 +56,13 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "ipVersion"
 					enclosedIn "params"
 					desc "ip协议号"
 					location "body"
-					type "String"
+					type "Integer"
 					optional true
 					since "3.1"
 					values ("4","6")
@@ -80,7 +75,6 @@ doc {
 					type "boolean"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "dnsDomain"
@@ -90,7 +84,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "resourceUuid"
@@ -100,7 +93,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -110,7 +102,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -120,7 +111,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "category"
@@ -131,6 +121,15 @@ doc {
 					optional true
 					since "2.2"
 					values ("Public","Private","System")
+				}
+				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
+					location "body"
+					type "List"
+					optional true
+					since "3.4.0"
 				}
 			}
         }

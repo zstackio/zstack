@@ -1,5 +1,7 @@
 package org.zstack.sdnController.header
 
+import org.zstack.sdnController.header.APIUpdateSdnControllerEvent
+
 doc {
     title "UpdateSdnController"
 
@@ -27,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "3.7"
-					
 				}
 				column {
 					name "name"
@@ -37,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "description"
@@ -47,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "systemTags"
@@ -57,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "userTags"
@@ -67,7 +65,6 @@ doc {
 					type "List"
 					optional true
 					since "3.7"
-					
 				}
 			}
         }

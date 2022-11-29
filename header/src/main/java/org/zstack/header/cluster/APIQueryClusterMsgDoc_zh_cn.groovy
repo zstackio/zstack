@@ -2,7 +2,6 @@ package org.zstack.header.cluster
 
 import org.zstack.header.cluster.APIQueryClusterReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryCluster"

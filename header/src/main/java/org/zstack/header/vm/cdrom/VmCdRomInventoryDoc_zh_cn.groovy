@@ -22,19 +22,19 @@ doc {
 	}
 	field {
 		name "deviceId"
-		desc "光驱顺序号"
+		desc ""
 		type "Integer"
 		since "3.3"
 	}
 	field {
 		name "isoUuid"
-		desc "ISO镜像UUID"
+		desc ""
 		type "String"
 		since "3.3"
 	}
 	field {
 		name "isoInstallPath"
-		desc "ISO镜像挂载路径"
+		desc ""
 		type "String"
 		since "3.3"
 	}

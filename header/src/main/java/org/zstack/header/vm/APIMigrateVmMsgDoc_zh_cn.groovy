@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "hostUuid"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "migrateFromDestination"
@@ -49,7 +47,6 @@ doc {
 					type "Boolean"
 					optional true
 					since "2.3"
-					
 				}
 				column {
 					name "allowUnknown"
@@ -59,7 +56,6 @@ doc {
 					type "boolean"
 					optional true
 					since "3.6.0"
-
 				}
 				column {
 					name "strategy"
@@ -79,7 +75,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -89,7 +84,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

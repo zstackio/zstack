@@ -1,5 +1,6 @@
 package org.zstack.sdnController.header
 
+import org.zstack.sdnController.header.APIQuerySdnControllerReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {

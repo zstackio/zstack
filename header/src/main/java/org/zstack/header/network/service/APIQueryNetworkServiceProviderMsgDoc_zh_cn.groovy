@@ -2,7 +2,6 @@ package org.zstack.header.network.service
 
 import org.zstack.header.network.service.APIQueryNetworkServiceProviderReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询网络服务模块(QueryNetworkServiceProvider)"

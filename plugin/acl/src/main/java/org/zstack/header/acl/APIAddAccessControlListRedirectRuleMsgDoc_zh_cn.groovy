@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional true
 					since "4.1.3"
-					
 				}
 				column {
 					name "description"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "4.1.3"
-					
 				}
 				column {
 					name "domain"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "4.1.3"
-					
 				}
 				column {
 					name "url"
@@ -59,7 +56,6 @@ doc {
 					type "String"
 					optional true
 					since "4.1.3"
-					
 				}
 				column {
 					name "aclUuid"
@@ -69,7 +65,6 @@ doc {
 					type "String"
 					optional false
 					since "4.1.3"
-					
 				}
 				column {
 					name "resourceUuid"
@@ -79,7 +74,6 @@ doc {
 					type "String"
 					optional true
 					since "4.1.3"
-					
 				}
 				column {
 					name "tagUuids"
@@ -89,7 +83,6 @@ doc {
 					type "List"
 					optional true
 					since "4.1.3"
-					
 				}
 				column {
 					name "systemTags"
@@ -99,7 +92,6 @@ doc {
 					type "List"
 					optional true
 					since "4.1.3"
-					
 				}
 				column {
 					name "userTags"
@@ -109,7 +101,6 @@ doc {
 					type "List"
 					optional true
 					since "4.1.3"
-					
 				}
 			}
         }

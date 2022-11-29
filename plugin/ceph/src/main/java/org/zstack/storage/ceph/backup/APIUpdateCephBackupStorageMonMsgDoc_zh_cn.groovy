@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "hostname"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "sshUsername"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "sshPassword"
@@ -59,7 +56,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "sshPort"
@@ -69,7 +65,6 @@ doc {
 					type "Integer"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "monPort"
@@ -79,7 +74,6 @@ doc {
 					type "Integer"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -89,7 +83,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -99,7 +92,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "2.3"
-					
 				}
 				column {
 					name "excludePackages"
@@ -39,7 +38,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "updatePackages"
@@ -49,7 +47,6 @@ doc {
 					type "List"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "releaseVersion"
@@ -59,7 +56,6 @@ doc {
 					type "String"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "resourceUuid"
@@ -69,7 +65,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "tagUuids"
@@ -79,7 +74,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -89,7 +83,6 @@ doc {
 					type "List"
 					optional true
 					since "2.3"
-					
 				}
 				column {
 					name "userTags"
@@ -99,7 +92,6 @@ doc {
 					type "List"
 					optional true
 					since "2.3"
-					
 				}
 			}
         }

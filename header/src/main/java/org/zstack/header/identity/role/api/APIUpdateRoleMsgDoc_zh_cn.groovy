@@ -11,10 +11,9 @@ doc {
 
     rest {
         request {
-			url "PUT /v1/identities/roles/{uuid}"
+			url "PUT /v1/identities/roles/{uuid}/actions"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateRoleMsg.class
 
@@ -30,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "name"
@@ -38,9 +36,8 @@ doc {
 					desc "资源名称"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "description"
@@ -50,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "statements"
@@ -60,7 +56,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "policyUuids"
@@ -70,7 +65,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "systemTags"
@@ -80,7 +74,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -90,7 +83,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 			}
         }

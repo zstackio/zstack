@@ -2,7 +2,6 @@ package org.zstack.header.host
 
 import org.zstack.header.host.APIQueryHostReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryHost"

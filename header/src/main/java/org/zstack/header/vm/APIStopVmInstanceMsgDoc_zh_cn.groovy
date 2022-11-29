@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					
 				}
 				column {
 					name "type"
@@ -49,7 +48,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +57,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
 				}
 				column {
 					name "stopHA"
@@ -69,7 +66,6 @@ doc {
 					type "String"
 					optional true
 					since "2.2"
-					
 				}
 			}
         }

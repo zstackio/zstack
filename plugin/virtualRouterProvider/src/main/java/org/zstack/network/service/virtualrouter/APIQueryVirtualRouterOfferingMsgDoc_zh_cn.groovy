@@ -2,7 +2,6 @@ package org.zstack.network.service.virtualrouter
 
 import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterOfferingReply
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "查询虚拟路由器规格(QueryVirtualRouterOffering)"

@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "3.7"
-					
 				}
 				column {
 					name "soundType"
@@ -49,7 +48,6 @@ doc {
 					type "List"
 					optional true
 					since "3.7"
-					
 				}
 				column {
 					name "userTags"
@@ -59,7 +57,6 @@ doc {
 					type "List"
 					optional true
 					since "3.7"
-					
 				}
 			}
         }

@@ -6,7 +6,7 @@ import java.sql.Timestamp
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "已使用IP的结构清单"
 
 	field {
 		name "uuid"
@@ -28,25 +28,25 @@ doc {
 	}
 	field {
 		name "ipVersion"
-		desc "IP协议号"
+		desc ""
 		type "Integer"
-		since "3.1"
+		since "0.6"
 	}
 	field {
 		name "ip"
-		desc "IP地址"
+		desc ""
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "netmask"
-		desc "网络掩码"
+		desc ""
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "gateway"
-		desc "网关地址"
+		desc ""
 		type "String"
 		since "0.6"
 	}
@@ -66,7 +66,7 @@ doc {
 		name "vmNicUuid"
 		desc "云主机网卡UUID"
 		type "String"
-		since "3.1"
+		since "0.6"
 	}
 	field {
 		name "createDate"
