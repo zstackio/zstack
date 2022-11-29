@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateAffinityGroupAction extends AbstractAction {
+public class AddHostToHostSchedulingRuleGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateAffinityGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateAffinityGroupResult value;
+        public org.zstack.sdk.AddHostToHostSchedulingRuleGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,29 +25,11 @@ public class CreateAffinityGroupAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostGroupUuid;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, validValues = {"antiSoft","antiHard"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String policy;
-
-    @Param(required = false, validValues = {"host"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String subType;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -81,8 +63,8 @@ public class CreateAffinityGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateAffinityGroupResult value = res.getResult(org.zstack.sdk.CreateAffinityGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateAffinityGroupResult() : value; 
+        org.zstack.sdk.AddHostToHostSchedulingRuleGroupResult value = res.getResult(org.zstack.sdk.AddHostToHostSchedulingRuleGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddHostToHostSchedulingRuleGroupResult() : value; 
 
         return ret;
     }
@@ -112,10 +94,10 @@ public class CreateAffinityGroupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/affinity-groups";
+        info.path = "/hostSchedulingRuleGroup/{hostGroupUuid}/host/{hostUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
