@@ -201,6 +201,34 @@ doc {
 					since "4.1"
 					values ("tls_cipher_policy_default","tls_cipher_policy_1_0","tls_cipher_policy_1_1","tls_cipher_policy_1_2","tls_cipher_policy_1_2_strict","tls_cipher_policy_1_2_strict_with_1_3")
 				}
+				column {
+					name "sessionPersistence"
+					enclosedIn "changeLoadBalancerListener"
+					desc "会话保持模式"
+					location "body"
+					type "String"
+					optional true
+					since "4.6"
+					values ("disable","iphash","insert","rewrite")
+				}
+				column {
+					name "sessionIdleTimeout"
+					enclosedIn "changeLoadBalancerListener"
+					desc "会话保持超时时间"
+					location "body"
+					type "Integer"
+					optional true
+					since "4.6"
+				}
+				column {
+					name "cookieName"
+					enclosedIn "changeLoadBalancerListener"
+					desc "Cookie名称"
+					location "body"
+					type "String"
+					optional true
+					since "4.6"
+				}
 			}
         }
 
