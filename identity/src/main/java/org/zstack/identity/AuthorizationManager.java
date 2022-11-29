@@ -138,12 +138,12 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
         findAuthorizationBackend(session).validatePermission(targetApis, session);
     }
 
-    public static ErrorCode createAdditionAuthErrorCode(String credentials, String... authentications) {
+    public static ErrorCode createAdditionAuthErrorCode(Map<String, String> properties, String... authentications) {
         JsonObject o = new JsonObject();
         JsonArray authArray = new JsonArray(authentications.length);
         Arrays.asList(authentications).forEach(authArray::add);
         o.add("authentications", authArray);
-        o.addProperty("credentials", credentials);
+        properties.forEach(o::addProperty);
         return err(IdentityErrors.NEED_ADDITION_AUTHENTICATION, "%s", o.toString());
     }
 }
