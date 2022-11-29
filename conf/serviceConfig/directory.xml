@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>directory</id>
+    <interceptor>DirectoryApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.directory.APICreateDirectoryMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.directory.APIDeleteDirectoryMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.directory.APIMoveDirectoryMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.directory.APIUpdateDirectoryMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.directory.APIAddResourcesToDirectoryMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.directory.APIRemoveResourcesFromDirectoryMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.directory.APIMoveResourcesToDirectoryMsg</name>
+    </message>
+</service>

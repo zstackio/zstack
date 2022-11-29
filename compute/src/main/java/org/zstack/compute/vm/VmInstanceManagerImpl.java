@@ -25,6 +25,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.thread.*;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.directory.ResourceDirectoryRefVO;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
@@ -76,7 +77,9 @@ import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagCreator;
+import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.ObjectUtils;
@@ -110,7 +113,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         ResourceOwnerAfterChangeExtensionPoint,
         GlobalApiMessageInterceptor,
         AfterChangeHostStatusExtensionPoint,
-        VmInstanceMigrateExtensionPoint {
+        VmInstanceMigrateExtensionPoint,
+        VmInstanceBeforeStartExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private List<String> createVmWorkFlowElements;
     private List<String> stopVmWorkFlowElements;
@@ -2375,5 +2379,24 @@ public class VmInstanceManagerImpl extends AbstractService implements
     @Override
     public VmNicQosConfigBackend getVmNicQosConfigBackend(String type) {
         return vmFactoryManager.getVmNicQosConfigBackend(type);
+    }
+
+    @Override
+    public ErrorCode handleSystemTag(String vmUuid, List<String> tags) {
+        PatternedSystemTag tag = VmSystemTags.DIRECTORY_UUID;
+        String token = VmSystemTags.DIRECTORY_UUID_TOKEN;
+
+        String directoryUuid = SystemTagUtils.findTagValue(tags, tag, token);
+        if (StringUtils.isEmpty(directoryUuid)) {
+            return null;
+        }
+        ResourceDirectoryRefVO refVO = new ResourceDirectoryRefVO();
+        refVO.setResourceUuid(vmUuid);
+        refVO.setDirectoryUuid(directoryUuid);
+        refVO.setResourceType(VmInstanceVO.class.getSimpleName());
+        refVO.setLastOpDate(new Timestamp(new Date().getTime()));
+        refVO.setCreateDate(new Timestamp(new Date().getTime()));
+        dbf.persist(refVO);
+        return null;
     }
 }
