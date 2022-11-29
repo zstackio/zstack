@@ -179,6 +179,9 @@ public class VmSystemTags {
             new PatternedSystemTag(String.format("l3::{%s}::SecurityGroupUuids::{%s}", L3_UUID_TOKEN, SECURITY_GROUP_UUIDS_TOKEN),
                     VmInstanceVO.class);
 
+    public static String DIRECTORY_UUID_TOKEN = "directoryUuid";
+    public static PatternedSystemTag DIRECTORY_UUID = new PatternedSystemTag(String.format("directoryUuid::{%s}", DIRECTORY_UUID_TOKEN), VmInstanceVO.class);
+
     public static class UserdataTagOutputHandler implements SensitiveTagOutputHandler {
         private final String chpasswd = "chpasswd";
         private final String list = "list";
