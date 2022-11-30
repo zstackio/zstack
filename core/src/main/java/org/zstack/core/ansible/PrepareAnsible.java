@@ -66,7 +66,7 @@ public class PrepareAnsible {
         try {
             while ((line = bf.readLine()) != null) {
                 line = StringUtils.strip(line.trim(), "\t\r\n");
-                if (line.equals(targetIp.trim())) {
+                if (line.equals(String.format("%s ansible_python_interpreter=/usr/bin/python2", targetIp.trim()))) {
                     return true;
                 }
             }
