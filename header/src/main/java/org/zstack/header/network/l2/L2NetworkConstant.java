@@ -14,6 +14,15 @@ public interface L2NetworkConstant {
     public static final String L2_NO_VLAN_NETWORK_TYPE = "L2NoVlanNetwork";
     @PythonClass
     public static final String L2_VLAN_NETWORK_TYPE = "L2VlanNetwork";
+    @PythonClass
+    public static final String HARDWARE_VXLAN_NETWORK_POOL_TYPE = "HardwareVxlanNetworkPool";
+    @PythonClass
+    public static final String HARDWARE_VXLAN_NETWORK_TYPE = "HardwareVxlanNetwork";
+    public static final String L2_TF_NETWORK_TYPE = "TfL2Network";
+    @PythonClass
+    public static final String VXLAN_NETWORK_TYPE = "VxlanNetwork";
+    @PythonClass
+    public static final String VXLAN_NETWORK_POOL_TYPE = "VxlanNetworkPool";
 
     @PythonClass
     public static final String VSWITCH_TYPE_LINUX_BRIDGE = "LinuxBridge";

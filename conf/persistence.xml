@@ -167,6 +167,9 @@
         <class>org.zstack.header.vm.VmInstanceNumaNodeVO</class>
         <class>org.zstack.header.host.HostNumaNodeVO</class>
         <class>org.zstack.header.core.encrypt.EncryptionIntegrityVO</class>
-
+        <class>org.zstack.sdnController.header.SdnControllerVO</class>
+        <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO</class>
+        <class>org.zstack.sdnController.header.VxlanHostMappingVO</class>
+        <class>org.zstack.sdnController.header.VxlanClusterMappingVO</class>
     </persistence-unit>
 </persistence>

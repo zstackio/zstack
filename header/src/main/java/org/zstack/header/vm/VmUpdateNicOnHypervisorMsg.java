@@ -6,6 +6,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class VmUpdateNicOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
     private String vmInstanceUuid;
+    private boolean notifySugonSdn;
 
     @Override
     public String getHostUuid() {
@@ -22,5 +23,13 @@ public class VmUpdateNicOnHypervisorMsg extends NeedReplyMessage implements Host
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
+    }
+
+    public boolean isNotifySugonSdn() {
+        return notifySugonSdn;
+    }
+
+    public void setNotifySugonSdn(boolean notifySugonSdn) {
+        this.notifySugonSdn = notifySugonSdn;
     }
 }
