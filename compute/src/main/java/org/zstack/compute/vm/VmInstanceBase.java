@@ -2202,7 +2202,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
 
                     if (amsg.hasSystemTag(VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF::isMatch)) {
-                        tagMgr.createInherentSystemTags(amsg.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
+                        tagMgr.createNonInherentSystemTags(amsg.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
                         isSet = true;
                     }
                 }
@@ -2223,7 +2223,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     VmAttachNicMsg amsg = (VmAttachNicMsg) msg;
 
                     if (amsg.hasSystemTag(VmSystemTags.CUSTOM_MAC::isMatch)) {
-                        tagMgr.createInherentSystemTags(amsg.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
+                        tagMgr.createNonInherentSystemTags(amsg.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
                         isSet = true;
                     }
                 }
