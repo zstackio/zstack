@@ -4,6 +4,8 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.*;
 import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
+import org.reflections.util.FilterBuilder;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
@@ -17,9 +19,18 @@ import static java.util.Arrays.asList;
 /**
  */
 public class BeanUtils {
-    public static Reflections reflections = new Reflections(ClasspathHelper.forPackage("org.zstack"),
-            new SubTypesScanner(), new MethodAnnotationsScanner(), new FieldAnnotationsScanner(),
-            new TypeAnnotationsScanner(), new MethodParameterScanner());
+    public static Reflections reflections;
+
+    static {
+        ConfigurationBuilder builder = ConfigurationBuilder.build()
+                .setUrls(ClasspathHelper.forPackage("org.zstack"))
+                .setScanners(Scanners.SubTypes, Scanners.MethodsAnnotated,
+                        Scanners.FieldsAnnotated, Scanners.TypesAnnotated,
+                        Scanners.MethodsParameter)
+                .setExpandSuperTypes(false)
+                .filterInputsBy(new FilterBuilder().includePackage("org.zstack"));
+        reflections = new Reflections(builder);
+    }
 
     private static Object getProperty(Object bean, Iterator<String> it) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         String path = it.next();
