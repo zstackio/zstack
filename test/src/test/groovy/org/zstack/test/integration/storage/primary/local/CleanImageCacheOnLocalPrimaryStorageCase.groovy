@@ -11,6 +11,7 @@ import org.zstack.header.storage.primary.ImageCacheVO_
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.sdk.ApplianceVmInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -142,7 +143,7 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
                 }
 
                 virtualRouterOffering {
-                    name = "vr"
+                    name = "vr-instance"
                     memory = SizeUnit.MEGABYTE.toByte(512)
                     cpu = 2
                     useManagementL3Network("pubL3")
@@ -176,6 +177,7 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
     void testDelete(){
         PrimaryStorageInventory localps = env.inventoryByName("local-ps")
         ImageInventory image1 = env.inventoryByName("image1")
+        ImageInventory vrImage = env.inventoryByName("vr")
 
         ImageCacheVO c = Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid,image1.getUuid()).find()
         assert c != null
@@ -207,6 +209,19 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
         retryInSecs {
             assert Q.New(ImageCacheShadowVO.class).eq(ImageCacheShadowVO_.imageUuid, image1.getUuid()).find() == null
             assert Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, image1.getUuid()).find() == null
+        }
+
+        ApplianceVmInventory vr = queryApplianceVm {}[0] as ApplianceVmInventory
+        destroyVmInstance {
+            uuid = vr.uuid
+        }
+        retryInSecs {
+            assert !Q.New(ImageCacheShadowVO.class)
+                    .eq(ImageCacheShadowVO_.imageUuid, vrImage.getUuid())
+                    .isExists()
+            assert !Q.New(ImageCacheVO.class)
+                    .eq(ImageCacheVO_.imageUuid, vrImage.getUuid())
+                    .isExists()
         }
     }
 }
