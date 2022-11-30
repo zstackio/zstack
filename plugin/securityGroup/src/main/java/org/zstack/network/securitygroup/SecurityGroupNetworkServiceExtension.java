@@ -58,7 +58,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                 if (!Q.New(VmNicSecurityGroupRefVO.class)
                         .eq(VmNicSecurityGroupRefVO_.vmNicUuid, vmNicUuid)
                         .eq(VmNicSecurityGroupRefVO_.securityGroupUuid, securityGroupUuid)
-                        .eq(VmNicSecurityGroupRefVO_.vmNicUuid, vmUuid)
+                        .eq(VmNicSecurityGroupRefVO_.vmInstanceUuid, vmUuid)
                         .isExists()) {
                     VmNicSecurityGroupRefVO refVO = new VmNicSecurityGroupRefVO();
                     refVO.setUuid(Platform.getUuid());
