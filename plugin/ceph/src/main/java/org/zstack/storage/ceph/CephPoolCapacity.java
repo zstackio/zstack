@@ -1,5 +1,7 @@
 package org.zstack.storage.ceph;
 
+import java.util.Map;
+
 /**
  * Created by lining on 2018/4/1.
  */
@@ -12,6 +14,52 @@ public class CephPoolCapacity {
     Long usedCapacity;
     Long totalCapacity;
     String relatedOsds;
+    Map<String, OsdCapacity> relatedOsdCapacity;
+
+    public static class OsdCapacity {
+        Long availableCapacity;
+        Long usedCapacity;
+        Long size;
+
+        public OsdCapacity(){}
+        public OsdCapacity(Long availableCapacity, Long usedCapacity, Long size) {
+            this.availableCapacity = availableCapacity;
+            this.usedCapacity = usedCapacity;
+            this.size = size;
+        }
+
+        public Long getAvailableCapacity() {
+            return availableCapacity;
+        }
+
+        public void setAvailableCapacity(Long availableCapacity) {
+            this.availableCapacity = availableCapacity;
+        }
+
+        public Long getUsedCapacity() {
+            return usedCapacity;
+        }
+
+        public void setUsedCapacity(Long usedCapacity) {
+            this.usedCapacity = usedCapacity;
+        }
+
+        public Long getSize() {
+            return size;
+        }
+
+        public void setSize(Long size) {
+            this.size = size;
+        }
+    }
+
+    public Map<String, OsdCapacity> getRelatedOsdCapacity() {
+        return relatedOsdCapacity;
+    }
+
+    public void setRelatedOsdCapacity(Map<String, OsdCapacity> relatedOsdCapacity) {
+        this.relatedOsdCapacity = relatedOsdCapacity;
+    }
 
     public String getRelatedOsds() {
         return relatedOsds;
