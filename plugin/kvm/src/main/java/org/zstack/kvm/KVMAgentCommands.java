@@ -2671,6 +2671,39 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class GetVmVirtualizerVersionCmd extends AgentCommand {
+        private String uuid;
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+    }
+
+    public static class GetVmVirtualizerVersionRsp extends AgentResponse {
+        private String virtualizer;
+        private String version;
+
+        public void setVirtualizer(String virtualizer) {
+            this.virtualizer = virtualizer;
+        }
+
+        public String getVirtualizer() {
+            return virtualizer;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+    }
+    
     public static class VmDeviceAddressTO {
         private String addressType;
         private String address;
