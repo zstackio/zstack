@@ -12,10 +12,6 @@ public interface IpAllocateMessage {
     default String getExcludedIp() {
         return null;
     }
-
     default boolean isDuplicatedIpAllowed() {return false;}
-
-    void setIpRangeUuid(String ipRangeUuid);
-
-    void setRequiredIp(String requiredIp);
+    default boolean isUseAddressPoolIfNotRequiredIpRange() { return false; }
 }

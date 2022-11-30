@@ -4,11 +4,8 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.network.l3.*;
 import org.zstack.utils.network.IPv6Constants;
-import org.zstack.utils.network.IPv6NetworkUtils;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,7 +59,7 @@ public class IpRangeHelper {
         }
 
         List<String> uuids = l3inv.getIpRanges().stream().map(IpRangeInventory::getUuid).collect(Collectors.toList());
-        return AddressPoolInventory.valueOf1(Q.New(AddressPoolVO.class).in(AddressPoolVO_.uuid, uuids).list());
+        return AddressPoolInventory.valueOf1(Q.New(AddressPoolVO.class).in(NormalIpRangeVO_.uuid, uuids).list());
     }
 
     public static List<IpRangeInventory> getAddressPools(L3NetworkVO vo) {
@@ -71,7 +68,7 @@ public class IpRangeHelper {
         }
 
         List<String> uuids = vo.getIpRanges().stream().map(IpRangeVO::getUuid).collect(Collectors.toList());
-        return AddressPoolInventory.valueOf1(Q.New(AddressPoolVO.class).in(AddressPoolVO_.uuid, uuids).list());
+        return AddressPoolInventory.valueOf1(Q.New(AddressPoolVO.class).in(NormalIpRangeVO_.uuid, uuids).list());
     }
 
     public static void updateL3NetworkIpversion(IpRangeVO ipr) {
@@ -100,30 +97,6 @@ public class IpRangeHelper {
 
         if (l3VO.getIpVersion() != ipVersion) {
             SQL.New(L3NetworkVO.class).set(L3NetworkVO_.ipVersion, ipVersion).eq(L3NetworkVO_.uuid, l3VO.getUuid()).update();
-        }
-    }
-
-    public static String getIpRangeType(String ipRangeUuid) {
-        List<IpRangeVO> normalRanges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ipRangeUuid).list();
-        return normalRanges.size() > 0 ? IpRangeType.Normal.toString() : IpRangeType.AddressPool.toString();
-    }
-
-    public static List<BigInteger> getUsedIpInRange(String ipRangeUuid, int ipVersion) {
-        Q q = Q.New(UsedIpVO.class).eq(UsedIpVO_.ipRangeUuid, ipRangeUuid);
-        if (!getIpRangeType(ipRangeUuid).equals(IpRangeType.AddressPool.toString())) {
-            String gateway = Q.New(IpRangeVO.class).select(IpRangeVO_.gateway)
-                    .eq(IpRangeVO_.uuid, ipRangeUuid).findValue();
-            q.notEq(UsedIpVO_.ip, gateway);
-        }
-        if (ipVersion == IPv6Constants.IPv4) {
-            q.select(UsedIpVO_.ipInLong);
-            List<Long> used = q.listValues();
-            Collections.sort(used);
-            return used.stream().distinct().map(l -> new BigInteger(String.valueOf(l))).collect(Collectors.toList());
-        } else {
-            q.select(UsedIpVO_.ip);
-            List<String> used = q.listValues();
-            return used.stream().distinct().map(IPv6NetworkUtils::getBigIntegerFromString).sorted().collect(Collectors.toList());
         }
     }
 }

@@ -18,7 +18,6 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.allocator.ResourceBindingStrategy;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
@@ -30,7 +29,6 @@ import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -76,8 +74,6 @@ public class L3BasicNetwork implements L3Network {
     protected PluginRegistry pluginRgty;
     @Autowired
     private ThreadFacade thdf;
-    @Autowired
-    private ResourceConfigFacade rcf;
 
     private L3NetworkVO self;
 
@@ -260,17 +256,9 @@ public class L3BasicNetwork implements L3Network {
         }
 
         if (msg.getIpVersion() == IPv6Constants.IPv4) {
-            String ias = rcf.getResourceConfigValue(L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY, msg.getL3NetworkUuid(), String.class);
-            if (ias != null) {
-                return IpAllocatorType.valueOf(ias);
-            }
             return RandomIpAllocatorStrategy.type;
         }
 
-        String ias = rcf.getResourceConfigValue(L3NetworkGlobalConfig.IPV6_ALLOCATE_STRATEGY, msg.getL3NetworkUuid(), String.class);
-        if (ias != null) {
-            return IpAllocatorType.valueOf(ias);
-        }
         return RandomIpv6AllocatorStrategy.type;
     }
 

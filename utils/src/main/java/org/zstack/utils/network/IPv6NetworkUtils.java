@@ -54,8 +54,6 @@ public class IPv6NetworkUtils {
 
         if (!isConsecutiveRange(part1)) {
             return findFirstHoleByDichotomy(part1);
-        } else if (part2[0].compareTo(part1[part1.length-1].add(BigInteger.ONE)) > 0) {
-            return part1[part1.length-1].add(BigInteger.ONE);
         } else {
             return findFirstHoleByDichotomy(part2);
         }
@@ -255,11 +253,10 @@ public class IPv6NetworkUtils {
     }
 
     public static boolean isIpv6RangeFull(String startIp, String endIp, long used) {
-        IPv6Address start = IPv6Address.fromString(startIp);
-        IPv6Address end = IPv6Address.fromString(endIp);
-        IPv6AddressRange range = IPv6AddressRange.fromFirstAndLast(start, end);
-        
-        return range.size().compareTo(new BigInteger(String.valueOf(used))) <= 0;
+        BigInteger start = IPv6Address.fromString(startIp).toBigInteger();
+        BigInteger end = IPv6Address.fromString(endIp).toBigInteger();
+
+        return end.subtract(start).compareTo(new BigInteger(String.valueOf(used))) <= 0;
     }
 
     public static BigInteger getBigIntegerFromString(String ip) {

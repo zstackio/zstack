@@ -12,14 +12,13 @@ import org.zstack.utils.network.NetworkUtils;
 
 import java.math.BigInteger;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class FirstAvailableIpAllocatorStrategy extends AbstractIpAllocatorStrategy{
     private static final CLogger logger = Utils.getLogger(FirstAvailableIpAllocatorStrategy.class);
     private static final IpAllocatorType type = new IpAllocatorType(L3NetworkConstant.FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY);
-
+    
     @Override
     public IpAllocatorType getType() {
         return type;
@@ -27,14 +26,12 @@ public class FirstAvailableIpAllocatorStrategy extends AbstractIpAllocatorStrate
     
     private String allocateIp(IpRangeVO vo, String excludeIp) {
         List<BigInteger> used = l3NwMgr.getUsedIpInRange(vo);
-        if (excludeIp != null) {
-            used.add(new BigInteger(String.valueOf(NetworkUtils.ipv4StringToLong(excludeIp))));
-            Collections.sort(used);
-        }
+        used.add(new BigInteger(String.valueOf(NetworkUtils.ipv4StringToLong(excludeIp))));
         List<Long> usedIP = used.stream().map(BigInteger::longValue).collect(Collectors.toList());
+        Collections.sort(used);
         return NetworkUtils.findFirstAvailableIpv4Address(vo.getStartIp(), vo.getEndIp(), usedIP.toArray(new Long[usedIP.size()]));
     }
-
+    
     @Override
     public UsedIpInventory allocateIp(IpAllocateMessage msg) {
         if (msg.getRequiredIp() != null) {
@@ -42,7 +39,18 @@ public class FirstAvailableIpAllocatorStrategy extends AbstractIpAllocatorStrate
         }
 
         String excludeIp = msg.getExcludedIp();
-        List<IpRangeVO> ranges = getReqIpRanges(msg, IPv6Constants.IPv4);
+        List<IpRangeVO> ranges;
+        /* when allocate ip address from address pool, ipRangeUuid is not null  except for vip */
+        if (msg.getIpRangeUuid() != null) {
+            ranges = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
+        } else {
+            ranges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                    .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
+            if (msg.isUseAddressPoolIfNotRequiredIpRange())/* for vip */ {
+                ranges.addAll(Q.New(AddressPoolVO.class).eq(AddressPoolVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .eq(AddressPoolVO_.ipVersion, IPv6Constants.IPv4).list());
+            }
+        }
 
         do {
             String ip = null;

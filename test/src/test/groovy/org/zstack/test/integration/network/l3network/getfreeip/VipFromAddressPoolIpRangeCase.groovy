@@ -158,6 +158,7 @@ class VipFromAddressPoolIpRangeCase extends SubCase {
         deleteIpRangeFromL3Network(ipr4_pool.uuid, ipr4_normal.uuid)
     }
 
+    //case QA reported
     void AllocateIpNotRequiredIpRangeRequiredIp()  {
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
         IpRangeInventory ipr4_pool = addPoolIpRangesToL3Network(l3)
@@ -173,12 +174,14 @@ class VipFromAddressPoolIpRangeCase extends SubCase {
             vipUuid = vip1.uuid
         }
 
-        expect(AssertionError.class) {
-            VipInventory vip2 = createVip {
-                name = "vip2"
-                l3NetworkUuid = l3.uuid
-                requiredIp = "192.168.0.2"
-            }
+        VipInventory vip2 = createVip {
+            name = "vip2"
+            l3NetworkUuid = l3.uuid
+            requiredIp = "192.168.0.2"
+        }
+        EipInventory eip2 = createEip {
+            name = "eip2"
+            vipUuid = vip2.uuid
         }
 
         deleteIpRangeFromL3Network(ipr4_pool.uuid, ipr4_normal.uuid)
@@ -198,11 +201,13 @@ class VipFromAddressPoolIpRangeCase extends SubCase {
             vipUuid = vip1.uuid
         }
 
-        expect(AssertionError.class) {
-            VipInventory vip2 = createVip {
-                name = "vip2"
-                l3NetworkUuid = l3.uuid
-            }
+        VipInventory vip2 = createVip {
+            name = "vip2"
+            l3NetworkUuid = l3.uuid
+        }
+        EipInventory eip2 = createEip {
+            name = "eip2"
+            vipUuid = vip2.uuid
         }
 
         deleteIpRangeFromL3Network(ipr4_pool.uuid, ipr4_normal.uuid)

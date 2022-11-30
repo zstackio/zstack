@@ -4,7 +4,6 @@ import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.EntityGraph;
-import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -32,4 +31,5 @@ public class IpRangeVO extends IpRangeAO implements OwnedByAccount {
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
     }
+
 }

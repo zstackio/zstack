@@ -15,12 +15,4 @@ public class L3NetworkSystemTags {
 
     public static String PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN = "dhcpServerUuid";
     public static PatternedSystemTag PUBLIC_NETWORK_DHCP_SERVER_UUID = new PatternedSystemTag(String.format("dhcpServerUuid::{%s}", PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN), L3NetworkVO.class);
-
-    public static String NETWORK_ASC_DELAY_NORMAL_NEXT_IPRANGE_UUID_TOKEN = "ascDelayNormalNextIpRangeUuid";
-    public static String NETWORK_ASC_DELAY_NORMAL_NEXT_IP_TOKEN = "ascDelayNormalNextIp";
-    public static PatternedSystemTag NETWORK_ASC_DELAY_NORMAL_NEXT_IP = new PatternedSystemTag(String.format("ascDelayNormalNextIp::{%s}::{%s}", NETWORK_ASC_DELAY_NORMAL_NEXT_IPRANGE_UUID_TOKEN, NETWORK_ASC_DELAY_NORMAL_NEXT_IP_TOKEN), L3NetworkVO.class);
-
-    public static String NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IPRANGE_UUID_TOKEN = "ascDelayAddressPoolNextIpRangeUuid";
-    public static String NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IP_TOKEN = "ascDelayAddressPoolNextIp";
-    public static PatternedSystemTag NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IP = new PatternedSystemTag(String.format("ascDelayAddressPoolNextIp::{%s}::{%s}", NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IPRANGE_UUID_TOKEN, NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IP_TOKEN), L3NetworkVO.class);
 }
