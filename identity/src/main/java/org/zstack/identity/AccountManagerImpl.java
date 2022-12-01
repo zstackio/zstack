@@ -32,6 +32,9 @@ import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.quota.QuotaDefinition;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
+import org.zstack.header.identity.login.LogInMsg;
+import org.zstack.header.identity.login.LogInReply;
+import org.zstack.header.identity.login.LoginManager;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RestAuthenticationBackend;
@@ -518,54 +521,35 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void handle(APILogInByAccountMsg msg) {
         APILogInReply reply = new APILogInReply();
 
-        AccountLoginStruct struct = null;
-
-        SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-        q.add(AccountVO_.name, Op.EQ, msg.getAccountName());
-        q.add(AccountVO_.password, Op.EQ, msg.getPassword());
-        AccountVO vo = q.find();
-
-        // if accountName/password not exists or specific type is set
-        // use extension to get login structure
-        if (vo == null || (msg.getAccountType() != null && !msg.getAccountType().equals(AccountConstant.LOGIN_TYPE))) {
-            for (AccountLoginExtensionPoint ext : pluginRgty.getExtensionList(AccountLoginExtensionPoint.class)) {
-                struct = ext.getLoginEntry(msg.getAccountName(), msg.getPassword(), msg.getAccountType());
-
-                if (struct != null) {
-                    break;
+        LogInMsg logInMsg = new LogInMsg();
+        logInMsg.setVerifyCode(msg.getVerifyCode());
+        logInMsg.setCaptchaUuid(msg.getCaptchaUuid());
+        logInMsg.setPassword(msg.getPassword());
+        logInMsg.setUsername(msg.getAccountName());
+        logInMsg.setLoginType(msg.getLoginType());
+        logInMsg.setSystemTags(msg.getSystemTags());
+        logInMsg.setClientInfo(msg.getClientInfo());
+        logInMsg.getProperties().put(AccountConstant.ACCOUNT_TYPE, msg.getAccountType());
+        bus.makeTargetServiceIdByResourceUuid(logInMsg, LoginManager.SERVICE_ID, logInMsg.getUsername());
+        bus.send(logInMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                    bus.reply(msg, reply);
+                    return;
                 }
-            }
-        } else {
-            struct = new AccountLoginStruct();
-            struct.setAccountUuid(vo.getUuid());
-            struct.setUserUuid(vo.getUuid());
-            struct.setResourceType(AccountVO.class.getSimpleName());
-        }
 
-        if (struct == null) {
-            reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR, "wrong account name or password"));
-            bus.reply(msg, reply);
-            return;
-        }
+                LogInReply logInReply = r.castReply();
+                IdentityCanonicalEvents.AccountLoginData data = new IdentityCanonicalEvents.AccountLoginData();
+                data.setAccountUuid(logInReply.getSession().getAccountUuid());
+                data.setUserUuid(logInReply.getSession().getUserUuid());
+                evtf.fire(IdentityCanonicalEvents.ACCOUNT_LOGIN_PATH, data);
 
-        for (AdditionalLoginExtensionPoint exp : pluginRgty.getExtensionList(AdditionalLoginExtensionPoint.class)){
-            ErrorCode errorCode = exp.authenticate(msg, struct.getUserUuid(), struct.getResourceType());
-            if (errorCode != null) {
-                reply.setError(errorCode);
+                reply.setInventory(logInReply.getSession());
                 bus.reply(msg, reply);
-                return;
             }
-        }
-
-        SessionInventory session = getSession(struct.getAccountUuid(), struct.getUserUuid());
-        msg.setSession(session);
-        IdentityCanonicalEvents.AccountLoginData data = new IdentityCanonicalEvents.AccountLoginData();
-        data.setAccountUuid(struct.getAccountUuid());
-        data.setUserUuid(struct.getUserUuid());
-        evtf.fire(IdentityCanonicalEvents.ACCOUNT_LOGIN_PATH, data);
-
-        reply.setInventory(session);
-        bus.reply(msg, reply);
+        });
     }
 
     private void handle(CreateAccountMsg msg) {

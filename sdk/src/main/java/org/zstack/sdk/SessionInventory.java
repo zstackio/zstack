@@ -28,6 +28,14 @@ public class SessionInventory  {
         return this.userUuid;
     }
 
+    public java.lang.String userType;
+    public void setUserType(java.lang.String userType) {
+        this.userType = userType;
+    }
+    public java.lang.String getUserType() {
+        return this.userType;
+    }
+
     public java.sql.Timestamp expiredDate;
     public void setExpiredDate(java.sql.Timestamp expiredDate) {
         this.expiredDate = expiredDate;

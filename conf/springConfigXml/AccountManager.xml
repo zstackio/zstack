@@ -53,6 +53,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="AccountLoginBackend" class="org.zstack.identity.AccountLoginBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.identity.login.LoginBackend"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="IAMIdentityResourceGenerator" class="org.zstack.identity.IAMIdentityResourceGenerator">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.identity.IdentityResourceGenerateExtensionPoint"/>

@@ -13,6 +13,7 @@ public class SessionInventory implements Serializable {
     private String uuid;
     private String accountUuid;
     private String userUuid;
+    private String userType;
     private Timestamp expiredDate;
     private Timestamp createDate;
     @APINoSee
@@ -82,5 +83,13 @@ public class SessionInventory implements Serializable {
 
     public void setNoSessionEvaluation(boolean noSessionEvaluation) {
         this.noSessionEvaluation = noSessionEvaluation;
+    }
+
+    public String getUserType() {
+        return userType;
+    }
+
+    public void setUserType(String userType) {
+        this.userType = userType;
     }
 }

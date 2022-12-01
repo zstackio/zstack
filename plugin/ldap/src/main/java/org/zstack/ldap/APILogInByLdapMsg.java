@@ -2,9 +2,11 @@ package org.zstack.ldap;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.http.HttpMethod;
+import org.zstack.header.identity.APILogInReply;
 import org.zstack.header.identity.APISessionMessage;
 import org.zstack.header.identity.SessionVO;
 import org.zstack.header.identity.SuppressCredentialCheck;
+import org.zstack.header.identity.login.APICaptchaMessage;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -21,7 +23,7 @@ import java.util.Map;
         isAction = true,
         responseClass = APILogInByLdapReply.class
 )
-public class APILogInByLdapMsg extends APISessionMessage implements APILoginAuditor {
+public class APILogInByLdapMsg extends APISessionMessage implements APILoginAuditor, APICaptchaMessage {
     @APIParam
     private String uid;
     @APIParam(password = true)
@@ -33,10 +35,6 @@ public class APILogInByLdapMsg extends APISessionMessage implements APILoginAudi
     private String captchaUuid;
     @APIParam(required = false)
     private Map<String, String> clientInfo;
-
-    public String getPassword() {
-        return password;
-    }
 
     public void setPassword(String password) {
         this.password = password;
@@ -98,7 +96,22 @@ public class APILogInByLdapMsg extends APISessionMessage implements APILoginAudi
             clientIp = StringUtils.isNotEmpty(clientInfo.get("clientIp")) ? clientInfo.get("clientIp") : "";
             clientBrowser = StringUtils.isNotEmpty(clientInfo.get("clientBrowser")) ? clientInfo.get("clientBrowser") : "";
         }
-        String resourceUuid = reply.isSuccess() ? amsg.getSession().getUuid() : "";
+        String resourceUuid = reply.isSuccess() ? ((APILogInByLdapReply) reply).getInventory().getUuid() : "";
         return new LoginResult(clientIp, clientBrowser, resourceUuid, SessionVO.class);
+    }
+
+    @Override
+    public String getUsername() {
+        return uid;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getLoginType() {
+        return LdapConstant.LOGIN_TYPE;
     }
 }

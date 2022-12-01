@@ -55,10 +55,6 @@ public class APILogInByUserMsg extends APISessionMessage implements APILoginAudi
         this.userName = userName;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
     public void setPassword(String password) {
         this.password = password;
     }
@@ -96,7 +92,22 @@ public class APILogInByUserMsg extends APISessionMessage implements APILoginAudi
             clientIp = StringUtils.isNotEmpty(clientInfo.get("clientIp")) ? clientInfo.get("clientIp") : "";
             clientBrowser = StringUtils.isNotEmpty(clientInfo.get("clientBrowser")) ? clientInfo.get("clientBrowser") : "";
         }
-        String resourceUuid = reply.isSuccess() ? amsg.getSession().getUuid() : "";
+        String resourceUuid = reply.isSuccess() ? ((APILogInReply) reply).getInventory().getUuid() : "";
         return new LoginResult(clientIp, clientBrowser, resourceUuid, SessionVO.class);
+    }
+
+    @Override
+    public String getUsername() {
+        return userName;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getLoginType() {
+        return AccountConstant.LOGIN_TYPE;
     }
 }

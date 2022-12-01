@@ -219,6 +219,7 @@ public class SourceClassMap {
 			put("org.zstack.header.identity.StatementEffect", "org.zstack.sdk.PolicyStatementEffect");
 			put("org.zstack.header.identity.UserGroupInventory", "org.zstack.sdk.UserGroupInventory");
 			put("org.zstack.header.identity.UserInventory", "org.zstack.sdk.UserInventory");
+			put("org.zstack.header.identity.login.LoginAuthenticationProcedureDesc", "org.zstack.sdk.LoginAuthenticationProcedureDesc");
 			put("org.zstack.header.identity.role.RoleInventory", "org.zstack.sdk.identity.role.RoleInventory");
 			put("org.zstack.header.identity.role.RolePolicyRefInventory", "org.zstack.sdk.identity.role.RolePolicyRefInventory");
 			put("org.zstack.header.identity.role.RolePolicyStatementInventory", "org.zstack.sdk.identity.role.RolePolicyStatementInventory");
@@ -884,6 +885,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LoadBalancerServerGroupVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefInventory");
 			put("org.zstack.sdk.LocalStorageResourceRefInventory", "org.zstack.storage.primary.local.LocalStorageResourceRefInventory");
 			put("org.zstack.sdk.LocateStatus", "org.zstack.storage.device.localRaid.LocateStatus");
+			put("org.zstack.sdk.LoginAuthenticationProcedureDesc", "org.zstack.header.identity.login.LoginAuthenticationProcedureDesc");
 			put("org.zstack.sdk.LongJobInventory", "org.zstack.header.longjob.LongJobInventory");
 			put("org.zstack.sdk.LongJobState", "org.zstack.header.longjob.LongJobState");
 			put("org.zstack.sdk.ManagementNodeInventory", "org.zstack.header.managementnode.ManagementNodeInventory");

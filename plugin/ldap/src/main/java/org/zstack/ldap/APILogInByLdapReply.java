@@ -13,20 +13,20 @@ public class APILogInByLdapReply extends APILogInAuditorReply {
     private SessionInventory inventory;
     private AccountInventory accountInventory;
 
-    public SessionInventory getInventory() {
-        return inventory;
-    }
-
-    public void setInventory(SessionInventory inventory) {
-        this.inventory = inventory;
-    }
-
     public AccountInventory getAccountInventory() {
         return accountInventory;
     }
 
     public void setAccountInventory(AccountInventory accountInventory) {
         this.accountInventory = accountInventory;
+    }
+
+    public SessionInventory getInventory() {
+        return inventory;
+    }
+
+    public void setInventory(SessionInventory inventory) {
+        this.inventory = inventory;
     }
 
     public static APILogInByLdapReply __example__() {

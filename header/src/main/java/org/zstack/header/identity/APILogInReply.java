@@ -1,11 +1,16 @@
 package org.zstack.header.identity;
 
+import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
 import java.sql.Timestamp;
 
+/**
+ * author:kaicai.hu
+ * Date:2019/4/24
+ */
 @RestResponse(allTo = "inventory")
-public class APILogInReply extends APILogInAuditorReply {
+public class APILogInReply extends APIReply {
     private SessionInventory inventory;
 
     public SessionInventory getInventory() {
@@ -27,5 +32,4 @@ public class APILogInReply extends APILogInAuditorReply {
         reply.setInventory(inventory);
         return reply;
     }
-
 }
