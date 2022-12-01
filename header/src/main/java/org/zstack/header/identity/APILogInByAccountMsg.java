@@ -2,6 +2,7 @@ package org.zstack.header.identity;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.http.HttpMethod;
+import org.zstack.header.core.encrypt.EncryptionParamAllowed;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -18,6 +19,7 @@ import java.util.Map;
         method = HttpMethod.PUT,
         responseClass = APILogInReply.class
 )
+@EncryptionParamAllowed(actions = { EncryptionParamAllowed.ACTION_PUT_USER_INFO_INTO_SYSTEM_TAG })
 public class APILogInByAccountMsg extends APISessionMessage implements APILoginAuditor {
     @APIParam
     private String accountName;
