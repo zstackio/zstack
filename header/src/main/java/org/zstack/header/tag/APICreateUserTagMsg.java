@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APICreateUserTagEvent.class,
         parameterName = "params"
 )
-public class APICreateUserTagMsg extends APICreateTagMsg {
+public class APICreateUserTagMsg extends APIAbstractCreateTagMsg {
  
     public static APICreateUserTagMsg __example__() {
         APICreateUserTagMsg msg = new APICreateUserTagMsg();
