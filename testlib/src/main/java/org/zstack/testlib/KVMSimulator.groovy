@@ -144,6 +144,13 @@ class KVMSimulator implements Simulator {
             return rsp
         }
 
+        spec.simulator(KVMConstant.GET_VM_VIRTUALIZER_VERSION_PATH) {
+            def rsp = new KVMAgentCommands.GetVmVirtualizerVersionRsp()
+            rsp.version = "4.2.0-627.g36ee592.el7"
+            rsp.virtualizer = "qemu-kvm"
+            return rsp
+        }
+
         spec.simulator(KVMConstant.KVM_VM_UPDATE_PRIORITY_PATH) {
             return new KVMAgentCommands.UpdateVmPriorityRsp()
         }

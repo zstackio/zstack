@@ -68,6 +68,7 @@ public interface KVMConstant {
     String HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH = "/host/updateSpiceChannelConfig";
     String KVM_GET_VM_FIRST_BOOT_DEVICE_PATH = "/vm/getfirstbootdevice";
     String GET_VM_DEVICE_ADDRESS_PATH = "/vm/getdeviceaddress";
+    String GET_VM_VIRTUALIZER_VERSION_PATH = "/vm/getvirtualizerversion";
     String KVM_SCAN_VM_PORT_STATUS = "/host/vm/scanport";
     String GET_DEV_CAPACITY = "/host/dev/capacity";
     String KVM_CONFIG_PRIMARY_VM_PATH = "/primary/vm/config";
