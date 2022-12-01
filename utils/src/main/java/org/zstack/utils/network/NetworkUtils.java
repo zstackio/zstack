@@ -252,8 +252,6 @@ public class NetworkUtils {
 
         if (!isConsecutiveRange(part1)) {
             return findFirstHoleByDichotomy(part1);
-        } else if (part2[0] - part1[part1.length-1] > 1) {
-            return part1[part1.length-1] + 1;
         } else {
             return findFirstHoleByDichotomy(part2);
         }
