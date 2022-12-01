@@ -3656,6 +3656,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         GetVmDeviceAddressMsg gmsg = new GetVmDeviceAddressMsg();
         if (self.getHostUuid() == null || self.getState() != VmInstanceState.Running) {
             reply.setError(operr("VM[uuid:%s] state is not Running.", msg.getUuid()));
+            bus.reply(msg, reply);
+            return;
         }
 
         gmsg.setHostUuid(self.getHostUuid());
