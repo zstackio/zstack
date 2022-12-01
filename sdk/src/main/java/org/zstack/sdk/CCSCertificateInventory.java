@@ -44,11 +44,11 @@ public class CCSCertificateInventory  {
         return this.subjectDN;
     }
 
-    public java.lang.Long serNumber;
-    public void setSerNumber(java.lang.Long serNumber) {
+    public java.lang.String serNumber;
+    public void setSerNumber(java.lang.String serNumber) {
         this.serNumber = serNumber;
     }
-    public java.lang.Long getSerNumber() {
+    public java.lang.String getSerNumber() {
         return this.serNumber;
     }
 
