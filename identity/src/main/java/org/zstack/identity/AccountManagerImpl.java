@@ -212,6 +212,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APICreateAccountMsg) msg);
         } else if (msg instanceof APILogInByAccountMsg) {
             handle((APILogInByAccountMsg) msg);
+        } else if (msg instanceof APIGetLoginProceduresMsg) {
+            handle((APIGetLoginProceduresMsg) msg);
         } else if (msg instanceof APILogInByUserMsg) {
             handle((APILogInByUserMsg) msg);
         } else if (msg instanceof APILogOutMsg) {
@@ -560,6 +562,48 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         evtf.fire(IdentityCanonicalEvents.ACCOUNT_LOGIN_PATH, data);
 
         reply.setInventory(session);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetLoginProceduresMsg msg) {
+        APIGetLoginProceduresReply reply = new APIGetLoginProceduresReply();
+
+        AccountLoginStruct struct = null;
+        if (AccountConstant.LOGIN_TYPE.equals(msg.getType())) {
+            List<AccountVO> vos = Q.New(AccountVO.class)
+                    .eq(AccountVO_.name, msg.getName())
+                    .list();
+            if (vos.size() != 1) {
+                reply.setError(operr("failed to get single login procedures for user: %s", msg.getName()));
+                bus.reply(msg, reply);
+                return;
+            }
+            AccountVO vo = vos.get(0);
+            struct = new AccountLoginStruct();
+            struct.setAccountUuid(vo.getUuid());
+            struct.setUserUuid(vo.getUuid());
+            struct.setResourceType(AccountVO.class.getSimpleName());
+        } else {
+            for (AccountLoginExtensionPoint ext : pluginRgty.getExtensionList(AccountLoginExtensionPoint.class)) {
+                struct = ext.getLoginEntry(msg.getName(), msg.getType());
+                if (struct != null) {
+                    break;
+                }
+            }
+        }
+
+        if (struct == null) {
+            reply.setError(operr("failed to get login procedures for user: %s", msg.getName()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        List<Map<String, String>> additions = new ArrayList<>();
+        for (AdditionalLoginExtensionPoint exp : pluginRgty.getExtensionList(AdditionalLoginExtensionPoint.class)) {
+            additions.addAll(exp.additionLoginRequirement(struct.getUserUuid(), struct.getResourceType()));
+        }
+
+        reply.setAdditions(additions);
         bus.reply(msg, reply);
     }
 

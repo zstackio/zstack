@@ -40,6 +40,10 @@
     </message>
     
     <message>
+        <name>org.zstack.header.identity.APIGetLoginProceduresMsg</name>
+    </message>
+    
+    <message>
         <name>org.zstack.header.identity.APILogInByUserMsg</name>
     </message>
     
