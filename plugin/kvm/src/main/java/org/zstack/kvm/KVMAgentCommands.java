@@ -9,6 +9,7 @@ import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.vm.PriorityConfigStruct;
 import org.zstack.header.vm.VmBootDevice;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmPriorityConfigVO;
 import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
@@ -1170,6 +1171,18 @@ public class KVMAgentCommands {
 
         public void setL2NetworkUuid(String l2NetworkUuid) {
             this.l2NetworkUuid = l2NetworkUuid;
+        }
+
+        public static NicTO fromVmNicInventory(VmNicInventory nic) {
+            NicTO to = new NicTO();
+
+            to.setMac(nic.getMac());
+            to.setUuid(nic.getUuid());
+            to.setDeviceId(nic.getDeviceId());
+            to.setNicInternalName(nic.getInternalName());
+            to.setType(nic.getType());
+
+            return to;
         }
     }
 
