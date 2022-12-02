@@ -1,2 +1,2 @@
-ALTER TABLE `zstack`.`InfoSecSecretResourcePoolVO` ADD COLUMN `encryptPublicKey` varchar(128) DEFAULT NULL;
-ALTER TABLE `zstack`.`InfoSecSecretResourcePoolVO` ADD COLUMN `encryptSubjectDN` text DEFAULT NULL;
+ALTER TABLE `zstack`.`InfoSecSecretResourcePoolVO` ADD COLUMN `encryptPublicKey` text DEFAULT NULL;
+ALTER TABLE `zstack`.`InfoSecSecretResourcePoolVO` ADD COLUMN `encryptSubjectDN` varchar(128) DEFAULT NULL;
