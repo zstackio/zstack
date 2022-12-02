@@ -1,6 +1,7 @@
 package org.zstack.sugonSdnController.network;
 
 import org.zstack.compute.vm.VmGlobalConfig;
+import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkType;
@@ -19,11 +20,7 @@ public class TfCompleteNicInformationExtensionPointImpl implements KVMCompleteNi
     private static final CLogger logger = Utils.getLogger(TfCompleteNicInformationExtensionPointImpl.class);
     @Override
     public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-        NicTO to = new NicTO();
-        to.setMac(nic.getMac());
-        to.setUuid(nic.getUuid());
-        to.setNicInternalName(nic.getInternalName());
-        to.setType(nic.getType());
+        NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
         to.setIps(new ArrayList<String>(Arrays.asList(nic.getIp())));
         VmGlobalConfig.VM_CLEAN_TRAFFIC.updateValue(true);
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
