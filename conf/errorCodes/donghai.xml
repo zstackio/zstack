@@ -44,5 +44,29 @@
         <id>1009</id>
         <description>get token failed,user authenticate  failed!</description>
     </code>
+    <code>
+        <id>1010</id>
+        <description>Authentication server exception,please try again later</description>
+    </code>
+    <code>
+        <id>1011</id>
+        <description>get authentication server return code exception</description>
+    </code>
+    <code>
+        <id>1012</id>
+        <description>parameter error, please check the parameter again</description>
+    </code>
+    <code>
+        <id>1013</id>
+        <description>userName or password error, please check them again</description>
+    </code>
+    <code>
+        <id>1014</id>
+        <description>this user is unavailable</description>
+    </code>
+    <code>
+        <id>1015</id>
+        <description>connection timeout</description>
+    </code>
 </error>
 
