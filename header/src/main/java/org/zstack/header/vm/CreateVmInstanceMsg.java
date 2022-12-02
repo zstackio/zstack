@@ -37,6 +37,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
+    private List<String> disableL3Networks;
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -278,5 +279,13 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
         this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
+    }
+
+    public List<String> getDisableL3Networks() {
+        return disableL3Networks;
+    }
+
+    public void setDisableL3Networks(List<String> disableL3Networks) {
+        this.disableL3Networks = disableL3Networks;
     }
 }
