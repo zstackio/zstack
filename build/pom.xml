@@ -21,7 +21,7 @@
                         <version>2.3</version>
                         <configuration>
                             <packagingExcludes>
-                                WEB-INF/lib/maven*.jar,
+                                %regex[WEB-INF/lib/maven(?!-artifact).*.jar],
                                 WEB-INF/lib/plexus*.jar,
                                 WEB-INF/lib/cvsclient*.jar,
                                 WEB-INF/lib/classworlds*.jar,
@@ -585,7 +585,7 @@
                 <version>2.3</version>
                 <configuration>
                     <packagingExcludes>
-                        WEB-INF/lib/maven*.jar,
+                        %regex[WEB-INF/lib/maven(?!-artifact).*.jar],
                         WEB-INF/lib/plexus*.jar,
                         WEB-INF/lib/cvsclient*.jar,
                         WEB-INF/lib/classworlds*.jar,
