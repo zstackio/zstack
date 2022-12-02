@@ -11,9 +11,12 @@ import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.vm.PriorityConfigStruct;
 import org.zstack.header.vm.VmBootDevice;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmPriorityConfigVO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
+import org.zstack.network.service.MtuGetter;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.io.Serializable;
 import java.util.*;
@@ -989,6 +992,18 @@ public class KVMAgentCommands {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public static NicTO fromVmNicInventory(VmNicInventory nic) {
+            NicTO to = new NicTO();
+
+            to.setMac(nic.getMac());
+            to.setUuid(nic.getUuid());
+            to.setDeviceId(nic.getDeviceId());
+            to.setNicInternalName(nic.getInternalName());
+            to.setType(nic.getType());
+
+            return to;
         }
     }
 
