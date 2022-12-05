@@ -90,6 +90,12 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-directory-provider</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.protobuf</groupId>
+                    <artifactId>protobuf-java</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.rabbitmq</groupId>
