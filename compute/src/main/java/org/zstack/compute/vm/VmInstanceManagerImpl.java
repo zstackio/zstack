@@ -1744,6 +1744,26 @@ public class VmInstanceManagerImpl extends AbstractService implements
         VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.installValidator(validator);
     }
 
+    private void installSeDeviceValidator() {
+        VmSystemTags.SECURITY_ELEMENT_ENABLE.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String SecurityElementEnableTokenByTag = null;
+                if (VmSystemTags.SECURITY_ELEMENT_ENABLE.isMatch(systemTag)) {
+                    SecurityElementEnableTokenByTag = VmSystemTags.SECURITY_ELEMENT_ENABLE.getTokenByTag(systemTag, VmSystemTags.SECURITY_ELEMENT_ENABLE_TOKEN);
+                } else {
+                    throw new OperationFailureException(argerr("invalid securityElementEnable[%s], %s is not securityElementEnable tag", systemTag, SecurityElementEnableTokenByTag));
+                }
+                if (!isBoolean(SecurityElementEnableTokenByTag)) {
+                    throw new OperationFailureException(argerr("invalid securityElementEnable[%s], %s is not boolean class", systemTag, SecurityElementEnableTokenByTag));
+                }
+            }
+            private boolean isBoolean(String param) {
+                return "true".equalsIgnoreCase(param) || "false".equalsIgnoreCase(param);
+            }
+        });
+    }
+
     private void installSystemTagValidator() {
         installHostnameValidator();
         installUserdataValidator();
@@ -1752,6 +1772,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         installMachineTypeValidator();
         installUsbRedirectValidator();
         installL3NetworkSecurityGroupValidator();
+        installSeDeviceValidator();
     }
 
     private void installUsbRedirectValidator() {
