@@ -396,6 +396,13 @@ public class KVMAgentCommands {
         private String hostCpuModelName;
         private String systemProductName;
         private String systemSerialNumber;
+        private String systemManufacturer;
+        private String systemUUID;
+        private String biosVendor;
+        private String biosVersion;
+        private String biosReleaseDate;
+        private String bmcVersion;
+        private String uptime;
         private String cpuCache;
         private List<String> ipAddresses;
         private List<String> libvirtCapabilities;
@@ -558,6 +565,62 @@ public class KVMAgentCommands {
 
         public void setLibvirtCapabilities(List<String> libvirtCapabilities) {
             this.libvirtCapabilities = libvirtCapabilities;
+        }
+
+        public String getSystemManufacturer() {
+            return systemManufacturer;
+        }
+
+        public void setSystemManufacturer(String systemManufacturer) {
+            this.systemManufacturer = systemManufacturer;
+        }
+
+        public String getSystemUUID() {
+            return systemUUID;
+        }
+
+        public void setSystemUUID(String systemUUID) {
+            this.systemUUID = systemUUID;
+        }
+
+        public String getBiosVendor() {
+            return biosVendor;
+        }
+
+        public void setBiosVendor(String biosVendor) {
+            this.biosVendor = biosVendor;
+        }
+
+        public String getBiosVersion() {
+            return biosVersion;
+        }
+
+        public void setBiosVersion(String biosVersion) {
+            this.biosVersion = biosVersion;
+        }
+
+        public String getBiosReleaseDate() {
+            return biosReleaseDate;
+        }
+
+        public void setBiosReleaseDate(String biosReleaseDate) {
+            this.biosReleaseDate = biosReleaseDate;
+        }
+
+        public String getBmcVersion() {
+            return bmcVersion;
+        }
+
+        public void setBmcVersion(String bmcVersion) {
+            this.bmcVersion = bmcVersion;
+        }
+
+        public String getUptime() {
+            return uptime;
+        }
+
+        public void setUptime(String uptime) {
+            this.uptime = uptime;
         }
     }
 
