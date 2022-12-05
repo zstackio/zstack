@@ -14,6 +14,217 @@ public class HostCanonicalEvents {
     public static final String HOST_CHECK_INITIALIZED_FAILED = "/host/check/initialized/failed";
     public static final String HOST_PHYSICAL_NIC_STATUS_UP = "/host/physicalNic/status/up";
     public static final String HOST_PHYSICAL_NIC_STATUS_DOWN = "/host/physicalNic/status/down";
+    public static final String HOST_PHYSICAL_MEMORY_ECC_ERROR_TRIGGERED = "/host/physicalMemory/ecc/error/triggered";
+    public static final String HOST_PHYSICAL_CPU_STATUS_ABNORMAL = "/host/physicalCpu/status/abnormal";
+    public static final String HOST_PHYSICAL_MEMORY_STATUS_ABNORMAL = "/host/physicalMemory/status/abnormal";
+    public static final String HOST_PHYSICAL_FAN_STATUS_ABNORMAL = "/host/physicalFan/status/abnormal";
+    public static final String HOST_PHYSICAL_DISK_STATUS_ABNORMAL = "/host/physicalDisk/status/abnormal";
+    public static final String HOST_PHYSICAL_DISK_INSERT_TRIGGERED = "/host/physicalDisk/insert/triggered";
+    public static final String HOST_PHYSICAL_DISK_REMOVE_TRIGGERED = "/host/physicalDisk/remove/triggered";
+
+    @NeedJsonSchema
+    public static class HostPhysicalCpuStatusAbnormalData {
+        private String hostUuid;
+        private String cpuName;
+        private String status;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getCpuName() {
+            return cpuName;
+        }
+
+        public void setCpuName(String cpuName) {
+            this.cpuName = cpuName;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalMemoryStatusAbnormalData {
+        private String hostUuid;
+        private String locator;
+        private String status;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getLocator() {
+            return locator;
+        }
+
+        public void setLocator(String locator) {
+            this.locator = locator;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalFanStatusAbnormalData {
+        private String hostUuid;
+        private String fanName;
+        private String status;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getFanName() {
+            return fanName;
+        }
+
+        public void setFanName(String fanName) {
+            this.fanName = fanName;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalDiskStatusAbnormalData {
+        private String hostUuid;
+        private String serialNumber;
+        private String enclosureId;
+        private String slotNumber;
+        private String status;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getSerialNumber() {
+            return serialNumber;
+        }
+
+        public void setSerialNumber(String serialNumber) {
+            this.serialNumber = serialNumber;
+        }
+
+        public String getEnclosureId() {
+            return enclosureId;
+        }
+
+        public void setEnclosureId(String enclosureId) {
+            this.enclosureId = enclosureId;
+        }
+
+        public String getSlotNumber() {
+            return slotNumber;
+        }
+
+        public void setSlotNumber(String slotNumber) {
+            this.slotNumber = slotNumber;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalDiskData {
+        private String hostUuid;
+        private String serialNumber;
+        private String enclosureId;
+        private String slotNumber;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getSerialNumber() {
+            return serialNumber;
+        }
+
+        public void setSerialNumber(String serialNumber) {
+            this.serialNumber = serialNumber;
+        }
+
+        public String getEnclosureId() {
+            return enclosureId;
+        }
+
+        public void setEnclosureId(String enclosureId) {
+            this.enclosureId = enclosureId;
+        }
+
+        public String getSlotNumber() {
+            return slotNumber;
+        }
+
+        public void setSlotNumber(String slotNumber) {
+            this.slotNumber = slotNumber;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalMemoryEccErrorData {
+        private String hostUuid;
+        private ErrorCode detail;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public ErrorCode getDetail() {
+            return detail;
+        }
+
+        public void setDetail(ErrorCode detail) {
+            this.detail = detail;
+        }
+    }
 
     public static class HostDisconnectedData {
         public String hostUuid;
