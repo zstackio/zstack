@@ -12600,6 +12600,33 @@ abstract class ApiHelper {
     }
 
 
+    def deleteMdevDevice(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteMdevDeviceAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteMdevDeviceAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def deleteMedia(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteMediaAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteMediaAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -16220,6 +16247,33 @@ abstract class ApiHelper {
 
     def generateMdevDevices(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GenerateMdevDevicesAction.class) Closure c) {
         def a = new org.zstack.sdk.GenerateMdevDevicesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def generateSeMdevDevices(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GenerateSeMdevDevicesAction.class) Closure c) {
+        def a = new org.zstack.sdk.GenerateSeMdevDevicesAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -26518,6 +26572,35 @@ abstract class ApiHelper {
     }
 
 
+    def queryMttyDevice(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryMttyDeviceAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryMttyDeviceAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryMulticastRouter(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryMulticastRouterAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryMulticastRouterAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -33802,6 +33885,33 @@ abstract class ApiHelper {
 
     def ungenerateMdevDevices(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UngenerateMdevDevicesAction.class) Closure c) {
         def a = new org.zstack.sdk.UngenerateMdevDevicesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def ungenerateSeMdevDevices(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UngenerateSeMdevDevicesAction.class) Closure c) {
+        def a = new org.zstack.sdk.UngenerateSeMdevDevicesAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
