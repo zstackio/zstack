@@ -39,6 +39,14 @@ public class MdevDeviceInventory  {
         return this.parentUuid;
     }
 
+    public java.lang.String mttyUuid;
+    public void setMttyUuid(java.lang.String mttyUuid) {
+        this.mttyUuid = mttyUuid;
+    }
+    public java.lang.String getMttyUuid() {
+        return this.mttyUuid;
+    }
+
     public java.lang.String hostUuid;
     public void setHostUuid(java.lang.String hostUuid) {
         this.hostUuid = hostUuid;
