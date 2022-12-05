@@ -73,4 +73,28 @@ public class HostSystemTags {
     public static String HOST_CONNECTED_TIME_TOKEN = "hostConnectedTime";
     public static PatternedSystemTag HOST_CONNECTED_TIME =
             new PatternedSystemTag(String.format("ConnectedTime::{%s}", HOST_CONNECTED_TIME_TOKEN), HostVO.class);
+
+    public static String SYSTEM_MANUFACTURER_TOKEN = "systemManufacturer";
+    public static PatternedSystemTag SYSTEM_MANUFACTURER = new PatternedSystemTag(String.format("systemManufacturer::{%s}", SYSTEM_MANUFACTURER_TOKEN), HostVO.class);
+
+    public static String SYSTEM_UUID_TOKEN = "systemUUID";
+    public static PatternedSystemTag SYSTEM_UUID = new PatternedSystemTag(String.format("systemUUID::{%s}", SYSTEM_UUID_TOKEN), HostVO.class);
+
+    public static String BIOS_VENDOR_TOKEN = "biosVendor";
+    public static PatternedSystemTag BIOS_VENDOR = new PatternedSystemTag(String.format("biosVendor::{%s}", BIOS_VENDOR_TOKEN), HostVO.class);
+
+    public static String BIOS_VERSION_TOKEN = "biosVersion";
+    public static PatternedSystemTag BIOS_VERSION = new PatternedSystemTag(String.format("biosVersion::{%s}", BIOS_VERSION_TOKEN), HostVO.class);
+
+    public static String BIOS_RELEASE_DATE_TOKEN = "biosReleaseDate";
+    public static PatternedSystemTag BIOS_RELEASE_DATE = new PatternedSystemTag(String.format("biosReleaseDate::{%s}", BIOS_RELEASE_DATE_TOKEN), HostVO.class);
+
+    public static String BMC_VERSION_TOKEN = "bmcVersion";
+    public static PatternedSystemTag BMC_VERSION = new PatternedSystemTag(String.format("bmcVersion::{%s}", BMC_VERSION_TOKEN), HostVO.class);
+
+    public static String UPTIME_TOKEN = "uptime";
+    public static PatternedSystemTag UPTIME = new PatternedSystemTag(String.format("uptime::{%s}", UPTIME_TOKEN), HostVO.class);
+
+    public static String MEMORY_SLOTS_MAXIMUM_TOKEN = "memorySlotsMaximum";
+    public static PatternedSystemTag MEMORY_SLOTS_MAXIMUM = new PatternedSystemTag(String.format("memorySlotsMaximum::{%s}", MEMORY_SLOTS_MAXIMUM_TOKEN), HostVO.class);
 }
