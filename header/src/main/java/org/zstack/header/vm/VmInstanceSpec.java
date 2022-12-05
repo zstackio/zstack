@@ -330,6 +330,8 @@ public class VmInstanceSpec implements Serializable {
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private boolean skipIpAllocation = false;
 
+    private List<String> disableL3Networks;
+
     public boolean isSkipIpAllocation() {
         return skipIpAllocation;
     }
@@ -735,5 +737,13 @@ public class VmInstanceSpec implements Serializable {
             return this.getImageSpec().getInventory().getSize();
         }
         return rootDiskOffering.getDiskSize();
+    }
+
+    public List<String> getDisableL3Networks() {
+        return disableL3Networks;
+    }
+
+    public void setDisableL3Networks(List<String> disableL3Networks) {
+        this.disableL3Networks = disableL3Networks;
     }
 }
