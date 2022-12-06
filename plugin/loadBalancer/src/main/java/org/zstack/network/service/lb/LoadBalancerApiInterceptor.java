@@ -1025,9 +1025,6 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             if (!LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(msg.getBalancerAlgorithm()) && LoadBalancerSessionPersistence.iphash.toString().equals(msg.getSessionPersistence())) {
                 throw new ApiMessageInterceptionException(argerr("listener[%s] changes session persistence to iphash, it must specify source balancer algorithm", msg.getUuid()));
             }
-            if (msg.getSessionPersistence() == null) {
-                msg.setSessionPersistence(LoadBalancerSessionPersistence.disable.toString());
-            }
 
             if (LoadBalancerConstants.LB_PROTOCOL_HTTP.equals(listener.getProtocol())) {
                 if (LoadBalancerSessionPersistence.rewrite.toString().equals(msg.getSessionPersistence()) && "http-tunnel".equals(msg.getHttpMode())) {
@@ -1049,6 +1046,10 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                         throw new ApiMessageInterceptionException(argerr("listener[%s] can not assigning httpMode http-tunnel when the session persistence is rewrite", msg.getUuid()));
                     }
                 }
+            }
+
+            if (msg.getSessionPersistence() == null) {
+                msg.setSessionPersistence(LoadBalancerSessionPersistence.disable.toString());
             }
         }
 
