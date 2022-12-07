@@ -813,6 +813,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     if (LoadBalancerSystemTags.SESSION_PERSISTENCE.isMatch(tag)) {
                         enableSession = LoadBalancerSystemTags.SESSION_PERSISTENCE.getTokenByTag(tag,
                                 LoadBalancerSystemTags.SESSION_PERSISTENCE_TOKEN);
+                        try {
+                            LoadBalancerSessionPersistence.valueOf(LoadBalancerSessionPersistence.class, enableSession);
+                        } catch (Exception e) {
+                            throw new ApiMessageInterceptionException(argerr("invalid session persistence type[%s], it only support %s", enableSession, Arrays.toString(LoadBalancerSessionPersistence.values())));
+                        }
                     }
                     if (LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT.isMatch(tag)) {
                         timeout = LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT.getTokenByTag(tag,
@@ -831,11 +836,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                             throw new ApiMessageInterceptionException(argerr("invalid session cookie name[%s], it must only contains letters, numbers and underscores", cookieName));
                         }
                     }
+                    if (enableSession != null && timeout != null && cookieName != null) {
+                        throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning idle timeout and cookie name at the same time", msg.getLoadBalancerUuid(), msg.getName()));
+                    }
                 }
 
                 /*can not assign session idle timeout and cookie name without specifying session persistence*/
                 if (enableSession == null && (timeout != null || cookieName != null)) {
-                    throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning idle timeout and cookie name when the session persistence has been disabled", msg.getLoadBalancerUuid(), msg.getName()));
+                    throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning idle timeout and cookie name without specifying session persistence", msg.getLoadBalancerUuid(), msg.getName()));
                 }
 
                 if (LoadBalancerSessionPersistence.insert.toString().equals(enableSession) && timeout == null) {
@@ -1001,7 +1009,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         } else {
             /*can not modify session idle timeout and cookie name without specifying session persistence*/
             if (msg.getSessionPersistence() == null && (msg.getSessionIdleTimeout() != null || msg.getCookieName() != null)) {
-                throw new ApiMessageInterceptionException(argerr("listener[%s] doesn't support modifying idle timeout when the session persistence has been disabled  ", msg.getUuid()));
+                throw new ApiMessageInterceptionException(argerr("listener[%s] doesn't support modifying idle timeout and cookie name without specifying session persistence", msg.getUuid()));
             }
             /*can not modify session idle timeout without specifying session persistence insert*/
             if (!LoadBalancerSessionPersistence.insert.toString().equals(msg.getSessionPersistence()) && msg.getSessionIdleTimeout() != null) {
