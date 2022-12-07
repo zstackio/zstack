@@ -779,7 +779,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol()) || LoadBalancerConstants.LB_PROTOCOL_TCP.equals(msg.getProtocol())) {
             for (String tag : msg.getSystemTags()) {
                 if (LoadBalancerSystemTags.SESSION_PERSISTENCE.isMatch(tag) || LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT.isMatch(tag) || LoadBalancerSystemTags.COOKIE_NAME.isMatch(tag)) {
-                    throw new ApiMessageInterceptionException(argerr("l4[%s] loadBalancer[%s] listener[%s] doesn't support modifying session persistence state", msg.getProtocol(), msg.getName(), msg.getLoadBalancerUuid()));
+                    throw new ApiMessageInterceptionException(argerr("l4[%s] loadBalancer listener[%s] doesn't support specifying session persistence state", msg.getProtocol(),  msg.getName()));
                 }
             }
         }
