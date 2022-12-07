@@ -285,8 +285,7 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
             info.put(VyosConstants.REPLACE_FIREWALL_WITH_IPTBALES, true);
         }
 
-        Boolean b = rcf.getResourceConfigValue(VyosGlobalConfig.ENABLE_VYOS_CMD, spec.getVmInventory().getUuid(), Boolean.class);
-        if (Boolean.TRUE.equals(b)) {
+        if (rcf.getResourceConfigValue(VyosGlobalConfig.ENABLE_VYOS_CMD, spec.getVmInventory().getUuid(), Boolean.class)) {
             info.put(VyosConstants.CONFIG_ENABLE_VYOS, true);
         } else {
             info.put(VyosConstants.CONFIG_ENABLE_VYOS, false);
