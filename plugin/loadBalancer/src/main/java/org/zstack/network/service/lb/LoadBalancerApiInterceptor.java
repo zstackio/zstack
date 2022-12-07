@@ -860,16 +860,15 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
             if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(algorithm)) {
                 for (String tag : msg.getSystemTags()) {
-                if (LoadBalancerSystemTags.SESSION_PERSISTENCE.isMatch(tag)) {
-                    String enableSession = LoadBalancerSystemTags.SESSION_PERSISTENCE.getTokenByTag(tag,
+                    if (LoadBalancerSystemTags.SESSION_PERSISTENCE.isMatch(tag)) {
+                        String enableSession = LoadBalancerSystemTags.SESSION_PERSISTENCE.getTokenByTag(tag,
                             LoadBalancerSystemTags.SESSION_PERSISTENCE_TOKEN);
-                    if (!LoadBalancerSessionPersistence.iphash.toString().equals(enableSession)) {
-                        /*can not assign session persistence iphash without source algorithm*/
-                        throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning session persistence iphash when the source balancer algorithm is not source", msg.getLoadBalancerUuid(), msg.getName()));
+                        if (!LoadBalancerSessionPersistence.iphash.toString().equals(enableSession)) {
+                            /*can not assign session persistence iphash without source algorithm*/
+                            throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning session persistence iphash when the source balancer algorithm is not source", msg.getLoadBalancerUuid(), msg.getName()));
+                        }
                     }
                 }
-            }
-
             }
         }
 
@@ -1015,6 +1014,9 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             /*can not modify session persistence rewrite without modifying session cookie name*/
             if (LoadBalancerSessionPersistence.rewrite.toString().equals(msg.getSessionPersistence()) && msg.getCookieName() == null) {
                 throw new ApiMessageInterceptionException(argerr("listener[%s] doesn't support modifying session rewrite without modifying cookie name", msg.getUuid()));
+            }
+            if (LoadBalancerSessionPersistence.insert.toString().equals(msg.getSessionPersistence()) && msg.getSessionIdleTimeout() == null) {
+                msg.setSessionIdleTimeout(LoadBalancerConstants.SESSION_IDLE_TIMEOUT_DEFAULT);
             }
 
             /*can not modify session persistence without specifying balancer algorithm*/
