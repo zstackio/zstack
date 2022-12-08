@@ -44,6 +44,10 @@ public class SizeUtils {
         return str.matches("\\d+");
     }
 
+    public static boolean isPositive(Number i){
+        return i != null && i.doubleValue() > 0;
+    }
+
     public static boolean isSizeString2(String str) {
         String suffix = str.substring(str.length() - 2);
         if (!validSuffix.contains(suffix)) {
