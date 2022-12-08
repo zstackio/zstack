@@ -16,10 +16,17 @@
             <zstack:extension interface="org.zstack.header.vm.VmPreAttachL3NetworkExtensionPoint" />
         </zstack:plugin>
     </bean>
-    <bean id="VmDetachNicExtensionPointImpl" class="org.zstack.sugonSdnController.network.VmDetachNicExtensionPointImpl">
+    <bean id="vmDetachNicExtensionPointImpl" class="org.zstack.sugonSdnController.network.VmDetachNicExtensionPointImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.VmDetachNicExtensionPoint" />
             <zstack:extension interface="org.zstack.header.vm.VmFailToAttachL3NetworkExtensionPoint" />
         </zstack:plugin>
+    </bean>
+    <bean id="recoverVmExtensionPointImpl"   class="org.zstack.sugonSdnController.network.RecoverVmExtensionPointImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.RecoverVmExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+    <bean id="tfPortService" class="org.zstack.sugonSdnController.network.TfPortService">
     </bean>
 </beans>
