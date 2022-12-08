@@ -1058,7 +1058,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 }
             }
 
-            if (msg.getSessionPersistence() == null) {
+            if (msg.getSessionPersistence() == null && msg.getBalancerAlgorithm() != null) {
                 msg.setSessionPersistence(LoadBalancerSessionPersistence.disable.toString());
             }
         }
