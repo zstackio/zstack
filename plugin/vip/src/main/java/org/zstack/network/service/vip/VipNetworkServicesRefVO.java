@@ -5,6 +5,7 @@ import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
@@ -18,14 +19,46 @@ import java.sql.Timestamp;
                 @EntityGraph.Neighbour(type = VipVO.class, myField = "vipUuid", targetField = "uuid")
         }
 )
+@IdClass(VipNetworkServicesRefVO.CompositeID.class)
 public class VipNetworkServicesRefVO {
+    static class CompositeID implements Serializable {
+        private String uuid;
+        private String serviceType;
+        private String vipUuid;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public String getServiceType() {
+            return serviceType;
+        }
+
+        public void setServiceType(String serviceType) {
+            this.serviceType = serviceType;
+        }
+
+        public String getVipUuid() {
+            return vipUuid;
+        }
+
+        public void setVipUuid(String vipUuid) {
+            this.vipUuid = vipUuid;
+        }
+    }
     @Id
     @Column
     private String uuid;
 
+    @Id
     @Column
     private String serviceType;
 
+    @Id
     @Column
     @ForeignKey(parentEntityClass = VipVO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String vipUuid;
@@ -35,6 +68,16 @@ public class VipNetworkServicesRefVO {
 
     @Column
     private Timestamp lastOpDate;
+
+    @Override
+    public boolean equals(Object r) {
+        if (!(r instanceof VipNetworkServicesRefVO)) {
+            return false;
+        }
+
+        VipNetworkServicesRefVO ref = (VipNetworkServicesRefVO) r;
+        return ref.getUuid().equals(uuid)&&ref.getServiceType().equals(serviceType)&&ref.getVipUuid().equals(vipUuid);
+    }
 
     @PreUpdate
     private void preUpdate() {
