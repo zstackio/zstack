@@ -13,6 +13,8 @@ public interface L3NetworkConstant {
     @PythonClass
     public static final String L3_BASIC_NETWORK_TYPE = "L3BasicNetwork";
     @PythonClass
+    public static final String ASC_DELAY_RECYCLE_IP_ALLOCATOR_STRATEGY = "AscDelayRecycleIpAllocatorStrategy";
+    @PythonClass
     public static final String FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY = "FirstAvailableIpAllocatorStrategy";
     @PythonClass
     public static final String RANDOM_IP_ALLOCATOR_STRATEGY = "RandomIpAllocatorStrategy";

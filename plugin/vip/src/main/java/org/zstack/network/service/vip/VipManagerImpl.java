@@ -247,18 +247,11 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         }
 
                         String strategyType = msg.getAllocatorStrategy();
-                        if (strategyType == null) {
-                            if (msg.getIpVersion() == IPv6Constants.IPv4) {
-                                strategyType = L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY;
-                            } else {
-                                strategyType = L3NetworkConstant.RANDOM_IPV6_ALLOCATOR_STRATEGY;
-                            }
-                        }
                         AllocateIpMsg amsg = new AllocateIpMsg();
                         amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
                         amsg.setAllocateStrategy(strategyType);
+                        amsg.setIpVersion(msg.getIpVersion());
                         amsg.setRequiredIp(msg.getRequiredIp());
-                        amsg.setUseAddressPoolIfNotRequiredIpRange(true);
                         if (msg.getIpRangeUuid() != null) {
                             amsg.setIpRangeUuid(msg.getIpRangeUuid());
                         }
