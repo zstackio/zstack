@@ -1,15 +1,13 @@
 package org.zstack.sugonSdnController.controller.neutronClient;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.bouncycastle.util.IPAddress;
 import org.zstack.core.db.Q;
 import org.zstack.sdnController.header.SdnControllerConstant;
 import org.zstack.sdnController.header.SdnControllerVO;
 import org.zstack.sdnController.header.SdnControllerVO_;
 import org.zstack.sugonSdnController.controller.SugonSdnControllerGlobalProperty;
-import org.zstack.sugonSdnController.controller.api.ApiConnector;
-import org.zstack.sugonSdnController.controller.api.ApiConnectorFactory;
-import org.zstack.sugonSdnController.controller.api.ApiPropertyBase;
-import org.zstack.sugonSdnController.controller.api.ObjectReference;
+import org.zstack.sugonSdnController.controller.api.*;
 import org.zstack.sugonSdnController.controller.api.types.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -30,7 +28,7 @@ public class TfPortClient {
         return apiConnector;
     }
 
-    public TfPortResponse createPort(String l2Id, String l3Id, String mac, String ip, String tenantId, String vmInventeryId) {
+    public TfPortResponse createPort(String l2Id, String l3Id, String mac, String ip, String tenantId, String vmInventeryId,String tfPortUuid) {
         TfPortRequestBody portRequestBodyEO = new TfPortRequestBody();
         TfPortRequestData portRequestDataEO = new TfPortRequestData();
         TfPortRequestContext portRequestContextEO = new TfPortRequestContext();
@@ -102,7 +100,7 @@ public class TfPortClient {
         // initialize port object
         VirtualMachineInterface port;
         try {
-            port = portNeutronToVnc(requestPortResourceEntity, netObj);
+            port = portNeutronToVnc(requestPortResourceEntity, netObj , tfPortUuid);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -271,12 +269,15 @@ public class TfPortClient {
         }
     }
 
-    private VirtualMachineInterface portNeutronToVnc(TfPortRequestResource requestPortResourceEntity, VirtualNetwork virtualNetwork) throws IOException {
+    private VirtualMachineInterface portNeutronToVnc(TfPortRequestResource requestPortResourceEntity, VirtualNetwork virtualNetwork,String tfPortUUid) throws IOException {
         String projectId = requestPortResourceEntity.getTenantId();
         Project projectObj = getProjectObj(requestPortResourceEntity);
         IdPermsType idPermsType = new IdPermsType();
         idPermsType.setEnable(true);
         String portUuid = String.valueOf(UUID.randomUUID());
+        if(Objects.nonNull(tfPortUUid)){
+            portUuid = tfPortUUid;
+        }
         VirtualMachineInterface portObj = new VirtualMachineInterface();
         portObj.setUuid(portUuid);
         portObj.setName(portUuid);
@@ -535,6 +536,17 @@ public class TfPortClient {
         }
         //  disassociate any floating IP used by instance
 
+        List<ObjectReference<ApiPropertyBase>> fipBackRefs = portObj.getFloatingIpBackRefs();
+        if (CollectionUtils.isNotEmpty(fipBackRefs)){
+            for (ObjectReference<ApiPropertyBase> fipBackRef : fipBackRefs){
+                try {
+                    floatingipUpdate(fipBackRef.getUuid());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
         try {
             if (apiConnector != null) {
                 apiConnector.delete(VirtualMachineInterface.class, portId);
@@ -556,5 +568,53 @@ public class TfPortClient {
         response.setCode(200);
         return response;
         // end
+    }
+
+    private void floatingipUpdate(String uuid) throws IOException {
+        FloatingIp fipObj = floatingipNeutronToVnc(uuid);
+        apiConnector.update(fipObj);
+    }
+
+    private FloatingIp floatingipNeutronToVnc(String uuid) throws IOException {
+        FloatingIp fipObj = (FloatingIp) apiConnector.findById(FloatingIp.class, uuid);
+        List<ObjectReference<ApiPropertyBase>> portRefs = fipObj.getVirtualMachineInterface();
+        fipObj.clearVirtualMachineInterface();
+        if (CollectionUtils.isEmpty(portRefs)){
+            fipObj.setFixedIpAddress(null);
+        } else {
+            VirtualMachineInterface  portObj = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class, portRefs.get(0).getUuid());
+            List<ObjectReference<ApiPropertyBase>> iipRefs = portObj.getInstanceIpBackRefs();
+            if (CollectionUtils.isNotEmpty(iipRefs) && iipRefs.size() > 1){
+                String msg = "Port "+ portObj.getUuid() + " has multiple fixed IP addresses.  Must provide a specific IP address when assigning a floating IP.";
+                throw new RuntimeException(msg);
+            }
+            if (CollectionUtils.isNotEmpty(iipRefs)){
+                InstanceIp iipObj = (InstanceIp) apiConnector.findById(InstanceIp.class, iipRefs.get(0).getUuid());
+                checkPortFipAssoc(portObj, iipObj.getAddress(), fipObj);
+                fipObj.setFixedIpAddress(iipObj.getAddress());
+            }
+        }
+        return fipObj;
+    }
+
+    private void checkPortFipAssoc(VirtualMachineInterface portObj, String address, FloatingIp fipObj) throws IOException {
+        // check if port already has floating ip associated
+        List<ObjectReference<ApiPropertyBase>> fipRefs = portObj.getFloatingIpBackRefs();
+        List<String> fipIds = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(fipRefs)){
+            for (ObjectReference<ApiPropertyBase> ref : fipRefs){
+                if (!Objects.equals(fipObj.getUuid(), ref.getUuid())){
+                    fipIds.add(ref.getUuid());
+                }
+            }
+        }
+        if (CollectionUtils.isNotEmpty(fipIds)){
+            for (String fipId : fipIds) {
+                FloatingIp fipInstance = (FloatingIp) apiConnector.findById(FloatingIp.class, fipId);
+                if (fipInstance.getFixedIpAddress().equals(address)){
+                    throw new RuntimeException("FloatingIPPortAlreadyAssociated: " + fipInstance.getAddress() + " && " + portObj);
+                }
+            }
+        }
     }
 }
