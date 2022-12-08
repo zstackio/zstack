@@ -105,8 +105,8 @@ public class VmAllocateNicFlow implements Flow {
                 customMac = NetworkUtils.generateMacWithDeviceId((short) deviceId);
             }
             final String mac = customMac;
-            CustomNicOperator nicOperator = new CustomNicOperator();
-            final String customNicUuid = nicOperator.getCustomNicId(spec.getVmInventory().getUuid(), nw.getUuid());
+            CustomNicOperator nicOperator = new CustomNicOperator(spec.getVmInventory().getUuid(),nw.getUuid());
+            final String customNicUuid = nicOperator.getCustomNicId();
 
             // choose vnic factory based on enableSRIOV system tag
             VmInstanceNicFactory vnicFactory;
