@@ -83,7 +83,7 @@ class GlobalConfigCase extends SubCase {
         } as GetGlobalConfigOptionsResult
 
         // there are 21 valid values for category "vm.cpuMode" from KVMGlobalConfig.java
-        assert configOptions.options.validValue.size() == 24
+        assert configOptions.options.validValue.size() == 26
     }
 
     void testGetNumberRange() {
