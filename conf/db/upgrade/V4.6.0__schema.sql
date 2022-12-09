@@ -10,3 +10,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmVdpaNicVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkVmVdpaNicVOPciDeviceVO` FOREIGN KEY (`pciDeviceUuid`) REFERENCES `zstack`.`PciDeviceVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`VipNetworkServicesRefVO` DROP INDEX `uuid`;
+ALTER TABLE `zstack`.`VipNetworkServicesRefVO` DROP PRIMARY KEY, ADD PRIMARY KEY(`uuid`,`serviceType`,`vipUuid`);

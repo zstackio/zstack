@@ -965,7 +965,10 @@ public class VipBase {
     private void addServicesRef(String uuid, String type) {
         VipNetworkServicesRefVO vipRef = new VipNetworkServicesRefVO();
 
-        if (dbf.isExist(uuid, VipNetworkServicesRefVO.class)) {
+        if (Q.New(VipNetworkServicesRefVO.class)
+                .eq(VipNetworkServicesRefVO_.uuid, uuid)
+                .eq(VipNetworkServicesRefVO_.vipUuid, self.getUuid())
+                .eq(VipNetworkServicesRefVO_.serviceType, type).isExists()) {
             logger.debug(String.format("repeat to add the servicesRef [type:%s:uuid:%s] with vip[uuid:%s]",
                     type, uuid, self.getUuid()));
             return;
@@ -990,8 +993,11 @@ public class VipBase {
 
     private void delServicesRef(String uuid, String type) {
         DebugUtils.Assert((uuid != null) && (type != null), "the parameter can't be null");
-        VipNetworkServicesRefVO vipRef = dbf.findByUuid(uuid, VipNetworkServicesRefVO.class);
-        if ( vipRef == null) {
+        VipNetworkServicesRefVO vipRef = Q.New(VipNetworkServicesRefVO.class)
+                .eq(VipNetworkServicesRefVO_.uuid, uuid)
+                .eq(VipNetworkServicesRefVO_.serviceType, type)
+                .eq(VipNetworkServicesRefVO_.vipUuid, self.getUuid()).find();
+        if ( vipRef == null ) {
             logger.error(String.format("the servicesRef [type:%s:uuid:%s] with vip[uuid:%s] doesn't exist",
                     type, uuid, self.getUuid()));
             return;
