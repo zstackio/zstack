@@ -403,6 +403,7 @@ public class KVMAgentCommands {
         private String biosReleaseDate;
         private String bmcVersion;
         private String uptime;
+        private String memorySlotsMaximum;
         private String cpuCache;
         private List<String> ipAddresses;
         private List<String> libvirtCapabilities;
@@ -621,6 +622,14 @@ public class KVMAgentCommands {
 
         public void setUptime(String uptime) {
             this.uptime = uptime;
+        }
+
+        public String getMemorySlotsMaximum() {
+            return memorySlotsMaximum;
+        }
+
+        public void setMemorySlotsMaximum(String memorySlotsMaximum) {
+            this.memorySlotsMaximum = memorySlotsMaximum;
         }
     }
 
