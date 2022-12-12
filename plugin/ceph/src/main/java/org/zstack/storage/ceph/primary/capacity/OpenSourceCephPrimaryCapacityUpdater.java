@@ -1,5 +1,6 @@
 package org.zstack.storage.ceph.primary.capacity;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -8,8 +9,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
-import org.zstack.header.storage.primary.PrimaryStorageCapacityUpdaterRunnable;
-import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.storage.ceph.CephCapacity;
 import org.zstack.storage.ceph.CephConstants;
 import org.zstack.storage.ceph.CephPoolCapacity;
@@ -18,10 +17,7 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -58,19 +54,49 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
         List<String> poolNames = new ArrayList<>();
 
         PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(cephPs.getUuid());
-        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-            @Override
-            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
-                    // init
-                    cap.setAvailableCapacity(avail);
-                }
-
-                cap.setTotalCapacity(total);
-                cap.setTotalPhysicalCapacity(total);
-                cap.setAvailablePhysicalCapacity(avail);
+        updater.run(cap -> {
+            if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
+                // init
+                cap.setAvailableCapacity(avail);
+            }
+            cap.setTotalCapacity(total);
+            cap.setTotalPhysicalCapacity(total);
+            cap.setAvailablePhysicalCapacity(avail);
+            if (CollectionUtils.isEmpty(poolCapacities)) {
                 return cap;
             }
+
+            Map<String, CephPoolCapacity> osdPoolCapacity = new HashMap<>();
+            for (CephPoolCapacity poolCapacitiy : poolCapacities) {
+                if (poolCapacitiy.getRelatedOsdCapacity() == null) {
+                    continue;
+                }
+                Map<String, CephPoolCapacity> osdPoolCap = poolCapacitiy.getRelatedOsdCapacity().keySet().stream()
+                        .collect(Collectors.toMap(osdName -> osdName, osdName -> {
+                            if (!osdPoolCapacity.containsKey(osdName)) {
+                                return poolCapacitiy;
+                            }
+                            // osd multiplexing
+                            Float diskUtilization = osdPoolCapacity.get(osdName).getDiskUtilization();
+                            return diskUtilization > poolCapacitiy.getDiskUtilization() ? poolCapacitiy : osdPoolCapacity.get(osdName);
+                        }));
+                osdPoolCapacity.putAll(osdPoolCap);
+            }
+
+            long osdsTotalSize = 0;
+            long osdsAvailCap = 0;
+            for (String osdName : osdPoolCapacity.keySet()) {
+                CephPoolCapacity cephPoolCapacity = osdPoolCapacity.get(osdName);
+                osdsTotalSize += cephPoolCapacity.getRelatedOsdCapacity().get(osdName).getSize() * cephPoolCapacity.getDiskUtilization();
+                osdsAvailCap += cephPoolCapacity.getRelatedOsdCapacity().get(osdName).getAvailableCapacity() * cephPoolCapacity.getDiskUtilization();
+            }
+
+            if (osdsTotalSize != 0){
+                cap.setTotalCapacity(osdsTotalSize);
+                cap.setTotalPhysicalCapacity(osdsTotalSize);
+                cap.setAvailablePhysicalCapacity(osdsAvailCap);
+            }
+            return cap;
         });
 
         if (poolCapacities == null) {
