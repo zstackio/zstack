@@ -90,4 +90,7 @@ public class HostSystemTags {
 
     public static String UPTIME_TOKEN = "uptime";
     public static PatternedSystemTag UPTIME = new PatternedSystemTag(String.format("uptime::{%s}", UPTIME_TOKEN), HostVO.class);
+
+    public static String MEMORY_SLOTS_MAXIMUM_TOKEN = "memorySlotsMaximum";
+    public static PatternedSystemTag MEMORY_SLOTS_MAXIMUM = new PatternedSystemTag(String.format("memorySlotsMaximum::{%s}", MEMORY_SLOTS_MAXIMUM_TOKEN), HostVO.class);
 }

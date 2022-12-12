@@ -4278,6 +4278,8 @@ public class KVMHost extends HostBase implements Host {
                                     createTagWithoutNonValue(HostSystemTags.BMC_VERSION, HostSystemTags.BMC_VERSION_TOKEN, ret.getBmcVersion(), true);
                                     createTagWithoutNonValue(HostSystemTags.UPTIME, HostSystemTags.UPTIME_TOKEN, ret.getUptime(), true);
 
+                                    createTagWithoutNonValue(HostSystemTags.MEMORY_SLOTS_MAXIMUM, HostSystemTags.MEMORY_SLOTS_MAXIMUM_TOKEN, ret.getMemorySlotsMaximum(), true);
+
                                     if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
                                         recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
                                     }
