@@ -2,6 +2,7 @@ package org.zstack.network.service.virtualrouter.vyos;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.appliancevm.*;
+import org.zstack.appliancevm.ApplianceVmConstant.BootstrapParams;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -278,6 +279,7 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
         }
         logger.debug("add vyos password to vrouter");
         info.put(VyosConstants.BootstrapInfoKey.vyosPassword.toString(), VirtualRouterGlobalConfig.VYOS_PASSWORD.value());
+        info.put(BootstrapParams.sshPort.toString(), VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class));
 
         /* vrouter only has 1 private network */
         List<String> l3Uuids = (List<String>)info.get(ApplianceVmConstant.BootstrapParams.additionalL3Uuids.toString());
