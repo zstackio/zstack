@@ -168,6 +168,7 @@ public class KVMHost extends HostBase implements Host {
     private String cancelJob;
     private String getVmFirstBootDevicePath;
     private String getVmDeviceAddressPath;
+    private String getVmVirtualizerVersion;
     private String scanVmPortPath;
     private String getDevCapacityPath;
     private String configPrimaryVmPath;
@@ -335,6 +336,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.GET_VM_DEVICE_ADDRESS_PATH);
         getVmDeviceAddressPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.GET_VM_VIRTUALIZER_VERSION_PATH);
+        getVmVirtualizerVersion = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_SCAN_VM_PORT_STATUS);
@@ -557,6 +562,8 @@ public class KVMHost extends HostBase implements Host {
             handle((GetVmFirstBootDeviceOnHypervisorMsg) msg);
         } else if (msg instanceof GetVmDeviceAddressMsg) {
             handle((GetVmDeviceAddressMsg) msg);
+        } else if (msg instanceof GetVmVirtualizerVersionMsg) {
+            handle((GetVmVirtualizerVersionMsg) msg);
         } else if (msg instanceof CheckHostCapacityMsg) {
             handle((CheckHostCapacityMsg) msg);
         } else if (msg instanceof ConfigPrimaryVmMsg) {
@@ -977,6 +984,13 @@ public class KVMHost extends HostBase implements Host {
         new Http<>(getVmDeviceAddressPath, cmd, GetVmDeviceAddressRsp.class).call(new ReturnValueCompletion<GetVmDeviceAddressRsp>(msg, completion) {
             @Override
             public void success(GetVmDeviceAddressRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("failed to get vm[uuid:%s] device address, because:%s", msg.getVmInstanceUuid(), rsp.getError()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+
                 for (String resourceType : msg.getInventories().keySet()) {
                     reply.putAddresses(resourceType, rsp.getAddresses(resourceType).stream().map(it -> {
                         VmDeviceAddress address = new VmDeviceAddress();
@@ -988,6 +1002,49 @@ public class KVMHost extends HostBase implements Host {
                         return address;
                     }).collect(Collectors.toList()));
                 }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(GetVmVirtualizerVersionMsg msg) {
+        inQueue().name(String.format("get-virtualizer-version-of-vm-%s-on-kvm-%s", msg.getVmInstanceUuid(), self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> getVmVirtualizerVersion(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void getVmVirtualizerVersion(final GetVmVirtualizerVersionMsg msg, final NoErrorCompletion completion) {
+        checkStatus();
+
+        GetVmVirtualizerVersionReply reply = new GetVmVirtualizerVersionReply();
+        GetVmVirtualizerVersionCmd cmd = new GetVmVirtualizerVersionCmd();
+        cmd.setUuid(msg.getVmInstanceUuid());
+        new Http<>(getVmVirtualizerVersion, cmd, GetVmVirtualizerVersionRsp.class).call(new ReturnValueCompletion<GetVmVirtualizerVersionRsp>(msg, completion) {
+            @Override
+            public void success(GetVmVirtualizerVersionRsp rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("failed to get vm[uuid:%s] virtualizer version, because:%s", msg.getVmInstanceUuid(), rsp.getError()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+
+                reply.setVirtualizer(rsp.getVirtualizer());
+                reply.setVersion(rsp.getVersion());
 
                 bus.reply(msg, reply);
                 completion.done();
