@@ -103,4 +103,5 @@
     <import resource="springConfigXml/log.xml"/>
     <import resource="springConfigXml/sdnController.xml"/>
     <import resource="springConfigXml/cas.xml"/>
+    <import resource="springConfigXml/directoryManager.xml"/>
 </beans>
