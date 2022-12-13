@@ -54,6 +54,7 @@ public interface VmInstanceConstant {
         ChangeNicNetwork,
         ChangeNicIp,
         DetachNic,
+        ChangeNicState,
         AttachIso,
         DetachIso,
         Expunge,
