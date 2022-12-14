@@ -32,7 +32,7 @@
                                 WEB-INF/lib/c3p0-0.9.1.1.jar,
                                 WEB-INF/lib/reflections-0.9.8.jar,
                                 WEB-INF/lib/groovy-2.4.7.jar,
-                                WEB-INF/lib/okhttp-2.7.5.jar,
+                                WEB-INF/lib/okhttp-*.jar,
                                 WEB-INF/lib/sisu-guava-0.9.9.jar,
                                 WEB-INF/lib/groovy-sandbox-1.19.jar,
                             </packagingExcludes>
@@ -168,7 +168,7 @@
                     <artifactId>search</artifactId>
                     <version>${project.version}</version>
                 </dependency>
-               
+
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>applianceVm</artifactId>
@@ -588,7 +588,7 @@
                         WEB-INF/lib/c3p0-0.9.1.1.jar,
                         WEB-INF/lib/reflections-0.9.8.jar,
                         WEB-INF/lib/groovy-2.4.7.jar,
-                        WEB-INF/lib/okhttp-2.7.5.jar,
+                        WEB-INF/lib/okhttp-*.jar,
                     </packagingExcludes>
                     <webResources>
                         <resource>
