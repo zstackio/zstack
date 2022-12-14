@@ -75,6 +75,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="AscDelayRecycleIpAllocatorStrategy" class="org.zstack.network.l3.AscDelayRecycleIpAllocatorStrategy">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l3.IpAllocatorStrategy"/>
+            <zstack:extension interface="org.zstack.header.network.l3.IpRangeDeletionExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="RandomIpAllocatorStrategy" class="org.zstack.network.l3.RandomIpAllocatorStrategy">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.l3.IpAllocatorStrategy"/>

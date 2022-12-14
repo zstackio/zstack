@@ -31,6 +31,10 @@ import org.zstack.identity.AccountManager;
 import org.zstack.identity.ResourceSharingExtensionPoint;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceSystemTag;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.resourceconfig.ResourceConfigUpdateExtensionPoint;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ExceptionDSL;
@@ -70,6 +74,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     private ErrorFacade errf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private Map<String, IpRangeFactory> ipRangeFactories = Collections.synchronizedMap(new HashMap<String, IpRangeFactory>());
     private Map<String, L3NetworkFactory> l3NetworkFactories = Collections.synchronizedMap(new HashMap<String, L3NetworkFactory>());
@@ -448,6 +454,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     @Override
     public boolean start() {
         populateExtensions();
+        installResourceConfigExtensions();
         return true;
     }
 
@@ -490,6 +497,26 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                         f.getClass().getName(), old.getClass().getName(), f.getType()));
             }
             ipRangeFactories.put(f.getType().toString(), f);
+        }
+    }
+
+    private void installResourceConfigExtensions() {
+        ResourceConfig resourceConfig = rcf.getResourceConfig(L3NetworkGlobalConfig.IP_ALLOCATE_STRATEGY.getIdentity());
+        resourceConfig.installUpdateExtension(new ResourceConfigUpdateExtensionPoint() {
+            @Override
+            public void updateResourceConfig(ResourceConfig config, String resourceUuid, String resourceType, String oldValue, String newValue) {
+                cleanUpIpCursorOfAcsStrategy(resourceUuid, oldValue, newValue);
+            }
+        });
+    }
+
+    private void cleanUpIpCursorOfAcsStrategy(String resourceUuid, String oldValue, String newValue) {
+        if (oldValue.equals(L3NetworkConstant.ASC_DELAY_RECYCLE_IP_ALLOCATOR_STRATEGY) &&
+        !newValue.equals(L3NetworkConstant.ASC_DELAY_RECYCLE_IP_ALLOCATOR_STRATEGY)) {
+            PatternedSystemTag pst = L3NetworkSystemTags.NETWORK_ASC_DELAY_NORMAL_NEXT_IP;
+            pst.delete(resourceUuid);
+            pst = L3NetworkSystemTags.NETWORK_ASC_DELAY_ADDRESS_POOL_NEXT_IP;
+            pst.delete(resourceUuid);
         }
     }
 
@@ -612,11 +639,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     @Override
     public boolean isIpRangeFull(IpRangeVO vo) {
-        SimpleQuery<UsedIpVO> query = dbf.createQuery(UsedIpVO.class);
-        query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
-        query.select(UsedIpVO_.ip);
-        List<Long> used = query.listValue();
-        used = used.stream().distinct().collect(Collectors.toList());
+        List<BigInteger> used = getUsedIpInRange(vo);
 
         if (vo.getIpVersion() == IPv6Constants.IPv4) {
             int total = NetworkUtils.getTotalIpInRange(vo.getStartIp(), vo.getEndIp());
@@ -628,20 +651,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     @Override
     public List<BigInteger> getUsedIpInRange(IpRangeVO vo) {
-        if (vo.getIpVersion() == IPv6Constants.IPv4) {
-            SimpleQuery<UsedIpVO> query = dbf.createQuery(UsedIpVO.class);
-            query.select(UsedIpVO_.ipInLong);
-            query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
-            List<Long> used = query.listValue();
-            Collections.sort(used);
-            return used.stream().distinct().map(l -> new BigInteger(String.valueOf(l))).collect(Collectors.toList());
-        } else {
-            SimpleQuery<UsedIpVO> query = dbf.createQuery(UsedIpVO.class);
-            query.select(UsedIpVO_.ip);
-            query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
-            List<String> used = query.listValue();
-            return used.stream().distinct().map(IPv6NetworkUtils::getBigIntegerFromString).sorted().collect(Collectors.toList());
-        }
+        return IpRangeHelper.getUsedIpInRange(vo.getUuid(), vo.getIpVersion());
     }
 
     @Override
