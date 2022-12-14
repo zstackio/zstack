@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class AffinityGroupInventory  {
+public class HostSchedulingRuleGroupInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -28,38 +28,6 @@ public class AffinityGroupInventory  {
         return this.description;
     }
 
-    public java.lang.String policy;
-    public void setPolicy(java.lang.String policy) {
-        this.policy = policy;
-    }
-    public java.lang.String getPolicy() {
-        return this.policy;
-    }
-
-    public java.lang.String version;
-    public void setVersion(java.lang.String version) {
-        this.version = version;
-    }
-    public java.lang.String getVersion() {
-        return this.version;
-    }
-
-    public java.lang.String type;
-    public void setType(java.lang.String type) {
-        this.type = type;
-    }
-    public java.lang.String getType() {
-        return this.type;
-    }
-
-    public java.lang.String appliance;
-    public void setAppliance(java.lang.String appliance) {
-        this.appliance = appliance;
-    }
-    public java.lang.String getAppliance() {
-        return this.appliance;
-    }
-
     public java.lang.String zoneUuid;
     public void setZoneUuid(java.lang.String zoneUuid) {
         this.zoneUuid = zoneUuid;
@@ -68,12 +36,12 @@ public class AffinityGroupInventory  {
         return this.zoneUuid;
     }
 
-    public java.lang.String state;
-    public void setState(java.lang.String state) {
-        this.state = state;
+    public java.lang.String clusterUuid;
+    public void setClusterUuid(java.lang.String clusterUuid) {
+        this.clusterUuid = clusterUuid;
     }
-    public java.lang.String getState() {
-        return this.state;
+    public java.lang.String getClusterUuid() {
+        return this.clusterUuid;
     }
 
     public java.sql.Timestamp createDate;
@@ -90,14 +58,6 @@ public class AffinityGroupInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
-    }
-
-    public java.util.List usages;
-    public void setUsages(java.util.List usages) {
-        this.usages = usages;
-    }
-    public java.util.List getUsages() {
-        return this.usages;
     }
 
 }
