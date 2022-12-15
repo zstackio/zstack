@@ -52,6 +52,16 @@ doc {
 					
 				}
 				column {
+					name "type"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional false
+					since "4.6.0"
+
+				}
+				column {
 					name "resourceUuid"
 					enclosedIn "params"
 					desc "资源UUID"

@@ -34,6 +34,9 @@ public class CreateDirectoryAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String zoneUuid;
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

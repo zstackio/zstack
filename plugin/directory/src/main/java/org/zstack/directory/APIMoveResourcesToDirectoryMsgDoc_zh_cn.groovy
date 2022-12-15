@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "resourceUuids"
-					enclosedIn ""
+					enclosedIn "moveResourcesToDirectory"
 					desc "批量资源UUID"
 					location "body"
 					type "List"
@@ -33,12 +33,32 @@ doc {
 				}
 				column {
 					name "directoryUuid"
-					enclosedIn ""
+					enclosedIn "moveResourcesToDirectory"
 					desc "目录UUID"
 					location "body"
 					type "String"
 					optional false
 					since "4.6.0"
+					
+				}
+				column {
+					name "systemTags"
+					enclosedIn ""
+					desc "系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "userTags"
+					enclosedIn ""
+					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
 					
 				}
 			}

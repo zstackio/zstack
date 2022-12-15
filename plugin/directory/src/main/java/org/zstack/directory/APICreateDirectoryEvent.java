@@ -16,10 +16,11 @@ public class APICreateDirectoryEvent extends APIEvent {
         DirectoryInventory inventory = new DirectoryInventory();
         inventory.setUuid(uuid());
         inventory.setName("test");
-        inventory.setGroupName("/admin/first/second");
+        inventory.setGroupName("admin/first/second");
         inventory.setParentUuid(uuid());
         inventory.setRootDirectoryUuid(uuid());
         inventory.setZoneUuid(uuid());
+        inventory.setType("vminstance");
         ret.setInventory(inventory);
         return ret;
     }

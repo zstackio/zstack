@@ -27,6 +27,7 @@ public class DirectoryInventory implements Serializable {
     private String parentUuid;
     private String rootDirectoryUuid;
     private String zoneUuid;
+    private String type;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -38,6 +39,7 @@ public class DirectoryInventory implements Serializable {
         inv.setParentUuid(vo.getParentUuid());
         inv.setRootDirectoryUuid(vo.getRootDirectoryUuid());
         inv.setZoneUuid(vo.getZoneUuid());
+        inv.setType(vo.getType());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -97,6 +99,14 @@ public class DirectoryInventory implements Serializable {
 
     public void setZoneUuid(String zoneUuid) {
         this.zoneUuid = zoneUuid;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public Timestamp getCreateDate() {

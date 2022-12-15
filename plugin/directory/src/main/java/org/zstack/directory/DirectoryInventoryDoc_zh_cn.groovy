@@ -43,6 +43,12 @@ doc {
 		since "4.6.0"
 	}
 	field {
+		name "type"
+		desc "目录类型"
+		type "String"
+		since "4.6.0"
+	}
+	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"

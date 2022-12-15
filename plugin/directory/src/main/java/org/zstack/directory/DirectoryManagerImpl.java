@@ -114,6 +114,7 @@ public class DirectoryManagerImpl extends AbstractService implements DirectoryMa
             bus.publish(event);
             return;
         }
+        vo.setType(msg.getType());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo.setRootDirectoryUuid(Platform.getUuid());
         vo.setZoneUuid(msg.getZoneUuid());
