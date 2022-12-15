@@ -2,15 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class BlockPrimaryStorageInventory  {
-
-    public java.lang.String uuid;
-    public void setUuid(java.lang.String uuid) {
-        this.uuid = uuid;
-    }
-    public java.lang.String getUuid() {
-        return this.uuid;
-    }
+public class BlockPrimaryStorageInventory extends org.zstack.sdk.PrimaryStorageInventory {
 
     public java.lang.String vendorName;
     public void setVendorName(java.lang.String vendorName) {
