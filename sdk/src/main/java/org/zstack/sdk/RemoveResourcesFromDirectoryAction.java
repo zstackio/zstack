@@ -25,7 +25,7 @@ public class RemoveResourcesFromDirectoryAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List resourceUuids;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

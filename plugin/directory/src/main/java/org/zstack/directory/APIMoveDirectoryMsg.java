@@ -39,7 +39,7 @@ public class APIMoveDirectoryMsg extends APIMessage implements DirectoryMessage 
         this.directoryUuid = directoryUuid;
     }
 
-    public static APIMoveDirectoryMsg __example() {
+    public static APIMoveDirectoryMsg __example__() {
         APIMoveDirectoryMsg msg = new APIMoveDirectoryMsg();
         msg.setDirectoryUuid(uuid());
         msg.setTargetParentUuid(uuid());

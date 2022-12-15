@@ -34,7 +34,8 @@ public class APIUpdateDirectoryEvent extends APIEvent {
         inventory.setParentUuid(uuid());
         inventory.setRootDirectoryUuid(uuid());
         inventory.setZoneUuid(uuid());
-        inventory.setGroupName("/admin/first/second");
+        inventory.setType("vminstance");
+        inventory.setGroupName("admin/first/second");
         event.setInventory(inventory);
         return event;
     }

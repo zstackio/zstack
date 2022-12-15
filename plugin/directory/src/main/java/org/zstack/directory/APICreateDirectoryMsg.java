@@ -23,12 +23,15 @@ public class APICreateDirectoryMsg extends APICreateMessage {
     private String parentUuid;
     @APIParam(resourceType = ZoneVO.class)
     private String zoneUuid;
+    @APIParam(required = true)
+    private String type;
 
     public static APICreateDirectoryMsg __example__() {
         APICreateDirectoryMsg ret = new APICreateDirectoryMsg();
         ret.name = "directory";
         ret.parentUuid = uuid();
         ret.zoneUuid = uuid();
+        ret.type = "vminstance";
         return ret;
     }
 
@@ -54,5 +57,13 @@ public class APICreateDirectoryMsg extends APICreateMessage {
 
     public void setZoneUuid(String zoneUuid) {
         this.zoneUuid = zoneUuid;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

@@ -17,6 +17,7 @@ public class DirectoryVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<DirectoryVO, String> parentUuid;
     public static volatile SingularAttribute<DirectoryVO, String> rootDirectoryUuid;
     public static volatile SingularAttribute<DirectoryVO, String> zoneUuid;
+    public static volatile SingularAttribute<DirectoryVO, String> type;
     public static volatile SingularAttribute<DirectoryVO, Timestamp> createDate;
     public static volatile SingularAttribute<DirectoryVO, Timestamp> lastOpDate;
 }

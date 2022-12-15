@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`DirectoryVO` (
     `parentUuid` varchar(32),
     `rootDirectoryUuid` varchar(32) NOT NULL,
     `zoneUuid` varchar(32) NOT NULL,
+    `type` varchar(32) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`),

@@ -28,6 +28,8 @@ public class DirectoryVO extends ResourceVO implements OwnedByAccount, ToInvento
     @org.zstack.header.vo.ForeignKey(parentEntityClass = ZoneVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String zoneUuid;
     @Column
+    private String type;
+    @Column
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
@@ -104,5 +106,13 @@ public class DirectoryVO extends ResourceVO implements OwnedByAccount, ToInvento
     @Override
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }
