@@ -19,6 +19,15 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
     private boolean migrateFromDestination;
     // A map from old disk to new disk
     private Map<String, String> diskMigrationMap;
+    private boolean isRecovery;
+
+    public boolean isRecovery() {
+        return isRecovery;
+    }
+
+    public void setRecovery(boolean recovery) {
+        isRecovery = recovery;
+    }
 
     public StorageMigrationPolicy getStorageMigrationPolicy() {
         return storageMigrationPolicy;
