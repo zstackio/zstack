@@ -74,7 +74,7 @@ public class CreateVmFromCdpBackupAction extends AbstractAction {
     public java.util.List dataVolumeSystemTags;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean isDisasterRecovery;
+    public boolean isDisasterRecovery = false;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
