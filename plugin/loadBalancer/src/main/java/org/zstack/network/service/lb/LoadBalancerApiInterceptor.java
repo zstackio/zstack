@@ -895,7 +895,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     if (LoadBalancerSessionPersistence.iphash.toString().equals(enableSession)) {
                         if (!LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(algorithm)) {
                             /*can not assign session persistence iphash without source algorithm*/
-                            throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning session persistence iphash when the balancer algorithm is not source", msg.getLoadBalancerUuid(), msg.getName()));
+                            throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning session persistence iphash", msg.getLoadBalancerUuid(), msg.getName()));
                         }
                     }
                 }
