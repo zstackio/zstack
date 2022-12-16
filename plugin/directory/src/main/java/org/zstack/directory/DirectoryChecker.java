@@ -1,6 +1,7 @@
 package org.zstack.directory;
 
 import org.zstack.header.Component;
+import org.zstack.header.errorcode.ErrorCode;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,7 +14,7 @@ import java.util.Map;
  */
 public interface DirectoryChecker {
 
-    boolean check(String directoryUuid, List<String> resourceUuids);
+    ErrorCode check(String directoryUuid, List<String> resourceUuids);
 
     DirectoryType getType();
 }

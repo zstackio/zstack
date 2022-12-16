@@ -264,8 +264,7 @@ public class DirectoryBase {
         }
         List<DirectoryVO> list = directoryVOS.stream().filter(directoryVO -> directoryVO.getName().equals(msg.getName())).collect(Collectors.toList());
         if (!list.isEmpty()) {
-            //TODO: The error message needs to be concretized
-            completion.fail(operr("operation failed, peer directory names cannot be duplicated"));
+            completion.fail(operr("duplicate directory name, directory[uuid: %s] with name %s already exists", list.get(0).getUuid(), msg.getName()));
             return;
         }
 
@@ -328,8 +327,7 @@ public class DirectoryBase {
             findSubUuids(uuids, list);
         }
         if (list.contains(msg.getTargetParentUuid())) {
-            //TODO: The error message needs to be concretized
-            completion.fail(operr("the operation fails and the directory becomes a ring"));
+            completion.fail(operr("circular dependency detected, directory %s and directory %s will cause circular dependency", msg.getDirectoryUuid(), msg.getTargetParentUuid()));
             return;
         }
         vo.setParentUuid(msg.getTargetParentUuid());

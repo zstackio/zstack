@@ -102,7 +102,7 @@ public class DirectoryManagerImpl extends AbstractService implements DirectoryMa
         }
         List<DirectoryVO> list = directoryVOS.stream().filter(DirectoryVO -> DirectoryVO.getName().equals(name)).collect(Collectors.toList());
         if (!list.isEmpty()) {
-            event.setError(operr("fail to create directory, peer directory names cannot be duplicated"));
+            event.setError(operr("duplicate directory name, directory[uuid: %s] with name %s already exists", list.get(0).getUuid(), msg.getName()));
             bus.publish(event);
             return;
         }
