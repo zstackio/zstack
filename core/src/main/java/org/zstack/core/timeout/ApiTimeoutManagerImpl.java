@@ -422,8 +422,8 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
         long newMessageDeadline = timer.getCurrentTimeMillis() + messageTimeout;
         mtd.setMessageTimeout(messageTimeout);
         mtd.setMessageDeadline(messageTimeout < messageTimeoutFromContext ?
-                Math.min(messageTimeoutFromContext, newMessageDeadline) :
-                Math.max(messageTimeoutFromContext, newMessageDeadline));
+                Math.min(originalDeadlineFromContext, newMessageDeadline) :
+                Math.max(originalDeadlineFromContext, newMessageDeadline));
         return mtd;
     }
 }
