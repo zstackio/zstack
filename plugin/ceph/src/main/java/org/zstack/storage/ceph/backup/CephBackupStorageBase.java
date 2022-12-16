@@ -765,8 +765,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         private void doCall() {
             if (!it.hasNext()) {
-                callback.fail(operr("all mons failed to execute http call[%s], errors are %s",
-                        path, JSONObjectUtil.toJsonString(errorCodes)));
+                callback.fail(operr("all monitors cannot execute http call[%s]", path));
 
                 return;
             }
@@ -1265,14 +1264,14 @@ public class CephBackupStorageBase extends BackupStorageBase {
         });
 
         class Connector {
-            List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+            private ErrorCodeList errorCodes = new ErrorCodeList();
             Iterator<CephBackupStorageMonBase> it = mons.iterator();
 
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
-                    if (errorCodes.size() == mons.size()) {
-                        trigger.fail(operr("unable to connect to the ceph backup storage[uuid:%s]. Failed to connect all ceph mons. Errors are %s",
-                                        self.getUuid(), JSONObjectUtil.toJsonString(errorCodes)));
+                    if (errorCodes.getCauses().size() == mons.size()) {
+                        trigger.fail(operr(errorCodes, "unable to connect to the ceph backup storage[uuid:%s], failed to connect all ceph monitors.",
+                                        self.getUuid()));
                     } else {
                         // reload because mon status changed
                         self = dbf.reload(self);
@@ -1290,7 +1289,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        errorCodes.add(errorCode);
+                        errorCodes.getCauses().add(errorCode);
 
                         if (newAdded) {
                             // the mon fails to connect, remove it
