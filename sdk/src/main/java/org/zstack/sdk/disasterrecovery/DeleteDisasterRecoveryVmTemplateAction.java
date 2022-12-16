@@ -12,7 +12,7 @@ public class DeleteDisasterRecoveryVmTemplateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.disasterrecovery.DeleteMirrorCdpTaskScheduleJobResult value;
+        public org.zstack.sdk.disasterrecovery.DeleteDisasterRecoveryVmTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -63,8 +63,8 @@ public class DeleteDisasterRecoveryVmTemplateAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.disasterrecovery.DeleteMirrorCdpTaskScheduleJobResult value = res.getResult(org.zstack.sdk.disasterrecovery.DeleteMirrorCdpTaskScheduleJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.disasterrecovery.DeleteMirrorCdpTaskScheduleJobResult() : value; 
+        org.zstack.sdk.disasterrecovery.DeleteDisasterRecoveryVmTemplateResult value = res.getResult(org.zstack.sdk.disasterrecovery.DeleteDisasterRecoveryVmTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.disasterrecovery.DeleteDisasterRecoveryVmTemplateResult() : value; 
 
         return ret;
     }

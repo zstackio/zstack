@@ -12,12 +12,12 @@ public class MirrorCdpTaskScheduleJobInventory  {
         return this.uuid;
     }
 
-    public java.lang.String groupName;
-    public void setGroupName(java.lang.String groupName) {
-        this.groupName = groupName;
+    public java.lang.String name;
+    public void setName(java.lang.String name) {
+        this.name = name;
     }
-    public java.lang.String getGroupName() {
-        return this.groupName;
+    public java.lang.String getName() {
+        return this.name;
     }
 
     public java.lang.String description;
