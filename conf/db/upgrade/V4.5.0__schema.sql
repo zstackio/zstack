@@ -158,6 +158,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MirrorCdpTaskVO` (
     `peerCdpTaskUuid` varchar(32) NOT NULL,
     `mode` varchar(128) NOT NULL,
     `peerHostName` varchar(128) NOT NULL,
+    `peerUserName` varchar(64) NOT NULL,
+    `peerPassword` varchar(255) NOT NULL,
     `mirrorResourceUuid` varchar(128) DEFAULT NULL,
     `mirrorResourceType` varchar(255) DEFAULT NULL,
     `status` varchar(128) DEFAULT NULL,
@@ -214,12 +216,16 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MirrorCdpTaskRecoverRecordVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`),
-    UNIQUE KEY `uuid` (`uuid`)
+    UNIQUE KEY `uuid` (`uuid`),
+    KEY `fkMirrorCdpTaskRecoverRecordVOResourceVO` (`resourceUuid`),
+    KEY `fkMirrorCdpTaskRecoverRecordVOMirrorCdpTaskVO` (`mirrorCdpTaskUuid`),
+    CONSTRAINT `fkMirrorCdpTaskRecoverRecordVOMirrorCdpTaskVO` FOREIGN KEY (`mirrorCdpTaskUuid`) REFERENCES `MirrorCdpTaskVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkMirrorCdpTaskRecoverRecordVOResourceVO` FOREIGN KEY (`resourceUuid`) REFERENCES `ResourceVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`MirrorCdpTaskScheduleJobVO` (
     `uuid` varchar(32) NOT NULL,
-    `groupName` varchar(256) NOT NULL,
+    `name` varchar(256) NOT NULL,
     `description` varchar(256) DEFAULT NULL,
     `status` varchar(32) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
@@ -234,7 +240,11 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MirrorCdpTaskScheduleJobTaskRefVO` (
     `scheduleJobUuid` varchar(32) NOT NULL,
     `parentTaskUuid` varchar(32) DEFAULT NULL,
     PRIMARY KEY (`uuid`),
-    UNIQUE KEY `uuid` (`uuid`)
+    UNIQUE KEY `uuid` (`uuid`),
+    KEY `fkMirrorCdpTaskVOScheduleJobRefVO` (`mirrorCdpTaskUuid`),
+    KEY `fkScheduleJobVOScheduleJobRefVO` (`scheduleJobUuid`),
+    CONSTRAINT `fkMirrorCdpTaskVOScheduleJobRefVO` FOREIGN KEY (`mirrorCdpTaskUuid`) REFERENCES `MirrorCdpTaskVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkScheduleJobVOScheduleJobRefVO` FOREIGN KEY (`scheduleJobUuid`) REFERENCES `MirrorCdpTaskScheduleJobVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`TwinManagementNodeResourceMapVO` (

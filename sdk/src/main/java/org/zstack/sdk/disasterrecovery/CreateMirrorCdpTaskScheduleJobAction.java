@@ -29,7 +29,7 @@ public class CreateMirrorCdpTaskScheduleJobAction extends AbstractAction {
     public java.util.List mirrorCdpTaskUuids;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String groupName;
+    public java.lang.String name;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
