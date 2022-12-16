@@ -38663,6 +38663,33 @@ abstract class ApiHelper {
     }
 
 
+    def changeScheduleJobTasksPriority(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.disasterrecovery.ChangeScheduleJobTasksPriorityAction.class) Closure c) {
+        def a = new org.zstack.sdk.disasterrecovery.ChangeScheduleJobTasksPriorityAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createDisasterRecoveryVmTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.disasterrecovery.CreateDisasterRecoveryVmTemplateAction.class) Closure c) {
         def a = new org.zstack.sdk.disasterrecovery.CreateDisasterRecoveryVmTemplateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -38964,6 +38991,35 @@ abstract class ApiHelper {
     }
 
 
+    def queryMirrorCdpTaskRecoverRecord(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.disasterrecovery.QueryMirrorCdpTaskRecoverRecordAction.class) Closure c) {
+        def a = new org.zstack.sdk.disasterrecovery.QueryMirrorCdpTaskRecoverRecordAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryMirrorCdpTaskScheduleJob(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.disasterrecovery.QueryMirrorCdpTaskScheduleJobAction.class) Closure c) {
         def a = new org.zstack.sdk.disasterrecovery.QueryMirrorCdpTaskScheduleJobAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -39132,33 +39188,6 @@ abstract class ApiHelper {
 
     def updateMirrorCdpTaskScheduleJob(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.disasterrecovery.UpdateMirrorCdpTaskScheduleJobAction.class) Closure c) {
         def a = new org.zstack.sdk.disasterrecovery.UpdateMirrorCdpTaskScheduleJobAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def updateMirrorCdpTaskScheduleJobPriority(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.disasterrecovery.UpdateMirrorCdpTaskScheduleJobPriorityAction.class) Closure c) {
-        def a = new org.zstack.sdk.disasterrecovery.UpdateMirrorCdpTaskScheduleJobPriorityAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

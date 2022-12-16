@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateMirrorCdpTaskScheduleJobAction extends AbstractAction {
+public class ChangeScheduleJobTasksPriorityAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateMirrorCdpTaskScheduleJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.disasterrecovery.UpdateMirrorCdpTaskScheduleJobResult value;
+        public org.zstack.sdk.disasterrecovery.ChangeScheduleJobTasksPriorityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,11 @@ public class UpdateMirrorCdpTaskScheduleJobAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String scheduleJobUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map mirrorCdpTasks;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +63,8 @@ public class UpdateMirrorCdpTaskScheduleJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.disasterrecovery.UpdateMirrorCdpTaskScheduleJobResult value = res.getResult(org.zstack.sdk.disasterrecovery.UpdateMirrorCdpTaskScheduleJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.disasterrecovery.UpdateMirrorCdpTaskScheduleJobResult() : value; 
+        org.zstack.sdk.disasterrecovery.ChangeScheduleJobTasksPriorityResult value = res.getResult(org.zstack.sdk.disasterrecovery.ChangeScheduleJobTasksPriorityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.disasterrecovery.ChangeScheduleJobTasksPriorityResult() : value; 
 
         return ret;
     }
@@ -96,11 +93,11 @@ public class UpdateMirrorCdpTaskScheduleJobAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/mirror/cdptask/schedulejob/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/mirror/cdptask/schedulejob/changepriority";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateMirrorCdpTaskScheduleJob";
+        info.parameterName = "params";
         return info;
     }
 

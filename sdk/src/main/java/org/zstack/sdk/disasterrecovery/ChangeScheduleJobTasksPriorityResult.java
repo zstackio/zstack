@@ -2,7 +2,7 @@ package org.zstack.sdk.disasterrecovery;
 
 import org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobInventory;
 
-public class AddMirrorCdpTasksToScheduleJobResult {
+public class ChangeScheduleJobTasksPriorityResult {
     public MirrorCdpTaskScheduleJobInventory inventory;
     public void setInventory(MirrorCdpTaskScheduleJobInventory inventory) {
         this.inventory = inventory;

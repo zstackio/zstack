@@ -29,7 +29,7 @@ public class AddMirrorCdpTasksToScheduleJobAction extends AbstractAction {
     public java.lang.String scheduleJobUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map mirrorCdpTaskUuids;
+    public java.util.Map mirrorCdpTasks;
 
     @Param(required = false)
     public java.util.List systemTags;

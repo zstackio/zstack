@@ -89,7 +89,10 @@ public class CreateDisasterRecoveryVmTemplateAction extends AbstractAction {
     public java.lang.String failbackMode;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean useExistingVolume;
+    public java.lang.Boolean useExistingVolume = false;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public long groupId = 0L;
 
     @Param(required = false, validValues = {"InstantStart","JustCreate","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String strategy;
