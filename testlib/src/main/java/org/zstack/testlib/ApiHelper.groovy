@@ -6875,6 +6875,33 @@ abstract class ApiHelper {
     }
 
 
+    def createCasClient(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateCasClientAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateCasClientAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createCdpPolicy(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateCdpPolicyAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateCdpPolicyAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -8252,6 +8279,33 @@ abstract class ApiHelper {
     }
 
 
+    def createOAuthClient(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateOAuthClientAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateOAuthClientAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createOssBackupBucketRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateOssBackupBucketRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateOssBackupBucketRemoteAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -8704,6 +8758,33 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
 
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def createSSORedirectTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateSSORedirectTemplateAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateSSORedirectTemplateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
             return out
         } else {
             return errorOut(a.call())
@@ -13105,6 +13186,60 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
 
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteSSOClient(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteSSOClientAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteSSOClientAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteSSORedirectTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteSSORedirectTemplateAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteSSORedirectTemplateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
             return out
         } else {
             return errorOut(a.call())
@@ -34361,6 +34496,33 @@ abstract class ApiHelper {
     }
 
 
+    def updateCasClient(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateCasClientAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateCasClientAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def updateCdpPolicy(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateCdpPolicyAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateCdpPolicyAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -35893,6 +36055,33 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
 
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateOAuthClient(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateOAuthClientAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateOAuthClientAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
             return out
         } else {
             return errorOut(a.call())
