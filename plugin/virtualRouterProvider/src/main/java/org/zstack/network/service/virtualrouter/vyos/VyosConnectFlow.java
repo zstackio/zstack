@@ -64,27 +64,27 @@ public class VyosConnectFlow extends NoRollbackFlow {
     @Autowired
     private AnsibleFacade asf;
 
-    private void debug (String vrMgtIp, int timeout) {
+    private void debug (String vrMgtIp, String sshUser, int timeout) {
         int sshPort = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
         if (!NetworkUtils.isRemotePortOpen(vrMgtIp, sshPort, timeout)) {
-            logger.debug(String.format("vyos agent port %s is not opened on managment nic %s",
+            logger.debug(String.format("virtual router agent port %s is not opened on managment nic %s",
                     sshPort, vrMgtIp));
             return;
         }
         Ssh ssh1 = new Ssh();
-        ssh1.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
+        ssh1.setUsername(sshUser).setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                 .setHostname(vrMgtIp).setTimeout(timeout);
-        SshResult ret1 = ssh1.command("sudo tail -n 300 /home/vyos/zvr/zvrboot.log").runAndClose();
+        SshResult ret1 = ssh1.command(String.format("sudo tail -n 300 /home/%s/zvr/zvrboot.log", sshUser)).runAndClose();
         if (ret1.getReturnCode() == 0) {
-            logger.debug(String.format("vyos bootup log %s", ret1.getStdout()));
+            logger.debug(String.format("virtual router bootup log %s", ret1.getStdout()));
         } else {
-            logger.debug(String.format("get vyos bootup log failed: %s", ret1.getStderr()));
+            logger.debug(String.format("get virtual router bootup log failed: %s", ret1.getStderr()));
         }
 
         Ssh ssh2 = new Ssh();
-        ssh2.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
+        ssh2.setUsername(sshUser).setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                 .setHostname(vrMgtIp).setTimeout(timeout);
-        SshResult ret2 = ssh2.command("sudo tail -n 300 /home/vyos/zvr/zvrstartup.log").runAndClose();
+        SshResult ret2 = ssh2.command(String.format("sudo tail -n 300 /home/%s/zvr/zvrstartup.log", sshUser)).runAndClose();
         if (ret2.getReturnCode() == 0) {
             logger.debug(String.format("zvr startup log %s", ret2.getStdout()));
         } else {
@@ -92,9 +92,9 @@ public class VyosConnectFlow extends NoRollbackFlow {
         }
 
         Ssh ssh3 = new Ssh();
-        ssh3.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
+        ssh3.setUsername(sshUser).setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                 .setHostname(vrMgtIp).setTimeout(timeout);
-        SshResult ret3 = ssh3.command("sudo tail -n 300 /home/vyos/zvr/zvr.log").runAndClose();
+        SshResult ret3 = ssh3.command(String.format("sudo tail -n 300 /home/%s/zvr/zvr.log", sshUser)).runAndClose();
         if (ret3.getReturnCode() == 0) {
             logger.debug(String.format("zvr log %s", ret3.getStdout()));
         } else {
@@ -102,7 +102,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
         }
 
         Ssh ssh4 = new Ssh();
-        ssh4.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
+        ssh4.setUsername(sshUser).setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                 .setHostname(vrMgtIp).setTimeout(timeout);
         SshResult ret4 = ssh4.command("ps aux | grep zvr").runAndClose();
         if (ret4.getReturnCode() == 0) {
@@ -254,17 +254,22 @@ public class VyosConnectFlow extends NoRollbackFlow {
     @Override
     public void rollback(FlowRollback trigger, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
+        final String vrUuid;
         VmNicInventory mgmtNic;
         if (vr != null) {
             mgmtNic = vr.getManagementNic();
+            vrUuid = vr.getUuid();
         } else {
             final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
             ApplianceVmInventory applianceVm = ApplianceVmInventory.valueOf(dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class));
             mgmtNic = applianceVm.getManagementNic();
+            vrUuid = spec.getVmInventory().getUuid();
             DebugUtils.Assert(mgmtNic!=null, String.format("cannot find management nic for virtual router[uuid:%s, name:%s]", spec.getVmInventory().getUuid(), spec.getVmInventory().getName()));
         }
-
-        debug(mgmtNic.getIp(), 30);
+        String vrUserTag = VirtualRouterSystemTags.VIRTUAL_ROUTER_LOGIN_USER.getTokenByResourceUuid(
+                vrUuid, VirtualRouterVmVO.class, VirtualRouterSystemTags.VIRTUAL_ROUTER_LOGIN_USER_TOKEN);
+        String sshUser = vrUserTag != null ? vrUserTag : "vyos"; //old vpc vrouter has no tag, that's vyos.
+        debug(mgmtNic.getIp(), sshUser, 30);
         trigger.rollback();
     }
 }

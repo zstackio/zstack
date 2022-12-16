@@ -34,4 +34,9 @@ public class VirtualRouterSystemTags {
 
     public static String VIRTUAL_ROUTER_OFFERING_TOKEN = "routerOffering";
     public static PatternedSystemTag VIRTUAL_ROUTER_OFFERING = new PatternedSystemTag(String.format("virtualRouterOffering::{%s}", VIRTUAL_ROUTER_OFFERING_TOKEN), L3NetworkVO.class);
+
+    public static String VIRTUAL_ROUTER_LOGIN_USER_TOKEN = "loginUser";
+    public static PatternedSystemTag VIRTUAL_ROUTER_LOGIN_USER = new PatternedSystemTag(String.format(
+                    "loginUser::{%s}", VIRTUAL_ROUTER_LOGIN_USER_TOKEN ),
+                    VirtualRouterVmVO.class);
 }

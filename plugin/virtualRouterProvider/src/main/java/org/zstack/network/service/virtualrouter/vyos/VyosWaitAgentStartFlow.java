@@ -3,48 +3,28 @@ package org.zstack.network.service.virtualrouter.vyos;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.appliancevm.ApplianceVmGlobalConfig;
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.appliancevm.ApplianceVmVO;
-import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.Platform;
-import org.zstack.core.ansible.AnsibleFacade;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.rest.JsonAsyncRESTCallback;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitCommand;
-import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitRsp;
 import org.zstack.network.service.virtualrouter.*;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_;
-import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.NetworkUtils;
-import org.zstack.utils.ssh.Ssh;
-import org.zstack.utils.ssh.SshResult;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by shixin on 2022/06/15.
@@ -60,12 +40,22 @@ public class VyosWaitAgentStartFlow extends NoRollbackFlow {
     @Autowired
     private DatabaseFacade dbf;
 
+    public void updateVrLoginUser(String vrUuid, boolean isVyos){
+        SystemTagCreator creator = VirtualRouterSystemTags.VIRTUAL_ROUTER_LOGIN_USER.newSystemTagCreator(vrUuid);
+        creator.setTagByTokens(map(
+                e(VirtualRouterSystemTags.VIRTUAL_ROUTER_LOGIN_USER_TOKEN, isVyos ? "vyos" : "zstack")
+        ));
+        creator.inherent = true;
+        creator.recreate = true;
+        creator.create();
+        logger.debug("creator done");
+    }
+
     /* this flow is called before VyosDeployAgentFlow, because:
     *  1. vyos vm startup, zvrboot will reboot vyos agent
     *  2. VyosDeployAgentFlow may also reboot vyos agent,
     *  3. we must keep #1 finished before #2
     *  */
-
     @Override
     public void run(FlowTrigger trigger, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
@@ -86,6 +76,18 @@ public class VyosWaitAgentStartFlow extends NoRollbackFlow {
         restf.echo(url, new Completion(trigger) {
             @Override
             public void success() {
+                String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_GET_TYPE_PATH);
+                VirtualRouterCommands.GetTypeCommand cmd = new VirtualRouterCommands.GetTypeCommand();
+                cmd.setUuid(vrUuid);
+                try {
+                    VirtualRouterCommands.GetTypeRsp rsp = restf.syncJsonPost(url, cmd, VirtualRouterCommands.GetTypeRsp.class, TimeUnit.SECONDS, 10);
+                    if (rsp.isSuccess()) {
+                        updateVrLoginUser(vrUuid, rsp.isVyos());
+                    }
+                }catch (OperationFailureException e){
+                    // old zvr will return 404
+                    updateVrLoginUser(vrUuid, true);
+                }
                 trigger.next();
             }
 
