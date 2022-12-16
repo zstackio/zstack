@@ -278,7 +278,7 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
             return;
         }
         logger.debug("add vyos password to vrouter");
-        info.put(VyosConstants.BootstrapInfoKey.vyosPassword.toString(), VirtualRouterGlobalConfig.VYOS_PASSWORD.value());
+        info.put(VyosConstants.BootstrapInfoKey.vpcPassword.toString(), VirtualRouterGlobalConfig.VYOS_PASSWORD.value());
         info.put(BootstrapParams.sshPort.toString(), VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class));
 
         /* vrouter only has 1 private network */

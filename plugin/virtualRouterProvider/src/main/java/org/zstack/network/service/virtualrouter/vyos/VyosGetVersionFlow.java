@@ -76,6 +76,7 @@ public class VyosGetVersionFlow extends NoRollbackFlow {
             }
         }
 
+        flowData.put(VmInstanceConstant.Params.vmInstanceUuid.toString(), vrUuid);
         vyosVersionManager.vyosRouterVersionCheck(vrUuid, new ReturnValueCompletion<VyosVersionCheckResult>(flowTrigger) {
             @Override
             public void fail(ErrorCode errorCode) {

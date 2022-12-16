@@ -17,7 +17,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
+import org.zstack.network.service.virtualrouter.*;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -48,8 +48,14 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
     @Autowired
     private ThreadFacade thdf;
 
-    private final static String REMOTE_ZVR_PATH = "/home/vyos/zvr.bin";
-    private final static String REMOTE_ZVRBOOT_PATH = "/home/vyos/zvrboot.bin";
+
+    private static String REMOTE_USER;
+    private static String REMOTE_PASS = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
+    private static int    REMOTE_PORT = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
+
+    private static String REMOTE_ZVR_DIR;
+    private static String REMOTE_ZVR_BIN_PATH;
+    private static String REMOTE_ZVRBOOT_BIN_PATH;
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -59,6 +65,14 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
         }
 
         boolean isReconnect = Boolean.parseBoolean((String) data.get(Params.isReconnect.toString()));
+        final String vrUuid = (String) data.get(VmInstanceConstant.Params.vmInstanceUuid.toString());
+        String vrUserTag = VirtualRouterSystemTags.VIRTUAL_ROUTER_LOGIN_USER.getTokenByResourceUuid(
+                            vrUuid, VirtualRouterVmVO.class, VirtualRouterSystemTags.VIRTUAL_ROUTER_LOGIN_USER_TOKEN);
+        REMOTE_USER = vrUserTag != null ? vrUserTag : "vyos"; //old vpc vrouter has no tag, that's vyos.
+        REMOTE_ZVR_DIR = String.format("/home/%s/zvr", REMOTE_USER);
+        REMOTE_ZVR_BIN_PATH = String.format("/home/%s/zvr.bin", REMOTE_USER);
+        REMOTE_ZVRBOOT_BIN_PATH = String.format("/home/%s/zvrboot.bin", REMOTE_USER);
+
 
         if (!isReconnect && !ApplianceVmGlobalConfig.DEPLOY_AGENT_ON_START.value(Boolean.class)) {
             // no need to deploy agent
@@ -90,7 +104,6 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
         int timeoutInSeconds = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
         long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeoutInSeconds);
-        int sshPort = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
 
         List<Throwable> errors = new ArrayList<>();
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
@@ -100,25 +113,26 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     boolean forceReboot = false;
                     long now = System.currentTimeMillis();
                     if (now > timeout) {
-                        trigger.fail(err(ApplianceVmErrors.UNABLE_TO_START, "vyos deploy agent failed, because %s",
+                        trigger.fail(err(ApplianceVmErrors.UNABLE_TO_START, "virtual router deploy agent failed, because %s",
                                 errors.get(errors.size() -1)));
                         return true;
                     }
 
-                    if (NetworkUtils.isRemotePortOpen(mgmtNicIp, sshPort, 2000)) {
-                        if(isZvrMd5Changed(mgmtNicIp,sshPort)){
-                            deployAgent(sshPort);
+                    if (NetworkUtils.isRemotePortOpen(mgmtNicIp, REMOTE_PORT, 2000)) {
+                        if(isZvrMd5Changed(mgmtNicIp, REMOTE_PORT)){
+                            logger.debug(String.format("will deploy virtual router agent by remote user[%s] from management", REMOTE_USER));
+                            deployAgent(REMOTE_PORT);
                             forceReboot = true;
                         }
-                        rebootAgent(sshPort, forceReboot);
+                        rebootAgent(REMOTE_PORT, forceReboot);
                         trigger.next();
                         return true;
                     } else {
-                        errors.add(new Throwable(String.format("vyos agent port %s is not opened on managment nic %s", sshPort, mgmtNicIp)));
+                        errors.add(new Throwable(String.format("virtual router agent port %s is not opened on managment nic %s", REMOTE_PORT, mgmtNicIp)));
                         return false;
                     }
                 } catch (Throwable t) {
-                    logger.warn("vyos deploy agent failed", t);
+                    logger.warn("virtual router deploy agent failed", t);
                     errors.add(t);
                     return false;
                 }
@@ -128,48 +142,47 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                 try {
                     new Ssh().setTimeout(300).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
-                            "/home/vyos/zvr.bin"
+                            REMOTE_ZVR_BIN_PATH
                     ).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvrboot.bin", true).getAbsolutePath(),
-                            "/home/vyos/zvrboot.bin"
+                            REMOTE_ZVRBOOT_BIN_PATH
                     ).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
-                            "/home/vyos/zvr/mn_zvr_version"
-                    ).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
+                            String.format("%s/mn_zvr_version", REMOTE_ZVR_DIR)
+                    ).setPrivateKey(asf.getPrivateKey()).setUsername(REMOTE_USER).setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
 
                 } catch (SshException  e ) {
                     /*
                     ZSTAC-18352, try again with password when key fail
                      */
-                    String password = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
                     new Ssh().setTimeout(300).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
-                            "/home/vyos/zvr.bin"
+                            REMOTE_ZVR_BIN_PATH
                     ).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvrboot.bin", true).getAbsolutePath(),
-                            "/home/vyos/zvrboot.bin"
+                            REMOTE_ZVRBOOT_BIN_PATH
                     ).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
-                            "/home/vyos/zvr/mn_zvr_version"
-                    ).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
+                            String.format("%s/mn_zvr_version", REMOTE_ZVR_DIR)
+                    ).setPassword(REMOTE_PASS).setUsername(REMOTE_USER).setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
                 }
             }
 
             private void rebootAgent(int port, boolean forceReboot) {
-                String script = String.format("sudo bash /home/vyos/zvrboot.bin\n" +
-                        "sudo bash /home/vyos/zvr.bin\n" +
-                        "sudo bash /home/vyos/zvr/ssh/zvr-reboot.sh %s\n", forceReboot);
+                String script = String.format("sudo bash %s\n" +
+                        "sudo bash %s\n" +
+                        "sudo bash %s/ssh/zvr-reboot.sh %s\n",
+                        REMOTE_ZVRBOOT_BIN_PATH, REMOTE_ZVR_BIN_PATH, REMOTE_ZVR_DIR, forceReboot);
 
                 try {
                     new Ssh().shell(script
-                    ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
+                    ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername(REMOTE_USER).setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
                 } catch (SshException  e ) {
                     /*
                     ZSTAC-18352, try again with password when key fail
                      */
-                    String password = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
                     new Ssh().shell(script
-                    ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
+                    ).setTimeout(300).setPassword(REMOTE_PASS).setUsername(REMOTE_USER).setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
                 }
             }
 
@@ -194,7 +207,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
     private boolean isZvrMd5Changed(String ip, int port){
         int interval = 30 ;
         Ssh ssh = new Ssh();
-        ssh.setUsername("vyos")
+        ssh.setUsername(REMOTE_USER)
                 .setPrivateKey(asf.getPrivateKey())
                 .setPort(port)
                 .setHostname(ip)
@@ -208,7 +221,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
 
         try {
-            ssh.command(String.format("sudo -S md5sum %s 2>/dev/null", REMOTE_ZVR_PATH));
+            ssh.command(String.format("sudo -S md5sum %s 2>/dev/null", REMOTE_ZVR_BIN_PATH));
             SshResult ret = ssh.run();
             if (ret.getReturnCode() == 0) {
                 remoteZvrMd5 =  ret.getStdout().split(" ")[0];
@@ -221,11 +234,11 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
             if (!remoteZvrMd5.equals(localZvrMd5)) {
                 logger.debug(String.format("file MD5 changed, local[%s, md5:%s] remote[%s, md5: %s]", localZvrPath,
-                        localZvrMd5, REMOTE_ZVR_PATH, remoteZvrMd5));
+                        localZvrMd5, REMOTE_ZVR_BIN_PATH, remoteZvrMd5));
                 return true;
             }
 
-            ssh.command(String.format("sudo -S md5sum %s 2>/dev/null", REMOTE_ZVRBOOT_PATH));
+            ssh.command(String.format("sudo -S md5sum %s 2>/dev/null", REMOTE_ZVRBOOT_BIN_PATH));
             ret = ssh.run();
             if (ret.getReturnCode() == 0) {
                 remoteZvrbootMd5 =  ret.getStdout().split(" ")[0];
@@ -238,12 +251,12 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
             if (!remoteZvrbootMd5.equals(localZvrbootMd5)) {
                 logger.debug(String.format("file MD5 changed, local[%s, md5:%s] remote[%s, md5: %s]", localZvrBootPath,
-                        localZvrbootMd5, REMOTE_ZVRBOOT_PATH, remoteZvrbootMd5));
+                        localZvrbootMd5, REMOTE_ZVRBOOT_BIN_PATH, remoteZvrbootMd5));
                 return true;
             }
 
         }catch (SshException  e ) {
-            logger.debug(String.format("unable to check vyos[ip:%s, port:%s] zvr md5", ip, port, e.getMessage()));
+            logger.debug(String.format("unable to check virtual router[ip:%s, port:%s] zvr md5", ip, port, e.getMessage()));
         }finally {
             ssh.close();
         }
@@ -282,24 +295,23 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
     }
 
     private void debug (String vrMgtIp, int timeout) {
-        int sshPort = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
-        if (!NetworkUtils.isRemotePortOpen(vrMgtIp, sshPort, timeout)) {
-            logger.debug(String.format("vyos agent port %s is not opened on managment nic %s",
-                    sshPort, vrMgtIp));
+        if (!NetworkUtils.isRemotePortOpen(vrMgtIp, REMOTE_PORT, timeout)) {
+            logger.debug(String.format("virtual router agent port %s is not opened on managment nic %s",
+                    REMOTE_PORT, vrMgtIp));
             return;
         }
         Ssh ssh1 = new Ssh();
-        ssh1.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
+        ssh1.setUsername(REMOTE_USER).setPrivateKey(asf.getPrivateKey()).setPort(REMOTE_PORT)
                 .setHostname(vrMgtIp).setTimeout(timeout);
-        SshResult ret1 = ssh1.command("sudo tail -n 300 /home/vyos/zvr/zvrReboot.log").runAndClose();
+        SshResult ret1 = ssh1.command(String.format("sudo tail -n 300 %s/zvrReboot.log", REMOTE_ZVR_DIR)).runAndClose();
         if (ret1.getReturnCode() == 0) {
-            logger.debug(String.format("vyos reboot log %s", ret1.getStdout()));
+            logger.debug(String.format("virtual router reboot log %s", ret1.getStdout()));
         } else {
-            logger.debug(String.format("get vyos reboot log failed: %s", ret1.getStderr()));
+            logger.debug(String.format("get virtual router reboot log failed: %s", ret1.getStderr()));
         }
 
         Ssh ssh2 = new Ssh();
-        ssh2.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
+        ssh2.setUsername(REMOTE_USER).setPrivateKey(asf.getPrivateKey()).setPort(REMOTE_PORT)
                 .setHostname(vrMgtIp).setTimeout(timeout);
         SshResult ret2 = ssh2.command("sudo tail -n 300 /tmp/agentRestart.log").runAndClose();
         if (ret2.getReturnCode() == 0) {

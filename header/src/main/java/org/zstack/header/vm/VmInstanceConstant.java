@@ -34,6 +34,7 @@ public interface VmInstanceConstant {
         L3NetworkInventory,
         UsedIPInventory,
         vmInventory,
+        vmInstanceUuid,
         VmAllocateNicFlow_ips,
         VmAllocateNicFlow_nics,
         VmAllocateNicFlow_allowDuplicatedAddress,
