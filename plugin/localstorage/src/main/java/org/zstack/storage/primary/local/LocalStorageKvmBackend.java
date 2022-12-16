@@ -2463,9 +2463,48 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 downloadImage = false;
             }
 
+            flows.add(new NoRollbackFlow() {
+                String __name__ = "get-base-image-cache-of-root-volume";
+
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
+                    cmd.volumeInstallDir = makeVolumeInstallDir(struct.getVolume());
+                    cmd.imageCacheDir = getCachedImageDir();
+                    cmd.volumeUuid = struct.getVolume().getUuid();
+                    httpCall(GET_BASE_IMAGE_PATH, struct.getSrcHostUuid(), cmd, GetVolumeBaseImagePathRsp.class, new ReturnValueCompletion<GetVolumeBaseImagePathRsp>(trigger) {
+                        @Override
+                        public void success(GetVolumeBaseImagePathRsp rsp) {
+                            if (rsp.path != null && isCachedImageUrl(rsp.path)) {
+                                context.baseImageCachePath = rsp.path;
+                                context.baseImageCacheSize = rsp.size;
+                            }
+
+                            context.rootVolumeUuid = cmd.volumeUuid;
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.error(String.format("cannot get volume base image %s, skip and continue", errorCode.getDetails()));
+                            trigger.next();
+                        }
+                    });
+                }
+            });
+
             if (downloadImage) {
                 flows.add(new NoRollbackFlow() {
                     String __name__ = "download-base-image-to-dst-host";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        if (context.baseImageCachePath == null) {
+                            logger.debug("no base image cache, skip this flow");
+                            return true;
+                        }
+                        return false;
+                    }
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
@@ -2484,36 +2523,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 });
             } else {
                 context.hasbackingfile = true;
-                flows.add(new NoRollbackFlow() {
-                    String __name__ = "get-base-image-cache-of-root-volume";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
-                        cmd.volumeInstallDir = makeVolumeInstallDir(struct.getVolume());
-                        cmd.imageCacheDir = getCachedImageDir();
-                        cmd.volumeUuid = struct.getVolume().getUuid();
-                        httpCall(GET_BASE_IMAGE_PATH, struct.getSrcHostUuid(), cmd, GetVolumeBaseImagePathRsp.class, new ReturnValueCompletion<GetVolumeBaseImagePathRsp>(trigger) {
-                            @Override
-                            public void success(GetVolumeBaseImagePathRsp rsp) {
-                                if (rsp.path != null && isCachedImageUrl(rsp.path)) {
-                                    context.baseImageCachePath = rsp.path;
-                                    context.baseImageCacheSize = rsp.size;
-                                }
-
-                                context.rootVolumeUuid = cmd.volumeUuid;
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                logger.error(String.format("cannot get volume base image %s, skip and continue", errorCode.getDetails()));
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
-
                 flows.add(new Flow() {
                     String __name__ = "reserve-capacity-for-base-image-cache-on-dst-host";
 

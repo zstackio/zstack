@@ -1,5 +1,6 @@
 package org.zstack.network.service.vip;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vo.*;
@@ -172,10 +173,16 @@ public class VipVO extends ResourceVO implements OwnedByAccount {
         this.serviceProvider = serviceProvider;
     }
 
+    @Deprecated
     public String getUseFor() {
-        return useFor;
+        if (getServicesTypes() != null && !getServicesTypes().isEmpty()) {
+            return StringUtils.join(getServicesTypes(), ',');
+        }
+
+        return null;
     }
 
+    @Deprecated
     public void setUseFor(String useFor) {
         this.useFor = useFor;
     }

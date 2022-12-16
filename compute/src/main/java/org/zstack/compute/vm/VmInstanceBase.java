@@ -1185,6 +1185,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
+                        VmNicVO nicVO = dbf.findByUuid(targetNic.getUuid(), VmNicVO.class);
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmUpdateNicExtensionPoint.class),
+                                new ForEachFunction<VmUpdateNicExtensionPoint>() {
+                                    @Override
+                                    public void run(VmUpdateNicExtensionPoint arg) {
+                                        arg.afterUpdateNic(VmNicInventory.valueOf(nicVO));
+                                    }
+                                });
                         completion.success();
                     }
                 });
@@ -6075,6 +6083,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                 flowChain.done(new FlowDoneHandler(chain) {
                     @Override
                     public void handle(Map data) {
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmUpdateNicExtensionPoint.class),
+                                new ForEachFunction<VmUpdateNicExtensionPoint>() {
+                                    @Override
+                                    public void run(VmUpdateNicExtensionPoint arg) {
+                                        arg.afterUpdateNic(nic);
+                                    }
+                                });
+
                         VmNicVO nicVO = (VmNicVO) data.get(VmInstanceConstant.Params.VmNicInventory.toString());
                         completion.success(VmNicInventory.valueOf(nicVO));
                         chain.next();

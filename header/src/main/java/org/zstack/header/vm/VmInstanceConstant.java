@@ -38,6 +38,7 @@ public interface VmInstanceConstant {
         ApplianceVmSyncHaConfig_applianceVm,
         ApplianceVmSyncHaConfig_haUuid,
         AllocatedUrlForAttachingVolume,
+        VmConfigSyncType,
     }
 
     enum VmOperation {
@@ -76,4 +77,5 @@ public interface VmInstanceConstant {
 
     String EMPTY_CDROM = "empty";
     String NONE_CDROM = "none";
+
 }

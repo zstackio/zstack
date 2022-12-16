@@ -561,6 +561,10 @@ public class SourceClassMap {
 			put("org.zstack.usbDevice.UsbDeviceInventory", "org.zstack.sdk.UsbDeviceInventory");
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
 			put("org.zstack.v2v.V2VConversionHostInventory", "org.zstack.sdk.V2VConversionHostInventory");
+			put("org.zstack.vmStatusSync.VmStatusSyncConstants$VmConfigType", "org.zstack.sdk.VmConfigType");
+			put("org.zstack.vmStatusSync.VmStatusSyncConstants$VmQgaState", "org.zstack.sdk.VmQgaState");
+			put("org.zstack.vmStatusSync.qga.VmQgaInventory", "org.zstack.sdk.VmQgaInventory");
+			put("org.zstack.vmStatusSync.vmConfig.VmConfigSyncResultInventory", "org.zstack.sdk.VmConfigSyncResultInventory");
 			put("org.zstack.vmware.ESXHostInventory", "org.zstack.sdk.ESXHostInventory");
 			put("org.zstack.vmware.SkippedResources", "org.zstack.sdk.SkippedResources");
 			put("org.zstack.vmware.VCenterBackupStorageInventory", "org.zstack.sdk.VCenterBackupStorageInventory");
@@ -636,6 +640,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.metricpusher.MetricTemplateInventory", "org.zstack.sdk.zwatch.metricpusher.MetricTemplateInventory");
 			put("org.zstack.zwatch.metricpusher.ReceiverState", "org.zstack.sdk.zwatch.metricpusher.ReceiverState");
 			put("org.zstack.zwatch.migratedb.AlarmRecordsInventory", "org.zstack.sdk.zwatch.migratedb.AlarmRecordsInventory");
+			put("org.zstack.zwatch.migratedb.AuditsInventory", "org.zstack.sdk.zwatch.migratedb.AuditsInventory");
 			put("org.zstack.zwatch.migratedb.EventRecordsInventory", "org.zstack.sdk.zwatch.migratedb.EventRecordsInventory");
 			put("org.zstack.zwatch.monitorgroup.entity.EventRuleTemplateInventory", "org.zstack.sdk.zwatch.monitorgroup.entity.EventRuleTemplateInventory");
 			put("org.zstack.zwatch.monitorgroup.entity.MetricRuleTemplateInventory", "org.zstack.sdk.zwatch.monitorgroup.entity.MetricRuleTemplateInventory");
@@ -1118,6 +1123,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmCPUSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmCPUSpendingDetails");
 			put("org.zstack.sdk.VmCapabilities", "org.zstack.header.vm.VmCapabilities");
 			put("org.zstack.sdk.VmCdRomInventory", "org.zstack.header.vm.cdrom.VmCdRomInventory");
+			put("org.zstack.sdk.VmConfigSyncResultInventory", "org.zstack.vmStatusSync.vmConfig.VmConfigSyncResultInventory");
+			put("org.zstack.sdk.VmConfigType", "org.zstack.vmStatusSync.VmStatusSyncConstants$VmConfigType");
 			put("org.zstack.sdk.VmExternalBackupInfo", "org.zstack.externalbackup.VmExternalBackupInfo");
 			put("org.zstack.sdk.VmInstanceDeviceAddressArchiveInventory", "org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveInventory");
 			put("org.zstack.sdk.VmInstanceDeviceAddressGroupInventory", "org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupInventory");
@@ -1131,6 +1138,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmNicSecurityGroupRefInventory", "org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory");
 			put("org.zstack.sdk.VmPriorityConfigInventory", "org.zstack.header.vm.VmPriorityConfigInventory");
 			put("org.zstack.sdk.VmPriorityLevel", "org.zstack.header.vm.VmPriorityLevel");
+			put("org.zstack.sdk.VmQgaInventory", "org.zstack.vmStatusSync.qga.VmQgaInventory");
+			put("org.zstack.sdk.VmQgaState", "org.zstack.vmStatusSync.VmStatusSyncConstants$VmQgaState");
 			put("org.zstack.sdk.VmSchedHistoryInventory", "org.zstack.header.vm.VmSchedHistoryInventory");
 			put("org.zstack.sdk.VmSpending", "org.zstack.billing.spendingcalculator.vm.VmSpending");
 			put("org.zstack.sdk.VmSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmSpendingDetails");
@@ -1286,6 +1295,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.metricpusher.MetricTemplateInventory", "org.zstack.zwatch.metricpusher.MetricTemplateInventory");
 			put("org.zstack.sdk.zwatch.metricpusher.ReceiverState", "org.zstack.zwatch.metricpusher.ReceiverState");
 			put("org.zstack.sdk.zwatch.migratedb.AlarmRecordsInventory", "org.zstack.zwatch.migratedb.AlarmRecordsInventory");
+			put("org.zstack.sdk.zwatch.migratedb.AuditsInventory", "org.zstack.zwatch.migratedb.AuditsInventory");
 			put("org.zstack.sdk.zwatch.migratedb.EventRecordsInventory", "org.zstack.zwatch.migratedb.EventRecordsInventory");
 			put("org.zstack.sdk.zwatch.monitorgroup.entity.EventRuleTemplateInventory", "org.zstack.zwatch.monitorgroup.entity.EventRuleTemplateInventory");
 			put("org.zstack.sdk.zwatch.monitorgroup.entity.MetricRuleTemplateInventory", "org.zstack.zwatch.monitorgroup.entity.MetricRuleTemplateInventory");

@@ -43,7 +43,8 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(validValues = {"none", "host-model", "host-passthrough", "Hygon_Customized",
             "Dhyana", "EPYC", "EPYC-IBPB", "Haswell", "Haswell-noTSX", "Broadwell", "Broadwell-noTSX",
             "SandyBridge", "IvyBridge", "Conroe", "Penryn", "Nehalem", "Westmere", "Opteron_G1",
-            "Opteron_G2", "Opteron_G3", "Opteron_G4", "pentium", "pentium2", "pentium3"})
+            "Opteron_G2", "Opteron_G3", "Opteron_G4", "pentium", "pentium2", "pentium3",
+            "Kunpeng-920", "FT-2000+"})
     @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig NESTED_VIRTUALIZATION = new GlobalConfig(CATEGORY, "vm.cpuMode");
     @GlobalConfigValidation
