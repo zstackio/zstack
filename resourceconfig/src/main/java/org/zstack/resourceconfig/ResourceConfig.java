@@ -362,6 +362,14 @@ public class ResourceConfig {
                 .find();
     }
 
+    public boolean resourceConfigCreated(String resourceUuid) {
+        return Q.New(ResourceConfigVO.class)
+                .eq(ResourceConfigVO_.name, globalConfig.getName())
+                .eq(ResourceConfigVO_.category, globalConfig.getCategory())
+                .eq(ResourceConfigVO_.resourceUuid, resourceUuid)
+                .isExists();
+    }
+
     private String loadConfigValue(String resourceUuid) {
         return Q.New(ResourceConfigVO.class).select(ResourceConfigVO_.value)
                 .eq(ResourceConfigVO_.name, globalConfig.getName())
