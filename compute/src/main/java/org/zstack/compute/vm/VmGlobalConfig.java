@@ -38,6 +38,9 @@ public class VmGlobalConfig {
     public static GlobalConfig NUMA = new GlobalConfig(CATEGORY, "numa");
     @GlobalConfigValidation
     public static GlobalConfig VM_BOOT_MENU = new GlobalConfig(CATEGORY, "bootMenu");
+    @GlobalConfigValidation(numberGreaterThan = 3000, numberLessThan = 65535)
+    @BindResourceConfig(value = {VmInstanceVO.class})
+    public static GlobalConfig VM_BOOT_MENU_SPLASH_TIMEOUT = new GlobalConfig(CATEGORY, "bootMenuSplashTimeout");
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig KVM_HIDDEN_STATE = new GlobalConfig(CATEGORY, "kvmHiddenState");
