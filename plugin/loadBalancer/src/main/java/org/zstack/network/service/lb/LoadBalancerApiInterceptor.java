@@ -784,23 +784,48 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
-        String algorithm = null;
+        String algorithm = null, seessionPersistence = null;
         for (String tag : msg.getSystemTags()) {
             if (LoadBalancerSystemTags.BALANCER_ALGORITHM.isMatch(tag)) {
                 algorithm = LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByTag(tag,
                         LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN);
             }
-        }
-
-        /*can not modify session persistence when the listener algorithm is source or leastconn*/
-        if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(algorithm) || LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN.equals(algorithm)) {
-            for (String tag : msg.getSystemTags()) {
-                if (LoadBalancerSystemTags.SESSION_PERSISTENCE.isMatch(tag) || LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT.isMatch(tag) || LoadBalancerSystemTags.COOKIE_NAME.isMatch(tag)) {
-                    throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] %s algorithm doesn't support modifying session persistence state", msg.getLoadBalancerUuid(), msg.getName(), algorithm));
-                }
+            if (LoadBalancerSystemTags.SESSION_PERSISTENCE.isMatch(tag)) {
+                seessionPersistence = LoadBalancerSystemTags.SESSION_PERSISTENCE.getTokenByTag(tag,
+                        LoadBalancerSystemTags.SESSION_PERSISTENCE_TOKEN);
             }
         }
 
+        /*can not modify session persistence when the listener algorithm is leastconn except disable*/
+        if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN.equals(algorithm)) {
+            for (String tag : msg.getSystemTags()) {
+                if ((!LoadBalancerSessionPersistence.disable.toString().equals(seessionPersistence) && seessionPersistence != null) || LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT.isMatch(tag) || LoadBalancerSystemTags.COOKIE_NAME.isMatch(tag)) {
+                    throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] %s algorithm doesn't support modifying session persistence state except assigning disable explicitly", msg.getLoadBalancerUuid(), msg.getName(), algorithm));
+                }
+            }
+            insertTagIfNotExisting(
+                    msg, LoadBalancerSystemTags.SESSION_PERSISTENCE,
+                    LoadBalancerSystemTags.SESSION_PERSISTENCE.instantiateTag(
+                            map(e(LoadBalancerSystemTags.SESSION_PERSISTENCE_TOKEN, LoadBalancerSessionPersistence.disable))
+                    )
+            );
+        }
+
+        /*can not modify session persistence when the listener algorithm is source except iphash*/
+        if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(algorithm)) {
+            for (String tag : msg.getSystemTags()) {
+                if ((!LoadBalancerSessionPersistence.iphash.toString().equals(seessionPersistence) && seessionPersistence != null) || LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT.isMatch(tag) || LoadBalancerSystemTags.COOKIE_NAME.isMatch(tag)) {
+                    throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] %s algorithm doesn't support modifying session persistence state except assigning iphash explicitly", msg.getLoadBalancerUuid(), msg.getName(), algorithm));
+                }
+            }
+            insertTagIfNotExisting(
+                    msg, LoadBalancerSystemTags.SESSION_PERSISTENCE,
+                    LoadBalancerSystemTags.SESSION_PERSISTENCE.instantiateTag(
+                            map(e(LoadBalancerSystemTags.SESSION_PERSISTENCE_TOKEN, LoadBalancerSessionPersistence.iphash))
+                    )
+            );
+        }
+        
         /*modify session persistence when the listener algorithm is roundrobin or weightroundrobin*/
         if (LB_PROTOCOL_HTTP.equals(msg.getProtocol()) || LB_PROTOCOL_HTTPS.equals(msg.getProtocol())) {
             if (LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN.equals(algorithm) || LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(algorithm)) {
@@ -1017,18 +1042,33 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
-        /*can not modify session persistence when the listener algorithm is source or leastconn*/
-        if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(msg.getBalancerAlgorithm()) || LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN.equals(msg.getBalancerAlgorithm())) {
-            if (msg.getSessionPersistence() != null || msg.getSessionIdleTimeout() != null || msg.getCookieName() != null) {
-                throw new ApiMessageInterceptionException(argerr("listener[%s] %s algorithm doesn't support modifying session persistence", msg.getUuid(), msg.getBalancerAlgorithm()));
+        /*can not assign session persistence iphash without source algorithm*/
+        if (!LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(msg.getBalancerAlgorithm()) && LoadBalancerSessionPersistence.iphash.toString().equals(msg.getSessionPersistence())) {
+            throw new ApiMessageInterceptionException(argerr("listener[%s] changes session persistence to iphash, it must specify source balancer algorithm", msg.getUuid()));
+        }
+
+        /*can not modify session persistence without specifying balancer algorithm*/
+        if (msg.getBalancerAlgorithm() == null && msg.getSessionPersistence() != null) {
+            throw new ApiMessageInterceptionException(argerr("listener[%s] modifies session persistence, it must specify balancer algorithm", msg.getUuid()));
+        }
+
+        /*can not modify session persistence except iphash when the listener algorithm is source*/
+        if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(msg.getBalancerAlgorithm())) {
+            if ((!LoadBalancerSessionPersistence.iphash.toString().equals(msg.getSessionPersistence()) && msg.getSessionPersistence() != null) || msg.getSessionIdleTimeout() != null || msg.getCookieName() != null) {
+                throw new ApiMessageInterceptionException(argerr("listener[%s] %s algorithm doesn't support modifying session persistence except assigning iphash explicitly", msg.getUuid(), msg.getBalancerAlgorithm()));
             }
-            if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(msg.getBalancerAlgorithm())) {
-                msg.setSessionPersistence(LoadBalancerSessionPersistence.iphash.toString());
+            msg.setSessionPersistence(LoadBalancerSessionPersistence.iphash.toString());
+        }
+
+        /*can not modify session persistence except disable when the listener algorithm is leastconn*/
+        if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN.equals(msg.getBalancerAlgorithm())) {
+            if ((!LoadBalancerSessionPersistence.disable.toString().equals(msg.getSessionPersistence()) && msg.getSessionPersistence() != null) || msg.getSessionIdleTimeout() != null || msg.getCookieName() != null) {
+                throw new ApiMessageInterceptionException(argerr("listener[%s] %s algorithm doesn't support modifying session persistence except assigning disable explicitly", msg.getUuid(), msg.getBalancerAlgorithm()));
             }
-            if (LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN.equals(msg.getBalancerAlgorithm())) {
-                msg.setSessionPersistence(LoadBalancerSessionPersistence.disable.toString());
-            }
-        } else {
+            msg.setSessionPersistence(LoadBalancerSessionPersistence.disable.toString());
+        }
+
+        if (BALANCE_ALGORITHM_ROUND_ROBIN.equals(msg.getBalancerAlgorithm()) || BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(msg.getBalancerAlgorithm())) {
             /*can not modify session idle timeout and cookie name without specifying session persistence*/
             if (msg.getSessionPersistence() == null && (msg.getSessionIdleTimeout() != null || msg.getCookieName() != null)) {
                 throw new ApiMessageInterceptionException(argerr("listener[%s] doesn't support modifying idle timeout and cookie name without specifying session persistence", msg.getUuid()));
@@ -1049,15 +1089,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 msg.setSessionIdleTimeout(LoadBalancerConstants.SESSION_IDLE_TIMEOUT_DEFAULT);
             }
 
-            /*can not modify session persistence without specifying balancer algorithm*/
-            if (msg.getBalancerAlgorithm() == null && msg.getSessionPersistence() != null) {
-                throw new ApiMessageInterceptionException(argerr("listener[%s] modifies session persistence, it must specify balancer algorithm", msg.getUuid()));
-            }
-            /*can not assign session persistence iphash without source algorithm*/
-            if (!LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(msg.getBalancerAlgorithm()) && LoadBalancerSessionPersistence.iphash.toString().equals(msg.getSessionPersistence())) {
-                throw new ApiMessageInterceptionException(argerr("listener[%s] changes session persistence to iphash, it must specify source balancer algorithm", msg.getUuid()));
-            }
-
+            /*must assign session persistence rewrite without http-tunnel*/
             if (LoadBalancerConstants.LB_PROTOCOL_HTTP.equals(listener.getProtocol())) {
                 if (LoadBalancerSessionPersistence.rewrite.toString().equals(msg.getSessionPersistence()) && "http-tunnel".equals(msg.getHttpMode())) {
                     throw new ApiMessageInterceptionException(argerr("listener[%s] can not assigning session persistence rewrite when the http mode is http-tunnel", msg.getUuid()));
