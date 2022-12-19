@@ -66,7 +66,7 @@ public class VmGlobalConfig {
     public static GlobalConfig RESOURCE_BINDING_STRATEGY = new GlobalConfig(CATEGORY, "resourceBinding.strategy");
 
     @GlobalConfigValidation(validValues = {"None", "Preserve","Reboot","Shutdown"})
-    @BindResourceConfig({VmInstanceVO.class})
+    @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_CRASH_STRATEGY = new GlobalConfig(CATEGORY, "crash.strategy");
 
     @GlobalConfigValidation(numberGreaterThan = 0)
