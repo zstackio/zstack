@@ -52,6 +52,7 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig CHECK_HOST_CPU_MODEL_NAME = new GlobalConfig(CATEGORY, "checkHostCpuModelName");
     @GlobalConfigValidation
+    @BindResourceConfig({ClusterVO.class})
     public static GlobalConfig KVM_IGNORE_MSRS = new GlobalConfig(CATEGORY, "ignoreMsrs");
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig({ClusterVO.class})
