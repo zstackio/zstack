@@ -74,4 +74,9 @@ public class KVMGlobalConfig {
     public static GlobalConfig HOST_CONNECTION_CHECK_INTERVAL = new GlobalConfig(CATEGORY, "host.connection.check.interval");
     @GlobalConfigValidation
     public static GlobalConfig CONNECTION_SERVER_UPDATE_INTERVAL = new GlobalConfig(CATEGORY, "connection.server.update.interval");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig REDIRECT_CONSOLE_LOG_TO_FILE = new GlobalConfig(CATEGORY, "redirect.vm.log.to.file");
+
 }
