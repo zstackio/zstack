@@ -100,6 +100,7 @@ public class SourceClassMap {
 			put("org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory", "org.zstack.sdk.AiSiNoSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecretResourcePoolInventory", "org.zstack.sdk.InfoSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecurityMachineInventory", "org.zstack.sdk.InfoSecSecurityMachineInventory");
+			put("org.zstack.directory.DirectoryInventory", "org.zstack.sdk.DirectoryInventory");
 			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
 			put("org.zstack.drs.api.Threshold", "org.zstack.sdk.Threshold");
 			put("org.zstack.drs.entity.ClusterDRSInventory", "org.zstack.sdk.ClusterDRSInventory");
@@ -779,6 +780,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.DeleteSnapshotGroupResult", "org.zstack.header.storage.snapshot.group.DeleteSnapshotGroupResult");
 			put("org.zstack.sdk.DiskOfferingInventory", "org.zstack.header.configuration.DiskOfferingInventory");
 			put("org.zstack.sdk.ESXHostInventory", "org.zstack.vmware.ESXHostInventory");
+			put("org.zstack.sdk.DirectoryInventory", "org.zstack.directory.DirectoryInventory");
 			put("org.zstack.sdk.EcsImageInventory", "org.zstack.header.aliyun.image.EcsImageInventory");
 			put("org.zstack.sdk.EcsInstanceInventory", "org.zstack.header.aliyun.ecs.EcsInstanceInventory");
 			put("org.zstack.sdk.EcsInstanceType", "org.zstack.header.aliyun.ecs.EcsInstanceType");
