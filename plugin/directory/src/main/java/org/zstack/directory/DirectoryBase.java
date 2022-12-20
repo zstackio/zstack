@@ -262,7 +262,9 @@ public class DirectoryBase {
         } else {
             directoryVOS = Q.New(DirectoryVO.class).eq(DirectoryVO_.parentUuid, vo.getParentUuid()).list();
         }
-        List<DirectoryVO> list = directoryVOS.stream().filter(directoryVO -> directoryVO.getName().equals(msg.getName())).collect(Collectors.toList());
+        List<DirectoryVO> list = directoryVOS.stream()
+                .filter(s -> s.getName().equals(msg.getName()) && s.getType().equals(vo.getType()))
+                .collect(Collectors.toList());
         if (!list.isEmpty()) {
             completion.fail(operr("duplicate directory name, directory[uuid: %s] with name %s already exists", list.get(0).getUuid(), msg.getName()));
             return;

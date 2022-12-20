@@ -27,6 +27,7 @@ import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
@@ -43,6 +44,10 @@ public class DirectoryManagerImpl extends AbstractService implements DirectoryMa
     private DatabaseFacade dbf;
     @Autowired
     protected ThreadFacade thdf;
+
+    private static final List<String> DIRECTORY_TYPES = asList(
+            DirectoryConstant.DEFAULT_DIRECTORY, DirectoryConstant.VCENTER_DIRECTORY
+    );
 
     @Override
     @MessageSafe
@@ -92,15 +97,19 @@ public class DirectoryManagerImpl extends AbstractService implements DirectoryMa
             vo.setGroupName(name);
             //judge whether the same level directory has the same name
             directoryVOS = Q.New(DirectoryVO.class).isNull(DirectoryVO_.parentUuid).list();
+            vo.setRootDirectoryUuid(Platform.getUuid());
         } else {
             String groupName = String.format("/%s", msg.getName());
             DirectoryVO parentVO = dbf.findByUuid(msg.getParentUuid(), DirectoryVO.class);
+            vo.setRootDirectoryUuid(parentVO.getRootDirectoryUuid());
             vo.setGroupName(parentVO.getGroupName() + groupName);
             vo.setParentUuid(msg.getParentUuid());
             //judge whether the same level directory has the same name
             directoryVOS = Q.New(DirectoryVO.class).eq(DirectoryVO_.parentUuid, parentVO.getUuid()).list();
         }
-        List<DirectoryVO> list = directoryVOS.stream().filter(DirectoryVO -> DirectoryVO.getName().equals(name)).collect(Collectors.toList());
+        List<DirectoryVO> list = directoryVOS.stream()
+                .filter(s -> s.getName().equals(name) && s.getType().equals(msg.getType()))
+                .collect(Collectors.toList());
         if (!list.isEmpty()) {
             event.setError(operr("duplicate directory name, directory[uuid: %s] with name %s already exists", list.get(0).getUuid(), msg.getName()));
             bus.publish(event);
@@ -114,9 +123,13 @@ public class DirectoryManagerImpl extends AbstractService implements DirectoryMa
             bus.publish(event);
             return;
         }
+        if (!DIRECTORY_TYPES.contains(msg.getType())) {
+            event.setError(operr("the type of directory %s is not supported, the supported directory types are %s", msg.getType(), DIRECTORY_TYPES));
+            bus.publish(event);
+            return;
+        }
         vo.setType(msg.getType());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
-        vo.setRootDirectoryUuid(Platform.getUuid());
         vo.setZoneUuid(msg.getZoneUuid());
         vo.setCreateDate(new Timestamp(new Date().getTime()));
         dbf.persist(vo);
