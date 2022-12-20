@@ -96,6 +96,14 @@
 	</config>
 
 	<config>
+		<name>bootMenuSplashTimeout</name>
+		<description>splash timeout of boot menu in milliseconds</description>
+		<category>vm</category>
+		<defaultValue>3000</defaultValue>
+		<type>java.lang.Integer</type>
+	</config>
+
+	<config>
 		<name>kvmHiddenState</name>
 		<description>hide KVM hypervisor signature to guest</description>
 		<category>vm</category>
