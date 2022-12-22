@@ -351,15 +351,19 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Transactional(readOnly = true)
-    private List<String> getLocalStorageInCluster(String clusterUuid) {
+    private List<String> getAvailableLocalStorageInCluster(String clusterUuid) {
         String sql = "select pri.uuid" +
                 " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
                 " where pri.uuid = ref.primaryStorageUuid" +
                 " and ref.clusterUuid = :cuuid" +
-                " and pri.type = :ptype";
+                " and pri.type = :ptype" +
+                " and pri.state = :state" +
+                " and pri.status = :status";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("cuuid", clusterUuid);
         q.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
+        q.setParameter("state", PrimaryStorageState.Enabled);
+        q.setParameter("status", PrimaryStorageStatus.Connected);
         return q.getResultList();
     }
 
@@ -373,22 +377,38 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     public Flow marshalVmOperationFlow(String previousFlowName, String nextFlowName, FlowChain chain, VmInstanceSpec spec) {
         if (VmAllocatePrimaryStorageFlow.class.getName().equals(nextFlowName)) {
             if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
-                List<String> localStorageUuids = getLocalStorageInCluster(spec.getDestHost().getClusterUuid());
-                if (localStorageUuids != null && !localStorageUuids.isEmpty()) {
-                    boolean isOnlyLocalStorage = SQL.New("select pri.uuid" +
-                            " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
-                            " where pri.uuid = ref.primaryStorageUuid" +
-                            " and ref.clusterUuid = :cuuid" +
-                            " and pri.type != :ptype", String.class)
-                            .param("cuuid", spec.getDestHost().getClusterUuid())
-                            .param("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE)
-                            .list().isEmpty();
+                List<String> localStorageUuids = getAvailableLocalStorageInCluster(spec.getDestHost().getClusterUuid());
+                if (CollectionUtils.isEmpty(localStorageUuids)) {
+                    return null;
+                }
 
-                    if(!isOnlyLocalStorage && (spec.getRequiredPrimaryStorageUuidForRootVolume() != null || spec.getRequiredPrimaryStorageUuidForDataVolume() != null)){
-                        return new LocalStorageDesignatedAllocateCapacityFlow();
-                    }else{
-                        return new LocalStorageDefaultAllocateCapacityFlow();
-                    }
+                boolean requireNoneLocalStorage = spec.getRequiredPrimaryStorageUuidForRootVolume() != null && Q.New(PrimaryStorageVO.class)
+                        .eq(PrimaryStorageVO_.uuid, spec.getRequiredPrimaryStorageUuidForRootVolume())
+                        .notEq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                        .isExists();
+                requireNoneLocalStorage = requireNoneLocalStorage && (spec.getDataDiskOfferings().isEmpty() ||
+                        spec.getRequiredPrimaryStorageUuidForDataVolume() != null && Q.New(PrimaryStorageVO.class)
+                        .eq(PrimaryStorageVO_.uuid, spec.getRequiredPrimaryStorageUuidForDataVolume())
+                        .notEq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                        .isExists());
+                if (requireNoneLocalStorage) {
+                    return null;
+                }
+
+                boolean isOnlyLocalStorage = SQL.New("select pri.uuid" +
+                                " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
+                                " where pri.uuid = ref.primaryStorageUuid" +
+                                " and ref.clusterUuid = :cuuid" +
+                                " and pri.type != :ptype", String.class)
+                        .param("cuuid", spec.getDestHost().getClusterUuid())
+                        .param("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                        .list().isEmpty();
+
+                if (!isOnlyLocalStorage && (spec.getRequiredPrimaryStorageUuidForRootVolume() != null ||
+                        spec.getRequiredPrimaryStorageUuidForDataVolume() != null)) {
+                    return new LocalStorageDesignatedAllocateCapacityFlow();
+                } else {
+                    return new LocalStorageDefaultAllocateCapacityFlow();
                 }
             }
         } else if (spec.getCurrentVmOperation() == VmOperation.AttachVolume) {
