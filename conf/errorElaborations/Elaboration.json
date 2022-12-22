@@ -1636,7 +1636,7 @@
     "category": "vmSchedulingRule",
     "code": "3002",
     "method": "regex",
-    "regex": "the vm scheduling group.* has already had a vm affinitive to each other scheduling rule attached.* Attaching a vm antiaffinity from each other scheduling rule is not allowed.",
+    "regex": "the vm scheduling group.* has already had a vm affinitive to each other scheduling rule attached. Attaching a vm antiaffinity from each other scheduling rule is not allowed.",
     "message_cn": "该云主机调度组已绑定聚集云主机调度策略，不可绑定互斥云主机调度策略。",
     "message_en": "The VM scheduling group has already had a VM Affinitive to Each Other scheduling policy attached. Attaching a VM Exclusive from Each Other scheduling policy is not allowed."
   },
@@ -1644,7 +1644,7 @@
     "category": "vmSchedulingRule",
     "code": "3003",
     "method": "regex",
-    "regex": "the vm scheduling group.* has already had a vm affinitive to each other scheduling rule attached.* attaching another one is not allowed.",
+    "regex": "the vm scheduling group.* has already had a vm affinitive to each other scheduling rule attached.attaching another one is not allowed.",
     "message_cn": "该云主机调度组已绑定聚集云主机调度策略，不可重复绑定。",
     "message_en": "The VM scheduling group has already had a VM Affinitive to Each Other scheduling policy attached. Attaching another one is not allowed."
   },
