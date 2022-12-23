@@ -13,3 +13,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmVdpaNicVO` (
 
 ALTER TABLE `zstack`.`VipNetworkServicesRefVO` DROP INDEX `uuid`;
 ALTER TABLE `zstack`.`VipNetworkServicesRefVO` DROP PRIMARY KEY, ADD PRIMARY KEY(`uuid`,`serviceType`,`vipUuid`);
+
+ALTER TABLE `zstack`.`VmNicVO` ADD COLUMN `state` varchar(255) NOT NULL DEFAULT "enable";

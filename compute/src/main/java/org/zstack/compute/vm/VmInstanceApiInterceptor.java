@@ -98,6 +98,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetVmAttachableDataVolumeMsg) msg);
         } else if (msg instanceof APIDetachL3NetworkFromVmMsg) {
             validate((APIDetachL3NetworkFromVmMsg) msg);
+        } else if (msg instanceof APIChangeVmNicStateMsg) {
+            validate((APIChangeVmNicStateMsg) msg);
         } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
             validate((APIAttachL3NetworkToVmMsg) msg);
         } else if (msg instanceof APIChangeVmNicNetworkMsg) {
@@ -930,6 +932,23 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("unable to attach the nic. Its l2 network [uuid:%s] that have not been attached to any cluster",
                     l3NetworkVO.getL2NetworkUuid()));
         }
+    }
+
+    @Transactional(readOnly = true)
+    private void validate(APIChangeVmNicStateMsg msg) {
+        VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+        if (!nicVO.getType().equals(VmInstanceConstant.VIRTUAL_NIC_TYPE)) {
+            throw new ApiMessageInterceptionException(operr("unable update nic[uuid: %s] state, which nic type[%s] not support enable/disable nic",
+                    msg.getVmNicUuid(), nicVO.getType()));
+        }
+        if (!Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, nicVO.getVmInstanceUuid())
+                .eq(VmInstanceVO_.type, VmInstanceConstant.USER_VM_TYPE)
+                .eq(VmInstanceVO_.hypervisorType, VmInstanceConstant.KVM_HYPERVISOR_TYPE).isExists()) {
+            throw new ApiMessageInterceptionException(operr("unable update nic[uuid: %s] state, which vm not support enable/disable nic",
+                    msg.getVmNicUuid()));
+        }
+        msg.setVmInstanceUuid(nicVO.getVmInstanceUuid());
+        msg.l3Uuid = nicVO.getL3NetworkUuid();
     }
 
     @Transactional(readOnly = true)
