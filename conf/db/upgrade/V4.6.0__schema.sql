@@ -125,7 +125,7 @@ CREATE PROCEDURE createVmSchedulingRule()
         DECLARE ruleName VARCHAR(255);
         DECLARE ruleAccountUuid VARCHAR(32);
         DECLARE vmRuleGroupUuid VARCHAR(32);
-        DECLARE vmCursor CURSOR FOR SELECT uuid, policy, zoneUuid, appliance, name from `zstack`.`AffinityGroupVO`;
+        DECLARE vmCursor CURSOR FOR SELECT uuid, policy, zoneUuid, appliance, name from `zstack`.`AffinityGroupVO` order by createDate desc;
         DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
         OPEN vmCursor;
@@ -155,12 +155,10 @@ CREATE PROCEDURE createVmSchedulingRule()
             VALUES (vmRuleGroupUuid, ruleName, ruleAppliance, ruleZoneUuid, agUuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
             INSERT INTO  `zstack`.`ResourceVO` (`uuid`, `resourceName`, `resourceType`, `concreteResourceType`) VALUES (vmRuleGroupUuid, ruleName, 'VmSchedulingRuleGroupVO', 'org.zstack.header.vmscheduling.VmSchedulingRuleGroupVO');
             select accountUuid INTO ruleAccountUuid from AccountResourceRefVO where resourceUuid = agUuid and resourceType = 'AffinityGroupVO';
-            if (ruleName <> 'zstack.affinity.group.for.virtual.router' and ruleAccountUuid is not null) THEN
-                INSERT INTO `zstack`.`AccountResourceRefVO` ( `accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`, `concreteResourceType`)
-                VALUES (ruleAccountUuid, ruleAccountUuid,  vmRuleGroupUuid, 'VmSchedulingRuleGroupVO', 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'org.zstack.header.vmscheduling.VmSchedulingRuleGroupVO');
+            INSERT INTO `zstack`.`VmSchedulingRuleRefVO`(`vmGroupUuid`, `vmSchedulingRuleUuid`, `lastOpDate`,`createDate`) VALUES (vmRuleGroupUuid, agUuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+            IF (ruleName <> 'zstack.affinity.group.for.virtual.router' and ruleAccountUuid is not null) THEN
+                INSERT INTO `zstack`.`AccountResourceRefVO` ( `accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`, `concreteResourceType`) VALUES (ruleAccountUuid, ruleAccountUuid,  vmRuleGroupUuid, 'VmSchedulingRuleGroupVO', 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'org.zstack.header.vmscheduling.VmSchedulingRuleGroupVO');
             END IF;
-            INSERT INTO `zstack`.`VmSchedulingRuleRefVO`(`vmGroupUuid`, `vmSchedulingRuleUuid`, `lastOpDate`,`createDate`)
-            VALUES (vmRuleGroupUuid, agUuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
         END LOOP;
         CLOSE vmCursor;
         SELECT CURTIME();
