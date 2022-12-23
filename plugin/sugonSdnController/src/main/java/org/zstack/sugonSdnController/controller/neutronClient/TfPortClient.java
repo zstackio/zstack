@@ -3,12 +3,18 @@ package org.zstack.sugonSdnController.controller.neutronClient;
 import org.apache.commons.collections.CollectionUtils;
 import org.bouncycastle.util.IPAddress;
 import org.zstack.core.db.Q;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.sdnController.header.SdnControllerConstant;
 import org.zstack.sdnController.header.SdnControllerVO;
 import org.zstack.sdnController.header.SdnControllerVO_;
 import org.zstack.sugonSdnController.controller.SugonSdnControllerGlobalProperty;
-import org.zstack.sugonSdnController.controller.api.*;
+import org.zstack.sugonSdnController.controller.api.ApiConnector;
+import org.zstack.sugonSdnController.controller.api.ApiConnectorFactory;
+import org.zstack.sugonSdnController.controller.api.ApiPropertyBase;
+import org.zstack.sugonSdnController.controller.api.ObjectReference;
 import org.zstack.sugonSdnController.controller.api.types.*;
+import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -28,7 +34,7 @@ public class TfPortClient {
         return apiConnector;
     }
 
-    public TfPortResponse createPort(String l2Id, String l3Id, String mac, String ip, String tenantId, String vmInventeryId,String tfPortUuid) {
+    public TfPortResponse createPort(String l2Id, String l3Id, String mac, String ip, String tenantId, String vmInventeryId, String tfPortUuid) {
         TfPortRequestBody portRequestBodyEO = new TfPortRequestBody();
         TfPortRequestData portRequestDataEO = new TfPortRequestData();
         TfPortRequestContext portRequestContextEO = new TfPortRequestContext();
@@ -100,7 +106,7 @@ public class TfPortClient {
         // initialize port object
         VirtualMachineInterface port;
         try {
-            port = portNeutronToVnc(requestPortResourceEntity, netObj , tfPortUuid);
+            port = portNeutronToVnc(requestPortResourceEntity, netObj, tfPortUuid);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -269,13 +275,13 @@ public class TfPortClient {
         }
     }
 
-    private VirtualMachineInterface portNeutronToVnc(TfPortRequestResource requestPortResourceEntity, VirtualNetwork virtualNetwork,String tfPortUUid) throws IOException {
+    private VirtualMachineInterface portNeutronToVnc(TfPortRequestResource requestPortResourceEntity, VirtualNetwork virtualNetwork, String tfPortUUid) throws IOException {
         String projectId = requestPortResourceEntity.getTenantId();
         Project projectObj = getProjectObj(requestPortResourceEntity);
         IdPermsType idPermsType = new IdPermsType();
         idPermsType.setEnable(true);
         String portUuid = String.valueOf(UUID.randomUUID());
-        if(Objects.nonNull(tfPortUUid)){
+        if (Objects.nonNull(tfPortUUid)){
             portUuid = tfPortUUid;
         }
         VirtualMachineInterface portObj = new VirtualMachineInterface();
@@ -355,7 +361,7 @@ public class TfPortClient {
         return portObj;
     }
 
-    private boolean ipAddrInNetId(String ipAddr, String netId) throws IOException {
+    public boolean ipAddrInNetId(String ipAddr, String netId) throws IOException {
         ApiConnector apiConnector = getApiConnector();
 
         VirtualNetwork virtualNetwork = null;
@@ -537,8 +543,8 @@ public class TfPortClient {
         //  disassociate any floating IP used by instance
 
         List<ObjectReference<ApiPropertyBase>> fipBackRefs = portObj.getFloatingIpBackRefs();
-        if (CollectionUtils.isNotEmpty(fipBackRefs)){
-            for (ObjectReference<ApiPropertyBase> fipBackRef : fipBackRefs){
+        if (CollectionUtils.isNotEmpty(fipBackRefs)) {
+            for (ObjectReference<ApiPropertyBase> fipBackRef : fipBackRefs) {
                 try {
                     floatingipUpdate(fipBackRef.getUuid());
                 } catch (IOException e) {
@@ -582,10 +588,10 @@ public class TfPortClient {
         if (CollectionUtils.isEmpty(portRefs)){
             fipObj.setFixedIpAddress(null);
         } else {
-            VirtualMachineInterface  portObj = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class, portRefs.get(0).getUuid());
+            VirtualMachineInterface portObj = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class, portRefs.get(0).getUuid());
             List<ObjectReference<ApiPropertyBase>> iipRefs = portObj.getInstanceIpBackRefs();
-            if (CollectionUtils.isNotEmpty(iipRefs) && iipRefs.size() > 1){
-                String msg = "Port "+ portObj.getUuid() + " has multiple fixed IP addresses.  Must provide a specific IP address when assigning a floating IP.";
+            if (CollectionUtils.isNotEmpty(iipRefs) && iipRefs.size() > 1) {
+                String msg = "Port " + portObj.getUuid() + " has multiple fixed IP addresses.  Must provide a specific IP address when assigning a floating IP.";
                 throw new RuntimeException(msg);
             }
             if (CollectionUtils.isNotEmpty(iipRefs)){
@@ -601,20 +607,117 @@ public class TfPortClient {
         // check if port already has floating ip associated
         List<ObjectReference<ApiPropertyBase>> fipRefs = portObj.getFloatingIpBackRefs();
         List<String> fipIds = new ArrayList<>();
-        if (CollectionUtils.isNotEmpty(fipRefs)){
-            for (ObjectReference<ApiPropertyBase> ref : fipRefs){
-                if (!Objects.equals(fipObj.getUuid(), ref.getUuid())){
+        if (CollectionUtils.isNotEmpty(fipRefs)) {
+            for (ObjectReference<ApiPropertyBase> ref : fipRefs) {
+                if (!Objects.equals(fipObj.getUuid(), ref.getUuid())) {
                     fipIds.add(ref.getUuid());
                 }
             }
         }
-        if (CollectionUtils.isNotEmpty(fipIds)){
+        if (CollectionUtils.isNotEmpty(fipIds)) {
             for (String fipId : fipIds) {
                 FloatingIp fipInstance = (FloatingIp) apiConnector.findById(FloatingIp.class, fipId);
-                if (fipInstance.getFixedIpAddress().equals(address)){
+                if (fipInstance.getFixedIpAddress().equals(address)) {
                     throw new RuntimeException("FloatingIPPortAlreadyAssociated: " + fipInstance.getAddress() + " && " + portObj);
                 }
             }
         }
+    }
+
+    /**
+     * 检查ip是否在已经被占用
+     *
+     * @param ipAddr   IPv4地址
+     * @param subnetId (三层网络)的UUID
+     * @return 占用-true; 未占用-false
+     */
+    public boolean checkTfIpAvailability(String ipAddr, String subnetId) throws IOException {
+        ApiConnector apiConnector = getApiConnector();
+        VirtualNetwork virtualNetwork = null;
+        L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, subnetId).find();
+        virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, StringDSL.transToTfUuid(l3Network.getL2NetworkUuid()));
+        List<ObjectReference<ApiPropertyBase>> instanceIpBackRefs = null;
+        List<ObjectReference<VnSubnetsType>> subnetListRefs = null;
+        if (Objects.nonNull(virtualNetwork)) {
+            instanceIpBackRefs = virtualNetwork.getInstanceIpBackRefs();
+            subnetListRefs = virtualNetwork.getNetworkIpam();
+        }
+
+        if (Objects.nonNull(virtualNetwork.getRouterExternal()) && virtualNetwork.getRouterExternal()) {
+            // if external network, floating ips.
+            List<ObjectReference<ApiPropertyBase>> floatingIpPools = virtualNetwork.getFloatingIpPools();
+            if (CollectionUtils.isNotEmpty(floatingIpPools)) {
+                for (ObjectReference<ApiPropertyBase> floatingIpPool : floatingIpPools) {
+                    FloatingIpPool floatingIpPoolObj = (FloatingIpPool) apiConnector.findById(FloatingIpPool.class, floatingIpPool.getUuid());
+                    List<ObjectReference<ApiPropertyBase>> floatingIps = floatingIpPoolObj.getFloatingIps();
+                    if (CollectionUtils.isNotEmpty(floatingIps)) {
+                        for (ObjectReference<ApiPropertyBase> fip : floatingIps) {
+                            FloatingIp fipObj = (FloatingIp) apiConnector.findById(FloatingIp.class, fip.getUuid());
+                            if (fipObj.getAddress().equals(ipAddr)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        } else { // else instance ips.
+            List<InstanceIp> ipObjects = null;
+            if (Objects.nonNull(apiConnector) && CollectionUtils.isNotEmpty(instanceIpBackRefs)) {
+                ipObjects = (List<InstanceIp>) apiConnector.getObjects(InstanceIp.class, instanceIpBackRefs);
+            }
+            // check all instance ips.
+            if (CollectionUtils.isNotEmpty(ipObjects)) {
+                for (InstanceIp ipObj : ipObjects) {
+                    if (ipObj.getAddress().equals(ipAddr)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // check all subnets' gateway/dns service address/host routes/dhcp relay servers .eg
+        if (CollectionUtils.isNotEmpty(subnetListRefs)) {
+            for (ObjectReference<VnSubnetsType> subnetListRef : subnetListRefs) {
+                List<IpamSubnetType> ipamSubnets = subnetListRef.getAttr().getIpamSubnets();
+                if (CollectionUtils.isNotEmpty(ipamSubnets)) {
+                    for (IpamSubnetType ipamSubnet : ipamSubnets) {
+                        List<String> ipamSubnetIpUseList = new ArrayList<>();
+                        ipamSubnetIpUseList.add(ipamSubnet.getDefaultGateway());
+                        ipamSubnetIpUseList.add(ipamSubnet.getDnsServerAddress());
+                        List<String> dnsNameservers = ipamSubnet.getDnsNameservers();
+                        if (CollectionUtils.isNotEmpty(dnsNameservers)) {
+                            ipamSubnetIpUseList.addAll(dnsNameservers);
+                        }
+                        List<String> dhcpRelayServer = ipamSubnet.getDhcpRelayServer();
+                        if (CollectionUtils.isNotEmpty(dhcpRelayServer)) {
+                            ipamSubnetIpUseList.addAll(dhcpRelayServer);
+                        }
+                        RouteTableType routeTableType = ipamSubnet.getHostRoutes();
+                        if (Objects.nonNull(routeTableType)) {
+                            List<RouteType> routeTypes = routeTableType.getRoute();
+                            if (CollectionUtils.isNotEmpty(routeTypes)) {
+                                for (RouteType routeType : routeTypes) {
+                                    String ip = routeType.getNextHop();
+                                    if (Objects.nonNull(ip)) {
+                                        ipamSubnetIpUseList.add(ip);
+                                    }
+                                }
+                            }
+                        }
+                        if (ipamSubnetIpUseList.contains(ipAddr)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public List<TfPortIpEntity> listUsedIps(String networkUuid, String SubnetUuid) {
+        List<TfPortIpEntity> tfPortIpEntityList = new ArrayList<>();
+
+
+        return tfPortIpEntityList;
     }
 }

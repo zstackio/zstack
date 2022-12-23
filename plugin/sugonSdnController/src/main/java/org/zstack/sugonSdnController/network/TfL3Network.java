@@ -5,8 +5,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.sugonSdnController.controller.SugonSdnController;
-import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -18,11 +16,14 @@ import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.sdnController.header.SdnControllerVO;
 import org.zstack.sdnController.header.SdnControllerVO_;
+import org.zstack.sugonSdnController.controller.SugonSdnController;
+import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant;
+import org.zstack.sugonSdnController.controller.neutronClient.TfPortClient;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
-
+import java.io.IOException;
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.network.NetworkUtils.getSubnetInfo;
 
@@ -61,9 +62,29 @@ public class TfL3Network extends L3BasicNetwork {
             handle((APIAddHostRouteToL3NetworkMsg) msg);
         } else if (msg instanceof APIRemoveHostRouteFromL3NetworkMsg) {
             handle((APIRemoveHostRouteFromL3NetworkMsg) msg);
+        } else if (msg instanceof APICheckIpAvailabilityMsg) {
+            handle((APICheckIpAvailabilityMsg) msg);
         } else {
             super.handleMessage(msg);
         }
+    }
+
+    private void handle(APICheckIpAvailabilityMsg msg) {
+        APICheckIpAvailabilityReply reply = new APICheckIpAvailabilityReply();
+        CheckIpAvailabilityReply r = new CheckIpAvailabilityReply();
+        TfPortClient tfPortClient = new TfPortClient();
+        try {
+            boolean availability = tfPortClient.checkTfIpAvailability(msg.getIp(), msg.getL3NetworkUuid());
+            r.setAvailable(!availability);
+            if (availability){
+                r.setReason("IP address is already in use.");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        reply.setAvailable(r.isAvailable());
+        reply.setReason(r.getReason());
+        bus.reply(msg, reply);
     }
 
     private void handle(APIDeleteL3NetworkMsg msg){
