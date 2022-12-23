@@ -1368,109 +1368,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                         })));
     }
 
-    private VmAbnormalLifeCycleOperation getVmAbnormalLifeCycleOperation(String originalHostUuid,
-                                                                         String currentHostUuid,
-                                                                         VmInstanceState originalState,
-                                                                         VmInstanceState currentState) {
-        if (originalState == VmInstanceState.Stopped && currentState == VmInstanceState.Running) {
-            return VmAbnormalLifeCycleOperation.VmRunningOnTheHost;
-        }
-
-        // c.f. ZSTAC-25974
-        if ((originalState == VmInstanceState.Running || originalState == VmInstanceState.Starting)
-                && currentState == VmInstanceState.Stopped
-                && currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmStoppedOnTheSameHost;
-        }
-
-        if (VmInstanceState.intermediateStates.contains(originalState) && currentState == VmInstanceState.Running) {
-            return VmAbnormalLifeCycleOperation.VmRunningFromIntermediateState;
-        }
-
-        if (VmInstanceState.intermediateStates.contains(originalState) && currentState == VmInstanceState.Stopped) {
-            return VmAbnormalLifeCycleOperation.VmStoppedFromIntermediateState;
-        }
-
-        if (originalState == VmInstanceState.Running && currentState == VmInstanceState.Paused &&
-                currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmPausedFromRunningStateHostNotChanged;
-        }
-
-        if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Paused &&
-                currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged;
-        }
-
-        if (originalState == VmInstanceState.Stopped && currentState == VmInstanceState.Paused &&
-                currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmPausedFromStoppedStateHostNotChanged;
-        }
-
-        if (originalState == VmInstanceState.Migrating && currentState == VmInstanceState.Paused &&
-                currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmPausedFromMigratingStateHostNotChanged;
-        }
-
-        if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Running &&
-                currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged;
-        }
-
-        if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Running &&
-                !currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostChanged;
-        }
-
-        if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Stopped &&
-                currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmStoppedOnTheSameHost;
-        }
-
-        if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Stopped
-                && originalHostUuid == null && currentHostUuid.equals(self.getLastHostUuid())) {
-            return VmAbnormalLifeCycleOperation.VmStoppedFromUnknownStateHostNotChanged;
-        }
-
-        if (originalState == VmInstanceState.Running &&
-                originalState == currentState &&
-                !currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmMigrateToAnotherHost;
-        }
-
-        if (originalState == VmInstanceState.Paused && currentState == VmInstanceState.Running &&
-                currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmRunningFromPausedStateHostNotChanged;
-        }
-
-        if (originalState == VmInstanceState.Paused && currentState == VmInstanceState.Stopped &&
-                currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmStoppedFromPausedStateHostNotChanged;
-        }
-
-        if (originalState == VmInstanceState.Destroyed &&
-                (currentState == VmInstanceState.Running || currentState == VmInstanceState.Paused)) {
-            return VmAbnormalLifeCycleOperation.VmRunningFromDestroyed;
-        }
-
-        if (originalState == VmInstanceState.Running && currentState == VmInstanceState.Crashed &&
-                currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmCrashedFromRunningStateHostNotChanged;
-        }
-
-        if (originalState == VmInstanceState.Crashed && currentState == VmInstanceState.Running &&
-                currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmRunningFromCrashedStateHostNotChanged;
-        }
-        if (originalState == VmInstanceState.Crashed && currentState == VmInstanceState.Stopped &&
-                currentHostUuid.equals(originalHostUuid)) {
-            return VmAbnormalLifeCycleOperation.VmStoppedFromCrashedStateHostNotChanged;
-        }
-
-        throw new CloudRuntimeException(String.format("unknown VM[uuid:%s] abnormal state combination[original state: %s," +
-                        " current state: %s, original host:%s, current host:%s]",
-                self.getUuid(), originalState, currentState, originalHostUuid, currentHostUuid));
-    }
-
     private void vmStateChangeOnHost(final VmStateChangedOnHostMsg msg, final NoErrorCompletion completion) {
         final VmStateChangedOnHostReply reply = new VmStateChangedOnHostReply();
         if (refreshVO(true) == null) {
@@ -1529,8 +1426,29 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        VmAbnormalLifeCycleOperation operation = getVmAbnormalLifeCycleOperation(originalHostUuid,
-                currentHostUuid, originalState, currentState);
+        VmAbnormalLifeCycleStruct struct = new VmAbnormalLifeCycleStruct();
+        struct.setCurrentHostUuid(currentHostUuid);
+        struct.setCurrentState(currentState);
+        struct.setOriginalHostUuid(originalHostUuid);
+        struct.setOriginalState(originalState);
+        struct.setVmLastHostUuid(self.getLastHostUuid());
+
+        VmAbnormalLifeCycleOperation operation = VmAbnormalLifeCycleStruct
+                .getVmAbnormalLifeCycleOperationFromStruct(struct);
+
+        if (operation == null) {
+            throw new CloudRuntimeException(String.format("unknown VM[uuid:%s] abnormal" +
+                            " state combination[original state: %s," +
+                            " current state: %s, original host:%s, current host:%s]",
+                    self.getUuid(),
+                    struct.getOriginalState(),
+                    struct.getCurrentState(),
+                    struct.getOriginalHostUuid(),
+                    struct.getCurrentHostUuid()));
+        }
+
+        struct.setVmInstance(getSelfInventory());
+        struct.setOperation(operation);
         if (operation == VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged
                 || operation == VmAbnormalLifeCycleOperation.VmRunningFromCrashedStateHostNotChanged) {
             // the vm is detected on the host again. It's largely because the host disconnected before
@@ -1600,14 +1518,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         List<VmAbnormalLifeCycleExtensionPoint> exts = pluginRgty.getExtensionList(VmAbnormalLifeCycleExtensionPoint.class);
-
-        VmAbnormalLifeCycleStruct struct = new VmAbnormalLifeCycleStruct();
-        struct.setCurrentHostUuid(currentHostUuid);
-        struct.setCurrentState(currentState);
-        struct.setOriginalHostUuid(originalHostUuid);
-        struct.setOriginalState(originalState);
-        struct.setVmInstance(getSelfInventory());
-        struct.setOperation(operation);
 
         logger.debug(String.format("the vm[uuid:%s]'s state changed abnormally on the host[uuid:%s]," +
                         " ZStack is going to take the operation[%s]," +
