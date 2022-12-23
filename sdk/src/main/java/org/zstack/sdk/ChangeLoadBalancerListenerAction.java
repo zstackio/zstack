@@ -73,6 +73,15 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, validValues = {"http-keep-alive","http-server-close","http-tunnel","httpclose","forceclose"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String httpMode;
 
+    @Param(required = false, validValues = {"disable","iphash","insert","rewrite"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sessionPersistence;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {30L,3600L}, noTrim = false)
+    public java.lang.Integer sessionIdleTimeout;
+
+    @Param(required = false, validRegexValues = "[A-Za-z0-9_-]+", maxLength = 20, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String cookieName;
+
     @Param(required = false)
     public java.util.List systemTags;
 
