@@ -285,9 +285,13 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                             " from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref, HostVO host" +
                             " where ps.uuid = ref.primaryStorageUuid" +
                             " and ref.clusterUuid = host.clusterUuid" +
-                            " and host.uuid = :huuid";
+                            " and host.uuid = :huuid" +
+                            " and ps.state = :state" +
+                            " and ps.status = :status";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                     q.setParameter("huuid", msg.getRequiredHostUuid());
+                    q.setParameter("state", PrimaryStorageState.Enabled);
+                    q.setParameter("status", PrimaryStorageStatus.Connected);
                     List<String> types = q.getResultList();
                     for (String type : types) {
                         if (type.equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)) {
