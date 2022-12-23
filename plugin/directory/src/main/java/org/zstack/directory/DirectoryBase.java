@@ -269,17 +269,36 @@ public class DirectoryBase {
             completion.fail(operr("duplicate directory name, directory[uuid: %s] with name %s already exists", list.get(0).getUuid(), msg.getName()));
             return;
         }
-
-        String oldGroupName = vo.getGroupName();
-        String oldName = vo.getName();
-        //TODO: The path method is encapsulated as a utility function
-        String substring = oldGroupName.substring(0, oldGroupName.length() - oldName.length());
-        String newGroupName = substring + msg.getName();
-        vo.setGroupName(newGroupName);
+        updateGroupName(msg, vo);
         vo.setName(msg.getName());
         dbf.update(vo);
         event.setInventory(DirectoryInventory.valueOf(vo));
         completion.success();
+    }
+
+    private void updateGroupName(APIUpdateDirectoryMsg msg, DirectoryVO vo) {
+        String oldGroupName = vo.getGroupName();
+        String oldName = vo.getName();
+        String substring = oldGroupName.substring(0, oldGroupName.length() - oldName.length());
+        String newGroupName = substring + msg.getName();
+        vo.setGroupName(newGroupName);
+        updateChildrenGroupName(oldGroupName, newGroupName, msg.getUuid());
+    }
+
+    private void updateChildrenGroupName(String oldGroupName, String newGroupName, String uuid) {
+        List<DirectoryVO> vos = Q.New(DirectoryVO.class).like(DirectoryVO_.groupName, oldGroupName + "/%").list();
+        List<DirectoryVO> list = new ArrayList<>();
+        if (!vos.isEmpty()) {
+            for(DirectoryVO vo : vos) {
+                // admin/test/test1 -> admin1/test/test1
+                String groupName = vo.getGroupName();
+                int length = groupName.length();
+                String nowGroupName = newGroupName + groupName.substring(oldGroupName.length(), length);
+                vo.setGroupName(nowGroupName);
+                list.add(vo);
+            }
+            dbf.updateCollection(list);
+        }
     }
 
     private void handle(APIMoveDirectoryMsg msg) {
@@ -333,6 +352,9 @@ public class DirectoryBase {
             return;
         }
         vo.setParentUuid(msg.getTargetParentUuid());
+        DirectoryVO parentVO = Q.New(DirectoryVO.class).eq(DirectoryVO_.uuid, msg.getTargetParentUuid()).find();
+        String newGroupName = String.format("%s/%s", parentVO.getGroupName(), vo.getName());
+        vo.setGroupName(newGroupName);
         dbf.update(vo);
         completion.success();
     }
