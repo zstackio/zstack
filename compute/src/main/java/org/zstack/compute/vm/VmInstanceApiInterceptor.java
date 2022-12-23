@@ -938,13 +938,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIChangeVmNicStateMsg msg) {
         VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
         if (!nicVO.getType().equals(VmInstanceConstant.VIRTUAL_NIC_TYPE)) {
-            throw new ApiMessageInterceptionException(operr("unable update nic[uuid: %s] state, which nic type[%s] not support enable/disable nic",
+            throw new ApiMessageInterceptionException(operr("could not update nic[uuid: %s] state, due to nic type[%s] not support",
                     msg.getVmNicUuid(), nicVO.getType()));
         }
         if (!Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, nicVO.getVmInstanceUuid())
                 .eq(VmInstanceVO_.type, VmInstanceConstant.USER_VM_TYPE)
                 .eq(VmInstanceVO_.hypervisorType, VmInstanceConstant.KVM_HYPERVISOR_TYPE).isExists()) {
-            throw new ApiMessageInterceptionException(operr("unable update nic[uuid: %s] state, which vm not support enable/disable nic",
+            throw new ApiMessageInterceptionException(operr("could not update nic[uuid: %s] state, due to vm not support",
                     msg.getVmNicUuid()));
         }
         msg.setVmInstanceUuid(nicVO.getVmInstanceUuid());
