@@ -139,4 +139,8 @@ public class CollectionUtils {
         list.addAll(listB);
         return list;
     }
+
+    public static boolean isEmpty(Collection coll) {
+        return coll == null || coll.isEmpty();
+    }
 }
