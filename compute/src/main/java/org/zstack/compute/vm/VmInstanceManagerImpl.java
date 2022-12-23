@@ -1427,8 +1427,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         String hostname = VmSystemTags.HOSTNAME.getTokenByTag(sysTag, VmSystemTags.HOSTNAME_TOKEN);
 
                         validateHostname(sysTag, hostname);
-                        List<String> l3NetworkUuids = msg.getL3NetworkUuids();
-                        l3NetworkUuids.forEach(it->validateHostNameOnDefaultL3Network(sysTag, hostname, it));
                     } else if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
                         validateStaticIp(sysTag);
                     } 
@@ -1500,8 +1498,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     q.select(VmInstanceVO_.defaultL3NetworkUuid);
                     q.add(VmInstanceVO_.uuid, Op.EQ, resourceUuid);
                     String defaultL3Uuid = q.findValue();
-
-                    validateHostNameOnDefaultL3Network(systemTag, hostname, defaultL3Uuid);
                 } else if (VmSystemTags.STATIC_IP.isMatch(systemTag)) {
                     validateStaticIp(systemTag);
                 } else if (VmSystemTags.BOOT_ORDER.isMatch(systemTag)) {

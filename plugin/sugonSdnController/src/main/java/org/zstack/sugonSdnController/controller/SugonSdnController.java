@@ -431,6 +431,8 @@ public class SugonSdnController implements TfSdnController, SdnController {
                 // 设置可分配IP池范围
                 AllocationPoolType allocationPoolType = new AllocationPoolType(startIp,endIp);
                 ipamSubnetType.addAllocationPools(allocationPoolType);
+                // 设置分配IP从小到大
+                ipamSubnetType.setAddrFromStart(true);
                 // 封装实体 -> ObjectReference<VnSubnetsType>
                 IpamSubnets ipamSubnets = new IpamSubnets();
                 ipamSubnets.addSubnets(ipamSubnetType);
