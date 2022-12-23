@@ -46,4 +46,20 @@
 		<defaultValue>false</defaultValue>
 		<type>java.lang.Boolean</type>
 	</config>
+
+	<config>
+		<name>refreshVolumeSize.scope</name>
+		<description>sync volume size scope, options are [AllActive, Monitored, None]. AllActive: sync all active volumes, Monitored: sync all monitored volumes</description>
+		<category>volume</category>
+		<defaultValue>AllActive</defaultValue>
+	</config>
+
+	<config>
+		<name>refreshVolumeSize.hostCountPerBatch</name>
+		<description>the host count for per batching refresh volumes</description>
+		<category>volume</category>
+		<defaultValue>10</defaultValue>
+		<type>java.lang.Integer</type>
+	</config>
+
 </globalConfig>

@@ -1,5 +1,6 @@
 package org.zstack.storage.volume;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,14 +58,13 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.host.HostStatus.Connected;
 
 public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint, VmStateChangedExtensionPoint, VmDetachVolumeExtensionPoint,
@@ -135,6 +135,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             handle((CreateDataVolumeFromVolumeTemplateMsg) msg);
         } else if (msg instanceof CreateDataVolumeFromVolumeSnapshotMsg) {
             handle((CreateDataVolumeFromVolumeSnapshotMsg) msg);
+        } else if (msg instanceof BatchSyncManagedActiveVolumeSizeMsg) {
+            handle((BatchSyncManagedActiveVolumeSizeMsg) msg);
+        } else if (msg instanceof BatchSyncActiveVolumeSizeOnHostMsg) {
+            handle((BatchSyncActiveVolumeSizeOnHostMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -640,6 +644,122 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         });
     }
 
+    private void handle(BatchSyncManagedActiveVolumeSizeMsg msg) {
+        BatchSyncManagedActiveVolumeSizeReply reply = new BatchSyncManagedActiveVolumeSizeReply();
+
+        List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
+                .eq(HostVO_.clusterUuid, msg.getClusterUuid())
+                .eq(HostVO_.status, Connected)
+                .listValues().stream()
+                .filter(uuid -> destMaker.isManagedByUs((String) uuid)).map(String::valueOf)
+                .collect(Collectors.toList());
+
+       new While<>(hostUuids).step((hostUuid, completion) -> {
+           BatchSyncActiveVolumeSizeOnHostMsg bmsg = new BatchSyncActiveVolumeSizeOnHostMsg();
+           bmsg.setHostUuid(hostUuid);
+           bus.makeLocalServiceId(bmsg, VolumeConstant.SERVICE_ID);
+
+           bus.send(bmsg, new CloudBusCallBack(completion) {
+               @Override
+               public void run(MessageReply r) {
+                   if (r.isSuccess()) {
+                       BatchSyncActiveVolumeSizeOnHostReply br = r.castReply();
+                       reply.addSuccessCount(br.getSuccessCount());
+                       reply.addFailCount(br.getFailCount());
+                   } else {
+                       completion.addError(r.getError());
+                   }
+                   completion.done();
+               }
+           });
+       }, VolumeGlobalConfig.HOST_COUNT_PER_BATCH_REFRESH_VOLUME_SIZE.value(Integer.class)).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    reply.setError(errorCodeList.getCauses().get(0));
+                }
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(BatchSyncActiveVolumeSizeOnHostMsg msg) {
+        BatchSyncActiveVolumeSizeOnHostReply reply = new BatchSyncActiveVolumeSizeOnHostReply();
+
+        List<String> activeVmUuids = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.uuid)
+                .eq(VmInstanceVO_.hostUuid, msg.getHostUuid())
+                .eq(VmInstanceVO_.state, VmInstanceState.Running)
+                .listValues();
+        if (activeVmUuids.isEmpty()) {
+            bus.reply(msg, reply);
+            return;
+        }
+        Map<String, Map<String, String>> activeVolumesInPs = Q.New(VolumeVO.class)
+                .select(VolumeVO_.primaryStorageUuid, VolumeVO_.uuid, VolumeVO_.installPath)
+                .in(VolumeVO_.vmInstanceUuid, activeVmUuids).listTuple().stream()
+                .collect(Collectors.groupingBy(t -> t.get(0, String.class), Collectors.toMap(
+                        t -> ((Tuple)t).get(1, String.class), t -> ((Tuple)t).get(2, String.class))));
+
+        new While<>(activeVolumesInPs.entrySet()).each((e, completion) -> {
+            BatchSyncVolumeSizeOnPrimaryStorageMsg bmsg = new BatchSyncVolumeSizeOnPrimaryStorageMsg();
+            bmsg.setHostUuid(msg.getHostUuid());
+            bmsg.setPrimaryStorageUuid(e.getKey());
+            bmsg.setVolumeUuidInstallPaths(e.getValue());
+            bus.makeTargetServiceIdByResourceUuid(bmsg, PrimaryStorageConstant.SERVICE_ID, e.getKey());
+            bus.send(bmsg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply r) {
+                    if (r.isSuccess()) {
+                        BatchSyncVolumeSizeOnPrimaryStorageReply br = r.castReply();
+                        Map<String, Long> actualSizes = br.getActualSizes();
+
+                        reply.addSuccessCount(actualSizes.size());
+                        reply.addFailCount(e.getValue().size() - actualSizes.size());
+
+                        refreshVolume(actualSizes);
+                    } else {
+                        reply.addFailCount(e.getValue().size());
+                    }
+
+                    completion.done();
+                }
+
+                @Transactional(readOnly = true)
+                private Map<String, Long> calculateSnapshotSize(Collection<String> volumeUuids) {
+                    String sql = "select sp.uuid, sum(sp.size) from VolumeSnapshotVO sp where sp.volumeUuid in :uuids group by sp.uuid";
+                    TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                    q.setParameter("uuids", volumeUuids);
+                    List<Tuple> results = q.getResultList();
+                    return results.stream().collect(Collectors.toMap(
+                            tuple -> tuple.get(0, String.class), tuple -> tuple.get(1, Long.class)));
+                }
+
+                @Transactional
+                private void refreshVolume(Map<String, Long> actualSizes) {
+                    actualSizes.entrySet().removeIf(actualSize -> actualSize.getValue() == null);
+                    Map<String, Long> uuidSnapshotSizes = calculateSnapshotSize(actualSizes.keySet());
+
+                    for (Map.Entry<String, Long> entry : actualSizes.entrySet()) {
+                        // the actual size = volume actual size + all snapshot size
+                        long volActualSize = entry.getValue() + uuidSnapshotSizes.getOrDefault(entry.getKey(), 0L);
+                        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, entry.getKey())
+                                .set(VolumeVO_.actualSize, volActualSize)
+                                .update();
+                    }
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    reply.setError(errorCodeList.getCauses().get(0));
+                }
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     private void handle(CreateDataVolumeFromVolumeSnapshotMsg msg) {
         final CreateDataVolumeFromVolumeSnapshotReply reply = new CreateDataVolumeFromVolumeSnapshotReply();
         final VolumeVO vo = new VolumeVO();
@@ -746,9 +866,42 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             handle((APICreateDataVolumeFromVolumeTemplateMsg) msg);
         } else if (msg instanceof APIGetVolumeFormatMsg) {
             handle((APIGetVolumeFormatMsg) msg);
+        } else if (msg instanceof APIBatchSyncVolumeSizeMsg) {
+            handle((APIBatchSyncVolumeSizeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIBatchSyncVolumeSizeMsg msg) {
+        APIBatchSyncVolumeSizeReply reply = new APIBatchSyncVolumeSizeReply();
+
+        new While<>(destMaker.getManagementNodesInHashRing()).each((mnId, compl) -> {
+            BatchSyncManagedActiveVolumeSizeMsg bmsg = new BatchSyncManagedActiveVolumeSizeMsg();
+            bmsg.setClusterUuid(msg.getClusterUuid());
+            bus.makeServiceIdByManagementNodeId(bmsg, VolumeConstant.SERVICE_ID, mnId);
+            bus.send(bmsg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply r) {
+                    if (r.isSuccess()) {
+                        BatchSyncManagedActiveVolumeSizeReply br = r.castReply();
+                        reply.addSuccessCount(br.getSuccessCount());
+                        reply.addFailCount(br.getFailCount());
+                    } else {
+                        compl.addError(r.getError());
+                    }
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    reply.setError(errorCodeList.getCauses().get(0));
+                }
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(APIGetVolumeFormatMsg msg) {

@@ -41,10 +41,7 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeInfo;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
@@ -118,6 +115,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String OFFLINE_SNAPSHOT_MERGE = "/nfsprimarystorage/offlinesnapshotmerge";
     public static final String REMOUNT_PATH = "/nfsprimarystorage/remount";
     public static final String GET_VOLUME_SIZE_PATH = "/nfsprimarystorage/getvolumesize";
+    public static final String BATCH_GET_VOLUME_SIZE_PATH = "/nfsprimarystorage/batchgetvolumesize";
     public static final String HARD_LINK_VOLUME = "/nfsprimarystorage/volume/hardlink";
     public static final String PING_PATH = "/nfsprimarystorage/ping";
     public static final String GET_VOLUME_BASE_IMAGE_PATH = "/nfsprimarystorage/getvolumebaseimage";
@@ -740,6 +738,28 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 GetVolumeActualSizeRsp rsp = returnValue.getResponse(GetVolumeActualSizeRsp.class);
                 reply.setSize(rsp.size);
                 reply.setActualSize(rsp.actualSize);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory inv, BatchSyncVolumeSizeOnPrimaryStorageMsg msg, ReturnValueCompletion<BatchSyncVolumeSizeOnPrimaryStorageReply> completion) {
+        BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
+
+        GetBatchVolumeActualSizeCmd cmd = new GetBatchVolumeActualSizeCmd();
+        cmd.volumeUuidInstallPaths = msg.getVolumeUuidInstallPaths();
+        cmd.setUuid(inv.getUuid());
+
+        asyncHttpCall(BATCH_GET_VOLUME_SIZE_PATH, msg.getHostUuid(), cmd, GetBatchVolumeActualSizeRsp.class, inv, new ReturnValueCompletion<GetBatchVolumeActualSizeRsp>(completion) {
+            @Override
+            public void success(GetBatchVolumeActualSizeRsp rsp) {
+                reply.setActualSizes(rsp.actualSizes);
                 completion.success(reply);
             }
 
