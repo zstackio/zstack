@@ -91,6 +91,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "state"
+		desc "网卡状态"
+		type "String"
+		since "4.5"
+	}
+	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"

@@ -82,6 +82,40 @@ public class KVMAgentCommands {
     public static class UpdateVmPriorityRsp extends AgentResponse {
     }
 
+    public static class ChangeVmNicStateCommand extends AgentCommand {
+        private String vmUuid;
+        private String state;
+        private NicTO nic;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public NicTO getNic() {
+            return nic;
+        }
+
+        public void setNic(NicTO nic) {
+            this.nic = nic;
+        }
+
+        public String getState() {
+            return state;
+        }
+
+        public void setState(String state) {
+            this.state = state;
+        }
+    }
+
+    public static class ChangeVmNicStateRsp extends AgentResponse {
+
+    }
+
     public static class DetachNicCommand extends AgentCommand {
         private String vmUuid;
         private NicTO nic;
@@ -850,6 +884,7 @@ public class KVMAgentCommands {
         private VHostAddOn vHostAddOn;
         private DeviceAddress pci;
         private String type;
+        private String state;
 
         // only for vf nic
         private String vlanId;
@@ -989,6 +1024,14 @@ public class KVMAgentCommands {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public String getState() {
+            return state;
+        }
+
+        public void setState(String state) {
+            this.state = state;
         }
     }
 
