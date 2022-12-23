@@ -304,7 +304,6 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     public Map<String, Object> prepareBootstrapInformation(VmInstanceSpec spec) {
         VmNicInventory mgmtNic = null;
         String defaultL3Uuid;
-        int sshPort;
         String applianceVmSubType;
         if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate) {
             ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
@@ -317,7 +316,6 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
             DebugUtils.Assert(mgmtNic!=null, String.format("cannot find management nic for appliance vm[uuid:%s]", aspec.getUuid()));
             defaultL3Uuid = aspec.getDefaultRouteL3Network() != null ? aspec.getDefaultRouteL3Network().getUuid() : mgmtNic.getL3NetworkUuid();
-            sshPort = aspec.getSshPort();
             applianceVmSubType = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSubType.toString(), String.class);
         } else {
             ApplianceVmVO avo = dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);
@@ -325,8 +323,6 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             ApplianceVmInventory ainv = ApplianceVmInventory.valueOf(avo);
             mgmtNic = ainv.getManagementNic();
             defaultL3Uuid = ainv.getDefaultRouteL3NetworkUuid();
-            //TODO: make it configurable
-            sshPort = 22;
         }
 
         Map<String, Object> ret = new HashMap<String, Object>();
@@ -404,7 +400,6 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
         String publicKey = asf.getPublicKey();
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
-        ret.put(BootstrapParams.sshPort.toString(), sshPort);
         ret.put(BootstrapParams.uuid.toString(), spec.getVmInventory().getUuid());
         ret.put(BootstrapParams.managementNodeIp.toString(), Platform.getManagementServerIp());
         ret.put(BootstrapParams.managementNodeCidr.toString(), Platform.getManagementServerCidr());

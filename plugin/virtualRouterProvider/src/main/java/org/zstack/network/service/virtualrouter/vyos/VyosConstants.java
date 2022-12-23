@@ -26,6 +26,7 @@ public interface VyosConstants {
 
     String REPLACE_FIREWALL_WITH_IPTBALES = "SkipVyosIptables";
     String HA_STATUS = "haStatus";
+    String CONFIG_ENABLE_VYOS = "EnableVyosCmd";
 
     /* in old version, vpc snat is disabled in mn node, but it's not delete in vyos node, which is fix in http://jira.zstack.io/browse/ZSTAC-27851
     *  so when upgrade before 3.9.0.0, mn will reconnect virtual router, during reconnection, the snat rules should be deleted*/
