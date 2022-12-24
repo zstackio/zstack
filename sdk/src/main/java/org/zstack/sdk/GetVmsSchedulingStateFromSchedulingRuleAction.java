@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class VmSchedulingRuleConflictVmsAction extends AbstractAction {
+public class GetVmsSchedulingStateFromSchedulingRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class VmSchedulingRuleConflictVmsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.VmSchedulingRuleConflictVmsResult value;
+        public org.zstack.sdk.GetVmsSchedulingStateFromSchedulingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,10 @@ public class VmSchedulingRuleConflictVmsAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String ruleUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List vmUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +57,8 @@ public class VmSchedulingRuleConflictVmsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.VmSchedulingRuleConflictVmsResult value = res.getResult(org.zstack.sdk.VmSchedulingRuleConflictVmsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.VmSchedulingRuleConflictVmsResult() : value; 
+        org.zstack.sdk.GetVmsSchedulingStateFromSchedulingRuleResult value = res.getResult(org.zstack.sdk.GetVmsSchedulingStateFromSchedulingRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmsSchedulingStateFromSchedulingRuleResult() : value; 
 
         return ret;
     }
@@ -85,10 +88,10 @@ public class VmSchedulingRuleConflictVmsAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/vmSchedulingRule/conflict/vms";
+        info.path = "/get/vms/schedulingState/from/SchedulingRule";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

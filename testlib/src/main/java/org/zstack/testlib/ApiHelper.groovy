@@ -21374,6 +21374,33 @@ abstract class ApiHelper {
     }
 
 
+    def getVmsSchedulingStateFromSchedulingRule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmsSchedulingStateFromSchedulingRuleAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetVmsSchedulingStateFromSchedulingRuleAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getVmvNUMATopology(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetVmvNUMATopologyAction.class) Closure c) {
         def a = new org.zstack.sdk.GetVmvNUMATopologyAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -22132,6 +22159,33 @@ abstract class ApiHelper {
 
     def listVmSchedulingRulesFromExecuteState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ListVmSchedulingRulesFromExecuteStateAction.class) Closure c) {
         def a = new org.zstack.sdk.ListVmSchedulingRulesFromExecuteStateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def listVmsFromSchedulingState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ListVmsFromSchedulingStateAction.class) Closure c) {
+        def a = new org.zstack.sdk.ListVmsFromSchedulingStateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -38524,33 +38578,6 @@ abstract class ApiHelper {
 
     def validateVolumeSnapshotChain(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ValidateVolumeSnapshotChainAction.class) Closure c) {
         def a = new org.zstack.sdk.ValidateVolumeSnapshotChainAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def vmSchedulingRuleConflictVms(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.VmSchedulingRuleConflictVmsAction.class) Closure c) {
-        def a = new org.zstack.sdk.VmSchedulingRuleConflictVmsAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
