@@ -1,5 +1,3 @@
-alter table LicenseHistoryVO modify COLUMN `userName` varchar(64) NOT NULL;
-
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `type` char(32) DEFAULT 'unknown';
 
 CREATE TABLE IF NOT EXISTS `zstack`.`VmVdpaNicVO` (
