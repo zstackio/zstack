@@ -2762,9 +2762,9 @@
     "fileName": "src/main/java/org/zstack/billing/BillingApiInterceptor.java"
   },
   {
-    "raw": "price must be 0 and 9999.99",
-    "en_US": "price must be 0 and 9999.99",
-    "zh_CN": "价格必须在0和9999.99之间",
+    "raw": "price must be 0 and 999999999.99",
+    "en_US": "price must be 0 and 999999999.99",
+    "zh_CN": "价格必须在0和999999999.99之间",
     "arguments": [],
     "line": 234,
     "fileName": "src/main/java/org/zstack/billing/BillingApiInterceptor.java"
