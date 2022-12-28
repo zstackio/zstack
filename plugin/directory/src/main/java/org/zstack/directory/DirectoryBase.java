@@ -44,7 +44,6 @@ public class DirectoryBase {
 
     protected DirectoryVO self;
     protected String syncThreadName;
-    protected String operateDirectoryThreadName = "update-delete-move-directory";
 
     public DirectoryBase(DirectoryVO self) {
         this.self = self;
@@ -226,7 +225,7 @@ public class DirectoryBase {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return operateDirectoryThreadName;
+                return DirectoryConstant.OPERATE_DIRECTORY_THREAD_NAME;
             }
 
             @Override
@@ -308,7 +307,7 @@ public class DirectoryBase {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return operateDirectoryThreadName;
+                return DirectoryConstant.OPERATE_DIRECTORY_THREAD_NAME;
             }
 
             @Override
@@ -377,7 +376,7 @@ public class DirectoryBase {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return operateDirectoryThreadName;
+                return DirectoryConstant.OPERATE_DIRECTORY_THREAD_NAME;
             }
 
             @Override

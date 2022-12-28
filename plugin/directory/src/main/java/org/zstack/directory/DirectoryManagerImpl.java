@@ -87,6 +87,39 @@ public class DirectoryManagerImpl extends AbstractService implements DirectoryMa
     private void handle(APICreateDirectoryMsg msg) {
         APICreateDirectoryEvent event = new APICreateDirectoryEvent(msg.getId());
 
+        thdf.chainSubmit(new ChainTask(msg) {
+
+            @Override
+            public String getSyncSignature() {
+                return DirectoryConstant.OPERATE_DIRECTORY_THREAD_NAME;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                createDirectory(msg, event, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.publish(event);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        event.setError(errorCode);
+                        bus.publish(event);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("update-directory-name-%s", msg.getName());
+            }
+        });
+    }
+
+    private void createDirectory(APICreateDirectoryMsg msg, APICreateDirectoryEvent event, Completion completion) {
         DirectoryVO vo = new DirectoryVO();
         vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
         String name = msg.getName();
@@ -111,21 +144,18 @@ public class DirectoryManagerImpl extends AbstractService implements DirectoryMa
                 .filter(s -> s.getName().equals(name) && s.getType().equals(msg.getType()))
                 .collect(Collectors.toList());
         if (!list.isEmpty()) {
-            event.setError(operr("duplicate directory name, directory[uuid: %s] with name %s already exists", list.get(0).getUuid(), msg.getName()));
-            bus.publish(event);
+            completion.fail(operr("duplicate directory name, directory[uuid: %s] with name %s already exists", list.get(0).getUuid(), msg.getName()));
             return;
         }
         //judge whether the maximum level is exceeded
         String[] split = vo.getGroupName().split("/");
         // the directory cannot exceed 4 floors (contains the default directory)
         if(split.length > 3) {
-            event.setError(operr("fail to create directory, directories are up to four levels"));
-            bus.publish(event);
+            completion.fail(operr("fail to create directory, directories are up to four levels"));
             return;
         }
         if (!DIRECTORY_TYPES.contains(msg.getType())) {
-            event.setError(operr("the type of directory %s is not supported, the supported directory types are %s", msg.getType(), DIRECTORY_TYPES));
-            bus.publish(event);
+            completion.fail(operr("the type of directory %s is not supported, the supported directory types are %s", msg.getType(), DIRECTORY_TYPES));
             return;
         }
         vo.setType(msg.getType());
@@ -134,7 +164,7 @@ public class DirectoryManagerImpl extends AbstractService implements DirectoryMa
         vo.setCreateDate(new Timestamp(new Date().getTime()));
         dbf.persist(vo);
         event.setInventory(DirectoryInventory.valueOf(vo));
-        bus.publish(event);
+        completion.success();
     }
 
     @Override

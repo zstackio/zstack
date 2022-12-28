@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true,
         responseClass = APIUpdateDirectoryEvent.class
 )
-public class APIUpdateDirectoryMsg extends APIMessage implements DirectoryMessage {
+public class APIUpdateDirectoryMsg extends APIMessage implements DirectoryMessage, OperateDirectoryMessage {
     @APIParam(resourceType = DirectoryVO.class)
     private String uuid;
     @APIParam(maxLength = 255)

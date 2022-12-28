@@ -76,7 +76,9 @@ public class DirectoryApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void setServiceId(APIMessage msg) {
-        if (msg instanceof DirectoryMessage) {
+        if (msg instanceof OperateDirectoryMessage) {
+            bus.makeTargetServiceIdByResourceUuid(msg, DirectoryManager.SERVICE_ID, DirectoryConstant.OPERATE_DIRECTORY_THREAD_NAME);
+        } else if (msg instanceof DirectoryMessage) {
             DirectoryMessage dmsg = (DirectoryMessage) msg;
             bus.makeTargetServiceIdByResourceUuid(msg, DirectoryManager.SERVICE_ID, dmsg.getDirectoryUuid());
         }
