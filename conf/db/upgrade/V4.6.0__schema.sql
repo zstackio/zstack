@@ -67,7 +67,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostSchedulingRuleGroupVO`(
     `name` varchar(255) not null,
     `description` varchar(2048) DEFAULT NULL,
     `zoneUuid` varchar(32) not null,
-    `clusterUuid` varchar(32) not null,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
@@ -187,7 +186,6 @@ DELIMITER ;
 call createVmSchedulingRule();
 DROP PROCEDURE IF EXISTS createVmSchedulingRule;
 
-
 DELIMITER $$
 CREATE PROCEDURE createVmSchedulingRuleGroupRef()
     BEGIN
@@ -215,4 +213,35 @@ DELIMITER ;
 
 call createVmSchedulingRuleGroupRef();
 DROP PROCEDURE IF EXISTS createVmSchedulingRuleGroupRef;
+
+DELIMITER $$
+CREATE PROCEDURE createAutoScalingVmTemplate()
+    BEGIN
+        DECLARE agUuid VARCHAR(32);
+        DECLARE vmGroupUUid VARCHAR(32);
+        DECLARE autoReleaseTagUuid VARCHAR(32);
+        DECLARE autoScalingVmTemplateUuid VARCHAR(32);
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE vmCursor CURSOR FOR select SUBSTRING(tag, 20), resourceUuid from SystemTagVO where resourceType ='AutoScalingVmTemplateVO' and tag like 'affinityGroupUuid::%';
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+        OPEN vmCursor;
+        read_loop: LOOP
+            FETCH vmCursor INTO agUuid, autoScalingVmTemplateUuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SET autoReleaseTagUuid = REPLACE(UUID(), '-', '');
+            select uuid into vmGroupUUid  from VmSchedulingRuleGroupVO where srcUuid = agUuid;
+            INSERT INTO `zstack`.`SystemTagVO`(`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`, `createDate`, `lastOpDate`)
+            VALUES(autoReleaseTagUuid, autoScalingVmTemplateUuid, 'AutoScalingVmTemplateVO', 0, 'System', concat('vmSchedulingRuleGroupUuid::', vmGroupUUid),  CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+        END LOOP;
+        CLOSE vmCursor ;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+call createAutoScalingVmTemplate();
+DROP PROCEDURE IF EXISTS createAutoScalingVmTemplate;
 

@@ -34,9 +34,6 @@ public class CreateHostSchedulingRuleGroupAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String zoneUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clusterUuid;
-
     @Param(required = false)
     public java.lang.String resourceUuid;
 

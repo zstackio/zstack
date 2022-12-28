@@ -121,7 +121,6 @@ public class SourceClassMap {
 			put("org.zstack.header.acl.AccessControlListEntryInventory", "org.zstack.sdk.AccessControlListEntryInventory");
 			put("org.zstack.header.acl.AccessControlListInventory", "org.zstack.sdk.AccessControlListInventory");
 			put("org.zstack.header.affinitygroup.AffinityGroupInventory", "org.zstack.sdk.AffinityGroupInventory");
-			put("org.zstack.header.vmscheduling.VmSchedulingRuleInventory", "org.zstack.sdk.VmSchedulingRuleInventory");
 			put("org.zstack.header.affinitygroup.AffinityGroupUsageInventory", "org.zstack.sdk.AffinityGroupUsageInventory");
 			put("org.zstack.header.aliyun.AliyunOssException", "org.zstack.sdk.AliyunOssException");
 			put("org.zstack.header.aliyun.ebs.AliyunEbsBackupStorageInventory", "org.zstack.sdk.AliyunEbsBackupStorageInventory");
@@ -324,6 +323,10 @@ public class SourceClassMap {
 			put("org.zstack.header.vm.cdrom.VmCdRomInventory", "org.zstack.sdk.VmCdRomInventory");
 			put("org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveInventory", "org.zstack.sdk.VmInstanceDeviceAddressArchiveInventory");
 			put("org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupInventory", "org.zstack.sdk.VmInstanceDeviceAddressGroupInventory");
+			put("org.zstack.header.vmscheduling.HostSchedulingRuleGroupInventory", "org.zstack.sdk.HostSchedulingRuleGroupInventory");
+			put("org.zstack.header.vmscheduling.VmSchedulingRuleExecuteState", "org.zstack.sdk.VmSchedulingRuleExecuteState");
+			put("org.zstack.header.vmscheduling.VmSchedulingRuleGroupInventory", "org.zstack.sdk.VmSchedulingRuleGroupInventory");
+			put("org.zstack.header.vmscheduling.VmSchedulingRuleInventory", "org.zstack.sdk.VmSchedulingRuleInventory");
 			put("org.zstack.header.vo.ResourceInventory", "org.zstack.sdk.ResourceInventory");
 			put("org.zstack.header.volume.APIGetVolumeFormatReply$VolumeFormatReplyStruct", "org.zstack.sdk.VolumeFormatReplyStruct");
 			put("org.zstack.header.volume.VolumeInventory", "org.zstack.sdk.VolumeInventory");
@@ -673,7 +676,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AdditionalLicenseType", "org.zstack.license.AdditionalLicenseType");
 			put("org.zstack.sdk.AddressPoolInventory", "org.zstack.header.network.l3.AddressPoolInventory");
 			put("org.zstack.sdk.AffinityGroupInventory", "org.zstack.header.affinitygroup.AffinityGroupInventory");
-			put("org.zstack.header.vmscheduling.VmSchedulingRuleInventory", "org.zstack.sdk.VmSchedulingRuleInventory");
 			put("org.zstack.sdk.AffinityGroupUsageInventory", "org.zstack.header.affinitygroup.AffinityGroupUsageInventory");
 			put("org.zstack.sdk.AiSiNoSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
@@ -826,6 +828,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostNetworkBondingInventory", "org.zstack.header.host.HostNetworkBondingInventory");
 			put("org.zstack.sdk.HostNetworkInterfaceInventory", "org.zstack.header.host.HostNetworkInterfaceInventory");
 			put("org.zstack.sdk.HostPhysicalMemoryInventory", "org.zstack.header.host.HostPhysicalMemoryInventory");
+			put("org.zstack.sdk.HostSchedulingRuleGroupInventory", "org.zstack.header.vmscheduling.HostSchedulingRuleGroupInventory");
 			put("org.zstack.sdk.HybridAccountInventory", "org.zstack.hybrid.account.HybridAccountInventory");
 			put("org.zstack.sdk.HybridConnectionType", "org.zstack.header.aliyun.network.HybridConnectionType");
 			put("org.zstack.sdk.HybridEipAddressInventory", "org.zstack.header.hybrid.network.eip.HybridEipAddressInventory");
@@ -1135,6 +1138,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmPriorityConfigInventory", "org.zstack.header.vm.VmPriorityConfigInventory");
 			put("org.zstack.sdk.VmPriorityLevel", "org.zstack.header.vm.VmPriorityLevel");
 			put("org.zstack.sdk.VmSchedHistoryInventory", "org.zstack.header.vm.VmSchedHistoryInventory");
+			put("org.zstack.sdk.VmSchedulingRuleExecuteState", "org.zstack.header.vmscheduling.VmSchedulingRuleExecuteState");
+			put("org.zstack.sdk.VmSchedulingRuleGroupInventory", "org.zstack.header.vmscheduling.VmSchedulingRuleGroupInventory");
+			put("org.zstack.sdk.VmSchedulingRuleInventory", "org.zstack.header.vmscheduling.VmSchedulingRuleInventory");
 			put("org.zstack.sdk.VmSpending", "org.zstack.billing.spendingcalculator.vm.VmSpending");
 			put("org.zstack.sdk.VmSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmSpendingDetails");
 			put("org.zstack.sdk.VmVdpaNicInventory", "org.zstack.header.vdpa.VmVdpaNicInventory");
