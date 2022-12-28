@@ -328,6 +328,7 @@ public class SourceClassMap {
 			put("org.zstack.header.volume.VolumeInventory", "org.zstack.sdk.VolumeInventory");
 			put("org.zstack.header.vpc.VpcRouterDnsInventory", "org.zstack.sdk.VpcRouterDnsInventory");
 			put("org.zstack.header.vpc.VpcRouterVmInventory", "org.zstack.sdk.VpcRouterVmInventory");
+			put("org.zstack.header.vpc.VpcSnatStateInventory", "org.zstack.sdk.VpcSnatStateInventory");
 			put("org.zstack.header.vpc.ha.VpcHaGroupApplianceVmRefInventory", "org.zstack.sdk.VpcHaGroupApplianceVmRefInventory");
 			put("org.zstack.header.vpc.ha.VpcHaGroupInventory", "org.zstack.sdk.VpcHaGroupInventory");
 			put("org.zstack.header.vpc.ha.VpcHaGroupMonitorIpInventory", "org.zstack.sdk.VpcHaGroupMonitorIpInventory");
@@ -1163,6 +1164,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VpcHaGroupVipRefInventory", "org.zstack.header.vpc.ha.VpcHaGroupVipRefInventory");
 			put("org.zstack.sdk.VpcRouterDnsInventory", "org.zstack.header.vpc.VpcRouterDnsInventory");
 			put("org.zstack.sdk.VpcRouterVmInventory", "org.zstack.header.vpc.VpcRouterVmInventory");
+			put("org.zstack.sdk.VpcSnatStateInventory", "org.zstack.header.vpc.VpcSnatStateInventory");
 			put("org.zstack.sdk.VpcUserVpnGatewayInventory", "org.zstack.header.hybrid.network.vpn.VpcUserVpnGatewayInventory");
 			put("org.zstack.sdk.VpcVirtualRouteEntryInventory", "org.zstack.header.aliyun.network.vrouter.VpcVirtualRouteEntryInventory");
 			put("org.zstack.sdk.VpcVirtualRouterInventory", "org.zstack.header.aliyun.network.vrouter.VpcVirtualRouterInventory");
