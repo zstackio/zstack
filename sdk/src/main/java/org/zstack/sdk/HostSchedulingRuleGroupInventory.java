@@ -36,14 +36,6 @@ public class HostSchedulingRuleGroupInventory  {
         return this.zoneUuid;
     }
 
-    public java.lang.String clusterUuid;
-    public void setClusterUuid(java.lang.String clusterUuid) {
-        this.clusterUuid = clusterUuid;
-    }
-    public java.lang.String getClusterUuid() {
-        return this.clusterUuid;
-    }
-
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

@@ -48,7 +48,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostSchedulingRuleGroupVO`(
     `name` varchar(255) not null,
     `description` varchar(2048) DEFAULT NULL,
     `zoneUuid` varchar(32) not null,
-    `clusterUuid` varchar(32) not null,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
