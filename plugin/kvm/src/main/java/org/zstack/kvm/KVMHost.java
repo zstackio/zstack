@@ -3095,6 +3095,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setHostManagementIp(self.getManagementIp());
         cmd.setConsolePassword(spec.getConsolePassword());
         cmd.setUsbRedirect(spec.isUsbRedirect());
+        cmd.setEnableSE(spec.isEnableSE());
         cmd.setVDIMonitorNumber(Integer.valueOf(spec.getVDIMonitorNumber()));
         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setVmPortOff(VmGlobalConfig.VM_PORT_OFF.value(Boolean.class));

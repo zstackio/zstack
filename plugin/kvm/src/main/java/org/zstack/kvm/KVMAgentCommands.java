@@ -1700,6 +1700,7 @@ public class KVMAgentCommands {
         private boolean useNuma;
         private String MemAccess;
         private boolean usbRedirect;
+        private boolean enableSE;
         private boolean useBootMenu;
         private boolean createPaused;
         private boolean kvmHiddenState;
@@ -1873,6 +1874,13 @@ public class KVMAgentCommands {
             this.usbRedirect = usbRedirect;
         }
 
+        public boolean isEnableSE() {
+            return enableSE;
+        }
+
+        public void setEnableSE(boolean enableSE) {
+            this.enableSE = enableSE;
+        }
         public boolean isUseNuma() {
             return useNuma;
         }

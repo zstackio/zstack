@@ -385,6 +385,10 @@ public class SourceClassMap {
 			put("org.zstack.monitoring.items.ItemInventory", "org.zstack.sdk.ItemInventory");
 			put("org.zstack.monitoring.media.EmailMediaInventory", "org.zstack.sdk.EmailMediaInventory");
 			put("org.zstack.monitoring.media.MediaInventory", "org.zstack.sdk.MediaInventory");
+			put("org.zstack.mttyDevice.MttyDeviceInventory", "org.zstack.sdk.MttyDeviceInventory");
+			put("org.zstack.mttyDevice.MttyDeviceState", "org.zstack.sdk.MttyDeviceState");
+			put("org.zstack.mttyDevice.MttyDeviceType", "org.zstack.sdk.MttyDeviceType");
+			put("org.zstack.mttyDevice.MttyDeviceVirtStatus", "org.zstack.sdk.MttyDeviceVirtStatus");
 			put("org.zstack.multicast.router.header.MulticastRouteInventory", "org.zstack.sdk.MulticastRouteInventory");
 			put("org.zstack.multicast.router.header.MulticastRouterInventory", "org.zstack.sdk.MulticastRouterInventory");
 			put("org.zstack.multicast.router.header.MulticastRouterRendezvousPointInventory", "org.zstack.sdk.MulticastRouterRendezvousPointInventory");
@@ -901,6 +905,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MirrorNetworkUsedIpInventory", "org.zstack.header.portMirror.MirrorNetworkUsedIpInventory");
 			put("org.zstack.sdk.MonitorTriggerActionInventory", "org.zstack.monitoring.actions.MonitorTriggerActionInventory");
 			put("org.zstack.sdk.MonitorTriggerInventory", "org.zstack.monitoring.MonitorTriggerInventory");
+			put("org.zstack.sdk.MttyDeviceInventory", "org.zstack.mttyDevice.MttyDeviceInventory");
+			put("org.zstack.sdk.MttyDeviceState", "org.zstack.mttyDevice.MttyDeviceState");
+			put("org.zstack.sdk.MttyDeviceType", "org.zstack.mttyDevice.MttyDeviceType");
+			put("org.zstack.sdk.MttyDeviceVirtStatus", "org.zstack.mttyDevice.MttyDeviceVirtStatus");
 			put("org.zstack.sdk.MulticastRouteInventory", "org.zstack.multicast.router.header.MulticastRouteInventory");
 			put("org.zstack.sdk.MulticastRouterInventory", "org.zstack.multicast.router.header.MulticastRouterInventory");
 			put("org.zstack.sdk.MulticastRouterRendezvousPointInventory", "org.zstack.multicast.router.header.MulticastRouterRendezvousPointInventory");
