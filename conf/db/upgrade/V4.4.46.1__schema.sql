@@ -10,3 +10,4 @@ END $$
 DELIMITER ;
 
 CALL addLongJobVOIndex();
+ALTER TABLE `zstack`.`ESXHostVO` ADD COLUMN `esxiVersion` varchar(32);
