@@ -16,7 +16,7 @@ import org.zstack.header.zone.ZoneVO;
         responseClass = APICreateDirectoryEvent.class,
         parameterName = "params"
 )
-public class APICreateDirectoryMsg extends APICreateMessage {
+public class APICreateDirectoryMsg extends APICreateMessage implements OperateDirectoryMessage {
     @APIParam(maxLength = 255)
     private String name;
     @APIParam(required = false)

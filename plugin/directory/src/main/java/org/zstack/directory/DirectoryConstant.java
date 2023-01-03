@@ -10,4 +10,5 @@ import org.zstack.header.configuration.PythonClass;
 public interface DirectoryConstant {
     String DEFAULT_DIRECTORY = "default";
     String VCENTER_DIRECTORY = "vcenter";
+    String OPERATE_DIRECTORY_THREAD_NAME = "create-update-delete-move-directory";
 }

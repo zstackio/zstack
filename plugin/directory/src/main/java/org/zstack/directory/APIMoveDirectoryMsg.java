@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true,
         responseClass = APIMoveDirectoryEvent.class
 )
-public class APIMoveDirectoryMsg extends APIMessage implements DirectoryMessage {
+public class APIMoveDirectoryMsg extends APIMessage implements DirectoryMessage, OperateDirectoryMessage {
     @APIParam(resourceType = DirectoryVO.class)
     private String targetParentUuid;
     @APIParam(resourceType = DirectoryVO.class)
