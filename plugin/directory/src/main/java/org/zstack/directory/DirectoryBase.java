@@ -256,6 +256,11 @@ public class DirectoryBase {
 
     private void updateDirectory(APIUpdateDirectoryMsg msg, APIUpdateDirectoryEvent event, Completion completion) {
         DirectoryVO vo = dbf.findByUuid(msg.getUuid(), DirectoryVO.class);
+        //if the renamed name is unchanged, it is returned successfully
+        if (msg.getName().equals(vo.getName())) {
+            completion.success();
+            return;
+        }
         //judge whether the same level directory has the same name
         List<DirectoryVO> directoryVOS;
         if (StringUtils.isEmpty(vo.getParentUuid())) {
