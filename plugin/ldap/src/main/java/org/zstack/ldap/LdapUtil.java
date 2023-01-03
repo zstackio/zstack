@@ -712,9 +712,14 @@ public class LdapUtil {
         }
     }
 
+    private String LdapEscape(String ldapDn) {
+        return ldapDn.replace("/", "\\2f");
+    }
+
     public boolean validateDnExist(LdapTemplateContextSource ldapTemplateContextSource, String fullDn){
         try {
             String dn = fullDn.replace("," + ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString(), "");
+            dn = LdapEscape(dn);
             Object result = ldapTemplateContextSource.getLdapTemplate().lookup(dn, new AbstractContextMapper<Object>() {
                 @Override
                 protected Object doMapFromContext(DirContextOperations ctx) {
@@ -732,6 +737,7 @@ public class LdapUtil {
     public boolean validateDnExist(LdapTemplateContextSource ldapTemplateContextSource, String fullDn, Filter filter){
         try {
             String dn = fullDn.replace("," + ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString(), "");
+            dn = LdapEscape(dn);
             List<Object> result = ldapTemplateContextSource.getLdapTemplate().search(dn, filter.toString(), new AbstractContextMapper<Object>() {
                 @Override
                 protected Object doMapFromContext(DirContextOperations ctx) {
