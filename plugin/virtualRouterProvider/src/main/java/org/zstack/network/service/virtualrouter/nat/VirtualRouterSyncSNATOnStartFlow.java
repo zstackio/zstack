@@ -97,6 +97,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                 continue;
             }
 
+            pubNic = vrMgr.getSnatPubicInventory(vr, pubNic.getL3NetworkUuid());
             for (VmNicInventory priNic : vr.getGuestNics()) {
                 if (nwServed.contains(priNic.getL3NetworkUuid()) && !priNic.isIpv6OnlyNic()) {
                     SNATInfo info = new SNATInfo();
