@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateAffinityGroupAction extends AbstractAction {
+public class CreateVmSchedulingRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -24,6 +24,18 @@ public class CreateAffinityGroupAction extends AbstractAction {
             return this;
         }
     }
+
+    @Param(required = true, validValues = {"AFFINITY","ANTIAFFINITY"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String rule;
+
+    @Param(required = true, validValues = {"SOFT","HARD"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String mode;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmGroupUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostGroupUuid;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
@@ -112,7 +124,7 @@ public class CreateAffinityGroupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/affinity-groups";
+        info.path = "/vmsSchedulingRule";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
