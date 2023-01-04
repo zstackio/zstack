@@ -692,7 +692,7 @@
     "code": "1008",
     "method": "regex",
     "regex": ".*overlap with ip range\\[uuid:.*, start ip:.*, end ip: .*].*",
-    "message_cn": "与己有的网络段范围 [uuid：%1$s，开始：%2$s，结束：%3$s] 重叠。",
+    "message_cn": "与已有的网络段范围 [uuid：%1$s，开始：%2$s，结束：%3$s] 重叠。",
     "message_en": "Overlapped with the existing IP range [uuid: %1$s, start ip: %2$s, end ip: %3$s]."
   },
   {
