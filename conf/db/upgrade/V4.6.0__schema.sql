@@ -28,4 +28,4 @@ ALTER TABLE `zstack`.`VipNetworkServicesRefVO` DROP PRIMARY KEY, ADD PRIMARY KEY
 UPDATE `zstack`.`GlobalConfigVO` SET value="enable", defaultValue="enable" WHERE category="storageDevice" AND name="enable.multipath" AND value="true";
 UPDATE `zstack`.`GlobalConfigVO` SET value="ignore", defaultValue="enable" WHERE category="storageDevice" AND name="enable.multipath" AND value="false";
 
-ALTER TABLE `zstack`.`PriceVO` MODIFY COLUMN price DOUBLE(14,5)
+ALTER TABLE `zstack`.`PriceVO` MODIFY COLUMN price DOUBLE(14,5);
