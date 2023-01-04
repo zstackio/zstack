@@ -1,5 +1,6 @@
 package org.zstack.appliancevm;
 
+import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.appliancevm.ApplianceVmConstant.BootstrapParams;
@@ -7,10 +8,7 @@ import org.zstack.compute.vm.VmInstanceHookManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigFacade;
@@ -35,6 +33,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.vm.*;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.service.MtuGetter;
@@ -79,6 +79,10 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     private L2NetworkManager l2Mgr;
     @Autowired
     private VmInstanceHookManager vmHookMgr;
+    @Autowired
+    protected EventFacade evtf;
+    @Autowired
+    private RESTFacade restf;
 
     private List<String> createApplianceVmWorkFlow;
     private FlowChainBuilder createApplianceVmWorkFlowBuilder;
@@ -236,6 +240,23 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         populateExtensions();
         deployAnsible();
         hookVmEvents();
+
+        restf.registerSyncHttpCallHandler(ApplianceVmConstant.APPLIANCE_VM_ABNORMAL_FILE_REPORT, ApplianceVmCommands.ApplianceVmAbnormalFilesCmd.class, new SyncHttpCallHandler<ApplianceVmCommands.ApplianceVmAbnormalFilesCmd>() {
+            @Override
+            public String handleSyncHttpCall(ApplianceVmCommands.ApplianceVmAbnormalFilesCmd cmd) {
+                if (cmd == null) {
+                    return null;
+                }
+
+                if (!ApplianceVmGlobalConfig.ENABLE_ABNORMAL_FILE_REPORTER.value(Boolean.class)) {
+                    return null;
+                }
+
+                fireApplianceVmAbnormalFilesExistsEvent(cmd);
+                return null;
+            }
+        });
+
         return true;
     }
 
@@ -277,6 +298,22 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
         vmHookMgr.hookCreateEvent(VmCreateHook::new);
         vmHookMgr.hookDestroyEvent(VmDestroyHook::new);
+    }
+
+    private void fireApplianceVmAbnormalFilesExistsEvent(ApplianceVmCommands.ApplianceVmAbnormalFilesCmd cmd) {
+        ApplianceVmCanonicalEvents.ApplianceVmAbnormalFilesDate data = new ApplianceVmCanonicalEvents.ApplianceVmAbnormalFilesDate();
+        String applianceVmType = Q.New(ApplianceVmVO.class).eq(ApplianceVmVO_.uuid, cmd.getApplianceVmUuid()).select(ApplianceVmVO_.applianceVmType).findValue();
+        if (applianceVmType == null) {
+            return;
+        }
+        data.setApplianceVmUuid(cmd.getApplianceVmUuid());
+        data.setApplianceVmType(applianceVmType);
+        data.setDiskTotal(cmd.getDiskTotal());
+        data.setDiskUsed(cmd.getDiskUsed());
+        data.setDiskUsedutilization(cmd.getDiskUsedutilization());
+        data.setAbnormalFiles(new Gson().toJson(cmd.getAbnormalFiles()));
+
+        evtf.fire(ApplianceVmCanonicalEvents.APPLIANCEVM_ABNORMAL_FILE_REPORT_PATH, data);
     }
 
     @Override
