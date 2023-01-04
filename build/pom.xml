@@ -371,6 +371,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>block-primary-storage</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>sdk</artifactId>
                     <version>${project.version}</version>
                 </dependency>
