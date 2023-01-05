@@ -230,7 +230,7 @@ public class CephOsdGroupCapacityHelper {
         for (String poolName : poolNames) {
             String installPathPrefix = String.format("ceph://%s", poolName);
             long volSize = volumes.parallelStream()
-                    .filter(v -> v.getInstallPath()
+                    .filter(v -> v.getInstallPath() != null && v.getInstallPath()
                             .substring(0, v.getInstallPath().lastIndexOf("/"))
                             .equals((installPathPrefix)))
                     .map(VolumeVO::getSize)
@@ -238,7 +238,7 @@ public class CephOsdGroupCapacityHelper {
                     .reduce(0L, Long::sum);
 
             long imageCacheSize = imageCaches.parallelStream()
-                    .filter(v -> v.getInstallUrl()
+                    .filter(v -> v.getInstallUrl() != null && v.getInstallUrl()
                             .substring(0, v.getInstallUrl().lastIndexOf("/"))
                             .equals((installPathPrefix)))
                     .map(ImageCacheVO::getSize)
@@ -246,7 +246,7 @@ public class CephOsdGroupCapacityHelper {
                     .reduce(0L, Long::sum);
 
             long snapShotSize = snapshots.parallelStream()
-                    .filter(v -> v.getPrimaryStorageInstallPath()
+                    .filter(v -> v.getPrimaryStorageInstallPath() != null && v.getPrimaryStorageInstallPath()
                             .substring(0, v.getPrimaryStorageInstallPath().lastIndexOf("/"))
                             .equals((installPathPrefix)))
                     .map(VolumeSnapshotVO::getSize)
