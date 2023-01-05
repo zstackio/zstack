@@ -20,7 +20,7 @@ public class AddBlockPrimaryStorageAction extends AbstractAction {
                     String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
-
+            
             return this;
         }
     }
