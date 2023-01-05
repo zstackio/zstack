@@ -2359,6 +2359,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 info.setPublicIp(publicNic.getIp());
                 info.setPublicNicMac(publicNic.getMac());
                 info.setSnatNetmask(vnic.getNetmask());
+                info.setPrivateGatewayIp(vnic.getGateway());
                 snatInfo.add(info);
             }
         }
