@@ -30,6 +30,10 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BlockScsiLunVO` (
     CONSTRAINT `fkScsiLunVOVolumeVO` FOREIGN KEY (`volumeUuid`) REFERENCES `zstack`.`VolumeEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN id smallint unsigned DEFAULT 0;
+ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN type VARCHAR(128) DEFAULT NULL;
+ALTER TABLE `zstack`.`BlockScsiLunVO` MODIFY COLUMN lunType varchar(256) DEFAULT NULL;
+
 CREATE TABLE IF NOT EXISTS `zstack`.`HostInitiatorRefVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `hostUuid` varchar(32) NOT NULL UNIQUE,
