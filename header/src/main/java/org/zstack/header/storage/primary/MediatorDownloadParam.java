@@ -5,7 +5,7 @@ import org.zstack.header.vm.VmInstanceSpec;
 /**
  * Created by mingjian.deng on 2017/11/24.
  */
-public class MediatorDowloadParam implements MediatorParam{
+public class MediatorDownloadParam implements MediatorParam {
     private VmInstanceSpec.ImageSpec image;
     private String installPath;
     private String primaryStorageUuid;

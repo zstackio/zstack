@@ -717,15 +717,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         boolean shareable;
     }
 
-    public static class UploadCmd extends AgentCommand implements HasThreadContext {
-        public String sendCommandUrl;
-        public String imageUuid;
-        public String hostname;
-        public String srcPath;
-        public String dstPath;
-        public String description;
-    }
-
     public static class CpRsp extends AgentResponse {
         public Long size;
         public Long actualSize;
@@ -1250,12 +1241,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         licenseExts = pluginRgty.getExtensionList(PrimaryStorageLicenseInfoFactory.class);
     }
 
-    static class UploadParam implements MediatorParam {
-        ImageInventory image;
-        String primaryStorageInstallPath;
-        String backupStorageInstallPath;
-    }
-
     class SftpBackupStorageMediator extends BackupStorageMediator {
         private void getSftpCredentials(final ReturnValueCompletion<GetSftpBackupStorageDownloadCredentialReply> completion) {
             GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
@@ -1276,7 +1261,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         @Override
         public void download(final ReturnValueCompletion<String> completion) {
             checkParam();
-            final MediatorDowloadParam dparam = (MediatorDowloadParam) param;
+            final MediatorDownloadParam dparam = (MediatorDownloadParam) param;
 
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
             chain.setName(String.format("download-image-from-sftp-%s-to-ceph-%s", backupStorage.getUuid(), dparam.getPrimaryStorageUuid()));
@@ -1360,7 +1345,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public void upload(final ReturnValueCompletion<String> completion) {
             checkParam();
 
-            final UploadParam uparam = (UploadParam) param;
+            final MediatorUploadParam uparam = (MediatorUploadParam) param;
             final TaskProgressRange parentStage = getTaskStage();
             final TaskProgressRange PREPARATION_STAGE = new TaskProgressRange(0, 10);
             final TaskProgressRange UPLOAD_STAGE = new TaskProgressRange(10, 100);
@@ -1502,7 +1487,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public void download(final ReturnValueCompletion<String> completion) {
             checkParam();
 
-            final MediatorDowloadParam dparam = (MediatorDowloadParam) param;
+            final MediatorDownloadParam dparam = (MediatorDownloadParam) param;
             if (ImageMediaType.DataVolumeTemplate.toString().equals(dparam.getImage().getInventory().getMediaType())) {
                 CpCmd cmd = new CpCmd();
                 cmd.srcPath = dparam.getImage().getSelectedBackupStorage().getInstallPath();
@@ -1527,79 +1512,26 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         @Override
         public void upload(final ReturnValueCompletion<String> completion) {
             checkParam();
+            final MediatorUploadParam uparam = (MediatorUploadParam) param;
 
-            final UploadParam uparam = (UploadParam) param;
-            final TaskProgressRange parentStage = getTaskStage();
-            FlowChain chain = FlowChainBuilder.newShareFlowChain();
-            chain.setName(String.format("upload-image-ceph-%s-to-ceph-%s", self.getUuid(), backupStorage.getUuid()));
-            chain.then(new ShareFlow() {
-                String backupStorageInstallPath;
+            CpCmd cmd = new CpCmd();
+            cmd.sendCommandUrl = restf.getSendCommandUrl();
+            cmd.fsId = getSelf().getFsid();
+            cmd.srcPath = uparam.primaryStorageInstallPath;
+            cmd.dstPath = uparam.backupStorageInstallPath;
+
+            final String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
+            new HttpCaller<>(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(completion) {
+                @Override
+                public void success(CpRsp rsp) {
+                    completion.success(rsp.installPath);
+                }
 
                 @Override
-                public void setup() {
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "get-backup-storage-install-path";
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            BackupStorageAskInstallPathMsg msg = new BackupStorageAskInstallPathMsg();
-                            msg.setBackupStorageUuid(backupStorage.getUuid());
-                            msg.setImageUuid(uparam.image.getUuid());
-                            msg.setImageMediaType(uparam.image.getMediaType());
-                            bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, backupStorage.getUuid());
-                            bus.send(msg, new CloudBusCallBack(trigger) {
-                                @Override
-                                public void run(MessageReply reply) {
-                                    if (!reply.isSuccess()) {
-                                        trigger.fail(reply.getError());
-                                    } else {
-                                        backupStorageInstallPath = ((BackupStorageAskInstallPathReply) reply).getInstallPath();
-                                        trigger.next();
-                                    }
-                                }
-                            });
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "cp-to-the-image";
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            CpCmd cmd = new CpCmd();
-                            cmd.sendCommandUrl = restf.getSendCommandUrl();
-                            cmd.srcPath = uparam.primaryStorageInstallPath;
-                            cmd.dstPath = backupStorageInstallPath;
-                            httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(trigger) {
-                                @Override
-                                public void success(CpRsp returnValue) {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-
-                    done(new FlowDoneHandler(completion) {
-                        @Override
-                        public void handle(Map data) {
-                            reportProgress(parentStage.getEnd().toString());
-                            completion.success(backupStorageInstallPath);
-                        }
-                    });
-
-                    error(new FlowErrorHandler(completion) {
-                        @Override
-                        public void handle(ErrorCode errCode, Map data) {
-                            completion.fail(errCode);
-                        }
-                    });
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
                 }
-            }).start();
+            }).specifyOrder(apiId).call();
         }
 
         @Override
@@ -2247,7 +2179,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                     }
                                 });
                             } else {
-                                MediatorDowloadParam param = new MediatorDowloadParam();
+                                MediatorDownloadParam param = new MediatorDownloadParam();
                                 param.setImage(image);
                                 param.setInstallPath(makeCacheInstallPath(image.getInventory().getUuid()));
                                 param.setPrimaryStorageUuid(self.getUuid());
@@ -3041,7 +2973,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         ImageSpec spec = new ImageSpec();
         spec.setInventory(msg.getImage());
         spec.setSelectedBackupStorage(msg.getBackupStorageRef());
-        MediatorDowloadParam param = new MediatorDowloadParam();
+        MediatorDownloadParam param = new MediatorDownloadParam();
         param.setImage(spec);
         param.setInstallPath(makeDataVolumeInstallPath(msg.getVolumeUuid()));
         param.setPrimaryStorageUuid(self.getUuid());
@@ -3224,7 +3156,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         new HttpCaller<>(path, cmd, retClass, callback, unit, timeout).call();
     }
 
-    protected class HttpCaller<T extends AgentResponse> {
+    public class HttpCaller<T extends AgentResponse> {
         private Iterator<CephPrimaryStorageMonBase> it;
         private final ErrorCodeList errorCodes = new ErrorCodeList();
 
@@ -3239,11 +3171,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         private boolean tryNext = false;
         private List<String> avoidMonUuids = null;
 
-        HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback) {
+        public HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback) {
             this(path, cmd, retClass, callback, null, 0);
         }
 
-        HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback, TimeUnit unit, long timeout) {
+        public HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback, TimeUnit unit, long timeout) {
             this.path = path;
             this.cmd = cmd;
             this.retClass = retClass;
@@ -3252,7 +3184,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             this.timeout = timeout;
         }
 
-        void call() {
+        public void call() {
             it = prepareMons().iterator();
             prepareCmd();
             doCall();
@@ -3355,12 +3287,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 base.httpCall(path, cmd, retClass, completion, unit, timeout);
             }
         }
-    }
 
-    private void updateCapacityIfNeeded(AgentResponse rsp) {
-        if (rsp.totalCapacity != null && rsp.availableCapacity != null) {
-            CephCapacity cephCapacity = new CephCapacity(getSelf().getFsid(), rsp);
-            new CephCapacityUpdater().update(cephCapacity);
+        private void updateCapacityIfNeeded(AgentResponse rsp) {
+            if (rsp.totalCapacity != null && rsp.availableCapacity != null) {
+                CephCapacity cephCapacity = new CephCapacity(getSelf().getFsid(), rsp);
+                new CephCapacityUpdater().update(cephCapacity);
+            }
         }
     }
 
@@ -4523,62 +4455,19 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void uploadBitsToBackupStorage(final UploadBitsToBackupStorageMsg msg, final NoErrorCompletion completion) {
-        checkCephFsId(msg.getPrimaryStorageUuid(), msg.getBackupStorageUuid());
-        SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
-        q.select(BackupStorageVO_.type);
-        q.add(BackupStorageVO_.uuid, Op.EQ, msg.getBackupStorageUuid());
-        String bsType = q.findValue();
+        UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();
+        BackupStorageMediator mediator = getBackupStorageMediator(msg.getBackupStorageUuid());
 
-        String path = CP_PATH;
-        String hostname = null;
-
-        if (!CephConstants.CEPH_BACKUP_STORAGE_TYPE.equals(bsType)) {
-            List<PrimaryStorageCommitExtensionPoint> exts = pluginRgty.getExtensionList(PrimaryStorageCommitExtensionPoint.class);
-            DebugUtils.Assert(exts.size() <= 1, "PrimaryStorageCommitExtensionPoint mustn't > 1");
-            if (exts.size() == 0) {
-                throw new OperationFailureException(operr(
-                        "unable to upload bits to the backup storage[type:%s], we only support CEPH", bsType
-                ));
-            } else {
-                path = exts.get(0).getCommitAgentPath(self.getType());
-                hostname = exts.get(0).getHostName(msg.getBackupStorageUuid());
-                DebugUtils.Assert(path != null, String.format("found the extension point: [%s], but return null path",
-                        exts.get(0).getClass().getSimpleName()));
-            }
-        }
-
-        UploadCmd cmd = new UploadCmd();
-        cmd.sendCommandUrl = restf.getSendCommandUrl();
-        cmd.fsId = getSelf().getFsid();
-        cmd.srcPath = msg.getPrimaryStorageInstallPath();
-        cmd.dstPath = msg.getBackupStorageInstallPath();
-
-        if (msg.getImageUuid() != null) {
-            cmd.imageUuid = msg.getImageUuid();
-            ImageInventory inv = ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class));
-
-            StringBuilder desc = new StringBuilder();
-            for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
-                String tmp = ext.getImageDescription(inv);
-                if (tmp != null && !tmp.trim().equals("")) {
-                    desc.append(tmp);
-                }
-            }
-            cmd.description = desc.toString();
-        }
-        if (hostname != null) {
-            // imagestore hostname
-            cmd.hostname = hostname;
-        }
-
-        final String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
-        final UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();
-        new HttpCaller<>(path, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(msg) {
+        MediatorUploadParam param = new MediatorUploadParam();
+        param.image = dbf.findByUuid(msg.getImageUuid(), ImageVO.class).toInventory();
+        param.primaryStorageUuid = msg.getPrimaryStorageUuid();
+        param.primaryStorageInstallPath = msg.getPrimaryStorageInstallPath();
+        param.backupStorageInstallPath = msg.getBackupStorageInstallPath();
+        mediator.param = param;
+        mediator.upload(new ReturnValueCompletion<String>(msg) {
             @Override
-            public void success(CpRsp rsp) {
-                if (rsp.installPath != null) {
-                    reply.setInstallPath(rsp.installPath);
-                }
+            public void success(String installPath) {
+                reply.setInstallPath(installPath);
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -4589,7 +4478,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
                 completion.done();
             }
-        }).specifyOrder(apiId).call();
+        });
     }
 
     private void handle(final CheckHostStorageConnectionMsg msg) {

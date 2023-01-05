@@ -587,7 +587,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 ask.setImageUuid(paramIn.getImage().getUuid());
                 ask.setBackupStorageUuid(paramIn.getBackupStorageUuid());
                 ask.setImageMediaType(paramIn.getImage().getMediaType());
-                bus.makeTargetServiceIdByResourceUuid(ask, BackupStorageConstant.SERVICE_ID, paramIn.getBackupStorageUuid());
+                bus.makeLocalServiceId(ask, BackupStorageConstant.SERVICE_ID);
                 MessageReply ar = bus.call(ask);
                 if (!ar.isSuccess()) {
                     trigger.fail(ar.getError());
