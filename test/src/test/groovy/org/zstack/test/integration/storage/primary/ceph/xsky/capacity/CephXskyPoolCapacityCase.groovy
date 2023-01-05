@@ -2,11 +2,19 @@ package org.zstack.test.integration.storage.primary.ceph.xsky.capacity
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.CephBackupStorageInventory
 import org.zstack.sdk.CephPrimaryStoragePoolInventory
 import org.zstack.sdk.GetPrimaryStorageCapacityResult
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.storage.ceph.CephPoolCapacity
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.test.integration.storage.CephEnv
@@ -41,6 +49,7 @@ class CephXskyPoolCapacityCase extends SubCase {
     void test() {
         env.create {
             testReconnectPrimaryStorage()
+            testSkipCalculateCapacityWhichInstallPathIsNull()
         }
     }
 
@@ -123,5 +132,34 @@ class CephXskyPoolCapacityCase extends SubCase {
         }[0]
         assert afterBs.availableCapacity == bs.availableCapacity + addSize
         assert afterBs.totalCapacity == bs.totalCapacity + addSize
+    }
+
+    void testSkipCalculateCapacityWhichInstallPathIsNull() {
+        PrimaryStorageInventory ps = env.inventoryByName("ceph-pri") as PrimaryStorageInventory
+        VmInstanceInventory vm = env.inventoryByName("test-vm") as VmInstanceInventory
+
+        VolumeSnapshotInventory rootSnapshot = createVolumeSnapshot {
+            name = "root-volume-snapshot"
+            volumeUuid = vm.rootVolumeUuid
+        } as VolumeSnapshotInventory
+
+        String volumeInstallPath = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, vm.rootVolumeUuid).select(VolumeVO_.installPath)
+                .findValue()
+        String volumeSnapshotInstallPath = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, rootSnapshot.uuid)
+                .select(VolumeSnapshotVO_.primaryStorageInstallPath)
+                .findValue()
+
+        // mock install path is null
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, vm.rootVolumeUuid).set(VolumeVO_.installPath, null).update()
+        SQL.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, rootSnapshot.uuid)
+                .set(VolumeSnapshotVO_.primaryStorageInstallPath, null).update()
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, vm.rootVolumeUuid).set(VolumeVO_.installPath, volumeInstallPath).update()
+        SQL.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, rootSnapshot.uuid)
+                .set(VolumeSnapshotVO_.primaryStorageInstallPath, volumeSnapshotInstallPath).update()
     }
 }
