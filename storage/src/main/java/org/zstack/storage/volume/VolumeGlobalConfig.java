@@ -29,6 +29,12 @@ public class VolumeGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = 600)
     public static GlobalConfig REFRESH_VOLUME_SIZE_INTERVAL = new GlobalConfig(CATEGORY, "refreshVolumeSizeInterval");
 
+    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 100)
+    public static GlobalConfig HOST_COUNT_PER_BATCH_REFRESH_VOLUME_SIZE = new GlobalConfig(CATEGORY, "refreshVolumeSize.hostCountPerBatch");
+
+    @GlobalConfigValidation(validValues = {"AllActive", "Monitored", "None"})
+    public static GlobalConfig AUTO_REFRESH_VOLUME_SCOPE = new GlobalConfig(CATEGORY, "refreshVolumeSize.scope");
+
     @GlobalConfigValidation(validValues = {"0", "512", "4096"})
     @GlobalConfigDef(defaultValue = "0", type = Integer.class, description = "physical block size of the underlying storage")
     @BindResourceConfig({VolumeVO.class, PrimaryStorageVO.class})

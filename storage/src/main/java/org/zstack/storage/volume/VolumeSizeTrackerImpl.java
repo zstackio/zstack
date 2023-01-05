@@ -6,12 +6,14 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.db.Q;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.ExceptionSafe;
-import org.zstack.header.core.NopeNoErrorCompletion;
 import org.zstack.header.core.NopeWhileDoneCompletion;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.volume.*;
@@ -79,24 +81,51 @@ public class VolumeSizeTrackerImpl implements VolumeSizeTracker, Component {
         return true;
     }
 
-    private void setupTracker(){
-        VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> startTracker());
-        startTracker();
+    private void setupTracker() {
+        VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL.installUpdateExtension(this::startIntervalTracker);
+        startIntervalTracker(null, VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL);
     }
 
-    private synchronized void startTracker(){
+    private synchronized void startIntervalTracker(GlobalConfig oldConfig, GlobalConfig newConfig) {
+        final long oldValue = oldConfig == null ? 0L : oldConfig.value(Long.class);
+        final long newValue = newConfig.value(Long.class);
+
+        if (oldValue == newValue) {
+            return;
+        }
+
+        submitTrackerTask(newValue);
+    }
+
+    private void submitTrackerTask(long interval) {
         if (trackerThread != null) {
             trackerThread.cancel(true);
         }
 
-        final long interval = VolumeGlobalConfig.REFRESH_VOLUME_SIZE_INTERVAL.value(Long.class);
         trackerThread = thdf.submitPeriodicTask(new PeriodicTask() {
-
             @Override
             @ExceptionSafe
             public void run() {
-                reScanVolume();
-                syncVolumeSize();
+                String scope = VolumeGlobalConfig.AUTO_REFRESH_VOLUME_SCOPE.value(String.class);
+                if ("AllActive".equals(scope)) {
+                    logger.info("begin to sync all online volumes");
+                    List<String> clusterUuids = Q.New(ClusterVO.class).select(ClusterVO_.uuid).listValues();
+                    new While<>(clusterUuids).each((clusterUuid, completion) -> {
+                        BatchSyncManagedActiveVolumeSizeMsg msg = new BatchSyncManagedActiveVolumeSizeMsg();
+                        msg.setClusterUuid(clusterUuid);
+                        bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
+                        bus.send(msg, new CloudBusCallBack(null) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                completion.done();
+                            }
+                        });
+                    }).run(new NopeWhileDoneCompletion());
+                } else if ("Monitored".equals(scope)) {
+                    logger.info("begin to sync all monitored volumes");
+                    reScanVolume();
+                    syncVolumeSize();
+                }
             }
 
             @Override

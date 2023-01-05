@@ -415,6 +415,10 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(CephPrimaryStorageBase.BATCH_GET_VOLUME_SIZE_PATH) {
+                return new CephPrimaryStorageBase.GetBatchVolumeSizeRsp()
+            }
+
             VFS.vfsHook(CephPrimaryStorageBase.CP_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CpCmd.class)
                 VFS vfs = vfs(cmd, spec)
