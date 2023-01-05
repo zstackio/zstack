@@ -1,5 +1,8 @@
 package org.zstack.core.jsonlabel;
 
+import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.search.Inventory;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -8,6 +11,8 @@ import java.util.List;
 /**
  * Created by xing5 on 2016/9/13.
  */
+@Inventory(mappingVOClass = JsonLabelVO.class)
+@PythonClassInventory
 public class JsonLabelInventory {
     private long id;
     private String labelKey;
