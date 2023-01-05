@@ -4321,6 +4321,15 @@ public class KVMHost extends HostBase implements Host {
                                     runner.putArgument("isMini", "true");
                                 }
                             }
+                            for (KVMDeployHostExtensionPoint extensionPoint : pluginRegistry.getExtensionList(KVMDeployHostExtensionPoint.class)) {
+                                Map<String, Object> deployConfigurations = extensionPoint.generateDeployHostConfiguration(info, getSelf());
+                                if (deployConfigurations == null) {
+                                    continue;
+                                }
+                                deployConfigurations.keySet().forEach(key -> {
+                                    runner.putArgument(key, deployConfigurations.get(key));
+                                });
+                            }
                             if ("baremetal2".equals(self.getHypervisorType())) {
                                 runner.putArgument("isBareMetal2Gateway", "true");
                             }
