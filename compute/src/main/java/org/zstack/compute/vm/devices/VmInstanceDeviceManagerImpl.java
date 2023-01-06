@@ -316,7 +316,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
                 boolean nicExists = q(VmNicVO.class).eq(VmNicVO_.uuid, resourceUuid).isExists();
                 boolean cdRomExists = q(VmCdRomVO.class).eq(VmCdRomVO_.uuid, resourceUuid).isExists();
 
-                return volumeExists || nicExists || cdRomExists;
+                return volumeExists || nicExists || cdRomExists || vmExists(resourceUuid);
             }
         }.execute();
     }

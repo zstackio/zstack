@@ -205,7 +205,6 @@
             <zstack:extension interface="org.zstack.compute.vm.VmNicExtensionPoint" />
             <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
             <zstack:extension interface="org.zstack.header.vm.VmPlatformChangedExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.storage.snapshot.group.MemorySnapshotGroupExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
         
@@ -223,12 +222,6 @@
     <bean id="VmCdRomUpgradeExtension" class="org.zstack.compute.vm.VmCdRomUpgradeExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
-        </zstack:plugin>
-    </bean>
-
-    <bean id="VmCdRomMemorySnapshotGroupExtension" class="org.zstack.compute.vm.VmCdRomMemorySnapshotGroupExtension">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.storage.snapshot.group.MemorySnapshotGroupExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

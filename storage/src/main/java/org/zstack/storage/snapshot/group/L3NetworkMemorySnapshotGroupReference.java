@@ -6,7 +6,7 @@ import org.zstack.core.db.Q;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
-import org.zstack.header.vm.ArchiveVmNicType;
+import org.zstack.header.vm.ArchiveVmNicBundle;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO_;
 
@@ -29,7 +29,7 @@ public class L3NetworkMemorySnapshotGroupReference implements MemorySnapshotGrou
     public List<VolumeSnapshotGroupInventory> getVolumeSnapshotGroupReferenceList(String resourceUuid) {
         List<String> quotedArchiveGroupList = Q.New(VmInstanceDeviceAddressArchiveVO.class)
                 .select(VmInstanceDeviceAddressArchiveVO_.addressGroupUuid)
-                .eq(VmInstanceDeviceAddressArchiveVO_.metadataClass, ArchiveVmNicType.class.getCanonicalName())
+                .eq(VmInstanceDeviceAddressArchiveVO_.metadataClass, ArchiveVmNicBundle.class.getCanonicalName())
                 .like(VmInstanceDeviceAddressArchiveVO_.metadata, String.format("%%\"l3NetworkUuid\":\"%s\"%%", resourceUuid)).listValues();
 
         if (quotedArchiveGroupList.isEmpty()) {
