@@ -139,6 +139,7 @@
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.AfterChangeHostStatusExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceBeforeStartExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

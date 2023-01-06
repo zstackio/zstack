@@ -29,6 +29,7 @@
         <module>vxlan</module>
         <module>acl</module>
         <module>sdnController</module>
+        <module>directory</module>
     </modules>
     <dependencies>
         <dependency>
