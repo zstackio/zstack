@@ -1,10 +1,10 @@
-package org.zstack.sdk.iam2.api;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateIAM2OrganizationAction extends AbstractAction {
+public class LoginByThirdAuthAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.CreateIAM2OrganizationResult value;
+        public org.zstack.sdk.LoginByThirdAuthResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,29 +25,17 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password;
 
-    @Param(required = true, validValues = {"Company","Department"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.iam2.entity.OrganizationType type;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parentUuid;
-
-    @Param(required = false)
-    public java.util.List attributes;
-
-    @Param(required = false)
-    public java.lang.String srcType;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.util.Map clientInfo;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -55,23 +43,11 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
+    @NonAPIParam
+    public boolean isSuppressCredentialCheck = true;
 
     @Param(required = false)
     public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -81,8 +57,8 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.CreateIAM2OrganizationResult value = res.getResult(org.zstack.sdk.iam2.api.CreateIAM2OrganizationResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.CreateIAM2OrganizationResult() : value; 
+        org.zstack.sdk.LoginByThirdAuthResult value = res.getResult(org.zstack.sdk.LoginByThirdAuthResult.class);
+        ret.value = value == null ? new org.zstack.sdk.LoginByThirdAuthResult() : value; 
 
         return ret;
     }
@@ -111,11 +87,11 @@ public class CreateIAM2OrganizationAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/iam2/organizations";
-        info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.httpMethod = "PUT";
+        info.path = "/third/auth/login/";
+        info.needSession = false;
+        info.needPoll = false;
+        info.parameterName = "loginByThirdAuth";
         return info;
     }
 
