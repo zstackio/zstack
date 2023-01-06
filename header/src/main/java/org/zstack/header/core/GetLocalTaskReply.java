@@ -1,17 +1,12 @@
-package org.zstack.header.host;
+package org.zstack.header.core;
 
 import org.zstack.header.core.progress.ChainInfo;
-import org.zstack.header.message.APIReply;
-import org.zstack.header.rest.RestResponse;
+import org.zstack.header.message.MessageReply;
 
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by MaJin on 2019/7/3.
- */
-@RestResponse(fieldsTo = {"all"})
-public class APIGetHostTaskReply extends APIReply {
+public class GetLocalTaskReply extends MessageReply {
     private Map<String, ChainInfo> results = new HashMap<>();
 
     public Map<String, ChainInfo> getResults() {
@@ -22,7 +17,7 @@ public class APIGetHostTaskReply extends APIReply {
         this.results = results;
     }
 
-    public void putResults(String hostUuid, ChainInfo info) {
-        results.put(hostUuid, info);
+    public void putResults(String uuid, ChainInfo info) {
+        results.put(uuid, info);
     }
 }

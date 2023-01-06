@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetHostTaskAction extends AbstractAction {
+public class GetChainTaskAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -24,9 +24,6 @@ public class GetHostTaskAction extends AbstractAction {
             return this;
         }
     }
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List hostUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List syncSignatures;
@@ -88,7 +85,7 @@ public class GetHostTaskAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hosts/task-details";
+        info.path = "/core/task-details";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

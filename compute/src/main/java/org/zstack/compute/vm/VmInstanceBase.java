@@ -1,6 +1,5 @@
 package org.zstack.compute.vm;
 
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.hibernate.exception.ConstraintViolationException;
@@ -8183,7 +8182,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public String getName() {
-                return "overlay-message";
+                return msg.getTaskName();
             }
         });
     }
