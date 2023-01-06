@@ -65,9 +65,9 @@ public class VmSystemTags {
     public static String USB_REDIRECT_TOKEN = "usbRedirect";
     public static PatternedSystemTag USB_REDIRECT = new PatternedSystemTag(String.format("usbRedirect::{%s}",USB_REDIRECT_TOKEN),VmInstanceVO.class);
 
-    // set seDevice::true to enable se redirect
-    public static String SE_DEVICE_TOKEN = "seDevice";
-    public static PatternedSystemTag SE_DEVICE = new PatternedSystemTag(String.format("seDevice::{%s}", SE_DEVICE_TOKEN),VmInstanceVO.class);
+    // set securityElementEnable::true to enable se redirect
+    public static String SECURITY_ELEMENT_ENABLE_TOKEN = "securityElementEnable";
+    public static PatternedSystemTag SECURITY_ELEMENT_ENABLE = new PatternedSystemTag(String.format("securityElementEnable::{%s}", SECURITY_ELEMENT_ENABLE_TOKEN),VmInstanceVO.class);
 
     // set rdpEnable::true to enable RDP tag
     public static String RDP_ENABLE_TOKEN = "RDPEnable";

@@ -315,7 +315,7 @@ public class VmInstanceSpec implements Serializable {
     private boolean gcOnStopFailure;
     private boolean ignoreResourceReleaseFailure;
     private boolean usbRedirect = false;
-    private boolean enableSE = false;
+    private boolean enableSecurityElement = false;
     private String enableRDP = "false";
     private String VDIMonitorNumber = "1";
     @NoLogging
@@ -373,12 +373,12 @@ public class VmInstanceSpec implements Serializable {
         this.usbRedirect = usbRedirect;
     }
     
-    public boolean isEnableSE() {
-        return enableSE;
+    public boolean isEnableSecurityElement() {
+        return enableSecurityElement;
     }
     
-    public void setEnableSE(boolean enableSE) {
-        this.enableSE = enableSE;
+    public void setEnableSecurityElement(boolean enableSecurityElement) {
+        this.enableSecurityElement = enableSecurityElement;
     }
 
     public void setCreatePaused(boolean createPaused) {
