@@ -273,3 +273,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ResourceDirectoryRefVO` (
     CONSTRAINT `fkResourceDirectoryRefVO` FOREIGN KEY (`resourceUuid`) REFERENCES `ResourceVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkResourceDirectoryRefVO1` FOREIGN KEY (`directoryUuid`) REFERENCES `DirectoryVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE SlbOfferingVO ADD CONSTRAINT fkSlbOfferingVOInstanceOfferingEO FOREIGN KEY (uuid) REFERENCES InstanceOfferingEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
