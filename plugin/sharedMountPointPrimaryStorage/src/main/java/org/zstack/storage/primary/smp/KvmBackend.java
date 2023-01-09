@@ -298,6 +298,14 @@ public class KvmBackend extends HypervisorBackend {
     public static class LinkVolumeNewDirRsp extends AgentRsp {
     }
 
+    public static class UnlinkBitsCmd extends AgentCmd {
+        public String installPath;
+        public boolean onlyLinkedFile = true;
+    }
+
+    public static class UnlinkBitsRsp extends AgentRsp {
+    }
+
     public static class GetQcow2HashValueCmd extends AgentCmd {
         private String installPath;
 
@@ -326,6 +334,7 @@ public class KvmBackend extends HypervisorBackend {
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/sharedmountpointprimarystorage/createrootvolume";
     public static final String CREATE_VOLUME_WITH_BACKING_PATH = "/sharedmountpointprimarystorage/createvolumewithbacking";
     public static final String DELETE_BITS_PATH = "/sharedmountpointprimarystorage/bits/delete";
+    public static final String UNLINK_BITS_PATH = "/sharedmountpointprimarystorage/bits/unlink";
     public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/sharedmountpointprimarystorage/createtemplatefromvolume";
     public static final String UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/upload";
     public static final String DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/download";
@@ -2263,6 +2272,23 @@ public class KvmBackend extends HypervisorBackend {
                 reply.getSnapshots().addAll(msg.getSnapshots());
                 reply.setInstallPathToGc(cmd.srcDir);
                 completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(UnlinkBitsOnPrimaryStorageMsg msg, ReturnValueCompletion<UnlinkBitsOnPrimaryStorageReply> completion) {
+        UnlinkBitsCmd cmd = new UnlinkBitsCmd();
+        cmd.installPath = msg.getInstallPath();
+        new Do().go(UNLINK_BITS_PATH, cmd, LinkVolumeNewDirRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+            @Override
+            public void success(AgentRsp rsp) {
+                completion.success(new UnlinkBitsOnPrimaryStorageReply());
             }
 
             @Override

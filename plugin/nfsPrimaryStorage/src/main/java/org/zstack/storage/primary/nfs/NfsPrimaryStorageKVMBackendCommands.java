@@ -425,6 +425,14 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public boolean inUse;
     }
 
+    public static class UnlinkBitsCmd extends NfsPrimaryStorageAgentCommand {
+        public String installPath;
+        public boolean onlyLinkedFile = true;
+    }
+
+    public static class UnlinkBitsRsp extends NfsPrimaryStorageAgentResponse {
+    }
+
     public static class ListDirectionCmd extends NfsPrimaryStorageAgentCommand {
         private String path;
 

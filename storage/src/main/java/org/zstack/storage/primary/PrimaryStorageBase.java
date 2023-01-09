@@ -391,6 +391,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((ShrinkVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ChangeVolumeTypeOnPrimaryStorageMsg) {
             handle((ChangeVolumeTypeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof UnlinkBitsOnPrimaryStorageMsg) {
+            handle((UnlinkBitsOnPrimaryStorageMsg) msg);
         } else if (msg instanceof GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) {
             handle((GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) msg);
         } else {
@@ -1663,6 +1665,11 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         ChangeVolumeTypeOnPrimaryStorageReply reply = new ChangeVolumeTypeOnPrimaryStorageReply();
         reply.setSnapshots(msg.getSnapshots());
         reply.setVolume(msg.getVolume());
+        bus.reply(msg, reply);
+    };
+
+    protected void handle(UnlinkBitsOnPrimaryStorageMsg msg) {
+        UnlinkBitsOnPrimaryStorageReply reply = new UnlinkBitsOnPrimaryStorageReply();
         bus.reply(msg, reply);
     };
 

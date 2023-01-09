@@ -4,7 +4,6 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
-import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.primary.PingPrimaryStorageMsg
 import org.zstack.header.storage.primary.PrimaryStorageVO
@@ -24,13 +23,9 @@ import org.zstack.testlib.vfs.VFS
 import org.zstack.testlib.vfs.VFSFile
 import org.zstack.testlib.vfs.Volume
 import org.zstack.utils.gson.JSONObjectUtil
-import org.zstack.utils.path.PathUtil
-import org.zstack.utils.path.PathUtils
 
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.StandardCopyOption
-
 /**
  * Created by xing5 on 2017/2/13.
  */
@@ -162,9 +157,18 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-//            simulator(NfsPrimaryStorageKVMBackend.LIST_PATH) {
-//                return new NfsPrimaryStorageKVMBackendCommands.ListDirectionResponse()
-//            }
+            simulator(NfsPrimaryStorageKVMBackend.UNLINK_PATH) {
+                return new NfsPrimaryStorageKVMBackendCommands.UnlinkBitsRsp()
+            }
+
+            VFS.vfsHook(NfsPrimaryStorageKVMBackend.UNLINK_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.UnlinkBitsCmd.class)
+                VFS vfs = vfs(cmd, spec)
+                assert vfs.exists(cmd.installPath)
+                vfs.unlink(cmd.installPath, cmd.onlyLinkedFile)
+                return rsp
+            }
+
 
             simulator(NfsPrimaryStorageKVMBackend.MOVE_BITS_PATH) {
                 return new NfsPrimaryStorageKVMBackendCommands.MoveBitsRsp()
@@ -410,6 +414,20 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
 
             simulator(NfsPrimaryStorageKVMBackend.HARD_LINK_VOLUME) {
                 return new NfsPrimaryStorageKVMBackendCommands.LinkVolumeNewDirRsp()
+            }
+
+            VFS.vfsHook(NfsPrimaryStorageKVMBackend.HARD_LINK_VOLUME, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.LinkVolumeNewDirCmd.class)
+                VFS vfs = vfs(cmd, spec)
+                def links = vfs.link(cmd.dstDir, cmd.srcDir)
+                for (link in links) {
+                    Qcow2 qf = vfs.getFile(link, true)
+                    if (qf.backingFile != null) {
+                        qf.rebase(qf.backingFile.toString().replace(cmd.srcDir, cmd.dstDir))
+                    }
+                }
+
+                return rsp
             }
 
             simulator(NfsPrimaryStorageKVMBackend.GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH) {
