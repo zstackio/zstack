@@ -60,11 +60,12 @@ class Qcow2Tree {
 
         Map<String, Qcow2Node> allNodes = [:]
 
-        vfs.walkFileSystem { f ->
-            if (!(f instanceof Qcow2)) {
+        vfs.walkFileSystem { vf ->
+            if (!(vf instanceof Qcow2)) {
                 return
             }
 
+            Qcow2 f = (Qcow2) vf
             Qcow2Node n = allNodes[f.pathString()]
             if (n == null) {
                 n = new Qcow2Node(qcow2: f, children: [])

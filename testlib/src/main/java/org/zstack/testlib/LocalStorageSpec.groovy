@@ -326,6 +326,18 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(LocalStorageKvmBackend.UNLINK_BITS_PATH) {
+                return new LocalStorageKvmBackend.UnlinkBitsRsp()
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.UNLINK_BITS_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.UnlinkBitsCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                assert vfs.exists(cmd.installPath)
+                vfs.unlink(cmd.installPath, cmd.onlyLinkedFile)
+                return rsp
+            }
+
 //            simulator(LocalStorageKvmBackend.GET_LIST_PATH) { HttpEntity<String> e, EnvSpec spec ->
 //                return new LocalStorageKvmBackend.ListPathRsp(paths: [])
 //            }
@@ -471,6 +483,23 @@ class LocalStorageSpec extends PrimaryStorageSpec {
 
             simulator(LocalStorageKvmBackend.HARD_LINK_VOLUME) {
                 return new LocalStorageKvmBackend.LinkVolumeNewDirRsp()
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.HARD_LINK_VOLUME, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.LinkVolumeNewDirCmd.class)
+                VFS vfs = vfs(e, cmd, spec)
+                def links = vfs.link(cmd.dstDir, cmd.srcDir)
+                for (link in links) {
+                    Qcow2 qf = vfs.getFile(link, true)
+                    if (qf.backingFile != null) {
+                        qf.rebase(qf.backingFile.toString().replace(cmd.srcDir, cmd.dstDir))
+                    }
+                    // TODO multi paths
+                    qf.path = link
+                    qf.update()
+                }
+
+                return rsp
             }
 
             simulator(LocalStorageKvmBackend.GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH) {

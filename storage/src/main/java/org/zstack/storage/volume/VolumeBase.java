@@ -1551,6 +1551,7 @@ public class VolumeBase implements Volume {
             final List<VolumeSnapshotInventory> oldRootSnapshots = new ArrayList<>();
             VolumeInventory newRootVol;
             VolumeInventory oldRootVol;
+            final Map<VolumeInventory, String> installPathsToGc = new HashMap<>();
 
             @Override
             public void setup() {
@@ -1577,6 +1578,7 @@ public class VolumeBase implements Volume {
                                 ChangeVolumeTypeOnPrimaryStorageReply cr = reply.castReply();
                                 newRootSnapshots.addAll(cr.getSnapshots());
                                 newRootVol = cr.getVolume();
+                                installPathsToGc.put(newRootVol, cr.getInstallPathToGc());
                                 trigger.next();
                             }
                         });
@@ -1610,6 +1612,7 @@ public class VolumeBase implements Volume {
                                 ChangeVolumeTypeOnPrimaryStorageReply cr = reply.castReply();
                                 oldRootSnapshots.addAll(cr.getSnapshots());
                                 oldRootVol = cr.getVolume();
+                                installPathsToGc.put(oldRootVol, cr.getInstallPathToGc());
                                 trigger.next();
                             }
                         });
@@ -1661,6 +1664,34 @@ public class VolumeBase implements Volume {
                             }
                         }.execute();
                         trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "unlink-volumes-old-install-path";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new While<>(installPathsToGc.entrySet()).each((entry, compl) -> {
+                            VolumeInventory vol = entry.getKey();
+                            UnlinkBitsOnPrimaryStorageMsg umsg = new UnlinkBitsOnPrimaryStorageMsg();
+                            umsg.setInstallPath(entry.getValue());
+                            umsg.setResourceUuid(vol.getUuid());
+                            umsg.setResourceType(VolumeVO.class.getSimpleName());
+                            umsg.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
+                            bus.makeTargetServiceIdByResourceUuid(umsg, PrimaryStorageConstant.SERVICE_ID, vol.getPrimaryStorageUuid());
+                            bus.send(umsg, new CloudBusCallBack(compl) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    compl.done();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                trigger.next();
+                            }
+                        });
                     }
                 });
 

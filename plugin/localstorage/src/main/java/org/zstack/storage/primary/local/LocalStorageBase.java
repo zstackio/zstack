@@ -3066,6 +3066,23 @@ public class LocalStorageBase extends PrimaryStorageBase {
             }
         });
     }
+    @Override
+    protected void handle(UnlinkBitsOnPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory factory = getHypervisorBackendFactoryByResourceUuid(msg.getResourceUuid(), msg.getResourceType());
+        factory.getHypervisorBackend(self).handle(msg, new ReturnValueCompletion<UnlinkBitsOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(UnlinkBitsOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                UnlinkBitsOnPrimaryStorageReply r = new UnlinkBitsOnPrimaryStorageReply();
+                r.setError(errorCode);
+                bus.reply(msg, r);
+            }
+        });
+    }
 
     public static class LocalStoragePhysicalCapacityUsage extends PrimaryStorageBase.PhysicalCapacityUsage {
         public long localStorageUsedSize;
