@@ -133,9 +133,18 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
             bus.makeTargetServiceIdByResourceUuid(omsg, VolumeConstant.SERVICE_ID, e.getKey());
 
             bus.send(omsg, new CloudBusCallBack(compl) {
-                private List<ErrorCode> buildErrorCodeFromReply(MulitpleOverlayReply reply) {
+                private List<ErrorCode> buildErrorCodeFromReply(MessageReply r) {
                     List<ErrorCode> errorCodes = new ArrayList<>();
                     Iterator<NeedReplyMessage> iterator = omsg.getMessages().iterator();
+                    if (!r.isSuccess()) {
+                        omsg.getMessages().forEach(m -> {
+                            ErrorCode error = r.getError().copy();
+                            error.putToOpaque(VolumeSnapshotConstant.SNAPSHOT_UUID, ((VolumeSnapshotDeletionMsg)iterator.next()).getSnapshotUuid());
+                            errorCodes.add(error);
+                        });
+                        return errorCodes;
+                    }
+                    MulitpleOverlayReply reply = (MulitpleOverlayReply)r;
                     reply.getInnerReplies().forEach(innerReply -> {
                         VolumeSnapshotDeletionMsg innerMsg = (VolumeSnapshotDeletionMsg)iterator.next();
                         if (!innerReply.isSuccess()) {
@@ -154,7 +163,7 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
                         ext.volumeSnapshotAfterCleanUpExtensionPoint(volumeUuid, snapshotToDelete.get(volumeUuid));
                     });
 
-                    buildErrorCodeFromReply((MulitpleOverlayReply)reply).forEach(compl::addError);
+                    buildErrorCodeFromReply(reply).forEach(compl::addError);
                     compl.done();
                 }
             });
