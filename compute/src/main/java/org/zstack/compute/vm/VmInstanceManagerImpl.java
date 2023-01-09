@@ -1740,17 +1740,17 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void installSeDeviceValidator() {
-        VmSystemTags.SE_DEVICE.installValidator(new SystemTagValidator() {
+        VmSystemTags.SECURITY_ELEMENT_ENABLE.installValidator(new SystemTagValidator() {
             @Override
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
-                String seDeviceTokenByTag = null;
-                if (VmSystemTags.SE_DEVICE.isMatch(systemTag)) {
-                    seDeviceTokenByTag = VmSystemTags.SE_DEVICE.getTokenByTag(systemTag, VmSystemTags.SE_DEVICE_TOKEN);
+                String SecurityElementEnableTokenByTag = null;
+                if (VmSystemTags.SECURITY_ELEMENT_ENABLE.isMatch(systemTag)) {
+                    SecurityElementEnableTokenByTag = VmSystemTags.SECURITY_ELEMENT_ENABLE.getTokenByTag(systemTag, VmSystemTags.SECURITY_ELEMENT_ENABLE_TOKEN);
                 } else {
-                    throw new OperationFailureException(argerr("invalid seDevice[%s], %s is not seDevice tag", systemTag, seDeviceTokenByTag));
+                    throw new OperationFailureException(argerr("invalid securityElementEnable[%s], %s is not securityElementEnable tag", systemTag, SecurityElementEnableTokenByTag));
                 }
-                if (!isBoolean(seDeviceTokenByTag)) {
-                    throw new OperationFailureException(argerr("invalid seDevice[%s], %s is not boolean class", systemTag, seDeviceTokenByTag));
+                if (!isBoolean(SecurityElementEnableTokenByTag)) {
+                    throw new OperationFailureException(argerr("invalid securityElementEnable[%s], %s is not boolean class", systemTag, SecurityElementEnableTokenByTag));
                 }
             }
             private boolean isBoolean(String param) {
