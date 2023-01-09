@@ -2911,6 +2911,7 @@ public class KVMAgentCommands {
     public static class MigrateVmCmd extends AgentCommand implements HasThreadContext {
         private String vmUuid;
         private String destHostIp;
+        private String destHostManagementIp;
         private String storageMigrationPolicy;
         private String srcHostIp;
         private boolean useNuma;
@@ -3007,6 +3008,14 @@ public class KVMAgentCommands {
 
         public void setDisks(Map<String, VolumeTO> disks) {
             this.disks = disks;
+        }
+
+        public String getDestHostManagementIp() {
+            return destHostManagementIp;
+        }
+
+        public void setDestHostManagementIp(String destHostManagementIp) {
+            this.destHostManagementIp = destHostManagementIp;
         }
     }
 
