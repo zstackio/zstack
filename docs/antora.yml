@@ -9,6 +9,7 @@ version: master
 nav:
 - modules/ROOT/nav.adoc
 - modules/core/nav.adoc
+- modules/identity/nav.adoc
 - modules/network/nav.adoc
 - modules/longjob/nav.adoc
 - modules/test/nav.adoc
