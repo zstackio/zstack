@@ -862,12 +862,16 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 nic.setUuid(Platform.getUuid());
                 nic.setMac(mac);
                 nic.setDeviceId(deviceId);
+                nic.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
+                for (NicManageExtensionPoint ext : pluginRgty.getExtensionList(NicManageExtensionPoint.class)) {
+                    ext.beforeCreateNic(nic, msg);
+                }
 
                 nicVO.setUuid(nic.getUuid());
                 nicVO.setDeviceId(deviceId);
-                nicVO.setMac(mac);
+                nicVO.setMac(nic.getMac());
                 nicVO.setAccountUuid(msg.getSession().getAccountUuid());
-                nicVO.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
+                nicVO.setType(nic.getType());
 
                 int tries = 5;
                 while (tries-- > 0) {
@@ -1411,6 +1415,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             })).run(new WhileDoneCompletion(trigger) {
                                 @Override
                                 public void done(ErrorCodeList errorCodeList) {
+                                    for (NicManageExtensionPoint ext : pluginRgty.getExtensionList(NicManageExtensionPoint.class)) {
+                                        ext.beforeDeleteNic(nic);
+                                    }
                                     dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
                                     trigger.next();
                                 }

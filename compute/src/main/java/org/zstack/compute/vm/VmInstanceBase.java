@@ -2321,6 +2321,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                 L3NetworkVO l3vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
                 final L3NetworkInventory l3 = L3NetworkInventory.valueOf(l3vo);
                 final VmInstanceInventory vm = getSelfInventory();
+                List<VmNicInventory> nics = vm.getVmNics();
+                VmNicInventory nicToAttach = VmNicInventory.valueOf(vmNicVO);
+                nicToAttach.setMetaData("attachNic");
+                if (nics == null) {
+                    vm.setVmNics(new ArrayList<VmNicInventory>(Arrays.asList(nicToAttach)));
+                }else {
+                    nics.add(nicToAttach);
+                }
                 for (VmPreAttachL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(VmPreAttachL3NetworkExtensionPoint.class)) {
                     ext.vmPreAttachL3Network(vm, l3);
                 }
