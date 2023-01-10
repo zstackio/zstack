@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.common.io.ByteStreams;
 import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.ConnectionReuseStrategy;
@@ -339,7 +340,8 @@ class ApiConnectorImpl implements ApiConnector {
         int status = response.getStatusLine().getStatusCode();
         if (status != HttpStatus.SC_OK
                 && status != HttpStatus.SC_ACCEPTED ) {
-            String reason = response.getStatusLine().getReasonPhrase();
+//            String reason = response.getStatusLine().getReasonPhrase();
+            String reason =  new String(ByteStreams.toByteArray(response.getEntity().getContent()));
             s_logger.warn("<< Response:" + reason);
             checkResponseKeepAliveStatus(response);
             return Status.failure(reason);
@@ -380,7 +382,8 @@ class ApiConnectorImpl implements ApiConnector {
                 && status != HttpStatus.SC_CREATED
                 && status != HttpStatus.SC_ACCEPTED ) {
 
-            String reason = response.getStatusLine().getReasonPhrase();
+//            String reason = response.getStatusLine().getReasonPhrase();
+            String reason =  new String(ByteStreams.toByteArray(response.getEntity().getContent()));
             s_logger.error("create api request failed: " + reason);
             if (status != HttpStatus.SC_NOT_FOUND) {
                 s_logger.error("Failure message: " + getResponseData(response));
@@ -425,7 +428,8 @@ class ApiConnectorImpl implements ApiConnector {
         int status = response.getStatusLine().getStatusCode();
         if (status != HttpStatus.SC_OK
                 && status != HttpStatus.SC_ACCEPTED ) {
-            String reason = response.getStatusLine().getReasonPhrase();
+//            String reason = response.getStatusLine().getReasonPhrase();
+            String reason =  new String(ByteStreams.toByteArray(response.getEntity().getContent()));
             s_logger.warn("<< Response:" + reason);
             checkResponseKeepAliveStatus(response);
             return Status.failure(reason);
@@ -448,7 +452,8 @@ class ApiConnectorImpl implements ApiConnector {
 
         int status = response.getStatusLine().getStatusCode();
         if (status != HttpStatus.SC_OK) {
-            String reason = response.getStatusLine().getReasonPhrase();
+//            String reason = response.getStatusLine().getReasonPhrase();
+            String reason =  new String(ByteStreams.toByteArray(response.getEntity().getContent()));
             s_logger.warn("GET failed: " + reason);
             if (status != HttpStatus.SC_NOT_FOUND) {
                 s_logger.error("Failure message: " + getResponseData(response));
@@ -493,7 +498,8 @@ class ApiConnectorImpl implements ApiConnector {
         if (status != HttpStatus.SC_OK
                 && status != HttpStatus.SC_NO_CONTENT
                 && status != HttpStatus.SC_ACCEPTED ) {
-            String reason = response.getStatusLine().getReasonPhrase();
+//            String reason = response.getStatusLine().getReasonPhrase();
+            String reason =  new String(ByteStreams.toByteArray(response.getEntity().getContent()));
             s_logger.warn("Delete failed: " + reason);
             if (status != HttpStatus.SC_NOT_FOUND) {
                 s_logger.error("Failure message: " + getResponseData(response));
@@ -664,7 +670,8 @@ class ApiConnectorImpl implements ApiConnector {
                 && status != HttpStatus.SC_CREATED
                 && status != HttpStatus.SC_ACCEPTED
                 && status != HttpStatus.SC_NO_CONTENT ) {
-            String reason = response.getStatusLine().getReasonPhrase();
+//            String reason = response.getStatusLine().getReasonPhrase();
+            String reason =  new String(ByteStreams.toByteArray(response.getEntity().getContent()));
             s_logger.error("sync request failed: " + reason);
             if (status != HttpStatus.SC_NOT_FOUND) {
                 s_logger.error("Failure message: " + getResponseData(response));
