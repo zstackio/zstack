@@ -40,8 +40,19 @@ public class TfL3Network extends L3BasicNetwork {
     @Autowired
     protected DatabaseFacade dbf;
 
+    SugonSdnController sugonSdnController;
+
     public TfL3Network(L3NetworkVO self) {
         super(self);
+    }
+
+    private SugonSdnController getSugonSdnController() {
+        if (sugonSdnController != null){
+            return sugonSdnController;
+        }
+        SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
+        SdnController sdnController = sdnControllerManager.getSdnController(sdn);
+        return (SugonSdnController) sdnController;
     }
 
     @Override
@@ -92,10 +103,7 @@ public class TfL3Network extends L3BasicNetwork {
         // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getUuid()).find();
         if(l3Network!=null){
-            SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
-            SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-            SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
-            sugonSdnController.deleteL3Network(l3Network, new Completion(msg){
+            getSugonSdnController().deleteL3Network(l3Network, new Completion(msg){
                 @Override
                 public void success() {
                     // zstack business processing
@@ -120,10 +128,7 @@ public class TfL3Network extends L3BasicNetwork {
         // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getUuid()).find();
         if(l3Network!=null){
-            SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
-            SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-            SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
-            sugonSdnController.updateL3Network(l3Network,msg, new Completion(msg){
+            getSugonSdnController().updateL3Network(l3Network,msg, new Completion(msg){
                 @Override
                 public void success() {
                     // zstack business processing
@@ -149,10 +154,7 @@ public class TfL3Network extends L3BasicNetwork {
         // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if(l3Network!=null){
-            SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
-            SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-            SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
-            sugonSdnController.addL3IpRangeByCidr(l3Network,msg, new Completion(msg){
+            getSugonSdnController().addL3IpRangeByCidr(l3Network,msg, new Completion(msg){
                 @Override
                 public void success() {
                     // zstack business processing
@@ -177,10 +179,7 @@ public class TfL3Network extends L3BasicNetwork {
         // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if(l3Network!=null){
-            SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
-            SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-            SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
-            sugonSdnController.deleteL3Network(l3Network, new Completion(msg){
+            getSugonSdnController().deleteL3Network(l3Network, new Completion(msg){
                 @Override
                 public void success() {
                     // zstack business processing
@@ -205,10 +204,7 @@ public class TfL3Network extends L3BasicNetwork {
         // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if(l3Network!=null){
-            SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
-            SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-            SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
-            sugonSdnController.addL3Dns(l3Network, msg,new Completion(msg){
+            getSugonSdnController().addL3Dns(l3Network, msg,new Completion(msg){
                 @Override
                 public void success() {
                     // zstack business processing
@@ -233,10 +229,7 @@ public class TfL3Network extends L3BasicNetwork {
         // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if(l3Network!=null){
-            SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
-            SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-            SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
-            sugonSdnController.deleteL3Dns(l3Network, msg,new Completion(msg){
+            getSugonSdnController().deleteL3Dns(l3Network, msg,new Completion(msg){
                 @Override
                 public void success() {
                     // zstack business processing
@@ -261,10 +254,7 @@ public class TfL3Network extends L3BasicNetwork {
         // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if(l3Network!=null){
-            SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
-            SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-            SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
-            sugonSdnController.addL3HostRoute(l3Network, msg,new Completion(msg){
+            getSugonSdnController().addL3HostRoute(l3Network, msg,new Completion(msg){
                 @Override
                 public void success() {
                     // zstack business processing
@@ -289,10 +279,7 @@ public class TfL3Network extends L3BasicNetwork {
         // Get L3 Network from zstack db
         L3NetworkVO l3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         if(l3Network!=null){
-            SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(SdnControllerVO_.vendorType, SugonSdnControllerConstant.TF_CONTROLLER).find();
-            SdnController sdnController = sdnControllerManager.getSdnController(sdn);
-            SugonSdnController sugonSdnController = (SugonSdnController) sdnController;
-            sugonSdnController.deleteL3HostRoute(l3Network, msg,new Completion(msg){
+            getSugonSdnController().deleteL3HostRoute(l3Network, msg,new Completion(msg){
                 @Override
                 public void success() {
                     // zstack business processing

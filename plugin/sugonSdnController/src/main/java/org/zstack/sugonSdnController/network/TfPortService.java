@@ -18,6 +18,25 @@ public class TfPortService {
     @Autowired
     protected AccountManager acntMgr;
 
+    public TfPortResponse getTfPort(String tfPortUUid) {
+        TfPortClient tfPortClient = new TfPortClient();
+        return tfPortClient.getVirtualMachineInterface(tfPortUUid);
+    }
+
+    public TfPortResponse createTfPort(String tfPortUUid, String l2NetworkUuid, String l3NetworkUuid, String mac, String ip) {
+        //invoke tf rest interface to retrieve real ip and mac and portId
+        TfPortClient tfPortClient = new TfPortClient();
+        String tfL2NetworkId = StringDSL.transToTfUuid(l2NetworkUuid);
+        String tfL3NetworkId = StringDSL.transToTfUuid(l3NetworkUuid);
+        String accountId = StringDSL.transToTfUuid(acntMgr.getOwnerAccountUuidOfResource(l3NetworkUuid));
+        TfPortResponse port = tfPortClient.createPort(tfL2NetworkId, tfL3NetworkId, mac, ip, accountId, null, tfPortUUid, null);
+        if (port.getCode() != HttpStatus.OK.value()) {
+            // fail  to rollback the flowchain
+            throw new RuntimeException("failed to invoke creating tf port: " + port);
+        }
+        return port;
+    }
+
     public TfPortResponse createTfPort(String tfPortUUid, VmInstanceInventory vm, L3NetworkInventory l3) {
         MacOperator mo = new MacOperator();
         String customMac = mo.getMac(vm.getUuid(), l3.getUuid());
@@ -33,11 +52,26 @@ public class TfPortService {
         String tfL3NetworkId = StringDSL.transToTfUuid(l3.getUuid());
         String accountId = StringDSL.transToTfUuid(acntMgr.getOwnerAccountUuidOfResource(vm.getUuid()));
         String vmiUuid = StringDSL.transToTfUuid(vm.getUuid());
-        TfPortResponse port = tfPortClient.createPort(tfL2NetworkId, tfL3NetworkId, customMac, customIp, accountId, vmiUuid, tfPortUUid);
+        String vmName = vm.getName();
+        TfPortResponse port = tfPortClient.createPort(tfL2NetworkId, tfL3NetworkId, customMac, customIp, accountId, vmiUuid, tfPortUUid, vmName);
         if (port.getCode() != HttpStatus.OK.value()) {
             // fail  to rollback the flowchain
             throw new RuntimeException("failed to invoke creating tf port: " + port);
         }
         return port;
+    }
+
+    public TfPortResponse deleteTfPort(String portUUid) {
+        String accountId = StringDSL.transToTfUuid(acntMgr.getOwnerAccountUuidOfResource(portUUid));
+        String tfPortUUid = StringDSL.transToTfUuid(portUUid);
+        TfPortClient tfPortClient = new TfPortClient();
+        return tfPortClient.deletePort(tfPortUUid, accountId);
+    }
+
+    public void updateTfPort(String tfPortUUid, String vmUuid) {
+        String accountId = StringDSL.transToTfUuid(acntMgr.getOwnerAccountUuidOfResource(vmUuid));
+        String tfVmUUid = StringDSL.transToTfUuid(vmUuid);
+        TfPortClient tfPortClient = new TfPortClient();
+        tfPortClient.updateTfPort(tfPortUUid, accountId, tfVmUUid);
     }
 }

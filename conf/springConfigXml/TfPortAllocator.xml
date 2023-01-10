@@ -22,6 +22,11 @@
             <zstack:extension interface="org.zstack.header.vm.VmFailToAttachL3NetworkExtensionPoint" />
         </zstack:plugin>
     </bean>
+    <bean id="TfNicManageExtensionPointImpl" class="org.zstack.sugonSdnController.network.TfNicManageExtensionPointImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.NicManageExtensionPoint" />
+        </zstack:plugin>
+    </bean>
     <bean id="recoverVmExtensionPointImpl"   class="org.zstack.sugonSdnController.network.RecoverVmExtensionPointImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.RecoverVmExtensionPoint" />
