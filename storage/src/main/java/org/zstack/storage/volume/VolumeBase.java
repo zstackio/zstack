@@ -154,6 +154,8 @@ public class VolumeBase implements Volume {
             handle((GetVolumeBackingInstallPathMsg) msg);
         } else if (msg instanceof SetVmBootVolumeMsg) {
             handle((SetVmBootVolumeMsg) msg);
+        } else if (msg instanceof ChangeVolumeTypeMsg) {
+            handle((ChangeVolumeTypeMsg) msg);
         } else if (msg instanceof CreateVolumeSnapshotGroupMsg) {
             handle((CreateVolumeSnapshotGroupMsg) msg);
         } else {
@@ -1705,6 +1707,149 @@ public class VolumeBase implements Volume {
                 });
 
                 done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void handle(ChangeVolumeTypeMsg msg) {
+        if (self.isAttached()) {
+            ChangeVolumeTypeReply reply = new ChangeVolumeTypeReply();
+            reply.setError(operr("only support detached volume, use SetVmBootVolumeMsg instead."));
+            bus.reply(msg, reply);
+            return;
+        }
+
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                changeVolumeType(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("change-volume-type-%s", self.getUuid());
+            }
+        });
+    }
+
+    private void changeVolumeType(ChangeVolumeTypeMsg msg, NoErrorCompletion completion) {
+        if (self.getType() == msg.getType()) {
+            bus.reply(msg, new ChangeVolumeTypeReply());
+            completion.done();
+            return;
+        }
+
+        ChangeVolumeTypeReply reply = new ChangeVolumeTypeReply();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName("change-volume-type");
+        chain.then(new ShareFlow() {
+            final List<VolumeSnapshotInventory> changedSnapshots = new ArrayList<>();
+            VolumeInventory changedVolume;
+            String installPathToGc;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "change-volume-type-on-ps";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ChangeVolumeTypeOnPrimaryStorageMsg cmsg = new ChangeVolumeTypeOnPrimaryStorageMsg();
+                        cmsg.setSnapshots(VolumeSnapshotInventory.valueOf(Q.New(VolumeSnapshotVO.class)
+                                .eq(VolumeSnapshotVO_.volumeUuid, self.getUuid())
+                                .list()));
+                        cmsg.setTargetType(msg.getType());
+                        cmsg.setVolume(getSelfInventory());
+                        bus.makeLocalServiceId(cmsg, PrimaryStorageConstant.SERVICE_ID);
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                ChangeVolumeTypeOnPrimaryStorageReply cr = reply.castReply();
+                                changedSnapshots.addAll(cr.getSnapshots());
+                                changedVolume = cr.getVolume();
+                                installPathToGc = cr.getInstallPathToGc();
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "change-volume-type-in-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                self.setType(msg.getType());
+                                self.setInstallPath(changedVolume.getInstallPath());
+                                merge(self);
+
+                                for (VolumeSnapshotInventory changedSnapshot : changedSnapshots) {
+                                    VolumeSnapshotVO snapshot = findByUuid(changedSnapshot.getUuid(), VolumeSnapshotVO.class);
+                                    snapshot.setVolumeType(msg.getType().toString());
+                                    snapshot.setPrimaryStorageInstallPath(changedSnapshot.getPrimaryStorageInstallPath());
+                                    merge(snapshot);
+                                }
+                            }
+                        }.execute();
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "unlink-volume-old-install-path";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        UnlinkBitsOnPrimaryStorageMsg umsg = new UnlinkBitsOnPrimaryStorageMsg();
+                        umsg.setInstallPath(installPathToGc);
+                        umsg.setResourceUuid(self.getUuid());
+                        umsg.setResourceType(VolumeVO.class.getSimpleName());
+                        umsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                        bus.makeTargetServiceIdByResourceUuid(umsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+                        bus.send(umsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
                         bus.reply(msg, reply);

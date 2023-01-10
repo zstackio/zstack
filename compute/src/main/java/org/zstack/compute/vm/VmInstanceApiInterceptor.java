@@ -627,7 +627,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("boot volume cannot be shareable."));
         }
 
-        if (!volume.getVmInstanceUuid().equals(msg.getVmInstanceUuid())) {
+        if (!msg.getVmInstanceUuid().equals(volume.getVmInstanceUuid())) {
             throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] must be attached to vm[uuid:%s]",
                     msg.getVolumeUuid(), msg.getVmInstanceUuid()));
         }
