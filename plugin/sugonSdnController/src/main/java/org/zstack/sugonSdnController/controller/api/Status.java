@@ -6,6 +6,7 @@ public abstract class Status {
 
     public abstract boolean isSuccess();
     public abstract void ifFailure(ErrorHandler handler);
+    public abstract String getMsg();
 
     private final static Status success = new Success();
 
@@ -27,6 +28,13 @@ public abstract class Status {
         public void ifFailure(ErrorHandler handler) {
             // do nothing
         }
+
+        @Override
+        public String getMsg() {
+            // do nothing
+            return "success";
+        }
+
     }
 
     private static class Failure extends Status {
@@ -44,6 +52,11 @@ public abstract class Status {
         @Override
         public void ifFailure(ErrorHandler handler) {
             handler.handle(message);
+        }
+
+        @Override
+        public String getMsg() {
+            return message;
         }
     }
 

@@ -5,6 +5,7 @@ import org.bouncycastle.util.IPAddress;
 import org.zstack.core.db.Q;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.sdnController.header.SdnControllerConstant;
 import org.zstack.sdnController.header.SdnControllerVO;
 import org.zstack.sdnController.header.SdnControllerVO_;
@@ -34,7 +35,7 @@ public class TfPortClient {
         return apiConnector;
     }
 
-    public TfPortResponse createPort(String l2Id, String l3Id, String mac, String ip, String tenantId, String vmInventeryId, String tfPortUuid) {
+    public TfPortResponse createPort(String l2Id, String l3Id, String mac, String ip, String tenantId, String vmInventeryId, String tfPortUuid, String vmName) {
         TfPortRequestBody portRequestBodyEO = new TfPortRequestBody();
         TfPortRequestData portRequestDataEO = new TfPortRequestData();
         TfPortRequestContext portRequestContextEO = new TfPortRequestContext();
@@ -113,6 +114,7 @@ public class TfPortClient {
         PermType2 perms2 = new PermType2();
         perms2.setOwner(tenantId);
         port.setPerms2(perms2);
+        port.setDisplayName(vmName);
         ApiConnector apiConnector = getApiConnector();
         // always request for v4 and v6 ip object and handle the failure
         // create the object
@@ -173,13 +175,13 @@ public class TfPortClient {
             throw new RuntimeException(e);
         }
         try {
-            return portVncToNeutorn(virtualMachineInterface);
+            return portVncToNeutron(virtualMachineInterface);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private TfPortResponse portVncToNeutorn(VirtualMachineInterface portObj) throws IOException {
+    private TfPortResponse portVncToNeutron(VirtualMachineInterface portObj) throws IOException {
         ApiConnector apiConnector = getApiConnector();
         TfPortResponse tfPortResponse = new TfPortResponse();
         tfPortResponse.setPortId(portObj.getUuid());
@@ -364,22 +366,19 @@ public class TfPortClient {
     public boolean ipAddrInNetId(String ipAddr, String netId) throws IOException {
         ApiConnector apiConnector = getApiConnector();
 
-        VirtualNetwork virtualNetwork = null;
         if (apiConnector != null) {
-            virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, netId);
-        }
-        List<ObjectReference<ApiPropertyBase>> instanceIpBackRefs = null;
-        if (virtualNetwork != null) {
-            instanceIpBackRefs = virtualNetwork.getInstanceIpBackRefs();
-        }
-        List<InstanceIp> ipObjects = null;
-        if (apiConnector != null) {
-            ipObjects = (List<InstanceIp>) apiConnector.getObjects(InstanceIp.class, instanceIpBackRefs);
-        }
-        if (ipObjects != null) {
-            for (InstanceIp ipObj : ipObjects) {
-                if (ipObj.getAddress().equals(ipAddr)) {
-                    return true;
+            VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, netId);
+            if (virtualNetwork != null) {
+                List<ObjectReference<ApiPropertyBase>> instanceIpBackRefs = virtualNetwork.getInstanceIpBackRefs();
+                if (instanceIpBackRefs != null) {
+                    List<InstanceIp> ipObjects = (List<InstanceIp>) apiConnector.getObjects(InstanceIp.class, instanceIpBackRefs);
+                    if (ipObjects != null) {
+                        for (InstanceIp ipObj : ipObjects) {
+                            if (ipObj.getAddress().equals(ipAddr)) {
+                                return true;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -449,6 +448,19 @@ public class TfPortClient {
             throw new RuntimeException("can not get apiConnector~");
         }
 
+    }
+
+    public TfPortResponse getVirtualMachineInterface(String portId) {
+        try {
+            VirtualMachineInterface port = (VirtualMachineInterface) getApiConnector().findById(VirtualMachineInterface.class, portId);
+            if (port != null){
+                return portVncToNeutron(port);
+            }else {
+                return null;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private VirtualNetwork networkRead(String l2Id) throws IOException {
@@ -719,5 +731,16 @@ public class TfPortClient {
 
 
         return tfPortIpEntityList;
+    }
+
+    public void updateTfPort(String tfPortUUid, String accountId, String deviceId) {
+        try {
+            VirtualMachineInterface port = (VirtualMachineInterface) getApiConnector().findById(VirtualMachineInterface.class, tfPortUUid);
+            VirtualMachine vm = ensureInstanceExists(deviceId, accountId, false);
+            port.setVirtualMachine(vm);
+            getApiConnector().update(port);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
