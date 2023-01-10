@@ -19,6 +19,15 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
     private boolean migrateFromDestination;
     // A map from old disk to new disk
     private Map<String, String> diskMigrationMap;
+    private boolean reload;
+
+    public boolean isReload() {
+        return reload;
+    }
+
+    public void setReload(boolean reload) {
+        this.reload = reload;
+    }
 
     public StorageMigrationPolicy getStorageMigrationPolicy() {
         return storageMigrationPolicy;
