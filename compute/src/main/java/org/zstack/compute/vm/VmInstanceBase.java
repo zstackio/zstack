@@ -7016,6 +7016,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmInstanceSpec spec = new VmInstanceSpec();
         spec.setRequiredPrimaryStorageUuidForRootVolume(struct.getPrimaryStorageUuidForRootVolume());
         spec.setRequiredPrimaryStorageUuidForDataVolume(struct.getPrimaryStorageUuidForDataVolume());
+        spec.setRequiredPrimaryStorageUuidsForRootVolume(struct.getPrimaryStorageUuidsForRootVolume());
+        spec.setRequiredPrimaryStorageUuidsForDataVolume(struct.getPrimaryStorageUuidsForDataVolume());
         spec.setDataVolumeSystemTags(struct.getDataVolumeSystemTags());
         spec.setRootVolumeSystemTags(struct.getRootVolumeSystemTags());
         spec.setRequiredHostUuid(struct.getRequiredHostUuid());

@@ -1,10 +1,13 @@
 package org.zstack.compute.vm;
 
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.InstantiateNewCreatedVmInstanceMsg;
+import org.zstack.header.vm.VmCreationStrategy;
+import org.zstack.header.vm.VmNicSpec;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
 
 /**
  * Created by xing5 on 2016/9/13.
@@ -26,6 +29,24 @@ public class InstantiateVmFromNewCreatedStruct {
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private List<String> disableL3Networks;
     private List<String> sshKeyPairUuids;
+    private List<String> primaryStorageUuidsForRootVolume;
+    private List<String> primaryStorageUuidsForDataVolume;
+
+    public List<String> getPrimaryStorageUuidsForRootVolume() {
+        return primaryStorageUuidsForRootVolume;
+    }
+
+    public void setPrimaryStorageUuidsForRootVolume(List<String> primaryStorageUuidsForRootVolume) {
+        this.primaryStorageUuidsForRootVolume = primaryStorageUuidsForRootVolume;
+    }
+
+    public List<String> getPrimaryStorageUuidsForDataVolume() {
+        return primaryStorageUuidsForDataVolume;
+    }
+
+    public void setPrimaryStorageUuidsForDataVolume(List<String> primaryStorageUuidsForDataVolume) {
+        this.primaryStorageUuidsForDataVolume = primaryStorageUuidsForDataVolume;
+    }
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -96,6 +117,8 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         struct.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
+        struct.setPrimaryStorageUuidsForRootVolume(msg.getPrimaryStorageUuidsForRootVolume());
+        struct.setPrimaryStorageUuidsForDataVolume(msg.getPrimaryStorageUuidsForDataVolume());
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
         struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
