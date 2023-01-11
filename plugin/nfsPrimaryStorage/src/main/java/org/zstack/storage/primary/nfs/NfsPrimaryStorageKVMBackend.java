@@ -104,6 +104,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String CREATE_FOLDER_PATH = "/nfsprimarystorage/createfolder";
     public static final String GET_CAPACITY_PATH = "/nfsprimarystorage/getcapacity";
     public static final String DELETE_PATH = "/nfsprimarystorage/delete";
+    public static final String UNLINK_PATH = "/nfsprimarystorage/unlink";
     public static final String CHECK_BITS_PATH = "/nfsprimarystorage/checkbits";
     public static final String MOVE_BITS_PATH = "/nfsprimarystorage/movebits";
     public static final String MERGE_SNAPSHOT_PATH = "/nfsprimarystorage/mergesnapshot";
@@ -1190,6 +1191,24 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Override
     public void deleteFolder(PrimaryStorageInventory pinv, String installPath, Completion completion) {
         delete(pinv, installPath, true, completion);
+    }
+
+    @Override
+    public void unlink(PrimaryStorageInventory pinv, String installPath, Completion completion) {
+        HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
+        UnlinkBitsCmd cmd = new UnlinkBitsCmd();
+        cmd.installPath = installPath;
+        asyncHttpCall(UNLINK_PATH, host.getUuid(), cmd, UnlinkBitsRsp.class, pinv, new ReturnValueCompletion<UnlinkBitsRsp>(completion) {
+            @Override
+            public void success(UnlinkBitsRsp rsp) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override

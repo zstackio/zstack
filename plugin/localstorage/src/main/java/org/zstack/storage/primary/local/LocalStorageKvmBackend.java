@@ -364,6 +364,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
+    public static class UnlinkBitsCmd extends AgentCommand {
+        public String installPath;
+        public boolean onlyLinkedFile = true;
+    }
+
+    public static class UnlinkBitsRsp extends AgentResponse {
+    }
+
     public static class ListPathCmd extends AgentCommand {
         private String path;
         private String hostUuid;
@@ -831,6 +839,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String DELETE_BITS_PATH = "/localstorage/delete";
     public static final String DELETE_DIR_PATH = "/localstorage/deletedir";
     public static final String CHECK_BITS_PATH = "/localstorage/checkbits";
+    public static final String UNLINK_BITS_PATH = "/localstorage/unlink";
     public static final String CREATE_TEMPLATE_FROM_VOLUME = "/localstorage/volume/createtemplate";
     public static final String REVERT_SNAPSHOT_PATH = "/localstorage/snapshot/revert";
     public static final String REINIT_IMAGE_PATH = "/localstorage/reinit/image";
@@ -3461,6 +3470,24 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 reply.getSnapshots().addAll(msg.getSnapshots());
                 reply.setInstallPathToGc(cmd.srcDir);
                 completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(UnlinkBitsOnPrimaryStorageMsg msg, ReturnValueCompletion<UnlinkBitsOnPrimaryStorageReply> completion) {
+        String hostUuid = getHostUuidByResourceUuid(msg.getResourceUuid(), msg.getResourceType());
+        UnlinkBitsCmd cmd = new UnlinkBitsCmd();
+        cmd.installPath = msg.getInstallPath();
+        httpCall(UNLINK_BITS_PATH, hostUuid, cmd, UnlinkBitsRsp.class, new ReturnValueCompletion<UnlinkBitsRsp>(completion) {
+            @Override
+            public void success(UnlinkBitsRsp rsp) {
+                completion.success(new UnlinkBitsOnPrimaryStorageReply());
             }
 
             @Override

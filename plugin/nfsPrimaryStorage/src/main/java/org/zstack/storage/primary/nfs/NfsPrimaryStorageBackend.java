@@ -63,6 +63,7 @@ public interface NfsPrimaryStorageBackend {
     void delete(PrimaryStorageInventory pinv, String installPath, Completion completion);
 
     void deleteFolder(PrimaryStorageInventory pinv, String installPath, Completion completion);
+    void unlink(PrimaryStorageInventory pinv, String installPath, Completion completion);
 
     void revertVolumeFromSnapshot(VolumeSnapshotInventory sinv, VolumeInventory vol, HostInventory host, ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply> completion);
 
@@ -79,6 +80,7 @@ public interface NfsPrimaryStorageBackend {
     void remount(PrimaryStorageInventory pinv, String clusterUuid, Completion completion);
 
     void updateMountPoint(PrimaryStorageInventory pinv, String clusterUuid, String oldMountPoint, String newMountPoint, Completion completion);
+
 
     class BitsInfo {
         private String installPath;
