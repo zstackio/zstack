@@ -35,6 +35,24 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String strategy;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
+    private List<String> primaryStorageUuidsForRootVolume;
+    private List<String> primaryStorageUuidsForDataVolume;
+
+    public List<String> getPrimaryStorageUuidsForRootVolume() {
+        return primaryStorageUuidsForRootVolume;
+    }
+
+    public void setPrimaryStorageUuidsForRootVolume(List<String> primaryStorageUuidsForRootVolume) {
+        this.primaryStorageUuidsForRootVolume = primaryStorageUuidsForRootVolume;
+    }
+
+    public List<String> getPrimaryStorageUuidsForDataVolume() {
+        return primaryStorageUuidsForDataVolume;
+    }
+
+    public void setPrimaryStorageUuidsForDataVolume(List<String> primaryStorageUuidsForDataVolume) {
+        this.primaryStorageUuidsForDataVolume = primaryStorageUuidsForDataVolume;
+    }
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
