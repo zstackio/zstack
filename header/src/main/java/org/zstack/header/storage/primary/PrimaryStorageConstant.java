@@ -10,6 +10,9 @@ public interface PrimaryStorageConstant {
     String SERVICE_ID = "storage.primary";
     @PythonClass
     String DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE = "DefaultPrimaryStorageAllocationStrategy";
+    String LEAST_VOLUME_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE = "LeastVolumePrimaryStorageAllocationStrategy";
+    String MAXIMUM_AVAILABLE_CAPACITY_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE = "MaximumAvailableCapacityAllocationStrategy";
+    String CUSTOM_ORDER_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE = "CustomOrderPrimaryStorageAllocationStrategy";
     String VM_FOLDER = "vm";
     String PRIMARY_STORAGE_DETACH_CODE = "primaryStorage.detach";
 
