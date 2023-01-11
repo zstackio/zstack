@@ -1,8 +1,10 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -29,11 +31,13 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.*;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Create by lining at 2020/08/17
@@ -57,7 +61,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         // The creation parameter specifies the primary storage, no need to automatically allocate the primary storage
-        if (!needAutoAllocatePS(spec)) {
+        if (rootVolumePsSpecified(spec) && (!needCreateDataVolume(spec) || dataVolumePsSpecified(spec))) {
             allocate(trigger, spec);
             return;
         }
@@ -119,83 +123,28 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             return;
         }
 
-        boolean autoAllocateRootVolumePs = needAutoAllocateRootVolumePS(spec);
-        boolean autoAllocateDataVolumePs = needAutoAllocateDataVolumePS(spec);
-        List<ErrorCode> errorCodes = new ArrayList<>();
-
-        if (autoAllocateRootVolumePs && autoAllocateDataVolumePs) {
-            // First priority：root local, data non-local
-            // Second priority：root local, data local / root non-local, data non-local
-            // Third priority：root non-local, data local
-            List<String[]> psCombos1 = new ArrayList<>();
-            List<String[]> psCombos2 = new ArrayList<>();
-            List<String[]> psCombos3 = new ArrayList<>();
-
-            for (String rootVolumePsUuid : availablePsUuids) {
-                for (String dataVolumePsUuid : availablePsUuids) {
-                    String[] combo = {rootVolumePsUuid, dataVolumePsUuid};
-
-                    if (localPsUuids.contains(rootVolumePsUuid) && nonLocalPsUuids.contains(dataVolumePsUuid)) {
-                        psCombos1.add(combo);
-                    } else if (nonLocalPsUuids.contains(rootVolumePsUuid) && localPsUuids.contains(dataVolumePsUuid)) {
-                        psCombos3.add(combo);
-                    } else {
-                        psCombos2.add(combo);
-                    }
-                }
+        if (!rootVolumePsSpecified(spec) && rootVolumePsOptional(spec)) {
+            List<String> filterPsUuids = spec.getRequiredPrimaryStorageUuidsForRootVolume().stream().filter(availablePsUuids::contains).collect(Collectors.toList());
+            if (filterPsUuids.isEmpty()) {
+                trigger.fail(Platform.operr(String.format("none of the specified primary storages%s are available",  spec.getRequiredPrimaryStorageUuidsForRootVolume())));
+                return;
             }
-
-            List<String[]> psCombos = new ArrayList<>();
-            psCombos.addAll(psCombos1);
-            psCombos.addAll(psCombos2);
-            psCombos.addAll(psCombos3);
-
-            new While<>(psCombos).each((psCombo, whileCompletion) -> {
-                spec.setRequiredPrimaryStorageUuidForRootVolume(psCombo[0]);
-                spec.setRequiredPrimaryStorageUuidForDataVolume(psCombo[1]);
-
-                FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
-                chain.done(new FlowDoneHandler(whileCompletion) {
-                    @Override
-                    public void handle(Map data) {
-                        whileCompletion.allDone();
-                    }
-                }).error(new FlowErrorHandler(whileCompletion) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        errorCodes.add(errCode);
-                        whileCompletion.done();
-                    }
-                }).start();
-            }).run(new WhileDoneCompletion(trigger) {
-                @Override
-                public void done(ErrorCodeList errorCodeList) {
-                    if (errorCodes.size() == availablePsUuids.size()) {
-                        trigger.fail(errorCodes.get(0));
-                        return;
-                    }
-
-                    trigger.next();
-                }
-            });
-            return;
+            spec.setRequiredPrimaryStorageUuidsForRootVolume(filterPsUuids);
+        }
+        if (needCreateDataVolume(spec) && !dataVolumePsSpecified(spec) && dataVolumePsOptional(spec)) {
+            List<String> filterPsUuids = spec.getRequiredPrimaryStorageUuidsForDataVolume().stream().filter(availablePsUuids::contains).collect(Collectors.toList());
+            if (filterPsUuids.isEmpty()) {
+                trigger.fail(Platform.operr(String.format("none of the specified primary storages%s are available",  spec.getRequiredPrimaryStorageUuidsForDataVolume())));
+                return;
+            }
+            spec.setRequiredPrimaryStorageUuidsForDataVolume(filterPsUuids);
         }
 
-        availablePsUuids.clear();
-        if (autoAllocateRootVolumePs) {
-            availablePsUuids.addAll(localPsUuids);
-            availablePsUuids.addAll(nonLocalPsUuids);
-        } else {
-            availablePsUuids.addAll(nonLocalPsUuids);
-            availablePsUuids.addAll(localPsUuids);
-        }
-
-        new While<>(availablePsUuids).each((psUuid, whileCompletion) -> {
-            if (autoAllocateRootVolumePs) {
-                spec.setRequiredPrimaryStorageUuidForRootVolume(psUuid);
-            } else {
-                spec.setRequiredPrimaryStorageUuidForDataVolume(psUuid);
-            }
+        // local + non-local， need to automatically allocate the primary storage
+        List<List<String>> psCombos = getPrimaryStorageCombinationFromSpec(spec, localPsUuids, nonLocalPsUuids);
+        new While<>(psCombos).each((combo, whileCompletion) -> {
+            spec.setRequiredPrimaryStorageUuidForRootVolume(combo.get(0));
+            spec.setRequiredPrimaryStorageUuidForDataVolume(combo.get(1));
 
             FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
             chain.done(new FlowDoneHandler(whileCompletion) {
@@ -206,15 +155,15 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }).error(new FlowErrorHandler(whileCompletion) {
                 @Override
                 public void handle(ErrorCode errCode, Map data) {
-                    errorCodes.add(errCode);
+                    whileCompletion.addError(errCode);
                     whileCompletion.done();
                 }
             }).start();
         }).run(new WhileDoneCompletion(trigger) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (errorCodes.size() == availablePsUuids.size()) {
-                    trigger.fail(errorCodes.get(0));
+                if (errorCodeList.getCauses().size() == psCombos.size()) {
+                    trigger.fail(errorCodeList.getCauses().get(0));
                     return;
                 }
 
@@ -427,6 +376,20 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     .listValues();
         }
 
+        if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForRootVolume())) {
+            return Q.New(PrimaryStorageClusterRefVO.class)
+                    .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                    .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, spec.getRequiredPrimaryStorageUuidsForRootVolume())
+                    .listValues();
+        }
+
+        if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForDataVolume())) {
+            return Q.New(PrimaryStorageClusterRefVO.class)
+                    .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, spec.getRequiredPrimaryStorageUuidsForDataVolume())
+                    .listValues();
+        }
+
         if (l3Uuid != null) {
             String l2Uuid = Q.New(L3NetworkVO.class)
                     .select(L3NetworkVO_.l2NetworkUuid)
@@ -461,25 +424,24 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 .list();
     }
 
-    private boolean needAutoAllocatePS(VmInstanceSpec spec) {
-        boolean autoAllocateRootVolumePs = needAutoAllocateRootVolumePS(spec);
-        boolean autoAllocateDataVolumePs = needAutoAllocateDataVolumePS(spec);
-        return  autoAllocateRootVolumePs || autoAllocateDataVolumePs;
+    private boolean rootVolumePsSpecified(VmInstanceSpec spec) {
+        return spec.getRequiredPrimaryStorageUuidForRootVolume() != null;
     }
 
-    private boolean needAutoAllocateRootVolumePS(VmInstanceSpec spec) {
-        return spec.getRequiredPrimaryStorageUuidForRootVolume() == null;
+    private boolean dataVolumePsSpecified(VmInstanceSpec spec) {
+        return spec.getRequiredPrimaryStorageUuidForDataVolume() != null;
     }
 
-    private boolean needAutoAllocateDataVolumePS(VmInstanceSpec spec) {
-        if (spec.getRequiredPrimaryStorageUuidForDataVolume() == null) {
-            if (spec.getDataDiskOfferings() != null &&
-                    spec.getDataDiskOfferings().size() > 0) {
-                return true;
-            }
-        }
+    private boolean needCreateDataVolume(VmInstanceSpec spec) {
+        return !CollectionUtils.isEmpty(spec.getDataDiskOfferings());
+    }
 
-        return false;
+    private boolean rootVolumePsOptional(VmInstanceSpec spec) {
+        return !CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForRootVolume());
+    }
+
+    private boolean dataVolumePsOptional(VmInstanceSpec spec) {
+        return !CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForDataVolume());
     }
 
     private FlowChain buildAllocateHostAndPrimaryStorageFlowChain(final FlowTrigger trigger, VmInstanceSpec spec) {
@@ -513,5 +475,71 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
         });
         chain.start();
+    }
+
+    private List<List<String>> getPrimaryStorageCombinationFromSpec(VmInstanceSpec spec, List<String> localPsUuids, List<String> nonLocalPsUuids) {
+        List<String> availPsForRootVolume = new ArrayList<String>() {{addAll(localPsUuids); addAll(nonLocalPsUuids);}};
+        List<String> availPsForDataVolume = new ArrayList<String>() {{addAll(nonLocalPsUuids); addAll(localPsUuids);}};
+
+        boolean autoAllocateRootVolumePs = false;
+        boolean autoAllocateDataVolumePs = false;
+        List<String> rootPs = new ArrayList<>();
+        List<String> dataPs = new ArrayList<>();
+        if (rootVolumePsSpecified(spec)) {
+            rootPs.add(spec.getRequiredPrimaryStorageUuidForRootVolume());
+        } else if (rootVolumePsOptional(spec)) {
+            rootPs.addAll(spec.getRequiredPrimaryStorageUuidsForRootVolume());
+        } else {
+            autoAllocateRootVolumePs = true;
+            rootPs.addAll(availPsForRootVolume);
+        }
+
+        String rootVolumeStrategy = spec.getRootDiskOffering() == null ? null : spec.getRootDiskOffering().getAllocatorStrategy();
+        sortPrimaryStorages(rootPs, rootVolumeStrategy, spec.getImageSpec());
+
+        if (needCreateDataVolume(spec)) {
+            if (dataVolumePsSpecified(spec)) {
+                dataPs.add(spec.getRequiredPrimaryStorageUuidForDataVolume());
+            } else if (dataVolumePsOptional(spec)) {
+                dataPs.addAll(spec.getRequiredPrimaryStorageUuidsForDataVolume());
+            } else {
+                autoAllocateDataVolumePs = true;
+                dataPs.addAll(availPsForDataVolume);
+            }
+            String dataVolumeStrategy = spec.getDataDiskOfferings().get(0).getAllocatorStrategy();
+            sortPrimaryStorages(dataPs, dataVolumeStrategy, null);
+        } else {
+            dataPs.add(null);
+        }
+
+        List<List<String>> finalPsCombos = new ArrayList<>();
+        if (autoAllocateRootVolumePs && autoAllocateDataVolumePs) {
+            // First priority：root local, data non-local
+            // Second priority：root local, data local / root non-local, data non-local
+            // Third priority：root non-local, data local
+            List<String> tmpLocalPsUuids = rootPs.stream().filter(localPsUuids::contains).collect(Collectors.toList());
+            List<String> tmpNonLocalPsUuids = rootPs.stream().filter(nonLocalPsUuids::contains).collect(Collectors.toList());
+            rootPs.clear();
+            rootPs.addAll(tmpLocalPsUuids);
+            rootPs.addAll(tmpNonLocalPsUuids);
+
+            tmpLocalPsUuids = dataPs.stream().filter(localPsUuids::contains).collect(Collectors.toList());
+            tmpNonLocalPsUuids = dataPs.stream().filter(nonLocalPsUuids::contains).collect(Collectors.toList());
+            dataPs.clear();
+            dataPs.addAll(tmpNonLocalPsUuids);
+            dataPs.addAll(tmpLocalPsUuids);
+        }
+
+        rootPs.forEach(r -> dataPs.forEach(d -> finalPsCombos.add(Arrays.asList(r, d))));
+        return finalPsCombos;
+    }
+
+    private void sortPrimaryStorages(final List<String> psUuids, String strategy, VmInstanceSpec.ImageSpec imageSpec) {
+        List<PrimaryStorageVO> primaryStorageVOS = psUuids.stream().map(uuid -> dbf.findByUuid(uuid, PrimaryStorageVO.class)).collect(Collectors.toList());
+        for (PrimaryStorageSortExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageSortExtensionPoint.class)) {
+            ext.sort(primaryStorageVOS, imageSpec, strategy);
+        }
+        psUuids.clear();
+        psUuids.addAll(primaryStorageVOS.stream().map(ResourceVO::getUuid).collect(Collectors.toList()));
     }
 }
