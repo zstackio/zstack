@@ -32,6 +32,13 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private List<String> excludePrimaryStorageUuids;
     private List<String> excludeAllocatorStrategies;
     private String imageUuid;
+    /**
+     * Allocate PrimaryStorage
+     * * @deprecated
+     * * This parameter is no longer acceptable to allocate PrimaryStorage.
+     * * <p> Use msg.setRequiredInstallUri("volume://volumeUuid") instead.
+     */
+    @Deprecated
     private String volumeUuid;
     private boolean noOverProvisioning;
     private String purpose;

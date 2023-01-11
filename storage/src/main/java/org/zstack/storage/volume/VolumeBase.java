@@ -198,6 +198,7 @@ public class VolumeBase implements Volume {
                         amsg.setSize(originSize);
                         amsg.setRequiredHostUuid(msg.getHostUuid());
                         amsg.setSystemTags(systemTags);
+                        amsg.setRequiredInstallUri(String.format("volume://%s", vo.getUuid()));
 
                         bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                         bus.send(amsg, new CloudBusCallBack(trigger) {
