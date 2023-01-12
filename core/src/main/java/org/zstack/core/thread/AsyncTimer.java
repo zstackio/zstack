@@ -63,7 +63,7 @@ public abstract class AsyncTimer implements Runnable {
             throw new CloudRuntimeException("cannot start a cancelled timer");
         }
 
-        cancel = thdf.submitTimeoutTask(this, getTimeUnit(), getPeriod(), true);
+        cancel = thdf.submitTimeoutTask(this, getTimeUnit(), 0);
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("%s starts", getName()));
         }

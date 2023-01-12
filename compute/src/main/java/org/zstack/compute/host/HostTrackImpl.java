@@ -34,6 +34,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     private final static CLogger logger = Utils.getLogger(HostTrackImpl.class);
 
     private Map<String, Tracker> trackers = new HashMap<>();
+    private static boolean alwaysStartRightNow = false;
 
     @Autowired
     private DatabaseFacade dbf;
@@ -241,7 +242,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
         t = new Tracker(hostUuid);
         trackers.put(hostUuid, t);
 
-        if (CoreGlobalProperty.UNIT_TEST_ON) {
+        if (CoreGlobalProperty.UNIT_TEST_ON && !alwaysStartRightNow) {
             t.start();
         } else {
             t.startRightNow();
