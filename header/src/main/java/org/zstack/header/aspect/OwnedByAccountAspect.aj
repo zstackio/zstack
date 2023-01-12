@@ -1,24 +1,31 @@
-package org.zstack.core.aspect;
+package org.zstack.header.aspect;
 
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.ResourceVO;
-import org.zstack.core.db.Q;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.header.identity.OwnedByAccount;
+
 import javax.persistence.EntityManager;
+import java.util.function.Function;
 
 public aspect OwnedByAccountAspect {
     private static final CLogger logger = Utils.getLogger(OwnedByAccountAspect.class);
 
-    Object around(OwnedByAccount oa) : this(oa) && execution(String OwnedByAccount+.getAccountUuid()) {
+    private static Function<String, String> accountUuidGetter;
+
+    public static Function<String, String> getAccountUuidGetter() {
+        return accountUuidGetter;
+    }
+
+    public static void setAccountUuidGetter(Function<String, String> accountUuidGetter) {
+        OwnedByAccountAspect.accountUuidGetter = accountUuidGetter;
+    }
+
+    Object around(OwnedByAccount oa) : this(oa) && execution(java.lang.String OwnedByAccount+.getAccountUuid()) {
         Object accountUuid = proceed(oa);
 
         if (accountUuid == null) {
-            accountUuid = Q.New(AccountResourceRefVO.class).select(AccountResourceRefVO_.accountUuid)
-                .eq(AccountResourceRefVO_.resourceUuid, ((ResourceVO)oa).getUuid()).findValue();
-            oa.setAccountUuid((String)accountUuid);
+            accountUuid = accountUuidGetter.apply(((ResourceVO) oa).getUuid());
         }
 
         return accountUuid;
