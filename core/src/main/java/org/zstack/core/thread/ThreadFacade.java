@@ -38,8 +38,6 @@ public interface ThreadFacade extends Component {
     
     ThreadFacadeImpl.TimeoutTaskReceipt submitTimeoutTask(Runnable task, TimeUnit unit, long delay);
 
-    ThreadFacadeImpl.TimeoutTaskReceipt submitTimeoutTask(Runnable task, TimeUnit unit, long delay, boolean executeRightNow);
-
     Runnable submitTimerTask(TimerTask task, TimeUnit unit, long delay);
 
     int getSyncThreadNum(int totalThreadNum);
