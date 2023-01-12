@@ -259,12 +259,7 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     }
 
     @Override
-    public TimeoutTaskReceipt submitTimeoutTask(final Runnable task, TimeUnit unit, long delay) {
-        return submitTimeoutTask(task, unit, delay, false);
-    }
-
-    @Override
-    public TimeoutTaskReceipt submitTimeoutTask(Runnable task, TimeUnit unit, long delay, boolean executeRightNow) {
+    public TimeoutTaskReceipt submitTimeoutTask(Runnable task, TimeUnit unit, long delay) {
         final TimerWrapper timer = timerPool.getTimer();
 
         class TimerTaskWorker extends java.util.TimerTask implements TimeoutTaskReceipt {
@@ -290,19 +285,7 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
 
         TimerTaskWorker worker = new TimerTaskWorker();
         timer.schedule(worker, unit.toMillis(delay));
-        if (executeRightNow) {
-            executeRightNow(task);
-        }
         return worker;
-    }
-
-    @AsyncThread
-    private void executeRightNow(final Runnable task) {
-        try {
-            task.run();
-        } catch (Throwable t) {
-            _logger.warn(String.format("Unhandled exception happened when running %s", task.getClass().getName()), t);
-        }
     }
 
     @Override
