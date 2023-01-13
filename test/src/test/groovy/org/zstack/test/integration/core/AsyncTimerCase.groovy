@@ -45,6 +45,31 @@ class AsyncTimerCase extends SubCase {
         assert total == count
     }
 
+    void testStartRightNow() {
+        int count = 0
+        int total = 3
+
+        def timer = new AsyncTimer(TimeUnit.MILLISECONDS, 100L) {
+            @Override
+            protected void execute() {
+                count ++
+                if (count < total) {
+                    continueToRunThisTimer()
+                }
+            }
+        }
+
+        timer.startRightNow()
+
+        TimeUnit.MILLISECONDS.sleep((total - 1) * 100)
+        retryInSecs {
+            assert total == count
+        }
+
+        TimeUnit.MILLISECONDS.sleep(2L * 100)
+        assert total == count
+    }
+
     void testCancel() {
         int count = 0
 
@@ -68,6 +93,7 @@ class AsyncTimerCase extends SubCase {
     @Override
     void test() {
         testRun()
+        testStartRightNow()
         testCancel()
     }
 }
