@@ -1709,7 +1709,7 @@
     "code": "3011",
     "method": "regex",
     "regex": "the vm scheduling group has already had a vms antiaffinity from hosts scheduling rule attached. the number of hosts available for the vm in the scheduling group to run is less than that of the vm in the group. you cannot attach a vm antiaffinity from Each Other scheduling rule to the group",
-    "message_cn": "该该云主机调度组已绑定云主机互斥物理机调度策略，若再绑定互斥云主机调度策略，当前可供组内云主机运行的物理机数量将少于云主机数量，导致部分云主机无法分配物理机。请按需调整物理机/云主机数量后重试。",
+    "message_cn": "该云主机调度组已绑定云主机互斥物理机调度策略，若再绑定互斥云主机调度策略，当前可供组内云主机运行的物理机数量将少于云主机数量，导致部分云主机无法分配物理机。请按需调整物理机/云主机数量后重试。",
     "message_en": "The VM scheduling group has already had a VMs Exclusive from Hosts scheduling policy attached. The number of hosts available for the VM instances in the scheduling group to run is less than that of the VM instances in the group. You cannot attach a VM Exclusive from Each Other scheduling policy to the group."
   }
 ]
