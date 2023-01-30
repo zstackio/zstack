@@ -26,7 +26,6 @@ import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.thread.*;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.directory.ResourceDirectoryRefVO;
-import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
@@ -80,6 +79,7 @@ import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagCreator;
+import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.ObjectUtils;
@@ -957,58 +957,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         bus.reply(msg, reply);
     }
 
-    private void instantiateTagsForCreateMessage(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, VmInstanceVO finalVo) {
-        if (cmsg != null) {
-            tagMgr.createTagsFromAPICreateMessage(cmsg, finalVo.getUuid(), VmInstanceVO.class.getSimpleName());
-        } else {
-            tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), finalVo.getUuid(), VmInstanceVO.class.getSimpleName());
-        }
-
-        if ((boolean) Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.virtio).findValue()) {
-            SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(finalVo.getUuid());
-            creator.recreate = true;
-            creator.inherent = false;
-            creator.tag = VmSystemTags.VIRTIO.getTagFormat();
-            creator.create();
-        }
-
-        if (finalVo.getInstanceOfferingUuid() != null) {
-            tagMgr.copySystemTag(
-                    finalVo.getInstanceOfferingUuid(),
-                    InstanceOfferingVO.class.getSimpleName(),
-                    finalVo.getUuid(),
-                    VmInstanceVO.class.getSimpleName(), false);
-        }
-
-        if (msg.getImageUuid() != null) {
-            tagMgr.copySystemTag(
-                    msg.getImageUuid(),
-                    ImageVO.class.getSimpleName(),
-                    finalVo.getUuid(),
-                    VmInstanceVO.class.getSimpleName(), false);
-
-            if (ImageArchitecture.aarch64.toString().equals(finalVo.getArchitecture())) {
-                SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(finalVo.getUuid());
-                creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, VmMachineType.virt.toString())));
-                creator.recreate = true;
-                creator.create();
-            }
-        }
-    }
-
-    private List<ErrorCode> extEmitterHandleSystemTag(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, VmInstanceVO finalVo) {
-        List<ErrorCode> result = Collections.emptyList();
-        if (msg == null) {
-            result.add(operr("CreateVmInstanceMsg cannot be null"));
-            return result;
-        } else if (cmsg != null && cmsg.getSystemTags() != null && !cmsg.getSystemTags().isEmpty()) {
-            return extEmitter.handleSystemTag(finalVo.getUuid(), cmsg.getSystemTags());
-        } else if (cmsg == null && msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
-            return extEmitter.handleSystemTag(finalVo.getUuid(), msg.getSystemTags());
-        }
-        return result;
-    }
-
     protected void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<VmInstanceInventory> completion) {
         pluginRgty.getExtensionList(VmInstanceCreateExtensionPoint.class).forEach(extensionPoint -> {
             extensionPoint.preCreateVmInstance(msg);
@@ -1059,137 +1007,120 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
         }.execute();
 
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("do-create-vmInstance-%s", vo.getUuid()));
-        chain.then(new ShareFlow() {
-            VmInstanceInventory instantiateVm;
+        if (cmsg != null) {
+            tagMgr.createTagsFromAPICreateMessage(cmsg, vo.getUuid(), VmInstanceVO.class.getSimpleName());
+        } else {
+            tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), VmInstanceVO.class.getSimpleName());
+        }
 
-            @Override
-            public void setup() {
-                flow(new Flow() {
-                    List<ErrorCode> errorCodes = Collections.emptyList();
-                    String __name__ = String.format("instantiate-systemTag-for-vm-%s", finalVo.getUuid());
+        if ((boolean) Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.virtio).findValue()) {
+            SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(vo.getUuid());
+            creator.recreate = true;
+            creator.inherent = false;
+            creator.tag = VmSystemTags.VIRTIO.getTagFormat();
+            creator.create();
+        }
 
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        instantiateTagsForCreateMessage(msg, cmsg, finalVo);
-                        errorCodes = extEmitterHandleSystemTag(msg, cmsg, finalVo);
-                        if (!errorCodes.isEmpty()) {
-                            trigger.fail(operr("handle system tag fail when creating vm because [%s]",
-                                    StringUtils.join(errorCodes.stream().map(ErrorCode::getDescription).collect(Collectors.toList()),
-                                            ", ")));
-                            return;
-                        }
-                        trigger.next();
-                    }
+        if (instanceOfferingUuid != null) {
+            tagMgr.copySystemTag(
+                    instanceOfferingUuid,
+                    InstanceOfferingVO.class.getSimpleName(),
+                    vo.getUuid(),
+                    VmInstanceVO.class.getSimpleName(), false);
+        }
 
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, finalVo.getUuid()).isExists()) {
-                            dbf.removeByPrimaryKey(finalVo.getUuid(), VmInstanceVO.class);
-                        }
-                        trigger.rollback();
-                    }
-                });
+        if (msg.getImageUuid() != null) {
+            tagMgr.copySystemTag(
+                    msg.getImageUuid(),
+                    ImageVO.class.getSimpleName(),
+                    vo.getUuid(),
+                    VmInstanceVO.class.getSimpleName(), false);
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "instantiate-just-create-vmInstance";
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return VmCreationStrategy.JustCreate != VmCreationStrategy.valueOf(msg.getStrategy());
-                    }
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        VmInstanceInventory inv = VmInstanceInventory.valueOf(finalVo);
-                        createVmButNotStart(msg, inv);
-                        instantiateVm = inv;
-                        trigger.next();
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "instantiate-new-created-vmInstance";
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy());
-                    }
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        InstantiateNewCreatedVmInstanceMsg smsg = new InstantiateNewCreatedVmInstanceMsg();
-                        smsg.setDisableL3Networks(msg.getDisableL3Networks());
-                        smsg.setHostUuid(msg.getHostUuid());
-                        List<String> temporaryDiskOfferingUuids = createDiskOfferingUuidsFromDataDiskSizes(msg, finalVo.getUuid());
-                        smsg.setDataDiskOfferingUuids(merge(msg.getDataDiskOfferingUuids(), temporaryDiskOfferingUuids));
-                        smsg.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
-                        smsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
-                        smsg.setL3NetworkUuids(msg.getL3NetworkSpecs());
-
-                        if (msg.getRootDiskOfferingUuid() != null) {
-                            smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
-                        } else if (msg.getRootDiskSize() > 0) {
-                            DiskOfferingVO dvo = new DiskOfferingVO();
-                            dvo.setUuid(Platform.getUuid());
-                            dvo.setAccountUuid(msg.getAccountUuid());
-                            dvo.setDiskSize(msg.getRootDiskSize());
-                            dvo.setName("for-create-vm-" + finalVo.getUuid());
-                            dvo.setType("TemporaryDiskOfferingType");
-                            dvo.setState(DiskOfferingState.Enabled);
-                            dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
-                            dbf.persist(dvo);
-                            smsg.setRootDiskOfferingUuid(dvo.getUuid());
-                        }
-
-                        smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(finalVo));
-                        smsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
-                        smsg.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
-                        smsg.setStrategy(msg.getStrategy());
-                        smsg.setTimeout(msg.getTimeout());
-                        smsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
-                        smsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
-                        smsg.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
-                        bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
-                        bus.send(smsg, new CloudBusCallBack(smsg) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (msg.getRootDiskOfferingUuid() == null && smsg.getRootDiskOfferingUuid() != null) {
-                                    dbf.removeByPrimaryKey(smsg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
-                                }
-
-                                if (!temporaryDiskOfferingUuids.isEmpty()) {
-                                    dbf.removeByPrimaryKeys(temporaryDiskOfferingUuids, DiskOfferingVO.class);
-                                }
-
-                                if (reply.isSuccess()) {
-                                    InstantiateNewCreatedVmInstanceReply r = (InstantiateNewCreatedVmInstanceReply) reply;
-                                    instantiateVm = r.getVmInventory();
-                                    trigger.next();
-                                    return;
-                                }
-                                trigger.fail(reply.getError());
-                            }
-                        });
-                    }
-                });
-
-                done(new FlowDoneHandler(completion) {
-                    @Override
-                    public void handle(Map data) {
-                        completion.success(instantiateVm);
-                    }
-                });
-
-                error(new FlowErrorHandler(completion) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        completion.fail(errCode);
-                    }
-                });
+            if (ImageArchitecture.aarch64.toString().equals(architecture)) {
+                SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(vo.getUuid());
+                creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, VmMachineType.virt.toString())));
+                creator.recreate = true;
+                creator.create();
             }
+        }
 
-        }).start();
+        List<ErrorCode> errorCodes = Collections.emptyList();
+        if (cmsg != null && cmsg.getSystemTags() != null && !cmsg.getSystemTags().isEmpty()) {
+            errorCodes = extEmitter.handleSystemTag(vo.getUuid(), cmsg.getSystemTags());
+        } else if (cmsg == null && msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
+            errorCodes = extEmitter.handleSystemTag(vo.getUuid(), msg.getSystemTags());
+        }
+
+        if (!errorCodes.isEmpty()) {
+            completion.fail(operr("handle system tag fail when creating vm because [%s]",
+                    StringUtils.join(errorCodes.stream().map(ErrorCode::getDescription).collect(Collectors.toList()),
+                        ", ")));
+        }
+
+        InstantiateNewCreatedVmInstanceMsg smsg = new InstantiateNewCreatedVmInstanceMsg();
+        if (VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy())) {
+            VmInstanceInventory inv = VmInstanceInventory.valueOf(vo);
+            createVmButNotStart(msg, inv);
+            completion.success(inv);
+            return;
+        }
+
+        smsg.setDisableL3Networks(msg.getDisableL3Networks());
+        smsg.setHostUuid(msg.getHostUuid());
+        List<String> temporaryDiskOfferingUuids = createDiskOfferingUuidsFromDataDiskSizes(msg, finalVo.getUuid());
+        smsg.setDataDiskOfferingUuids(merge(msg.getDataDiskOfferingUuids(), temporaryDiskOfferingUuids));
+        smsg.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
+        smsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
+        smsg.setL3NetworkUuids(msg.getL3NetworkSpecs());
+
+        if (msg.getRootDiskOfferingUuid() != null) {
+            smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
+        } else if (msg.getRootDiskSize() > 0) {
+            DiskOfferingVO dvo = new DiskOfferingVO();
+            dvo.setUuid(Platform.getUuid());
+            dvo.setAccountUuid(msg.getAccountUuid());
+            dvo.setDiskSize(msg.getRootDiskSize());
+            dvo.setName("for-create-vm-" + vo.getUuid());
+            dvo.setType("TemporaryDiskOfferingType");
+            dvo.setState(DiskOfferingState.Enabled);
+            dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+            dbf.persist(dvo);
+            smsg.setRootDiskOfferingUuid(dvo.getUuid());
+        }
+
+        smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(vo));
+        smsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
+        smsg.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
+        smsg.setStrategy(msg.getStrategy());
+        smsg.setTimeout(msg.getTimeout());
+        smsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
+        smsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
+        smsg.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
+        bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vo.getUuid());
+        bus.send(smsg, new CloudBusCallBack(smsg) {
+            @Override
+            public void run(MessageReply reply) {
+                try {
+                    if (msg.getRootDiskOfferingUuid() == null && smsg.getRootDiskOfferingUuid() != null) {
+                        dbf.removeByPrimaryKey(smsg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
+                    }
+
+                    if (!temporaryDiskOfferingUuids.isEmpty()) {
+                        dbf.removeByPrimaryKeys(temporaryDiskOfferingUuids, DiskOfferingVO.class);
+                    }
+
+                    if (reply.isSuccess()) {
+                        InstantiateNewCreatedVmInstanceReply r = (InstantiateNewCreatedVmInstanceReply) reply;
+                        completion.success(r.getVmInventory());
+                    } else {
+                        completion.fail(reply.getError());
+                    }
+                } catch (Exception e) {
+                    bus.logExceptionWithMessageDump(msg, e);
+                    bus.replyErrorByMessageType(msg, e);
+                }
+            }
+        });
     }
 
     private List<String> createDiskOfferingUuidsFromDataDiskSizes(final CreateVmInstanceMsg msg, String vmUuid) {
@@ -1506,7 +1437,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                         validateHostname(sysTag, hostname);
                         List<String> l3NetworkUuids = msg.getL3NetworkUuids();
-                        l3NetworkUuids.forEach(it -> validateHostNameOnDefaultL3Network(sysTag, hostname, it));
+                        l3NetworkUuids.forEach(it->validateHostNameOnDefaultL3Network(sysTag, hostname, it));
                     } else if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
                         validateStaticIp(sysTag);
                     } 
