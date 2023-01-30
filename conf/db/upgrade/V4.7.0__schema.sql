@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`TwinManagementNodeResourceMapVO` (
     `externalResourceUuid` varchar(32) NOT NULL,
     `resourceUuid` varchar(32) NOT NULL,
     `type` varchar(32) NOT NULL,
+    `groupUuid` varchar(32) DEFAULT NULL,
     `externalManagementNodeUuid` varchar(32) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',

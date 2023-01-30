@@ -44,6 +44,14 @@ public class TwinManagementNodeResourceMapInventory  {
         return this.externalManagementNodeUuid;
     }
 
+    public java.lang.String groupUuid;
+    public void setGroupUuid(java.lang.String groupUuid) {
+        this.groupUuid = groupUuid;
+    }
+    public java.lang.String getGroupId() {
+        return this.groupUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

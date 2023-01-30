@@ -37,6 +37,9 @@ public class AddTwinManagementNodeResourceMapAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String externalManagementNodeUuid;
 
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String groupUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 

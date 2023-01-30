@@ -44,13 +44,13 @@ public class RevertVmFromCdpBackupAction extends AbstractAction {
     public java.lang.String hostUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String disasterRecoveryVmInstanceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean useExistingVolume = true;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public long recoverBandwidth = 0L;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String disasterRecoveryVmInstanceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;

@@ -36,11 +36,11 @@ public class ExternalManagementNodeInventory  {
         return this.hostName;
     }
 
-    public int port;
-    public void setPort(int port) {
+    public java.lang.Integer port;
+    public void setPort(java.lang.Integer port) {
         this.port = port;
     }
-    public int getPort() {
+    public java.lang.Integer getPort() {
         return this.port;
     }
 
