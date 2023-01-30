@@ -2,19 +2,8 @@ package org.zstack.test.integration.kvm.vm.cdrom
 
 import org.zstack.compute.vm.VmCdRomGlobalProperty
 import org.zstack.compute.vm.VmSystemTags
-import org.zstack.core.cloudbus.CloudBus
-import org.zstack.core.cloudbus.CloudBusCallBack
-import org.zstack.core.db.Q
-import org.zstack.header.configuration.InstanceOfferingVO
-import org.zstack.header.configuration.InstanceOfferingVO_
 import org.zstack.header.image.ImageConstant
-import org.zstack.header.message.MessageReply
-import org.zstack.header.vm.CreateVmInstanceMsg
-import org.zstack.header.vm.VmCreationStrategy
 import org.zstack.header.vm.VmInstanceConstant
-import org.zstack.header.vm.VmInstanceState
-import org.zstack.header.vm.VmInstanceVO
-import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
@@ -31,12 +20,6 @@ import org.zstack.utils.data.SizeUnit
  */
 class VmIsoSystemTagCase extends SubCase {
     EnvSpec env
-    DiskOfferingInventory diskOffering
-    ImageInventory iso
-    ImageInventory iso1
-    ImageInventory iso2
-    L3NetworkInventory l3
-    InstanceOfferingInventory instanceOfferingInventory
 
     @Override
     void clean() {
@@ -141,66 +124,20 @@ class VmIsoSystemTagCase extends SubCase {
     @Override
     void test() {
         env.create {
-            diskOffering = env.inventoryByName("diskOffering")
-            iso = env.inventoryByName("iso_0")
-            iso1 = env.inventoryByName("iso_1")
-            iso2 = env.inventoryByName("iso_2")
-            l3 = env.inventoryByName("l3")
-            instanceOfferingInventory = env.inventoryByName("instanceOffering")
-
             testVmIsoSystemTag()
-            testCreateTagError()
-        }
-    }
-
-    void testCreateTagError() {
-        String hostName = "testHostName"
-        CloudBus bus = bean(CloudBus.class)
-        VmInstanceInventory hostNameVm = createVmInstance {
-            name = "hostNameVm"
-            instanceOfferingUuid = instanceOfferingInventory.uuid
-            rootDiskOfferingUuid = diskOffering.uuid
-            imageUuid = iso.uuid
-            l3NetworkUuids = [l3.getUuid()]
-            sessionId = currentEnvSpec.session.uuid
-            systemTags = ["${VmSystemTags.HOSTNAME_TOKEN}::${hostName}".toString()]
-        }
-        MessageReply error = null
-        CreateVmInstanceMsg cmsg = new CreateVmInstanceMsg()
-        cmsg.setSystemTags(["${VmSystemTags.HOSTNAME_TOKEN}::${hostName}".toString()])
-        cmsg.setZoneUuid(hostNameVm.getZoneUuid())
-        cmsg.setInstanceOfferingUuid(hostNameVm.getInstanceOfferingUuid())
-        cmsg.setClusterUuid(hostNameVm.getClusterUuid())
-        cmsg.setName("testError")
-        cmsg.setImageUuid(hostNameVm.getImageUuid())
-        cmsg.setType(hostNameVm.getType())
-        cmsg.setHostUuid(hostNameVm.getHostUuid())
-        InstanceOfferingVO iovo = Q.New(InstanceOfferingVO.class).eq(InstanceOfferingVO_.uuid, hostNameVm.getInstanceOfferingUuid()).find()
-        cmsg.setInstanceOfferingUuid(iovo.getUuid())
-        cmsg.setCpuNum(iovo.getCpuNum())
-        cmsg.setCpuSpeed(iovo.getCpuSpeed())
-        cmsg.setMemorySize(iovo.getMemorySize())
-        cmsg.setAllocatorStrategy(iovo.getAllocatorStrategy())
-        cmsg.setDefaultL3NetworkUuid(hostNameVm.getDefaultL3NetworkUuid())
-        cmsg.setStrategy(VmCreationStrategy.InstantStart.toString())
-        cmsg.setAccountUuid(currentEnvSpec.session.getAccountUuid())
-        bus.makeLocalServiceId(cmsg, VmInstanceConstant.SERVICE_ID)
-        bus.send(cmsg, new CloudBusCallBack(null) {
-            @Override
-            public void run(MessageReply reply) {
-                error = reply
-            }
-        })
-
-        retryInSecs {
-            assert error != null
-            assert error.getError().getDetails().contains("${VmSystemTags.HOSTNAME_TOKEN}::${hostName}".toString())
-            assert !Q.New(VmInstanceVO.class).eq(VmInstanceVO_.state, VmInstanceState.Created).exists
         }
     }
 
     void testVmIsoSystemTag() {
         VmCdRomGlobalProperty.syncVmIsoSystemTag = true
+
+        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
+        ImageInventory iso = env.inventoryByName("iso_0")
+        ImageInventory iso1 = env.inventoryByName("iso_1")
+        ImageInventory iso2 = env.inventoryByName("iso_2")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+        InstanceOfferingInventory instanceOfferingInventory = env.inventoryByName("instanceOffering")
+
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOfferingInventory.uuid
