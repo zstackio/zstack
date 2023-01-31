@@ -54,6 +54,15 @@ doc {
 					since "0.6"
 				}
 				column {
+					name "raiseException"
+					enclosedIn ""
+					desc "是否引发异常"
+					location "query"
+					type "boolean"
+					optional true
+					since "4.6.11"
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

@@ -265,7 +265,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 reply.setInventories(new ArrayList<>());
             } else {
                 reply.setInventories(getInterdependentL3NetworksByBackupStorageUuids(Collections.singletonList(bsvo),
-                        msg.getZoneUuid(), accountUuid));
+                        msg.getZoneUuid(), accountUuid, false));
             }
         } else {
             reply.setInventories(getInterdependentBackupStoragesByL3NetworkUuids(msg.getL3NetworkUuids()));
@@ -497,8 +497,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             msg.getImageUuid(), msg.getZoneUuid()));
         }
 
-        List<L3NetworkInventory> l3s =
-                getInterdependentL3NetworksByBackupStorageUuids(bss, msg.getZoneUuid(), accountUuid);
+        List<L3NetworkInventory> l3s = getInterdependentL3NetworksByBackupStorageUuids(bss, msg.getZoneUuid(), accountUuid, msg.getRaiseException());
 
         List<String> bsUuids = bss.stream().map(BackupStorageVO::getUuid).collect(Collectors.toList());
         for (GetInterdependentL3NetworksExtensionPoint ext : pluginRgty.getExtensionList(GetInterdependentL3NetworksExtensionPoint.class)) {
@@ -510,7 +509,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     @Transactional(readOnly = true)
-    private List<L3NetworkInventory> getInterdependentL3NetworksByBackupStorageUuids(List<BackupStorageVO> bss, String zoneUuid, String accountUuid) {
+    private List<L3NetworkInventory> getInterdependentL3NetworksByBackupStorageUuids(List<BackupStorageVO> bss, String zoneUuid, String accountUuid, boolean raiseException) {
+        List<String> psUuids = new ArrayList<>();
         List<L3NetworkVO> l3s = new ArrayList<>();
         for (BackupStorageVO bs : bss) {
             BackupStorageType bsType = BackupStorageType.valueOf(bs.getType());
@@ -518,51 +518,111 @@ public class VmInstanceManagerImpl extends AbstractService implements
             if (relatedPrimaryStorageUuids == null) {
                 // the backup storage has no strongly-bound primary storage
                 List<String> psTypes = hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics(bs.getType());
-                String sql = "select l3" +
-                        " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
-                        " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
-                        " where l3.l2NetworkUuid = l2ref.l2NetworkUuid" +
-                        " and l2ref.clusterUuid = psref.clusterUuid" +
-                        " and psref.primaryStorageUuid = ps.uuid" +
-                        " and ps.type in (:psTypes)" +
-                        " and ps.zoneUuid = l3.zoneUuid" +
-                        " and l3.zoneUuid = :zoneUuid" +
-                        " group by l3.uuid";
-                TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
-                l3q.setParameter("psTypes", psTypes);
-                l3q.setParameter("zoneUuid", zoneUuid);
-                l3s.addAll(l3q.getResultList());
+                psUuids.addAll(Q.New(PrimaryStorageVO.class)
+                        .select(PrimaryStorageVO_.uuid)
+                        .in(PrimaryStorageVO_.type, psTypes)
+                        .eq(PrimaryStorageVO_.zoneUuid, zoneUuid)
+                        .listValues());
+                l3s.addAll(SQL.New("select l3" +
+                                " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
+                                " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                                " where l3.l2NetworkUuid = l2ref.l2NetworkUuid" +
+                                " and l2ref.clusterUuid = psref.clusterUuid" +
+                                " and psref.primaryStorageUuid = ps.uuid" +
+                                " and ps.type in (:psTypes)" +
+                                " and ps.zoneUuid = l3.zoneUuid" +
+                                " and l3.zoneUuid = :zoneUuid" +
+                                " group by l3.uuid")
+                        .param("psTypes", psTypes)
+                        .param("zoneUuid", zoneUuid)
+                        .list());
             } else if (!relatedPrimaryStorageUuids.isEmpty()) {
                 // the backup storage has strongly-bound primary storage, e.g. ceph
-                String sql = "select l3" +
-                        " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
-                        " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
-                        " where l3.l2NetworkUuid = l2ref.l2NetworkUuid" +
-                        " and l2ref.clusterUuid = psref.clusterUuid" +
-                        " and psref.primaryStorageUuid = ps.uuid" +
-                        " and ps.uuid in (:psUuids)" +
-                        " and ps.zoneUuid = l3.zoneUuid" +
-                        " and l3.zoneUuid = :zoneUuid" +
-                        " group by l3.uuid";
-                TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
-                l3q.setParameter("psUuids", relatedPrimaryStorageUuids);
-                l3q.setParameter("zoneUuid", zoneUuid);
-                l3s.addAll(l3q.getResultList());
+                psUuids.addAll(Q.New(PrimaryStorageVO.class)
+                        .select(PrimaryStorageVO_.uuid)
+                        .in(PrimaryStorageVO_.uuid, relatedPrimaryStorageUuids)
+                        .eq(PrimaryStorageVO_.zoneUuid, zoneUuid)
+                        .listValues());
+                l3s.addAll(SQL.New("select l3" +
+                                " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
+                                " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                                " where l3.l2NetworkUuid = l2ref.l2NetworkUuid" +
+                                " and l2ref.clusterUuid = psref.clusterUuid" +
+                                " and psref.primaryStorageUuid = ps.uuid" +
+                                " and ps.uuid in (:psUuids)" +
+                                " and ps.zoneUuid = l3.zoneUuid" +
+                                " and l3.zoneUuid = :zoneUuid" +
+                                " group by l3.uuid")
+                        .param("psUuids", relatedPrimaryStorageUuids)
+                        .param("zoneUuid", zoneUuid)
+                        .list());
             } else {
+                // relatedPrimaryStorageUuids is not null, but size is 0
                 logger.warn(String.format("the backup storage[uuid:%s, type: %s] needs a strongly-bound primary storage," +
                         " but seems the primary storage is not added", bs.getUuid(), bs.getType()));
             }
         }
 
-        List<String> l3sFromAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
-        if (l3sFromAccount == null) {
+        if (l3s.isEmpty()) {
+            if (psUuids.isEmpty()) {
+                if (raiseException) {
+                    throw new OperationFailureException(argerr("no primary storage bound to the backup storage[uuid:%s, type:%s] is found",
+                            bss.get(0).getUuid(), bss.get(0).getType()));
+                }
+                logger.warn(String.format("no primary storage bound to the backup storage[uuid:%s, type:%s] is found",
+                        bss.get(0).getUuid(), bss.get(0).getType()));
+                return new ArrayList<>();
+            }
+
+            Long clusterNum = SQL.New("select count(distinct cl)" +
+                            " from ClusterVO cl, PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                            " where cl.uuid = psref.clusterUuid" +
+                            " and psref.primaryStorageUuid in (:psUuids)" +
+                            " and ps.zoneUuid = cl.zoneUuid" +
+                            " and cl.zoneUuid = :zoneUuid" +
+                            " group by cl.uuid", Long.class)
+                    .param("psUuids", psUuids)
+                    .param("zoneUuid", zoneUuid)
+                    .find();
+
+            if (clusterNum == null || clusterNum == 0) {
+                if (raiseException) {
+                    throw new OperationFailureException(argerr("the primary storages[uuids:%s] has not attached any cluster on the zone[uuid:%s]",
+                            psUuids, zoneUuid));
+                }
+                logger.warn(String.format("the primary storages[uuids:%s] has not attached any cluster on the zone[uuid:%s]", psUuids, zoneUuid));
+                return new ArrayList<>();
+            }
+
+            Long l2Num = SQL.New("select count(distinct l2)" +
+                            " from L2NetworkVO l2, L2NetworkClusterRefVO l2ref, PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
+                            " where l2.uuid = l2ref.l2NetworkUuid" +
+                            " and psref.primaryStorageUuid in (:psUuids)" +
+                            " and l2ref.clusterUuid = psref.clusterUuid" +
+                            " and ps.zoneUuid = l2.zoneUuid" +
+                            " and l2.zoneUuid = :zoneUuid", Long.class)
+                    .param("psUuids", psUuids)
+                    .param("zoneUuid", zoneUuid)
+                    .find();
+            if (l2Num == null || l2Num == 0) {
+                if (raiseException) {
+                    throw new OperationFailureException(argerr("no l2Networks found in clusters that have attached to primary storages[uuids:%s]",
+                            psUuids));
+                }
+                logger.warn(String.format("no l2Networks found in clusters that have attached to primary storages[uuids:%s]", psUuids));
+                return new ArrayList<>();
+            }
+        }
+
+        List<String> l3UuidListOfCurrentAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
+        if (l3UuidListOfCurrentAccount == null) {
             return L3NetworkInventory.valueOf(l3s);
         }
         return L3NetworkInventory.valueOf(l3s.stream()
-                .filter(vo -> l3sFromAccount.contains(vo.getUuid()))
+                .filter(vo -> l3UuidListOfCurrentAccount.contains(vo.getUuid()))
                 .collect(Collectors.toList()));
     }
-
+    
     private void handle(APIGetCandidateZonesClustersHostsForCreatingVmMsg msg) {
         DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
 

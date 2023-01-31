@@ -5097,6 +5097,38 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
+    "raw": "no primary storage bound to the backup storage[uuid:%s, type:%s] is found",
+    "en_US": "no primary storage bound to the backup storage[uuid:{0}, type:{1}] is found",
+    "zh_CN": "未找到与备份存储[uuid:{0}, type:{1}]绑定的主存储",
+    "arguments": [
+      "bss.get(0).getUuid()",
+      "bss.get(0).getType()"
+    ],
+    "line": 541,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
+    "raw": "the primary storages[uuids:%s] has not attached any cluster on the zone[uuid:%s]",
+    "en_US": "the primary storages[uuids:{0}] has not attached any cluster on the zone[uuid:{1}]",
+    "zh_CN": "主存储[uuids:{0}]尚未加载区域[uuid:{1}]上的任何集群",
+    "arguments": [
+      "psUuids",
+      "zoneUuid"
+    ],
+    "line": 560,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
+    "raw": "no l2Networks found in clusters that have attached to primary storages[uuids:%s]",
+    "en_US": "no l2Networks found in clusters that have attached to primary storages[uuids:{0}]",
+    "zh_CN": "在已加载到主存储[uuids:{0}]的集群中未找到二层网络",
+    "arguments": [
+      "psUuids"
+    ],
+    "line": 577,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
     "raw": "the image[name:%s, uuid:%s] is an ISO, rootDiskSize must be set",
     "en_US": "the image[name:{0}, uuid:{1}] is an ISO, rootDiskSize must be set",
     "zh_CN": "镜像[name:{0}, uuid:{1}]是一个IOS, 必须设置根云盘大小",
