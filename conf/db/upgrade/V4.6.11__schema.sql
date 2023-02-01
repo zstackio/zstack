@@ -54,3 +54,15 @@ ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN serNumber varchar(128) NOT
 ALTER TABLE `zstack`.`ESXHostVO` ADD COLUMN `esxiVersion` varchar(32);
 
 ALTER TABLE `zstack`.`CephOsdGroupVO` MODIFY COLUMN `osds` text NOT NULL;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`GuestToolsStateVO` (
+    `vmInstanceUuid` varchar(32) NOT NULL UNIQUE,
+    `state` varchar(32) NOT NULL DEFAULT 'Unknown',
+    `version` varchar(32),
+    `platform` varchar(32),
+    `osType` varchar(32),
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`vmInstanceUuid`),
+    CONSTRAINT `fkGuestToolsStateVOVmInstanceEO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES `VmInstanceEO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
