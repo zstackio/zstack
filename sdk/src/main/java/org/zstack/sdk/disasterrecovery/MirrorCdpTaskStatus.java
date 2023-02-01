@@ -5,4 +5,5 @@ public enum MirrorCdpTaskStatus {
 	Running,
 	Stopped,
 	Failed,
+	Deleted,
 }
