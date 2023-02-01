@@ -40,6 +40,15 @@ public class UpgradeCdpTaskToMirrorTaskAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String mirrorBackupStorageUuid;
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String peerHostName;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String peerUserName;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String peerPassword;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
