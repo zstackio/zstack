@@ -34,6 +34,9 @@ public class GetInterdependentL3NetworksImagesAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String imageUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean raiseException = false;
+
     @Param(required = false)
     public java.util.List systemTags;
 

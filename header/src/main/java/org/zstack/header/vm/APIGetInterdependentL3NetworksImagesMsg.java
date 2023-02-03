@@ -11,8 +11,6 @@ import org.zstack.header.zone.ZoneVO;
 
 import java.util.List;
 
-import static java.util.Arrays.asList;
-
 /**
  * Created by xing5 on 2016/8/23.
  */
@@ -29,6 +27,8 @@ public class APIGetInterdependentL3NetworksImagesMsg extends APISyncCallMessage 
     private List<String> l3NetworkUuids;
     @APIParam(required = false, resourceType = ImageVO.class)
     private String imageUuid;
+    @APIParam(required = false)
+    private boolean raiseException;
 
     public String getZoneUuid() {
         return zoneUuid;
@@ -53,11 +53,21 @@ public class APIGetInterdependentL3NetworksImagesMsg extends APISyncCallMessage 
     public void setImageUuid(String imageUuid) {
         this.imageUuid = imageUuid;
     }
- 
+
+    public boolean getRaiseException() {
+        return raiseException;
+    }
+
+    public void setRaiseException(boolean raiseException) {
+        this.raiseException = raiseException;
+    }
+
     public static APIGetInterdependentL3NetworksImagesMsg __example__() {
         APIGetInterdependentL3NetworksImagesMsg msg = new APIGetInterdependentL3NetworksImagesMsg();
         msg.zoneUuid = uuid();
         msg.imageUuid = uuid();
+        msg.raiseException = true;
+
         return msg;
     }
 
