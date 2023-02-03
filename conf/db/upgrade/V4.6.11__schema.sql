@@ -7,24 +7,24 @@ CREATE VIEW `zstack`.`L2NetworkVO` AS SELECT uuid, name, description, type, vSwi
 
 DELIMITER $$
 CREATE PROCEDURE addColumnsToSNSTextTemplateVO()
-    BEGIN
+BEGIN
         IF NOT EXISTS( SELECT 1
                        FROM INFORMATION_SCHEMA.COLUMNS
                        WHERE table_name = 'SNSTextTemplateVO'
                              AND table_schema = 'zstack'
                              AND column_name = 'subject') THEN
 
-           ALTER TABLE `zstack`.`SNSTextTemplateVO` ADD COLUMN `subject` VARCHAR(2048);
-        END IF;
+ALTER TABLE `zstack`.`SNSTextTemplateVO` ADD COLUMN `subject` VARCHAR(2048);
+END IF;
         IF NOT EXISTS( SELECT 1
                        FROM INFORMATION_SCHEMA.COLUMNS
                        WHERE table_name = 'SNSTextTemplateVO'
                              AND table_schema = 'zstack'
                              AND column_name = 'recoverySubject') THEN
 
-           ALTER TABLE `zstack`.`SNSTextTemplateVO` ADD COLUMN `recoverySubject` VARCHAR(2048);
-        END IF;
-    END $$
+ALTER TABLE `zstack`.`SNSTextTemplateVO` ADD COLUMN `recoverySubject` VARCHAR(2048);
+END IF;
+END $$
 DELIMITER ;
 
 call addColumnsToSNSTextTemplateVO();
@@ -38,14 +38,14 @@ CREATE TABLE IF NOT EXISTS `zstack`.`FlkSecSecretResourcePoolVO` (
     `hmacToken` varchar(32) DEFAULT NULL,
     PRIMARY KEY  (`uuid`),
     CONSTRAINT fkFlkSecSecretResourcePoolVOSecretResourcePoolVO FOREIGN KEY (uuid) REFERENCES SecretResourcePoolVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`FlkSecSecurityMachineVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `port` int unsigned NOT NULL,
     PRIMARY KEY  (`uuid`),
     CONSTRAINT fkFlkSecSecurityMachineVOSecurityMachineVO FOREIGN KEY (uuid) REFERENCES SecurityMachineVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN issuerDN varchar(255) NOT NULL;
 ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN subjectDN varchar(255) NOT NULL;
