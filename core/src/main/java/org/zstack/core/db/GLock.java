@@ -115,7 +115,8 @@ public class GLock {
             try {
                 conn = dataSource.getConnection();
                 conn.setAutoCommit(true);
-                pstmt = conn.prepareStatement(String.format("select get_lock('%s', %s)", name, timeout));
+                pstmt = conn.prepareStatement(String.format("select get_lock('%s', %s)", name, timeout),ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
+                //pstmt = conn.prepareStatement(String.format("select get_lock('%s', %s)", name, timeout));
                 if (waitTimeout > 0) {
                     pstmt.execute(String.format("set wait_timeout=%d", waitTimeout));
                 }
@@ -197,7 +198,7 @@ public class GLock {
 
             PreparedStatement pstmt = null;
             try {
-                pstmt = conn.prepareStatement(String.format("select release_lock('%s')", name));
+                pstmt = conn.prepareStatement(String.format("select release_lock('%s')", name), ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
                 try (ResultSet rs = pstmt.executeQuery()) {
                     if (!rs.next()) {
                         throw new CloudRuntimeException("Mysql cannot find lock: " + name);
