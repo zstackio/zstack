@@ -11,10 +11,8 @@ import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.identity.IdentityByPassCheck;
-import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.identity.SuppressCredentialCheck;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.extension.AuthorizationBackend;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.zql.ZQLQueryExtensionPoint;
@@ -70,6 +68,13 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
         if (msg.getSession().getUuid() == null) {
             throw new ApiMessageInterceptionException(err(IdentityErrors.INVALID_SESSION,
                     "session uuid is null"));
+        }
+
+        for (RenewSessionPreAuthExtensionPoint ext : pluginRegistry.getExtensionList(RenewSessionPreAuthExtensionPoint.class)) {
+            ErrorCode errorCode= ext.checkAuth(msg.getSession());
+            if (errorCode != null) {
+                throw new OperationFailureException(errorCode);
+            }
         }
 
         msg.setSession(Session.renewSession(msg.getSession().getUuid(), null));
