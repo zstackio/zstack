@@ -63,6 +63,14 @@ public class LongJobUtils {
                 " analysis the cause to fix it and resume long job if you want to continue.", longJobUuid);
     }
 
+    public static ErrorCode buildErrIfCanceled(String jobUuid) {
+        Tuple t = Q.New(LongJobVO.class).select(LongJobVO_.state, LongJobVO_.uuid)
+                .eq(LongJobVO_.uuid, jobUuid)
+                .findTuple();
+
+        return t == null || !canceledStates.contains(t.get(0, LongJobState.class)) ? null : cancelErr(t.get(1, String.class));
+    }
+
     public static ErrorCode buildErrIfCanceled() {
         Tuple t = Q.New(LongJobVO.class).select(LongJobVO_.state, LongJobVO_.uuid)
                 .eq(LongJobVO_.apiId, ThreadContext.get(Constants.THREAD_CONTEXT_API))

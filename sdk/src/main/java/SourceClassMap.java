@@ -187,8 +187,17 @@ public class SourceClassMap {
 			put("org.zstack.header.core.webhooks.WebhookInventory", "org.zstack.sdk.WebhookInventory");
 			put("org.zstack.header.datacenter.DataCenterInventory", "org.zstack.sdk.DataCenterInventory");
 			put("org.zstack.header.datacenter.DataCenterProperty", "org.zstack.sdk.DataCenterProperty");
+			put("org.zstack.header.disasterrecovery.DisasterRecoveryVmTemplateInventory", "org.zstack.sdk.disasterrecovery.DisasterRecoveryVmTemplateInventory");
+			put("org.zstack.header.disasterrecovery.MirrorCdpTaskInventory", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskInventory");
+			put("org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobInventory", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobInventory");
+			put("org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobStatus", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobStatus");
+			put("org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefInventory", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefInventory");
+			put("org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefVO", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefVO");
 			put("org.zstack.header.errorcode.ErrorCode", "org.zstack.sdk.ErrorCode");
 			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
+			put("org.zstack.header.externalmanagement.ExternalManagementNodeInventory", "org.zstack.sdk.ExternalManagementNodeInventory");
+			put("org.zstack.header.externalmanagement.ExternalManagementNodeStatus", "org.zstack.sdk.ExternalManagementNodeStatus");
+			put("org.zstack.header.externalmanagement.TwinManagementNodeResourceMapInventory", "org.zstack.sdk.TwinManagementNodeResourceMapInventory");
 			put("org.zstack.header.flowMeter.FlowCollectorInventory", "org.zstack.sdk.FlowCollectorInventory");
 			put("org.zstack.header.flowMeter.FlowCounter", "org.zstack.sdk.FlowCounter");
 			put("org.zstack.header.flowMeter.FlowMeterInventory", "org.zstack.sdk.FlowMeterInventory");
@@ -495,7 +504,9 @@ public class SourceClassMap {
 			put("org.zstack.sso.header.CasClientInventory", "org.zstack.sdk.CasClientInventory");
 			put("org.zstack.sso.header.CasState", "org.zstack.sdk.CasState");
 			put("org.zstack.sso.header.OAuth2ClientInventory", "org.zstack.sdk.OAuth2ClientInventory");
+			put("org.zstack.sso.header.RedirectUrlTemplate", "org.zstack.sdk.RedirectUrlTemplate");
 			put("org.zstack.sso.header.SSOClientInventory", "org.zstack.sdk.SSOClientInventory");
+			put("org.zstack.sso.header.SSORedirectTemplateInventory", "org.zstack.sdk.SSORedirectTemplateInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreBackupStorageInventory", "org.zstack.sdk.ImageStoreBackupStorageInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreGcResult", "org.zstack.sdk.ImageStoreGcResult");
 			put("org.zstack.storage.backup.imagestore.ImageStoreImageStruct", "org.zstack.sdk.ImageStoreImageStruct");
@@ -795,6 +806,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EventLogInventory", "org.zstack.core.eventlog.EventLogInventory");
 			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
 			put("org.zstack.sdk.ExternalBackupState", "org.zstack.externalbackup.ExternalBackupState");
+			put("org.zstack.sdk.ExternalManagementNodeInventory", "org.zstack.header.externalmanagement.ExternalManagementNodeInventory");
+			put("org.zstack.sdk.ExternalManagementNodeStatus", "org.zstack.header.externalmanagement.ExternalManagementNodeStatus");
 			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
@@ -808,6 +821,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GlobalConfigOptions", "org.zstack.core.config.GlobalConfigOptions");
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
 			put("org.zstack.sdk.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
+			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");
 			put("org.zstack.sdk.HostIommuStateType", "org.zstack.pciDevice.HostIommuStateType");
@@ -989,6 +1003,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
 			put("org.zstack.sdk.RaidControllerInventory", "org.zstack.storage.device.localRaid.RaidControllerInventory");
 			put("org.zstack.sdk.RaidPhysicalDriveInventory", "org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory");
+			put("org.zstack.sdk.RedirectUrlTemplate", "org.zstack.sso.header.RedirectUrlTemplate");
 			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
 			put("org.zstack.sdk.ReplicationDiskStatus", "org.zstack.storage.primary.ministorage.ReplicationDiskStatus");
 			put("org.zstack.sdk.ReplicationGroupState", "org.zstack.imagereplicator.ReplicationGroupState");
@@ -1012,6 +1027,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RunningState", "org.zstack.storage.device.localRaid.RunningState");
 			put("org.zstack.sdk.RunningTaskInfo", "org.zstack.header.core.progress.RunningTaskInfo");
 			put("org.zstack.sdk.SSOClientInventory", "org.zstack.sso.header.SSOClientInventory");
+			put("org.zstack.sdk.SSORedirectTemplateInventory", "org.zstack.sso.header.SSORedirectTemplateInventory");
 			put("org.zstack.sdk.SchedulerJobGroupInventory", "org.zstack.header.scheduler.SchedulerJobGroupInventory");
 			put("org.zstack.sdk.SchedulerJobGroupJobRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupJobRefInventory");
 			put("org.zstack.sdk.SchedulerJobGroupSchedulerTriggerRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefInventory");
@@ -1023,7 +1039,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ScsiLunHostRefInventory", "org.zstack.header.storageDevice.ScsiLunHostRefInventory");
 			put("org.zstack.sdk.ScsiLunInventory", "org.zstack.header.storageDevice.ScsiLunInventory");
 			put("org.zstack.sdk.ScsiLunVmInstanceRefInventory", "org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory");
-			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.SdnControllerInventory", "org.zstack.sdnController.header.SdnControllerInventory");
 			put("org.zstack.sdk.SdnVniRange", "org.zstack.sdnController.header.SdnVniRange");
 			put("org.zstack.sdk.SecretResourcePoolInventory", "org.zstack.header.securitymachine.SecretResourcePoolInventory");
@@ -1071,6 +1086,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TaskProgressInventory", "org.zstack.header.core.progress.TaskProgressInventory");
 			put("org.zstack.sdk.TemplateConfigInventory", "org.zstack.templateConfig.TemplateConfigInventory");
 			put("org.zstack.sdk.Threshold", "org.zstack.drs.api.Threshold");
+			put("org.zstack.sdk.TwinManagementNodeResourceMapInventory", "org.zstack.header.externalmanagement.TwinManagementNodeResourceMapInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretStatus", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus");
@@ -1178,6 +1194,12 @@ public class SourceClassMap {
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStruct", "org.zstack.header.storage.database.backup.DatabaseBackupStruct");
 			put("org.zstack.sdk.databasebackup.DatabaseType", "org.zstack.header.storage.database.backup.DatabaseType");
+			put("org.zstack.sdk.disasterrecovery.DisasterRecoveryVmTemplateInventory", "org.zstack.header.disasterrecovery.DisasterRecoveryVmTemplateInventory");
+			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskInventory", "org.zstack.header.disasterrecovery.MirrorCdpTaskInventory");
+			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobInventory", "org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobInventory");
+			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobStatus", "org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobStatus");
+			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefInventory", "org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefInventory");
+			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefVO", "org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefVO");
 			put("org.zstack.sdk.iam2.api.APIPermissionStruct", "org.zstack.iam2.api.APIGetIAM2VirtualIDAPIPermissionMsg$APIPermissionStruct");
 			put("org.zstack.sdk.iam2.api.Attribute", "org.zstack.iam2.api.Attribute");
 			put("org.zstack.sdk.iam2.api.ErrorResult", "org.zstack.iam2.api.ErrorResult");

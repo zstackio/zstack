@@ -106,7 +106,7 @@ public class ArchiveTicketStatusHistoryInventory  {
         this.flowName = flowName;
     }
     public java.lang.String getFlowName() {
-        return flowName;
+        return this.flowName;
     }
 
     public java.sql.Timestamp createDate;
