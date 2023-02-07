@@ -77,6 +77,10 @@ public class L2NetworkInventory implements Serializable {
      */
     private String vSwitchType;
     /**
+     * @desc virtual id for vlan/vni
+     */
+    private Integer virtualNetworkId;
+    /**
      * @desc the time this resource gets created
      */
     private Timestamp createDate;
@@ -99,6 +103,7 @@ public class L2NetworkInventory implements Serializable {
         this.setZoneUuid(vo.getZoneUuid());
         this.setType(vo.getType());
         this.setvSwitchType(vo.getvSwitchType());
+        this.setVirtualNetworkId(vo.getVirtualNetworkId());
         this.setDescription(vo.getDescription());
         this.setName(vo.getName());
         this.setPhysicalInterface(vo.getPhysicalInterface());
@@ -176,6 +181,14 @@ public class L2NetworkInventory implements Serializable {
 
     public void setvSwitchType(String vSwitchType) {
         this.vSwitchType = vSwitchType;
+    }
+
+    public Integer getVirtualNetworkId() {
+        return virtualNetworkId;
+    }
+
+    public void setVirtualNetworkId(Integer virtualNetworkId) {
+        this.virtualNetworkId = virtualNetworkId;
     }
 
     public Timestamp getCreateDate() {

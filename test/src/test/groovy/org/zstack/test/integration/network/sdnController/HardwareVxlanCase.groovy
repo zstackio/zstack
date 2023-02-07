@@ -57,6 +57,8 @@ class HardwareVxlanCase extends SubCase {
             zoneUuid = zone.uuid
         }
 
+        hardPool.virtualNetworkId == 0
+
         createVniRange {
             startVni = 100
             endVni = 200
@@ -138,6 +140,8 @@ class HardwareVxlanCase extends SubCase {
         assert createCmd.vlan == vx1.vni
         assert createCmd.l2NetworkUuid == vx1.uuid
         assert vx1.attachedClusterUuids.size() == hardPool.attachedClusterUuids.size()
+
+        assert vx1.virtualNetworkId == 200
 
         /* reconnect host will re-install vxlan config */
         createCmd = null

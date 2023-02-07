@@ -137,6 +137,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
 
                                 AllocateVniReply r = reply.castReply();
                                 vo.setVni(r.getVni());
+                                vo.setVirtualNetworkId(vo.getVni());
                                 dbf.persist(vo);
 
                                 data.put(SdnControllerConstant.Params.VXLAN_NETWORK.toString(), vo);
