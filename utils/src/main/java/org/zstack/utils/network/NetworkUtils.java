@@ -864,7 +864,7 @@ public class NetworkUtils {
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(address, port), timeout);
             return true;
-        } catch (IOException ignored) {
+        } catch (IOException exception) {
             return false;
         }
     }
