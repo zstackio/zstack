@@ -7,6 +7,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.identity.IdentityErrors;
@@ -21,12 +22,11 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceMessage;
-import org.zstack.header.vm.VmNicHelper;
-import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.*;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.IpRangeHelper;
+import org.zstack.utils.ShellResult;
+import org.zstack.utils.ShellUtils;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
@@ -43,6 +43,8 @@ import static org.zstack.utils.CollectionDSL.list;
 public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ErrorFacade errf;
     @Autowired
     private CloudBus bus;
 
@@ -256,6 +258,11 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
         String gateway = iprs.get(0).getGateway();
         for (int i=0; i<3; i++) {
             if (NetworkUtils.isReachable(gateway, 2000)) {
+                return;
+            }
+
+            ShellResult ret = ShellUtils.runAndReturn(String.format("ping -c 1 -W 2 %s", gateway));
+            if (ret.isReturnCode(0)) {
                 return;
             }
         }
