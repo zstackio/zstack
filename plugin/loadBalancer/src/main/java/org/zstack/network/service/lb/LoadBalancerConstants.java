@@ -29,6 +29,12 @@ public class LoadBalancerConstants {
     public static final String HEALTH_CHECK_TARGET_PROTOCL_UDP = "udp";
     public static final String HEALTH_CHECK_TARGET_PROTOCL_HTTP = "http";
 
+    public static final String HTTP_MODE_HTTP_KEEP_ALIVE = "http-keep-alive";
+    public static final String HTTP_MODE_HTTP_SERVER_CLOSE = "http-server-close";
+    public static final String HTTP_MODE_HTTP_TUNNEL = "http-tunnel";
+    public static final String HTTP_MODE_HTTPCLOSE = "httpclose";
+    public static final String HTTP_MODE_FORCECLOSE = "forceclose";
+
     public static enum HealthCheckMothod {
         GET,
         HEAD
@@ -52,6 +58,8 @@ public class LoadBalancerConstants {
     public static final String COOKIE_NAME_REGEX = "[A-Za-z0-9_-]+";
 
     public static final List<String> HEALTH_CHECK_TARGET_PROTOCOLS = new ArrayList<String>();
+
+    public static final List<String> HTTP_MODES = new ArrayList<String>();
 
     public static final String ACTION_CATEGORY = "loadBalancer";
 
@@ -80,6 +88,12 @@ public class LoadBalancerConstants {
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_TCP);
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_UDP);
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_HTTP);
+
+        HTTP_MODES.add(HTTP_MODE_HTTP_KEEP_ALIVE);
+        HTTP_MODES.add(HTTP_MODE_HTTP_SERVER_CLOSE);
+        HTTP_MODES.add(HTTP_MODE_HTTP_TUNNEL);
+        HTTP_MODES.add(HTTP_MODE_HTTPCLOSE);
+        HTTP_MODES.add(HTTP_MODE_FORCECLOSE);
     }
 
     public static enum Param {
