@@ -28,6 +28,9 @@ public class L2NetworkAO extends ResourceVO {
     private String vSwitchType;
 
     @Column
+    private Integer virtualNetworkId;
+
+    @Column
     @ForeignKey(parentEntityClass = ZoneEO.class, onDeleteAction = ReferenceOption.RESTRICT)
     private String zoneUuid;
 
@@ -94,6 +97,14 @@ public class L2NetworkAO extends ResourceVO {
 
     public void setvSwitchType(String vSwitchType) {
         this.vSwitchType = vSwitchType;
+    }
+
+    public Integer getVirtualNetworkId() {
+        return virtualNetworkId;
+    }
+
+    public void setVirtualNetworkId(Integer virtualNetworkId){
+        this.virtualNetworkId = virtualNetworkId;
     }
 
     public Timestamp getCreateDate() {

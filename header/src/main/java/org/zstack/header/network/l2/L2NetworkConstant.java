@@ -34,4 +34,6 @@ public interface L2NetworkConstant {
 
     // https://elixir.bootlin.com/linux/v5.6/source/include/uapi/linux/if.h#L33
     public static final int LINUX_IF_NAME_MAX_SIZE = 15;
+
+    public static final int VIRTUAL_NETWORK_ID_DEFAULT_VALUE = 0;
 }

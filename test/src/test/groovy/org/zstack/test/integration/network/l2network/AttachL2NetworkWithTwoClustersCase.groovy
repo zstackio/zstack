@@ -188,6 +188,8 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
         HostInventory host1 = env.inventoryByName("kvm-1")
         HostInventory host2 = env.inventoryByName("kvm-2")
 
+        assert l21.virtualNetworkId == 0
+
         VmInstanceInventory vm1 = createVmInstance {
             name = "vm-1"
             instanceOfferingUuid = offering.uuid
@@ -239,6 +241,8 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
         ImageInventory image = env.inventoryByName("image1")
         HostInventory host1 = env.inventoryByName("kvm-1")
         HostInventory host2 = env.inventoryByName("kvm-2")
+
+        assert l21.virtualNetworkId == 100
 
         VmInstanceInventory vm1 = createVmInstance {
             name = "vm-21"
@@ -296,6 +300,8 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
             delegate.zoneUuid = zone.uuid
         }
 
+        assert poolinv.virtualNetworkId == 0
+
         createVniRange {
             delegate.startVni = 100
             delegate.endVni = 10000
@@ -320,6 +326,9 @@ public class AttachL2NetworkWithTwoClustersCase extends SubCase{
             delegate.name = "vxlanL2"
             delegate.zoneUuid = zone.uuid
         }
+
+        def vniRange = 100..10000
+        assert vniRange.contains(vxlanL2.virtualNetworkId)
 
         L3NetworkInventory vxlanL3 = createL3Network {
             delegate.name = "vxlanL3"
