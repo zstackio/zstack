@@ -5174,8 +5174,8 @@ abstract class ApiHelper {
     }
 
 
-    def changeVmNicState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = ChangeVmNicStateAction.class) Closure c) {
-        def a = new ChangeVmNicStateAction()
+    def changeVmNicState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeVmNicStateAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeVmNicStateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

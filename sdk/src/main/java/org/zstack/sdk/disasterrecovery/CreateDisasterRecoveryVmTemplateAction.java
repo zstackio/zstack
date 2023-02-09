@@ -97,6 +97,9 @@ public class CreateDisasterRecoveryVmTemplateAction extends AbstractAction {
     @Param(required = false, validValues = {"InstantStart","JustCreate","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String strategy;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagPatternUuids;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

@@ -97,6 +97,9 @@ public class UpdateDisasterRecoveryVmTemplateAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public long groupId = 0L;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagPatternUuids;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

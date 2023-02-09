@@ -172,4 +172,12 @@ public class VmTemplateInventory  {
         return this.systemTags;
     }
 
+    public java.lang.String tagPatternUuids;
+    public void setTagPatternUuids(java.lang.String tagPatternUuids) {
+        this.tagPatternUuids = tagPatternUuids;
+    }
+    public java.lang.String getTagPatternUuids() {
+        return this.tagPatternUuids;
+    }
+
 }

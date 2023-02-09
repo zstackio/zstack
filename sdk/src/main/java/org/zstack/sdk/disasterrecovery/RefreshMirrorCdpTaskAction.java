@@ -31,12 +31,6 @@ public class RefreshMirrorCdpTaskAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String peerHostName;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String peerUserName;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String peerPassword;
-
     @Param(required = false)
     public java.util.List systemTags;
 
