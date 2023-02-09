@@ -63,22 +63,6 @@ public class MirrorCdpTaskInventory  {
         return this.peerHostName;
     }
 
-    public java.lang.String peerUserName;
-    public void setPeerUserName(java.lang.String peerUserName) {
-        this.peerUserName = peerUserName;
-    }
-    public java.lang.String getPeerUserName() {
-        return this.peerUserName;
-    }
-
-    public java.lang.String peerPassword;
-    public void setPeerPassword(java.lang.String peerPassword) {
-        this.peerPassword = peerPassword;
-    }
-    public java.lang.String getPeerPassword() {
-        return this.peerPassword;
-    }
-
     public java.lang.String mirrorResourceUuid;
     public void setMirrorResourceUuid(java.lang.String mirrorResourceUuid) {
         this.mirrorResourceUuid = mirrorResourceUuid;

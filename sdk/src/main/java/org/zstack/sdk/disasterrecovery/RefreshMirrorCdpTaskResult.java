@@ -1,14 +1,14 @@
 package org.zstack.sdk.disasterrecovery;
 
-import org.zstack.sdk.disasterrecovery.MirrorCdpTaskInventory;
+
 
 public class RefreshMirrorCdpTaskResult {
-    public MirrorCdpTaskInventory inventory;
-    public void setInventory(MirrorCdpTaskInventory inventory) {
-        this.inventory = inventory;
+    public java.lang.String peerHostName;
+    public void setPeerHostName(java.lang.String peerHostName) {
+        this.peerHostName = peerHostName;
     }
-    public MirrorCdpTaskInventory getInventory() {
-        return this.inventory;
+    public java.lang.String getPeerHostName() {
+        return this.peerHostName;
     }
 
 }
