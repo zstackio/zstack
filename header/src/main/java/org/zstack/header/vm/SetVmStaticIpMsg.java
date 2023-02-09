@@ -10,6 +10,8 @@ public class SetVmStaticIpMsg extends NeedReplyMessage implements VmInstanceMess
     private String l3NetworkUuid;
     private String ip;
     private String ip6;
+    private String netmask;
+    private String gateway;
 
     @Override
     public String getVmInstanceUuid() {
@@ -42,5 +44,21 @@ public class SetVmStaticIpMsg extends NeedReplyMessage implements VmInstanceMess
 
     public void setIp6(String ip6) {
         this.ip6 = ip6;
+    }
+
+    public String getNetmask() {
+        return netmask;
+    }
+
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
+
+    public String getGateway() {
+        return gateway;
+    }
+
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
     }
 }

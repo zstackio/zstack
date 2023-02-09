@@ -549,34 +549,34 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         List<VmNicVO> vmNics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
-        boolean l3Found = false;
+//        boolean l3Found = false;
         for (VmNicVO nic : vmNics) {
-            for (UsedIpVO ipvo: nic.getUsedIps()) {
-                if (ipvo.getL3NetworkUuid().equals(msg.getL3NetworkUuid())) {
-                    l3Found = true;
-                    if (msg.getIp() != null) {
-                        String ip = IPv6NetworkUtils.ipv6TagValueToAddress(msg.getIp());
-                        if (NetworkUtils.isIpv4Address(ip)) {
-                            validateStaticIPv4(nic, l3NetworkVO, ip);
-                        } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
-                            validateStaticIPv6(nic, l3NetworkVO, ip);
-                            msg.setIp(ip);
-                        } else {
-                            throw new ApiMessageInterceptionException(argerr("static ip [%s] format error", msg.getIp()));
-                        }
-                    }
-                    if (msg.getIp6() != null) {
-                        String ip6 = IPv6NetworkUtils.ipv6TagValueToAddress(msg.getIp6());
-                        validateStaticIPv6(nic, l3NetworkVO, ip6);
-                        msg.setIp6(ip6);
-                    }
+            if (msg.getIp() != null) {
+                String ip = IPv6NetworkUtils.ipv6TagValueToAddress(msg.getIp());
+                if (NetworkUtils.isIpv4Address(ip)) {
+                    validateStaticIPv4(nic, l3NetworkVO, ip);
+                } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
+                    validateStaticIPv6(nic, l3NetworkVO, ip);
+                    msg.setIp(ip);
+                } else {
+                    throw new ApiMessageInterceptionException(argerr("static ip [%s] format error", msg.getIp()));
                 }
             }
+            if (msg.getIp6() != null) {
+                String ip6 = IPv6NetworkUtils.ipv6TagValueToAddress(msg.getIp6());
+                validateStaticIPv6(nic, l3NetworkVO, ip6);
+                msg.setIp6(ip6);
+            }
         }
-        if (!l3Found) {
-            throw new ApiMessageInterceptionException(argerr("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
-                            msg.getL3NetworkUuid()));
-        }
+//        for (String systemTag : msg.getSystemTags()) {
+//            if (!VmSystemTags.SIMPLE_L2_NETWORK.isMatch(systemTag)) {
+//                l3Found = true;
+//            }
+//        }
+//        if (!l3Found) {
+//            throw new ApiMessageInterceptionException(argerr("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
+//                            msg.getL3NetworkUuid()));
+//        }
     }
 
     private void validate(APIDeleteVmStaticIpMsg msg) {

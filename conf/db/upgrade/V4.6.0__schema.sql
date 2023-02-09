@@ -275,3 +275,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ResourceDirectoryRefVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE SlbOfferingVO ADD CONSTRAINT fkSlbOfferingVOInstanceOfferingEO FOREIGN KEY (uuid) REFERENCES InstanceOfferingEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+ALTER TABLE `zstack`.`UsedIpVO` MODIFY COLUMN `ipRangeUuid` varchar(32) DEFAULT NULL;

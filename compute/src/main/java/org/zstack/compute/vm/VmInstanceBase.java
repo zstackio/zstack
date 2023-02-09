@@ -3362,6 +3362,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         cmsg.setIp6(msg.getIp6());
         cmsg.setL3NetworkUuid(msg.getL3NetworkUuid());
         cmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        cmsg.setGateway(msg.getGateway());
+        cmsg.setNetmask(msg.getNetmask());
         bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, cmsg.getVmInstanceUuid());
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
@@ -3386,7 +3388,24 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                setStaticIp(msg, new Completion(reply) {
+                L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
+                if (l3NetworkVO.getIpRanges().isEmpty()) {
+                    setStaticIpOnlyDb(msg, new Completion(reply) {
+                        @Override
+                        public void success() {
+                            bus.reply(msg, reply);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            reply.setError(errorCode);
+                            bus.reply(msg, reply);
+                            chain.next();
+                        }
+                    });
+                } else {
+                    setStaticIp(msg, new Completion(reply) {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);
@@ -3400,6 +3419,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         chain.next();
                     }
                 });
+                }
             }
 
             @Override
@@ -3408,6 +3428,53 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         });
     }
+
+    private void setStaticIpOnlyDb(final SetVmStaticIpMsg msg, final Completion completion) {
+        VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                .eq(VmNicVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .limit(1).find();
+        if (msg.getIp() != null) {
+            UsedIpVO vo = new UsedIpVO();
+            vo.setUuid(Platform.getUuid());
+            if (NetworkUtils.isIpv4Address(msg.getIp())) {
+                vo.setIpInLong(NetworkUtils.ipv4StringToLong(msg.getGateway()));
+                vo.setGateway(msg.getGateway());
+                vo.setIp(msg.getIp());
+                vo.setNetmask(msg.getNetmask());
+                vo.setIpVersion(IPv6Constants.IPv4);
+                vo.setVmNicUuid(nicVO.getUuid());
+                vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
+                nicVO.setUsedIpUuid(vo.getUuid());
+                dbf.persist(vo);
+                dbf.update(nicVO);
+            } else {
+                vo.setGateway(msg.getGateway());
+                vo.setIp(msg.getIp());
+                vo.setNetmask(msg.getNetmask());
+                vo.setIpVersion(IPv6Constants.IPv6);
+                vo.setVmNicUuid(nicVO.getUuid());
+                vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
+                nicVO.setUsedIpUuid(vo.getUuid());
+                dbf.persist(vo);
+                dbf.update(nicVO);
+            }
+        }
+        if (msg.getIp6() != null) {
+            UsedIpVO vo = new UsedIpVO();
+            vo.setUuid(Platform.getUuid());
+            vo.setGateway(msg.getGateway());
+            vo.setIp(msg.getIp());
+            vo.setNetmask(msg.getNetmask());
+            vo.setIpVersion(IPv6Constants.IPv6);
+            vo.setVmNicUuid(nicVO.getUuid());
+            vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
+            nicVO.setUsedIpUuid(vo.getUuid());
+            dbf.persist(vo);
+            dbf.update(nicVO);
+        }
+        completion.success();
+    }
+
 
     private void setStaticIp(final SetVmStaticIpMsg msg, final Completion completion) {
         Map<Integer, String> staticIpMap = new HashMap<>();
