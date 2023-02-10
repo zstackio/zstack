@@ -26,3 +26,7 @@ ALTER TABLE `zstack`.`SanSecSecretResourcePoolVO` ADD COLUMN `username` varchar(
 ALTER TABLE `zstack`.`SanSecSecretResourcePoolVO` ADD COLUMN `password` varchar(128) DEFAULT NULL;
 ALTER TABLE `zstack`.`SanSecSecretResourcePoolVO` ADD COLUMN `sm3Key` varchar(128) DEFAULT NULL;
 ALTER TABLE `zstack`.`SanSecSecretResourcePoolVO` ADD COLUMN `sm4Key` varchar(128) DEFAULT NULL;
+
+ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN issuerDN varchar(255) NOT NULL;
+ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN subjectDN varchar(255) NOT NULL;
+ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN serNumber varchar(128) unsigned NOT NULL;
