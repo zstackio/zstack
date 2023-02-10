@@ -36,6 +36,22 @@ public class SNSTextTemplateInventory  {
         return this.applicationPlatformType;
     }
 
+    public java.lang.String subject;
+    public void setSubject(java.lang.String subject) {
+        this.subject = subject;
+    }
+    public java.lang.String getSubject() {
+        return this.subject;
+    }
+
+    public java.lang.String recoverySubject;
+    public void setRecoverySubject(java.lang.String recoverySubject) {
+        this.recoverySubject = recoverySubject;
+    }
+    public java.lang.String getRecoverySubject() {
+        return this.recoverySubject;
+    }
+
     public java.lang.String template;
     public void setTemplate(java.lang.String template) {
         this.template = template;
