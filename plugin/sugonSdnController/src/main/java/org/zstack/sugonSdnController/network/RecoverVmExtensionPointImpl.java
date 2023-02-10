@@ -10,6 +10,8 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.vm.RecoverVmExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.sugonSdnController.controller.SugonSdnController;
+import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant;
 import org.zstack.sugonSdnController.controller.neutronClient.TfPortResponse;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.StringDSL;
@@ -32,6 +34,10 @@ public class RecoverVmExtensionPointImpl implements RecoverVmExtensionPoint {
 
         for (VmNicInventory vmNic : vm.getVmNics()) {
             L3NetworkVO l3NetworkVO = dbf.findByUuid(vmNic.getL3NetworkUuid(), L3NetworkVO.class);
+            if (!l3NetworkVO.getType().equals(SugonSdnControllerConstant.L3_TF_NETWORK_TYPE)) {
+                continue;
+            }
+
             // recover mac tag
             String mac = vmNic.getMac();
             if (StringUtils.isNotEmpty(mac)) {
