@@ -17,4 +17,4 @@ CREATE TABLE IF NOT EXISTS `zstack`.`FlkSecSecurityMachineVO` (
 
 ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN issuerDN varchar(255) NOT NULL;
 ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN subjectDN varchar(255) NOT NULL;
-ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN serNumber bigint(64) unsigned NOT NULL;
+ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN serNumber varchar(128) NOT NULL;
