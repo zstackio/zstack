@@ -900,7 +900,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 }
 
                 /*can not assign session persistence rewrite with http-keep-alive*/
-                if ("http-tunnel".equals(httpMode) && LoadBalancerSessionPersistence.rewrite.toString().equals(enableSession)) {
+                if (LoadBalancerConstants.HTTP_MODE_HTTP_TUNNEL.equals(httpMode) && LoadBalancerSessionPersistence.rewrite.toString().equals(enableSession)) {
                     throw new ApiMessageInterceptionException(argerr("loadBalancer[%s] listener[%s] doesn't support assigning session persistence rewrite when the http mode is http-tunnel", msg.getLoadBalancerUuid(), msg.getName()));
                 }
 
@@ -1046,6 +1046,29 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
+        /*must assign session persistence rewrite without http-tunnel*/
+        if (LoadBalancerConstants.LB_PROTOCOL_HTTP.equals(listener.getProtocol())) {
+            if (LoadBalancerSessionPersistence.rewrite.toString().equals(msg.getSessionPersistence()) && LoadBalancerConstants.HTTP_MODE_HTTP_TUNNEL.equals(msg.getHttpMode())) {
+                throw new ApiMessageInterceptionException(argerr("listener[%s] can not modifying session persistence rewrite when the http mode is http-tunnel", msg.getUuid()));
+            }
+            if (LoadBalancerSessionPersistence.rewrite.toString().equals(msg.getSessionPersistence()) && msg.getHttpMode() == null) {
+                Boolean httpModeTunnel = Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
+                        .eq(SystemTagVO_.tag, "httpMode::http-tunnel")
+                        .eq(SystemTagVO_.resourceUuid, listener.getUuid()).isExists();
+                if (httpModeTunnel) {
+                    throw new ApiMessageInterceptionException(argerr("listener[%s] can not modifying session persistence rewrite when the http mode is http-tunnel", msg.getUuid()));
+                }
+            }
+            if (LoadBalancerConstants.HTTP_MODE_HTTP_TUNNEL.equals(msg.getHttpMode()) && msg.getSessionPersistence() == null) {
+                Boolean cookieRewrite = Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
+                        .eq(SystemTagVO_.tag, "sessionPersistence::rewrite")
+                        .eq(SystemTagVO_.resourceUuid, listener.getUuid()).isExists();
+                if (cookieRewrite) {
+                    throw new ApiMessageInterceptionException(argerr("listener[%s] can not modifying httpMode http-tunnel when the session persistence is rewrite", msg.getUuid()));
+                }
+            }
+        }
+
         /*can not assign session persistence iphash without source algorithm*/
         if (!LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE.equals(msg.getBalancerAlgorithm()) && LoadBalancerSessionPersistence.iphash.toString().equals(msg.getSessionPersistence())) {
             throw new ApiMessageInterceptionException(argerr("listener[%s] changes session persistence to iphash, it must specify source balancer algorithm", msg.getUuid()));
@@ -1091,29 +1114,6 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
             if (LoadBalancerSessionPersistence.insert.toString().equals(msg.getSessionPersistence()) && msg.getSessionIdleTimeout() == null) {
                 msg.setSessionIdleTimeout(LoadBalancerConstants.SESSION_IDLE_TIMEOUT_DEFAULT);
-            }
-
-            /*must assign session persistence rewrite without http-tunnel*/
-            if (LoadBalancerConstants.LB_PROTOCOL_HTTP.equals(listener.getProtocol())) {
-                if (LoadBalancerSessionPersistence.rewrite.toString().equals(msg.getSessionPersistence()) && "http-tunnel".equals(msg.getHttpMode())) {
-                    throw new ApiMessageInterceptionException(argerr("listener[%s] can not modifying session persistence rewrite when the http mode is http-tunnel", msg.getUuid()));
-                }
-                if (LoadBalancerSessionPersistence.rewrite.toString().equals(msg.getSessionPersistence()) && msg.getHttpMode() == null) {
-                    Boolean httpModeTunnel = Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
-                            .eq(SystemTagVO_.tag, "httpMode::http-tunnel")
-                            .eq(SystemTagVO_.resourceUuid, listener.getUuid()).isExists();
-                    if (httpModeTunnel) {
-                        throw new ApiMessageInterceptionException(argerr("listener[%s] can not modifying session persistence rewrite when the http mode is http-tunnel", msg.getUuid()));
-                    }
-                }
-                if ("http-tunnel".equals(msg.getHttpMode()) && msg.getSessionPersistence() == null) {
-                    Boolean cookieRewrite = Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
-                            .eq(SystemTagVO_.tag, "sessionPersistence::rewrite")
-                            .eq(SystemTagVO_.resourceUuid, listener.getUuid()).isExists();
-                    if (cookieRewrite) {
-                        throw new ApiMessageInterceptionException(argerr("listener[%s] can not modifying httpMode http-tunnel when the session persistence is rewrite", msg.getUuid()));
-                    }
-                }
             }
 
             if (msg.getSessionPersistence() == null && msg.getBalancerAlgorithm() != null) {
