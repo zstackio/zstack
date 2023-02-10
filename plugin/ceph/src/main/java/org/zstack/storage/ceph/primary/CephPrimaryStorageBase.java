@@ -4747,12 +4747,22 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         ImageSpec imageSpec = new ImageSpec();
         imageSpec.setInventory(ImageInventory.valueOf(image));
+        Map<String, ImageStatus> fsidImageStatusMap = new HashMap<>();
 
         ImageBackupStorageRefInventory ref = CollectionUtils.find(image.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefVO>() {
             @Override
             public ImageBackupStorageRefInventory call(ImageBackupStorageRefVO arg) {
                 String fsid = Q.New(CephBackupStorageVO.class).eq(CephBackupStorageVO_.uuid, arg.getBackupStorageUuid()).select(CephBackupStorageVO_.fsid).findValue();
-                if (fsid != null && fsid.equals(getSelf().getFsid()) && ImageStatus.Ready == arg.getStatus()) {
+                // mismatch fsid means the image is not available for this primary storage.
+                // normally this happens due to primary storage migration which do
+                // not migrate images stored in ceph backup storage.
+                if (fsid == null || !fsid.equals(getSelf().getFsid())) {
+                    return null;
+                }
+
+                fsidImageStatusMap.put(fsid, arg.getStatus());
+
+                if (ImageStatus.Ready == arg.getStatus()) {
                     return ImageBackupStorageRefInventory.valueOf(arg);
                 }
                 return null;
@@ -4760,7 +4770,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
 
         if (ref == null) {
-            throw new OperationFailureException(operr("cannot find backupstorage to download image [%s] to primarystorage [%s]", volume.getRootImageUuid(), getSelf().getUuid()));
+            String cause;
+
+            if (fsidImageStatusMap.isEmpty()) {
+                cause = i18n("Because the image is currently inaccessible, " +
+                        "possibly due to a previous volume storage migration");
+            } else {
+                cause = i18n("Because image status is not %s", ImageStatus.Ready.toString());
+            }
+
+            throw new OperationFailureException(operr("cannot find backupstorage to download image [%s] " +
+                    "to primarystorage [%s]. %s", volume.getRootImageUuid(), getSelf().getUuid(), cause));
         }
 
         imageSpec.setSelectedBackupStorage(ImageBackupStorageRefInventory.valueOf(image.getBackupStorageRefs().iterator().next()));
