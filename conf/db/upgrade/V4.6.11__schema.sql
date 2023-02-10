@@ -14,3 +14,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`FlkSecSecurityMachineVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT fkFlkSecSecurityMachineVOSecurityMachineVO FOREIGN KEY (uuid) REFERENCES SecurityMachineVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN issuerDN varchar(255) NOT NULL;
+ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN subjectDN varchar(255) NOT NULL;
+ALTER TABLE `zstack`.`CCSCertificateVO` MODIFY COLUMN serNumber bigint(64) unsigned NOT NULL;
