@@ -8,19 +8,27 @@ import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.InstanceOfferingSystemTags;
 import org.zstack.configuration.OfferingUserConfigUtils;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.*;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.configuration.DiskOfferingVO;
+import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
@@ -46,10 +54,7 @@ import org.zstack.header.vm.CreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceCreateExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceStartExtensionPoint;
-import org.zstack.header.volume.APICreateDataVolumeMsg;
-import org.zstack.header.volume.CreateDataVolumeExtensionPoint;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.vm.*;
 import org.zstack.resourceconfig.*;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
@@ -63,12 +68,14 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint,
-        VmInstanceCreateExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator {
+        VmInstanceCreateExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator,
+        PrimaryStorageSortExtensionPoint {
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
 
     @Autowired
@@ -438,6 +445,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             }
         }
 
+        if (allocatorStrategyType == null && msg.getDiskOfferingUuid() != null) {
+            allocatorStrategyType = Q.New(DiskOfferingVO.class)
+                    .eq(DiskOfferingVO_.uuid, msg.getDiskOfferingUuid())
+                    .select(DiskOfferingVO_.allocatorStrategy)
+                    .findValue();
+        }
+
         if (allocatorStrategyType == null) {
             allocatorStrategyType = msg.getAllocationStrategy() == null ?
                     PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE
@@ -472,6 +486,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         spec.setTags(msg.getTags());
         spec.setAllocationMessage(msg);
         spec.setAvoidPrimaryStorageUuids(msg.getExcludePrimaryStorageUuids());
+        if (msg.getDiskOfferingUuid() != null && DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(msg.getDiskOfferingUuid())) {
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(msg.getDiskOfferingUuid(), DiskOfferingUserConfig.class);
+            if (config.getAllocate() != null && config.getAllocate().getPrimaryStorages() != null) {
+                List<String> requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+                        .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
+                spec.setRequiredPrimaryStorageUuids(requiredPrimaryStorageUuids);
+            }
+        }
         List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
 
         if (msg.isDryRun()) {
@@ -653,6 +675,28 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private void startPrimaryStorageAutoDeleteTrashTask(String resourceUuid, String newValue){
         primaryStorageAutoDeleteTrashTask(resourceUuid, newValue);
+    }
+
+    @Override
+    public void sort(List<PrimaryStorageVO> primaryStorageVOS, VmInstanceSpec.ImageSpec imageSpec, String allocateStrategy) {
+        if (primaryStorageVOS.size() < 2) {
+            return;
+        }
+
+        if (allocateStrategy == null) {
+            allocateStrategy = PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE;
+        }
+        PrimaryStorageAllocatorStrategyFactory factory = getPrimaryStorageAllocatorStrategyFactory(
+                PrimaryStorageAllocatorStrategyType.valueOf(allocateStrategy));
+        PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
+        PrimaryStorageAllocationSpec allocationSpec = new PrimaryStorageAllocationSpec();
+        if (imageSpec != null) {
+            allocationSpec.setImageUuid(imageSpec.getInventory().getUuid());
+            Optional.ofNullable(imageSpec.getSelectedBackupStorage())
+                    .ifPresent(it -> allocationSpec.setBackupStorageUuid(it.getBackupStorageUuid()));
+        }
+
+        strategy.sort(allocationSpec, primaryStorageVOS);
     }
 
     class AutoDeleteTrashTask {
@@ -963,27 +1007,30 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
 
         String rootDiskOffering = msg.getRootDiskOfferingUuid();
-        if (rootDiskOffering == null) {
+        if (rootDiskOffering == null || !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(rootDiskOffering)) {
             return;
         }
 
-        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(rootDiskOffering)) {
-            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(rootDiskOffering, DiskOfferingUserConfig.class);
+        DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(rootDiskOffering, DiskOfferingUserConfig.class);
+        if (config.getAllocate() == null) {
+            return;
+        }
 
-            if (config.getAllocate() == null) {
-                return;
-            }
-
-            if (config.getAllocate().getPrimaryStorage() == null) {
-                return;
-            }
-
+        if (config.getAllocate().getPrimaryStorage() != null) {
             String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
             if (msg.getPrimaryStorageUuidForRootVolume() != null && !msg.getPrimaryStorageUuidForRootVolume().equals(psUuid)) {
                 throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
                         psUuid, msg.getPrimaryStorageUuidForRootVolume()));
             }
             msg.setPrimaryStorageUuidForRootVolume(psUuid);
+        } else if (!org.apache.commons.collections.CollectionUtils.isEmpty(config.getAllocate().getPrimaryStorages())) {
+            List<String> requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+                    .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
+            if (msg.getPrimaryStorageUuidForRootVolume() != null && !requiredPrimaryStorageUuids.contains(msg.getPrimaryStorageUuidForRootVolume())) {
+                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+                        requiredPrimaryStorageUuids, msg.getPrimaryStorageUuidForRootVolume()));
+            }
+            msg.setPrimaryStorageUuidsForRootVolume(requiredPrimaryStorageUuids);
         }
     }
 
@@ -993,28 +1040,32 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
 
         String diskOffering = msg.getDataDiskOfferingUuids().get(0);
-        if (diskOffering == null) {
+        if (diskOffering == null || !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             return;
         }
 
-        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
-            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+        DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+        if (config.getAllocate() == null) {
+            return;
+        }
 
-            if (config.getAllocate() == null) {
-                return;
-            }
-
-            if (config.getAllocate().getPrimaryStorage() == null) {
-                return;
-            }
-
+        if (config.getAllocate().getPrimaryStorage() != null) {
             String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
             if (msg.getPrimaryStorageUuidForDataVolume() != null && !msg.getPrimaryStorageUuidForDataVolume().equals(psUuid)) {
                 throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
                         psUuid, msg.getPrimaryStorageUuidForDataVolume()));
             }
             msg.setPrimaryStorageUuidForDataVolume(psUuid);
+        } else if (!org.apache.commons.collections.CollectionUtils.isEmpty(config.getAllocate().getPrimaryStorages())) {
+            List<String> requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+                    .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
+            if (msg.getPrimaryStorageUuidForDataVolume() != null && !requiredPrimaryStorageUuids.contains(msg.getPrimaryStorageUuidForDataVolume())) {
+                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+                        requiredPrimaryStorageUuids, msg.getPrimaryStorageUuidForDataVolume()));
+            }
+            msg.setPrimaryStorageUuidsForDataVolume(requiredPrimaryStorageUuids);
         }
+
     }
 
     @Override

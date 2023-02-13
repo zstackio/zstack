@@ -43,6 +43,10 @@ public class LocalStorageAllocatorStrategy implements PrimaryStorageAllocatorStr
     }
 
     @Override
+    public void sort(PrimaryStorageAllocationSpec spec, List<PrimaryStorageVO> candidates) {
+    }
+
+    @Override
     public List<PrimaryStorageInventory> allocateAllCandidates(PrimaryStorageAllocationSpec spec) {
         class Result {
             List<PrimaryStorageVO> result;

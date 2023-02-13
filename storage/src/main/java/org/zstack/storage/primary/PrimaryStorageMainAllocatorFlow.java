@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -16,7 +15,6 @@ import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
-import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -67,6 +65,18 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("priUuid", spec.getRequiredPrimaryStorageUuid());
             errorInfo = String.format("required primary storage[uuid:%s] cannot satisfy conditions[state:%s, status:%s, size:%s]",
                     spec.getRequiredPrimaryStorageUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
+        } else if (!org.apache.commons.collections.CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuids())) {
+            sql = "select pri" +
+                    " from PrimaryStorageVO pri" +
+                    " where pri.state = :priState" +
+                    " and pri.status = :status" +
+                    " and pri.uuid in (:priUuids)";
+            query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
+            query.setParameter("priState", PrimaryStorageState.Enabled);
+            query.setParameter("status", PrimaryStorageStatus.Connected);
+            query.setParameter("priUuids", spec.getRequiredPrimaryStorageUuids());
+            errorInfo = String.format("required primary storage%s cannot satisfy conditions[state:%s, status:%s, size:%s]",
+                    spec.getRequiredPrimaryStorageUuids(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredHostUuid() != null) {
             sql = "select pri" +
                     " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host" +

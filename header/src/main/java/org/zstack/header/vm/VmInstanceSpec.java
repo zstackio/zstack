@@ -313,6 +313,24 @@ public class VmInstanceSpec implements Serializable {
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private boolean skipIpAllocation = false;
+    private List<String> requiredPrimaryStorageUuidsForRootVolume;
+    private List<String> requiredPrimaryStorageUuidsForDataVolume;
+
+    public List<String> getRequiredPrimaryStorageUuidsForRootVolume() {
+        return requiredPrimaryStorageUuidsForRootVolume;
+    }
+
+    public void setRequiredPrimaryStorageUuidsForRootVolume(List<String> requiredPrimaryStorageUuidsForRootVolume) {
+        this.requiredPrimaryStorageUuidsForRootVolume = requiredPrimaryStorageUuidsForRootVolume;
+    }
+
+    public List<String> getRequiredPrimaryStorageUuidsForDataVolume() {
+        return requiredPrimaryStorageUuidsForDataVolume;
+    }
+
+    public void setRequiredPrimaryStorageUuidsForDataVolume(List<String> requiredPrimaryStorageUuidsForDataVolume) {
+        this.requiredPrimaryStorageUuidsForDataVolume = requiredPrimaryStorageUuidsForDataVolume;
+    }
 
     public boolean isSkipIpAllocation() {
         return skipIpAllocation;

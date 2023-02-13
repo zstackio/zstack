@@ -150,9 +150,12 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
         }
         rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
         rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
+        if (spec.getRootDiskOffering() != null) {
+            rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
+        }
+
         if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
             rmsg.setSize(spec.getRootDiskOffering().getDiskSize());
-            rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
         } else {
             //TODO: find a way to allow specifying strategy for root disk
             rmsg.setSize(spec.getImageSpec().getInventory().getSize());
