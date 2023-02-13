@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  * Created by AlanJager on 2017/7/8.
  */
 public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBackend implements NetworkServiceCentralizedDnsBackend,
-        VmInstanceMigrateExtensionPoint, FlatDhcpGetDnsAddressExtensionPoint {
+        VmInstanceMigrateExtensionPoint, DnsServiceExtensionPoint {
     private final CLogger logger = Utils.getLogger(VirtualRouterCentralizedDnsBackend.class);
 
     @Autowired

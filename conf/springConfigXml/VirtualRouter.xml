@@ -190,7 +190,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceCentralizedDnsBackend" />
             <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" order="-100"/>
-            <zstack:extension interface="org.zstack.header.network.service.FlatDhcpGetDnsAddressExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.service.DnsServiceExtensionPoint" />
         </zstack:plugin>
     </bean>
 
