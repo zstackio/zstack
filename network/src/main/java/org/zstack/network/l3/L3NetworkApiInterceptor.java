@@ -501,9 +501,10 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         List<VmInstanceDeviceAddressArchiveVO> archiveNicInfoList = Q.New(VmInstanceDeviceAddressArchiveVO.class)
                 .eq(VmInstanceDeviceAddressArchiveVO_.metadataClass, ArchiveVmNicBundle.class.getCanonicalName()).list();
 
-        List<String> QuotedArchiveGroupList = new ArrayList<>();
+        List<String> QuotedArchiveGroupList;
 
         QuotedArchiveGroupList = archiveNicInfoList.stream()
+                .filter(vmInstanceDeviceAddressArchiveVO -> vmInstanceDeviceAddressArchiveVO.getMetadata() != null)
                 .filter(vmInstanceDeviceAddressArchiveVO -> JSONObjectUtil.toObject(vmInstanceDeviceAddressArchiveVO.getMetadata(), ArchiveVmNicBundle.class)
                         .getVmNicInventory().getL3NetworkUuid().equals(msg.getL3NetworkUuid()))
                 .map(VmInstanceDeviceAddressArchiveVO::getAddressGroupUuid)

@@ -612,8 +612,7 @@ public class KVMHost extends HostBase implements Host {
                     reply.setError(err);
                 }
 
-                extEmitter.afterReceiveSyncVmDeviceInfoRespoinse(VmInstanceInventory
-                        .valueOf(dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class)), ret);
+                extEmitter.afterReceiveSyncVmDeviceInfoRespoinse(VmInstanceInventory.valueOf(dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class)), ret, null);
                 bus.reply(msg, reply);
             }
 
@@ -3058,7 +3057,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(StartVmResponse ret) {
                 StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
                 if (ret.isSuccess()) {
-                    extEmitter.afterReceiveSyncVmDeviceInfoRespoinse(spec.getVmInventory(), ret);
+                    extEmitter.afterReceiveSyncVmDeviceInfoRespoinse(null, ret, spec);
 
                     String info = String.format("successfully start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s]",
                             spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),

@@ -62,11 +62,11 @@ public class KVMExtensionEmitter implements Component {
         syncVmDeviceInfoExts = pluginRgty.getExtensionList(KVMSyncVmDeviceInfoExtensionPoint.class);
     }
 
-    public void afterReceiveSyncVmDeviceInfoRespoinse(final VmInstanceInventory vm, final KVMAgentCommands.VmDevicesInfoResponse rsp) {
+    public void afterReceiveSyncVmDeviceInfoRespoinse(final VmInstanceInventory vm, final KVMAgentCommands.VmDevicesInfoResponse rsp, VmInstanceSpec spec) {
         CollectionUtils.safeForEach(syncVmDeviceInfoExts, new ForEachFunction<KVMSyncVmDeviceInfoExtensionPoint>() {
             @Override
             public void run(KVMSyncVmDeviceInfoExtensionPoint arg) {
-                arg.afterReceiveVmDeviceInfoResponse(vm, rsp);
+                arg.afterReceiveVmDeviceInfoResponse(vm, rsp, spec);
             }
         });
     }
