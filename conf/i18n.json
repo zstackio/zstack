@@ -5097,9 +5097,9 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
-    "raw": "no primary storage bound to the backup storage[uuid:%s, type:%s] is found",
-    "en_US": "no primary storage bound to the backup storage[uuid:{0}, type:{1}] is found",
-    "zh_CN": "未找到与备份存储[uuid:{0}, type:{1}]绑定的主存储",
+    "raw": "no primary storage accessible to the backup storage[uuid:%s, type:%s] is found",
+    "en_US": "no primary storage accessible to the backup storage[uuid:{0}, type:{1}] is found",
+    "zh_CN": "未找到镜像服务器[uuid:{0}, type:{1}]可访问的主存储",
     "arguments": [
       "bss.get(0).getUuid()",
       "bss.get(0).getType()"

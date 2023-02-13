@@ -567,10 +567,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
         if (l3s.isEmpty()) {
             if (psUuids.isEmpty()) {
                 if (raiseException) {
-                    throw new OperationFailureException(argerr("no primary storage bound to the backup storage[uuid:%s, type:%s] is found",
+                    throw new OperationFailureException(argerr("no primary storage accessible to the backup storage[uuid:%s, type:%s] is found",
                             bss.get(0).getUuid(), bss.get(0).getType()));
                 }
-                logger.warn(String.format("no primary storage bound to the backup storage[uuid:%s, type:%s] is found",
+                logger.warn(String.format("no primary storage accessible to the backup storage[uuid:%s, type:%s] is found",
                         bss.get(0).getUuid(), bss.get(0).getType()));
                 return new ArrayList<>();
             }
