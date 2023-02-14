@@ -422,6 +422,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         vo.setZoneUuid(zoneUuid);
         vo.setState(L3NetworkState.Enabled);
         vo.setCategory(L3NetworkCategory.valueOf(msg.getCategory()));
+        vo.setEnableIPAM(msg.isEnableIPAM());
         if (msg.getIpVersion() != null) {
             vo.setIpVersion(msg.getIpVersion());
         } else {

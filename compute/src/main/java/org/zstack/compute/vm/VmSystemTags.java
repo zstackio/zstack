@@ -255,8 +255,4 @@ public class VmSystemTags {
             return patternedSystemTag.instantiateTag(tokens);
         }
     }
-
-    public static String L2_UUID_TOKEN = "l2Uuid";
-    public static PatternedSystemTag SIMPLE_L2_NETWORK = new PatternedSystemTag(String.format("simpleL2Network::{%s}", L2_UUID_TOKEN), VmInstanceVO.class);
-
 }

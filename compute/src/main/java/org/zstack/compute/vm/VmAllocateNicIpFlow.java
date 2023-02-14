@@ -39,7 +39,7 @@ import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateNicIpFlow implements Flow {
-    private static final CLogger logger = Utils.getLogger(VmAllocateNicFlow.class);
+    private static final CLogger logger = Utils.getLogger(VmAllocateNicIpFlow.class);
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -147,6 +147,8 @@ public class VmAllocateNicIpFlow implements Flow {
                         ipVO.setVmNicUuid(nic.getUuid());
                         ipVOS.add(ipVO);
                         nicsWithIp.add(nic);
+                        spec.getDestNics().removeIf(inv -> nic.getUuid().equals(inv.getUuid()));
+                        spec.getDestNics().add(VmNicInventory.valueOf(nic));
                         wcomp.done();
                     }
                 }
