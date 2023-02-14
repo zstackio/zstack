@@ -212,7 +212,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     public SimpleFlowChain ctxHandler(FlowContextHandler handler) {
-        DebugUtils.Assert(errorHandler==null, "there has been an FlowContextHandler installed");
+        DebugUtils.Assert(contextHandler==null, "there has been an FlowContextHandler installed");
         contextHandler = handler;
         return this;
     }
