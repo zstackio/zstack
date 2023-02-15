@@ -59,6 +59,7 @@ import org.zstack.storage.primary.*;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.storage.volume.VolumeErrors;
+import org.zstack.storage.volume.VolumeGlobalConfig;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -355,6 +356,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         private String path;
         @GrayVersion(value = "5.0.0")
         private String username;
+        private boolean zeroed;
 
         public String getHostUuid() {
             return hostUuid;
@@ -378,6 +380,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         public void setUsername(String username) {
             this.username = username;
+        }
+
+        public boolean isZeroed() {
+            return zeroed;
+        }
+
+        public void setZeroed(boolean zeroed) {
+            this.zeroed = zeroed;
         }
     }
 
@@ -1825,6 +1835,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         DeleteBitsCmd cmd = new DeleteBitsCmd();
         cmd.setPath(path);
         cmd.setHostUuid(hostUuid);
+        cmd.setZeroed(VolumeGlobalConfig.ZEROED_BEFORE_DELETE.value(Boolean.class));
 
         String deletePath = dir ? DELETE_DIR_PATH : DELETE_BITS_PATH;
 
