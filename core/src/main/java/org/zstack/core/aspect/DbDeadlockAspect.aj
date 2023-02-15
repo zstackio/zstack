@@ -1,6 +1,6 @@
 package org.zstack.core.aspect;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLTransactionRollbackException;
+import java.sql.SQLTransactionRollbackException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.utils.DebugUtils;
@@ -51,7 +51,7 @@ public aspect DbDeadlockAspect {
 
                     Throwable root = DebugUtils.getRootCause(re);
 
-                    if (root instanceof MySQLTransactionRollbackException && root.getMessage().contains("Deadlock")) {
+                    if (root instanceof SQLTransactionRollbackException && root.getMessage().contains("Deadlock")) {
                         logger.warn("deadlock happened, retry");
                         DatabaseFacadeImpl.increaseDeadlock();
                         try {

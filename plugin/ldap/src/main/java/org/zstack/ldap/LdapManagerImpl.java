@@ -1,6 +1,6 @@
 package org.zstack.ldap;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.filter.AndFilter;
@@ -406,7 +406,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
             evt.setInventory(bindLdapAccount(msg.getAccountUuid(), fullDn));
             logger.info(String.format("create ldap binding[ldapUid=%s, ldapUseAsLoginName=%s] success", fullDn, ldapUseAsLoginName));
         } catch (PersistenceException e) {
-            if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class)) {
+            if (ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class)) {
                 evt.setError(err(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
                         "The ldap uid has been bound to an account. "));
             } else {
