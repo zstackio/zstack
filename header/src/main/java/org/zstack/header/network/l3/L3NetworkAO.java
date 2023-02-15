@@ -44,7 +44,7 @@ public class L3NetworkAO extends ResourceVO {
     private Integer ipVersion;
 
     @Column
-    private boolean enableIPAM = true;
+    private Boolean enableIPAM = Boolean.TRUE;
 
     @Column
     private Timestamp createDate;
@@ -157,11 +157,11 @@ public class L3NetworkAO extends ResourceVO {
         this.ipVersion = ipVersion;
     }
 
-    public boolean isEnableIPAM() {
+    public Boolean getEnableIPAM() {
         return enableIPAM;
     }
 
-    public void setEnableIPAM(boolean enableIPAM) {
+    public void setEnableIPAM(Boolean enableIPAM) {
         this.enableIPAM = enableIPAM;
     }
 }

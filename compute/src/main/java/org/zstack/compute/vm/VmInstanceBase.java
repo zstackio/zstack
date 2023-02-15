@@ -2175,7 +2175,6 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
         final VmInstanceInventory vm = spec.getVmInventory();
-        Boolean l3EnableIPAM = Boolean.TRUE;
         List<L3NetworkInventory> l3s = new ArrayList<>();
         for (String l3Uuid : l3Uuids) {
             L3NetworkVO l3vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
@@ -2184,12 +2183,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             for (VmPreAttachL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(VmPreAttachL3NetworkExtensionPoint.class)) {
                 ext.vmPreAttachL3Network(vm, l3);
             }
-            if(!l3vo.isEnableIPAM()) {
-                l3EnableIPAM = Boolean.FALSE;
-            }
         }
 
-        spec.setSkipIpAllocation(!l3EnableIPAM);
         spec.setL3Networks(list(new VmNicSpec(l3s)));
         spec.setDestNics(new ArrayList<VmNicInventory>());
 

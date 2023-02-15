@@ -78,6 +78,7 @@ public class VmAllocateNicIpFlow implements Flow {
         }
         List<VmNicSpec> firstL3s = VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks())
                 .stream()
+                .filter(v -> v.getL3Invs().get(0).getEnableIPAM())
                 .peek(v -> {
                     if (!Q.New(NormalIpRangeVO.class)
                             .eq(NormalIpRangeVO_.l3NetworkUuid, v.getL3Invs().get(0).getUuid())

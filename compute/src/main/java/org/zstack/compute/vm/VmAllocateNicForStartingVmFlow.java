@@ -55,6 +55,9 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
         final List<VmNicInventory> nicsNeedNewIp = new ArrayList<VmNicInventory>(vm.getVmNics().size());
         final List<VmNicInventory> usedIpNics = new ArrayList<VmNicInventory>();
         for (VmNicInventory nic : vm.getVmNics()) {
+            if (Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, nic.getL3NetworkUuid()).eq(L3NetworkVO_.enableIPAM, Boolean.FALSE).isExists()) {
+                continue;
+            }
             if (nic.getUsedIpUuid() == null) {
                 nic.getUsedIps().clear();
                 nicsNeedNewIp.add(nic);
