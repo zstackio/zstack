@@ -1,5 +1,6 @@
 package org.zstack.storage.ceph.primary;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
@@ -72,6 +73,7 @@ import org.zstack.storage.primary.GetPrimaryStorageLicenseInfoMsg;
 import org.zstack.storage.primary.GetPrimaryStorageLicenseInfoReply;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
+import org.zstack.storage.volume.VolumeGlobalConfig;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.*;
@@ -353,6 +355,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     public static class DeleteCmd extends AgentCommand {
         String installPath;
+        boolean zeroed;
 
         public String getInstallPath() {
             return installPath;
@@ -360,6 +363,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
+        }
+
+        public boolean isZeroed() {
+            return zeroed;
+        }
+
+        public void setZeroed(boolean zeroed) {
+            this.zeroed = zeroed;
         }
     }
 
@@ -2338,6 +2349,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     protected void handle(final DeleteVolumeOnPrimaryStorageMsg msg) {
         DeleteCmd cmd = new DeleteCmd();
         cmd.installPath = msg.getVolume().getInstallPath();
+        cmd.zeroed = VolumeGlobalConfig.ZEROED_BEFORE_DELETE.value(Boolean.class);
 
         final DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
 
@@ -2593,6 +2605,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     protected void handle(final DeleteVolumeBitsOnPrimaryStorageMsg msg) {
         DeleteCmd cmd = new DeleteCmd();
         cmd.installPath = msg.getInstallPath();
+        cmd.zeroed = VolumeGlobalConfig.ZEROED_BEFORE_DELETE.value(Boolean.class);
 
         final DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
 
