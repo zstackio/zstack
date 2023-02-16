@@ -174,7 +174,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                     VmNicType vmNicType = new VmNicType(nic.getType());
                     VmInstanceNicFactory vnicFactory;
                     vnicFactory = vmMgr.getVmInstanceNicFactory(vmNicType);
-                    vnicFactory.createVmNic(nic, spec, nic.getUsedIps());
+                    vnicFactory.createVmNic(nic, spec);
                 });
             }
         }.execute();

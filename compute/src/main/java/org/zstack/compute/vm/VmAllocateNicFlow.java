@@ -149,7 +149,7 @@ public class VmAllocateNicFlow implements Flow {
             new SQLBatch() {
                 @Override
                 protected void scripts() {
-                    vnicFactory.createVmNic(nic, spec, null);
+                    vnicFactory.createVmNic(nic, spec);
                     nics.add(nic);
                 }
             }.execute();

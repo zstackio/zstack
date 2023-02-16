@@ -10,7 +10,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
@@ -19,7 +18,6 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
@@ -52,6 +50,8 @@ public class VmAllocateNicIpFlow implements Flow {
     private VmNicManager nicManager;
     @Autowired
     protected VmInstanceManager vmMgr;
+    @Autowired
+    protected VmNicFactory vnicFactory;
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
@@ -144,9 +144,12 @@ public class VmAllocateNicIpFlow implements Flow {
                         nic.setUsedIpUuid(ip.getUuid());
                         nic.setNetmask(ip.getNetmask());
                         nic.setGateway(ip.getGateway());
-                        UsedIpVO ipVO = dbf.findByUuid(ip.getUuid(), UsedIpVO.class);
-                        ipVO.setVmNicUuid(nic.getUuid());
-                        ipVOS.add(ipVO);
+                        for (UsedIpInventory usedIp : nicIps) {
+                            /* update usedIpVo */
+                            UsedIpVO ipVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, usedIp.getUuid()).find();
+                            ipVO.setVmNicUuid(nic.getUuid());
+                            ipVOS.add(ipVO);
+                        }
                         nicsWithIp.add(nic);
                         spec.getDestNics().removeIf(inv -> nic.getUuid().equals(inv.getUuid()));
                         spec.getDestNics().add(VmNicInventory.valueOf(nic));
