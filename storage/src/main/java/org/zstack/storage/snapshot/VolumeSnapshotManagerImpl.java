@@ -30,6 +30,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.message.*;
+import org.zstack.header.storage.backup.CleanUpVmBackupExtensionPoint;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
@@ -37,6 +38,7 @@ import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -78,7 +80,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         AfterReimageVmInstanceExtensionPoint,
         VmJustBeforeDeleteFromDbExtensionPoint,
         VolumeJustBeforeDeleteFromDbExtensionPoint,
-        OverwriteVolumeExtensionPoint {
+        OverwriteVolumeExtensionPoint, CleanUpVmBackupExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotManagerImpl.class);
     private String syncSignature;
     @Autowired
@@ -99,6 +101,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private EventFacade evtf;
     @Autowired
     private CascadeFacade casf;
+    @Autowired
+    private VmInstanceDeviceManager vidm;
 
     private Map<String, MemorySnapshotGroupReferenceFactory> referenceFactories = Collections.synchronizedMap(new HashMap<>());
 
@@ -376,6 +380,11 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 bus.publish(event);
             }
         }).start();
+    }
+
+    @Override
+    public void afterCleanUpVmBackup(String groupUuid) {
+        vidm.deleteArchiveVmInstanceDeviceAddressGroup(groupUuid);
     }
 
     private class SnapshotAncestorStruct {
