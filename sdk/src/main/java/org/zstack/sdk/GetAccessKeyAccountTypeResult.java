@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
 public class GetAccessKeyAccountTypeResult {
-    public java.lang.String type;
-    public void setType(java.lang.String type) {
+    public AccountType type;
+    public void setType(AccountType type) {
         this.type = type;
     }
-    public java.lang.String getType() {
+    public AccountType getType() {
         return this.type;
     }
 

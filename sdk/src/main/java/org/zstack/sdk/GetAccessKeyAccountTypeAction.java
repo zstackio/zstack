@@ -88,7 +88,7 @@ public class GetAccessKeyAccountTypeAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/accesskey/account/type/{uuid}";
+        info.path = "/accesskey/account/type";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

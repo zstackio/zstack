@@ -38,6 +38,12 @@ public class FailbackVmFromMirrorCdpBackupAction extends AbstractAction {
     public java.lang.String instanceOfferingUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer cpuNum;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Long memorySize;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String defaultL3NetworkUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -73,7 +79,7 @@ public class FailbackVmFromMirrorCdpBackupAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataVolumeSystemTags;
 
-    @Param(required = false, validValues = {"Create","Revert"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"Create","Revert"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String failbackMode;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
