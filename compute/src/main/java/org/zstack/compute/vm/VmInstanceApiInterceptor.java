@@ -267,7 +267,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     continue;
                 }
 
-                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp())) {
+                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp()) || !l3NetworkVO.getEnableIPAM()) {
                     found = true;
                     break;
                 }
@@ -306,7 +306,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     if (ipVersion != ipr.getIpVersion()) {
                         continue;
                     }
-                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp())) {
+                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp()) || !l3NetworkVO.getEnableIPAM()) {
                         found = true;
                         break;
                     }
@@ -695,7 +695,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APICreateVmNicMsg msg) {
         SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
-        l3q.select(L3NetworkVO_.state, L3NetworkVO_.system, L3NetworkVO_.category, L3NetworkVO_.type);
+        l3q.select(L3NetworkVO_.state, L3NetworkVO_.system, L3NetworkVO_.category, L3NetworkVO_.type, L3NetworkVO_.enableIPAM);
         l3q.add(L3NetworkVO_.uuid, Op.EQ, msg.getL3NetworkUuid());
         Tuple t = l3q.findTuple();
         L3NetworkState l3state = t.get(0, L3NetworkState.class);
@@ -711,7 +711,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
             boolean found = false;
             for (NormalIpRangeVO ipr : iprs) {
-                if (NetworkUtils.isInRange(msg.getIp(), ipr.getStartIp(), ipr.getEndIp())) {
+                if (NetworkUtils.isInRange(msg.getIp(), ipr.getStartIp(), ipr.getEndIp()) || !t.get(4, Boolean.class)) {
                     found = true;
                     break;
                 }
@@ -810,7 +810,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     continue;
                 }
 
-                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp())) {
+                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp()) || !l3NetworkVO.getEnableIPAM()) {
                     found = true;
                     break;
                 }
@@ -849,7 +849,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     if (ipVersion != ipr.getIpVersion()) {
                         continue;
                     }
-                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp())) {
+                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp()) || !l3NetworkVO.getEnableIPAM()) {
                         found = true;
                         break;
                     }

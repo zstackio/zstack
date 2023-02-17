@@ -3356,6 +3356,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         cmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
         cmsg.setGateway(msg.getGateway());
         cmsg.setNetmask(msg.getNetmask());
+        cmsg.setIpv6Gateway(msg.getIpv6Gateway());
+        cmsg.setIpv6prefix(msg.getIpv6prefix());
         bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, cmsg.getVmInstanceUuid());
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
@@ -3425,6 +3427,21 @@ public class VmInstanceBase extends AbstractVmInstance {
         VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid())
                 .eq(VmNicVO_.l3NetworkUuid, msg.getL3NetworkUuid())
                 .limit(1).find();
+        List<UsedIpVO> voList = new ArrayList<>();
+
+        if (msg.getIp6() != null) {
+            UsedIpVO vo = new UsedIpVO();
+            vo.setUuid(Platform.getUuid());
+            vo.setIp(msg.getIp());
+            vo.setGateway(msg.getIpv6Gateway());
+            vo.setNetmask(msg.getIpv6prefix());
+            vo.setIpVersion(IPv6Constants.IPv6);
+            vo.setVmNicUuid(nicVO.getUuid());
+            vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
+            nicVO.setUsedIpUuid(vo.getUuid());
+            voList.add(vo);
+        }
+        // Ip and ip6 set at same time means dual stack network, nic will set UsedIpUuid with ipv4
         if (msg.getIp() != null) {
             UsedIpVO vo = new UsedIpVO();
             vo.setUuid(Platform.getUuid());
@@ -3437,33 +3454,20 @@ public class VmInstanceBase extends AbstractVmInstance {
                 vo.setVmNicUuid(nicVO.getUuid());
                 vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
                 nicVO.setUsedIpUuid(vo.getUuid());
-                dbf.persist(vo);
-                dbf.update(nicVO);
+                voList.add(vo);
             } else {
-                vo.setGateway(msg.getGateway());
                 vo.setIp(msg.getIp());
-                vo.setNetmask(msg.getNetmask());
+                vo.setGateway(msg.getIpv6Gateway());
+                vo.setNetmask(msg.getIpv6prefix());
                 vo.setIpVersion(IPv6Constants.IPv6);
                 vo.setVmNicUuid(nicVO.getUuid());
                 vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
                 nicVO.setUsedIpUuid(vo.getUuid());
-                dbf.persist(vo);
-                dbf.update(nicVO);
+                voList.add(vo);
             }
         }
-        if (msg.getIp6() != null) {
-            UsedIpVO vo = new UsedIpVO();
-            vo.setUuid(Platform.getUuid());
-            vo.setGateway(msg.getGateway());
-            vo.setIp(msg.getIp());
-            vo.setNetmask(msg.getNetmask());
-            vo.setIpVersion(IPv6Constants.IPv6);
-            vo.setVmNicUuid(nicVO.getUuid());
-            vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
-            nicVO.setUsedIpUuid(vo.getUuid());
-            dbf.persist(vo);
-            dbf.update(nicVO);
-        }
+        dbf.persistCollection(voList);
+        dbf.update(nicVO);
         completion.success();
     }
 

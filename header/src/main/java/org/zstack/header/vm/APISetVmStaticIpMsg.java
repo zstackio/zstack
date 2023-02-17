@@ -31,6 +31,10 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
     private String netmask;
     @APIParam(required = false)
     private String gateway;
+    @APIParam(required = false)
+    private String ipv6Gateway;
+    @APIParam(required = false)
+    private String ipv6prefix;
 
     public String getIp() {
         return ip;
@@ -79,6 +83,22 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
 
     public void setGateway(String gateway) {
         this.gateway = gateway;
+    }
+
+    public String getIpv6Gateway() {
+        return ipv6Gateway;
+    }
+
+    public void setIpv6Gateway(String ipv6Gateway) {
+        this.ipv6Gateway = ipv6Gateway;
+    }
+
+    public String getIpv6prefix() {
+        return ipv6prefix;
+    }
+
+    public void setIpv6prefix(String ipv6prefix) {
+        this.ipv6prefix = ipv6prefix;
     }
 
     public static APISetVmStaticIpMsg __example__() {
