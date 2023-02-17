@@ -31,8 +31,10 @@ public class TfNicManageExtensionPointImpl implements NicManageExtensionPoint {
         nic.setType(VmInstanceConstant.TF_VIRTUAL_NIC_TYPE);
         TfPortResponse port = null;
         String portUuid = msg.getResourceUuid();
+        String tfPortUuid = null;
         if (portUuid != null){
-            port = tfPortService.getTfPort(StringDSL.transToTfUuid(portUuid));
+            tfPortUuid = StringDSL.transToTfUuid(portUuid);
+            port = tfPortService.getTfPort(tfPortUuid);
             if (port != null){
                 String ipAddr = null;
                 for (TfPortIpEntity ipEntrty: port.getFixedIps()) {
@@ -52,7 +54,7 @@ public class TfNicManageExtensionPointImpl implements NicManageExtensionPoint {
         }
         if (port == null) {
             String l2NetworkUuid = l3Network.getL2NetworkUuid();
-            port = tfPortService.createTfPort(StringDSL.transToTfUuid(portUuid), l2NetworkUuid, msg.getL3NetworkUuid(),
+            port = tfPortService.createTfPort(tfPortUuid, l2NetworkUuid, msg.getL3NetworkUuid(),
                     nic.getMac(), msg.getIp());
             logger.debug("Create a new tf port success.");
         }
