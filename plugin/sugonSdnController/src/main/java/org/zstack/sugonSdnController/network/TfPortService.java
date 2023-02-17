@@ -62,10 +62,9 @@ public class TfPortService {
     }
 
     public TfPortResponse deleteTfPort(String portUUid) {
-        String accountId = StringDSL.transToTfUuid(acntMgr.getOwnerAccountUuidOfResource(portUUid));
         String tfPortUUid = StringDSL.transToTfUuid(portUUid);
         TfPortClient tfPortClient = new TfPortClient();
-        return tfPortClient.deletePort(tfPortUUid, accountId);
+        return tfPortClient.deletePort(tfPortUUid);
     }
 
     public void updateTfPort(String tfPortUUid, String vmUuid) {

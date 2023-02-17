@@ -1,6 +1,8 @@
 package org.zstack.sugonSdnController.network;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.sugonSdnController.controller.SugonSdnController;
 import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant;
 import org.zstack.core.db.Q;
@@ -18,6 +20,7 @@ import org.zstack.sdnController.header.SdnControllerVO;
 import org.zstack.sdnController.header.SdnControllerVO_;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.operr;
 
 public class TfL2Network extends L2NoVlanNetwork implements TfL2NetworkExtensionPoint{
 
@@ -190,6 +193,13 @@ public class TfL2Network extends L2NoVlanNetwork implements TfL2NetworkExtension
 
     private void handle(APIDeleteL2NetworkMsg msg) {
         APIDeleteL2NetworkEvent evt = new APIDeleteL2NetworkEvent(msg.getId());
+        if(Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, msg.getL2NetworkUuid()).count() > 0){
+            String error = String.format("L2Network[%s] still has some L3Networks, please delete L3Networks first.",
+                    msg.getL2NetworkUuid());
+            evt.setError(operr(error));
+            bus.publish(evt);
+            return;
+        }
         deleteTfL2NetworkOnSdnController(self, new Completion(msg) {
             @Override
             public void success() {
