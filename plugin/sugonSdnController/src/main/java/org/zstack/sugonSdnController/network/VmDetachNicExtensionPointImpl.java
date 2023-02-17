@@ -45,7 +45,7 @@ public class VmDetachNicExtensionPointImpl implements VmDetachNicExtensionPoint,
         L3NetworkVO l3nw = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
         if (SugonSdnControllerConstant.L3_TF_NETWORK_TYPE.equals(l3nw.getType())) {
             // bug fix: won't delete nic related tags, because recovery flow will use them
-            deleteTfPort(nic.getUuid(), nic.getL3NetworkUuid());
+            deleteTfPort(nic.getUuid());
         }
     }
 
@@ -59,16 +59,15 @@ public class VmDetachNicExtensionPointImpl implements VmDetachNicExtensionPoint,
             CustomNicOperator nicOperator = new CustomNicOperator(vm.getUuid(), l3.getUuid());
             String customNicId = nicOperator.getCustomNicId();
             nicOperator.deleteNicTags();
-            deleteTfPort(customNicId, l3.getUuid());
+            deleteTfPort(customNicId);
         }
     }
 
 
 
-    private void deleteTfPort(String nicUuid, String l3NetworkUuid) {
+    private void deleteTfPort(String nicUuid) {
         TfPortClient client = new TfPortClient();
-        String accountId = accountMgr.getOwnerAccountUuidOfResource(l3NetworkUuid);
-        TfPortResponse response = client.deletePort(StringDSL.transToTfUuid(nicUuid), accountId);
+        TfPortResponse response = client.deletePort(StringDSL.transToTfUuid(nicUuid));
         if (response.getCode() != HttpStatus.OK.value()) {
             throw new RuntimeException("failed to invoke deleting tf port: " + response);
         }
