@@ -1,6 +1,7 @@
 package org.zstack.header.image;
 
 import org.apache.commons.lang.StringUtils;
+import org.zstack.utils.URLBuilder;
 
 import java.util.HashMap;
 
@@ -69,7 +70,8 @@ public class ImageHelper {
 
     public static String addNameToExportUrl(String exportUrl, String name) {
         String image = StringUtils.substringAfterLast(exportUrl, "/");
-        return exportUrl.replace(image, String.format("%s-%s", name, image));
+        String urlName = name == null ? "" : URLBuilder.buildUrlComponent(name);
+        return exportUrl.replace(image, String.format("%s-%s", urlName, image));
     }
 
     public static String removeNameFromExportUrl(String exportUrl) {
