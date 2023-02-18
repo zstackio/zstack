@@ -911,7 +911,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
-    public void preCreateVolume(APICreateDataVolumeMsg msg) {
+    public void preCreateVolume(VolumeCreateMessage msg) {
         String diskOffering = msg.getDiskOfferingUuid();
         if (diskOffering == null) {
             return;

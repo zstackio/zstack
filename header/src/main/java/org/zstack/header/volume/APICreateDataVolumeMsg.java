@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
         responseClass = APICreateDataVolumeEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
-public class APICreateDataVolumeMsg extends APICreateMessage implements APIAuditor {
+public class APICreateDataVolumeMsg extends APICreateMessage implements APIAuditor, VolumeCreateMessage {
     /**
      * @desc max length of 255 characters
      */
