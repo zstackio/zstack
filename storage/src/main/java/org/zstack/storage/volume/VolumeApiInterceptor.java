@@ -1,7 +1,6 @@
 package org.zstack.storage.volume;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.OfferingUserConfigUtils;
@@ -17,36 +16,29 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageState;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.storage.primary.PrimaryStorageAllocateConfig;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
-import org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotMsg;
 import org.zstack.header.storage.snapshot.ConsistentType;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
-import org.zstack.storage.snapshot.group.VolumeSnapshotGroup;
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -79,6 +71,9 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof VolumeCreateMessage) {
+            validate((VolumeCreateMessage) msg);
+        }
         if (msg instanceof APIChangeVolumeStateMsg) {
             validate((APIChangeVolumeStateMsg) msg);
         } else if (msg instanceof APIDeleteDataVolumeMsg) {
@@ -105,6 +100,34 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(VolumeCreateMessage msg) {
+        String diskOffering = msg.getDiskOfferingUuid();
+        if (diskOffering == null || !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
+            return;
+        }
+
+        DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+        if (config.getAllocate() == null) {
+            return;
+        }
+
+        if (config.getAllocate().getPrimaryStorage() != null) {
+            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
+            if (msg.getPrimaryStorageUuid() != null && !msg.getPrimaryStorageUuid().equals(psUuid)) {
+                throw new ApiMessageInterceptionException(argerr("primary storage uuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
+                        psUuid, msg.getPrimaryStorageUuid()));
+            }
+            msg.setPrimaryStorageUuid(psUuid);
+        } else if (!CollectionUtils.isEmpty(config.getAllocate().getPrimaryStorages())) {
+            List<String> requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+                    .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
+            if (msg.getPrimaryStorageUuid() != null && !requiredPrimaryStorageUuids.contains(msg.getPrimaryStorageUuid())) {
+                throw new ApiMessageInterceptionException(operr("primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+                        requiredPrimaryStorageUuids, msg.getPrimaryStorageUuid()));
+            }
+        }
     }
 
     private void validate(APICreateVolumeSnapshotMsg msg) {
@@ -352,25 +375,6 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         } else {
             Long diskSize = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, msg.getDiskOfferingUuid()).select(DiskOfferingVO_.diskSize).findValue();
             msg.setDiskSize(diskSize);
-        }
-
-        String diskOffering = msg.getDiskOfferingUuid();
-        if (diskOffering == null) {
-            return;
-        }
-
-        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
-            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
-            if (config.getAllocate() == null || config.getAllocate().getPrimaryStorage() == null) {
-                return;
-            }
-
-            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
-            if (msg.getPrimaryStorageUuid() != null && !msg.getPrimaryStorageUuid().equals(psUuid)) {
-                throw new ApiMessageInterceptionException(argerr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
-                        psUuid, msg.getPrimaryStorageUuid()));
-            }
-            msg.setPrimaryStorageUuid(psUuid);
         }
     }
 
