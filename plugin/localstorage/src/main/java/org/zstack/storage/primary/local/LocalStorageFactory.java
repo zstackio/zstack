@@ -1318,7 +1318,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    public void preCreateVolume(APICreateDataVolumeMsg msg) {
+    public void preCreateVolume(VolumeCreateMessage msg) {
         String diskOffering = msg.getDiskOfferingUuid();
         if (diskOffering == null || !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             return;
