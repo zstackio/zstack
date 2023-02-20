@@ -29,3 +29,5 @@ DELIMITER ;
 
 call addColumnsToSNSTextTemplateVO();
 DROP PROCEDURE IF EXISTS addColumnsToSNSTextTemplateVO;
+
+ALTER TABLE `zstack`.`ESXHostVO` ADD COLUMN `esxiVersion` varchar(32);
