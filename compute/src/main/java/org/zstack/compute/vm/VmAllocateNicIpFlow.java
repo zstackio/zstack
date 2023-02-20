@@ -26,10 +26,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -62,7 +59,7 @@ public class VmAllocateNicIpFlow implements Flow {
         Boolean allowDuplicatedAddress = (Boolean) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString());
         Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
         List<ErrorCode> errs = new ArrayList<>();
-        List<UsedIpVO> ipVOS = new ArrayList<>();
+        Set<UsedIpVO> ipVOS = new HashSet<>();
         List<VmNicVO> nicsWithIp = new ArrayList<>();
         List<UsedIpInventory> ips = new ArrayList<>();
         data.put(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString(), nicsWithIp);
@@ -150,6 +147,7 @@ public class VmAllocateNicIpFlow implements Flow {
                             ipVO.setVmNicUuid(nic.getUuid());
                             ipVOS.add(ipVO);
                         }
+                        nic.setUsedIps(ipVOS);
                         nicsWithIp.add(nic);
                         spec.getDestNics().removeIf(inv -> nic.getUuid().equals(inv.getUuid()));
                         spec.getDestNics().add(VmNicInventory.valueOf(nic));

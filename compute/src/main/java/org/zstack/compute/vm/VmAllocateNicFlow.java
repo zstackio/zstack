@@ -8,10 +8,12 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.cluster.ClusterDeletionMsg;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -27,6 +29,7 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
+import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
@@ -34,10 +37,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -58,6 +58,10 @@ public class VmAllocateNicFlow implements Flow {
     private VmNicManager nicManager;
     @Autowired
     protected VmInstanceManager vmMgr;
+    @Autowired
+    protected AccountManager acntMgr;
+    @Autowired
+    protected EventFacade evtf;
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
@@ -169,9 +173,14 @@ public class VmAllocateNicFlow implements Flow {
 
     @Override
     public void rollback(final FlowRollback chain, Map data) {
-        final List<VmNicInventory> destNics = (List<VmNicInventory>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString());
-        final List<String> nicUuids = destNics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList());
-        dbf.removeByPrimaryKeys(nicUuids, VmNicVO.class);
+        final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        final List<VmNicInventory> destNics = spec.getDestNics();
+        if (destNics == null || destNics.isEmpty()) {
+            chain.rollback();
+            return;
+        }
+        logger.debug(String.format("%s nic need for delete", destNics.size()));
+        dbf.removeByPrimaryKeys(destNics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList()), VmNicVO.class);
         chain.rollback();
         return;
     }
