@@ -31,12 +31,12 @@ public class MirrorCdpTaskInventory  {
         return this.description;
     }
 
-    public java.lang.String peerExternalManagementNodeUuid;
-    public void setPeerExternalManagementNodeUuid(java.lang.String peerExternalManagementNodeUuid) {
-        this.peerExternalManagementNodeUuid = peerExternalManagementNodeUuid;
+    public java.lang.String externalManagementNodeUuid;
+    public void setExternalManagementNodeUuid(java.lang.String externalManagementNodeUuid) {
+        this.externalManagementNodeUuid = externalManagementNodeUuid;
     }
-    public java.lang.String getPeerExternalManagementNodeUuid() {
-        return this.peerExternalManagementNodeUuid;
+    public java.lang.String getExternalManagementNodeUuid() {
+        return this.externalManagementNodeUuid;
     }
 
     public java.lang.String peerCdpTaskUuid;
@@ -55,12 +55,12 @@ public class MirrorCdpTaskInventory  {
         return this.mode;
     }
 
-    public java.lang.String peerHostName;
-    public void setPeerHostName(java.lang.String peerHostName) {
-        this.peerHostName = peerHostName;
+    public java.lang.String peerBackupStorageUuid;
+    public void setPeerBackupStorageUuid(java.lang.String peerBackupStorageUuid) {
+        this.peerBackupStorageUuid = peerBackupStorageUuid;
     }
-    public java.lang.String getPeerHostName() {
-        return this.peerHostName;
+    public java.lang.String getPeerBackupStorageUuid() {
+        return this.peerBackupStorageUuid;
     }
 
     public java.lang.String mirrorResourceUuid;
