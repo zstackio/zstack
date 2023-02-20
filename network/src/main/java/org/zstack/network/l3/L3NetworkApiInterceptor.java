@@ -2,6 +2,7 @@ package org.zstack.network.l3;
 
 
 import com.googlecode.ipv6.IPv6Address;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.apache.commons.validator.routines.DomainValidator;
@@ -504,7 +505,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         List<String> QuotedArchiveGroupList;
 
         QuotedArchiveGroupList = archiveNicInfoList.stream()
-                .filter(vmInstanceDeviceAddressArchiveVO -> vmInstanceDeviceAddressArchiveVO.getMetadata() != null)
+                .filter(vmInstanceDeviceAddressArchiveVO -> !StringUtils.isEmpty(vmInstanceDeviceAddressArchiveVO.getMetadata()))
                 .filter(vmInstanceDeviceAddressArchiveVO -> JSONObjectUtil.toObject(vmInstanceDeviceAddressArchiveVO.getMetadata(), ArchiveVmNicBundle.class)
                         .getVmNicInventory().getL3NetworkUuid().equals(msg.getL3NetworkUuid()))
                 .map(VmInstanceDeviceAddressArchiveVO::getAddressGroupUuid)
