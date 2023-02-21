@@ -3780,7 +3780,9 @@ public class KVMHost extends HostBase implements Host {
                                         recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
                                     }
 
-
+                                    if (ret.isKvmPtp()){
+                                        createTagWithoutNonValue(KVMSystemTags.KVM_PTP, KVMSystemTags.KVM_PTP_TOKEN, HostKvmPTPStatusType.Active.toString(), true);
+                                    }
 
                                     List<String> ips = ret.getIpAddresses();
                                     if (ips != null) {

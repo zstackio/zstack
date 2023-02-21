@@ -408,6 +408,7 @@ public class KVMAgentCommands {
         private String systemProductName;
         private String systemSerialNumber;
         private List<String> ipAddresses;
+        private boolean kvmPtp;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -503,6 +504,14 @@ public class KVMAgentCommands {
 
         public void setSystemSerialNumber(String systemSerialNumber) {
             this.systemSerialNumber = systemSerialNumber;
+        }
+
+        public boolean isKvmPtp() {
+            return kvmPtp;
+        }
+
+        public void setKvmPtp(boolean kvmPtp) {
+            this.kvmPtp = kvmPtp;
         }
     }
 
