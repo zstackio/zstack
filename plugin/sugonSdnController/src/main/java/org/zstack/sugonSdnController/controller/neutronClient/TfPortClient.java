@@ -24,11 +24,9 @@ public class TfPortClient {
 
     private ApiConnector apiConnector;
 
-    public TfPortClient(){
-        apiConnector = getApiConnector();
-    }
+    private String tenantId;
 
-    public ApiConnector getApiConnector() {
+    public TfPortClient(){
         SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(
                 SdnControllerVO_.vendorType,
                 SdnControllerConstant.TF_CONTROLLER).find();
@@ -39,10 +37,10 @@ public class TfPortClient {
         if (apiConnector == null) {
             throw new RuntimeException(String.format("Can not connect to tf sdn controller: %s.", sdn.getIp()));
         }
-        return apiConnector;
+        tenantId = StringDSL.transToTfUuid(sdn.getAccountUuid());
     }
 
-    public TfPortResponse createPort(String l2Id, String l3Id, String mac, String ip, String tenantId,
+    public TfPortResponse createPort(String l2Id, String l3Id, String mac, String ip,
                                      String vmInventeryId, String tfPortUuid, String vmName) {
         TfPortRequestResource requestPortResourceEntity = new TfPortRequestResource();
         requestPortResourceEntity.setNetworkId(l2Id);
@@ -107,7 +105,7 @@ public class TfPortClient {
 
             if (ip != null) {
                 try {
-                    portCreateInstanceIp(netObj, realPort, l3Id, ip, tenantId);
+                    portCreateInstanceIp(netObj, realPort, l3Id, ip);
                 } catch (Exception e) {
                     try {
                         apiConnector.delete(realPort);
@@ -120,7 +118,7 @@ public class TfPortClient {
                 String errmsg = "Bad request trying to create IP instance.";
                 boolean ipv4PortDelete = false;
                 try {
-                    Status ip_result = portCreateInstanceIp(netObj, realPort, l3Id, ip, tenantId);
+                    Status ip_result = portCreateInstanceIp(netObj, realPort, l3Id, ip);
                     if (!ip_result.isSuccess()) {
                         ipv4PortDelete = true;
                         logger.error("Tf instance ip create failed.");
@@ -173,7 +171,7 @@ public class TfPortClient {
     }
 
     private Status portCreateInstanceIp(VirtualNetwork virtualNetwork, VirtualMachineInterface port,
-                                      String subnetId, String ip, String tenantId) throws IOException {
+                                      String subnetId, String ip) throws IOException {
         InstanceIp ipObj = new InstanceIp();
         String ipFamily = "v4";
         if (ip != null) {
@@ -293,7 +291,7 @@ public class TfPortClient {
 
     public TfPortResponse getVirtualMachineInterface(String portId) {
         try {
-            VirtualMachineInterface port = (VirtualMachineInterface) getApiConnector().findById(
+            VirtualMachineInterface port = (VirtualMachineInterface) apiConnector.findById(
                     VirtualMachineInterface.class, portId);
             if (port != null){
                 return getPortResponse(port);
@@ -305,6 +303,25 @@ public class TfPortClient {
         }
     }
 
+    public List<VirtualMachineInterface> getVirtualMachineInterfaceDetail() {
+        try {
+            List<VirtualMachineInterface> result = new ArrayList<>();
+            List<VirtualMachineInterface> ports = (List<VirtualMachineInterface>) apiConnector.list(
+                    VirtualMachineInterface.class, Arrays.asList("default-domain", tenantId));
+
+            for (VirtualMachineInterface port : ports) {
+                VirtualMachineInterface detail = (VirtualMachineInterface) apiConnector.findById(
+                        VirtualMachineInterface.class, port.getUuid());
+                if (detail == null) {
+                    continue;
+                }
+                result.add(detail);
+            }
+            return result;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public TfPortResponse deletePort(String portId) {
         TfPortResponse response = new TfPortResponse();
