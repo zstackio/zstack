@@ -2070,11 +2070,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             private boolean isSet = false;
             private boolean allowDupicatedAddress = false;
             Map<String, List<String>> staticIpMap = null;
+            Map<String, NetworkUtils.IPAMInfo> ipamInfoMap = null;
 
             void set() {
                 if (msg instanceof APIAttachL3NetworkToVmMsg) {
                     APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
                     staticIpMap = amsg.getStaticIpMap();
+                    ipamInfoMap = amsg.getIpamInfoMap();
                 } else if (msg instanceof VmAttachNicMsg) {
                     VmAttachNicMsg nicMsg = (VmAttachNicMsg) msg;
                     staticIpMap = nicMsg.getStaticIpMap();
@@ -2210,6 +2212,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         flowChain.setName(String.format("attachNic-vm-%s-l3-%s", self.getUuid(), l3Uuids.get(0)));
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString(), setStaticIp.allowDupicatedAddress);
+        flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_ipamInfo.toString(), setStaticIp.ipamInfoMap);
         flowChain.then(new VmAllocateNicFlow());
         flowChain.then(new VmAllocateNicIpFlow());
         flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());

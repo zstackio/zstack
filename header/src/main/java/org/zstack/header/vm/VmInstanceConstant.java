@@ -37,6 +37,7 @@ public interface VmInstanceConstant {
         VmAllocateNicFlow_ips,
         VmAllocateNicFlow_nics,
         VmAllocateNicFlow_allowDuplicatedAddress,
+        VmAllocateNicFlow_ipamInfo,
         ApplianceVmSyncHaConfig_applianceVm,
         ApplianceVmSyncHaConfig_haUuid,
         AllocatedUrlForAttachingVolume,

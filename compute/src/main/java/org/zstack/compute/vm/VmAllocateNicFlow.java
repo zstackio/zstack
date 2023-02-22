@@ -8,7 +8,6 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
-import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
@@ -29,7 +28,6 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
-import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
@@ -58,16 +56,13 @@ public class VmAllocateNicFlow implements Flow {
     private VmNicManager nicManager;
     @Autowired
     protected VmInstanceManager vmMgr;
-    @Autowired
-    protected AccountManager acntMgr;
-    @Autowired
-    protected EventFacade evtf;
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         taskProgress("create nics");
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        final Map<String, NetworkUtils.IPAMInfo> ipamInfoMap = (Map<String, NetworkUtils.IPAMInfo>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_ipamInfo.toString());
 
         final List<String> disableL3Networks = new ArrayList<>();
         if (spec.getDisableL3Networks() != null && !spec.getDisableL3Networks().isEmpty()) {
@@ -154,6 +149,37 @@ public class VmAllocateNicFlow implements Flow {
                 @Override
                 protected void scripts() {
                     vnicFactory.createVmNic(nic, spec);
+                    NetworkUtils.IPAMInfo nicIpamInfo = ipamInfoMap.get(nic.getL3NetworkUuid());
+                    if (nicIpamInfo != null) {
+                        if (!Objects.equals(nicIpamInfo.ipv4Address, "")) {
+                            UsedIpVO vo = new UsedIpVO();
+                            vo.setUuid(Platform.getUuid());
+                            vo.setIp(nicIpamInfo.ipv4Address);
+                            vo.setGateway(nicIpamInfo.ipv4Gateway);
+                            vo.setNetmask(nicIpamInfo.ipv4Netmask);
+                            vo.setIpVersion(IPv6Constants.IPv4);
+                            vo.setVmNicUuid(nic.getUuid());
+                            vo.setL3NetworkUuid(nic.getL3NetworkUuid());
+                            if (nic.getUsedIpUuid() == null) {
+                                nic.setUsedIpUuid(vo.getUuid());
+                            }
+                            dbf.persist(vo);
+                        }
+                        if (!Objects.equals(nicIpamInfo.ipv6Address, "")) {
+                            UsedIpVO vo = new UsedIpVO();
+                            vo.setUuid(Platform.getUuid());
+                            vo.setIp(nicIpamInfo.ipv6Address);
+                            vo.setGateway(nicIpamInfo.ipv6Gateway);
+                            vo.setNetmask(nicIpamInfo.ipv6Prefix);
+                            vo.setIpVersion(IPv6Constants.IPv6);
+                            vo.setVmNicUuid(nic.getUuid());
+                            vo.setL3NetworkUuid(nic.getL3NetworkUuid());
+                            if (nic.getUsedIpUuid() == null) {
+                                nic.setUsedIpUuid(vo.getUuid());
+                            }
+                            dbf.persist(vo);
+                        }
+                    }
                     nics.add(nic);
                 }
             }.execute();

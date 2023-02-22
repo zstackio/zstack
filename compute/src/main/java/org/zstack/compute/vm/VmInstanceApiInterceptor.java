@@ -798,6 +798,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         Map<String, List<String>> staticIps = new StaticIpOperator().getStaticIpbySystemTag(msg.getSystemTags());
+        msg.setIpamInfoMap(new StaticIpOperator().getIPAMInfoBySystemTag(msg.getSystemTags()));
         if (msg.getStaticIp() != null) {
             staticIps.computeIfAbsent(msg.getL3NetworkUuid(), k -> new ArrayList<>()).add(msg.getStaticIp());
             SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
