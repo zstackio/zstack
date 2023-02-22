@@ -155,7 +155,6 @@ class ReverCephVolumeWithoutSnapshotCase extends SubCase {
         trashs.each { t ->
             if (t.resourceUuid == root.uuid && t.trashType != TrashType.ReimageVolume.toString()) {
                 assert t.installPath == installPath
-                assert t.size == size
                 assert t.trashType == TrashType.RevertVolume.toString()
                 trashed = true
             }

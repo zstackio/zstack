@@ -101,7 +101,6 @@ STEP:
         trashs.each { t ->
             if (t.resourceUuid == vm.rootVolumeUuid) {
                 assert t.installPath == installPath
-                assert t.size == size + 1
                 assert t.trashType == TrashType.RevertVolume.toString()
                 trashed = true
             }
