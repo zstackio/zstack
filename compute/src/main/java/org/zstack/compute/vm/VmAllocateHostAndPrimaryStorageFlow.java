@@ -69,6 +69,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         List<String> possibleClusterUuids = getPossibleClusterUuids(spec);
         List<String> possiblePsUuids = getPossiblePrimaryStorageUuids(spec);
 
+        spec.setRequiredClusterUuids(possibleClusterUuids);
         // Multiple clusters, and each cluster has a different primary storage
         // Do not automatically allocate the primary storage, specifying primary storage impacts cluster selection
         if (possibleClusterUuids.size() > 1) {
@@ -281,113 +282,68 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         return !(!psTypes.contains(PrimaryStorageConstants.LOCAL_STORAGE_TYPE) || psTypes.size() <= 1);
     }
 
-    private String getTargetCluster(VmInstanceSpec spec) {
+    private List<String> getPossibleClusterUuids(VmInstanceSpec spec) {
         VmInstanceInventory vm = spec.getVmInventory();
+        String hostUuid = spec.getRequiredHostUuid();
 
         String clusterUuid = vm.getClusterUuid() != null ? vm.getClusterUuid() : spec.getRequiredClusterUuid();
         if (clusterUuid != null) {
-            return clusterUuid;
+            return Collections.singletonList(clusterUuid);
         }
-
-        String hostUuid = spec.getRequiredHostUuid();
-        String l3Uuid = vm.getDefaultL3NetworkUuid();
-        String zoneUuid = vm.getZoneUuid();
-        String rootVolumePsUuid = spec.getRequiredPrimaryStorageUuidForRootVolume();
-        String dataVolumePsUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
 
         if (hostUuid != null) {
             clusterUuid = Q.New(HostVO.class)
                     .select(HostVO_.clusterUuid)
                     .eq(HostVO_.uuid, hostUuid)
                     .findValue();
-            return clusterUuid;
-        }
-
-        if (rootVolumePsUuid != null) {
-            List<String> clusters = Q.New(PrimaryStorageClusterRefVO.class)
-                    .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, rootVolumePsUuid)
-                    .listValues();
-            if (clusters.size() == 1) {
-                return clusters.get(0);
-            }
-        }
-
-        if (dataVolumePsUuid != null) {
-            List<String> clusters = Q.New(PrimaryStorageClusterRefVO.class)
-                    .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, dataVolumePsUuid)
-                    .listValues();
-            if (clusters.size() == 1) {
-                return clusters.get(0);
-            }
-        }
-
-        if (l3Uuid != null) {
-            String l2Uuid = Q.New(L3NetworkVO.class)
-                    .select(L3NetworkVO_.l2NetworkUuid)
-                    .eq(L3NetworkVO_.uuid, l3Uuid)
-                    .findValue();
-            List<String> clusters = Q.New(L2NetworkClusterRefVO.class)
-                    .select(L2NetworkClusterRefVO_.clusterUuid)
-                    .eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2Uuid)
-                    .listValues();
-            if (clusters.size() == 1) {
-                return clusters.get(0);
-            }
-        }
-
-        if (zoneUuid != null) {
-            List<String> clusters = Q.New(ClusterVO.class)
-                    .select(ClusterVO_.uuid)
-                    .eq(ClusterVO_.zoneUuid, zoneUuid)
-                    .listValues();
-            if (clusters.size() == 1) {
-                return clusters.get(0);
-            }
-        }
-
-        return null;
-    }
-
-    private List<String> getPossibleClusterUuids(VmInstanceSpec spec) {
-        String clusterUuid = getTargetCluster(spec);
-        if (clusterUuid != null) {
             return Collections.singletonList(clusterUuid);
         }
 
-        VmInstanceInventory vm = spec.getVmInventory();
         String l3Uuid = vm.getDefaultL3NetworkUuid();
         String zoneUuid = vm.getZoneUuid();
         String rootVolumePsUuid = spec.getRequiredPrimaryStorageUuidForRootVolume();
         String dataVolumePsUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
 
-        if (rootVolumePsUuid != null) {
-            return Q.New(PrimaryStorageClusterRefVO.class)
-                    .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, rootVolumePsUuid)
-                    .listValues();
+        Q q = Q.New(ClusterVO.class).select(ClusterVO_.uuid);
+        if (zoneUuid != null) {
+            q.eq(ClusterVO_.zoneUuid, zoneUuid);
+        }
+        List<String> possibleClusterUuids = q.listValues();
+        List<String> needClusterUuids;
+        if (rootVolumePsUuid != null || dataVolumePsUuid != null
+                || !CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForRootVolume())
+                || !CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForDataVolume())) {
+            if (rootVolumePsUuid != null) {
+                needClusterUuids = Q.New(PrimaryStorageClusterRefVO.class)
+                        .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                        .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, rootVolumePsUuid)
+                        .listValues();
+                possibleClusterUuids.retainAll(needClusterUuids);
+            } else if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForRootVolume())) {
+                needClusterUuids = Q.New(PrimaryStorageClusterRefVO.class)
+                        .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                        .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, spec.getRequiredPrimaryStorageUuidsForRootVolume())
+                        .listValues();
+                possibleClusterUuids.retainAll(needClusterUuids);
+            }
+
+            if (dataVolumePsUuid != null) {
+                needClusterUuids = Q.New(PrimaryStorageClusterRefVO.class)
+                        .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                        .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, dataVolumePsUuid)
+                        .listValues();
+                possibleClusterUuids.retainAll(needClusterUuids);
+            } else if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForDataVolume())) {
+                needClusterUuids = Q.New(PrimaryStorageClusterRefVO.class)
+                        .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                        .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, spec.getRequiredPrimaryStorageUuidsForDataVolume())
+                        .listValues();
+                possibleClusterUuids.retainAll(needClusterUuids);
+            }
         }
 
-        if (dataVolumePsUuid != null) {
-            return Q.New(PrimaryStorageClusterRefVO.class)
-                    .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, dataVolumePsUuid)
-                    .listValues();
-        }
-
-        if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForRootVolume())) {
-            return Q.New(PrimaryStorageClusterRefVO.class)
-                    .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                    .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, spec.getRequiredPrimaryStorageUuidsForRootVolume())
-                    .listValues();
-        }
-
-        if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuidsForDataVolume())) {
-            return Q.New(PrimaryStorageClusterRefVO.class)
-                    .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, spec.getRequiredPrimaryStorageUuidsForDataVolume())
-                    .listValues();
+        if (possibleClusterUuids.size() < 2) {
+            return possibleClusterUuids;
         }
 
         if (l3Uuid != null) {
@@ -395,20 +351,14 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     .select(L3NetworkVO_.l2NetworkUuid)
                     .eq(L3NetworkVO_.uuid, l3Uuid)
                     .findValue();
-            return Q.New(L2NetworkClusterRefVO.class)
+            needClusterUuids = Q.New(L2NetworkClusterRefVO.class)
                     .select(L2NetworkClusterRefVO_.clusterUuid)
                     .eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2Uuid)
                     .listValues();
+            possibleClusterUuids.retainAll(needClusterUuids);
         }
 
-        if (zoneUuid != null) {
-            return Q.New(ClusterVO.class)
-                    .select(ClusterVO_.uuid)
-                    .eq(ClusterVO_.zoneUuid, zoneUuid)
-                    .listValues();
-        }
-
-        return Collections.emptyList();
+        return possibleClusterUuids;
     }
 
     private List<String> getPossiblePrimaryStorageUuids(VmInstanceSpec spec) {

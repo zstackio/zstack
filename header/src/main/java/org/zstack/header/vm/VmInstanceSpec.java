@@ -283,12 +283,15 @@ public class VmInstanceSpec implements Serializable {
     private ImageSpec imageSpec = new ImageSpec();
     private List<VolumeSpec> volumeSpecs = new ArrayList<>();
     private String requiredClusterUuid;
+    private List<String> requiredClusterUuids;
     private String requiredHostUuid;
     private List<String> softAvoidHostUuids;
     private List<String> avoidHostUuids;
     private String memorySnapshotUuid;
     private String requiredPrimaryStorageUuidForRootVolume;
     private String requiredPrimaryStorageUuidForDataVolume;
+    private List<String> requiredPrimaryStorageUuidsForRootVolume;
+    private List<String> requiredPrimaryStorageUuidsForDataVolume;
     private String bootMode;
 
     private List<HostName> hostnames = new ArrayList<>();
@@ -323,8 +326,14 @@ public class VmInstanceSpec implements Serializable {
     private List<String> dataVolumeSystemTags;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private boolean skipIpAllocation = false;
-    private List<String> requiredPrimaryStorageUuidsForRootVolume;
-    private List<String> requiredPrimaryStorageUuidsForDataVolume;
+
+    public List<String> getRequiredClusterUuids() {
+        return requiredClusterUuids;
+    }
+
+    public void setRequiredClusterUuids(List<String> requiredClusterUuids) {
+        this.requiredClusterUuids = requiredClusterUuids;
+    }
 
     public List<String> getRequiredPrimaryStorageUuidsForRootVolume() {
         return requiredPrimaryStorageUuidsForRootVolume;
