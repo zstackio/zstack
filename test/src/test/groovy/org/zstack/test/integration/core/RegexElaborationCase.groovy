@@ -41,6 +41,7 @@ class RegexElaborationCase extends SubCase {
         testElaboration6()
         testElaboration7()
         testElaboration8()
+        testElaboration7()
     }
 
     void testElaboration1() {
@@ -99,9 +100,23 @@ class RegexElaborationCase extends SubCase {
 
         ErrorCode result = err(PrimaryStorageErrors.ATTACH_ERROR, errorCodes, errorCodes.getDetails())
 
+        assert result.elaboration.trim().equals("错误信息: .*can not find vg .* and create vg with forceWipw=.*")
+        assert result.messages.message_cn.trim().equals("无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
+        assert result.messages.message_en.trim().equals("Could not attach shared block storage to cluster, because device is not empty. Please select the checkbox \"Clear LUN\" and try again.")
+
+        errCode1 = Platform.operr("operation error, because:.*can not find vg .* and create vg with forceWipw=.*") as ErrorCode
+        errCode2 = Platform.operr("operation error, because:.*can not find vg .* and create vg with forceWipw=.*") as ErrorCode
+
+        causes.clear()
+        causes.add(errCode1)
+        causes.add(errCode2)
+        errorCodes.setCauses(causes)
+
+        result = err(PrimaryStorageErrors.ATTACH_ERROR, errorCodes, errorCodes.getDetails())
         assert result.elaboration.trim().equals("错误信息: 无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
         assert result.messages.message_cn.trim().equals("无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
         assert result.messages.message_en.trim().equals("Could not attach shared block storage to cluster, because device is not empty. Please select the checkbox \"Clear LUN\" and try again.")
+
     }
 
     /**
