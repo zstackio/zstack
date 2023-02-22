@@ -5,6 +5,7 @@ import java.util.List;
 public abstract class APIGetMessage extends APISyncCallMessage {
     private Integer limit = 1000;
     private Integer start = 0;
+    private String order = "asc";
 
     public Integer getLimit() {
         return limit;
@@ -31,5 +32,13 @@ public abstract class APIGetMessage extends APISyncCallMessage {
             end = candidates.size();
         }
         return candidates.subList(start, end);
+    }
+
+    public String getOrder() {
+        return order;
+    }
+
+    public void setOrder(String order) {
+        this.order = order;
     }
 }
