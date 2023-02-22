@@ -297,17 +297,28 @@ public class StringSimilarity {
         }
 
         long start = System.currentTimeMillis();
-        if (errors.get(sub) != null) {
+        ErrorCodeElaboration err = errors.get(sub);
+        if (err != null && verifyElaboration(err, sub, args)) {
             logSearchSpend(sub, start, true);
-            return errors.get(sub);
+            return err;
         }
 
-        if (missed.get(sub) != null) {
+        // note: do not use another cache to support general error
+        // fmt, because we think during a period only errors with
+        // same cause will happen
+        // invalid cache, generate elaboration again
+        if (err != null) {
+            errors.remove(sub);
+        }
+
+        if (args != null && missed.get(String.format(sub, args)) != null) {
+            logSearchSpend(sub, start, false);
+            return null;
+        } else if (missed.get(sub) != null) {
             logSearchSpend(sub, start, false);
             return null;
         }
 
-        ErrorCodeElaboration err;
         try {
             logger.trace(String.format("start to search elaboration for: %s", String.format(sub, args)));
             err = findMostSimilarRegex(String.format(sub, args));

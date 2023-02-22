@@ -979,7 +979,11 @@ public class Platform {
 
         // failed to find elaboration, add the error code fmt string to missed list
         if (ela == null) {
-            StringSimilarity.addMissed(fmt);
+            if (args != null) {
+                StringSimilarity.addMissed(String.format(fmt, args));
+            } else {
+                StringSimilarity.addMissed(fmt);
+            }
 
             // note: if allowCode failed to find elaboration,
             // we still need to add the description to missed list
