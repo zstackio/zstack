@@ -22,8 +22,8 @@
             <list>
                 <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateHostAndPrimaryStorageFlow</value>
-		<value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
-		<value>org.zstack.compute.vm.VmPreAllocateNicFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
+                <value>org.zstack.compute.vm.VmPreAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateCdRomFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>

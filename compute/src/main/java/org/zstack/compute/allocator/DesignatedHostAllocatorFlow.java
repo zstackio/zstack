@@ -1,5 +1,6 @@
 package org.zstack.compute.allocator;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -25,14 +26,14 @@ public class DesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
     private DatabaseFacade dbf;
 
     @Transactional(readOnly = true)
-    private List<HostVO> allocate(String zoneUuid, String clusterUuid, String hostUuid, String hypervisorType) {
+    private List<HostVO> allocate(String zoneUuid, List<String> clusterUuids, String hostUuid, String hypervisorType) {
         StringBuilder sql = new StringBuilder();
         sql.append("select h from HostVO h where ");
         if (zoneUuid != null) {
             sql.append(String.format("h.zoneUuid = '%s' and ", zoneUuid));
         }
-        if (clusterUuid != null) {
-            sql.append(String.format("h.clusterUuid = '%s' and ", clusterUuid));
+        if (!CollectionUtils.isEmpty(clusterUuids)) {
+            sql.append(String.format("h.clusterUuid in ('%s') and ", String.join("','", clusterUuids)));
         }
         if (hostUuid != null) {
             sql.append(String.format("h.uuid = '%s' and ", hostUuid));
@@ -53,13 +54,13 @@ public class DesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
     }
     
     
-    private List<HostVO> allocate(List<HostVO> candidates, String zoneUuid, String clusterUuid, String hostUuid, String hypervisorType) {
+    private List<HostVO> allocate(List<HostVO> candidates, String zoneUuid,  List<String> clusterUuids, String hostUuid, String hypervisorType) {
         List<HostVO> ret = new ArrayList<HostVO>(candidates.size());
         for (HostVO h : candidates) {
             if (zoneUuid != null && !h.getZoneUuid().equals(zoneUuid)) {
                 continue;
             }
-            if (clusterUuid != null && !h.getClusterUuid().equals(clusterUuid)) {
+            if (!CollectionUtils.isEmpty(clusterUuids) && !clusterUuids.contains(h.getClusterUuid())) {
                 continue;
             }
             if (hostUuid != null && !h.getUuid().equals(hostUuid)) {
@@ -76,18 +77,18 @@ public class DesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
     @Override
     public void allocate() {
         String zoneUuid = (String) spec.getExtraData().get(HostAllocatorConstant.LocationSelector.zone);
-        String clusterUuid = (String) spec.getExtraData().get(HostAllocatorConstant.LocationSelector.cluster);
+        List<String> clusterUuids = (List<String>) spec.getExtraData().get(HostAllocatorConstant.LocationSelector.cluster);
         String hostUuid = (String) spec.getExtraData().get(HostAllocatorConstant.LocationSelector.host);
 
-        if (zoneUuid == null && clusterUuid == null && hostUuid == null && spec.getHypervisorType() == null) {
+        if (zoneUuid == null && CollectionUtils.isEmpty(clusterUuids) && hostUuid == null && spec.getHypervisorType() == null) {
             next(candidates);
             return;
         }
 
         if (amITheFirstFlow()) {
-            candidates = allocate(zoneUuid, clusterUuid, hostUuid, spec.getHypervisorType());
+            candidates = allocate(zoneUuid, clusterUuids, hostUuid, spec.getHypervisorType());
         } else {
-            candidates = allocate(candidates, zoneUuid, clusterUuid, hostUuid, spec.getHypervisorType());
+            candidates = allocate(candidates, zoneUuid, clusterUuids, hostUuid, spec.getHypervisorType());
         }
 
         if (candidates.isEmpty()) {
@@ -95,8 +96,8 @@ public class DesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
             if (zoneUuid != null) {
                 args.append(String.format("zoneUuid=%s", zoneUuid)).append(" ");
             }
-            if (clusterUuid != null) {
-                args.append(String.format("clusterUuid=%s", clusterUuid)).append(" ");
+            if (!clusterUuids.isEmpty()) {
+                args.append(String.format("clusterUuid in %s", clusterUuids)).append(" ");
             }
             if (hostUuid != null) {
                 args.append(String.format("hostUuid=%s", hostUuid)).append(" ");
