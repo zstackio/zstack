@@ -65,18 +65,6 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("priUuid", spec.getRequiredPrimaryStorageUuid());
             errorInfo = String.format("required primary storage[uuid:%s] cannot satisfy conditions[state:%s, status:%s, size:%s]",
                     spec.getRequiredPrimaryStorageUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
-        } else if (!org.apache.commons.collections.CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuids())) {
-            sql = "select pri" +
-                    " from PrimaryStorageVO pri" +
-                    " where pri.state = :priState" +
-                    " and pri.status = :status" +
-                    " and pri.uuid in (:priUuids)";
-            query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
-            query.setParameter("priState", PrimaryStorageState.Enabled);
-            query.setParameter("status", PrimaryStorageStatus.Connected);
-            query.setParameter("priUuids", spec.getRequiredPrimaryStorageUuids());
-            errorInfo = String.format("required primary storage%s cannot satisfy conditions[state:%s, status:%s, size:%s]",
-                    spec.getRequiredPrimaryStorageUuids(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredHostUuid() != null) {
             sql = "select pri" +
                     " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, HostVO host" +
@@ -139,6 +127,11 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         List<PrimaryStorageVO> vos = query.getResultList()
                 .stream().filter(distinctByKey(PrimaryStorageVO::getUuid)).collect(Collectors.toList());
         logger.debug("select primary storage by sql: " + sql);
+
+        if (spec.getRequiredPrimaryStorageUuids() != null && !spec.getRequiredPrimaryStorageUuids().isEmpty()) {
+            logger.debug(String.format("filter through primary storage uuids: %s", spec.getRequiredPrimaryStorageUuids()));
+            vos = vos.stream().filter(vo -> spec.getRequiredPrimaryStorageUuids().contains(vo.getUuid())).collect(Collectors.toList());
+        }
 
         /**
          * 1. if ps is indicated, then choose it directly
