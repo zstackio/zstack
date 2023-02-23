@@ -13,6 +13,7 @@ import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -25,7 +26,10 @@ public class StringSimilarity {
 
     public static final String elaborateFolder = "errorElaborations";
     public static File classPathFolder = PathUtil.findFolderOnClassPath(StringSimilarity.elaborateFolder);
+
+    // used for Jaro Similarity
     private static final double threshold = 0.1;
+
     private static final int mapLength = 1500;
     public static int maxElaborationRegex = 8192;
 
@@ -52,6 +56,14 @@ public class StringSimilarity {
     // initial errors from json files
     private static List<ErrorCodeElaboration> elaborations = initialElaborations();
 
+    /**
+     * check if the elaboration matches
+     * 1. check if the error is matched by regex
+     * 2. check if the error's distance is less than threshold
+     *
+     * @param err error code elaboration
+     * @return true if the error is matched
+     */
     public static boolean matched(ErrorCodeElaboration err) {
         if (err == null) {
             return false;
@@ -59,13 +71,17 @@ public class StringSimilarity {
         if (ElaborationSearchMethod.regex == err.getMethod()) {
             return true;
         }
-        return !(err.getDistance() > threshold);
+
+        return err.getDistance() < threshold;
     }
 
     public static List<ErrorCodeElaboration> getElaborations() {
         return new ArrayList<>(elaborations);
     }
 
+    /**
+     * reset the cached errors and missed errors
+     */
     public static void resetCachedErrors() {
         synchronized(errors) {
             errors.clear();
@@ -75,6 +91,12 @@ public class StringSimilarity {
         }
     }
 
+    /**
+     * add the error code elaboration to the errors cache.
+     *
+     * @param key error code fmt string
+     * @param err error code elaboration
+     */
     public static void addErrors(String key, ErrorCodeElaboration err) {
         if (err != null) {
             synchronized(errors) {
@@ -83,12 +105,20 @@ public class StringSimilarity {
         }
     }
 
+    /**
+     * add the error code fmt string to the missed cache.
+     *
+     * @param key error code fmt string
+     */
     public static void addMissed(String key) {
         synchronized(missed){
             missed.put(key, true);
         }
     }
 
+    /**
+     * refresh the error code elaborations from the json files.
+     */
     public static void refreshErrorTemplates() {
         elaborations = initialElaborations();
     }
@@ -124,6 +154,7 @@ public class StringSimilarity {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static List<ErrorCodeElaboration> initialElaborations() {
         List<String> errorTemplates = PathUtil.scanFolderOnClassPath(elaborateFolder);
         List<ErrorCodeElaboration> els = Collections.synchronizedList(new ArrayList<>());
@@ -137,7 +168,7 @@ public class StringSimilarity {
             }
             File templateFile = new File(errorTemplate);
             try {
-                String content = FileUtils.readFileToString(templateFile);
+                String content = FileUtils.readFileToString(templateFile, Charset.defaultCharset());
                 if (content == null || content.isEmpty()) {
                     continue;
                 }
@@ -146,12 +177,9 @@ public class StringSimilarity {
                         ArrayList.class,
                         ErrorCodeElaboration.class
                 ));
-                els.sort(new Comparator<ErrorCodeElaboration>() {
-                    @Override
-                    public int compare(ErrorCodeElaboration o1, ErrorCodeElaboration o2) {
-                        return Integer.parseInt(o1.getCode()) - Integer.parseInt(o2.getCode());
-                    }
-                });
+                els.sort(Comparator.comparingInt(
+                        o -> Integer.parseInt(o.getCode())
+                ));
             } catch (IOException e) {
                 throw new RuntimeException(String.format("read error elaboration template files failed, due to: %s", e.getMessage()));
             }
@@ -164,6 +192,12 @@ public class StringSimilarity {
         return els;
     }
 
+    /**
+     * check if the regex is contained in the elaborations.
+     *
+     * @param regex regex
+     * @return true if the regex is contained
+     */
     public static boolean regexContained(String regex) {
         for (ErrorCodeElaboration e: elaborations) {
             if (e.getRegex().equals(regex)) {
@@ -173,6 +207,12 @@ public class StringSimilarity {
         return false;
     }
 
+    /**
+     * check if the error code is contained in the elaborations.
+     *
+     * @param code error code
+     * @return true if the error code is contained
+     */
     public static boolean errorCodeContained(String code) {
         for (ErrorCodeElaboration e: elaborations) {
             String errCode = e.getCategory() + "." + e.getCode();
@@ -228,11 +268,11 @@ public class StringSimilarity {
         return l.distance(str, sub);
     }
 
-    private static final List<String> redundantStrs = CollectionDSL.list("unhandled exception happened when calling");
+    private static final List<String> redundantErrors = CollectionDSL.list("unhandled exception happened when calling");
 
     private static boolean isRedundant(String sub) {
-        for (String redundantStr: redundantStrs) {
-            if (sub.startsWith(redundantStr)) {
+        for (String redundantError: redundantErrors) {
+            if (sub.startsWith(redundantError)) {
                 return true;
             }
         }
@@ -244,23 +284,41 @@ public class StringSimilarity {
                 sub.length() > 50 ? sub.substring(0 , 50) + "..." : sub));
     }
 
+    /**
+     * find the most similar error code elaboration for the given error message.
+     *
+     * @param sub error message or error message fmt
+     * @param args arguments
+     * @return the most similar error code elaboration
+     */
     public static ErrorCodeElaboration findSimilar(String sub, Object...args) {
         if (sub == null || sub.isEmpty() || isRedundant(sub)) {
             return null;
         }
 
         long start = System.currentTimeMillis();
-        if (errors.get(sub) != null) {
+        ErrorCodeElaboration err = errors.get(sub);
+        if (err != null && verifyElaboration(err, sub, args)) {
             logSearchSpend(sub, start, true);
-            return errors.get(sub);
+            return err;
         }
 
-        if (missed.get(sub) != null) {
+        // note: do not use another cache to support general error
+        // fmt, because we think during a period only errors with
+        // same cause will happen
+        // invalid cache, generate elaboration again
+        if (err != null) {
+            errors.remove(sub);
+        }
+
+        if (args != null && missed.get(String.format(sub, args)) != null) {
+            logSearchSpend(sub, start, false);
+            return null;
+        } else if (missed.get(sub) != null) {
             logSearchSpend(sub, start, false);
             return null;
         }
 
-        ErrorCodeElaboration err;
         try {
             logger.trace(String.format("start to search elaboration for: %s", String.format(sub, args)));
             err = findMostSimilarRegex(String.format(sub, args));
@@ -269,6 +327,7 @@ public class StringSimilarity {
             err = findMostSimilarRegex(sub);
         }
 
+        // find by distance is not reliable disable it for now
         if (err == null) {
             err = findSimilarDistance(sub);
         }
@@ -278,49 +337,55 @@ public class StringSimilarity {
         return err;
     }
 
+    private static boolean verifyElaboration(ErrorCodeElaboration elaboration, String sub, Object...args) {
+        try {
+            if (elaboration.getMethod() == ElaborationSearchMethod.regex) {
+                return isRegexMatched(elaboration.getRegex(), sub)
+                        || isRegexMatched(elaboration.getRegex(), String.format(sub, args));
+            } else if (elaboration.getMethod() == ElaborationSearchMethod.distance) {
+                return getSimilar(elaboration.getRegex(), sub) < threshold
+                        || getSimilar(elaboration.getRegex(), String.format(sub, args)) < threshold;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+
+        return true;
+    }
+
     // better precision, worse performance
     private static ErrorCodeElaboration findMostSimilarRegex(String sub) {
         if (!isRegexMatchedByRetrees(sub)) {
             return null;
         }
-        ErrorCodeElaboration matchE = null;
-        for (ErrorCodeElaboration elaboration: elaborations) {
-            if (ElaborationSearchMethod.distance == elaboration.getMethod()) {
-                continue;
-            }
-            if (isRegexMatched(elaboration.getRegex(), sub)) {
-                if (matchE == null) {
-                    matchE = elaboration;
-                } else if (elaboration.getRegex().length() > matchE.getRegex().length()) {
-                    matchE = elaboration;
-                }
-            }
-        }
 
-        return matchE;
+        // find the most similar regex by compare matched regex length
+        return elaborations.stream()
+                .filter(ela -> ElaborationSearchMethod.regex == ela.getMethod())
+                .filter(ela -> isRegexMatched(ela.getRegex(), sub))
+                .max(Comparator.comparingInt(e -> e.getRegex().length()))
+                .orElse(null);
     }
 
     private static ErrorCodeElaboration findSimilarDistance(String sub) {
-        ErrorCodeElaboration result = null;
-        for (ErrorCodeElaboration elaboration: elaborations) {
-            if (ElaborationSearchMethod.regex == elaboration.getMethod()) {
-                continue;
-            }
-            double distance = getSimilar(elaboration.getRegex(), sub);
-            if (result == null) {
-                result = new ErrorCodeElaboration(elaboration);
-                result.setDistance(distance);
-            } else {
-                if (distance < result.getDistance()) {
-                    result = new ErrorCodeElaboration(elaboration);
-                    result.setDistance(distance);
-                }
-            }
-        }
-
-        return result;
+        return elaborations.stream()
+                .filter(ela -> ElaborationSearchMethod.distance == ela.getMethod())
+                .map(ela -> {
+                    ErrorCodeElaboration result = new ErrorCodeElaboration(ela);
+                    result.setDistance(getSimilar(ela.getRegex(), sub));
+                    return result;
+                })
+                .min(Comparator.comparingDouble(ErrorCodeElaboration::getDistance))
+                .orElse(null);
     }
 
+    /**
+     * format the error code elaboration message
+     *
+     * @param message error code elaboration message
+     * @param args arguments
+     * @return formatted error code elaboration message
+     */
     public static String formatElaboration(String message, Object...args) {
         StringBuilder buffer = new StringBuilder();
         buffer.append(message);
@@ -333,6 +398,13 @@ public class StringSimilarity {
         return new ReMatcher(retrees, sub).find();
     }
 
+    /**
+     * check if the given string is matched by the given regex.
+     *
+     * @param regex regex
+     * @param sub string
+     * @return true if the given string is matched by the given regex
+     */
     public static boolean isRegexMatched(String regex, String sub) {
         if (patterns.get(regex) == null) {
             return false;
@@ -340,6 +412,20 @@ public class StringSimilarity {
         return patterns.get(regex).matcher(sub).find();
     }
 
+    /**
+     * Jaro Similarity is the measure of similarity between two strings.
+     *
+     * The value of Jaro distance ranges from 0 to 1. where 0 means the strings are equal
+     * and 1 means no similarity between the two strings.
+     *
+     * We need to check the result of Jaro Similarity is greater than the threshold value.
+     *
+     * In case of a very long sub, the result is not reliable
+     *
+     * @param str regex
+     * @param sub string
+     * @return Jaro Similarity value
+     */
     private static double getSimilar(String str, String sub) {
         return getSimilar(str, sub, "jaroWinkler");
     }
