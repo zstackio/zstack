@@ -938,7 +938,7 @@ public class RestServer implements Component, CloudBusEventListener {
         try {
             date = ZonedDateTime.parse(dateStr, formatter);
         } catch (RuntimeException e) {
-            throw new RestException(HttpStatus.BAD_REQUEST.value(), "'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss '");
+            throw new RestException(HttpStatus.BAD_REQUEST.value(), "'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss z'");
         }
 
         ZonedDateTime now = ZonedDateTime.now();
