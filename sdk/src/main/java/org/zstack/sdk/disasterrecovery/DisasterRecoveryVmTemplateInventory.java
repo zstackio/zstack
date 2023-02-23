@@ -20,12 +20,12 @@ public class DisasterRecoveryVmTemplateInventory extends org.zstack.sdk.VmTempla
         return this.templateType;
     }
 
-    public java.lang.String failbackMode;
-    public void setFailbackMode(java.lang.String failbackMode) {
-        this.failbackMode = failbackMode;
+    public java.lang.String failbackDestination;
+    public void setFailbackDestination(java.lang.String failbackDestination) {
+        this.failbackDestination = failbackDestination;
     }
-    public java.lang.String getFailbackMode() {
-        return this.failbackMode;
+    public java.lang.String getFailbackDestination() {
+        return this.failbackDestination;
     }
 
     public boolean useExistingVolume;
@@ -50,6 +50,14 @@ public class DisasterRecoveryVmTemplateInventory extends org.zstack.sdk.VmTempla
     }
     public java.lang.String getOriginVmInstanceUuid() {
         return this.originVmInstanceUuid;
+    }
+
+    public java.lang.String externalManagementTagUuids;
+    public void setExternalManagementTagUuids(java.lang.String externalManagementTagUuids) {
+        this.externalManagementTagUuids = externalManagementTagUuids;
+    }
+    public java.lang.String getExternalManagementTagUuids() {
+        return this.externalManagementTagUuids;
     }
 
 }

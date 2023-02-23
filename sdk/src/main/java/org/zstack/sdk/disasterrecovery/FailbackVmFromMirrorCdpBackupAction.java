@@ -79,11 +79,14 @@ public class FailbackVmFromMirrorCdpBackupAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataVolumeSystemTags;
 
-    @Param(required = true, validValues = {"Create","Revert"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String failbackMode;
+    @Param(required = false, validValues = {"OriginalVm","NewVm"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String destination;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean useExistingVolume;
+    public boolean useExistingVolume = false;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List externalManagementTagUuids;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

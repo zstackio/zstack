@@ -43,7 +43,7 @@ public class UpdateDisasterRecoveryVmTemplateAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List l3NetworkUuids;
 
-    @Param(required = false, validValues = {"FailBack","FastRecover"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"Failback","FastRecovery"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String templateType;
 
     @Param(required = false, validValues = {"UserVm","ApplianceVm"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -82,8 +82,8 @@ public class UpdateDisasterRecoveryVmTemplateAction extends AbstractAction {
     @Param(required = false, validValues = {"InstantStart","JustCreate","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String strategy;
 
-    @Param(required = false, validValues = {"Create","Revert"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String failbackMode;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String failbackDestination;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean useExistingVolume;
@@ -98,7 +98,10 @@ public class UpdateDisasterRecoveryVmTemplateAction extends AbstractAction {
     public long groupId = 0L;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagPatternUuids;
+    public java.lang.String originVmInstanceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List externalManagementTagUuids;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
