@@ -562,6 +562,7 @@ public class Ssh {
         ret.raiseExceptionIfFailed();
     }
 
+    @Deprecated
     public void runErrorByException() {
         SshResult ret = run();
         try {
