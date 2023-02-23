@@ -1,7 +1,8 @@
 package org.zstack.sdk;
 
 public enum GuestToolsState {
-	Unknown,
+	NotInstalled,
 	Running,
 	NotRunning,
+	NotUpgraded,
 }
