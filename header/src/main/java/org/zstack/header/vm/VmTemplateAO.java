@@ -76,7 +76,7 @@ public class VmTemplateAO implements ToInventory {
     private String systemTags;
 
     @Column
-    private String tagPatternUuids;
+    private String tagUuids;
 
     public VmTemplateAO() {
     }
@@ -103,15 +103,15 @@ public class VmTemplateAO implements ToInventory {
         this.description = other.description;
         this.strategy = other.strategy;
         this.systemTags = other.systemTags;
-        this.tagPatternUuids = other.tagPatternUuids;
+        this.tagUuids = other.tagUuids;
     }
 
-    public String getTagPatternUuids() {
-        return tagPatternUuids;
+    public String getTagUuids() {
+        return tagUuids;
     }
 
-    public void setTagPatternUuids(String tagPatternUuids) {
-        this.tagPatternUuids = tagPatternUuids;
+    public void setTagUuids(String tagUuids) {
+        this.tagUuids = tagUuids;
     }
 
     public String getRootVolumeSystemTags() {

@@ -85,8 +85,8 @@ public class CreateDisasterRecoveryVmTemplateAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false, validValues = {"Create","Revert"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String failbackMode;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String failbackDestination;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean useExistingVolume = false;
@@ -98,7 +98,10 @@ public class CreateDisasterRecoveryVmTemplateAction extends AbstractAction {
     public java.lang.String strategy;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagPatternUuids;
+    public java.lang.String originVmInstanceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List externalManagementTagUuids;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

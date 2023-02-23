@@ -29,5 +29,5 @@ public class VmTemplateAO_ {
     public static volatile SingularAttribute<VmTemplateAO, String> description;
     public static volatile SingularAttribute<VmTemplateAO, String> strategy;
     public static volatile SingularAttribute<VmTemplateAO, String> systemTags;
-    public static volatile SingularAttribute<VmTemplateAO, String> tagPatternUuids;
+    public static volatile SingularAttribute<VmTemplateAO, String> tagUuids;
 }
