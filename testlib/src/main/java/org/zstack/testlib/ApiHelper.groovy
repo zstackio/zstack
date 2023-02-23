@@ -30879,6 +30879,33 @@ abstract class ApiHelper {
     }
 
 
+    def revertTemplateConfig(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RevertTemplateConfigAction.class) Closure c) {
+        def a = new org.zstack.sdk.RevertTemplateConfigAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def revertVmFromCdpBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RevertVmFromCdpBackupAction.class) Closure c) {
         def a = new org.zstack.sdk.RevertVmFromCdpBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
