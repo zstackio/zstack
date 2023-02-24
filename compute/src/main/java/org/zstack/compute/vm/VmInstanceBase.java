@@ -3435,9 +3435,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (msg.getIp6() != null) {
             UsedIpVO vo = new UsedIpVO();
             vo.setUuid(Platform.getUuid());
-            vo.setIp(msg.getIp());
-            vo.setGateway(msg.getIpv6Gateway());
-            vo.setNetmask(msg.getIpv6prefix());
+            vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIp()));
+            vo.setGateway(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIpv6Gateway()));
+            vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getIpv6prefix()));
             vo.setIpVersion(IPv6Constants.IPv6);
             vo.setVmNicUuid(nicVO.getUuid());
             vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());

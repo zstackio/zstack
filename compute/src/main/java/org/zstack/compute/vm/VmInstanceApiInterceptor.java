@@ -267,10 +267,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     continue;
                 }
 
-                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp()) || !l3NetworkVO.getEnableIPAM()) {
+                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp())) {
                     found = true;
                     break;
                 }
+            }
+
+            if (!l3NetworkVO.getEnableIPAM()) {
+                found = true;
             }
 
             if (!found) {
@@ -306,10 +310,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     if (ipVersion != ipr.getIpVersion()) {
                         continue;
                     }
-                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp()) || !l3NetworkVO.getEnableIPAM()) {
+                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp())) {
                         found = true;
                         break;
                     }
+                }
+
+                if (!l3NetworkVO.getEnableIPAM()) {
+                    found = true;
                 }
 
                 if (!found) {
@@ -711,10 +719,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
             boolean found = false;
             for (NormalIpRangeVO ipr : iprs) {
-                if (NetworkUtils.isInRange(msg.getIp(), ipr.getStartIp(), ipr.getEndIp()) || !t.get(4, Boolean.class)) {
+                if (NetworkUtils.isInRange(msg.getIp(), ipr.getStartIp(), ipr.getEndIp())) {
                     found = true;
                     break;
                 }
+            }
+
+            if (!t.get(4, Boolean.class)) {
+                found = true;
             }
 
             if (!found) {
@@ -811,10 +823,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     continue;
                 }
 
-                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp()) || !l3NetworkVO.getEnableIPAM()) {
+                if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp())) {
                     found = true;
                     break;
                 }
+            }
+
+            if (!l3NetworkVO.getEnableIPAM()) {
+                found = true;
             }
 
             if (!found) {
@@ -850,10 +866,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     if (ipVersion != ipr.getIpVersion()) {
                         continue;
                     }
-                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp()) || !l3NetworkVO.getEnableIPAM()) {
+                    if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp())) {
                         found = true;
                         break;
                     }
+                }
+
+                if (!l3NetworkVO.getEnableIPAM()) {
+                    found = true;
                 }
 
                 if (!found) {
