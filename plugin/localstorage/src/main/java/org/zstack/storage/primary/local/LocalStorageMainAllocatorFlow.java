@@ -83,33 +83,6 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
                     HostState.Enabled,
                     HostStatus.Connected,
                     spec.getSize());
-        } else if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuids())) {
-            String sql = "select ref" +
-                    " from PrimaryStorageVO pri, LocalStorageHostRefVO ref, HostVO host" +
-                    " where ref.primaryStorageUuid = pri.uuid" +
-                    " and pri.state = :state" +
-                    " and pri.status = :status" +
-                    " and pri.uuid in (:uuids)" +
-                    " and host.uuid = ref.hostUuid" +
-                    " and host.state = :hstate" +
-                    " and host.status = :hstatus" +
-                    " and pri.type = :ptype";
-            query = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
-            query.setParameter("state", PrimaryStorageState.Enabled);
-            query.setParameter("status", PrimaryStorageStatus.Connected);
-            query.setParameter("uuids", spec.getRequiredPrimaryStorageUuids());
-            query.setParameter("hstate", HostState.Enabled);
-            query.setParameter("hstatus", HostStatus.Connected);
-            query.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-
-            ret.err = operr("required primary storage%s cannot satisfy conditions[state: %s, status: %s]," +
-                            " or hosts providing the primary storage don't satisfy conditions[state: %s, status: %s, size > %s bytes]",
-                    spec.getRequiredPrimaryStorageUuids(),
-                    PrimaryStorageState.Enabled,
-                    PrimaryStorageStatus.Connected,
-                    HostState.Enabled,
-                    HostStatus.Connected,
-                    spec.getSize());
         } else if (spec.getRequiredHostUuid() != null) {
             String sql = "select lref" +
                     " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO pref, HostVO host, LocalStorageHostRefVO lref" +
@@ -198,6 +171,12 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             logger.debug(String.format("host[uuid:%s] is request, only check its capacity", spec.getRequiredHostUuid()));
             refs = refs.stream()
                     .filter(ref -> ref.getHostUuid().equals(spec.getRequiredHostUuid()))
+                    .collect(Collectors.toList());
+        }
+
+        if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuids())) {
+            logger.debug(String.format("filter through primary storage uuids: %s", spec.getRequiredPrimaryStorageUuids()));
+            refs = refs.stream().filter(ref -> spec.getRequiredPrimaryStorageUuids().contains(ref.getPrimaryStorageUuid()))
                     .collect(Collectors.toList());
         }
 
