@@ -2,7 +2,6 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -34,7 +33,7 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
     @APIParam(required = false)
     private String ipv6Gateway;
     @APIParam(required = false)
-    private String ipv6prefix;
+    private String ipv6Prefix;
 
     public String getIp() {
         return ip;
@@ -93,12 +92,12 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
         this.ipv6Gateway = ipv6Gateway;
     }
 
-    public String getIpv6prefix() {
-        return ipv6prefix;
+    public String getIpv6Prefix() {
+        return ipv6Prefix;
     }
 
-    public void setIpv6prefix(String ipv6prefix) {
-        this.ipv6prefix = ipv6prefix;
+    public void setIpv6Prefix(String ipv6Prefix) {
+        this.ipv6Prefix = ipv6Prefix;
     }
 
     public static APISetVmStaticIpMsg __example__() {

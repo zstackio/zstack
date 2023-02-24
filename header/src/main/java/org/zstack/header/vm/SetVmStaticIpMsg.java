@@ -13,7 +13,7 @@ public class SetVmStaticIpMsg extends NeedReplyMessage implements VmInstanceMess
     private String netmask;
     private String gateway;
     private String ipv6Gateway;
-    private String ipv6prefix;
+    private String ipv6Prefix;
 
     @Override
     public String getVmInstanceUuid() {
@@ -72,11 +72,11 @@ public class SetVmStaticIpMsg extends NeedReplyMessage implements VmInstanceMess
         this.ipv6Gateway = ipv6Gateway;
     }
 
-    public String getIpv6prefix() {
-        return ipv6prefix;
+    public String getIpv6Prefix() {
+        return ipv6Prefix;
     }
 
-    public void setIpv6prefix(String ipv6prefix) {
-        this.ipv6prefix = ipv6prefix;
+    public void setIpv6Prefix(String ipv6Prefix) {
+        this.ipv6Prefix = ipv6Prefix;
     }
 }

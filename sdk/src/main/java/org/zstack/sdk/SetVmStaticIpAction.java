@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class SetVmStaticIpAction extends AbstractAction {
 
@@ -47,7 +46,7 @@ public class SetVmStaticIpAction extends AbstractAction {
     public java.lang.String ipv6Gateway;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ipv6prefix;
+    public java.lang.String ipv6Prefix;
 
     @Param(required = false)
     public java.util.List systemTags;

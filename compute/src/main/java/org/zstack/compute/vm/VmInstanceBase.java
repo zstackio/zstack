@@ -77,6 +77,7 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkInfo;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
@@ -2070,7 +2071,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             private boolean isSet = false;
             private boolean allowDupicatedAddress = false;
             Map<String, List<String>> staticIpMap = null;
-            Map<String, NetworkUtils.IPAMInfo> ipamInfoMap = null;
+            Map<String, NetworkInfo> ipamInfoMap = null;
 
             void set() {
                 if (msg instanceof APIAttachL3NetworkToVmMsg) {
@@ -3360,7 +3361,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         cmsg.setGateway(msg.getGateway());
         cmsg.setNetmask(msg.getNetmask());
         cmsg.setIpv6Gateway(msg.getIpv6Gateway());
-        cmsg.setIpv6prefix(msg.getIpv6prefix());
+        cmsg.setIpv6Prefix(msg.getIpv6Prefix());
         bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, cmsg.getVmInstanceUuid());
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
@@ -3437,7 +3438,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             vo.setUuid(Platform.getUuid());
             vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIp()));
             vo.setGateway(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIpv6Gateway()));
-            vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getIpv6prefix()));
+            vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getIpv6Prefix()));
             vo.setIpVersion(IPv6Constants.IPv6);
             vo.setVmNicUuid(nicVO.getUuid());
             vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
@@ -3461,7 +3462,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             } else {
                 vo.setIp(msg.getIp());
                 vo.setGateway(msg.getIpv6Gateway());
-                vo.setNetmask(msg.getIpv6prefix());
+                vo.setNetmask(msg.getIpv6Prefix());
                 vo.setIpVersion(IPv6Constants.IPv6);
                 vo.setVmNicUuid(nicVO.getUuid());
                 vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());

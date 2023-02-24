@@ -6,13 +6,10 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.cluster.ClusterDeletionMsg;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -21,7 +18,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
-import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.*;
@@ -32,6 +28,7 @@ import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkInfo;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -62,7 +59,7 @@ public class VmAllocateNicFlow implements Flow {
         taskProgress("create nics");
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        final Map<String, NetworkUtils.IPAMInfo> ipamInfoMap = (Map<String, NetworkUtils.IPAMInfo>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_ipamInfo.toString());
+        final Map<String, NetworkInfo> ipamInfoMap = (Map<String, NetworkInfo>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_ipamInfo.toString());
 
         final List<String> disableL3Networks = new ArrayList<>();
         if (spec.getDisableL3Networks() != null && !spec.getDisableL3Networks().isEmpty()) {
@@ -149,14 +146,14 @@ public class VmAllocateNicFlow implements Flow {
                 @Override
                 protected void scripts() {
                     vnicFactory.createVmNic(nic, spec);
-                    NetworkUtils.IPAMInfo nicIpamInfo = ipamInfoMap.get(nic.getL3NetworkUuid());
-                    if (nicIpamInfo != null) {
-                        if (!Objects.equals(nicIpamInfo.ipv4Address, "")) {
+                    NetworkInfo nicNetworkInfo = ipamInfoMap.get(nic.getL3NetworkUuid());
+                    if (nicNetworkInfo != null) {
+                        if (!Objects.equals(nicNetworkInfo.ipv4Address, "")) {
                             UsedIpVO vo = new UsedIpVO();
                             vo.setUuid(Platform.getUuid());
-                            vo.setIp(nicIpamInfo.ipv4Address);
-                            vo.setGateway(nicIpamInfo.ipv4Gateway);
-                            vo.setNetmask(nicIpamInfo.ipv4Netmask);
+                            vo.setIp(nicNetworkInfo.ipv4Address);
+                            vo.setGateway(nicNetworkInfo.ipv4Gateway);
+                            vo.setNetmask(nicNetworkInfo.ipv4Netmask);
                             vo.setIpVersion(IPv6Constants.IPv4);
                             vo.setVmNicUuid(nic.getUuid());
                             vo.setL3NetworkUuid(nic.getL3NetworkUuid());
@@ -165,12 +162,12 @@ public class VmAllocateNicFlow implements Flow {
                             }
                             dbf.persist(vo);
                         }
-                        if (!Objects.equals(nicIpamInfo.ipv6Address, "")) {
+                        if (!Objects.equals(nicNetworkInfo.ipv6Address, "")) {
                             UsedIpVO vo = new UsedIpVO();
                             vo.setUuid(Platform.getUuid());
-                            vo.setIp(nicIpamInfo.ipv6Address);
-                            vo.setGateway(nicIpamInfo.ipv6Gateway);
-                            vo.setNetmask(nicIpamInfo.ipv6Prefix);
+                            vo.setIp(nicNetworkInfo.ipv6Address);
+                            vo.setGateway(nicNetworkInfo.ipv6Gateway);
+                            vo.setNetmask(nicNetworkInfo.ipv6Prefix);
                             vo.setIpVersion(IPv6Constants.IPv6);
                             vo.setVmNicUuid(nic.getUuid());
                             vo.setL3NetworkUuid(nic.getL3NetworkUuid());
