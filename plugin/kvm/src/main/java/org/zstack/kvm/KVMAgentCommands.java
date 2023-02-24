@@ -3,7 +3,6 @@ package org.zstack.kvm;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
-import org.zstack.header.agent.ReloadableCommand;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.host.VmNicRedirectConfig;
@@ -2741,21 +2740,51 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class GetVmVirtualizerVersionCmd extends AgentCommand {
-        private String uuid;
+    public static class GetVirtualizerInfoCmd extends AgentCommand {
+        private List<String> vmUuids;
 
-        public void setUuid(String uuid) {
-            this.uuid = uuid;
+        public List<String> getVmUuids() {
+            return vmUuids;
         }
+
+        public void setVmUuids(List<String> vmUuids) {
+            this.vmUuids = vmUuids;
+        }
+    }
+
+    public static class GetVirtualizerInfoRsp extends AgentResponse {
+        private VirtualizerInfoTO hostInfo;
+        private List<VirtualizerInfoTO> vmInfoList;
+
+        public VirtualizerInfoTO getHostInfo() {
+            return hostInfo;
+        }
+
+        public void setHostInfo(VirtualizerInfoTO hostInfo) {
+            this.hostInfo = hostInfo;
+        }
+
+        public List<VirtualizerInfoTO> getVmInfoList() {
+            return vmInfoList;
+        }
+
+        public void setVmInfoList(List<VirtualizerInfoTO> vmInfoList) {
+            this.vmInfoList = vmInfoList;
+        }
+    }
+
+    public static class VirtualizerInfoTO {
+        private String uuid;
+        private String virtualizer;
+        private String version;
 
         public String getUuid() {
             return uuid;
         }
-    }
 
-    public static class GetVmVirtualizerVersionRsp extends AgentResponse {
-        private String virtualizer;
-        private String version;
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
 
         public void setVirtualizer(String virtualizer) {
             this.virtualizer = virtualizer;
@@ -2773,7 +2802,7 @@ public class KVMAgentCommands {
             return version;
         }
     }
-    
+
     public static class VmDeviceAddressTO {
         private String addressType;
         private String address;
