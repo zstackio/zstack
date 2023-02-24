@@ -48,7 +48,7 @@ import org.zstack.header.tag.TagResourceType;
         parameterName = "params",
         responseClass = APICreateDataVolumeEvent.class
 )
-public class APICreateDataVolumeMsg extends APICreateMessage implements APIAuditor {
+public class APICreateDataVolumeMsg extends APICreateMessage implements APIAuditor, VolumeCreateMessage {
     /**
      * @desc max length of 255 characters
      */
