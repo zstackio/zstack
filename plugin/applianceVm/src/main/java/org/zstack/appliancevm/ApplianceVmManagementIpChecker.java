@@ -3,14 +3,15 @@ package org.zstack.appliancevm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.vm.VmBeforeCreateOnHypervisorExtensionPoint;
 import org.zstack.header.vm.VmBeforeStartOnHypervisorExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.err;
@@ -18,9 +19,12 @@ import static org.zstack.core.Platform.err;
 /**
  */
 public class ApplianceVmManagementIpChecker implements VmBeforeCreateOnHypervisorExtensionPoint, VmBeforeStartOnHypervisorExtensionPoint {
+    private static final CLogger logger = Utils.getLogger(ApplianceVmManagementIpChecker.class);
 
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ErrorFacade errf;
 
     private void checkManagementIp(VmInstanceSpec spec, boolean isNewCreated) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
@@ -47,7 +51,8 @@ public class ApplianceVmManagementIpChecker implements VmBeforeCreateOnHyperviso
 
         DebugUtils.Assert(mgmtNic!=null, String.format("cannot find management nic of appliance vm[uuid:%s, newCreated: %s]", spec.getVmInventory().getUuid(), isNewCreated));
 
-        if (NetworkUtils.isReachable(mgmtNic.getIp(), 1000)) {
+        ShellResult ret = ShellUtils.runAndReturn(String.format("ping -c 1 -W 1 %s", mgmtNic.getIp()));
+        if (ret.isReturnCode(0) || NetworkUtils.isReachable(mgmtNic.getIp(), 1000)) {
             throw new OperationFailureException(err(ApplianceVmErrors.MANAGEMENT_IP_OCCUPIED,
                     "the management nic IP[%s] has been occupied by another device in the data center, we can ping it", mgmtNic.getIp()
             ));
