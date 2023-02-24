@@ -66,6 +66,8 @@ import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
+import org.zstack.kvm.hypervisor.KvmHypervisorInfoHelper;
+import org.zstack.kvm.hypervisor.KvmHypervisorInfoManager;
 import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -94,6 +96,7 @@ import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.header.host.GetVirtualizerInfoReply.VmVirtualizerInfo;
 
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
@@ -126,6 +129,8 @@ public class KVMHost extends HostBase implements Host {
     private ClusterResourceConfigInitializer crci;
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private KvmHypervisorInfoManager hypervisorManager;
 
     private KVMHostContext context;
 
@@ -169,7 +174,7 @@ public class KVMHost extends HostBase implements Host {
     private String cancelJob;
     private String getVmFirstBootDevicePath;
     private String getVmDeviceAddressPath;
-    private String getVmVirtualizerVersion;
+    private String getVirtualizerInfo;
     private String scanVmPortPath;
     private String getDevCapacityPath;
     private String configPrimaryVmPath;
@@ -343,8 +348,8 @@ public class KVMHost extends HostBase implements Host {
         getVmDeviceAddressPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-        ub.path(KVMConstant.GET_VM_VIRTUALIZER_VERSION_PATH);
-        getVmVirtualizerVersion = ub.build().toString();
+        ub.path(KVMConstant.GET_VIRTUALIZER_INFO_PATH);
+        getVirtualizerInfo = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_SCAN_VM_PORT_STATUS);
@@ -569,8 +574,8 @@ public class KVMHost extends HostBase implements Host {
             handle((GetVmFirstBootDeviceOnHypervisorMsg) msg);
         } else if (msg instanceof GetVmDeviceAddressMsg) {
             handle((GetVmDeviceAddressMsg) msg);
-        } else if (msg instanceof GetVmVirtualizerVersionMsg) {
-            handle((GetVmVirtualizerVersionMsg) msg);
+        } else if (msg instanceof GetVirtualizerInfoMsg) {
+            handle((GetVirtualizerInfoMsg) msg);
         } else if (msg instanceof CheckHostCapacityMsg) {
             handle((CheckHostCapacityMsg) msg);
         } else if (msg instanceof ConfigPrimaryVmMsg) {
@@ -1022,10 +1027,10 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void handle(GetVmVirtualizerVersionMsg msg) {
-        inQueue().name(String.format("get-virtualizer-version-of-vm-%s-on-kvm-%s", msg.getVmInstanceUuid(), self.getUuid()))
+    private void handle(GetVirtualizerInfoMsg msg) {
+        inQueue().name(String.format("get-virtualizer-info-on-kvm-%s", self.getUuid()))
                 .asyncBackup(msg)
-                .run(chain -> getVmVirtualizerVersion(msg, new NoErrorCompletion(chain) {
+                .run(chain -> getVirtualizerInfo(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
@@ -1033,24 +1038,36 @@ public class KVMHost extends HostBase implements Host {
                 }));
     }
 
-    private void getVmVirtualizerVersion(final GetVmVirtualizerVersionMsg msg, final NoErrorCompletion completion) {
+    private void getVirtualizerInfo(final GetVirtualizerInfoMsg msg, final NoErrorCompletion completion) {
         checkStatus();
 
-        GetVmVirtualizerVersionReply reply = new GetVmVirtualizerVersionReply();
-        GetVmVirtualizerVersionCmd cmd = new GetVmVirtualizerVersionCmd();
-        cmd.setUuid(msg.getVmInstanceUuid());
-        new Http<>(getVmVirtualizerVersion, cmd, GetVmVirtualizerVersionRsp.class).call(new ReturnValueCompletion<GetVmVirtualizerVersionRsp>(msg, completion) {
+        // getVirtualizerInfo
+        GetVirtualizerInfoReply reply = new GetVirtualizerInfoReply();
+        GetVirtualizerInfoCmd cmd = new GetVirtualizerInfoCmd();
+        cmd.setVmUuids(msg.getVmInstanceUuids());
+        new Http<>(getVirtualizerInfo, cmd, GetVirtualizerInfoRsp.class).call(new ReturnValueCompletion<GetVirtualizerInfoRsp>(msg, completion) {
             @Override
-            public void success(GetVmVirtualizerVersionRsp rsp) {
+            public void success(GetVirtualizerInfoRsp rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(operr("failed to get vm[uuid:%s] virtualizer version, because:%s", msg.getVmInstanceUuid(), rsp.getError()));
+                    reply.setError(operr("failed to get host[uuid:%s] virtualizer info, because:%s", msg.getHostUuid(), rsp.getError()));
                     bus.reply(msg, reply);
                     completion.done();
                     return;
                 }
 
-                reply.setVirtualizer(rsp.getVirtualizer());
-                reply.setVersion(rsp.getVersion());
+                hypervisorManager.save(rsp);
+
+                reply.setHostVirtualizer(rsp.getHostInfo().getVirtualizer());
+                reply.setHostInstalledQemuVersion(rsp.getHostInfo().getVersion());
+                reply.setVmInfoList(rsp.getVmInfoList().stream()
+                        .map(info -> {
+                            VmVirtualizerInfo to = new VmVirtualizerInfo();
+                            to.setVmInstanceUuid(info.getUuid());
+                            if (KvmHypervisorInfoHelper.isQemuBased(info.getVirtualizer())) {
+                                to.setCurrentQemuVersion(info.getVersion());
+                            }
+                            return to;
+                        }).collect(Collectors.toList()));
 
                 bus.reply(msg, reply);
                 completion.done();

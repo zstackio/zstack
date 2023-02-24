@@ -181,4 +181,6 @@
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="KvmHypervisorInfoManager" class="org.zstack.kvm.hypervisor.KvmHypervisorInfoManagerImpl"></bean>
 </beans>
