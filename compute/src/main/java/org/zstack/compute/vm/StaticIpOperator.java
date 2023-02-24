@@ -47,7 +47,7 @@ public class StaticIpOperator {
         return ret;
     }
 
-    public Map<String, NetworkInfo> getIPAMInfoBySystemTag(List<String> systemTags) {
+    public Map<String, NetworkInfo> getNicNetworkInfoBySystemTag(List<String> systemTags) {
         Map<String, NetworkInfo> ret = new HashMap<>();
         if (systemTags == null) {
             return ret;

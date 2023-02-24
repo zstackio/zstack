@@ -96,7 +96,7 @@ public class VmAllocateNicIpFlow implements Flow {
                 AllocateIpMsg msg = new AllocateIpMsg();
                 msg.setL3NetworkUuid(nw.getUuid());
                 msg.setAllocateStrategy(spec.getIpAllocatorStrategy());
-                String  staticIp = nicStaticIpMap.get(ipversion);
+                String staticIp = nicStaticIpMap.get(ipversion);
                 if (staticIp != null) {
                     msg.setRequiredIp(staticIp);
                 } else {

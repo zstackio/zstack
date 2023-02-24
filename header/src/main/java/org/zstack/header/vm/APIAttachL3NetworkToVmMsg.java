@@ -75,7 +75,7 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
     private Map<String, List<String>> staticIpMap;
 
     @APINoSee
-    private Map<String, NetworkInfo> ipamInfoMap;
+    private Map<String, NetworkInfo> nicNetworkInfo;
 
     @APINoSee
     private boolean applyToBackend = true;
@@ -145,12 +145,12 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
         this.driverType = driverType;
     }
 
-    public Map<String, NetworkInfo> getIpamInfoMap() {
-        return ipamInfoMap;
+    public Map<String, NetworkInfo> getNicNetworkInfo() {
+        return nicNetworkInfo;
     }
 
-    public void setIpamInfoMap(Map<String, NetworkInfo> ipamInfoMap) {
-        this.ipamInfoMap = ipamInfoMap;
+    public void setNicNetworkInfo(Map<String, NetworkInfo> nicNetworkInfo) {
+        this.nicNetworkInfo = nicNetworkInfo;
     }
 
     public static APIAttachL3NetworkToVmMsg __example__() {

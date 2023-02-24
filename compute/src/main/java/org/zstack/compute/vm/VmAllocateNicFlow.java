@@ -28,6 +28,7 @@ import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkInfo;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
@@ -59,7 +60,7 @@ public class VmAllocateNicFlow implements Flow {
         taskProgress("create nics");
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        final Map<String, NetworkInfo> ipamInfoMap = (Map<String, NetworkInfo>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_ipamInfo.toString());
+        final Map<String, NetworkInfo> nicNetworkInfoMap = (Map<String, NetworkInfo>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_nicNetworkInfo.toString());
 
         final List<String> disableL3Networks = new ArrayList<>();
         if (spec.getDisableL3Networks() != null && !spec.getDisableL3Networks().isEmpty()) {
@@ -146,9 +147,9 @@ public class VmAllocateNicFlow implements Flow {
                 @Override
                 protected void scripts() {
                     vnicFactory.createVmNic(nic, spec);
-                    NetworkInfo nicNetworkInfo = ipamInfoMap.get(nic.getL3NetworkUuid());
-                    if (nicNetworkInfo != null) {
-                        if (!Objects.equals(nicNetworkInfo.ipv4Address, "")) {
+                    if (nicNetworkInfoMap != null && nicNetworkInfoMap.containsKey(nic.getL3NetworkUuid())) {
+                        NetworkInfo nicNetworkInfo = nicNetworkInfoMap.get(nic.getL3NetworkUuid());
+                        if (!nicNetworkInfo.ipv4Address.isEmpty()) {
                             UsedIpVO vo = new UsedIpVO();
                             vo.setUuid(Platform.getUuid());
                             vo.setIp(nicNetworkInfo.ipv4Address);
@@ -162,12 +163,12 @@ public class VmAllocateNicFlow implements Flow {
                             }
                             dbf.persist(vo);
                         }
-                        if (!Objects.equals(nicNetworkInfo.ipv6Address, "")) {
+                        if (!nicNetworkInfo.ipv6Address.isEmpty()) {
                             UsedIpVO vo = new UsedIpVO();
                             vo.setUuid(Platform.getUuid());
-                            vo.setIp(nicNetworkInfo.ipv6Address);
-                            vo.setGateway(nicNetworkInfo.ipv6Gateway);
-                            vo.setNetmask(nicNetworkInfo.ipv6Prefix);
+                            vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(nicNetworkInfo.ipv6Address));
+                            vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(nicNetworkInfo.ipv6Address+"/"+nicNetworkInfo.ipv6Prefix));
+                            vo.setGateway(nicNetworkInfo.ipv6Gateway.isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(nicNetworkInfo.ipv6Gateway));
                             vo.setIpVersion(IPv6Constants.IPv6);
                             vo.setVmNicUuid(nic.getUuid());
                             vo.setL3NetworkUuid(nic.getL3NetworkUuid());

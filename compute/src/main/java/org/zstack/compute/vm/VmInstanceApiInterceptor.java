@@ -513,11 +513,15 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
 
             if (ipVo.getL3NetworkUuid().equals(l3NetworkVO.getUuid())) {
-                NormalIpRangeVO rangeVO = dbf.findByUuid(ipVo.getIpRangeUuid(), NormalIpRangeVO.class);
                 if (ipVo.getIp().equals(ip)) {
                     throw new ApiMessageInterceptionException(argerr("ip address [%s] already set to vmNic [uuid:%s]",
                             ip, vmNicVO.getUuid()));
                 }
+                if (!l3NetworkVO.getEnableIPAM()) {
+                    continue;
+                }
+                // check if the ip is in the ip range when ipam is enabled
+                NormalIpRangeVO rangeVO = dbf.findByUuid(ipVo.getIpRangeUuid(), NormalIpRangeVO.class);
                 if (!NetworkUtils.isIpv4InCidr(ip, rangeVO.getNetworkCidr())) {
                     throw new ApiMessageInterceptionException(argerr("ip address [%s] is not in ip range [%s]",
                             ip, rangeVO.getNetworkCidr()));
@@ -540,6 +544,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 if (ip.equals(ipVo.getIp())) {
                     throw new ApiMessageInterceptionException(argerr("ip address [%s] already set to vmNic [uuid:%s]",
                             ip, vmNicVO.getUuid()));
+                }
+                if (!l3NetworkVO.getEnableIPAM()) {
+                    continue;
                 }
                 NormalIpRangeVO rangeVO = dbf.findByUuid(ipVo.getIpRangeUuid(), NormalIpRangeVO.class);
                 if (!IPv6NetworkUtils.isIpv6InRange(ip, rangeVO.getStartIp(), rangeVO.getEndIp())) {
@@ -810,7 +817,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         Map<String, List<String>> staticIps = new StaticIpOperator().getStaticIpbySystemTag(msg.getSystemTags());
-        msg.setIpamInfoMap(new StaticIpOperator().getIPAMInfoBySystemTag(msg.getSystemTags()));
+        msg.setNicNetworkInfo(new StaticIpOperator().getNicNetworkInfoBySystemTag(msg.getSystemTags()).entrySet()
+                .stream()
+                .filter(entry -> Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, entry.getKey()).eq(L3NetworkVO_.enableIPAM, Boolean.FALSE).isExists())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
         if (msg.getStaticIp() != null) {
             staticIps.computeIfAbsent(msg.getL3NetworkUuid(), k -> new ArrayList<>()).add(msg.getStaticIp());
             SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
