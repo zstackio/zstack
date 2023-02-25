@@ -40,6 +40,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     private String type;
     private String format;
     private String primaryStorageType;
+    private String multiQueues;
 
     public VolumeTO() {
     }
@@ -59,6 +60,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
         this.type = other.type;
         this.format = other.format;
         this.primaryStorageType = other.primaryStorageType;
+        this.multiQueues = other.multiQueues;
     }
 
     public static List<VolumeTO> valueOf(List<VolumeInventory> vols, KVMHostInventory host) {
@@ -233,5 +235,13 @@ public class VolumeTO extends BaseVirtualDeviceTO {
 
     public void setPrimaryStorageType(String primaryStorageType) {
         this.primaryStorageType = primaryStorageType;
+    }
+
+    public void setMultiQueues(String multiQueues) {
+        this.multiQueues = multiQueues;
+    }
+
+    public String getMultiQueues() {
+        return multiQueues;
     }
 }
