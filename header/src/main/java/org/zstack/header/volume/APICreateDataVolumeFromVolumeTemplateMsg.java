@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
         parameterName = "params"
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
-public class APICreateDataVolumeFromVolumeTemplateMsg extends APICreateMessage implements APIAuditor {
+public class APICreateDataVolumeFromVolumeTemplateMsg extends APICreateMessage implements APIAuditor, VolumeCreateMessage {
     @APIParam(resourceType = ImageVO.class, checkAccount = true)
     private String imageUuid;
     @APIParam(maxLength = 255)
@@ -67,6 +67,16 @@ public class APICreateDataVolumeFromVolumeTemplateMsg extends APICreateMessage i
         this.description = description;
     }
 
+    @Override
+    public String getDiskOfferingUuid() {
+        return null;
+    }
+
+    @Override
+    public void setDiskOfferingUuid(String diskOfferingUuid) {
+
+    }
+
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
     }
@@ -74,7 +84,17 @@ public class APICreateDataVolumeFromVolumeTemplateMsg extends APICreateMessage i
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
     }
- 
+
+    @Override
+    public long getDiskSize() {
+        return 0;
+    }
+
+    @Override
+    public void setDiskSize(long diskSize) {
+
+    }
+
     public static APICreateDataVolumeFromVolumeTemplateMsg __example__() {
         APICreateDataVolumeFromVolumeTemplateMsg msg = new APICreateDataVolumeFromVolumeTemplateMsg();
         msg.setDescription("dataVolume-from-volume-template");

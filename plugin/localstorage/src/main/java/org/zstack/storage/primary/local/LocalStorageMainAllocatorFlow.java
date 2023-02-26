@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -170,6 +171,12 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             logger.debug(String.format("host[uuid:%s] is request, only check its capacity", spec.getRequiredHostUuid()));
             refs = refs.stream()
                     .filter(ref -> ref.getHostUuid().equals(spec.getRequiredHostUuid()))
+                    .collect(Collectors.toList());
+        }
+
+        if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuids())) {
+            logger.debug(String.format("filter through primary storage uuids: %s", spec.getRequiredPrimaryStorageUuids()));
+            refs = refs.stream().filter(ref -> spec.getRequiredPrimaryStorageUuids().contains(ref.getPrimaryStorageUuid()))
                     .collect(Collectors.toList());
         }
 

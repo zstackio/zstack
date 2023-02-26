@@ -41,6 +41,9 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.storage.snapshot.group.*;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
@@ -418,14 +421,27 @@ public class VolumeBase implements Volume {
                             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                             amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                             amsg.setSize(self.getSize());
+                            amsg.setDiskOfferingUuid(self.getDiskOfferingUuid());
 
-                            bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                            if (msg.getPrimaryStorageUuid() != null) {
+                                bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                            } else {
+                                bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
+                            }
                             bus.send(amsg, new CloudBusCallBack(trigger) {
                                 @Override
                                 public void run(MessageReply reply) {
                                     if (!reply.isSuccess()) {
                                         trigger.fail(reply.getError());
                                     } else {
+                                        AllocatePrimaryStorageReply ar = (AllocatePrimaryStorageReply) reply;
+                                        if (msg.getPrimaryStorageUuid() == null) {
+                                            msg.setPrimaryStorageUuid(ar.getPrimaryStorageInventory().getUuid());
+                                        }
+                                        // set the primary storage uuid in advance to make the leastVolumeFirstAllocateStrategy allocation more balanced
+                                        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, self.getUuid())
+                                                .set(VolumeVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
+                                                .update();
                                         success = true;
                                         trigger.next();
                                     }
@@ -441,6 +457,9 @@ public class VolumeBase implements Volume {
                                 imsg.setDiskSize(self.getSize());
                                 bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                                 bus.send(imsg);
+                                SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, self.getUuid())
+                                        .set(VolumeVO_.primaryStorageUuid, null)
+                                        .update();
                             }
 
                             trigger.rollback();
