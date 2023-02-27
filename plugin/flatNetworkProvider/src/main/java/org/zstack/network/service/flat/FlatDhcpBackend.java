@@ -1619,11 +1619,27 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         VmNicInventory nnic = null;
 
         for (VmNicInventory nic : vm.getVmNics()) {
+            try {
+                NetworkServiceProviderType pType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                        nic.getL3NetworkUuid(), NetworkServiceType.DHCP);
+                if (pType != FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE) {
+                    continue;
+                }
+            } catch (OperationFailureException exception) {
+                logger.debug(String.format("dhcp is not enable on l3 network %s", nic.getL3NetworkUuid()));
+                continue;
+            }
+
             if (VmNicHelper.getL3Uuids(nic).contains(previousL3)) {
                 pnic = nic;
             } else if (VmNicHelper.getL3Uuids(nic).contains(nowL3)) {
                 nnic = nic;
             }
+        }
+
+        if (pnic == null && nnic == null) {
+            completion.success();
+            return;
         }
 
         ResetDefaultGatewayCmd cmd = new ResetDefaultGatewayCmd();

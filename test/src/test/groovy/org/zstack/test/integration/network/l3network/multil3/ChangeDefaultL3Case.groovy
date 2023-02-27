@@ -126,6 +126,38 @@ use:
                         }
                     }
 
+                    l3Network {
+                        name = "l3-3"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [EipConstant.EIP_NETWORK_SERVICE_TYPE]
+                        }
+
+                        ip {
+                            startIp = "192.168.203.10"
+                            endIp = "192.168.203.100"
+                            netmask = "255.255.255.0"
+                            gateway = "192.168.203.1"
+                        }
+                    }
+
+                    l3Network {
+                        name = "l3-4"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [EipConstant.EIP_NETWORK_SERVICE_TYPE]
+                        }
+
+                        ip {
+                            startIp = "192.168.204.10"
+                            endIp = "192.168.204.100"
+                            netmask = "255.255.255.0"
+                            gateway = "192.168.204.1"
+                        }
+                    }
+
                 }
 
                 attachBackupStorage("sftp")
@@ -136,7 +168,7 @@ use:
                 name = "vm"
                 useImage("image")
                 useDefaultL3Network("l3-1")
-                useL3Networks("l3-1","l3-2")
+                useL3Networks("l3-1","l3-2", "l3-3", "l3-4")
                 useInstanceOffering("instanceOffering")
             }
         }
@@ -152,6 +184,8 @@ use:
     void changeDefaultL3NetworkToAnother(){
         L3NetworkInventory l31i = env.inventoryByName("l3-1")
         L3NetworkInventory l32i = env.inventoryByName("l3-2")
+        L3NetworkInventory l3_3 = env.inventoryByName("l3-3")
+        L3NetworkInventory l3_4 = env.inventoryByName("l3-4")
         VmInstanceInventory vmi = env.inventoryByName("vm")
 
         VmNicInventory nic1 = CollectionUtils.find(vmi.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
@@ -164,6 +198,18 @@ use:
             @Override
             public VmNicInventory call(VmNicInventory arg) {
                 return arg.getL3NetworkUuid().equals(l32i.getUuid()) ? arg : null;
+            }
+        });
+        VmNicInventory nic3 = CollectionUtils.find(vmi.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
+            @Override
+            public VmNicInventory call(VmNicInventory arg) {
+                return arg.getL3NetworkUuid().equals(l3_3.getUuid()) ? arg : null;
+            }
+        });
+        VmNicInventory nic4 = CollectionUtils.find(vmi.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
+            @Override
+            public VmNicInventory call(VmNicInventory arg) {
+                return arg.getL3NetworkUuid().equals(l3_4.getUuid()) ? arg : null;
             }
         });
 
@@ -185,6 +231,45 @@ use:
         assert nic2.getMac() == cmd.macOfGatewayToAdd
         assert nic2.getGateway() == cmd.gatewayToAdd
         assert new BridgeNameFinder().findByL3Uuid(l32i.getUuid()) == cmd.bridgeNameOfGatewayToAdd
+
+        cmd = null
+        updateVmInstance {
+            uuid = vmi.uuid
+            defaultL3NetworkUuid = l3_3.uuid
+        }
+
+        TimeUnit.SECONDS.sleep(2);
+        assert nic2.getMac() == cmd.macOfGatewayToRemove
+        assert nic2.getGateway() == cmd.gatewayToRemove
+        assert new BridgeNameFinder().findByL3Uuid(l32i.getUuid()) == cmd.bridgeNameOfGatewayToRemove
+
+        assert null == cmd.macOfGatewayToAdd
+        assert null == cmd.gatewayToAdd
+        assert null == cmd.bridgeNameOfGatewayToAdd
+
+        cmd = null
+        updateVmInstance {
+            uuid = vmi.uuid
+            defaultL3NetworkUuid = l3_4.uuid
+        }
+
+        TimeUnit.SECONDS.sleep(2);
+        assert cmd == null
+
+        updateVmInstance {
+            uuid = vmi.uuid
+            defaultL3NetworkUuid = l31i.uuid
+        }
+
+        TimeUnit.SECONDS.sleep(2);
+        assert null == cmd.macOfGatewayToRemove
+        assert null == cmd.gatewayToRemove
+        assert null == cmd.bridgeNameOfGatewayToRemove
+
+        assert nic1.getMac() == cmd.macOfGatewayToAdd
+        assert nic1.getGateway() == cmd.gatewayToAdd
+        assert new BridgeNameFinder().findByL3Uuid(l31i.getUuid()) == cmd.bridgeNameOfGatewayToAdd
+
     }
     @Override
     void clean() {
