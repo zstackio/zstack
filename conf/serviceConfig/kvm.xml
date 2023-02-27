@@ -18,4 +18,14 @@
         <serviceId>kvm</serviceId>
     </message>
 
+    <message>
+        <name>org.zstack.kvm.hypervisor.message.APIQueryHostOsCategoryMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.kvm.hypervisor.message.APIQueryKvmHypervisorInfoMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
 </service>

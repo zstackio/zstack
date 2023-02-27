@@ -69,7 +69,7 @@ public interface KVMConstant {
     String HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH = "/host/updateSpiceChannelConfig";
     String KVM_GET_VM_FIRST_BOOT_DEVICE_PATH = "/vm/getfirstbootdevice";
     String GET_VM_DEVICE_ADDRESS_PATH = "/vm/getdeviceaddress";
-    String GET_VM_VIRTUALIZER_VERSION_PATH = "/vm/getvirtualizerversion";
+    String GET_VIRTUALIZER_INFO_PATH = "/vm/getvirtualizerinfo";
     String KVM_SCAN_VM_PORT_STATUS = "/host/vm/scanport";
     String GET_DEV_CAPACITY = "/host/dev/capacity";
     String KVM_CONFIG_PRIMARY_VM_PATH = "/primary/vm/config";
@@ -118,6 +118,9 @@ public interface KVMConstant {
     Integer DEFAULT_MAX_NIC_QUEUE_NUMBER = 12;
 
     String CONNECT_HOST_PRIMARYSTORAGE_ERROR = "psError";
+
+    String VIRTUALIZER_QEMU_KVM = "qemu-kvm";
+    String VIRTUALIZER_QEMU = "qemu";
 
     enum KvmVmState {
         NoState,
