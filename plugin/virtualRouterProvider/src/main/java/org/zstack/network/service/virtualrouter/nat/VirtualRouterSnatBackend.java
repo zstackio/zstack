@@ -172,6 +172,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             info.setPublicIp(pubNic.getIp());
             info.setPublicNicMac(pubNic.getMac());
             info.setSnatNetmask(privateNic.getNetmask());
+            info.setPrivateGatewayIp(privateNic.getGateway());
             snatInfo.add(info);
         }
 
@@ -260,6 +261,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             info.setPublicIp(publicNic.getIp());
             info.setPublicNicMac(publicNic.getMac());
             info.setSnatNetmask(priNic.getNetmask());
+            info.setPrivateGatewayIp(priNic.getGateway());
             snatInfo.add(info);
         }
 
@@ -378,6 +380,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 info.setPublicIp(pubnic.getIp());
                 info.setPublicNicMac(pubnic.getMac());
                 info.setSnatNetmask(priNic.getNetmask());
+                info.setPrivateGatewayIp(priNic.getGateway());
                 if (snatL3Uuids.contains(pubnic.getL3NetworkUuid())) {
                     info.setState(Boolean.TRUE);
                 } else {

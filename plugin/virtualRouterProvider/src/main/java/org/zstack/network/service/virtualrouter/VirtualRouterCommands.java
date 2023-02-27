@@ -530,6 +530,7 @@ public class VirtualRouterCommands {
 		private String publicIp;
 		private String privateNicMac;
 		private String privateNicIp;
+		private String privateGatewayIp;
 		private String snatNetmask;
 		private Boolean state;
 
@@ -570,6 +571,14 @@ public class VirtualRouterCommands {
 
 		public void setState(Boolean state) {
 			this.state = state;
+		}
+
+		public String getPrivateGatewayIp() {
+			return privateGatewayIp;
+		}
+
+		public void setPrivateGatewayIp(String privateGatewayIp) {
+			this.privateGatewayIp = privateGatewayIp;
 		}
 	}
 
