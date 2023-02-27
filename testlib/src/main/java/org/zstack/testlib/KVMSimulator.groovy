@@ -30,6 +30,8 @@ import org.zstack.utils.gson.JSONObjectUtil
 import javax.persistence.Tuple
 import java.util.concurrent.ConcurrentHashMap
 
+import static org.zstack.kvm.KVMAgentCommands.*
+
 /**
  * Created by xing5 on 2017/6/6.
  */
@@ -391,14 +393,21 @@ class KVMSimulator implements Simulator {
         }
 
         spec.simulator(KVMConstant.KVM_SYNC_VM_DEVICEINFO_PATH) { HttpEntity<String> e ->
-            KVMAgentCommands.SyncVmDeviceInfoCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.SyncVmDeviceInfoCmd.class)
-            return new KVMAgentCommands.SyncVmDeviceInfoResponse()
+            SyncVmDeviceInfoCmd cmd = JSONObjectUtil.toObject(e.body, SyncVmDeviceInfoCmd.class)
+            def rsp = new SyncVmDeviceInfoResponse()
+
+            rsp.virtualizerInfo = new VirtualizerInfoTO()
+            rsp.virtualizerInfo.uuid = cmd.vmInstanceUuid
+            rsp.virtualizerInfo.virtualizer = "qemu-kvm"
+            rsp.virtualizerInfo.version = "4.2.0-632.g6a6222b.el7"
+
+            return rsp
         }
 
         spec.simulator(KVMConstant.KVM_START_VM_PATH) { HttpEntity<String> e ->
-            KVMAgentCommands.StartVmCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            StartVmCmd cmd = JSONObjectUtil.toObject(e.body, StartVmCmd.class)
             assert new HashSet<>(cmd.dataVolumes.deviceId).size() == cmd.dataVolumes.size()
-            KVMAgentCommands.StartVmResponse  rsp = new KVMAgentCommands.StartVmResponse()
+            StartVmResponse  rsp = new StartVmResponse()
             rsp.virtualDeviceInfoList = []
             List<VolumeTO> pciInfo = new ArrayList<VolumeTO>()
             pciInfo.add(cmd.rootVolume)
@@ -418,6 +427,11 @@ class KVMSimulator implements Simulator {
 
                 rsp.virtualDeviceInfoList.add(info)
             }
+
+            rsp.virtualizerInfo = new VirtualizerInfoTO()
+            rsp.virtualizerInfo.uuid = cmd.vmInstanceUuid
+            rsp.virtualizerInfo.virtualizer = "qemu-kvm"
+            rsp.virtualizerInfo.version = "4.2.0-632.g6a6222b.el7"
 
             return rsp
         }

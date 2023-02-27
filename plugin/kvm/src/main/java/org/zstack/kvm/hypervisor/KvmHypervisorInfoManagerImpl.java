@@ -4,10 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoVO;
 import org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoVO_;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -28,6 +30,11 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager {
         List<VirtualizerInfoTO> tos = new ArrayList<>(rsp.getVmInfoList());
         tos.add(rsp.getHostInfo());
         save(tos);
+    }
+
+    @Override
+    public void save(VirtualizerInfoTO info) {
+        save(Collections.singletonList(info));
     }
 
     @Transactional
@@ -62,5 +69,10 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager {
         vo.setHypervisor(to.getVirtualizer());
         vo.setVersion(to.getVersion());
         return vo;
+    }
+
+    @Override
+    public void clean(String uuid) {
+        SQL.New(KvmHypervisorInfoVO.class).eq(KvmHypervisorInfoVO_.uuid, uuid).delete();
     }
 }

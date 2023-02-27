@@ -2285,6 +2285,7 @@ public class KVMAgentCommands {
         private List<VmNicInfo> nicInfos;
         private List<VirtualDeviceInfo> virtualDeviceInfoList;
         private VirtualDeviceInfo memBalloonInfo;
+        private VirtualizerInfoTO virtualizerInfo;
 
         public VirtualDeviceInfo getMemBalloonInfo() {
             return memBalloonInfo;
@@ -2308,6 +2309,14 @@ public class KVMAgentCommands {
 
         public void setVirtualDeviceInfoList(List<VirtualDeviceInfo> virtualDeviceInfoList) {
             this.virtualDeviceInfoList = virtualDeviceInfoList;
+        }
+
+        public VirtualizerInfoTO getVirtualizerInfo() {
+            return virtualizerInfo;
+        }
+
+        public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
+            this.virtualizerInfo = virtualizerInfo;
         }
     }
 
@@ -2680,6 +2689,15 @@ public class KVMAgentCommands {
     }
 
     public static class RebootVmResponse extends AgentResponse {
+        private VirtualizerInfoTO virtualizerInfo;
+
+        public VirtualizerInfoTO getVirtualizerInfo() {
+            return virtualizerInfo;
+        }
+
+        public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
+            this.virtualizerInfo = virtualizerInfo;
+        }
     }
 
     public static class DestroyVmCmd extends AgentCommand {
