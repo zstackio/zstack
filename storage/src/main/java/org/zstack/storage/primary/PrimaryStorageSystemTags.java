@@ -24,4 +24,8 @@ public class PrimaryStorageSystemTags {
 
     public static final String PRIMARY_STORAGE_VENDOR_TOKEN = "vendor";
     public static PatternedSystemTag PRIMARY_STORAGE_VENDOR =  new PatternedSystemTag(String.format("primaryStorage::vendor::{%s}", PRIMARY_STORAGE_VENDOR_TOKEN), PrimaryStorageVO.class);
+
+    public static String PRIMARY_STORAGE_MIGRATE_NETWORK_CIDR_TOKEN = "migrateCidr";
+    public static PatternedSystemTag PRIMARY_STORAGE_MIGRATE_NETWORK_CIDR = new PatternedSystemTag(String.format(
+            "primaryStorage::migrate::network::cidr::{%s}", PRIMARY_STORAGE_MIGRATE_NETWORK_CIDR_TOKEN), PrimaryStorageVO.class);
 }

@@ -55,6 +55,7 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
@@ -72,6 +73,7 @@ import org.zstack.storage.ceph.primary.capacity.CephOsdGroupCapacityHelper;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
+import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
@@ -80,6 +82,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.io.Serializable;
 import java.net.URI;
@@ -952,6 +955,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class GetFactsRsp extends AgentResponse {
         public String fsid;
         public String monAddr;
+        public List<String> ipAddresses;
     }
 
     public static class DeleteImageCacheCmd extends AgentCommand {
@@ -3238,6 +3242,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     public class HttpCaller<T extends AgentResponse> {
         private Iterator<CephPrimaryStorageMonBase> it;
+        private final List<CephPrimaryStorageMonVO> monVOs;
         private final ErrorCodeList errorCodes = new ErrorCodeList();
 
         private final String path;
@@ -3247,9 +3252,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         private final TimeUnit unit;
         private final long timeout;
 
-        private String randomFactor = null;
         private boolean tryNext = false;
-        private List<String> avoidMonUuids = null;
 
         public HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback) {
             this(path, cmd, retClass, callback, null, 0);
@@ -3262,17 +3265,23 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             this.callback = callback;
             this.unit = unit;
             this.timeout = timeout;
+            this.monVOs = prepareMons();
         }
 
         public void call() {
-            it = prepareMons().iterator();
+            prepareMonsIterator();
             prepareCmd();
             doCall();
         }
 
         // specify mons order by randomFactor to ensure that the same mon receive cmd every time.
         HttpCaller<T> specifyOrder(String randomFactor) {
-            this.randomFactor = randomFactor;
+            CollectionUtils.shuffleByKeySeed(monVOs, randomFactor, ResourceVO::getUuid);
+            return this;
+        }
+
+        HttpCaller<T> specifyOrder(Comparator<? super CephPrimaryStorageMonVO> c) {
+            monVOs.sort(c);
             return this;
         }
 
@@ -3282,7 +3291,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         HttpCaller<T> setAvoidMonUuids(List<String> avoidMonUuids) {
-            this.avoidMonUuids = avoidMonUuids;
+            if (monVOs.size() > 1 && avoidMonUuids != null) {
+                monVOs.removeIf(it -> avoidMonUuids.contains(it.getUuid()));
+            }
             return this;
         }
 
@@ -3291,30 +3302,23 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             cmd.setFsId(getSelf().getFsid());
         }
 
-        private List<CephPrimaryStorageMonBase> prepareMons() {
-            final List<CephPrimaryStorageMonBase> mons = new ArrayList<CephPrimaryStorageMonBase>();
-            for (CephPrimaryStorageMonVO monvo : getSelf().getMons()) {
-                mons.add(new CephPrimaryStorageMonBase(monvo));
-            }
+        private List<CephPrimaryStorageMonVO> prepareMons() {
+            final List<CephPrimaryStorageMonVO> mons = new ArrayList<>(getSelf().getMons());
 
-            if (randomFactor != null) {
-                CollectionUtils.shuffleByKeySeed(mons, randomFactor, it -> it.getSelf().getUuid());
-            } else {
-                Collections.shuffle(mons);
-            }
+            Collections.shuffle(mons);
 
-            mons.removeIf(it -> it.getSelf().getStatus() != MonStatus.Connected);
+            mons.removeIf(it -> it.getStatus() != MonStatus.Connected);
             if (mons.isEmpty()) {
                 throw new OperationFailureException(operr(
                         "all ceph mons of primary storage[uuid:%s] are not in Connected state", self.getUuid())
                 );
             }
 
-            if (mons.size() > 1 && avoidMonUuids != null) {
-                mons.removeIf(it -> avoidMonUuids.contains(it.getSelf().getUuid()));
-            }
-
             return mons;
+        }
+
+        private void prepareMonsIterator() {
+            it = monVOs.stream().map(CephPrimaryStorageMonBase::new).collect(Collectors.toList()).iterator();
         }
 
         private void doCall() {
@@ -3476,6 +3480,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                         fsids.put(monVO.getUuid(), rsp.fsid);
                                         monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
                                         dbf.update(monVO);
+
+                                        if (rsp.ipAddresses != null) {
+                                            updateMonExtraIps(monVO, rsp.ipAddresses);
+                                        }
                                     }
                                     compl.done();
                                 }
@@ -3662,6 +3670,20 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
             }
         }).start();
+    }
+
+    private void updateMonExtraIps(CephPrimaryStorageMonVO mon, List<String> ips) {
+        ips.remove(mon.getHostname());
+        if (CoreGlobalProperty.MN_VIP != null) {
+            ips.remove(CoreGlobalProperty.MN_VIP);
+        }
+        if (ips.isEmpty()) {
+            CephMonSystemTags.EXTRA_IPS.delete(mon.getUuid());
+            return;
+        }
+        recreateNonInherentTag(
+                CephMonSystemTags.EXTRA_IPS, CephMonSystemTags.EXTRA_IPS_TOKEN,
+                StringUtils.join(ips, ","), mon.getUuid());
     }
 
     @Override
@@ -4125,6 +4147,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                     if (monVO != null) {
                                         monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
                                         dbf.update(monVO);
+
+                                        if (rsp.ipAddresses != null) {
+                                            updateMonExtraIps(monVO, rsp.ipAddresses);
+                                        }
                                     }
 
                                     latch.ack();
@@ -4161,6 +4187,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
             }
         }).start();
+    }
+
+    private void recreateNonInherentTag(SystemTag tag, String token, String value, String resourceUuid) {
+        recreateTag(tag, token, value, resourceUuid, false);
+    }
+
+    private void recreateTag(SystemTag tag, String token, String value, String resourceUuid, boolean inherent) {
+        SystemTagCreator creator = tag.newSystemTagCreator(resourceUuid);
+        Optional.ofNullable(token).ifPresent(it -> creator.setTagByTokens(Collections.singletonMap(token, value)));
+        creator.inherent = inherent;
+        creator.recreate = true;
+        creator.create();
     }
 
     @Override
@@ -5427,10 +5465,25 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.setResourceUuid(msg.getResourceUuid());
         cmd.setSrcInstallPath(msg.getSrcInstallPath());
         cmd.setDstInstallPath(msg.getDstInstallPath());
-        cmd.setDstMonHostname(msg.getDstMonHostname());
-        cmd.setDstMonSshUsername(msg.getDstMonSshUsername());
-        cmd.setDstMonSshPassword(msg.getDstMonSshPassword());
-        cmd.setDstMonSshPort(msg.getDstMonSshPort());
+
+        MonMigrateIpInfo dstMonMigrateIpInfo = new MonMigrateIpInfo(msg.getDstPrimaryStorageUuid());
+        CephPrimaryStorageMonVO dstMon = dstMonMigrateIpInfo.monMap.values().iterator().next();
+        String dstMonMigrateIp = dstMon.getHostname();
+        if (!dstMonMigrateIpInfo.getMonsMigrateIpInCidr().isEmpty()) {
+            dstMon = dstMonMigrateIpInfo.getMonsMigrateIpInCidr().get(0);
+            dstMonMigrateIp = dstMonMigrateIpInfo.getMigrateIp(dstMon.getUuid());
+        }
+        cmd.setDstMonHostname(dstMonMigrateIp);
+        cmd.setDstMonSshUsername(dstMon.getSshUsername());
+        cmd.setDstMonSshPassword(dstMon.getSshPassword());
+        cmd.setDstMonSshPort(dstMon.getSshPort());
+
+        final MonMigrateIpInfo srcMonMigrateIpInfo = new MonMigrateIpInfo(msg.getPrimaryStorageUuid());
+        List<String> srcMonsWithMigrateIp = new ArrayList<>();
+        if (!srcMonMigrateIpInfo.monMigrateIpMap.isEmpty()) {
+            srcMonsWithMigrateIp.addAll(srcMonMigrateIpInfo.monMigrateIpMap.keySet());
+        }
+        Comparator<CephPrimaryStorageMonVO> containFirst = Comparator.comparing(mon -> !srcMonsWithMigrateIp.contains(mon.getUuid()));
 
         final String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
         final CephToCephMigrateVolumeSegmentReply reply = new CephToCephMigrateVolumeSegmentReply();
@@ -5447,7 +5500,52 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
                 completion.done();
             }
-        }, TimeUnit.MILLISECONDS, msg.getTimeout()).specifyOrder(apiId).call();
+        }, TimeUnit.MILLISECONDS, msg.getTimeout()).specifyOrder(apiId).specifyOrder(containFirst).call();
+    }
+
+    static class MonMigrateIpInfo {
+        private final Map<String, CephPrimaryStorageMonVO> monMap;
+
+        private final Map<String, String> monMigrateIpMap = new HashMap<>();
+
+        public MonMigrateIpInfo(String psUuid) {
+            CephPrimaryStorageVO psVO = Q.New(CephPrimaryStorageVO.class)
+                    .eq(CephPrimaryStorageVO_.uuid, psUuid).find();
+            List<CephPrimaryStorageMonVO> monVOS = new ArrayList<>(psVO.getMons());
+            Collections.shuffle(monVOS);
+            this.monMap = monVOS.stream().collect(
+                    Collectors.toMap(CephPrimaryStorageMonVO::getUuid, CephPrimaryStorageMonVO -> CephPrimaryStorageMonVO));
+
+            String migrateCidr = PrimaryStorageSystemTags.PRIMARY_STORAGE_MIGRATE_NETWORK_CIDR
+                    .getTokenByResourceUuid(psUuid, PrimaryStorageSystemTags.PRIMARY_STORAGE_MIGRATE_NETWORK_CIDR_TOKEN);
+            if (migrateCidr == null) {
+                return;
+            }
+
+            for (CephPrimaryStorageMonVO mon : monVOS) {
+                List<String> ips = new ArrayList<>();
+                ips.add(mon.getHostname());
+                final String extraIps = CephMonSystemTags.EXTRA_IPS
+                        .getTokenByResourceUuid(mon.getUuid(), CephMonSystemTags.EXTRA_IPS_TOKEN);
+                Optional.ofNullable(extraIps).ifPresent(it -> ips.addAll(Arrays.asList(it.split(","))));
+                List<String> cidrIps = NetworkUtils.filterIpv4sInCidr(ips, migrateCidr);
+                if (!cidrIps.isEmpty()) {
+                    monMigrateIpMap.put(mon.getUuid(), cidrIps.get(0));
+                }
+            }
+        }
+
+        public List<CephPrimaryStorageMonVO> getMonsMigrateIpInCidr() {
+            if (monMigrateIpMap.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            return monMigrateIpMap.keySet().stream().map(monMap::get).collect(Collectors.toList());
+        }
+
+        public String getMigrateIp(String monUuid) {
+            return monMigrateIpMap.get(monUuid);
+        }
     }
 
     private void handle(GetVolumeSnapshotInfoMsg msg) {
