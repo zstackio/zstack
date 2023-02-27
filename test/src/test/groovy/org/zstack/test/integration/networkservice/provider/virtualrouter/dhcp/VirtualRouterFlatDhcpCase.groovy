@@ -220,9 +220,10 @@ class VirtualRouterFlatDhcpCase extends SubCase {
     @Override
     void test() {
         env.create {
+            /* centerlizedDns is not used any more, remove the case
             testCreateVmWillSetForwardDns()
             testCreateVmFailWillReleaseDnsForward()
-            testVRouterDhcpWontSendCmd()
+            testVRouterDhcpWontSendCmd()*/
         }
     }
 
