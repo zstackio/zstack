@@ -980,9 +980,9 @@
     "category": "QUOTA",
     "code": "1002",
     "method": "regex",
-    "regex": ".*quota exceeding.The resource owner\\(or target resource owner\\) account\\[uuid:.*] exceeds a quota\\[name:.*, value: .*], Current used:.*, Request:.*. Please contact the administrator.",
-    "message_cn": "请求资源超出配额。资源所有者或目标资源所有者帐户 [uuid：%1$s] 超出配额 [配额名称：%2$s，配额总量：%3$s]，当前已使用：%4$s，本次请求数量：%5$s。如需继续操作请联系管理员。",
-    "message_en": "Quota [name: %2$s, amount: %3$s] of the resource owner or target resource owner account [uuid: %1$s] exceeds the limit. Current used: %4$s, requests: %5$s. Please contact the administrator."
+    "regex": ".*quota exceeding.The resource owner\\(or target resource owner\\) account\\[uuid:.* name:.*] exceeds a quota\\[name:.*, value: .*], Current used:.*, Request:.*. Please contact the administrator.",
+    "message_cn": "请求资源超出配额。资源所有者或目标资源所有者帐户 [uuid：%1$s，帐户名称：%2$s] 超出配额 [配额名称：%3$s，配额总量：%4$s]，当前已使用：%5$s，本次请求数量：%6$s。如需继续操作请联系管理员。",
+    "message_en": "Quota [name: %3$s, amount: %4$s] of the resource owner or target resource owner account [uuid: %1$s, name: %2$s] exceeds the limit. Current used: %5$s, requests: %6$s. Please contact the administrator."
   },
   {
     "category": "QUOTA",
