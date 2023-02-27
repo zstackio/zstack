@@ -156,13 +156,11 @@ public class KVMExtensionEmitter implements Component {
         }
     }
 
-    public void rebootVmOnKvmSuccess(final KVMHostInventory host, final VmInstanceInventory vm) {
-        CollectionUtils.safeForEach(rebootVmExts, new ForEachFunction<KVMRebootVmExtensionPoint>() {
-            @Override
-            public void run(KVMRebootVmExtensionPoint arg) {
-                arg.rebootVmOnKvmSuccess(host, vm);
-            }
-        });
+    public void rebootVmOnKvmSuccess(
+            final KVMHostInventory host,
+            final VmInstanceInventory vm,
+            KVMAgentCommands.RebootVmResponse ret) {
+        CollectionUtils.safeForEach(rebootVmExts, arg -> arg.rebootVmOnKvmSuccess(host, vm, ret));
     }
 
     public void rebootVmOnKvmFailed(final KVMHostInventory host, final VmInstanceInventory vm, final ErrorCode err) {
