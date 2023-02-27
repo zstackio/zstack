@@ -13055,6 +13055,32 @@
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
+    "raw": "could not attach port forwarding rule with allowedCidr, because vmNic[uuid:%s] already has rules that overlap the target private port ranges[%s, %s] and have the same protocol type[%s]",
+    "en_US": "could not attach port forwarding rule with allowedCidr, because vmNic[uuid:{0}] already has rules that overlap the target private port range[{1}, {2}] and have the same protocol type[{3}]",
+    "zh_CN": "无法挂载设置有允许CIDR的端口转发规则，因为虚拟机网卡[uuid:{0}]已经有与目标规则的云主机端口范围[{1}, {2}]重叠且协议类型[{3}]相同的规则",
+    "arguments": [
+      "vmNicUuid",
+      "privatePortStart",
+      "privatePortEnd",
+      "protocolType"
+    ],
+    "line": 304,
+    "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
+  },
+  {
+    "raw": "could not attach port forwarding rule, because vmNic[uuid:%s] already has a rule that overlaps the target private port ranges[%s, %s], has the same protocol type[%s] and has AllowedCidr",
+    "en_US": "could not attach port forwarding rule, because vmNic[uuid:{0}] already has a rule that overlaps the target private port range[{1}, {2}], has the same protocol type[{3}] and has AllowedCidr",
+    "zh_CN": "无法挂载端口转发规则，因为虚拟机网卡[uuid:{0}]已经有与目标规则的云主机端口范围[{1}, {2}]重叠、协议类型[{3}]相同且设置有允许CIDR的规则",
+    "arguments": [
+      "vmNicUuid",
+      "privatePortStart",
+      "privatePortEnd",
+      "protocolType"
+    ],
+    "line": 314,
+    "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
+  },
+  {
     "raw": "unsupported ip allocation strategy[%s]",
     "en_US": "unsupported ip allocation strategy[{0}]",
     "zh_CN": "不支持的ip分配策略[{0}]",
