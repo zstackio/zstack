@@ -3312,7 +3312,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         private void doCall() {
             if (!it.hasNext()) {
-                callback.fail(operr(errorCodes, "all mons failed to execute http call[%s], errors are %s", path)
+                callback.fail(operr(errorCodes, "all monitors cannot execute http call[%s]", path)
                 );
 
                 return;
@@ -3376,11 +3376,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 if (!it.hasNext()) {
                     if (errorCodes.getCauses().size() == mons.size()) {
                         if (errorCodes.getCauses().isEmpty()) {
-                            trigger.fail(operr("unable to connect to the ceph primary storage[uuid:%s]." +
-                                    " Failed to connect all ceph mons.", self.getUuid()));
+                            trigger.fail(operr("unable to connect to the ceph primary storage[uuid:%s]," +
+                                    " failed to connect all ceph monitors.", self.getUuid()));
                         } else {
-                            trigger.fail(operr(errorCodes, "unable to connect to the ceph primary storage[uuid:%s]." +
-                                            " Failed to connect all ceph mons. Errors are %s",
+                            trigger.fail(operr(errorCodes, "unable to connect to the ceph primary storage[uuid:%s]," +
+                                            " failed to connect all ceph monitors.",
                                     self.getUuid()));
                         }
                     } else {

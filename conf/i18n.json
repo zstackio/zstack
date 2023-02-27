@@ -17397,12 +17397,11 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
   },
   {
-    "raw": "unable to connect to the ceph backup storage[uuid:%s]. Failed to connect all ceph mons. Errors are %s",
-    "en_US": "unable to connect to the ceph backup storage[uuid:{0}]. Failed to connect all ceph mons. Errors are {1}",
-    "zh_CN": "无法连接到ceph镜像服务器[uuid:{0}]。所有监控节点均无法连接。错误是{1}",
+    "raw": "unable to connect to the ceph backup storage[uuid:%s], failed to connect all ceph monitors.",
+    "en_US": "unable to connect to the ceph backup storage[uuid:{0}], failed to connect all ceph monitors.",
+    "zh_CN": "无法连接到ceph镜像服务器[uuid:{0}]，所有监控节点均无法连接。",
     "arguments": [
-      "self.getUuid()",
-      "JSONObjectUtil.toJsonString(errorCodes)"
+      "self.getUuid()"
     ],
     "line": 1218,
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
@@ -17486,20 +17485,9 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
   },
   {
-    "raw": "unable to connect to the ceph primary storage[uuid:%s]. Failed to connect all ceph mons. Errors are %s",
-    "en_US": "unable to connect to the ceph primary storage[uuid:{0}]. Failed to connect all ceph mons. Errors are {1}",
-    "zh_CN": "无法连接到ceph主存储[uuid:{0}]。所有监控节点均连接失败。错误是{1}",
-    "arguments": [
-      "self.getUuid()",
-      "JSONObjectUtil.toJsonString(errorCodes)"
-    ],
-    "line": 2749,
-    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
-  },
-  {
-    "raw": "unable to connect to the ceph primary storage[uuid:%s]. Failed to connect all ceph mons.",
-    "en_US": "unable to connect to the ceph primary storage[uuid:{0}]. Failed to connect all ceph mons.",
-    "zh_CN": "未能连接ceph主存储[uuid:{0}]，连接所有的ceph mons失败",
+    "raw": "unable to connect to the ceph primary storage[uuid:%s], failed to connect all ceph monitors.",
+    "en_US": "unable to connect to the ceph primary storage[uuid:{0}], failed to connect all ceph monitors.",
+    "zh_CN": "无法连接到ceph主存储[uuid:{0}]，所有监控节点均连接失败",
     "arguments": [
       "self.getUuid()"
     ],
@@ -18439,12 +18427,11 @@
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageTagAllocatorFlow.java"
   },
   {
-    "raw": "all mons failed to execute http call[%s], errors are %s",
-    "en_US": "all mons failed to execute http call[{0}], errors are {1}",
-    "zh_CN": "所有的监控节点都无法执行http call[{0}]，错误是{1}",
+    "raw": "all monitors cannot execute http call[%s]",
+    "en_US": "all monitors cannot execute http call[{0}]",
+    "zh_CN": "所有的监控节点都无法执行http call[{0}]",
     "arguments": [
-      "path",
-      "JSONObjectUtil.toJsonString(errorCodes)"
+      "path"
     ],
     "line": 132,
     "fileName": "src/main/java/org/zstack/storage/primary/imagestore/ceph/CephPrimaryToImageStoreBackupStorageMediatorImpl.java"
