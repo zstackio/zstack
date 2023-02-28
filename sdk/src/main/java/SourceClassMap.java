@@ -199,10 +199,16 @@ public class SourceClassMap {
 			put("org.zstack.header.datacenter.DataCenterProperty", "org.zstack.sdk.DataCenterProperty");
 			put("org.zstack.header.disasterrecovery.DisasterRecoveryVmTemplateInventory", "org.zstack.sdk.disasterrecovery.DisasterRecoveryVmTemplateInventory");
 			put("org.zstack.header.disasterrecovery.MirrorCdpTaskInventory", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskInventory");
+			put("org.zstack.header.disasterrecovery.MirrorCdpTaskMode", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskMode");
+			put("org.zstack.header.disasterrecovery.MirrorCdpTaskRecoverRecordInventory", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskRecoverRecordInventory");
 			put("org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobInventory", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobInventory");
 			put("org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobStatus", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobStatus");
 			put("org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefInventory", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefInventory");
-			put("org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefVO", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefVO");
+			put("org.zstack.header.disasterrecovery.MirrorCdpTaskState", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskState");
+			put("org.zstack.header.disasterrecovery.MirrorCdpTaskStatus", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskStatus");
+			put("org.zstack.header.disasterrecovery.ScheduleJobResult", "org.zstack.sdk.disasterrecovery.ScheduleJobResult");
+			put("org.zstack.header.disasterrecovery.ScheduleJobResult$MirrorCdpTaskResult", "org.zstack.sdk.disasterrecovery.MirrorCdpTaskResult");
+			put("org.zstack.header.disasterrecovery.ScheduleJobStatus", "org.zstack.sdk.disasterrecovery.ScheduleJobStatus");
 			put("org.zstack.header.errorcode.ErrorCode", "org.zstack.sdk.ErrorCode");
 			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
 			put("org.zstack.header.externalmanagement.ExternalManagementNodeInventory", "org.zstack.sdk.ExternalManagementNodeInventory");
@@ -230,6 +236,7 @@ public class SourceClassMap {
 			put("org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigStruct", "org.zstack.sdk.VpcVpnIpSecConfigStruct");
 			put("org.zstack.header.identity.AccountInventory", "org.zstack.sdk.AccountInventory");
 			put("org.zstack.header.identity.AccountResourceRefInventory", "org.zstack.sdk.AccountResourceRefInventory");
+			put("org.zstack.header.identity.AccountType", "org.zstack.sdk.AccountType");
 			put("org.zstack.header.identity.PolicyInventory", "org.zstack.sdk.PolicyInventory");
 			put("org.zstack.header.identity.PolicyStatement", "org.zstack.sdk.PolicyStatement");
 			put("org.zstack.header.identity.Quota$QuotaUsage", "org.zstack.sdk.QuotaUsage");
@@ -344,6 +351,7 @@ public class SourceClassMap {
 			put("org.zstack.header.vm.VmPriorityConfigInventory", "org.zstack.sdk.VmPriorityConfigInventory");
 			put("org.zstack.header.vm.VmPriorityLevel", "org.zstack.sdk.VmPriorityLevel");
 			put("org.zstack.header.vm.VmSchedHistoryInventory", "org.zstack.sdk.VmSchedHistoryInventory");
+			put("org.zstack.header.vm.VmTemplateInventory", "org.zstack.sdk.VmTemplateInventory");
 			put("org.zstack.header.vm.cdrom.VmCdRomInventory", "org.zstack.sdk.VmCdRomInventory");
 			put("org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveInventory", "org.zstack.sdk.VmInstanceDeviceAddressArchiveInventory");
 			put("org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupInventory", "org.zstack.sdk.VmInstanceDeviceAddressGroupInventory");
@@ -708,6 +716,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
 			put("org.zstack.sdk.AccountPriceTableRefInventory", "org.zstack.billing.table.AccountPriceTableRefInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
+			put("org.zstack.sdk.AccountType", "org.zstack.header.identity.AccountType");
 			put("org.zstack.sdk.ActionStruct", "org.zstack.cloudformation.template.struct.ActionStruct");
 			put("org.zstack.sdk.ActionType", "org.zstack.vpcfirewall.entity.ActionType");
 			put("org.zstack.sdk.AddHostFromFileResult", "org.zstack.header.host.AddHostFromFileResult");
@@ -1215,6 +1224,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmSchedulingRuleInventory", "org.zstack.header.vmscheduling.VmSchedulingRuleInventory");
 			put("org.zstack.sdk.VmSpending", "org.zstack.billing.spendingcalculator.vm.VmSpending");
 			put("org.zstack.sdk.VmSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmSpendingDetails");
+			put("org.zstack.sdk.VmTemplateInventory", "org.zstack.header.vm.VmTemplateInventory");
 			put("org.zstack.sdk.VmVdpaNicInventory", "org.zstack.header.vdpa.VmVdpaNicInventory");
 			put("org.zstack.sdk.VmVfNicInventory", "org.zstack.header.sriov.VmVfNicInventory");
 			put("org.zstack.sdk.VniRangeInventory", "org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory");
@@ -1273,10 +1283,16 @@ public class SourceClassMap {
 			put("org.zstack.sdk.databasebackup.DatabaseType", "org.zstack.header.storage.database.backup.DatabaseType");
 			put("org.zstack.sdk.disasterrecovery.DisasterRecoveryVmTemplateInventory", "org.zstack.header.disasterrecovery.DisasterRecoveryVmTemplateInventory");
 			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskInventory", "org.zstack.header.disasterrecovery.MirrorCdpTaskInventory");
+			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskMode", "org.zstack.header.disasterrecovery.MirrorCdpTaskMode");
+			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskRecoverRecordInventory", "org.zstack.header.disasterrecovery.MirrorCdpTaskRecoverRecordInventory");
+			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskResult", "org.zstack.header.disasterrecovery.ScheduleJobResult$MirrorCdpTaskResult");
 			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobInventory", "org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobInventory");
 			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobStatus", "org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobStatus");
 			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefInventory", "org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefInventory");
-			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefVO", "org.zstack.header.disasterrecovery.MirrorCdpTaskScheduleJobTaskRefVO");
+			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskState", "org.zstack.header.disasterrecovery.MirrorCdpTaskState");
+			put("org.zstack.sdk.disasterrecovery.MirrorCdpTaskStatus", "org.zstack.header.disasterrecovery.MirrorCdpTaskStatus");
+			put("org.zstack.sdk.disasterrecovery.ScheduleJobResult", "org.zstack.header.disasterrecovery.ScheduleJobResult");
+			put("org.zstack.sdk.disasterrecovery.ScheduleJobStatus", "org.zstack.header.disasterrecovery.ScheduleJobStatus");
 			put("org.zstack.sdk.iam2.api.APIPermissionStruct", "org.zstack.iam2.api.APIGetIAM2VirtualIDAPIPermissionMsg$APIPermissionStruct");
 			put("org.zstack.sdk.iam2.api.Attribute", "org.zstack.iam2.api.Attribute");
 			put("org.zstack.sdk.iam2.api.ErrorResult", "org.zstack.iam2.api.ErrorResult");
