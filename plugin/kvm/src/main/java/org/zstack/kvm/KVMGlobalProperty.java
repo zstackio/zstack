@@ -29,7 +29,7 @@ public class KVMGlobalProperty {
     public static String TAKEVOERFLAGPATH;
     @GlobalProperty(name="MN.network.", defaultValue = "")
     public static List<String> MN_NETWORKS;
-    @GlobalProperty(name = "host.skip.packages", defaultValue = "qemu, qemu-kvm, qemu-kvm-ev, qemu-img, qemu-img-ev")
+    @GlobalProperty(name = "host.skip.packages", defaultValue = "qemu-kvm-ev, qemu-img-ev")
     public static String SKIP_PACKAGES;
 
 }
