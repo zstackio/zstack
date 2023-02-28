@@ -1,13 +1,28 @@
 package org.zstack.kvm.hypervisor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.Q;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.host.GetVirtualizerInfoMsg;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmAfterExpungeExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.kvm.*;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMAgentCommands.*;
 
 /**
@@ -18,10 +33,13 @@ public class KvmHypervisorInfoExtensions implements
         KVMRebootVmExtensionPoint,
         KVMDestroyVmExtensionPoint,
         KVMStopVmExtensionPoint,
-        VmAfterExpungeExtensionPoint
+        VmAfterExpungeExtensionPoint,
+        KVMHostConnectExtensionPoint
 {
     @Autowired
     private KvmHypervisorInfoManager manager;
+    @Autowired
+    private CloudBus bus;
 
     @Override
     public void afterReceiveVmDeviceInfoResponse(VmInstanceInventory vm, VmDevicesInfoResponse rsp) {
@@ -67,5 +85,42 @@ public class KvmHypervisorInfoExtensions implements
     @Override
     public void vmAfterExpunge(VmInstanceInventory vm) {
         manager.clean(vm.getUuid());
+    }
+
+    @Override
+    @SuppressWarnings("rawtypes")
+    public Flow createKvmHostConnectingFlow(KVMHostConnectedContext context) {
+        final String hostUuid = context.getInventory().getUuid();
+        final boolean newAdd = context.isNewAddedHost();
+
+        return new NoRollbackFlow() {
+            String __name__ = "collect-virtualizer-info-for-running-vm";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                GetVirtualizerInfoMsg msg = new GetVirtualizerInfoMsg();
+                msg.setHostUuid(hostUuid);
+                if (newAdd) {
+                    msg.setVmInstanceUuids(Collections.emptyList());
+                } else {
+                    List<String> vmUuids = Q.New(VmInstanceVO.class)
+                            .eq(VmInstanceVO_.hostUuid, hostUuid)
+                            .select(VmInstanceVO_.uuid)
+                            .listValues();
+                    msg.setVmInstanceUuids(vmUuids);
+                }
+
+                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(operr(reply.getError(), "failed to collect host virtualizer info"));
+                        }
+                    }
+                });
+            }
+        };
     }
 }

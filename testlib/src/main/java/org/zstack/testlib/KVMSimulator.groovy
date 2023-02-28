@@ -136,22 +136,32 @@ class KVMSimulator implements Simulator {
         }
 
         spec.simulator(KVMConstant.GET_VIRTUALIZER_INFO_PATH) { HttpEntity<String> e ->
-            def rsp = new KVMAgentCommands.GetVirtualizerInfoRsp()
-            rsp.hostInfo = new KVMAgentCommands.VirtualizerInfoTO()
+            def rsp = new GetVirtualizerInfoRsp()
+            rsp.hostInfo = new VirtualizerInfoTO()
             rsp.hostInfo.version = "4.2.0-627.g36ee592.el7"
             rsp.hostInfo.virtualizer = "qemu-kvm"
             String hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
             rsp.hostInfo.uuid = hostUuid
 
-            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.GetVirtualizerInfoCmd.class)
+            def cmd = JSONObjectUtil.toObject(e.body, GetVirtualizerInfoCmd.class)
             rsp.vmInfoList = cmd.vmUuids.collect { vmUuid ->
-                def to = new KVMAgentCommands.VirtualizerInfoTO()
+                def to = new VirtualizerInfoTO()
                 to.uuid = vmUuid
                 to.version = "4.2.0-627.g36ee592.el7"
                 to.virtualizer = "qemu-kvm"
                 return to
             }
 
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_HOST_FACT_PATH) { HttpEntity<String> e ->
+            def rsp = new HostFactResponse()
+            rsp.virtualizerInfo = new VirtualizerInfoTO()
+            rsp.virtualizerInfo.version = "4.2.0-627.g36ee592.el7"
+            rsp.virtualizerInfo.virtualizer = "qemu-kvm"
+            String hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            rsp.virtualizerInfo.uuid = hostUuid
             return rsp
         }
 

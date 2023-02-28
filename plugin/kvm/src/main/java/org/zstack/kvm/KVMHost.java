@@ -1039,10 +1039,12 @@ public class KVMHost extends HostBase implements Host {
                 }));
     }
 
+    /**
+     * This command will send when host is connecting.
+     * 
+     * DO NOT need to checkStatus()
+     */
     private void getVirtualizerInfo(final GetVirtualizerInfoMsg msg, final NoErrorCompletion completion) {
-        checkStatus();
-
-        // getVirtualizerInfo
         GetVirtualizerInfoReply reply = new GetVirtualizerInfoReply();
         GetVirtualizerInfoCmd cmd = new GetVirtualizerInfoCmd();
         cmd.setVmUuids(msg.getVmInstanceUuids());
@@ -3802,6 +3804,21 @@ public class KVMHost extends HostBase implements Host {
                 }
             }
 
+            // send get host facts message, do NOT check reply.
+            HostFactCmd cmd = new HostFactCmd();
+            new Http<>(hostFactPath, cmd, HostFactResponse.class)
+                    .call(new ReturnValueCompletion<HostFactResponse>(null) {
+                        @Override
+                        public void success(HostFactResponse response) {
+                            hypervisorManager.save(response.getVirtualizerInfo());
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.warn("failed to get host facts: " + errorCode.toString());
+                        }
+                    });
+
             continueConnect(info, complete);
         } else {
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -4310,6 +4327,8 @@ public class KVMHost extends HostBase implements Host {
                                         trigger.fail(operr("cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"));
                                         return;
                                     }
+
+                                    hypervisorManager.save(ret.getVirtualizerInfo());
 
                                     // create system tags of os::version etc
                                     createHostVersionSystemTags(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
