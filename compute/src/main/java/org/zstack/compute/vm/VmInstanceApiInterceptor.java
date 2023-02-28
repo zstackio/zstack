@@ -201,7 +201,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getDestL3NetworkUuid(), L3NetworkVO.class);
-        if (l3NetworkVO.getIpRanges().isEmpty()) {
+        if (l3NetworkVO.getEnableIPAM() && l3NetworkVO.getIpRanges().isEmpty()) {
             throw new ApiMessageInterceptionException(operr("unable to change to L3 network. The L3 network[uuid:%s] doesn't has have ip range",
                     msg.getDestL3NetworkUuid()));
         }
@@ -566,6 +566,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         List<VmNicVO> vmNics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
         boolean l3Found = false;
         for (VmNicVO nic : vmNics) {
+            l3Found = true;
             if (msg.getIp() != null) {
                 String ip = IPv6NetworkUtils.ipv6TagValueToAddress(msg.getIp());
                 if (NetworkUtils.isIpv4Address(ip)) {
