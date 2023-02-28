@@ -60,7 +60,10 @@ public class VmAllocateNicFlow implements Flow {
         taskProgress("create nics");
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        final Map<String, NetworkInfo> nicNetworkInfoMap = (Map<String, NetworkInfo>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_nicNetworkInfo.toString());
+        final Map<String, NetworkInfo> nicNetworkInfoMap =
+                Optional.ofNullable(data.get(VmInstanceConstant.Params.VmAllocateNicFlow_nicNetworkInfo.toString()))
+                .map(obj -> (Map<String, NetworkInfo>) obj)
+                .orElse(new StaticIpOperator().getNicNetworkInfoByVmUuid(spec.getVmInventory().getUuid()));
 
         final List<String> disableL3Networks = new ArrayList<>();
         if (spec.getDisableL3Networks() != null && !spec.getDisableL3Networks().isEmpty()) {

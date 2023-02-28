@@ -1589,6 +1589,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             ip, sysTag));
                 }
 
+                if (Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).eq(L3NetworkVO_.enableIPAM, Boolean.FALSE).isExists()) {
+                    return;
+                }
+
                 CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
                 cmsg.setIp(ip);
                 cmsg.setL3NetworkUuid(l3Uuid);

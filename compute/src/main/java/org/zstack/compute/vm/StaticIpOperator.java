@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.tag.SystemTagVO;
@@ -45,6 +46,11 @@ public class StaticIpOperator {
         }
 
         return ret;
+    }
+
+    public Map<String, NetworkInfo> getNicNetworkInfoByVmUuid(String vmUuid) {
+        return getNicNetworkInfoBySystemTag(Q.New(SystemTagVO.class).select(SystemTagVO_.tag)
+                .eq(SystemTagVO_.resourceUuid, vmUuid).listValues());
     }
 
     public Map<String, NetworkInfo> getNicNetworkInfoBySystemTag(List<String> systemTags) {

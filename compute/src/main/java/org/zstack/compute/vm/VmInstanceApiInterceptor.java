@@ -564,7 +564,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         List<VmNicVO> vmNics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
-//        boolean l3Found = false;
+        boolean l3Found = false;
         for (VmNicVO nic : vmNics) {
             if (msg.getIp() != null) {
                 String ip = IPv6NetworkUtils.ipv6TagValueToAddress(msg.getIp());
@@ -583,15 +583,19 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 msg.setIp6(ip6);
             }
         }
-//        for (String systemTag : msg.getSystemTags()) {
-//            if (!VmSystemTags.SIMPLE_L2_NETWORK.isMatch(systemTag)) {
-//                l3Found = true;
-//            }
-//        }
-//        if (!l3Found) {
-//            throw new ApiMessageInterceptionException(argerr("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
-//                            msg.getL3NetworkUuid()));
-//        }
+        if (!l3NetworkVO.getEnableIPAM()) {
+            l3Found = true;
+            if (!msg.getIp().isEmpty() && msg.getNetmask().isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("ipv4 address need a netmask"));
+            }
+            if (!msg.getIp6().isEmpty() && msg.getIpv6Prefix().isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("ipv6 address need a prefix"));
+            }
+        }
+        if (!l3Found) {
+            throw new ApiMessageInterceptionException(argerr("the VM[uuid:%s] has no nic on the L3 network[uuid:%s]", msg.getVmInstanceUuid(),
+                            msg.getL3NetworkUuid()));
+        }
     }
 
     private void validate(APIDeleteVmStaticIpMsg msg) {
