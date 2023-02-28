@@ -208,4 +208,12 @@
         <defaultValue>false</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+
+    <config>
+        <category>kvm</category>
+        <name>vm.cpu.hypervisor.feature</name>
+        <description>enable or disable hypervisor feature in guest cpuid</description>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>
