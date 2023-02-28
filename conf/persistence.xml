@@ -92,6 +92,9 @@
         <class>org.zstack.header.search.InsertVO</class>
         <class>org.zstack.header.search.UpdateVO</class>
         <class>org.zstack.kvm.KVMHostVO</class>
+        <class>org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoVO</class>
+        <class>org.zstack.kvm.hypervisor.datatype.HostOsCategoryVO</class>
+        <class>org.zstack.kvm.hypervisor.datatype.KvmHostHypervisorMetadataVO</class>
         <class>org.zstack.storage.backup.sftp.SftpBackupStorageVO</class>
         <class>org.zstack.storage.backup.imagestore.ImageStoreBackupStorageVO</class>
         <class>org.zstack.header.simulator.SimulatorHostVO</class>
