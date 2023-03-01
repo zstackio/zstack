@@ -2610,7 +2610,7 @@ public class KVMHost extends HostBase implements Host {
                             vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
                     extEmitter.rebootVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
                 } else {
-                    extEmitter.rebootVmOnKvmSuccess(KVMHostInventory.valueOf(getSelf()), vminv);
+                    extEmitter.rebootVmOnKvmSuccess(KVMHostInventory.valueOf(getSelf()), vminv, ret);
                 }
                 bus.reply(msg, reply);
                 completion.done();

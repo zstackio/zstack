@@ -10,8 +10,6 @@ import java.sql.Timestamp;
 @StaticMetamodel(KvmHypervisorInfoVO.class)
 public class KvmHypervisorInfoVO_ {
     public static volatile SingularAttribute<KvmHypervisorInfoVO, String> uuid;
-    public static volatile SingularAttribute<KvmHypervisorInfoVO, String> categoryUuid;
-    public static volatile SingularAttribute<KvmHypervisorInfoVO, String> managementNodeUuid;
     public static volatile SingularAttribute<KvmHypervisorInfoVO, String> hypervisor;
     public static volatile SingularAttribute<KvmHypervisorInfoVO, String> version;
     public static volatile SingularAttribute<KvmHypervisorInfoVO, Timestamp> createDate;

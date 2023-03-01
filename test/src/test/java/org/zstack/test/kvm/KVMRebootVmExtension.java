@@ -2,6 +2,7 @@ package org.zstack.test.kvm;
 
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMException;
 import org.zstack.kvm.KVMHostInventory;
 import org.zstack.kvm.KVMRebootVmExtensionPoint;
@@ -17,7 +18,7 @@ public class KVMRebootVmExtension implements KVMRebootVmExtensionPoint {
     }
 
     @Override
-    public void rebootVmOnKvmSuccess(KVMHostInventory host, VmInstanceInventory vm) {
+    public void rebootVmOnKvmSuccess(KVMHostInventory host, VmInstanceInventory vm, KVMAgentCommands.RebootVmResponse ret) {
         successCalled = true;
     }
 
