@@ -25,6 +25,22 @@ public class VmSystemTags {
     public static String STATIC_IP_TOKEN = "staticIp";
     public static PatternedSystemTag STATIC_IP = new PatternedSystemTag(String.format("staticIp::{%s}::{%s}", STATIC_IP_L3_UUID_TOKEN, STATIC_IP_TOKEN), VmInstanceVO.class);
 
+    public static String IPV4_GATEWAY_L3_UUID_TOKEN = "l3NetworkUuid";
+    public static String IPV4_GATEWAY_TOKEN = "ipv4Gateway";
+    public static PatternedSystemTag IPV4_GATEWAY = new PatternedSystemTag(String.format("ipv4Gateway::{%s}::{%s}", IPV4_GATEWAY_L3_UUID_TOKEN, IPV4_GATEWAY_TOKEN), VmInstanceVO.class);
+
+    public static String IPV6_GATEWAY_L3_UUID_TOKEN = "l3NetworkUuid";
+    public static String IPV6_GATEWAY_TOKEN = "ipv6Gateway";
+    public static PatternedSystemTag IPV6_GATEWAY = new PatternedSystemTag(String.format("ipv6Gateway::{%s}::{%s}", IPV6_GATEWAY_L3_UUID_TOKEN, IPV6_GATEWAY_TOKEN), VmInstanceVO.class);
+
+    public static String IPV4_NETMASK_L3_UUID_TOKEN = "l3NetworkUuid";
+    public static String IPV4_NETMASK_TOKEN = "ipv4Netmask";
+    public static PatternedSystemTag IPV4_NETMASK = new PatternedSystemTag(String.format("ipv4Netmask::{%s}::{%s}", IPV4_NETMASK_L3_UUID_TOKEN, IPV4_NETMASK_TOKEN), VmInstanceVO.class);
+
+    public static String IPV6_PREFIX_L3_UUID_TOKEN = "l3NetworkUuid";
+    public static String IPV6_PREFIX_TOKEN = "ipv6Prefix";
+    public static PatternedSystemTag IPV6_PREFIX = new PatternedSystemTag(String.format("ipv6Prefix::{%s}::{%s}", IPV6_PREFIX_L3_UUID_TOKEN, IPV6_PREFIX_TOKEN), VmInstanceVO.class);
+
     public static String MAC_TOKEN = "customMac";
     public static PatternedSystemTag CUSTOM_MAC = new PatternedSystemTag(String.format("customMac::{%s}::{%s}", STATIC_IP_L3_UUID_TOKEN, MAC_TOKEN), VmInstanceVO.class);
 

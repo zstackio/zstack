@@ -77,6 +77,7 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkInfo;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
@@ -2070,11 +2071,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             private boolean isSet = false;
             private boolean allowDupicatedAddress = false;
             Map<String, List<String>> staticIpMap = null;
+            Map<String, NetworkInfo> nicNetworkInfo = null;
 
             void set() {
                 if (msg instanceof APIAttachL3NetworkToVmMsg) {
                     APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
                     staticIpMap = amsg.getStaticIpMap();
+                    nicNetworkInfo = amsg.getNicNetworkInfo();
                 } else if (msg instanceof VmAttachNicMsg) {
                     VmAttachNicMsg nicMsg = (VmAttachNicMsg) msg;
                     staticIpMap = nicMsg.getStaticIpMap();
@@ -2210,7 +2213,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         flowChain.setName(String.format("attachNic-vm-%s-l3-%s", self.getUuid(), l3Uuids.get(0)));
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString(), setStaticIp.allowDupicatedAddress);
+        flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_nicNetworkInfo.toString(), setStaticIp.nicNetworkInfo);
         flowChain.then(new VmAllocateNicFlow());
+        flowChain.then(new VmAllocateNicIpFlow());
         flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
         setAdditionalFlow(flowChain, spec);
         if (self.getState() == VmInstanceState.Running) {
@@ -3353,6 +3358,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         cmsg.setIp6(msg.getIp6());
         cmsg.setL3NetworkUuid(msg.getL3NetworkUuid());
         cmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        cmsg.setGateway(msg.getGateway());
+        cmsg.setNetmask(msg.getNetmask());
+        cmsg.setIpv6Gateway(msg.getIpv6Gateway());
+        cmsg.setIpv6Prefix(msg.getIpv6Prefix());
         bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, cmsg.getVmInstanceUuid());
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
@@ -3377,7 +3386,24 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                setStaticIp(msg, new Completion(reply) {
+                L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
+                if (!l3NetworkVO.getEnableIPAM()) {
+                    setStaticIpOnlyDb(msg, new Completion(reply) {
+                        @Override
+                        public void success() {
+                            bus.reply(msg, reply);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            reply.setError(errorCode);
+                            bus.reply(msg, reply);
+                            chain.next();
+                        }
+                    });
+                } else {
+                    setStaticIp(msg, new Completion(reply) {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);
@@ -3391,6 +3417,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         chain.next();
                     }
                 });
+                }
             }
 
             @Override
@@ -3399,6 +3426,57 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         });
     }
+
+    private void setStaticIpOnlyDb(final SetVmStaticIpMsg msg, final Completion completion) {
+        VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                .eq(VmNicVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .limit(1).find();
+        List<UsedIpVO> voNewList = new ArrayList<>();
+        List<UsedIpVO> voOldList = Q.New(UsedIpVO.class).eq(UsedIpVO_.vmNicUuid, nicVO.getUuid()).list();
+
+        if (msg.getIp6() != null) {
+            UsedIpVO vo = new UsedIpVO();
+            vo.setUuid(Platform.getUuid());
+            vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIp6()));
+            vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getIp6()+"/"+msg.getIpv6Prefix()));
+            vo.setGateway(msg.getIpv6Gateway().isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIpv6Gateway()));
+            vo.setIpVersion(IPv6Constants.IPv6);
+            vo.setVmNicUuid(nicVO.getUuid());
+            vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
+            nicVO.setUsedIpUuid(vo.getUuid());
+            voNewList.add(vo);
+        }
+        // Ip and ip6 set at same time means dual stack network, nic will set UsedIpUuid with ipv4
+        if (msg.getIp() != null) {
+            UsedIpVO vo = new UsedIpVO();
+            vo.setUuid(Platform.getUuid());
+            if (NetworkUtils.isIpv4Address(msg.getIp())) {
+                vo.setIpInLong(NetworkUtils.ipv4StringToLong(msg.getIp()));
+                vo.setIp(msg.getIp());
+                vo.setNetmask(msg.getNetmask());
+                vo.setGateway(msg.getGateway());
+                vo.setIpVersion(IPv6Constants.IPv4);
+                vo.setVmNicUuid(nicVO.getUuid());
+                vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
+                nicVO.setUsedIpUuid(vo.getUuid());
+                voNewList.add(vo);
+            } else {
+                vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIp()));
+                vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getIp()+"/"+msg.getIpv6Prefix()));
+                vo.setGateway(msg.getIpv6Gateway().isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIpv6Gateway()));
+                vo.setIpVersion(IPv6Constants.IPv6);
+                vo.setVmNicUuid(nicVO.getUuid());
+                vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
+                nicVO.setUsedIpUuid(vo.getUuid());
+                voNewList.add(vo);
+            }
+        }
+        dbf.persistCollection(voNewList);
+        dbf.update(nicVO);
+        dbf.removeCollection(voOldList, UsedIpVO.class);
+        completion.success();
+    }
+
 
     private void setStaticIp(final SetVmStaticIpMsg msg, final Completion completion) {
         Map<Integer, String> staticIpMap = new HashMap<>();
@@ -5855,6 +5933,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         cmsg.setStaticIp(msg.getStaticIp());
         cmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
         cmsg.setRequiredIpMap(msg.getRequiredIpMap());
+        cmsg.setSystemTags(msg.getSystemTags());
         bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, cmsg.getVmInstanceUuid());
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
@@ -5935,6 +6014,10 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        if (!destL3.getEnableIPAM()) {
+                            trigger.next();
+                            return;
+                        }
                         allocateIp(destL3, nic, new ReturnValueCompletion<List<UsedIpInventory>>(chain) {
                             @Override
                             public void success(List<UsedIpInventory> returnValue) {
@@ -5955,10 +6038,96 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 flowChain.then(new NoRollbackFlow() {
+                    String __name__ = "update-nic-ip-for-disable-ipam";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (destL3.getEnableIPAM()) {
+                            trigger.next();
+                            return;
+                        }
+                        new While<>(nic.getUsedIps()).all((ip, comp) -> {
+                            ReturnIpMsg msg = new ReturnIpMsg();
+                            msg.setUsedIpUuid(ip.getUuid());
+                            msg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+                            bus.send(msg, new CloudBusCallBack(comp) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    comp.done();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
+                                    self.setDefaultL3NetworkUuid(destL3.getUuid());
+                                }
+                                self = dbf.updateAndRefresh(self);
+                                VmNicVO nicVO = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
+                                final Map<String, NetworkInfo> nicNetworkInfo = new StaticIpOperator().getNicNetworkInfoBySystemTag(msg.getSystemTags());
+                                List<UsedIpVO> voNewList = new ArrayList<>();
+                                List<UsedIpVO> voOldList = Q.New(UsedIpVO.class).eq(UsedIpVO_.vmNicUuid, nicVO.getUuid()).list();
+                                NetworkInfo networkInfo = nicNetworkInfo.get(msg.getDestL3NetworkUuid());
+                                if (networkInfo == null) {
+                                    trigger.next();
+                                    return;
+                                }
+                                if (networkInfo.ipv6Address != null && !networkInfo.ipv6Address.isEmpty()) {
+                                    UsedIpVO vo = new UsedIpVO();
+                                    vo.setUuid(Platform.getUuid());
+                                    vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(networkInfo.ipv6Address));
+                                    vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(networkInfo.ipv6Address+"/"+networkInfo.ipv6Prefix));
+                                    vo.setGateway(networkInfo.ipv6Gateway.isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(networkInfo.ipv6Gateway));
+                                    vo.setIpVersion(IPv6Constants.IPv6);
+                                    vo.setVmNicUuid(msg.getVmNicUuid());
+                                    vo.setL3NetworkUuid(msg.getDestL3NetworkUuid());
+                                    nicVO.setUsedIpUuid(vo.getUuid());
+                                    nicVO.setIp(networkInfo.ipv4Address);
+                                    nicVO.setGateway(networkInfo.ipv4Gateway);
+                                    nicVO.setNetmask(networkInfo.ipv4Netmask);
+                                    nicVO.setL3NetworkUuid(msg.getDestL3NetworkUuid());
+                                    voNewList.add(vo);
+                                }
+                                if (networkInfo.ipv4Address != null && !networkInfo.ipv4Address.isEmpty()) {
+                                    UsedIpVO vo = new UsedIpVO();
+                                    vo.setUuid(Platform.getUuid());
+                                    if (NetworkUtils.isIpv4Address(networkInfo.ipv4Address)) {
+                                        vo.setIpInLong(NetworkUtils.ipv4StringToLong(networkInfo.ipv4Address ));
+                                        vo.setIp(networkInfo.ipv4Address);
+                                        vo.setNetmask(networkInfo.ipv4Netmask);
+                                        vo.setGateway(networkInfo.ipv4Gateway);
+                                        vo.setIpVersion(IPv6Constants.IPv4);
+                                        vo.setVmNicUuid(msg.getVmNicUuid());
+                                        vo.setL3NetworkUuid(msg.getDestL3NetworkUuid());
+                                        nicVO.setUsedIpUuid(vo.getUuid());
+                                        nicVO.setIp(networkInfo.ipv4Address);
+                                        nicVO.setGateway(networkInfo.ipv4Gateway);
+                                        nicVO.setNetmask(networkInfo.ipv4Netmask);
+                                        nicVO.setL3NetworkUuid(msg.getDestL3NetworkUuid());
+                                        voNewList.add(vo);
+                                    }
+                                }
+                                dbf.persistCollection(voNewList);
+                                dbf.updateAndRefresh(nicVO);
+                                dbf.removeCollection(voOldList, UsedIpVO.class);
+                                data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
+                                data.put(VmInstanceConstant.Params.vmInventory.toString(), getSelfInventory());
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flowChain.then(new NoRollbackFlow() {
                     String __name__ = "update-nic-ip";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        if (!destL3.getEnableIPAM()) {
+                            trigger.next();
+                            return;
+                        }
                         new While<>(nic.getUsedIps()).all((ip, comp) -> {
                             ReturnIpMsg msg = new ReturnIpMsg();
                             msg.setUsedIpUuid(ip.getUuid());
