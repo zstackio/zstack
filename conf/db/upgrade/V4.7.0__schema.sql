@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmTemplateVO` (
     `defaultL3NetworkUuid` varchar(32) DEFAULT NULL,
     `strategy` text DEFAULT NULL,
     `systemTags` text DEFAULT NULL,
-    `tagPatternUuids` text DEFAULT NULL,
+    `tagUuids` text DEFAULT NULL,
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -60,10 +60,11 @@ CREATE TABLE IF NOT EXISTS `zstack`.`DisasterRecoveryVmTemplateVO` (
     `uuid` varchar(32) NOT NULL,
     `mirrorCdpTaskUuid` varchar(32) NOT NULL,
     `templateType` varchar(32) DEFAULT NULL,
-    `failbackMode` varchar(32) DEFAULT NULL,
+    `failbackDestination` varchar(32) DEFAULT NULL,
     `useExistingVolume` tinyint unsigned DEFAULT 0,
     `groupId` bigint(20) DEFAULT NULL,
     `originVmInstanceUuid` varchar(32) DEFAULT NULL,
+    `externalManagementTagUuids` text DEFAULT NULL,
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `uuid` (`uuid`),
     CONSTRAINT `fkDisasterRecoveryVmTempalateVOVmTemplateVO` FOREIGN KEY (`uuid`) REFERENCES `VmTemplateVO` (`uuid`) ON DELETE CASCADE
@@ -74,6 +75,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MirrorCdpTaskRecoverRecordVO` (
     `mirrorCdpTaskUuid` varchar(32) NOT NULL,
     `resourceType` varchar(32) NOT NULL,
     `resourceUuid` varchar(32) NOT NULL,
+    `groupId` bigint(20) DEFAULT NULL,
+    `groupTs` VARCHAR(2048) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`),

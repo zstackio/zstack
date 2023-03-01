@@ -28,7 +28,7 @@ public class StartMirrorCdpTaskScheduleJobAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, validValues = {"FailBack","FastRecovery"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"Failback","FastRecovery"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String operateType;
 
     @Param(required = false)

@@ -35,7 +35,7 @@ public class VmTemplateInventory implements Serializable {
     private String description;
     private String strategy;
     private String systemTags;
-    private String tagPatternUuids;
+    private String tagUuids;
 
     protected VmTemplateInventory(VmTemplateVO vo) {
         this.setUuid(vo.getUuid());
@@ -59,7 +59,7 @@ public class VmTemplateInventory implements Serializable {
         this.setDescription(vo.getDescription());
         this.setStrategy(vo.getStrategy());
         this.setSystemTags(vo.getSystemTags());
-        this.setTagPatternUuids(vo.getTagPatternUuids());
+        this.setTagUuids(vo.getTagUuids());
     }
 
     public static VmTemplateInventory valueOf(VmTemplateVO vo) {
@@ -77,12 +77,12 @@ public class VmTemplateInventory implements Serializable {
     public VmTemplateInventory() {
     }
 
-    public String getTagPatternUuids() {
-        return tagPatternUuids;
+    public String getTagUuids() {
+        return tagUuids;
     }
 
-    public void setTagPatternUuids(String tagPatternUuids) {
-        this.tagPatternUuids = tagPatternUuids;
+    public void setTagUuids(String tagUuids) {
+        this.tagUuids = tagUuids;
     }
 
     public String getUuid() {

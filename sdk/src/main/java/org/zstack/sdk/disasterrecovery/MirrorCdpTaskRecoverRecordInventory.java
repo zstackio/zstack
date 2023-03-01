@@ -36,6 +36,22 @@ public class MirrorCdpTaskRecoverRecordInventory  {
         return this.resourceType;
     }
 
+    public long groupId;
+    public void setGroupId(long groupId) {
+        this.groupId = groupId;
+    }
+    public long getGroupId() {
+        return this.groupId;
+    }
+
+    public java.lang.String groupTs;
+    public void setGroupTs(java.lang.String groupTs) {
+        this.groupTs = groupTs;
+    }
+    public java.lang.String getGroupTs() {
+        return this.groupTs;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
