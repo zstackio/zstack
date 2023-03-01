@@ -98,6 +98,8 @@ public class SourceClassMap {
 			put("org.zstack.crypto.ccs.CCSCertificateUserRefInventory", "org.zstack.sdk.CCSCertificateUserRefInventory");
 			put("org.zstack.crypto.ccs.CCSCertificateUserState", "org.zstack.sdk.CCSCertificateUserState");
 			put("org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory", "org.zstack.sdk.AiSiNoSecretResourcePoolInventory");
+			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory", "org.zstack.sdk.FlkSecSecretResourcePoolInventory");
+			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineInventory", "org.zstack.sdk.FlkSecSecurityMachineInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecretResourcePoolInventory", "org.zstack.sdk.InfoSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecurityMachineInventory", "org.zstack.sdk.InfoSecSecurityMachineInventory");
 			put("org.zstack.directory.DirectoryInventory", "org.zstack.sdk.DirectoryInventory");
@@ -817,6 +819,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
 			put("org.zstack.sdk.FirewallRuleState", "org.zstack.vpcfirewall.entity.FirewallRuleState");
+			put("org.zstack.sdk.FlkSecSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory");
+			put("org.zstack.sdk.FlkSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineInventory");
 			put("org.zstack.sdk.FlowCollectorInventory", "org.zstack.header.flowMeter.FlowCollectorInventory");
 			put("org.zstack.sdk.FlowCounter", "org.zstack.header.flowMeter.FlowCounter");
 			put("org.zstack.sdk.FlowMeterInventory", "org.zstack.header.flowMeter.FlowMeterInventory");
