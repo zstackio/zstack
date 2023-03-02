@@ -82,4 +82,8 @@ public class KVMGlobalConfig {
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig REDIRECT_CONSOLE_LOG_TO_FILE = new GlobalConfig(CATEGORY, "redirect.vm.log.to.file");
 
+    // vm cpu features stored in cpuid
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig VM_CPU_HYPERVISOR_FEATURE = new GlobalConfig(CATEGORY, "vm.cpu.hypervisor.feature");
 }

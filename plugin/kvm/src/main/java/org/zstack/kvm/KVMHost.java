@@ -3041,6 +3041,10 @@ public class KVMHost extends HostBase implements Host {
             cmd.setX2apic(allGuestOsCharacter.get(vmArchPlatformRelease).getX2apic() == null || allGuestOsCharacter.get(vmArchPlatformRelease).getX2apic());
         }
 
+        cmd.setCpuHypervisorFeature(rcf.getResourceConfigValue(KVMGlobalConfig.VM_CPU_HYPERVISOR_FEATURE,
+                spec.getVmInventory().getUuid(),
+                Boolean.class));
+
         VirtualDeviceInfo memBalloon = new VirtualDeviceInfo();
         memBalloon.setResourceUuid(vidm.MEM_BALLOON_UUID);
         memBalloon.setDeviceAddress(vidm.getVmDeviceAddress(vidm.MEM_BALLOON_UUID, spec.getVmInventory().getUuid()));

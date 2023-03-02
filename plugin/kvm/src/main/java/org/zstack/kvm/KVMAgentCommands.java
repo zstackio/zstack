@@ -1790,6 +1790,8 @@ public class KVMAgentCommands {
         private boolean consoleLogToFile;
         private boolean acpi;
         private boolean x2apic = true;
+        // cpuid hypervisor feature
+        private boolean cpuHypervisorFeature = true;
 
         // TODO: only for test
         private boolean useColoBinary;
@@ -2234,6 +2236,14 @@ public class KVMAgentCommands {
 
         public void setX2apic(boolean x2apic) {
             this.x2apic = x2apic;
+        }
+
+        public boolean isCpuHypervisorFeature() {
+            return cpuHypervisorFeature;
+        }
+
+        public void setCpuHypervisorFeature(boolean cpuHypervisorFeature) {
+            this.cpuHypervisorFeature = cpuHypervisorFeature;
         }
 
         public String getVendorId() {
