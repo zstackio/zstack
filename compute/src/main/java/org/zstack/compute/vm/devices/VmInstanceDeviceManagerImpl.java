@@ -326,6 +326,10 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
             return null;
         }
 
+        if (RESOURCE_CONFIG_UUID.equals(resourceUuid)) {
+            return null;
+        }
+
         if (!vmExists(vmInstanceUuid)) {
             return operr("cannot find vm with uuid: %s", vmInstanceUuid);
         }
