@@ -8,4 +8,6 @@ public interface KvmHypervisorInfoManager {
     void save(VirtualizerInfoTO info);
 
     void clean(String uuid);
+
+    void refreshMetadata();
 }
