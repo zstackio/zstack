@@ -433,6 +433,7 @@ public class KVMAgentCommands {
         private String cpuCache;
         private List<String> ipAddresses;
         private List<String> libvirtCapabilities;
+        private VirtualizerInfoTO virtualizerInfo;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -592,6 +593,14 @@ public class KVMAgentCommands {
 
         public void setLibvirtCapabilities(List<String> libvirtCapabilities) {
             this.libvirtCapabilities = libvirtCapabilities;
+        }
+
+        public VirtualizerInfoTO getVirtualizerInfo() {
+            return virtualizerInfo;
+        }
+
+        public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
+            this.virtualizerInfo = virtualizerInfo;
         }
     }
 
