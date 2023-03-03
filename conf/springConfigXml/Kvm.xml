@@ -163,6 +163,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KvmResourceConfigExtension" class="org.zstack.kvm.KvmResourceConfigExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.ResourceConfigMemorySnapshotExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="KVMVmConfigurationFactory" class="org.zstack.kvm.KVMVmConfigurationFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.HypervisorBasedVmConfigurationFactory"/>

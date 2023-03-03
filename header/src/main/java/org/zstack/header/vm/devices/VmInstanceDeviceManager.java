@@ -7,6 +7,8 @@ import java.util.Map;
 
 public interface VmInstanceDeviceManager {
     String MEM_BALLOON_UUID = "4780bf6d2fa65700f22e36c27e8ff05c";
+
+    String RESOURCE_CONFIG_UUID = "65700f22e34780bf6d2fa6c27e8ff05c";
     
     /**
      * create or update vm device address,
