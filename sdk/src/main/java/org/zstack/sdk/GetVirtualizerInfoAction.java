@@ -25,7 +25,7 @@ public class GetVirtualizerInfoAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List uuids;
 
     @Param(required = false)

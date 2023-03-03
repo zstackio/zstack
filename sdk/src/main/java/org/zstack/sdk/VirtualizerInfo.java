@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.VirtualizerVersionState;
 
 public class VirtualizerInfo  {
 
@@ -12,28 +12,28 @@ public class VirtualizerInfo  {
         return this.category;
     }
 
-    public java.lang.String currentQemuVersion;
-    public void setCurrentQemuVersion(java.lang.String currentQemuVersion) {
-        this.currentQemuVersion = currentQemuVersion;
+    public java.lang.String currentVersion;
+    public void setCurrentVersion(java.lang.String currentVersion) {
+        this.currentVersion = currentVersion;
     }
-    public java.lang.String getCurrentQemuVersion() {
-        return this.currentQemuVersion;
-    }
-
-    public java.lang.String expectQemuVersion;
-    public void setExpectQemuVersion(java.lang.String expectQemuVersion) {
-        this.expectQemuVersion = expectQemuVersion;
-    }
-    public java.lang.String getExpectQemuVersion() {
-        return this.expectQemuVersion;
+    public java.lang.String getCurrentVersion() {
+        return this.currentVersion;
     }
 
-    public boolean matched;
-    public void setMatched(boolean matched) {
-        this.matched = matched;
+    public java.lang.String expectVersion;
+    public void setExpectVersion(java.lang.String expectVersion) {
+        this.expectVersion = expectVersion;
     }
-    public boolean getMatched() {
-        return this.matched;
+    public java.lang.String getExpectVersion() {
+        return this.expectVersion;
+    }
+
+    public VirtualizerVersionState matchState;
+    public void setMatchState(VirtualizerVersionState matchState) {
+        this.matchState = matchState;
+    }
+    public VirtualizerVersionState getMatchState() {
+        return this.matchState;
     }
 
 }
