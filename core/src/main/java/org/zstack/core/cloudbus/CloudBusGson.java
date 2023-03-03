@@ -47,7 +47,7 @@ public class CloudBusGson {
                     return false;
                 }
             }
-    }).create();
+    }).enableComplexMapKeySerialization().create();
 
     private static Gson logSafeGson = new GsonUtil().setCoder(Message.class, new GsonTypeCoder<Message>() {
 
