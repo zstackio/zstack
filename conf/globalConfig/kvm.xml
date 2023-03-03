@@ -174,7 +174,7 @@
         <category>kvm</category>
         <name>kvmagent.allow.ports</name>
         <description>tcp or udp ports allowed by kvmagent, udp port start with 'u' like 'u67', port range can be like this: 1100:1200, multiple port or port range can be separated by ”,“</description>
-        <defaultValue>22,7070,16509,49152:49261,2049,20000:30000,u4789,u8472,7069,9100,9103,9092</defaultValue>
+        <defaultValue>22,{KvmAgent.port},16509,49152:49261,2049,20000:30000,u4789,u8472,{KvmAgent.prometheusPort},{KvmAgent.nodeExportPort},{KvmAgent.collectdExposePort},{kvmhost.pushgateway.webListenPort}</defaultValue>
         <type>java.lang.String</type>
     </config>
 

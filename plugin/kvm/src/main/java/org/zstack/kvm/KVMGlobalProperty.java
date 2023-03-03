@@ -29,7 +29,18 @@ public class KVMGlobalProperty {
     public static String TAKEVOERFLAGPATH;
     @GlobalProperty(name="MN.network.", defaultValue = "")
     public static List<String> MN_NETWORKS;
+<<<<<<< HEAD
     @GlobalProperty(name = "host.skip.packages", defaultValue = "qemu, qemu-kvm, qemu-kvm-ev, qemu-img, qemu-img-ev")
     public static String SKIP_PACKAGES;
 
+=======
+    @GlobalProperty(name="KvmAgent.prometheusPort", defaultValue = "7069")
+    public static int PROMETHEUS_PORT;
+    @GlobalProperty(name="KvmAgent.collectdExposePort", defaultValue = "9103")
+    public static int COLLECTD_EXPOSE_PORT;
+    @GlobalProperty(name="KvmAgent.nodeExportPort", defaultValue = "9100")
+    public static int NODE_EXPORT_PORT;
+    @GlobalProperty(name="KvmAgent.collectdAcceptPort", defaultValue = "25826")
+    public static int COLLECTD_ACCEPT_PORT;
+>>>>>>> 79bcc5c08d ([BugFix: ZSTACK-25869]internal-port)
 }

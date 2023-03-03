@@ -1,6 +1,7 @@
 package org.zstack.core.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -224,6 +225,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         }
                         // substitute system properties in defaultValue
                         String defaultValue = StringTemplate.substitute(d.defaultValue(), propertiesMap);
+                        defaultValue = StringTemplate.substitute(defaultValue, Platform.getGlobalProperties());
 
                         GlobalConfig c = new GlobalConfig();
                         c.setCategory(config.getCategory());
@@ -512,11 +514,13 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         throw new IllegalArgumentException(String.format("GlobalConfig[category:%s, name:%s] must have a default value", c.getCategory(), c.getName()));
                     } else {
                         c.setDefaultValue(StringTemplate.substitute(c.getDefaultValue(), propertiesMap));
+                        c.setDefaultValue(StringTemplate.substitute(c.getDefaultValue(), Platform.getGlobalProperties()));
                     }
                     if (c.getValue() == null) {
                         c.setValue(c.getDefaultValue());
                     } else {
                         c.setValue(StringTemplate.substitute(c.getValue(), propertiesMap));
+                        c.setValue(StringTemplate.substitute(c.getValue(), Platform.getGlobalProperties()));
                     }
                     GlobalConfig config = GlobalConfig.valueOf(c);
                     if (configsFromXml.containsKey(config.getIdentity())) {

@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.core.Platform;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceConstant;
 
@@ -64,7 +65,7 @@ public class LoadBalancerConstants {
 
     public static final int DNS_PORT = 53;
     public static final int SSH_PORT = 22;
-    public static final int ZVR_PORT = 7272;
+    public static final int ZVR_PORT = Integer.parseInt(Platform.getGlobalProperties().get("VirtualRouter.agentPort"));
 
     /*max concurrent connect no more than MAX_CONNECTION_LIMIT per listener*/
     public static final long MAX_CONNECTION_LIMIT = 10000000;
