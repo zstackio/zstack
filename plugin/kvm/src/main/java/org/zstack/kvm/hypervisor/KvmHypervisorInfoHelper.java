@@ -8,6 +8,7 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.hypervisor.datatype.HostOsCategoryVO;
 import org.zstack.kvm.hypervisor.datatype.HostOsCategoryVO_;
+import org.zstack.kvm.hypervisor.datatype.VirtualizerVersionState;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.data.Pair;
 
@@ -66,7 +67,7 @@ public class KvmHypervisorInfoHelper {
             String osVersion = OS_VERSION.getTokenByTag(osVersionTag, OS_VERSION_TOKEN);
             String osReleaseTag = hostReleaseMap.get(hostUuid);
             String osRelease = OS_RELEASE.getTokenByTag(osReleaseTag, OS_RELEASE_TOKEN);
-            String osReleaseVersion = String.format("%s %s %s", distribution.toLowerCase(), osRelease.toLowerCase(), osVersion);
+            String osReleaseVersion = String.format("%s %s %s", distribution, osRelease, osVersion);
 
             Pair<String, String> key = new Pair<>(architecture, osReleaseVersion);
             HostOsCategoryVO vo = caches.get(key);
@@ -86,8 +87,11 @@ public class KvmHypervisorInfoHelper {
         return results;
     }
 
-    public static boolean isQemuVersionMatched(String v1, String v2) {
-        return Objects.equals(v1, v2);
+    public static VirtualizerVersionState isQemuVersionMatched(String v1, String v2) {
+        if (v1 == null || v2 == null) {
+            return VirtualizerVersionState.Unknown;
+        }
+        return Objects.equals(v1, v2) ? VirtualizerVersionState.Matched : VirtualizerVersionState.Unmatched;
     }
 
     public static boolean isQemuBased(String virtualizerInfo) {

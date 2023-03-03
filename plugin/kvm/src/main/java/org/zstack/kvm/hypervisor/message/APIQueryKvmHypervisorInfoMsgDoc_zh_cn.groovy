@@ -1,6 +1,6 @@
 package org.zstack.kvm.hypervisor.message
 
-import org.zstack.kvm.hypervisor.message.APIQueryHostOsCategoryReply
+import org.zstack.kvm.hypervisor.message.APIQueryKvmHypervisorInfoReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -24,7 +24,7 @@ doc {
         }
 
         response {
-            clz APIQueryHostOsCategoryReply.class
+            clz APIQueryKvmHypervisorInfoReply.class
         }
     }
 }
