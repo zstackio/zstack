@@ -1,7 +1,11 @@
 package org.zstack.test.integration.storage.primary.ceph
 
+import org.zstack.core.db.Q
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.sdk.GetVolumeSnapshotSizeResult
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VolumeInventory
 import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.test.integration.storage.CephEnv
@@ -55,6 +59,15 @@ class GetVolumeSnapshotSizeCase extends SubCase{
         }
         assert result.actualSize == actualSize
         assert result.size == size
+        assert Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snapshotInventory.uuid)
+                .select(VolumeSnapshotVO_.size)
+                .findValue() == actualSize
+
+        def vol = syncVolumeSize {
+            uuid = vm.rootVolumeUuid
+        } as VolumeInventory
+
+        assert vol.actualSize == vm.allVolumes.find { it.uuid == vm.rootVolumeUuid }.actualSize
 
         env.simulator(CephPrimaryStorageBase.GET_VOLUME_SNAPSHOT_SIZE_PATH) {
             def rsp = new CephPrimaryStorageBase.GetVolumeSnapshotSizeRsp()
