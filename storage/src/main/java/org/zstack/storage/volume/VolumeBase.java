@@ -1989,9 +1989,15 @@ public class VolumeBase implements Volume {
                 refreshVO();
                 SyncVolumeSizeOnPrimaryStorageReply r = reply.castReply();
                 self.setSize(r.getSize());
-                // the actual size = volume actual size + all snapshot size
-                long snapshotSize = calculateSnapshotSize();
-                self.setActualSize(r.getActualSize() + snapshotSize);
+
+                if (!r.isWithInternalSnapshot()) {
+                    // the actual size = volume actual size + all snapshot size
+                    long snapshotSize = calculateSnapshotSize();
+                    self.setActualSize(r.getActualSize() + snapshotSize);
+                } else {
+                    self.setActualSize(r.getActualSize());
+                }
+
                 self = dbf.updateAndRefresh(self);
 
                 VolumeSize size = new VolumeSize();
