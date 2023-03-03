@@ -35,9 +35,7 @@ public class CentralizedDnsExtension extends AbstractNetworkServiceExtension imp
 
     @Override
     public void applyNetworkService(VmInstanceSpec spec, Map<String, Object> data, Completion completion) {
-        Map<NetworkServiceCentralizedDnsBackend, List<ForwardDnsStruct>> entries = workoutForwardDns(spec);
-        data.put(RESULT, entries);
-        doForwardDns(entries.entrySet().iterator(), spec, completion);
+        completion.success();
     }
 
 
@@ -111,11 +109,7 @@ public class CentralizedDnsExtension extends AbstractNetworkServiceExtension imp
 
     @Override
     public void releaseNetworkService(VmInstanceSpec spec, Map<String, Object> data, NoErrorCompletion completion) {
-        Map<NetworkServiceCentralizedDnsBackend, List<ForwardDnsStruct>> entries = (Map<NetworkServiceCentralizedDnsBackend, List<ForwardDnsStruct>>) data.get(RESULT);
-        if (entries == null) {
-            entries = workoutForwardDns(spec);
-        }
-        releaseForwardDns(entries.entrySet().iterator(), spec, completion);
+        completion.done();
     }
 
     private void releaseForwardDns(final Iterator<Map.Entry<NetworkServiceCentralizedDnsBackend, List<ForwardDnsStruct>>> it, final VmInstanceSpec spec, final NoErrorCompletion complete) {

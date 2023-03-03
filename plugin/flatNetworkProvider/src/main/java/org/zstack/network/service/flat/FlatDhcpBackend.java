@@ -74,7 +74,7 @@ import static org.zstack.utils.CollectionDSL.*;
  */
 public class FlatDhcpBackend extends AbstractService implements NetworkServiceDhcpBackend, KVMHostConnectExtensionPoint,
         L3NetworkDeleteExtensionPoint, VmInstanceMigrateExtensionPoint, VmAbnormalLifeCycleExtensionPoint, IpRangeDeletionExtensionPoint,
-        BeforeStartNewCreatedVmExtensionPoint, GlobalApiMessageInterceptor, AfterAddIpRangeExtensionPoint {
+        BeforeStartNewCreatedVmExtensionPoint, GlobalApiMessageInterceptor, AfterAddIpRangeExtensionPoint, DnsServiceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FlatDhcpBackend.class);
 
     @Autowired
@@ -1392,25 +1392,21 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         return FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE;
     }
 
-    private List<String> getL3NetworkDns(String l3NetworkUuid){
-        List<String> dns = Q.New(L3NetworkDnsVO.class).eq(L3NetworkDnsVO_.l3NetworkUuid, l3NetworkUuid)
-                .select(L3NetworkDnsVO_.dns).orderBy(L3NetworkDnsVO_.id, SimpleQuery.Od.ASC).listValues();
-        if (dns == null) {
-            dns = new ArrayList<String>();
-        }
+    @Override
+    public List<String> getDnsAddress(L3NetworkInventory l3Inv) {
+        List<String>  dns = new ArrayList<String>();
 
-        L3NetworkVO l3VO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3NetworkUuid).find();
-        if (FlatNetwordProviderGlobalConfig.ALLOW_DEFAULT_DNS.value(Boolean.class) && l3VO.getIpVersions().contains(IPv6Constants.IPv4)) {
-            Map<String, String> dhcpIpMap = getExistingDhcpServerIp(l3NetworkUuid, IPv6Constants.IPv4);
+        String providerUuid = Q.New(NetworkServiceProviderVO.class)
+                .select(NetworkServiceProviderVO_.uuid)
+                .eq(NetworkServiceProviderVO_.type, FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)
+                .findValue();
+        if (l3Inv.getNetworkServiceTypesFromProvider(providerUuid).contains(NetworkServiceType.DHCP.toString())
+                && FlatNetwordProviderGlobalConfig.ALLOW_DEFAULT_DNS.value(Boolean.class)
+                && l3Inv.getIpVersions().contains(IPv6Constants.IPv4)){
+            Map<String, String> dhcpIpMap = getExistingDhcpServerIp(l3Inv.getUuid(), IPv6Constants.IPv4);
             if (!dhcpIpMap.isEmpty()) {
                 Map.Entry<String, String> entry = dhcpIpMap.entrySet().iterator().next();
                 dns.add(entry.getKey());
-            }
-        }
-
-        for (FlatDhcpGetDnsAddressExtensionPoint exp : pluginRgty.getExtensionList(FlatDhcpGetDnsAddressExtensionPoint.class)) {
-            if (dns.isEmpty()) {
-                dns.addAll(exp.getDnsAddress(L3NetworkInventory.valueOf(l3VO)));
             }
         }
 
@@ -1487,7 +1483,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                 List<String> dns = new ArrayList<>();
                 List<String> dns6 = new ArrayList<>();
-                for (String dnsIp : getL3NetworkDns(arg.getL3Network().getUuid())) {
+                for (String dnsIp : nwServiceMgr.getL3NetworkDns(arg.getL3Network().getUuid())) {
                     if (NetworkUtils.isIpv4Address(dnsIp)) {
                         dns.add(dnsIp);
                     } else {
@@ -1623,11 +1619,27 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         VmNicInventory nnic = null;
 
         for (VmNicInventory nic : vm.getVmNics()) {
+            try {
+                NetworkServiceProviderType pType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                        nic.getL3NetworkUuid(), NetworkServiceType.DHCP);
+                if (pType != FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE) {
+                    continue;
+                }
+            } catch (OperationFailureException exception) {
+                logger.debug(String.format("dhcp is not enable on l3 network %s", nic.getL3NetworkUuid()));
+                continue;
+            }
+
             if (VmNicHelper.getL3Uuids(nic).contains(previousL3)) {
                 pnic = nic;
             } else if (VmNicHelper.getL3Uuids(nic).contains(nowL3)) {
                 nnic = nic;
             }
+        }
+
+        if (pnic == null && nnic == null) {
+            completion.success();
+            return;
         }
 
         ResetDefaultGatewayCmd cmd = new ResetDefaultGatewayCmd();
