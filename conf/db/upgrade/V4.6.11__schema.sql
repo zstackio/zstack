@@ -57,7 +57,7 @@ ALTER TABLE `zstack`.`CephOsdGroupVO` MODIFY COLUMN `osds` text NOT NULL;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`GuestToolsStateVO` (
     `vmInstanceUuid` varchar(32) NOT NULL UNIQUE,
-    `state` varchar(32) NOT NULL DEFAULT 'Unknown',
+    `state` varchar(32) NOT NULL DEFAULT 'NotInstalled',
     `version` varchar(32),
     `platform` varchar(32),
     `osType` varchar(32),
