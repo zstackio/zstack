@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.zstack.kvm.hypervisor.KvmHypervisorConstant.*;
 
@@ -69,7 +70,8 @@ public class HypervisorMetadataCollectorImpl implements HypervisorMetadataCollec
      * scan iso folder from specific root path
      */
     protected List<HypervisorMetadataDefinition> scanFolder(Path rootPath) throws IOException {
-        return Files.list(rootPath) //  /opt/zstack-dvd/x86_64
+        try (Stream<Path> stream = Files.list(rootPath)) { //  /opt/zstack-dvd/x86_64
+            return stream
                 .filter(path -> !IGNORE_DIR_AT_DVD.contains(path.getFileName().toString()))
                 .filter(path -> path.toFile().isDirectory())
                 .flatMap(path -> { //  /opt/zstack-dvd/x86_64/c76
@@ -82,6 +84,7 @@ public class HypervisorMetadataCollectorImpl implements HypervisorMetadataCollec
                 .filter(path -> path.toFile().isDirectory())
                 .map(this::mapFromPath)
                 .collect(Collectors.toList());
+        }
     }
 
     protected HypervisorMetadataDefinition mapFromPath(Path path) {
