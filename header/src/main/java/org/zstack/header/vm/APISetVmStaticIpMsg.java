@@ -2,7 +2,6 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -27,6 +26,14 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
     private String ip;
     @APIParam(required = false)
     private String ip6;
+    @APIParam(required = false)
+    private String netmask;
+    @APIParam(required = false)
+    private String gateway;
+    @APIParam(required = false)
+    private String ipv6Gateway;
+    @APIParam(required = false)
+    private String ipv6Prefix;
 
     public String getIp() {
         return ip;
@@ -59,6 +66,38 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
 
     public void setIp6(String ip6) {
         this.ip6 = ip6;
+    }
+
+    public String getNetmask() {
+        return netmask;
+    }
+
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
+
+    public String getGateway() {
+        return gateway;
+    }
+
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
+    }
+
+    public String getIpv6Gateway() {
+        return ipv6Gateway;
+    }
+
+    public void setIpv6Gateway(String ipv6Gateway) {
+        this.ipv6Gateway = ipv6Gateway;
+    }
+
+    public String getIpv6Prefix() {
+        return ipv6Prefix;
+    }
+
+    public void setIpv6Prefix(String ipv6Prefix) {
+        this.ipv6Prefix = ipv6Prefix;
     }
 
     public static APISetVmStaticIpMsg __example__() {

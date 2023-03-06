@@ -888,5 +888,6 @@ public class NetworkUtils {
 
         return startIpv6Addresses.toBigInteger().compareTo(iPv6Addresses.toBigInteger()) <= 0 && endIpv6Addresses.toBigInteger().compareTo(iPv6Addresses.toBigInteger()) >= 0;
     }
+
 }
 
