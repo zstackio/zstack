@@ -14,8 +14,10 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -183,9 +185,9 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
             }catch (Exception e){
                 throw new CloudRuntimeException(e);
             }
-        }).run(new NoErrorCompletion() {
+        }).run(new WhileDoneCompletion(null) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 logger.info("File check successfully!");
             }
         });

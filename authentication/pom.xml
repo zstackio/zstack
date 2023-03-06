@@ -5,7 +5,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>3.8.0</version>
+        <version>4.4.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -159,13 +159,17 @@
                 </executions>
                 <configuration>
                     <source>${project.java.version}</source>
-                    <complianceLevel>${project.java.version}</complianceLevel>
                     <target>${project.java.version}</target>
+                    <complianceLevel>${project.java.version}</complianceLevel>
                     <XnoInline>true</XnoInline>
                     <aspectLibraries>
                         <aspectLibrary>
                             <groupId>org.springframework</groupId>
                             <artifactId>spring-aspects</artifactId>
+                        </aspectLibrary>
+                        <aspectLibrary>
+                            <groupId>org.zstack</groupId>
+                            <artifactId>core</artifactId>
                         </aspectLibrary>
                         <aspectLibrary>
                             <groupId>org.zstack</groupId>

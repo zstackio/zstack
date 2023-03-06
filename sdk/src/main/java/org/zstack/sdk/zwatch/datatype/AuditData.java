@@ -116,14 +116,6 @@ public class AuditData  {
         return this.responseDump;
     }
 
-    public java.lang.String resourceBefore;
-    public void setResourceBefore(java.lang.String resourceBefore) {
-        this.resourceBefore = resourceBefore;
-    }
-    public java.lang.String getResourceBefore() {
-        return this.resourceBefore;
-    }
-
     public java.lang.String operator;
     public void setOperator(java.lang.String operator) {
         this.operator = operator;

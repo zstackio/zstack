@@ -12,8 +12,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
-import org.zstack.kvm.KVMAgentCommands.ConfirmVerificationFilesCommand;
-import org.zstack.kvm.KVMAgentCommands.ConfirmVerificationFilesResponse;
+import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.utils.Bash;
@@ -169,7 +168,7 @@ public class FileVerificationInitialServiceImpl implements FileVerificationIniti
             return;
         }
     
-        ConfirmVerificationFilesCommand cmd = new ConfirmVerificationFilesCommand();
+        KVMAgentCommands.ConfirmVerificationFilesCommand cmd = new KVMAgentCommands.ConfirmVerificationFilesCommand();
         cmd.patterns = new ArrayList<>(hostInitialVerificationFiles);
     
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -187,8 +186,8 @@ public class FileVerificationInitialServiceImpl implements FileVerificationIniti
                 }
     
                 KVMHostAsyncHttpCallReply httpReply = reply.castReply();
-                ConfirmVerificationFilesResponse response =
-                        httpReply.toResponse(ConfirmVerificationFilesResponse.class);
+                KVMAgentCommands.ConfirmVerificationFilesResponse response =
+                        httpReply.toResponse(KVMAgentCommands.ConfirmVerificationFilesResponse.class);
                 if (!response.isSuccess()) {
                     completion.fail(operr("KVM Host error, because: %s", response.getError()));
                     return;
@@ -198,6 +197,4 @@ public class FileVerificationInitialServiceImpl implements FileVerificationIniti
             }
         });
     }
-    
-    
 }
