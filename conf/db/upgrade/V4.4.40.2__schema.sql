@@ -1,4 +1,4 @@
-CREATE TABLE `AgentVersionVO` (
+CREATE TABLE IF NOT EXISTS `zstack`.`AgentVersionVO` (
   `uuid` varchar(32) NOT NULL PRIMARY KEY,
   `agentType` varchar(255) DEFAULT NULL,
   `currentVersion` varchar(255) DEFAULT NULL,
