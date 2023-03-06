@@ -8,6 +8,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.Component;
 import org.zstack.kvm.hypervisor.datatype.*;
+import org.zstack.utils.CollectionUtils;
 
 import java.util.*;
 import java.util.function.Function;
@@ -96,7 +97,10 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
         SQL.New(KvmHostHypervisorMetadataVO.class)
                 .eq(KvmHostHypervisorMetadataVO_.managementNodeUuid, Platform.getManagementServerId())
                 .delete();
- 
+        if (CollectionUtils.isEmpty(categoryVOS)) {
+            return;
+        }
+
         Set<String> requestArchitectures = categoryVOS.stream()
                 .map(HostOsCategoryVO::getArchitecture)
                 .collect(Collectors.toSet());
