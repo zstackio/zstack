@@ -3232,7 +3232,6 @@ public class KVMAgentCommands {
         public long dirSize;
     }
 
-<<<<<<< HEAD
     public static class CheckFileOnHostCmd extends AgentCommand {
         public Set<String> paths;
         public boolean md5Return;
@@ -3313,12 +3312,14 @@ public class KVMAgentCommands {
         public void setStatus(String status) {
             this.status = status;
         }
+    }
 
-        public static class ConfirmVerificationFilesCommand extends AgentCommand {
-            public List<String> patterns;
-        }
-        
-        public static class ConfirmVerificationFilesResponse extends AgentResponse {
-            public List<String> paths;
-        }
+    public static class ConfirmVerificationFilesCommand extends AgentCommand {
+        public List<String> patterns;
+    }
+
+    public static class ConfirmVerificationFilesResponse extends AgentResponse {
+        public List<String> paths;
+    }
+
 }
