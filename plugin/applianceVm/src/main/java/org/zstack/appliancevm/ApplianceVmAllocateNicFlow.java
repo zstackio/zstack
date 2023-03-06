@@ -34,9 +34,7 @@ import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -170,12 +168,25 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         new SQLBatch() {
             @Override
             protected void scripts() {
+                Set<UsedIpVO> ipVOS = new HashSet<>();
                 nics.forEach(nic -> {
                     VmNicType vmNicType = new VmNicType(nic.getType());
-                    VmInstanceNicFactory vnicFactory;
-                    vnicFactory = vmMgr.getVmInstanceNicFactory(vmNicType);
-                    vnicFactory.createVmNic(nic, spec, nic.getUsedIps());
+                    VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(vmNicType);
+                    vnicFactory.createVmNic(nic, spec);
+                    List<UsedIpInventory> ipInvList = new ArrayList<>();
+                    if (nic.getUsedIps() != null) {
+                        for (UsedIpInventory ip : nic.getUsedIps()) {
+                            UsedIpVO ipVO = dbf.findByUuid(ip.getUuid(), UsedIpVO.class);
+                            ipVO.setVmNicUuid(nic.getUuid());
+                            ipVOS.add(ipVO);
+                            ipInvList.add(UsedIpInventory.valueOf(ipVO));
+                        }
+                    }
+                    nic.setUsedIps(ipInvList);
+                    spec.getDestNics().removeIf(inv -> nic.getUuid().equals(inv.getUuid()));
+                    spec.getDestNics().add(nic);
                 });
+                dbf.updateCollection(ipVOS);
             }
         }.execute();
         chain.next();

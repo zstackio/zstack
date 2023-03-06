@@ -18,6 +18,7 @@ public class L3NetworkAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<L3NetworkAO, String> zoneUuid;
     public static volatile SingularAttribute<L3NetworkAO, String> l2NetworkUuid;
     public static volatile SingularAttribute<L3NetworkAO, Integer> ipVersion;
+    public static volatile SingularAttribute<L3NetworkAO, Boolean> enableIPAM;
     public static volatile SingularAttribute<L3NetworkAO, Timestamp> createDate;
     public static volatile SingularAttribute<L3NetworkAO, Timestamp> lastOpDate;
 }
