@@ -24,3 +24,20 @@ DELIMITER ;
 
 call addColumnsToSNSTextTemplateVO();
 DROP PROCEDURE IF EXISTS addColumnsToSNSTextTemplateVO;
+
+DELIMITER $$
+CREATE PROCEDURE UpdateSNSTopicVOSchema()
+    BEGIN
+        IF NOT EXISTS( SELECT 1
+                       FROM INFORMATION_SCHEMA.COLUMNS
+                       WHERE table_name = 'SNSTopicVO'
+                             AND table_schema = 'zstack'
+                             AND column_name = 'ltsLocale') THEN
+
+            ALTER TABLE `zstack`.`SNSTopicVO` ADD COLUMN ltsLocale varchar(32);
+
+        END IF;
+    END $$
+DELIMITER ;
+CALL UpdateSNSTopicVOSchema();
+DROP PROCEDURE IF EXISTS UpdateSNSTopicVOSchema;
