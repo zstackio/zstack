@@ -1770,7 +1770,11 @@ public class KVMAgentCommands {
         private boolean vmPortOff;
         private String vmCpuModel;
         private boolean emulateHyperV;
+
+        // hyperv features
+        private boolean hypervClock;
         private String vendorId;
+
         private boolean additionalQmp;
         private boolean isApplianceVm;
         private String systemSerialNumber;
@@ -2244,6 +2248,14 @@ public class KVMAgentCommands {
 
         public void setCpuHypervisorFeature(boolean cpuHypervisorFeature) {
             this.cpuHypervisorFeature = cpuHypervisorFeature;
+        }
+
+        public boolean isHypervClock() {
+            return hypervClock;
+        }
+
+        public void setHypervClock(boolean hypervClock) {
+            this.hypervClock = hypervClock;
         }
 
         public String getVendorId() {
