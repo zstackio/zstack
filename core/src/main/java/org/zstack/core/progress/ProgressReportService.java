@@ -135,7 +135,7 @@ public class ProgressReportService extends AbstractService implements Management
                 Runnable cleanup = ThreadContextUtils.saveThreadContext();
                 Defer.defer(cleanup);
                 setThreadContext(cmd);
-                taskProgress(TaskType.Progress, cmd.getProgress());
+                taskProgress(TaskType.Progress, cmd.getProgress(), cmd.getDetail());
                 return null;
             }
         });
@@ -340,10 +340,10 @@ public class ProgressReportService extends AbstractService implements Management
         }
 
         List<String> lst = ThreadContext.getImmutableStack().asList();
-        return lst.get(lst.size()-2);
+        return lst.get(lst.size() - 2);
     }
 
-    public static void createSubTaskProgress(String fmt, Object...args) {
+    public static void createSubTaskProgress(String fmt, Object... args) {
         if (!ProgressGlobalConfig.PROGRESS_ON.value(Boolean.class)) {
             return;
         }
@@ -414,7 +414,7 @@ public class ProgressReportService extends AbstractService implements Management
         Platform.getComponentLoader().getComponent(DatabaseFacade.class).persist(vo);
     }
 
-    private static void taskProgress(TaskType type, String fmt, Object...args) {
+    private static void taskProgress(TaskType type, String fmt, Object... args) {
         if (!ProgressGlobalConfig.PROGRESS_ON.value(Boolean.class)) {
             return;
         }
@@ -557,7 +557,7 @@ public class ProgressReportService extends AbstractService implements Management
         return stage;
     }
 
-    public static TaskProgressRange getTaskStage(){
+    public static TaskProgressRange getTaskStage() {
         String stage = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_STAGE) != null ?
                 ThreadContext.get(Constants.THREAD_CONTEXT_TASK_STAGE) : "0-100";
         return TaskProgressRange.valueOf(stage);
@@ -573,14 +573,14 @@ public class ProgressReportService extends AbstractService implements Management
         int range = stage.getEnd() - stage.getStart();
         double end = stage.getStart();
         for (Number w : weight) {
-            results.add(new TaskProgressRange((int)end, (int)(end += (w.doubleValue() / total * range))));
+            results.add(new TaskProgressRange((int) end, (int) (end += (w.doubleValue() / total * range))));
         }
         return results;
     }
 
 
-    private static TaskProgressRange transformSubStage(TaskProgressRange parentStage, TaskProgressRange subStage){
-        float ratio = (float)(parentStage.getEnd() - parentStage.getStart())/100;
+    private static TaskProgressRange transformSubStage(TaskProgressRange parentStage, TaskProgressRange subStage) {
+        float ratio = (float) (parentStage.getEnd() - parentStage.getStart()) / 100;
         int exactStart = Math.round(subStage.getStart() * ratio + parentStage.getStart());
         int exactEnd = Math.round(subStage.getEnd() * ratio + parentStage.getStart());
         return new TaskProgressRange(exactStart, exactEnd);
