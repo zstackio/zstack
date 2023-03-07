@@ -1586,6 +1586,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
 
                 if (Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).eq(L3NetworkVO_.enableIPAM, Boolean.FALSE).isExists()) {
+                    if (Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, ip).eq(UsedIpVO_.l3NetworkUuid, l3Uuid).isExists()) {
+                        throw new ApiMessageInterceptionException(argerr("IP[%s] is already used on the L3 network[uuid:%s]. Please correct your system tag[%s] of static IP",
+                                ip, l3Uuid, sysTag));
+                    }
                     return;
                 }
 

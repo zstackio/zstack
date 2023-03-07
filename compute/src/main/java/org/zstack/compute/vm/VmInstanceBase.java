@@ -3457,7 +3457,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 vo.setIpInLong(NetworkUtils.ipv4StringToLong(msg.getIp()));
                 vo.setIp(msg.getIp());
                 vo.setNetmask(msg.getNetmask());
-                vo.setGateway(msg.getGateway());
+                vo.setGateway(msg.getGateway().isEmpty() ? "" : msg.getGateway());
                 vo.setIpVersion(IPv6Constants.IPv4);
                 vo.setVmNicUuid(nicVO.getUuid());
                 vo.setL3NetworkUuid(nicVO.getL3NetworkUuid());
