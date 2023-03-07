@@ -123,4 +123,9 @@ public class VipNetworkServicesRefVO {
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
     }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

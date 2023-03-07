@@ -844,9 +844,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         for (QuotaPair d : quota.getQuotaPairs()) {
             logger.warn(String.format("Deprecated QuotaPair[name: %s, value: %d] is still used",
                     d.getName(), d.getValue()));
-
-            throw new CloudRuntimeException("QuotaPair is not supported now, use QuotaDefinition instead");
         }
+        throw new CloudRuntimeException("QuotaPair is not supported now, use QuotaDefinition instead");
     }
 
     private void repairAccountQuota() {
