@@ -18,6 +18,7 @@ public class SourceClassMap {
 			put("org.zstack.aliyunproxy.vpc.AliyunProxyVSwitchInventory", "org.zstack.sdk.AliyunProxyVSwitchInventory");
 			put("org.zstack.aliyunproxy.vpc.AliyunProxyVpcInventory", "org.zstack.sdk.AliyunProxyVpcInventory");
 			put("org.zstack.appliancevm.ApplianceVmInventory", "org.zstack.sdk.ApplianceVmInventory");
+			put("org.zstack.authentication.checkfile.FileVerificationInventory", "org.zstack.sdk.FileVerificationInventory");
 			put("org.zstack.autoscaling.group.AutoScalingGroupInventory", "org.zstack.sdk.AutoScalingGroupInventory");
 			put("org.zstack.autoscaling.group.activity.AutoScalingGroupActivityInventory", "org.zstack.sdk.AutoScalingGroupActivityInventory");
 			put("org.zstack.autoscaling.group.instance.AutoScalingGroupInstanceInventory", "org.zstack.sdk.AutoScalingGroupInstanceInventory");
@@ -316,7 +317,6 @@ public class SourceClassMap {
 			put("org.zstack.header.vm.VmPriorityLevel", "org.zstack.sdk.VmPriorityLevel");
 			put("org.zstack.header.vm.cdrom.VmCdRomInventory", "org.zstack.sdk.VmCdRomInventory");
 			put("org.zstack.header.vo.ResourceInventory", "org.zstack.sdk.ResourceInventory");
-			put("org.zstack.header.vo.SecurityLevelResourceRefInventory", "org.zstack.sdk.SecurityLevelResourceRefInventory");
 			put("org.zstack.header.volume.APIGetVolumeFormatReply$VolumeFormatReplyStruct", "org.zstack.sdk.VolumeFormatReplyStruct");
 			put("org.zstack.header.volume.VolumeInventory", "org.zstack.sdk.VolumeInventory");
 			put("org.zstack.header.vpc.VpcRouterDnsInventory", "org.zstack.sdk.VpcRouterDnsInventory");
@@ -474,6 +474,7 @@ public class SourceClassMap {
 			put("org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdnController.header.SdnControllerInventory", "org.zstack.sdk.SdnControllerInventory");
 			put("org.zstack.sdnController.header.SdnVniRange", "org.zstack.sdk.SdnVniRange");
+			put("org.zstack.smzy.entity.SecurityLevelResourceRefInventory", "org.zstack.sdk.SecurityLevelResourceRefInventory");
 			put("org.zstack.sns.SNSApplicationEndpointInventory", "org.zstack.sdk.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sns.SNSApplicationPlatformInventory", "org.zstack.sdk.sns.SNSApplicationPlatformInventory");
 			put("org.zstack.sns.SNSSmsEndpointInventory", "org.zstack.sdk.sns.SNSSmsEndpointInventory");
@@ -783,6 +784,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
+			put("org.zstack.sdk.FileVerificationInventory", "org.zstack.authentication.checkfile.FileVerificationInventory");
 			put("org.zstack.sdk.FirewallRuleState", "org.zstack.vpcfirewall.entity.FirewallRuleState");
 			put("org.zstack.sdk.FlowCollectorInventory", "org.zstack.header.flowMeter.FlowCollectorInventory");
 			put("org.zstack.sdk.FlowCounter", "org.zstack.header.flowMeter.FlowCounter");
@@ -1013,7 +1015,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SecurityGroupIngressRuleTO", "org.zstack.network.securitygroup.SecurityGroupIngressRuleTO");
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
-			put("org.zstack.sdk.SecurityLevelResourceRefInventory", "org.zstack.header.vo.SecurityLevelResourceRefInventory");
+			put("org.zstack.sdk.SecurityLevelResourceRefInventory", "org.zstack.smzy.entity.SecurityLevelResourceRefInventory");
 			put("org.zstack.sdk.SecurityMachineInventory", "org.zstack.header.securitymachine.SecurityMachineInventory");
 			put("org.zstack.sdk.SessionInventory", "org.zstack.header.identity.SessionInventory");
 			put("org.zstack.sdk.SessionStatus", "org.zstack.header.portMirror.SessionStatus");

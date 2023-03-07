@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <category>fv</category>
+        <name>fileVerificationInterval</name>
+        <description>the interval to verificate files, in minutes</description>
+        <defaultValue>60</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+</globalConfig>

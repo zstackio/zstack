@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>checkfile</id>
+    <interceptor>FVApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.authentication.checkfile.APIQueryVerificationFileMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.authentication.checkfile.APIAddVerificationFileMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.authentication.checkfile.APIDeleteVerificationFileMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.authentication.checkfile.APIRemoveVerificationFileMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.authentication.checkfile.APIRecoverVerificationFileMsg</name>
+    </message>
+</service>

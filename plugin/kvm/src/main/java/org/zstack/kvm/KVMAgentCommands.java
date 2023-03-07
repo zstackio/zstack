@@ -3313,4 +3313,13 @@ public class KVMAgentCommands {
             this.status = status;
         }
     }
+
+    public static class ConfirmVerificationFilesCommand extends AgentCommand {
+        public List<String> patterns;
+    }
+
+    public static class ConfirmVerificationFilesResponse extends AgentResponse {
+        public List<String> paths;
+    }
+
 }

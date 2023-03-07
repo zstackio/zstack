@@ -168,6 +168,6 @@
         <class>org.zstack.header.vm.VmInstanceNumaNodeVO</class>
         <class>org.zstack.header.host.HostNumaNodeVO</class>
         <class>org.zstack.header.core.encrypt.EncryptionIntegrityVO</class>
-
+        <class>org.zstack.authentication.checkfile.FileVerificationVO</class>
     </persistence-unit>
 </persistence>
