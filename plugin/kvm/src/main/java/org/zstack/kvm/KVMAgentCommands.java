@@ -3018,11 +3018,20 @@ public class KVMAgentCommands {
         private String volumeInstallPath;
         private String newVolumeUuid;
         private String newVolumeInstallPath;
+        private boolean online;
 
         // for baremetal2 instance
         private boolean isBaremetal2InstanceOnlineSnapshot;
 
         private long timeout;
+
+        public boolean isOnline() {
+            return online;
+        }
+
+        public void setOnline(boolean online) {
+            this.online = online;
+        }
 
         public String getVolumeUuid() {
             return volumeUuid;
