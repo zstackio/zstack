@@ -86,3 +86,14 @@ CREATE PROCEDURE CheckAndCreateResourceConfig()
 DELIMITER ;
 CALL CheckAndCreateResourceConfig();
 DROP PROCEDURE IF EXISTS CheckAndCreateResourceConfig;
+
+
+ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `gateway` varchar(128) DEFAULT NULL;
+ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `callBackIp` varchar(128) DEFAULT NULL;
+ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `description` varchar(2048) DEFAULT NULL;
+
+ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `speed` BIGINT UNSIGNED DEFAULT NULL;
+ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `bondingType` varchar(32) DEFAULT NULL;
+ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `gateway` varchar(128) DEFAULT NULL;
+ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `callBackIp` varchar(128) DEFAULT NULL;
+ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `description` varchar(2048) DEFAULT NULL;

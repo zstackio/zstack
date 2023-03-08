@@ -778,6 +778,22 @@ public class NetworkUtils {
         }
     }
 
+    public static String convertNetmask(Integer prefix) {
+        int value = 0xffffffff << (32 - prefix);
+        byte[] bytes = new byte[]{
+                (byte) (value >>> 24),
+                (byte) (value >> 16 & 0xff),
+                (byte) (value >> 8 & 0xff),
+                (byte) (value & 0xff)
+        };
+        try {
+            return InetAddress.getByAddress(bytes).getHostAddress();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public static boolean isValidMacAddress(String macAddress) {
         final String MAC_REGEX = "^([A-Fa-f0-9]{2}[-,:]){5}[A-Fa-f0-9]{2}$";
         return macAddress != null && !macAddress.isEmpty() && (macAddress.matches(MAC_REGEX));
