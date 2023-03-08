@@ -1,15 +1,13 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.VirtualizerVersionState;
-
 public class VirtualizerInfo  {
 
-    public java.lang.String category;
-    public void setCategory(java.lang.String category) {
-        this.category = category;
+    public java.lang.String hypervisor;
+    public void setHypervisor(java.lang.String hypervisor) {
+        this.hypervisor = hypervisor;
     }
-    public java.lang.String getCategory() {
-        return this.category;
+    public java.lang.String getHypervisor() {
+        return this.hypervisor;
     }
 
     public java.lang.String currentVersion;

@@ -67,7 +67,7 @@ public class KvmHypervisorInfoHelper {
             String osVersion = OS_VERSION.getTokenByTag(osVersionTag, OS_VERSION_TOKEN);
             String osReleaseTag = hostReleaseMap.get(hostUuid);
             String osRelease = OS_RELEASE.getTokenByTag(osReleaseTag, OS_RELEASE_TOKEN);
-            String osReleaseVersion = String.format("%s %s %s", distribution, osRelease, osVersion);
+            String osReleaseVersion = generateOsReleaseVersion(distribution, osRelease, osVersion);
 
             Pair<String, String> key = new Pair<>(architecture, osReleaseVersion);
             HostOsCategoryVO vo = caches.get(key);
@@ -85,6 +85,10 @@ public class KvmHypervisorInfoHelper {
         }
 
         return results;
+    }
+
+    private static String generateOsReleaseVersion(String distribution, String osRelease, String osVersion) {
+        return String.format("%s %s %s", distribution, osRelease, osVersion);
     }
 
     public static VirtualizerVersionState isQemuVersionMatched(String v1, String v2) {
