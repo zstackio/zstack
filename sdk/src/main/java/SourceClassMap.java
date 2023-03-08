@@ -189,6 +189,7 @@ public class SourceClassMap {
 			put("org.zstack.header.core.progress.TaskProgressInventory", "org.zstack.sdk.TaskProgressInventory");
 			put("org.zstack.header.core.trash.CleanTrashResult", "org.zstack.sdk.CleanTrashResult");
 			put("org.zstack.header.core.trash.InstallPathRecycleInventory", "org.zstack.sdk.InstallPathRecycleInventory");
+			put("org.zstack.header.core.trash.TrashCleanupResult", "org.zstack.sdk.TrashCleanupResult");
 			put("org.zstack.header.core.webhooks.WebhookInventory", "org.zstack.sdk.WebhookInventory");
 			put("org.zstack.header.datacenter.DataCenterInventory", "org.zstack.sdk.DataCenterInventory");
 			put("org.zstack.header.datacenter.DataCenterProperty", "org.zstack.sdk.DataCenterProperty");
@@ -1128,6 +1129,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TaskProgressInventory", "org.zstack.header.core.progress.TaskProgressInventory");
 			put("org.zstack.sdk.TemplateConfigInventory", "org.zstack.templateConfig.TemplateConfigInventory");
 			put("org.zstack.sdk.Threshold", "org.zstack.drs.api.Threshold");
+			put("org.zstack.sdk.TrashCleanupResult", "org.zstack.header.core.trash.TrashCleanupResult");
 			put("org.zstack.sdk.TwoFactorAuthenticationInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretStatus", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus");

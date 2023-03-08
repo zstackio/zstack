@@ -21,6 +21,7 @@ import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.trash.*;
 import org.zstack.header.Constants;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
@@ -29,8 +30,6 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
-import org.zstack.header.core.trash.CleanTrashResult;
-import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -52,7 +51,6 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
@@ -76,7 +74,6 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Tuple;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -1624,18 +1621,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         return makeVolumeInstallPathByTargetPool(installPath, targetCephPoolName);
     }
 
-    private void cleanTrash(Long trashId, final ReturnValueCompletion<CleanTrashResult> completion) {
-        CleanTrashResult result = new CleanTrashResult();
+    private void cleanTrash(Long trashId, final ReturnValueCompletion<TrashCleanupResult> completion) {
         InstallPathRecycleInventory inv = trash.getTrash(trashId);
         if (inv == null) {
-            completion.success(result);
+            completion.success(new TrashCleanupResult(trashId));
             return;
         }
 
         String details = trash.makeSureInstallPathNotUsed(inv);
         if (details != null) {
-            result.getDetails().add(details);
-            completion.success(result);
+            completion.success(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), operr(details)));
             return;
         }
 
@@ -1693,9 +1688,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", inv.getSize(), self.getUuid()));
                 trash.removeFromDb(trashId);
 
-                result.setSize(inv.getSize());
-                result.setResourceUuids(CollectionDSL.list(inv.getResourceUuid()));
-                completion.success(result);
+                completion.success(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), inv.getSize()));
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
@@ -1705,23 +1698,33 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }).start();
     }
 
-    private void cleanUpTrash(Long trashId, final ReturnValueCompletion<CleanTrashResult> completion) {
+    private void cleanUpTrash(Long trashId, final ReturnValueCompletion<List<TrashCleanupResult>> completion) {
         if (trashId != null) {
-            cleanTrash(trashId, completion);
+            cleanTrash(trashId, new ReturnValueCompletion<TrashCleanupResult>(completion) {
+                @Override
+                public void success(TrashCleanupResult res) {
+                    completion.success(CollectionDSL.list(res));
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
+                }
+            });
             return;
         }
 
-        CleanTrashResult result = new CleanTrashResult();
+        List<TrashCleanupResult> results = new ArrayList<>();
         List<InstallPathRecycleInventory> trashs = trash.getTrashList(self.getUuid(), trashLists);
         if (trashs.isEmpty()) {
-            completion.success(result);
+            completion.success(results);
             return;
         }
 
         new While<>(trashs).step((inv, coml) -> {
             String details = trash.makeSureInstallPathNotUsed(inv);
             if (details != null) {
-                result.getDetails().add(details);
+                results.add(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), operr(details)));
                 coml.done();
                 return;
             }
@@ -1779,8 +1782,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     bus.send(imsg);
                     logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", inv.getSize(), self.getUuid()));
 
-                    result.getResourceUuids().add(inv.getResourceUuid());
-                    updateTrashSize(result, inv.getSize());
+                    results.add(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), inv.getSize()));
                     trash.removeFromDb(inv.getTrashId());
                     coml.done();
                 }
@@ -1795,7 +1797,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (errorCodeList.getCauses().isEmpty()) {
-                    completion.success(result);
+                    completion.success(results);
                 } else {
                     completion.fail(errorCodeList.getCauses().get(0));
                 }
@@ -1815,9 +1817,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void run(SyncTaskChain chain) {
-                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<CleanTrashResult>(msg) {
+                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<List<TrashCleanupResult>>(msg) {
                     @Override
-                    public void success(CleanTrashResult returnValue) {
+                    public void success(List<TrashCleanupResult> returnValues) {
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -1894,14 +1896,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void run(SyncTaskChain chain) {
-                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<CleanTrashResult>(chain) {
+                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<List<TrashCleanupResult>>(chain) {
                     @Override
-                    public void success(CleanTrashResult result) {
-                        evt.setResult(result);
+                    public void success(List<TrashCleanupResult> results) {
+                        evt.setResult(TrashCleanupResult.buildCleanTrashResult(results));
+                        evt.setResults(results);
                         bus.publish(evt);
                         chain.next();
                     }
-
                     @Override
                     public void fail(ErrorCode errorCode) {
                         evt.setError(errorCode);
