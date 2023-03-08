@@ -142,6 +142,7 @@ public class QuotaUtil {
                 currentAccountUuid, quotaName, quotaValue, currentUsed, request);
     }
 
+    @Transactional(readOnly = true)
     public void checkQuota(APIMessage msg) {
         checkQuota(msg, msg.getSession().getAccountUuid(), msg.getSession().getAccountUuid());
     }

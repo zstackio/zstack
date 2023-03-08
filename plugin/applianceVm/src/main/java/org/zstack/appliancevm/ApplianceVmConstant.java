@@ -16,6 +16,9 @@ public class ApplianceVmConstant {
 
     public static final String ANSIBLE_MODULE_PATH = "ansible/appliancevm";
 
+    public static final String APPLIANCE_VM_ABNORMAL_FILE_REPORT = "/appliancevm/abnormalfiles/report";
+    public static final String ABNORMAL_FILE_MAX_SIZE = "abnormalFileMaxSize";
+
     public enum BootstrapParams {
         managementNic,
         additionalNics,
