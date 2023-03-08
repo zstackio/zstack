@@ -4328,6 +4328,7 @@ public class KVMHost extends HostBase implements Host {
                                         return;
                                     }
 
+                                    ret.getVirtualizerInfo().setUuid(self.getUuid());
                                     hypervisorManager.save(ret.getVirtualizerInfo());
 
                                     // create system tags of os::version etc

@@ -14,6 +14,7 @@ import java.util.function.Function;
  * Created by Wenhao.Zhang on 23/03/01
  */
 public class HypervisorMetadataCollectorForTest extends HypervisorMetadataCollectorImpl {
+    public static final String QEMU_VERSION_FOR_TEST = "4.2.0-632.g6a6222b.el7";
     private Function<Path, List<HypervisorMetadataDefinition>> folderScannerSimulator;
     private Function<HypervisorMetadataDefinition, String> collectMetadataSimulator;
 
@@ -68,9 +69,9 @@ public class HypervisorMetadataCollectorForTest extends HypervisorMetadataCollec
             default: osReleaseVersion = new String[] {"unknown", "unknown", "unknown"}; break;
         }
 
-        return String.format("qemu-kvm.version: 4.2.0-632.g6a6222b.el7\n" +
+        return String.format("qemu-kvm.version: %s\n" +
                 "platform.distname: %s\nplatform.id: %s\nplatform.version: %s\n",
-                osReleaseVersion[0], osReleaseVersion[1], osReleaseVersion[2]);
+                QEMU_VERSION_FOR_TEST, osReleaseVersion[0], osReleaseVersion[1], osReleaseVersion[2]);
     }
 
     public static class HypervisorMetadataDefinitionForTest extends HypervisorMetadataDefinition {
