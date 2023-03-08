@@ -123,7 +123,7 @@ public class HypervisorMetadataCollectorImpl implements HypervisorMetadataCollec
         Object qemuVersion = properties.get(KEY_QEMU_KVM_VERSION);
         if (qemuVersion != null && !qemuVersion.getClass().isArray()) {
             definition.setHypervisor(KVMConstant.VIRTUALIZER_QEMU_KVM);
-            definition.setVersion(parseQemuVersion(qemuVersion.toString()));
+            definition.setVersion(qemuVersion.toString());
         } else {
             return false;
         }
@@ -138,17 +138,5 @@ public class HypervisorMetadataCollectorImpl implements HypervisorMetadataCollec
         }
 
         return true;
-    }
-
-    /**
-     * 4.2.0-632.g6a6222b.el7  ->  4.2.0-632
-     */
-    private static String parseQemuVersion(String versionText) {
-        String[] splits = versionText.split("-");
-        if (splits.length != 2) {
-            return versionText;
-        }
-
-        return String.format("%s-%s", splits[0], splits[1].split("\\.")[0]);
     }
 }

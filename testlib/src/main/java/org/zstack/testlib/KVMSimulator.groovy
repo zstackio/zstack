@@ -160,8 +160,6 @@ class KVMSimulator implements Simulator {
             rsp.virtualizerInfo = new VirtualizerInfoTO()
             rsp.virtualizerInfo.version = "4.2.0-627.g36ee592.el7"
             rsp.virtualizerInfo.virtualizer = "qemu-kvm"
-            String hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
-            rsp.virtualizerInfo.uuid = hostUuid
             return rsp
         }
 
