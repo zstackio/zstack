@@ -1,8 +1,6 @@
 package org.zstack.core.thread;
 
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -12,7 +10,6 @@ import org.zstack.core.debug.DebugSignalHandler;
 import org.zstack.header.Constants;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ExceptionSafe;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.ChainInfo;
 import org.zstack.header.core.progress.PendingTaskInfo;
 import org.zstack.header.core.progress.SingleFlightChainInfo;
@@ -32,8 +29,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static org.zstack.core.Platform.*;
 
@@ -807,13 +802,6 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                         removeSubPending(cf.getTask().getDeduplicateString(), false);
                     }
 
-                    // recover task context from backup
-                    if (cf.getTask().taskContext != null) {
-                        TaskContext.setTaskContext(cf.getTask().taskContext);
-                    } else {
-                        TaskContext.removeTaskContext();
-                    }
-
                     cf.run(() -> {
                         synchronized (runningQueue) {
                             Optional.ofNullable(getApiId(cf))
@@ -901,21 +889,11 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     @Override
     public Future<Void> chainSubmit(ChainTask task) {
-        // backup task context for each chain task
-        if (TaskContext.getTaskContext() != null) {
-            task.taskContext = new HashMap<>(TaskContext.getTaskContext());
-        }
-
         return doChainSyncSubmit(task);
     }
 
     @Override
     public <T> Future<T> singleFlightSubmit(SingleFlightTask task) {
-        // backup task context for each chain task
-        if (TaskContext.getTaskContext() != null) {
-            task.taskContext = new HashMap<>(TaskContext.getTaskContext());
-        }
-
         return doSingleFlightSyncSubmit(task);
     }
 

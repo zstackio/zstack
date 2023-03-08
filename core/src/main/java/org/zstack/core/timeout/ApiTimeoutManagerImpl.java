@@ -125,17 +125,35 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
 
     @Override
     public void beforeDeliveryMessage(Message msg) {
-        if (!TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_DEADLINE)) {
-            long currentTime = timer.getCurrentTimeMillis();
-
-            if (msg instanceof ConfigurableTimeoutMessage) {
-                TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT, String.valueOf(getMessageTimeout((ConfigurableTimeoutMessage) msg)));
-                TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_DEADLINE, String.valueOf(currentTime + getMessageTimeout((ConfigurableTimeoutMessage) msg)));
-            } else if (msg instanceof NeedReplyMessage) {
-                TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT, String.valueOf(getMessageTimeout()));
-                TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_DEADLINE, String.valueOf(currentTime + getMessageTimeout()));
-            }
+        if (TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_DEADLINE)) {
+            return;
         }
+
+        MessageTimeoutDsc mtd = getMessageTimeoutDscFromMessage(msg);
+        TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT, String.valueOf(mtd.getMessageTimeout()));
+        TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_DEADLINE, String.valueOf(mtd.getMessageDeadline()));
+    }
+
+    private long calculateMessageDeadline(long timeout) {
+        return timer.getCurrentTimeMillis() + timeout;
+    }
+
+    private MessageTimeoutDsc getMessageTimeoutDscFromMessage(Message msg) {
+        MessageTimeoutDsc mtd = new MessageTimeoutDsc();
+
+        if (msg instanceof ConfigurableTimeoutMessage) {
+            long timeout = ((ConfigurableTimeoutMessage) msg).getTimeout();
+            long deadline = ((ConfigurableTimeoutMessage) msg).getMessageDeadline();
+            mtd.setMessageTimeout(timeout != -1 ? timeout : getMessageTimeout((ConfigurableTimeoutMessage) msg));
+            mtd.setMessageDeadline(deadline != -1 ? deadline : calculateMessageDeadline(mtd.getMessageTimeout()));
+        } else if (msg instanceof NeedReplyMessage) {
+            long timeout = ((NeedReplyMessage) msg).getTimeout();
+            long deadline = ((NeedReplyMessage) msg).getMessageDeadline();
+            mtd.setMessageTimeout(timeout != -1 ? timeout : getMessageTimeout());
+            mtd.setMessageDeadline(deadline != -1 ? deadline : calculateMessageDeadline(mtd.getMessageTimeout()));
+        }
+
+        return mtd;
     }
 
     private long getMessageTimeout() {
@@ -278,7 +296,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
 
     private long parseTimeout(String timeout) {
         if ("5m".equals(timeout)) {
-            // optimization as the most of default timeout are 5 minutes
+            // optimization as the most default timeout are 5 minutes
             return 300000;
         }
 
@@ -320,33 +338,68 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     @Override
     public void setMessageTimeout(Message msg) {
         if (msg instanceof ConfigurableTimeoutMessage) {
-            ((ConfigurableTimeoutMessage) msg).setTimeout(evalTimeout(getMessageTimeout((ConfigurableTimeoutMessage) msg)));
+            MessageTimeoutDsc mtd = evalTimeout(getMessageTimeout((ConfigurableTimeoutMessage) msg));
+            ((ConfigurableTimeoutMessage) msg).setTimeout(mtd.getMessageTimeout());
+            ((ConfigurableTimeoutMessage) msg).setMessageDeadline(mtd.getMessageDeadline());
         } else if (msg instanceof NeedReplyMessage) {
             NeedReplyMessage nmsg = (NeedReplyMessage) msg;
             if (nmsg.getTimeout() == -1) {
-                nmsg.setTimeout(evalTimeout(getMessageTimeout()));
+                MessageTimeoutDsc mtd = evalTimeout(getMessageTimeout());
+                nmsg.setTimeout(mtd.getMessageTimeout());
+                nmsg.setMessageDeadline(mtd.getMessageDeadline());
             }
         }
     }
 
-    private long evalTimeout(long messageTimeout) {
-        if (!TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_DEADLINE)) {
+    class MessageTimeoutDsc {
+        private long messageTimeout = -1;
+        private long messageDeadline = -1;
+
+        public long getMessageTimeout() {
             return messageTimeout;
         }
 
-        if (TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_TIMEOUT)) {
-            long originTimeout = Long.parseLong((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_TIMEOUT));
-
-            // deadline should be updated
-            if (messageTimeout != originTimeout) {
-                long deadline = Long.parseLong((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_DEADLINE));
-                long remainingTime = deadline - timer.getCurrentTimeMillis();
-
-                TaskContext.getTaskContext().put(TASK_CONTEXT_MESSAGE_DEADLINE, String.valueOf(timer.getCurrentTimeMillis() + messageTimeout - (originTimeout - remainingTime)));
-                TaskContext.getTaskContext().put(TASK_CONTEXT_MESSAGE_TIMEOUT, String.valueOf(messageTimeout));
-            }
+        public void setMessageTimeout(long messageTimeout) {
+            this.messageTimeout = messageTimeout;
         }
 
-        return getTimeout();
+        public long getMessageDeadline() {
+            return messageDeadline;
+        }
+
+        public void setMessageDeadline(long messageDeadline) {
+            this.messageDeadline = messageDeadline;
+        }
+    }
+
+    private MessageTimeoutDsc evalTimeout(long messageTimeout) {
+        MessageTimeoutDsc mtd = new MessageTimeoutDsc();
+
+        // no deadline is set, use message timeout directly
+        if (!TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_DEADLINE)) {
+            mtd.setMessageTimeout(messageTimeout);
+            mtd.setMessageDeadline(calculateMessageDeadline(messageTimeout));
+            return mtd;
+        }
+
+        // if no message timeout from context or context contains same timeout
+        // no need to get a new message deadline
+        boolean skipDeadlineCalculation = !TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_TIMEOUT)
+                || Long.parseLong((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_TIMEOUT)) == messageTimeout;
+        if (skipDeadlineCalculation) {
+            mtd.setMessageTimeout(getTimeout());
+            mtd.setMessageDeadline(calculateMessageDeadline(mtd.getMessageTimeout()));
+            return mtd;
+        }
+
+        // in most cases message deadline is shared
+        // only if message manually set a different message timeout, in this case choose a smaller timeout
+        // to make sure all related messages will become timeout before deadline
+        long originalMessageDeadline = Long.parseLong((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_DEADLINE));
+        long newMessageDeadline = timer.getCurrentTimeMillis() + messageTimeout;
+
+        mtd.setMessageTimeout(messageTimeout);
+        mtd.setMessageDeadline(Math.min(originalMessageDeadline, newMessageDeadline));
+        return mtd;
     }
 }

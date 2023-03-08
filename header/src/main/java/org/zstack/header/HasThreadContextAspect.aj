@@ -17,9 +17,14 @@ public aspect HasThreadContextAspect {
         return context.threadContext;
     }
 
+    Map<Object, Object> around(HasThreadContext context) : target(context) && execution(Map<Object, Object> HasThreadContext+.getTaskContext()) {
+        return context.taskContext;
+    }
+
     public static void setThreadContext(HasThreadContext obj) {
         obj.threadContext = ThreadContext.getContext();
         obj.threadContextStack = ThreadContext.getImmutableStack().asList();
-        obj.taskContext = TaskContext.getTaskContext();
+        // store copy of context not ref
+        obj.taskContext = TaskContext.getTaskContext() != null ? new HashMap<>(TaskContext.getTaskContext()) : null;
     }
 }
