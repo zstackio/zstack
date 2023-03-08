@@ -610,23 +610,23 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
         new Http<>(syncVmDeviceInfo, cmd, SyncVmDeviceInfoResponse.class)
                 .call(msg.getHostUuid(), new ReturnValueCompletion<SyncVmDeviceInfoResponse>(msg) {
-            @Override
-            public void success(SyncVmDeviceInfoResponse ret) {
-                if (!ret.isSuccess()) {
-                    ErrorCode err = Platform.err(SysErrors.OPERATION_ERROR, ret.getError());
-                    reply.setError(err);
-                }
+                    @Override
+                    public void success(SyncVmDeviceInfoResponse ret) {
+                        if (!ret.isSuccess()) {
+                            ErrorCode err = Platform.err(SysErrors.OPERATION_ERROR, ret.getError());
+                            reply.setError(err);
+                        }
 
-                extEmitter.afterReceiveSyncVmDeviceInfoRespoinse(VmInstanceInventory.valueOf(dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class)), ret, null);
-                bus.reply(msg, reply);
-            }
+                        extEmitter.afterReceiveSyncVmDeviceInfoRespoinse(VmInstanceInventory.valueOf(dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class)), ret, null);
+                        bus.reply(msg, reply);
+                    }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
 
     }
 
@@ -1040,7 +1040,7 @@ public class KVMHost extends HostBase implements Host {
 
     /**
      * This command will send when host is connecting.
-     * 
+     * <p>
      * DO NOT need to checkStatus()
      */
     private void getVirtualizerInfo(final GetVirtualizerInfoMsg msg, final NoErrorCompletion completion) {
@@ -1114,7 +1114,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         final String[] ips = extraIps.split(",");
-        for (String ip: ips) {
+        for (String ip : ips) {
             if (NetworkUtils.isIpv4InCidr(ip, cidr)) {
                 return ip;
             }
@@ -1459,6 +1459,7 @@ public class KVMHost extends HostBase implements Host {
                     }
                 }));
     }
+
     protected void changeVmNicState(final ChangeVmNicStateOnHypervisorMsg msg, final NoErrorCompletion completion) {
         final ChangeVmNicStateOnHypervisorReply reply = new ChangeVmNicStateOnHypervisorReply();
         NicTO to = completeNicInfo(msg.getNic());
@@ -1529,7 +1530,7 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private static int getHostMaxThreadsNum() {
-        int n = (int)(KVMGlobalProperty.KVM_HOST_MAX_THREDS_RATIO * ThreadGlobalProperty.MAX_THREAD_NUM);
+        int n = (int) (KVMGlobalProperty.KVM_HOST_MAX_THREDS_RATIO * ThreadGlobalProperty.MAX_THREAD_NUM);
         int m = ThreadGlobalProperty.MAX_THREAD_NUM / 5;
         return Math.max(n, m);
     }
@@ -1604,27 +1605,27 @@ public class KVMHost extends HostBase implements Host {
         MessageCommandRecorder.record(msg.getCommandClassName());
         new Http<>(url, msg.getCommand(), LinkedHashMap.class)
                 .call(new ReturnValueCompletion<LinkedHashMap>(msg, completion) {
-            @Override
-            public void success(LinkedHashMap ret) {
-                KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
-                reply.setResponse(ret);
-                bus.reply(msg, reply);
-                completion.done();
-            }
+                    @Override
+                    public void success(LinkedHashMap ret) {
+                        KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
+                        reply.setResponse(ret);
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
 
-            @Override
-            public void fail(ErrorCode err) {
-                KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
-                if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
-                    reply.setError(err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "cannot do the operation on the KVM host"));
-                } else {
-                    reply.setError(err);
-                }
+                    @Override
+                    public void fail(ErrorCode err) {
+                        KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
+                        if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
+                            reply.setError(err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "cannot do the operation on the KVM host"));
+                        } else {
+                            reply.setError(err);
+                        }
 
-                bus.reply(msg, reply);
-                completion.done();
-            }
-        });
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
     }
 
     private void handle(final MergeVolumeSnapshotOnKvmMsg msg) {
@@ -1652,7 +1653,7 @@ public class KVMHost extends HostBase implements Host {
             VmInstanceState state = q.findValue();
             if (state != VmInstanceState.Stopped && state != VmInstanceState.Running && state != VmInstanceState.Paused && state != VmInstanceState.Destroyed) {
                 throw new OperationFailureException(operr("cannot do volume snapshot merge when vm[uuid:%s] is in state of %s." +
-                                " The operation is only allowed when vm is Running or Stopped", volume.getUuid(), state));
+                        " The operation is only allowed when vm is Running or Stopped", volume.getUuid(), state));
             }
 
             if (state == VmInstanceState.Running) {
@@ -1677,25 +1678,25 @@ public class KVMHost extends HostBase implements Host {
         extEmitter.beforeMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
         new Http<>(mergeSnapshotPath, cmd, MergeSnapshotRsp.class)
                 .call(new ReturnValueCompletion<MergeSnapshotRsp>(msg, completion) {
-            @Override
-            public void success(MergeSnapshotRsp ret) {
-                if (!ret.isSuccess()) {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
-                    extEmitter.afterMergeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, reply.getError());
-                }
-                extEmitter.afterMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
-                bus.reply(msg, reply);
-                completion.done();
-            }
+                    @Override
+                    public void success(MergeSnapshotRsp ret) {
+                        if (!ret.isSuccess()) {
+                            reply.setError(operr("operation error, because:%s", ret.getError()));
+                            extEmitter.afterMergeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, reply.getError());
+                        }
+                        extEmitter.afterMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                extEmitter.afterMergeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, reply.getError());
-                bus.reply(msg, reply);
-                completion.done();
-            }
-        });
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        extEmitter.afterMergeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, reply.getError());
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
     }
 
     private void handle(final CheckSnapshotOnHypervisorMsg msg) {
@@ -1879,7 +1880,7 @@ public class KVMHost extends HostBase implements Host {
                 if (vmState != VmInstanceState.Stopped) {
                     reply.setError(err(SysErrors.NO_CAPABILITY_ERROR,
                             "kvm host[uuid:%s, name:%s, ip:%s] doesn't not support live snapshot. please stop vm[uuid:%s] and try again",
-                                    self.getUuid(), self.getName(), self.getManagementIp(), msg.getVmUuid()
+                            self.getUuid(), self.getName(), self.getManagementIp(), msg.getVmUuid()
                     ));
                     bus.reply(msg, reply);
                     completion.done();
@@ -2013,6 +2014,7 @@ public class KVMHost extends HostBase implements Host {
                             autoConverage = s.strategy != null && s.strategy.equals("auto-converge");
                         }
 
+
                         boolean xbzrle = KVMGlobalConfig.MIGRATE_XBZRLE.value(Boolean.class);
 
                         MigrateVmCmd cmd = new MigrateVmCmd();
@@ -2028,6 +2030,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setReload(s.reload);
                         cmd.setTimeout(timeoutManager.getTimeout());
+                        cmd.setDownTime(s.downTime);
 
                         if (s.diskMigrationMap != null) {
                             Map<String, VolumeTO> diskMigrationMap = new HashMap<>();
@@ -2183,6 +2186,7 @@ public class KVMHost extends HostBase implements Host {
         String vmUuid;
         String dstHostMigrateIp;
         String strategy;
+        Integer downTime;
         String dstHostMnIp;
         String dstHostUuid;
         StorageMigrationPolicy storageMigrationPolicy;
@@ -2194,7 +2198,7 @@ public class KVMHost extends HostBase implements Host {
         boolean reload;
     }
 
-    private MigrateStruct buildMigrateStuct(final MigrateVmOnHypervisorMsg msg){
+    private MigrateStruct buildMigrateStuct(final MigrateVmOnHypervisorMsg msg) {
         MigrateStruct s = new MigrateStruct();
         s.vmUuid = msg.getVmInventory().getUuid();
         s.srcHostUuid = msg.getSrcHostUuid();
@@ -2202,11 +2206,12 @@ public class KVMHost extends HostBase implements Host {
         s.storageMigrationPolicy = msg.getStorageMigrationPolicy();
         s.migrateFromDestition = msg.isMigrateFromDestination();
         s.strategy = msg.getStrategy();
+        s.downTime = msg.getDownTime();
         s.diskMigrationMap = msg.getDiskMigrationMap();
         s.reload = msg.isReload();
 
         MigrateNetworkExtensionPoint.MigrateInfo migrateIpInfo = null;
-        for (MigrateNetworkExtensionPoint ext: pluginRgty.getExtensionList(MigrateNetworkExtensionPoint.class)) {
+        for (MigrateNetworkExtensionPoint ext : pluginRgty.getExtensionList(MigrateNetworkExtensionPoint.class)) {
             MigrateNetworkExtensionPoint.MigrateInfo r = ext.getMigrationAddressForVM(s.srcHostUuid, s.dstHostUuid);
             if (r == null) {
                 continue;
@@ -2282,7 +2287,7 @@ public class KVMHost extends HostBase implements Host {
             public void success(AttachNicResponse ret) {
                 if (!ret.isSuccess()) {
                     reply.setError(operr("failed to update nic[vm:%s] on kvm host[uuid:%s, ip:%s]," +
-                                    "because %s", msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
+                            "because %s", msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -2794,8 +2799,8 @@ public class KVMHost extends HostBase implements Host {
 
         String nicType = nic.getType();
         if (!nicType.equals(VmInstanceConstant.VIRTUAL_NIC_TYPE) &&
-            !nicType.equals(VmOvsNicConstant.ACCEL_TYPE_VDPA) &&
-            !nicType.equals(VmOvsNicConstant.ACCEL_TYPE_VHOST_USER_SPACE)) {
+                !nicType.equals(VmOvsNicConstant.ACCEL_TYPE_VDPA) &&
+                !nicType.equals(VmOvsNicConstant.ACCEL_TYPE_VHOST_USER_SPACE)) {
             return to;
         }
 
@@ -2875,7 +2880,7 @@ public class KVMHost extends HostBase implements Host {
 
         String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
                 spec.getVmInventory().getPlatform();
-        if(ImagePlatform.Other.toString().equals(platform)){
+        if (ImagePlatform.Other.toString().equals(platform)) {
             checkPlatformWithOther(spec);
         }
 
@@ -2920,7 +2925,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVideoType(rcf.getResourceConfigValue(VmGlobalConfig.VM_VIDEO_TYPE, spec.getVmInventory().getUuid(), String.class));
         cmd.setSoundType(rcf.getResourceConfigValue(VmGlobalConfig.VM_SOUND_TYPE, spec.getVmInventory().getUuid(), String.class));
         if (VmSystemTags.QXL_MEMORY.hasTag(spec.getVmInventory().getUuid())) {
-            Map<String,String> qxlMemory = VmSystemTags.QXL_MEMORY.getTokensByResourceUuid(spec.getVmInventory().getUuid());
+            Map<String, String> qxlMemory = VmSystemTags.QXL_MEMORY.getTokensByResourceUuid(spec.getVmInventory().getUuid());
             cmd.setQxlMemory(qxlMemory);
         }
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
@@ -3476,7 +3481,7 @@ public class KVMHost extends HostBase implements Host {
                             public Class<PingResponse> getReturnClass() {
                                 return PingResponse.class;
                             }
-                        },TimeUnit.SECONDS, HostGlobalConfig.PING_HOST_TIMEOUT.value(Long.class));
+                        }, TimeUnit.SECONDS, HostGlobalConfig.PING_HOST_TIMEOUT.value(Long.class));
                     }
                 });
 
@@ -3690,7 +3695,7 @@ public class KVMHost extends HostBase implements Host {
     }
 
     @Transactional(readOnly = true)
-    private boolean noStorageAccessible(){
+    private boolean noStorageAccessible() {
         // detach ps will delete PrimaryStorageClusterRefVO first.
         List<String> attachedPsUuids = Q.New(PrimaryStorageClusterRefVO.class)
                 .select(PrimaryStorageClusterRefVO_.primaryStorageUuid)
@@ -3776,7 +3781,7 @@ public class KVMHost extends HostBase implements Host {
                 if (null == self.getArchitecture()) {
                     ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
                     HostVO host = dbf.findByUuid(self.getUuid(), HostVO.class);
-                    if (null == cluster.getArchitecture()){
+                    if (null == cluster.getArchitecture()) {
                         host.setArchitecture(CpuArchitecture.x86_64.toString());
                     } else {
                         host.setArchitecture(cluster.getArchitecture());
@@ -3835,6 +3840,7 @@ public class KVMHost extends HostBase implements Host {
             chain.allowWatch();
             chain.then(new ShareFlow() {
                 boolean deployed = false;
+
                 @Override
                 public void setup() {
 
@@ -3959,7 +3965,7 @@ public class KVMHost extends HostBase implements Host {
 
                             if (ret.isSshFailure()) {
                                 throw new OperationFailureException(operr("unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
-                                                "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
+                                        "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
                             } else if (ret.getReturnCode() != 0) {
                                 throw new OperationFailureException(operr("the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
                                                 " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), restf.getHostName(),
@@ -3989,7 +3995,7 @@ public class KVMHost extends HostBase implements Host {
                                     trigger.fail(operr("unable to Check whether the host is taken over,  because %s", hostRet.getExitErrorMessage()));
                                     return;
                                 }
-                                String hostOutput = hostRet.getStdout().replaceAll("\r|\n","");
+                                String hostOutput = hostRet.getStdout().replaceAll("\r|\n", "");
                                 logger.debug(String.format("Uuid in the host take over flag file is %s ", hostOutput));
                                 if (hostOutput.contains("No such file or directory")) {
                                     trigger.next();
@@ -4003,7 +4009,7 @@ public class KVMHost extends HostBase implements Host {
                                     trigger.fail(operr("Unable to get the timestamp of the flag,  because %s", timeRet.getExitErrorMessage()));
                                     return;
                                 }
-                                String timestampOutput = timeRet.getStdout().replaceAll("\r|\n","");
+                                String timestampOutput = timeRet.getStdout().replaceAll("\r|\n", "");
 
                                 long diff = (new Date().getTime() / 1000) - Long.parseLong(timestampOutput);
                                 logger.debug(String.format("hostOutput is %s ,The time difference is %d(s) ", hostOutput, diff));
@@ -4325,72 +4331,71 @@ public class KVMHost extends HostBase implements Host {
                             HostFactCmd cmd = new HostFactCmd();
                             new Http<>(hostFactPath, cmd, HostFactResponse.class)
                                     .call(new ReturnValueCompletion<HostFactResponse>(trigger) {
-                                @Override
-                                public void success(HostFactResponse ret) {
-                                    if (!ret.isSuccess()) {
-                                        trigger.fail(operr("operation error, because:%s", ret.getError()));
-                                        return;
-                                    }
+                                        @Override
+                                        public void success(HostFactResponse ret) {
+                                            if (!ret.isSuccess()) {
+                                                trigger.fail(operr("operation error, because:%s", ret.getError()));
+                                                return;
+                                            }
 
-                                    if (ret.getHvmCpuFlag() == null) {
-                                        trigger.fail(operr("cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"));
-                                        return;
-                                    }
+                                            if (ret.getHvmCpuFlag() == null) {
+                                                trigger.fail(operr("cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"));
+                                                return;
+                                            }
 
-                                    // create system tags of os::version etc
-                                    createHostVersionSystemTags(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
+                                            // create system tags of os::version etc
+                                            createHostVersionSystemTags(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
 
-                                    createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
-                                    createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion(), false);
-                                    createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
-                                    createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, ret.getEptFlag(), false);
-                                    createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
-                                    createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
-                                    createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
-                                    createTagWithoutNonValue(HostSystemTags.CPU_PROCESSOR_NUM, HostSystemTags.CPU_PROCESSOR_NUM_TOKEN, ret.getCpuProcessorNum(), true);
-                                    createTagWithoutNonValue(HostSystemTags.CPU_CACHE, HostSystemTags.CPU_CACHE_TOKEN, ret.getCpuCache(),  true);
-                                    createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MODEL_NAME, HostSystemTags.POWER_SUPPLY_MODEL_NAME_TOKEN, ret.getPowerSupplyModelName(), true);
-                                    createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MANUFACTURER, HostSystemTags.POWER_SUPPLY_MANUFACTURER_TOKEN, ret.getPowerSupplyManufacturer(), true);
-                                    createTagWithoutNonValue(HostSystemTags.IPMI_ADDRESS, HostSystemTags.IPMI_ADDRESS_TOKEN, ret.getIpmiAddress(), true);
-                                    createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY, HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN, ret.getPowerSupplyMaxPowerCapacity(), true);
-                                    createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
-                                    createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
+                                            createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
+                                            createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion(), false);
+                                            createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
+                                            createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, ret.getEptFlag(), false);
+                                            createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
+                                            createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
+                                            createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
+                                            createTagWithoutNonValue(HostSystemTags.CPU_PROCESSOR_NUM, HostSystemTags.CPU_PROCESSOR_NUM_TOKEN, ret.getCpuProcessorNum(), true);
+                                            createTagWithoutNonValue(HostSystemTags.CPU_CACHE, HostSystemTags.CPU_CACHE_TOKEN, ret.getCpuCache(), true);
+                                            createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MODEL_NAME, HostSystemTags.POWER_SUPPLY_MODEL_NAME_TOKEN, ret.getPowerSupplyModelName(), true);
+                                            createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MANUFACTURER, HostSystemTags.POWER_SUPPLY_MANUFACTURER_TOKEN, ret.getPowerSupplyManufacturer(), true);
+                                            createTagWithoutNonValue(HostSystemTags.IPMI_ADDRESS, HostSystemTags.IPMI_ADDRESS_TOKEN, ret.getIpmiAddress(), true);
+                                            createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY, HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN, ret.getPowerSupplyMaxPowerCapacity(), true);
+                                            createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
+                                            createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
 
-                                    if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
-                                        recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
-                                    }
+                                            if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
+                                                recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
+                                            }
 
 
+                                            List<String> ips = ret.getIpAddresses();
+                                            if (ips != null) {
+                                                ips.remove(self.getManagementIp());
+                                                if (CoreGlobalProperty.MN_VIP != null) {
+                                                    ips.remove(CoreGlobalProperty.MN_VIP);
+                                                }
+                                                if (!ips.isEmpty()) {
+                                                    recreateNonInherentTag(HostSystemTags.EXTRA_IPS, HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","));
+                                                } else {
+                                                    HostSystemTags.EXTRA_IPS.delete(self.getUuid());
+                                                }
+                                            }
 
-                                    List<String> ips = ret.getIpAddresses();
-                                    if (ips != null) {
-                                        ips.remove(self.getManagementIp());
-                                        if (CoreGlobalProperty.MN_VIP != null) {
-                                            ips.remove(CoreGlobalProperty.MN_VIP);
+                                            List<String> libvirtCapabilities = ret.getLibvirtCapabilities();
+                                            if (libvirtCapabilities != null) {
+                                                createTagWithoutNonValue(KVMSystemTags.LIBVIRT_CAPABILITIES, KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN, StringUtils.join(libvirtCapabilities, ","), true);
+                                            }
+
+                                            ret.getVirtualizerInfo().setUuid(self.getUuid());
+                                            hypervisorManager.saveHostInfo(ret.getVirtualizerInfo());
+
+                                            trigger.next();
                                         }
-                                        if (!ips.isEmpty()) {
-                                            recreateNonInherentTag(HostSystemTags.EXTRA_IPS, HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","));
-                                        } else {
-                                            HostSystemTags.EXTRA_IPS.delete(self.getUuid());
+
+                                        @Override
+                                        public void fail(ErrorCode errorCode) {
+                                            trigger.fail(errorCode);
                                         }
-                                    }
-
-                                    List<String> libvirtCapabilities = ret.getLibvirtCapabilities();
-                                    if (libvirtCapabilities != null) {
-                                        createTagWithoutNonValue(KVMSystemTags.LIBVIRT_CAPABILITIES, KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN, StringUtils.join(libvirtCapabilities, ","), true);
-                                    }
-
-                                    ret.getVirtualizerInfo().setUuid(self.getUuid());
-                                    hypervisorManager.saveHostInfo(ret.getVirtualizerInfo());
-
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
+                                    });
                         }
                     });
 
@@ -4727,20 +4732,20 @@ public class KVMHost extends HostBase implements Host {
 
                         new Http<>(updateHostOSPath, cmd, UpdateHostOSRsp.class)
                                 .call(new ReturnValueCompletion<UpdateHostOSRsp>(trigger) {
-                            @Override
-                            public void success(UpdateHostOSRsp ret) {
-                                if (ret.isSuccess()) {
-                                    trigger.next();
-                                } else {
-                                    trigger.fail(Platform.operr("%s", ret.getError()));
-                                }
-                            }
+                                    @Override
+                                    public void success(UpdateHostOSRsp ret) {
+                                        if (ret.isSuccess()) {
+                                            trigger.next();
+                                        } else {
+                                            trigger.fail(Platform.operr("%s", ret.getError()));
+                                        }
+                                    }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
                     }
                 });
 
@@ -4819,7 +4824,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         final String[] ips = extraIps.split(",");
-        for (String ip: ips) {
+        for (String ip : ips) {
             if (NetworkUtils.isIpv4InCidr(ip, cidr)) {
                 return true;
             }
