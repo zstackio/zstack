@@ -20,6 +20,15 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
     // A map from old disk to new disk
     private Map<String, String> diskMigrationMap;
     private boolean reload;
+    private Integer downTime;
+
+    public Integer getDownTime() {
+        return downTime;
+    }
+
+    public void setDownTime(Integer downTime) {
+        this.downTime = downTime;
+    }
 
     public boolean isReload() {
         return reload;

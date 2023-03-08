@@ -1,5 +1,6 @@
 package org.zstack.core.progress;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -210,13 +211,11 @@ public class ProgressReportService extends AbstractService implements Management
 
     private TaskProgressInventory inventory(TaskProgressVO vo) {
         TaskProgressInventory inv = new TaskProgressInventory(vo);
-        if (vo.getArguments() == null) {
-            inv.setContent(toI18nString(vo.getContent()));
-        } else {
-            List<String> args = JSONObjectUtil.toCollection(vo.getArguments(), ArrayList.class, String.class);
-            inv.setContent(toI18nString(vo.getContent(), args.toArray()));
-        }
+        inv.setContent(toI18nString(vo.getContent()));
 
+        if (!StringUtils.isEmpty(vo.getArguments())) {
+            inv.setArguments(vo.getArguments());
+        }
         return inv;
     }
 

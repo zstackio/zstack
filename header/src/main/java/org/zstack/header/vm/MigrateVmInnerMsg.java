@@ -13,6 +13,7 @@ public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMes
     private String strategy;
     private Boolean migrateFromDestination;
     private boolean allowUnknown;
+    private Integer downTime;
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
@@ -53,6 +54,15 @@ public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMes
     @Override
     public String getStrategy() {
         return strategy;
+    }
+
+    @Override
+    public Integer getDownTime() {
+        return null;
+    }
+
+    public void setDownTime(Integer downTime) {
+        this.downTime = downTime;
     }
 
     public void setStrategy(String strategy) {

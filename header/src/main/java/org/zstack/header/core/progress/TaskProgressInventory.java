@@ -17,6 +17,7 @@ public class TaskProgressInventory {
     private LinkedHashMap opaque;
     private Long time;
     private List<TaskProgressInventory> subTasks;
+    private String arguments;
 
     public TaskProgressInventory() {
     }
@@ -30,6 +31,15 @@ public class TaskProgressInventory {
         }
         taskName = vo.getTaskName();
         time = vo.getTime();
+        arguments = vo.getArguments();
+    }
+
+    public String getArguments() {
+        return arguments;
+    }
+
+    public void setArguments(String arguments) {
+        this.arguments = arguments;
     }
 
     public String getTaskName() {
