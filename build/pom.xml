@@ -415,7 +415,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
-                    <artifactId>ceph-ha-plugin</artifactId>
+                    <artifactId>storage-ha-plugin</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

@@ -21,7 +21,7 @@ public class TestSafeCompletion {
 
     HaCheckerCompletion haCompletion = new HaCheckerCompletion(null) {
         @Override
-        public void success() {
+        public void success(Object returnValue) {
             logger.debug("success");
             succCount++;
         }
@@ -63,7 +63,7 @@ public class TestSafeCompletion {
         new CloudBusCallBack(haCompletion) {
             @Override
             public void run(MessageReply reply) {
-                haCompletion.success();
+                haCompletion.success(null);
                 throw new OperationFailureException(operr("on purpose 3"));
             }
         }.run(null);
@@ -76,7 +76,7 @@ public class TestSafeCompletion {
     }
 
     private void throwExceptionAndCallSucc(HaCheckerCompletion completion) {
-        completion.success();
+        completion.success(null);
         completion.noWay();
         completion.fail(null);
         completion.notStable();
