@@ -40,10 +40,6 @@
         <property name="hostInitialVerificationFiles">
             <list>
                 <value>/boot/vmlinuz*</value>
-                <value>/usr/bin/virsh</value>
-                <value>/usr/sbin/libvirtd</value>
-                <value>/usr/libexec/qemu-kvm</value>
-                <value>/usr/local/zstack/ansible/files/kvm/zstack-kvmagent</value>
             </list>
         </property>
     </bean>
