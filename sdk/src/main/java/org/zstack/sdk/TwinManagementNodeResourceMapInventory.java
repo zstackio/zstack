@@ -48,7 +48,7 @@ public class TwinManagementNodeResourceMapInventory  {
     public void setGroupUuid(java.lang.String groupUuid) {
         this.groupUuid = groupUuid;
     }
-    public java.lang.String getGroupId() {
+    public java.lang.String getGroupUuid() {
         return this.groupUuid;
     }
 
