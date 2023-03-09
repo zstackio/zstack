@@ -44,7 +44,6 @@
                 <value>/usr/sbin/libvirtd</value>
                 <value>/usr/libexec/qemu-kvm</value>
                 <value>/usr/local/zstack/ansible/files/kvm/zstack-kvmagent</value>
-                <value>/usr/lib/modules/*/kernel/arch/x86/kvm/kvm.ko.xz</value>
             </list>
         </property>
     </bean>
