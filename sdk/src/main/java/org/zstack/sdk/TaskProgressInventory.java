@@ -68,4 +68,12 @@ public class TaskProgressInventory  {
         return this.subTasks;
     }
 
+    public java.lang.String arguments;
+    public void setArguments(java.lang.String arguments) {
+        this.arguments = arguments;
+    }
+    public java.lang.String getArguments() {
+        return this.arguments;
+    }
+
 }

@@ -16,6 +16,16 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
     private String targetHostUuid;
     private boolean migrateFromDestination;
     private boolean allowUnknown;
+    private Integer downTime;
+
+    @Override
+    public Integer getDownTime() {
+        return downTime;
+    }
+
+    public void setDownTime(Integer downTime) {
+        this.downTime = downTime;
+    }
 
     @Override
     public AllocationScene getAllocationScene() {

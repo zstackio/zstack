@@ -1,5 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
+import com.google.gson.JsonElement
+import com.google.gson.JsonParser
 import org.springframework.http.HttpEntity
 import org.springframework.web.util.UriComponentsBuilder
 import org.zstack.core.Platform
@@ -167,6 +169,8 @@ class VmProgressCase extends SubCase {
                 inv = invs[1]
                 assert inv.content == rcmd.progress
                 assert inv.type == TaskType.Progress.toString()
+                JsonElement element = JsonParser.parseString(inv.arguments)
+                assert element.isJsonArray()
 
             } else if (cmd.backupStorageInstallPath == vrImagePath) {
                 // downloading vr image, 1 sub tasks here
@@ -223,7 +227,7 @@ class VmProgressCase extends SubCase {
     @Override
     void test() {
         env.create {
-            int deleteDelay =  bean(ProgressReportService.class).getDELETE_DELAY()
+            int deleteDelay = bean(ProgressReportService.class).getDELETE_DELAY()
             ProgressGlobalConfig.CLEANUP_THREAD_INTERVAL.updateValue(1)
 
             testCreateVmProgress()
