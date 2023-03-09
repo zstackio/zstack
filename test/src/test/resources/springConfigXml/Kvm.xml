@@ -194,4 +194,11 @@
     </bean>
     <bean id="HypervisorMetadataCollector" class="org.zstack.kvm.hypervisor.HypervisorMetadataCollectorForTest">
     </bean>
+
+    <bean id="KvmHypervisorZQLExtension" class="org.zstack.kvm.hypervisor.KvmHypervisorZQLExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.zql.RestrictByExprExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>
