@@ -8,5 +8,5 @@ import java.util.List;
  * Created by yufan.wang on 2017/9/7.
  */
 public interface VolumeMigrationTargetHostFilter {
-    List<HostVO> filter(List<HostVO> candidates);
+    List<HostVO> filter(String volumeUuid, List<HostVO> candidates);
 }
