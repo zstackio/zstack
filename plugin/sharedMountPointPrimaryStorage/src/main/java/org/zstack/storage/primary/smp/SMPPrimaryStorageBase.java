@@ -1047,4 +1047,22 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             }
         });
     }
+
+    @Override
+    protected void handle(UnlinkBitsOnPrimaryStorageMsg msg) {
+        HypervisorBackend backend = getHypervisorBackendByVolumeUuid(msg.getResourceUuid());
+        backend.handle(msg, new ReturnValueCompletion<UnlinkBitsOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(UnlinkBitsOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                UnlinkBitsOnPrimaryStorageReply reply = new UnlinkBitsOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
 }

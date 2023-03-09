@@ -319,6 +319,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
                         amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                         amsg.setRequiredHostUuid(msg.getHostUuid());
+                        if (msg.getApiMsg() != null) {
+                            amsg.setSystemTags(msg.getApiMsg().getSystemTags());
+                        } else {
+                            amsg.setSystemTags(msg.getSystemTags());
+                        }
 
                         if (vvo.isShareable()) {
                             amsg.setPossiblePrimaryStorageTypes(PrimaryStorageType.getSupportSharedVolumePSTypeNames());

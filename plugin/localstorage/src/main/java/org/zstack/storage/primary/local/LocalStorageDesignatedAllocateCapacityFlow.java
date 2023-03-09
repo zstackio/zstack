@@ -156,6 +156,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
         rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
         rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
         rmsg.setSize(spec.getRootDiskAllocateSize());
+        rmsg.setSystemTags(spec.getRootVolumeSystemTags());
         if (spec.getRootDiskOffering() != null) {
             rmsg.setDiskOfferingUuid(spec.getRootDiskOffering().getUuid());
         }
@@ -192,6 +193,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
             amsg.setSize(dinv.getDiskSize());
             amsg.setRequiredHostUuid(spec.getDestHost().getUuid());
             amsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
+            amsg.setSystemTags(spec.getDataVolumeSystemTags());
 
             String requiredPrimaryStorageType = Q.New(PrimaryStorageVO.class)
                     .select(PrimaryStorageVO_.type)
