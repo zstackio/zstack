@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class UsernameKVMHostFilter implements VolumeMigrationTargetHostFilter {
     @Override
-    public List<HostVO> filter(List<HostVO> candidates) {
+    public List<HostVO> filter(String volumeUuid, List<HostVO> candidates) {
         List<String> toRemoveHuuids = Q.New(HostVO.class).notEq(KVMHostVO_.username, "root").select(KVMHostVO_.uuid).listValues();
         if (!toRemoveHuuids.isEmpty()){
             candidates = CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
