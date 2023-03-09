@@ -1,7 +1,10 @@
 package org.zstack.kvm.hypervisor.datatype;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.vo.ResourceInventory;
 
 import java.sql.Timestamp;
 import java.util.Collection;
@@ -13,6 +16,10 @@ import java.util.stream.Collectors;
  */
 @PythonClassInventory
 @Inventory(mappingVOClass = KvmHypervisorInfoVO.class, collectionValueOfMethod = "valueOf1")
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "resource", inventoryClass = ResourceInventory.class,
+                foreignKey = "resourceUuid", expandedInventoryKey = "uuid"),
+})
 public class KvmHypervisorInfoInventory {
     private String uuid;
     private String hypervisor;
