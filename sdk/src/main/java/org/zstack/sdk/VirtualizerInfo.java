@@ -26,11 +26,11 @@ public class VirtualizerInfo  {
         return this.expectVersion;
     }
 
-    public VirtualizerVersionState matchState;
-    public void setMatchState(VirtualizerVersionState matchState) {
+    public HypervisorVersionState matchState;
+    public void setMatchState(HypervisorVersionState matchState) {
         this.matchState = matchState;
     }
-    public VirtualizerVersionState getMatchState() {
+    public HypervisorVersionState getMatchState() {
         return this.matchState;
     }
 

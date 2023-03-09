@@ -2,6 +2,7 @@ package org.zstack.kvm.hypervisor.message;
 
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
+import org.zstack.kvm.hypervisor.datatype.HypervisorVersionState;
 import org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoInventory;
 
 import java.sql.Timestamp;
@@ -30,6 +31,7 @@ public class APIQueryKvmHypervisorInfoReply extends APIQueryReply {
         inv.setUuid(uuid());
         inv.setHypervisor("qemu-kvm");
         inv.setVersion("4.2.0-632.g6a6222b.el7");
+        inv.setMatchState(HypervisorVersionState.Matched);
         inv.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         inv.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
 

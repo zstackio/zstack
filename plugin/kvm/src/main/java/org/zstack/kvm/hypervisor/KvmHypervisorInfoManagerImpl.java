@@ -7,13 +7,19 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.Component;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.kvm.hypervisor.datatype.*;
+import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
 
+import javax.persistence.Tuple;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.Map.Entry;
 import static org.zstack.kvm.KVMAgentCommands.GetVirtualizerInfoRsp;
 import static org.zstack.kvm.KVMAgentCommands.VirtualizerInfoTO;
 import static org.zstack.kvm.hypervisor.HypervisorMetadataCollector.HypervisorMetadataDefinition;
@@ -27,39 +33,208 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
     @Autowired
     private HypervisorMetadataCollector collector;
 
-    @Override
-    public void save(GetVirtualizerInfoRsp rsp) {
-        List<VirtualizerInfoTO> tos = new ArrayList<>(rsp.getVmInfoList());
-        tos.add(rsp.getHostInfo());
-        save(tos);
+    private static class ResourceHypervisorInfo {
+        String uuid;
+        String resourceType;
+        String virtualizer;
+        String version;
+
+        String matchTargetUuid;
+        String matchTargetResourceType;
+        String matchTargetVersion;
+
+        KvmHypervisorInfoVO vo;
+
+        static ResourceHypervisorInfo fromVmVirtualizerInfo(VirtualizerInfoTO info) {
+            return fromVmVirtualizerInfo(info, null);
+        }
+
+        static ResourceHypervisorInfo fromVmVirtualizerInfo(VirtualizerInfoTO info, String hostUuid) {
+            ResourceHypervisorInfo result = from(info);
+            result.resourceType = VmInstanceVO.class.getSimpleName();
+            result.matchTargetResourceType = HostVO.class.getSimpleName();
+            result.matchTargetUuid = hostUuid;
+            return result;
+        }
+
+        static ResourceHypervisorInfo fromHostVirtualizerInfo(VirtualizerInfoTO info) {
+            ResourceHypervisorInfo result = from(info);
+            result.resourceType = HostVO.class.getSimpleName();
+            result.matchTargetResourceType = KvmHostHypervisorMetadataVO.class.getSimpleName();
+            return result;
+        }
+
+        static ResourceHypervisorInfo from(VirtualizerInfoTO info) {
+            ResourceHypervisorInfo result = new ResourceHypervisorInfo();
+            result.uuid = info.getUuid();
+            result.virtualizer = info.getVirtualizer();
+            result.version = info.getVersion();
+            return result;
+        }
+
+        KvmHypervisorInfoVO generate() {
+            if (vo == null) {
+                vo = new KvmHypervisorInfoVO();
+                vo.setUuid(uuid);
+            }
+            vo.setHypervisor(virtualizer);
+            vo.setVersion(version);
+            vo.setMatchState(KvmHypervisorInfoHelper.isQemuVersionMatched(version, matchTargetVersion));
+
+            return vo;
+        }
     }
 
     @Override
-    public void save(VirtualizerInfoTO info) {
-        save(Collections.singletonList(info));
+    public void save(GetVirtualizerInfoRsp rsp) {
+        final String hostUuid = rsp.getHostInfo().getUuid();
+        final List<ResourceHypervisorInfo> list = rsp.getVmInfoList().stream()
+                .map(info -> ResourceHypervisorInfo.fromVmVirtualizerInfo(info, hostUuid))
+                .collect(Collectors.toList());
+        list.add(ResourceHypervisorInfo.fromHostVirtualizerInfo(rsp.getHostInfo()));
+        save(list);
+    }
+
+    @Override
+    public void saveHostInfo(VirtualizerInfoTO info) {
+        save(Collections.singletonList(ResourceHypervisorInfo.fromHostVirtualizerInfo(info)));
+    }
+
+    @Override
+    public void saveVmInfo(VirtualizerInfoTO info) {
+        save(Collections.singletonList(ResourceHypervisorInfo.fromVmVirtualizerInfo(info)));
     }
 
     @Transactional
-    private void save(List<VirtualizerInfoTO> list) {
-        Map<String, VirtualizerInfoTO> uuidToMap = list.stream()
-                .collect(Collectors.toMap(VirtualizerInfoTO::getUuid, Function.identity()));
+    private void save(List<ResourceHypervisorInfo> list) {
+        Map<String, ResourceHypervisorInfo> uuidInfoMap = list.stream()
+                .collect(Collectors.toMap(info -> info.uuid, Function.identity()));
 
-        List<KvmHypervisorInfoVO> voList = Q.New(KvmHypervisorInfoVO.class)
-                .in(KvmHypervisorInfoVO_.uuid, new ArrayList<>(uuidToMap.keySet()))
-                .list();
-        Map<String, KvmHypervisorInfoVO> uuidVoMapToUpdate = voList.stream()
-                .collect(Collectors.toMap(KvmHypervisorInfoVO::getUuid, Function.identity()));
-        if (!uuidVoMapToUpdate.isEmpty()) {
-            uuidVoMapToUpdate.forEach((uuid, vo) -> updateKvmHypervisorInfoVO(uuid, vo, uuidToMap.get(uuid)));
-            db.updateCollection(voList);
+        collectVmMatchTargetUuid(uuidInfoMap);
+        collectVmMatchTargetVersion(uuidInfoMap);
+        collectHostMatchTargetInfo(uuidInfoMap);
+        collectHypervisorInfoVo(uuidInfoMap);
+
+        // Save
+        List<ResourceHypervisorInfo> toUpdateList = new ArrayList<>();
+        List<ResourceHypervisorInfo> toPersistList = new ArrayList<>();
+
+        uuidInfoMap.forEach((uuid, info) -> {
+            List<ResourceHypervisorInfo> targets = (info.vo == null) ? toPersistList : toUpdateList;
+            targets.add(info);
+        });
+
+        if (!toUpdateList.isEmpty()) {
+            db.updateCollection(toUpdateList.stream()
+                    .map(ResourceHypervisorInfo::generate)
+                    .collect(Collectors.toList()));
         }
 
-        List<KvmHypervisorInfoVO> voListToPersist = uuidToMap.entrySet().stream()
-                .filter(entry -> !uuidVoMapToUpdate.containsKey(entry.getKey()))
-                .map(entry -> updateKvmHypervisorInfoVO(entry.getKey(), null, uuidToMap.get(entry.getKey())))
+        if (!toPersistList.isEmpty()) {
+            db.persistCollection(toPersistList.stream()
+                    .map(ResourceHypervisorInfo::generate)
+                    .collect(Collectors.toList()));
+        }
+    }
+
+    private void collectVmMatchTargetUuid(Map<String, ResourceHypervisorInfo> uuidInfoMap) {
+        List<String> vmUuidListNeedFindHost = uuidInfoMap.values().stream()
+                .filter(info -> HostVO.class.getSimpleName().equals(info.matchTargetResourceType))
+                .filter(info -> VmInstanceVO.class.getSimpleName().equals(info.resourceType))
+                .filter(info -> info.matchTargetUuid == null)
+                .map(info -> info.uuid)
                 .collect(Collectors.toList());
-        if (!voListToPersist.isEmpty()) {
-            db.persistCollection(voListToPersist);
+        if (vmUuidListNeedFindHost.isEmpty()) {
+            return;
+        }
+
+        final List<Tuple> vmHostTuples = Q.New(VmInstanceVO.class)
+                .in(VmInstanceVO_.uuid, vmUuidListNeedFindHost)
+                .select(VmInstanceVO_.uuid, VmInstanceVO_.hostUuid)
+                .listTuple();
+        vmHostTuples.forEach(tuple ->
+                uuidInfoMap.get(tuple.get(0, String.class)).matchTargetUuid = tuple.get(1, String.class));
+    }
+
+    private void collectVmMatchTargetVersion(Map<String, ResourceHypervisorInfo> uuidInfoMap) {
+        Map<String, List<ResourceHypervisorInfo>> targetUuidInfoMap = uuidInfoMap.values().stream()
+                .filter(info -> info.matchTargetVersion == null)
+                .filter(info -> HostVO.class.getSimpleName().equals(info.matchTargetResourceType))
+                .filter(info -> VmInstanceVO.class.getSimpleName().equals(info.resourceType))
+                .collect(Collectors.toMap(info -> info.matchTargetUuid, CollectionDSL::list, CollectionDSL::concat));
+        if (targetUuidInfoMap.isEmpty()) {
+            return;
+        }
+
+        // find match info from uuidInfoMap
+        for (Iterator<Entry<String, List<ResourceHypervisorInfo>>> it = targetUuidInfoMap.entrySet().iterator(); it.hasNext();) {
+            final Entry<String, List<ResourceHypervisorInfo>> next = it.next();
+            final ResourceHypervisorInfo matchInfo = uuidInfoMap.get(next.getKey());
+            if (matchInfo == null) {
+                continue;
+            }
+
+            next.getValue().forEach(info -> info.matchTargetVersion = matchInfo.version);
+            it.remove();
+        }
+        if (targetUuidInfoMap.isEmpty()) {
+            return;
+        }
+
+        // find match info from database
+        List<Tuple> tuples = Q.New(KvmHypervisorInfoVO.class)
+                .in(KvmHypervisorInfoVO_.uuid, targetUuidInfoMap.keySet())
+                .select(KvmHypervisorInfoVO_.uuid, KvmHypervisorInfoVO_.version)
+                .listTuple();
+        for (Tuple tuple : tuples) {
+            String targetUuid = tuple.get(0, String.class);
+            targetUuidInfoMap.get(targetUuid).forEach(info -> info.matchTargetVersion = tuple.get(1, String.class));
+        }
+    }
+
+    private void collectHostMatchTargetInfo(Map<String, ResourceHypervisorInfo> uuidInfoMap) {
+        Set<String> hostUuidSet = uuidInfoMap.values().stream()
+                .filter(info -> info.matchTargetVersion == null)
+                .filter(info -> HostVO.class.getSimpleName().equals(info.resourceType))
+                .filter(info -> KvmHostHypervisorMetadataVO.class.getSimpleName().equals(info.matchTargetResourceType))
+                .map(info -> info.uuid)
+                .collect(Collectors.toSet());
+        if (hostUuidSet.isEmpty()) {
+            return;
+        }
+
+        final Map<String, HostOsCategoryVO> uuidCategoryMap =
+                KvmHypervisorInfoHelper.collectExpectedHypervisorInfoForHosts(hostUuidSet);
+        uuidCategoryMap.forEach((uuid, category) -> {
+            if (category == null) {
+                return;
+            }
+
+            ResourceHypervisorInfo info = uuidInfoMap.get(uuid);
+            final KvmHostHypervisorMetadataVO metadata = category.getMetadataList()
+                    .stream()
+                    .filter(m -> m.getHypervisor().equals(info.virtualizer))
+                    .findAny()
+                    .orElse(null);
+            if (metadata == null) {
+                return;
+            }
+
+            info.matchTargetUuid = metadata.getUuid();
+            info.matchTargetVersion = metadata.getVersion();
+        });
+    }
+
+    private void collectHypervisorInfoVo(Map<String, ResourceHypervisorInfo> uuidInfoMap) {
+        List<KvmHypervisorInfoVO> voList = Q.New(KvmHypervisorInfoVO.class)
+                .in(KvmHypervisorInfoVO_.uuid, uuidInfoMap.keySet())
+                .list();
+
+        for (KvmHypervisorInfoVO vo : voList) {
+            final ResourceHypervisorInfo info = uuidInfoMap.get(vo.getUuid());
+            if (info != null) {
+                info.vo = vo;
+            }
         }
     }
 

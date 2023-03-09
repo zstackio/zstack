@@ -37,6 +37,12 @@ public class KvmHypervisorInfoVO implements ToInventory {
      */
     @Column
     private String version;
+    /**
+     * Is the version match with expected
+     */
+    @Column
+    @Enumerated(EnumType.STRING)
+    private HypervisorVersionState matchState;
     @Column
     private Timestamp createDate;
     @Column
@@ -69,6 +75,14 @@ public class KvmHypervisorInfoVO implements ToInventory {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public HypervisorVersionState getMatchState() {
+        return matchState;
+    }
+
+    public void setMatchState(HypervisorVersionState matchState) {
+        this.matchState = matchState;
     }
 
     public Timestamp getCreateDate() {

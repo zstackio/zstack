@@ -5,7 +5,8 @@ import static org.zstack.kvm.KVMAgentCommands.VirtualizerInfoTO;
 
 public interface KvmHypervisorInfoManager {
     void save(GetVirtualizerInfoRsp rsp);
-    void save(VirtualizerInfoTO info);
+    void saveHostInfo(VirtualizerInfoTO info);
+    void saveVmInfo(VirtualizerInfoTO info);
 
     void clean(String uuid);
 

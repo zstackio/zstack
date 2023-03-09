@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public enum VirtualizerVersionState {
+public enum HypervisorVersionState {
 	Matched,
 	Unmatched,
 	Unknown,

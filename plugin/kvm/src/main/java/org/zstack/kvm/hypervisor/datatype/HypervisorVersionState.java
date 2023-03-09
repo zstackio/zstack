@@ -1,6 +1,6 @@
 package org.zstack.kvm.hypervisor.datatype;
 
-public enum VirtualizerVersionState {
+public enum HypervisorVersionState {
     // all virtualizer device version is matched
     Matched,
 
