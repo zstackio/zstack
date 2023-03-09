@@ -7,15 +7,13 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.*;
 import org.zstack.core.convert.PasswordConverter;
+import org.zstack.core.convert.SpecialDataConverter;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
-import org.zstack.header.core.encrypt.EncryptEntityMetadataVO;
-import org.zstack.header.core.encrypt.EncryptEntityMetadataVO_;
-import org.zstack.header.core.encrypt.EncryptEntityState;
-import org.zstack.header.core.encrypt.PasswordEncryptType;
+import org.zstack.header.core.encrypt.*;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.BeanUtils;
@@ -27,10 +25,7 @@ import javax.persistence.Entity;
 import javax.persistence.Query;
 import javax.persistence.Table;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -78,27 +73,33 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         return encryptDriver.decrypt(data, algType);
     }
 
+    private String getQuerySql(List<CovertSubClass> covertSubClasses, String className, Field field, String uuid) {
+        List<String> whereSqlList = covertSubClasses.stream()
+                .filter(subClass -> subClass.classSimpleName().equals(className) && !subClass.columnName().isEmpty())
+                .map(subClass -> String.format(" %s = '%s'", subClass.columnName(), subClass.columnValue()))
+                .collect(Collectors.toList());
+
+        String querySql = String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid);
+        if (!whereSqlList.isEmpty()) {
+            querySql = querySql + String.format(" and (%s)", whereSqlList.stream().collect(Collectors.joining(" or ")));
+        }
+        return querySql;
+    }
+
     private void encryptAllPassword() {
         new SQLBatch() {
             @Override
             protected void scripts() {
                 for (Field field : encryptedFields) {
-                    List<String> classNames = new ArrayList<>();
-
-                    if (field.getDeclaringClass().getAnnotation(Entity.class) != null && field.getDeclaringClass().getAnnotation(Table.class) != null) {
-                        classNames.add(field.getDeclaringClass().getSimpleName());
-                    } else {
-                        classNames.addAll(BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
-                                .filter(aClass -> aClass.getAnnotation(Entity.class) != null && aClass.getAnnotation(Table.class) != null)
-                                .map(Class::getSimpleName)
-                                .collect(Collectors.toList()));
-                    }
+                    List<CovertSubClass> covertSubClasses = getCovertSubClassList(field);
+                    List<String> classNames = getClassName(field, covertSubClasses);
 
                     for (String className : classNames) {
                         List<String> uuids = sql(String.format("select uuid from %s", className)).list();
 
                         for (String uuid : uuids) {
-                            String value = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
+                            String querySql = getQuerySql(covertSubClasses, className, field, uuid);
+                            String value = sql(querySql).find();
 
                             try {
                                 String encryptedString = encrypt(value);
@@ -125,22 +126,15 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
             @Override
             protected void scripts() {
                 for (Field field : encryptedFields) {
-                    List<String> classNames = new ArrayList<>();
-
-                    if (field.getDeclaringClass().getAnnotation(Entity.class) != null && field.getDeclaringClass().getAnnotation(Table.class) != null) {
-                        classNames.add(field.getDeclaringClass().getSimpleName());
-                    } else {
-                        classNames.addAll(BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
-                                .filter(aClass -> aClass.getAnnotation(Entity.class) != null && aClass.getAnnotation(Table.class) != null)
-                                .map(Class::getSimpleName)
-                                .collect(Collectors.toList()));
-                    }
+                    List<CovertSubClass> covertSubClasses = getCovertSubClassList(field);
+                    List<String> classNames = getClassName(field, covertSubClasses);
 
                     for (String className : classNames) {
                         List<String> uuids = sql(String.format("select uuid from %s", className)).list();
 
                         for (String uuid : uuids) {
-                            String encryptedString = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
+                            String querySql = getQuerySql(covertSubClasses, className, field, uuid);
+                            String encryptedString = sql(querySql).find();
 
                             try {
                                 String decryptString = decrypt(encryptedString);
@@ -167,22 +161,15 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
             @Override
             protected void scripts() {
                 for (Field field : encryptedFields) {
-                    List<String> classNames = new ArrayList<>();
-
-                    if (field.getDeclaringClass().getAnnotation(Entity.class) != null && field.getDeclaringClass().getAnnotation(Table.class) != null) {
-                        classNames.add(field.getDeclaringClass().getSimpleName());
-                    } else {
-                        classNames.addAll(BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
-                                .filter(aClass -> aClass.getAnnotation(Entity.class) != null && aClass.getAnnotation(Table.class) != null)
-                                .map(Class::getSimpleName)
-                                .collect(Collectors.toList()));
-                    }
+                    List<CovertSubClass> covertSubClasses = getCovertSubClassList(field);
+                    List<String> classNames = getClassName(field, covertSubClasses);
 
                     for (String className : classNames) {
                         List<String> uuids = sql(String.format("select uuid from %s", className)).list();
 
                         for (String uuid : uuids) {
-                            String encryptedString = sql(String.format("select %s from %s where uuid = '%s'", field.getName(), className, uuid)).find();
+                            String querySql = getQuerySql(covertSubClasses, className, field, uuid);
+                            String encryptedString = sql(querySql).find();
 
                             try {
                                 String decryptedString = decrypt(encryptedString);
@@ -212,7 +199,8 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         Set<Field> fields = Platform.getReflections().getFieldsAnnotatedWith(Convert.class);
 
         encryptedFields = fields.stream()
-                .filter(field -> field.getAnnotation(Convert.class).converter().equals(PasswordConverter.class))
+                .filter(field -> field.getAnnotation(Convert.class).converter().equals(PasswordConverter.class) ||
+                        field.getAnnotation(Convert.class).converter().equals(SpecialDataConverter.class))
                 .collect(Collectors.toSet());
     }
 
@@ -338,18 +326,38 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         }.execute();
     }
 
+    private List<CovertSubClass> getCovertSubClassList(Field field) {
+        List<CovertSubClass> covertSubClasses = new ArrayList<>();
+        if (field.getDeclaringClass().getAnnotation(CovertSubClasses.class) != null) {
+            covertSubClasses.addAll(Arrays.asList(field.getDeclaringClass().getAnnotation(CovertSubClasses.class).value()));
+        }
+        return covertSubClasses;
+    }
+
+    private List<String> getClassName(Field field, List<CovertSubClass> covertSubClasses) {
+        List<String> classNames = new ArrayList<>();
+        if (covertSubClasses == null || covertSubClasses.isEmpty()) {
+            covertSubClasses = getCovertSubClassList(field);
+        }
+
+        if (field.getDeclaringClass().getAnnotation(Entity.class) != null && field.getDeclaringClass().getAnnotation(Table.class) != null) {
+            classNames.add(field.getDeclaringClass().getSimpleName());
+        } else {
+            List<String> subClassNames = BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
+                    .filter(aClass -> aClass.getAnnotation(Entity.class) != null && aClass.getAnnotation(Table.class) != null)
+                    .map(Class::getSimpleName)
+                    .collect(Collectors.toList());
+
+            List<String> filterClassName = covertSubClasses.stream().map(CovertSubClass::classSimpleName).collect(Collectors.toList());
+            classNames.addAll(subClassNames.stream().filter(filterClassName::contains).collect(Collectors.toList()));
+        }
+
+        return classNames;
+    }
+
     private void collectEncryptEntityMetadata() {
         for (Field field : encryptedFields) {
-            List<String> classNames = new ArrayList<>();
-
-            if (field.getDeclaringClass().getAnnotation(Entity.class) != null && field.getDeclaringClass().getAnnotation(Table.class) != null) {
-                classNames.add(field.getDeclaringClass().getSimpleName());
-            } else {
-                classNames.addAll(BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
-                        .filter(aClass -> aClass.getAnnotation(Entity.class) != null && aClass.getAnnotation(Table.class) != null)
-                        .map(Class::getSimpleName)
-                        .collect(Collectors.toList()));
-            }
+            List<String> classNames = getClassName(field, null);
 
             for (String className : classNames) {
                 createIfNotExists(className, field.getName());
