@@ -3432,6 +3432,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 .eq(VmNicVO_.l3NetworkUuid, msg.getL3NetworkUuid())
                 .limit(1).find();
         List<UsedIpVO> voNewList = new ArrayList<>();
+        // in dual stack l3 , keep the old ip which not set in msg
+        List<UsedIpVO> voRemoveList = new ArrayList<>();
         List<UsedIpVO> voOldList = Q.New(UsedIpVO.class).eq(UsedIpVO_.vmNicUuid, nicVO.getUuid()).list();
 
         if (msg.getIp6() != null) {
@@ -3448,6 +3450,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             nicVO.setNetmask(vo.getNetmask());
             nicVO.setGateway(vo.getGateway());
             voNewList.add(vo);
+            voRemoveList.addAll(voOldList.stream().filter(voOld -> voOld.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList()));
         }
         // Ip and ip6 set at same time means dual stack network, nic will set UsedIpUuid with ipv4
         if (msg.getIp() != null) {
@@ -3466,6 +3469,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 nicVO.setNetmask(vo.getNetmask());
                 nicVO.setGateway(vo.getGateway());
                 voNewList.add(vo);
+                voRemoveList.addAll(voOldList.stream().filter(voOld -> voOld.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList()));
             } else {
                 vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getIp()));
                 vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getIp()+"/"+msg.getIpv6Prefix()));
@@ -3478,11 +3482,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                 nicVO.setNetmask(vo.getNetmask());
                 nicVO.setGateway(vo.getGateway());
                 voNewList.add(vo);
+                voRemoveList.addAll(voOldList.stream().filter(voOld -> voOld.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList()));
             }
         }
         dbf.persistCollection(voNewList);
         dbf.update(nicVO);
-        dbf.removeCollection(voOldList, UsedIpVO.class);
+        dbf.removeCollection(voRemoveList, UsedIpVO.class);
         completion.success();
     }
 
@@ -4451,7 +4456,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         q.setParameter("uuid", self.getUuid());
 
         List<L3NetworkVO> l3s = q.getResultList();
-        l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty()).collect(Collectors.toList());
+        l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty() || !l3.getEnableIPAM()).collect(Collectors.toList());
 
         return L3NetworkInventory.valueOf(l3s);
     }
@@ -4514,7 +4519,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     l3s = l3s.stream().filter(l3 -> !vmL3Uuids.contains(l3.getUuid())).collect(Collectors.toList());
                 }
 
-                l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty()).collect(Collectors.toList());
+                l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty() || !l3.getEnableIPAM()).collect(Collectors.toList());
                 return L3NetworkInventory.valueOf(l3s);
             }
 
