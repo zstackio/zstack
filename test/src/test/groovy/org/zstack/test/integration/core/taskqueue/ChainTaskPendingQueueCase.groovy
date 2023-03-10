@@ -43,9 +43,15 @@ class ChainTaskPendingQueueCase extends SubCase {
         }
 
         int pendingTaskSize = 60
+        def threads = []
         for (int i = 0; i < pendingTaskSize; i++) {
-            submitTask(signature, pendingTaskName, {})
+            def thread = Thread.start {
+                submitTask(signature, pendingTaskName, {})
+            }
+            threads << thread
         }
+
+        threads.each { it.join() }
 
         assert thdf.getChainTaskInfo(signature).getPendingTask().size() == pendingTaskSize
         assert thdf.dpq.chainTasks.get(signature).getCurrentPendingQueueThreshold() == CoreGlobalProperty.PENDING_QUEUE_MINIMUM_THRESHOLD * 5
