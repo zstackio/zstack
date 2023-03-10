@@ -41,6 +41,7 @@ public class KvmHypervisorInfoVO implements ToInventory {
      * Is the version match with expected
      */
     @Column
+    @Enumerated(EnumType.STRING)
     private HypervisorVersionState matchState;
     @Column
     private Timestamp createDate;
