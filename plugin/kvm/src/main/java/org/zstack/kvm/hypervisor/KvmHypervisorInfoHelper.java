@@ -24,7 +24,7 @@ public class KvmHypervisorInfoHelper {
     /**
      * @return map
      *   key: host uuid
-     *   value: HostOsCategoryVO
+     *   value: HostOsCategoryVO, may be null
      */
     public static Map<String, HostOsCategoryVO> collectExpectedHypervisorInfoForHosts(
             Collection<String> hostUuidList) {

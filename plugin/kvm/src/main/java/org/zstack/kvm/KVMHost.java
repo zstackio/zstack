@@ -3810,6 +3810,7 @@ public class KVMHost extends HostBase implements Host {
                     .call(new ReturnValueCompletion<HostFactResponse>(null) {
                         @Override
                         public void success(HostFactResponse response) {
+                            response.getVirtualizerInfo().setUuid(self.getUuid());
                             hypervisorManager.saveHostInfo(response.getVirtualizerInfo());
                         }
 

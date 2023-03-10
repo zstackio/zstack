@@ -112,6 +112,7 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
 
         collectVmMatchTargetUuid(uuidInfoMap);
         collectVmMatchTargetVersion(uuidInfoMap);
+        collectHostMatchTargetInfo(uuidInfoMap);
         collectHypervisorInfoVo(uuidInfoMap);
 
         // Save
@@ -189,6 +190,39 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
             String targetUuid = tuple.get(0, String.class);
             targetUuidInfoMap.get(targetUuid).forEach(info -> info.matchTargetVersion = tuple.get(1, String.class));
         }
+    }
+
+    private void collectHostMatchTargetInfo(Map<String, ResourceHypervisorInfo> uuidInfoMap) {
+        Set<String> hostUuidSet = uuidInfoMap.values().stream()
+                .filter(info -> info.matchTargetVersion == null)
+                .filter(info -> HostVO.class.getSimpleName().equals(info.resourceType))
+                .filter(info -> KvmHostHypervisorMetadataVO.class.getSimpleName().equals(info.matchTargetResourceType))
+                .map(info -> info.uuid)
+                .collect(Collectors.toSet());
+        if (hostUuidSet.isEmpty()) {
+            return;
+        }
+
+        final Map<String, HostOsCategoryVO> uuidCategoryMap =
+                KvmHypervisorInfoHelper.collectExpectedHypervisorInfoForHosts(hostUuidSet);
+        uuidCategoryMap.forEach((uuid, category) -> {
+            if (category == null) {
+                return;
+            }
+
+            ResourceHypervisorInfo info = uuidInfoMap.get(uuid);
+            final KvmHostHypervisorMetadataVO metadata = category.getMetadataList()
+                    .stream()
+                    .filter(m -> m.getHypervisor().equals(info.virtualizer))
+                    .findAny()
+                    .orElse(null);
+            if (metadata == null) {
+                return;
+            }
+
+            info.matchTargetUuid = metadata.getUuid();
+            info.matchTargetVersion = metadata.getVersion();
+        });
     }
 
     private void collectHypervisorInfoVo(Map<String, ResourceHypervisorInfo> uuidInfoMap) {
