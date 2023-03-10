@@ -24,6 +24,7 @@ public class KvmHypervisorInfoInventory {
     private String uuid;
     private String hypervisor;
     private String version;
+    private HypervisorVersionState matchState;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -35,6 +36,7 @@ public class KvmHypervisorInfoInventory {
         inv.setUuid(vo.getUuid());
         inv.setHypervisor(vo.getHypervisor());
         inv.setVersion(vo.getVersion());
+        inv.setMatchState(vo.getMatchState());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
@@ -66,6 +68,14 @@ public class KvmHypervisorInfoInventory {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public HypervisorVersionState getMatchState() {
+        return matchState;
+    }
+
+    public void setMatchState(HypervisorVersionState matchState) {
+        this.matchState = matchState;
     }
 
     public Timestamp getCreateDate() {

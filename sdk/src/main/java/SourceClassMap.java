@@ -378,7 +378,7 @@ public class SourceClassMap {
 			put("org.zstack.kvm.hypervisor.datatype.HostOsCategoryInventory", "org.zstack.sdk.HostOsCategoryInventory");
 			put("org.zstack.kvm.hypervisor.datatype.KvmHostHypervisorMetadataInventory", "org.zstack.sdk.KvmHostHypervisorMetadataInventory");
 			put("org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoInventory", "org.zstack.sdk.KvmHypervisorInfoInventory");
-			put("org.zstack.kvm.hypervisor.datatype.VirtualizerVersionState", "org.zstack.sdk.VirtualizerVersionState");
+			put("org.zstack.kvm.hypervisor.datatype.HypervisorVersionState", "org.zstack.sdk.HypervisorVersionState");
 			put("org.zstack.ldap.LdapAccountRefInventory", "org.zstack.sdk.LdapAccountRefInventory");
 			put("org.zstack.ldap.LdapServerInventory", "org.zstack.sdk.LdapServerInventory");
 			put("org.zstack.license.AdditionalLicenseInfo", "org.zstack.sdk.AdditionalLicenseInfo");
@@ -1143,7 +1143,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VirtualRouterVmInventory", "org.zstack.network.service.virtualrouter.VirtualRouterVmInventory");
 			put("org.zstack.sdk.VirtualizerInfo", "org.zstack.header.vm.VirtualizerInfo");
 			put("org.zstack.sdk.VirtualizerInfoInventory", "org.zstack.header.vm.VirtualizerInfoInventory");
-			put("org.zstack.sdk.VirtualizerVersionState", "org.zstack.kvm.hypervisor.datatype.VirtualizerVersionState");
+			put("org.zstack.sdk.HypervisorVersionState", "org.zstack.kvm.hypervisor.datatype.HypervisorVersionState");
 			put("org.zstack.sdk.VmCPUBillingInventory", "org.zstack.billing.generator.vm.cpu.VmCPUBillingInventory");
 			put("org.zstack.sdk.VmCPUSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmCPUSpendingDetails");
 			put("org.zstack.sdk.VmCapabilities", "org.zstack.header.vm.VmCapabilities");
