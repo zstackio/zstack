@@ -40,4 +40,11 @@ public class CollectionDSL {
         Collections.addAll(lst, els);
         return lst;
     }
+
+    public static <T> List<T> concat(List<T> list, List<T> list2) {
+        ArrayList<T> lst = new ArrayList<>(list2.size() + list.size());
+        lst.addAll(list);
+        lst.addAll(list2);
+        return lst;
+    }
 }

@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`KvmHypervisorInfoVO` (
     `uuid` char(32) NOT NULL UNIQUE COMMENT 'uuid',
     `hypervisor` varchar(32) NOT NULL,
     `version` varchar(64) NOT NULL,
+    `matchState` char(10) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     CONSTRAINT `KvmHypervisorInfoVOResourceVO` FOREIGN KEY (`uuid`) REFERENCES `zstack`.`ResourceVO` (`uuid`) ON DELETE CASCADE,

@@ -8,7 +8,7 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.hypervisor.datatype.HostOsCategoryVO;
 import org.zstack.kvm.hypervisor.datatype.HostOsCategoryVO_;
-import org.zstack.kvm.hypervisor.datatype.VirtualizerVersionState;
+import org.zstack.kvm.hypervisor.datatype.HypervisorVersionState;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.data.Pair;
 
@@ -91,11 +91,11 @@ public class KvmHypervisorInfoHelper {
         return String.format("%s %s %s", distribution, osRelease, osVersion);
     }
 
-    public static VirtualizerVersionState isQemuVersionMatched(String v1, String v2) {
+    public static HypervisorVersionState isQemuVersionMatched(String v1, String v2) {
         if (v1 == null || v2 == null) {
-            return VirtualizerVersionState.Unknown;
+            return HypervisorVersionState.Unknown;
         }
-        return Objects.equals(v1, v2) ? VirtualizerVersionState.Matched : VirtualizerVersionState.Unmatched;
+        return Objects.equals(v1, v2) ? HypervisorVersionState.Matched : HypervisorVersionState.Unmatched;
     }
 
     public static boolean isQemuBased(String virtualizerInfo) {

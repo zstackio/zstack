@@ -25,6 +25,12 @@ doc {
 		since "4.6.21"
 	}
 	field {
+		name "matchState"
+		desc "和预期版本号的匹配状态，可能的值为 \"Matched\", \"Unmatched\", \"Unknown\""
+		type "String"
+		since "4.6.21"
+	}
+	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"

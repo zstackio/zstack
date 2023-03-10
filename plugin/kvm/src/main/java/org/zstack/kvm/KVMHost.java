@@ -3810,7 +3810,7 @@ public class KVMHost extends HostBase implements Host {
                     .call(new ReturnValueCompletion<HostFactResponse>(null) {
                         @Override
                         public void success(HostFactResponse response) {
-                            hypervisorManager.save(response.getVirtualizerInfo());
+                            hypervisorManager.saveHostInfo(response.getVirtualizerInfo());
                         }
 
                         @Override
@@ -4329,7 +4329,7 @@ public class KVMHost extends HostBase implements Host {
                                     }
 
                                     ret.getVirtualizerInfo().setUuid(self.getUuid());
-                                    hypervisorManager.save(ret.getVirtualizerInfo());
+                                    hypervisorManager.saveHostInfo(ret.getVirtualizerInfo());
 
                                     // create system tags of os::version etc
                                     createHostVersionSystemTags(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());

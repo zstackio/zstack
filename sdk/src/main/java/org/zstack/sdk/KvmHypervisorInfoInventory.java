@@ -28,6 +28,14 @@ public class KvmHypervisorInfoInventory  {
         return this.version;
     }
 
+    public HypervisorVersionState matchState;
+    public void setMatchState(HypervisorVersionState matchState) {
+        this.matchState = matchState;
+    }
+    public HypervisorVersionState getMatchState() {
+        return this.matchState;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

@@ -45,7 +45,7 @@ public class KvmHypervisorInfoExtensions implements
 
     @Override
     public void afterReceiveVmDeviceInfoResponse(VmInstanceInventory vm, VmDevicesInfoResponse rsp) {
-        Optional.ofNullable(rsp.getVirtualizerInfo()).ifPresent(manager::save);
+        Optional.ofNullable(rsp.getVirtualizerInfo()).ifPresent(manager::saveVmInfo);
     }
 
     @Override
@@ -55,7 +55,7 @@ public class KvmHypervisorInfoExtensions implements
 
     @Override
     public void rebootVmOnKvmSuccess(KVMHostInventory host, VmInstanceInventory vm, RebootVmResponse rsp) {
-        Optional.ofNullable(rsp.getVirtualizerInfo()).ifPresent(manager::save);
+        Optional.ofNullable(rsp.getVirtualizerInfo()).ifPresent(manager::saveVmInfo);
     }
 
     @Override
