@@ -379,7 +379,11 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         public String dumpTaskQueueInfo() {
             StringBuilder tb = new StringBuilder(String.format("\nQUEUE SYNC SIGNATURE: %s", syncSignature));
-            tb.append(getTaskQueueInfo());
+
+            synchronized (chainTasks) {
+                tb.append(getTaskQueueInfo());
+            }
+
             return tb.toString();
         }
     }
