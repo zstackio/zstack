@@ -6084,34 +6084,19 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 List<UsedIpVO> voOldList = Q.New(UsedIpVO.class).eq(UsedIpVO_.vmNicUuid, nicVO.getUuid()).list();
                                 NetworkInfo networkInfo = nicNetworkInfo.get(msg.getDestL3NetworkUuid());
                                 if (networkInfo == null) {
-                                    trigger.next();
-                                    return;
-                                }
-                                if (networkInfo.ipv6Address != null && !networkInfo.ipv6Address.isEmpty()) {
-                                    UsedIpVO vo = new UsedIpVO();
-                                    vo.setUuid(Platform.getUuid());
-                                    vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(networkInfo.ipv6Address));
-                                    vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(networkInfo.ipv6Address+"/"+networkInfo.ipv6Prefix));
-                                    vo.setGateway(networkInfo.ipv6Gateway.isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(networkInfo.ipv6Gateway));
-                                    vo.setIpVersion(IPv6Constants.IPv6);
-                                    vo.setVmNicUuid(msg.getVmNicUuid());
-                                    vo.setL3NetworkUuid(msg.getDestL3NetworkUuid());
-                                    nicVO.setUsedIpUuid(vo.getUuid());
-                                    nicVO.setIp(networkInfo.ipv4Address);
-                                    nicVO.setGateway(networkInfo.ipv4Gateway);
-                                    nicVO.setNetmask(networkInfo.ipv4Netmask);
+                                    nicVO.setUsedIpUuid(null);
+                                    nicVO.setIp(null);
+                                    nicVO.setGateway(null);
+                                    nicVO.setNetmask(null);
                                     nicVO.setL3NetworkUuid(msg.getDestL3NetworkUuid());
-                                    voNewList.add(vo);
-                                }
-                                if (networkInfo.ipv4Address != null && !networkInfo.ipv4Address.isEmpty()) {
-                                    UsedIpVO vo = new UsedIpVO();
-                                    vo.setUuid(Platform.getUuid());
-                                    if (NetworkUtils.isIpv4Address(networkInfo.ipv4Address)) {
-                                        vo.setIpInLong(NetworkUtils.ipv4StringToLong(networkInfo.ipv4Address ));
-                                        vo.setIp(networkInfo.ipv4Address);
-                                        vo.setNetmask(networkInfo.ipv4Netmask);
-                                        vo.setGateway(networkInfo.ipv4Gateway);
-                                        vo.setIpVersion(IPv6Constants.IPv4);
+                                } else {
+                                    if (networkInfo.ipv6Address != null && !networkInfo.ipv6Address.isEmpty()) {
+                                        UsedIpVO vo = new UsedIpVO();
+                                        vo.setUuid(Platform.getUuid());
+                                        vo.setIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(networkInfo.ipv6Address));
+                                        vo.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(networkInfo.ipv6Address + "/" + networkInfo.ipv6Prefix));
+                                        vo.setGateway(networkInfo.ipv6Gateway.isEmpty() ? "" : IPv6NetworkUtils.getIpv6AddressCanonicalString(networkInfo.ipv6Gateway));
+                                        vo.setIpVersion(IPv6Constants.IPv6);
                                         vo.setVmNicUuid(msg.getVmNicUuid());
                                         vo.setL3NetworkUuid(msg.getDestL3NetworkUuid());
                                         nicVO.setUsedIpUuid(vo.getUuid());
@@ -6120,6 +6105,25 @@ public class VmInstanceBase extends AbstractVmInstance {
                                         nicVO.setNetmask(networkInfo.ipv4Netmask);
                                         nicVO.setL3NetworkUuid(msg.getDestL3NetworkUuid());
                                         voNewList.add(vo);
+                                    }
+                                    if (networkInfo.ipv4Address != null && !networkInfo.ipv4Address.isEmpty()) {
+                                        UsedIpVO vo = new UsedIpVO();
+                                        vo.setUuid(Platform.getUuid());
+                                        if (NetworkUtils.isIpv4Address(networkInfo.ipv4Address)) {
+                                            vo.setIpInLong(NetworkUtils.ipv4StringToLong(networkInfo.ipv4Address));
+                                            vo.setIp(networkInfo.ipv4Address);
+                                            vo.setNetmask(networkInfo.ipv4Netmask);
+                                            vo.setGateway(networkInfo.ipv4Gateway);
+                                            vo.setIpVersion(IPv6Constants.IPv4);
+                                            vo.setVmNicUuid(msg.getVmNicUuid());
+                                            vo.setL3NetworkUuid(msg.getDestL3NetworkUuid());
+                                            nicVO.setUsedIpUuid(vo.getUuid());
+                                            nicVO.setIp(networkInfo.ipv4Address);
+                                            nicVO.setGateway(networkInfo.ipv4Gateway);
+                                            nicVO.setNetmask(networkInfo.ipv4Netmask);
+                                            nicVO.setL3NetworkUuid(msg.getDestL3NetworkUuid());
+                                            voNewList.add(vo);
+                                        }
                                     }
                                 }
                                 dbf.persistCollection(voNewList);
@@ -6218,7 +6222,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         VmUpdateNicOnHypervisorMsg cmsg = new VmUpdateNicOnHypervisorMsg();
                         cmsg.setVmInstanceUuid(vm.getUuid());
                         cmsg.setHostUuid(dest.getUuid());
-                        cmsg.setNicsUuid(list(nicVO.getUuid()));
+                        cmsg.setNicsUuid(list(nic.getUuid()));
                         bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, vm.getUuid());
                         bus.send(cmsg, new CloudBusCallBack(trigger) {
                             @Override
