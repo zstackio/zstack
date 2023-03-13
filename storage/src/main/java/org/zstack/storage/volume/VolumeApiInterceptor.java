@@ -29,9 +29,11 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.storage.snapshot.ConsistentType;
-import org.zstack.header.storage.snapshot.group.*;
-import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.*;
+import org.zstack.header.storage.snapshot.group.MemorySnapshotValidatorExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 
 import javax.persistence.Tuple;
@@ -92,7 +94,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             validate((APICreateVolumeSnapshotGroupMsg) msg);
         } else if (msg instanceof APICreateVolumeSnapshotMsg) {
             validate((APICreateVolumeSnapshotMsg) msg);
-        } else if (msg instanceof APIAttachDataVolumeToHostMsg){
+        } else if (msg instanceof APIAttachDataVolumeToHostMsg) {
             validate((APIAttachDataVolumeToHostMsg) msg);
         } else if (msg instanceof APIDetachDataVolumeFromHostMsg) {
             validate((APIDetachDataVolumeFromHostMsg) msg);
@@ -108,20 +110,6 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                 .param("dVolumeType", VolumeType.Data.toString())
                 .param("volumeUuid", volumeUuid)
                 .find() > 0L;
-    }
-
-    private boolean isVmHasMemorySnapshotGroup(String vmUuid) {
-        List<String> snapShotGroupUuids = Q.New(VmInstanceDeviceAddressGroupVO.class)
-                .select(VmInstanceDeviceAddressGroupVO_.resourceUuid)
-                .eq(VmInstanceDeviceAddressGroupVO_.vmInstanceUuid, vmUuid)
-                .listValues();
-        if (snapShotGroupUuids.isEmpty()) {
-            return false;
-        }
-        return Q.New(VolumeSnapshotGroupVO.class)
-                .eq(VolumeSnapshotGroupVO_.vmInstanceUuid, vmUuid)
-                .in(VolumeSnapshotGroupVO_.uuid, snapShotGroupUuids)
-                .isExists();
     }
 
     private void validate(APICreateVolumeSnapshotMsg msg) {
@@ -194,7 +182,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         q.add(VolumeVO_.status, Op.EQ, VolumeStatus.Deleted);
         if (!q.isExists()) {
             throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is not in status of deleted. This is operation is to recover a deleted data volume",
-                            msg.getVolumeUuid()));
+                    msg.getVolumeUuid()));
         }
     }
 
@@ -260,22 +248,12 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
 
         if (vol.getType() != VolumeType.Data) {
             throw new ApiMessageInterceptionException(operr("the volume[uuid:%s, name:%s, type:%s] can't detach it",
-                            vol.getUuid(), vol.getName(), vol.getType()));
-        }
-
-        if (isDataVolumeHasMemorySnapshotGroup(msg.getVolumeUuid())) {
-            throw new ApiMessageInterceptionException(operr("the vm where the data volume [%s] is located has a memory snapshot, can't detach",
-                    msg.getVolumeUuid()));
+                    vol.getUuid(), vol.getName(), vol.getType()));
         }
     }
 
     private void validate(APIAttachDataVolumeToVmMsg msg) {
-        if (isVmHasMemorySnapshotGroup(msg.getVmInstanceUuid())) {
-            throw new ApiMessageInterceptionException(operr("unable to attach volume %s to vmInstance %s with memory snapshot group",
-                    msg.getVolumeUuid(), msg.getVmInstanceUuid()));
-        }
-
-        new SQLBatch(){
+        new SQLBatch() {
             @Override
             protected void scripts() {
                 VolumeVO vol = q(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
@@ -321,11 +299,11 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                         " and vm.imageUuid = image.uuid" +
                         " and image.platform = :platformType" +
                         " and vm.state != :vmState")
-                        .param("vmUuid",msg.getVmInstanceUuid())
+                        .param("vmUuid", msg.getVmInstanceUuid())
                         .param("vmState", VmInstanceState.Stopped)
                         .param("platformType", ImagePlatform.Other).find();
-                if(count > 0){
-                   throw new ApiMessageInterceptionException(operr("the vm[uuid:%s] doesn't support to online attach volume[%s] on the basis of that the image platform type of the vm is other ", msg.getVmInstanceUuid(), msg.getVolumeUuid()));
+                if (count > 0) {
+                    throw new ApiMessageInterceptionException(operr("the vm[uuid:%s] doesn't support to online attach volume[%s] on the basis of that the image platform type of the vm is other ", msg.getVmInstanceUuid(), msg.getVolumeUuid()));
                 }
 
 
@@ -352,7 +330,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                             VolumeStatus.Ready, VolumeStatus.NotInstantiated, vol.getStatus()));
                 }
 
-                String hvType = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid,msg.getVmInstanceUuid()).select(VmInstanceVO_.hypervisorType).findValue();
+                String hvType = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).select(VmInstanceVO_.hypervisorType).findValue();
                 if (vol.getFormat() != null) {
                     List<String> hvTypes = VolumeFormat.valueOf(vol.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
                     if (!hvTypes.contains(hvType)) {
