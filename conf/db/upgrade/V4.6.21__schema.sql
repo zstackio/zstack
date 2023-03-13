@@ -1,1 +1,1 @@
-ALTER TABLE `zstack`.`SNSTopicVO` ADD COLUMN `locale` varchar(32)
+ALTER TABLE `zstack`.`SNSTopicVO` ADD COLUMN `locale` varchar(32);
