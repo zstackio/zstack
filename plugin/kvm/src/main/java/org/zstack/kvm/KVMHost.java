@@ -4329,9 +4329,6 @@ public class KVMHost extends HostBase implements Host {
                                         return;
                                     }
 
-                                    ret.getVirtualizerInfo().setUuid(self.getUuid());
-                                    hypervisorManager.saveHostInfo(ret.getVirtualizerInfo());
-
                                     // create system tags of os::version etc
                                     createHostVersionSystemTags(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
 
@@ -4374,6 +4371,9 @@ public class KVMHost extends HostBase implements Host {
                                     if (libvirtCapabilities != null) {
                                         createTagWithoutNonValue(KVMSystemTags.LIBVIRT_CAPABILITIES, KVMSystemTags.LIBVIRT_CAPABILITIES_TOKEN, StringUtils.join(libvirtCapabilities, ","), true);
                                     }
+
+                                    ret.getVirtualizerInfo().setUuid(self.getUuid());
+                                    hypervisorManager.saveHostInfo(ret.getVirtualizerInfo());
 
                                     trigger.next();
                                 }
