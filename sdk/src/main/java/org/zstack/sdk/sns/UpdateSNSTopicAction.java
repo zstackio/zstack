@@ -34,6 +34,9 @@ public class UpdateSNSTopicAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = false, validValues = {"zh_CN","en_US"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String locale;
+
     @Param(required = false)
     public java.util.List systemTags;
 

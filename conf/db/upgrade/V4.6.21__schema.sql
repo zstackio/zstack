@@ -1,0 +1,1 @@
+ALTER TABLE `zstack`.`SNSTopicVO` ADD COLUMN `locale` varchar(32)
