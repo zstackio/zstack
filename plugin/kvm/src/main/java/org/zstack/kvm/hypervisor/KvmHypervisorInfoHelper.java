@@ -30,6 +30,7 @@ public class KvmHypervisorInfoHelper {
             Collection<String> hostUuidList) {
         Map<String, String> hostArchMap = Q.New(HostVO.class)
                 .select(HostVO_.uuid, HostVO_.architecture)
+                .notNull(HostVO_.architecture)
                 .in(HostVO_.uuid, hostUuidList)
                 .listTuple()
                 .stream()
@@ -61,6 +62,11 @@ public class KvmHypervisorInfoHelper {
         final Map<String, HostOsCategoryVO> results = new HashMap<>();
         for (String hostUuid : hostUuidList) {
             String architecture = hostArchMap.get(hostUuid);
+            if (architecture == null) {
+                results.put(hostUuid, null);
+                continue;
+            }
+
             String distributionTag = hostDistributionMap.get(hostUuid);
             String distribution = OS_DISTRIBUTION.getTokenByTag(distributionTag, OS_DISTRIBUTION_TOKEN);
             String osVersionTag = hostOsVersionMap.get(hostUuid);
