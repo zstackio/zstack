@@ -238,16 +238,12 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.installLocalBeforeUpdateExtension(new GlobalConfigBeforeUpdateExtensionPoint() {
             @Override
             public void beforeUpdateExtensionPoint(GlobalConfig oldConfig, String newValue) {
-                //encryption cannot be changed
-                if (PasswordEncryptType.SecurityResourceEncryption.toString().equals(oldConfig.value())) {
-                    throw new OperationFailureException(operr("SecurityResourceEncryption cannot be change"));
-                }
-
                 // avoid encrypt twice need to do synchronized encrypted(decrypted)
                 // e.g. use javax.persistence.Query set password to update encrypt password
                 // when PasswordConverter check this value is true the password will be encrypt
                 // again before persist, so this beforeUpdateExtension is necessary
-                if (PasswordEncryptType.LocalEncryption.toString().equals(newValue)) {
+                if (PasswordEncryptType.LocalEncryption.toString().equals(newValue)
+                        || PasswordEncryptType.SecurityResourceEncryption.toString().equals(newValue)) {
                     encryptAllPassword();
                 }
             }
