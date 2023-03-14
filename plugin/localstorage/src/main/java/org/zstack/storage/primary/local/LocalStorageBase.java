@@ -11,7 +11,6 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.MergeQueue;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -60,7 +59,6 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -249,7 +247,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 }
                 List<VolumeMigrationTargetHostFilter> exts = pluginRgty.getExtensionList(VolumeMigrationTargetHostFilter.class);
                 for (VolumeMigrationTargetHostFilter hostFilter : exts) {
-                    hosts = hostFilter.filter(hosts);
+                    hosts = hostFilter.filter(msg.getVolumeUuid(), hosts);
                 }
                 reply.setInventories(HostInventory.valueOf(hosts));
             }
