@@ -23,9 +23,9 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SSOTokenVO`(
 
 CREATE TABLE IF NOT EXISTS `zstack`.`OAuth2TokenVO`(
     `uuid` varchar(32) not null unique,
-    `accessToken` varchar(2048) not null,
-    `idToken` varchar(2048) not null,
-    `refreshToken` varchar(2048) not null,
+    `accessToken` text not null,
+    `idToken` text not null,
+    `refreshToken` text not null,
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkOAuth2TokenVOSSOTokenVO` FOREIGN KEY (`uuid`) REFERENCES `SSOTokenVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
