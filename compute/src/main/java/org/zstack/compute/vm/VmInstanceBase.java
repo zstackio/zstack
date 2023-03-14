@@ -3436,6 +3436,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         List<UsedIpVO> voRemoveList = new ArrayList<>();
         List<UsedIpVO> voOldList = Q.New(UsedIpVO.class).eq(UsedIpVO_.vmNicUuid, nicVO.getUuid()).list();
 
+        if (msg.getIp() == null && msg.getIp6() == null) {
+            voRemoveList.addAll(voOldList);
+            nicVO.setUsedIpUuid(null);
+            nicVO.setIp(null);
+            nicVO.setGateway(null);
+            nicVO.setNetmask(null);
+        }
+
         if (msg.getIp6() != null) {
             UsedIpVO vo = new UsedIpVO();
             vo.setUuid(Platform.getUuid());
