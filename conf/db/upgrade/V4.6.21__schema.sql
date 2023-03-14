@@ -1,0 +1,2 @@
+ALTER TABLE `zstack`.`GuestToolsStateVO` ADD COLUMN `zwatchState` varchar(32) NOT NULL DEFAULT 'NotInstalled';
+ALTER TABLE `zstack`.`GuestToolsStateVO` CHANGE `state` `qgaState` varchar(32) NOT NULL DEFAULT 'NotInstalled';
