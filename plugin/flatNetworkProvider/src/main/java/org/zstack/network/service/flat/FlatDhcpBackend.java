@@ -40,6 +40,7 @@ import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
 import org.zstack.network.service.DhcpExtension;
 import org.zstack.network.service.NetworkProviderFinder;
+import org.zstack.network.service.NetworkServiceHelper.HostRouteInfo;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.NetworkServiceProviderLookup;
 import org.zstack.network.service.flat.IpStatisticConstants.VmType;
@@ -65,6 +66,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.network.service.NetworkServiceHelper.getL3NetworkHostRoute;
 import static org.zstack.network.service.flat.IpStatisticConstants.ResourceType;
 import static org.zstack.network.service.flat.IpStatisticConstants.SortBy;
 import static org.zstack.utils.CollectionDSL.*;
@@ -1291,11 +1293,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
     }
 
-    public static class HostRouteInfo {
-        public String prefix;
-        public String nexthop;
-    }
-
     public static class DhcpInfo {
         public int ipVersion;
         public String raMode;
@@ -1411,23 +1408,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         return dns;
-    }
-
-    private List<HostRouteInfo> getL3NetworkHostRoute(String l3NetworkUuid){
-        List<L3NetworkHostRouteVO> vos = Q.New(L3NetworkHostRouteVO.class).eq(L3NetworkHostRouteVO_.l3NetworkUuid, l3NetworkUuid).list();
-        if (vos == null || vos.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        List<HostRouteInfo> res = new ArrayList<>();
-        for (L3NetworkHostRouteVO vo : vos) {
-            HostRouteInfo info = new HostRouteInfo();
-            info.prefix = vo.getPrefix();
-            info.nexthop = vo.getNexthop();
-            res.add(info);
-        }
-
-        return res;
     }
 
     private List<DhcpInfo> toDhcpInfo(List<DhcpStruct> structs) {
