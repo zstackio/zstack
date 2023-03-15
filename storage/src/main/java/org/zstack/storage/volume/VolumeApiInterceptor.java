@@ -104,14 +104,6 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         return msg;
     }
 
-    private boolean isDataVolumeHasMemorySnapshotGroup(String volumeUuid) {
-        return (Long) SQL.New("select count(*) from VolumeSnapshotGroupRefVO ref where ref.volumeType = :mVolumeType and ref.volumeSnapshotGroupUuid in (select vRef.volumeSnapshotGroupUuid from VolumeSnapshotGroupRefVO vRef where vRef.volumeType = :dVolumeType and vRef.volumeUuid = :volumeUuid)", Long.class)
-                .param("mVolumeType", VolumeType.Memory.toString())
-                .param("dVolumeType", VolumeType.Data.toString())
-                .param("volumeUuid", volumeUuid)
-                .find() > 0L;
-    }
-
     private void validate(APICreateVolumeSnapshotMsg msg) {
         SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
         q.select(VolumeVO_.status, VolumeVO_.type, VolumeVO_.state);
@@ -414,11 +406,6 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         VolumeStatus status = t.get(1, VolumeStatus.class);
         if (status == VolumeStatus.Deleted) {
             throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is already in status of deleted", msg.getVolumeUuid()));
-        }
-
-        if (isDataVolumeHasMemorySnapshotGroup(msg.getVolumeUuid())) {
-            throw new ApiMessageInterceptionException(operr("the vm where the data volume [%s] is located has a memory snapshot, can't delete",
-                    msg.getVolumeUuid()));
         }
 
         String hostUuid = Q.New(VolumeHostRefVO.class).select(VolumeHostRefVO_.hostUuid)
