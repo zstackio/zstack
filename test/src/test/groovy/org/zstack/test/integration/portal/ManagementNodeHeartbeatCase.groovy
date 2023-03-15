@@ -2,9 +2,12 @@ package org.zstack.test.integration.portal
 
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
 import org.zstack.header.managementnode.ManagementNodeState
 import org.zstack.header.managementnode.ManagementNodeVO
+import org.zstack.header.managementnode.ManagementNodeVO_
 import org.zstack.portal.managementnode.ManagementNodeGlobalConfig
+import org.zstack.portal.managementnode.PortalGlobalProperty
 import org.zstack.testlib.SubCase
 
 import java.sql.Timestamp
@@ -38,7 +41,7 @@ class ManagementNodeHeartbeatCase extends SubCase {
     void prepareInvalidRecords() {
         def now = LocalDateTime.now()
         def data = [
-                '127.0.0.111' : Timestamp.valueOf(now.minusMinutes(2)),
+                '127.0.0.111' : Timestamp.valueOf(now),
                 '127.0.0.222' : Timestamp.valueOf(now.plusMinutes(2))
             ]
 
@@ -56,10 +59,37 @@ class ManagementNodeHeartbeatCase extends SubCase {
 
     void testUnexpectedManagementNodeRecord() {
         ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.updateValue(1)
+        PortalGlobalProperty.MAX_HEARTBEAT_FAILURE = 2
 
         prepareInvalidRecords()
-        TimeUnit.SECONDS.sleep(6)
+        int heartbeatFailureTimeout = ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class) * PortalGlobalProperty.MAX_HEARTBEAT_FAILURE
+        int heartbeatUpdateDelay = 1 * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class)
+
+        int waitBeforeClean = heartbeatFailureTimeout + heartbeatUpdateDelay
+        int failureInterval = ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class)
+
+        // wait a interval before all nodes failed
+        sleep(TimeUnit.SECONDS.toMillis(waitBeforeClean - failureInterval))
         long count = dbf.count(ManagementNodeVO.class)
+        assert count == 2
+
+        // confirm 127.0.0.222 is cleaned at first
+        count = Q.New(ManagementNodeVO.class)
+                .notEq(ManagementNodeVO_.hostName, '127.0.0.222')
+                .count()
+        assert count == 2
+
+        // wait one more interval to wait 127.0.0.111 cleaned
+        sleep(TimeUnit.SECONDS.toMillis(failureInterval * 2))
+        count = dbf.count(ManagementNodeVO.class)
         assert count == 1
+
+        // confirm 127.0.0.111 is cleaned
+        count = Q.New(ManagementNodeVO.class)
+                .notEq(ManagementNodeVO_.hostName, '127.0.0.111')
+                .count()
+        assert count == 1
+
+        PortalGlobalProperty.MAX_HEARTBEAT_FAILURE = 5
     }
 }
