@@ -10,9 +10,12 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
+import org.zstack.utils.CharacterUtils;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -28,7 +31,7 @@ public class DirectoryApiInterceptor implements ApiMessageInterceptor {
     @Autowired
     private DirectoryFactory factory;
 
-    private static final List<String> NOT_SUPPORTED_SPECIAL_CHARACTER = asList("+", "'", "`", "/");
+    String regex = "^[\\u4e00-\\u9fa5a-zA-Z0-9\\s()（）【】@._+-]+$";
     //indicates the resource types that the directory allows to bind
     private static final List<String> ALLOW_RESOURCE_TYPES = asList(VmInstanceVO.class.getSimpleName());
 
@@ -96,7 +99,7 @@ public class DirectoryApiInterceptor implements ApiMessageInterceptor {
             }
         }
         List<String> resourceUuids = msg.getResourceUuids();
-        List<ResourceDirectoryRefVO> resources = Q.New(ResourceDirectoryRefVO.class).in(ResourceDirectoryRefVO_.resourceUuid,resourceUuids).list();
+        List<ResourceDirectoryRefVO> resources = Q.New(ResourceDirectoryRefVO.class).in(ResourceDirectoryRefVO_.resourceUuid, resourceUuids).list();
         if (!resources.isEmpty()) {
             List<String> list = resources.stream().map(ResourceDirectoryRefVO::getResourceUuid).collect(Collectors.toList());
             throw new ApiMessageInterceptionException(argerr("resources %s has already been bound to directory uuid[%s] , multiple paths are not supported", list, msg.getDirectoryUuid()));
@@ -111,17 +114,21 @@ public class DirectoryApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIUpdateDirectoryMsg msg) {
-        Optional opt = NOT_SUPPORTED_SPECIAL_CHARACTER.stream().filter(msg.getName()::contains).findAny();
-        if (opt.isPresent()) {
-            throw new ApiMessageInterceptionException(argerr("name can not contain those characters %s", NOT_SUPPORTED_SPECIAL_CHARACTER));
+        boolean result = CharacterUtils.checkCharactersByRegex(regex, msg.getName());
+        if (!result) {
+            throw new ApiMessageInterceptionException(argerr("name contains unsupported characters," +
+                    " name can only contain Chinese characters, English letters, " +
+                    "numbers, spaces, and the following characters: ()（）【】@._-+ "));
         }
     }
 
     private void validate(APICreateDirectoryMsg msg) {
         //judge whether special characters are included
-        Optional opt = NOT_SUPPORTED_SPECIAL_CHARACTER.stream().filter(msg.getName()::contains).findAny();
-        if (opt.isPresent()) {
-            throw new ApiMessageInterceptionException(argerr("name can not contain those characters %s", NOT_SUPPORTED_SPECIAL_CHARACTER));
+        boolean result = CharacterUtils.checkCharactersByRegex(regex, msg.getName());
+        if (!result) {
+            throw new ApiMessageInterceptionException(argerr("name contains unsupported characters," +
+                    " name can only contain Chinese characters, English letters, " +
+                    "numbers, spaces, and the following characters: ()（）【】@._-+ "));
         }
     }
 }
