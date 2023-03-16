@@ -4462,9 +4462,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         q.setParameter("l3State", L3NetworkState.Enabled);
         q.setParameter("uuid", self.getUuid());
-
+        List<String> attachedL3Uuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).eq(VmNicVO_.vmInstanceUuid, self.getUuid()).listValues();
         List<L3NetworkVO> l3s = q.getResultList();
-        l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty() || !l3.getEnableIPAM()).collect(Collectors.toList());
+        l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty() || (!l3.getEnableIPAM() && !attachedL3Uuids.contains(l3.getUuid()))).collect(Collectors.toList());
 
         return L3NetworkInventory.valueOf(l3s);
     }
