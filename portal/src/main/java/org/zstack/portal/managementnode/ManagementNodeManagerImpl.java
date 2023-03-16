@@ -8,7 +8,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CanonicalEventEmitter;
+import org.zstack.core.cloudbus.CloudBusIN;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
@@ -27,18 +32,39 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.Service;
 import org.zstack.header.core.ExceptionSafe;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.managementnode.*;
+import org.zstack.header.managementnode.IsManagementNodeReadyMsg;
+import org.zstack.header.managementnode.IsManagementNodeReadyReply;
+import org.zstack.header.managementnode.ManagementNodeCanonicalEvent;
 import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.LifeCycle;
 import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.ManagementNodeLifeCycleData;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeConstant;
+import org.zstack.header.managementnode.ManagementNodeExitMsg;
+import org.zstack.header.managementnode.ManagementNodeInventory;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.managementnode.ManagementNodeState;
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.managementnode.ManagementNodeVO_;
+import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vo.FindSameNodeExtensionPoint;
 import org.zstack.header.vo.ResourceInventory;
 import org.zstack.portal.apimediator.ApiMediator;
-import org.zstack.utils.*;
+import org.zstack.utils.BootErrorLog;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.StringDSL;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -50,7 +76,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -756,7 +786,11 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 List<ManagementNodeVO> all = heartBeatDBSource.jdbc.query(sql, new BeanPropertyRowMapper(ManagementNodeVO.class));
                 suspects.clear();
 
-                final long delta = TimeUnit.SECONDS.toMillis(PortalGlobalProperty.MAX_HEARTBEAT_FAILURE * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
+                // make sure the heartbeat is updated at least once during a failure period
+                final long delta = TimeUnit.SECONDS.toMillis(
+                        (long) (PortalGlobalProperty.MAX_HEARTBEAT_FAILURE + 1)
+                                * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class)
+                );
                 List<ManagementNodeVO> nodesInDb = new ArrayList<>();
 
                 for (ManagementNodeVO vo : all) {
