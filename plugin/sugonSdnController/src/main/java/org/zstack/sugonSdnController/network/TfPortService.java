@@ -12,6 +12,7 @@ import org.zstack.sugonSdnController.controller.neutronClient.TfPortClient;
 import org.zstack.sugonSdnController.controller.neutronClient.TfPortResponse;
 import org.zstack.utils.StringDSL;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +58,16 @@ public class TfPortService {
         String tfL3NetworkId = StringDSL.transToTfUuid(l3.getUuid());
         String vmiUuid = StringDSL.transToTfUuid(vm.getUuid());
         String vmName = vm.getName();
+
+        try {
+            boolean availability = tfPortClient.checkTfIpAvailability(customIp, l3.getUuid());
+            if (availability){
+                customIp = null;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         TfPortResponse port = tfPortClient.createPort(tfL2NetworkId, tfL3NetworkId, customMac, customIp, vmiUuid, tfPortUUid, vmName);
         if (port.getCode() != HttpStatus.OK.value()) {
             // fail  to rollback the flowchain

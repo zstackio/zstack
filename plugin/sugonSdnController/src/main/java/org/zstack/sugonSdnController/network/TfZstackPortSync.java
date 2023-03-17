@@ -59,7 +59,12 @@ public class TfZstackPortSync implements ManagementNodeReadyExtensionPoint {
             try{
                 List<VirtualMachineInterface> tfPorts = tfPortService.getTfPortsDetail();
                 for (VirtualMachineInterface vmi : tfPorts) {
-                    if ("neutron:LOADBALANCER".equals(vmi.getDeviceOwner())) {
+                    // exclude the virtualmachineinterface of vip
+                    if ("neutron:LOADBALANCER".equals(vmi.getDeviceOwner()) || "VIP".equals(vmi.getDeviceOwner())) {
+                        continue;
+                    }
+                    // exclude the virtualmachineinterface of tf lb
+                    if (vmi.getName().startsWith("default-domain__")) {
                         continue;
                     }
                     tfPortsUuid.add(StringDSL.transToZstackUuid(vmi.getUuid()));
