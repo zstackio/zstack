@@ -909,6 +909,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     AllocateIpMsg allocateIpMsg = new AllocateIpMsg();
                     allocateIpMsg.setL3NetworkUuid(msg.getL3NetworkUuid());
                     allocateIpMsg.setRequiredIp(msg.getIp());
+                    if (msg.getIp() == null) {
+                        allocateIpMsg.setRequiredIp(nic.getIp());
+                    }
                     allocateIpMsg.setIpVersion(version);
                     l3nm.updateIpAllocationMsg(allocateIpMsg, nic.getMac());
                     bus.makeTargetServiceIdByResourceUuid(allocateIpMsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());

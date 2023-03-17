@@ -56,6 +56,9 @@ public class TfNicManageExtensionPointImpl implements NicManageExtensionPoint {
             String l2NetworkUuid = l3Network.getL2NetworkUuid();
             port = tfPortService.createTfPort(tfPortUuid, l2NetworkUuid, msg.getL3NetworkUuid(),
                     nic.getMac(), msg.getIp());
+            if (port.getFixedIps().size() > 0) {
+                nic.setIp(port.getFixedIps().get(0).getIpAddress());
+            }
             logger.debug("Create a new tf port success.");
         }
         nic.setUuid(StringDSL.transToZstackUuid(port.getPortId()));
