@@ -5,6 +5,7 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Created by GuoYi on 10/19/17.
@@ -14,13 +15,9 @@ public class CephToCephMigrateVolumeSegmentMsg extends NeedReplyMessage implemen
     private String resourceUuid;
     private String srcInstallPath;
     private String dstInstallPath;
-    private String dstMonHostname;
-    private String dstMonSshUsername;
-    @NoLogging
-    private String dstMonSshPassword;
-    private int dstMonSshPort;
     private String primaryStorageUuid;
     private boolean isXsky;
+    private String dstPrimaryStorageUuid;
 
     public String getParentUuid() {
         return parentUuid;
@@ -54,38 +51,6 @@ public class CephToCephMigrateVolumeSegmentMsg extends NeedReplyMessage implemen
         this.dstInstallPath = dstInstallPath;
     }
 
-    public String getDstMonHostname() {
-        return dstMonHostname;
-    }
-
-    public void setDstMonHostname(String dstMonHostname) {
-        this.dstMonHostname = dstMonHostname;
-    }
-
-    public String getDstMonSshUsername() {
-        return dstMonSshUsername;
-    }
-
-    public void setDstMonSshUsername(String dstMonSshUsername) {
-        this.dstMonSshUsername = dstMonSshUsername;
-    }
-
-    public String getDstMonSshPassword() {
-        return dstMonSshPassword;
-    }
-
-    public void setDstMonSshPassword(String dstMonSshPassword) {
-        this.dstMonSshPassword = dstMonSshPassword;
-    }
-
-    public int getDstMonSshPort() {
-        return dstMonSshPort;
-    }
-
-    public void setDstMonSshPort(int dstMonSshPort) {
-        this.dstMonSshPort = dstMonSshPort;
-    }
-
     @Override
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
@@ -101,5 +66,13 @@ public class CephToCephMigrateVolumeSegmentMsg extends NeedReplyMessage implemen
 
     public void setXsky(boolean xsky) {
         isXsky = xsky;
+    }
+
+    public String getDstPrimaryStorageUuid() {
+        return dstPrimaryStorageUuid;
+    }
+
+    public void setDstPrimaryStorageUuid(String dstPrimaryStorageUuid) {
+        this.dstPrimaryStorageUuid = dstPrimaryStorageUuid;
     }
 }
