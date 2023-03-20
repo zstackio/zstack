@@ -7,6 +7,8 @@ public class LongJobConstants {
     public static final String SERVICE_ID = "longjob";
     public static final String ACTION_CATEGORY = "longjob";
 
+    public static final String NO_JOB_TO_CANCEL = "no matched job to cancel";
+
     public enum LongJobOperation {
         Start,
         Resume,

@@ -3575,6 +3575,24 @@ public class KVMAgentCommands {
 
     public static class CancelCmd extends AgentCommand implements CancelCommand {
         private String cancellationApiId;
+        private Integer times;
+        private Integer interval;
+
+        public Integer getTimes() {
+            return times;
+        }
+
+        public void setTimes(Integer times) {
+            this.times = times;
+        }
+
+        public Integer getInterval() {
+            return interval;
+        }
+
+        public void setInterval(Integer interval) {
+            this.interval = interval;
+        }
 
         @Override
         public void setCancellationApiId(String cancellationApiId) {
