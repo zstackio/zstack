@@ -7,7 +7,26 @@ import org.zstack.header.message.CancelMessage;
  */
 public class CancelHostTaskMsg extends CancelMessage implements HostMessage {
     private String hostUuid;
+    private Integer sleepTime;
+    private Integer retryInterval;
 
+    public Integer getRetryInterval() {
+        return retryInterval;
+    }
+
+    public void setRetryInterval(Integer retryInterval) {
+        this.retryInterval = retryInterval;
+    }
+
+    public Integer getSleepTime() {
+        return sleepTime;
+    }
+
+    public void setSleepTime(Integer sleepTime) {
+        this.sleepTime = sleepTime;
+    }
+
+    @Override
     public String getHostUuid() {
         return hostUuid;
     }

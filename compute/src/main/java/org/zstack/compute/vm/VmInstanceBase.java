@@ -42,6 +42,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.longjob.LongJobConstants;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
@@ -6477,6 +6478,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         CancelHostTasksMsg cmsg = new CancelHostTasksMsg();
         cmsg.setCancellationApiId(msg.getCancellationApiId());
+        cmsg.setRetryInterval(3);
+        cmsg.setSleepTime(1);
         bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
