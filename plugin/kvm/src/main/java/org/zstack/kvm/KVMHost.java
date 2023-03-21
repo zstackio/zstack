@@ -4524,9 +4524,9 @@ public class KVMHost extends HostBase implements Host {
     private void cancelJob(CancelHostTaskMsg msg, Completion completion) {
         CancelCmd cmd = new CancelCmd();
         cmd.setCancellationApiId(msg.getCancellationApiId());
-        if (msg.getRetryInterval() != null && msg.getSleepTime() != null) {
-            cmd.setRetryInterval(msg.getRetryInterval());
-            cmd.setSleepTime(msg.getSleepTime());
+        if (msg.getInterval() != null && msg.getTimes() != null) {
+            cmd.setInterval(msg.getInterval());
+            cmd.setTimes(msg.getTimes());
         }
         new Http<>(cancelJob, cmd, CancelRsp.class).call(new ReturnValueCompletion<CancelRsp>(completion) {
             @Override
