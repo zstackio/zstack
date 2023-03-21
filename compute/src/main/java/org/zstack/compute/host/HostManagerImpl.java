@@ -510,6 +510,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             nmsg.setHostUuids(msg.getHostUuids());
             nmsg.setSearchedMnIds(msg.getSearchedMnIds());
             nmsg.setCancellationApiId(msg.getCancellationApiId());
+            nmsg.setRetryInterval(msg.getRetryInterval());
+            nmsg.setSleepTime(msg.getSleepTime());
             bus.makeServiceIdByManagementNodeId(nmsg, HostConstant.SERVICE_ID, restMnIds.get(0));
             bus.send(nmsg, new CloudBusCallBack(msg) {
                 @Override
@@ -534,6 +536,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             CancelHostTaskMsg cmsg = new CancelHostTaskMsg();
             cmsg.setHostUuid(hostUuid);
             cmsg.setCancellationApiId(msg.getCancellationApiId());
+            cmsg.setRetryInterval(msg.getRetryInterval());
+            cmsg.setSleepTime(msg.getSleepTime());
             bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
             bus.send(cmsg, new CloudBusCallBack(compl) {
                 @Override

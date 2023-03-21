@@ -1996,7 +1996,6 @@ public class KVMHost extends HostBase implements Host {
                         }
 
 
-
                         boolean xbzrle = KVMGlobalConfig.MIGRATE_XBZRLE.value(Boolean.class);
 
                         MigrateVmCmd cmd = new MigrateVmCmd();
@@ -4508,7 +4507,7 @@ public class KVMHost extends HostBase implements Host {
 
     private void handle(final CancelHostTaskMsg msg) {
         CancelHostTaskReply reply = new CancelHostTaskReply();
-        cancelJob(msg.getCancellationApiId(), new Completion(msg) {
+        cancelJob(msg, new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -4522,9 +4521,13 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void cancelJob(String apiId, Completion completion) {
+    private void cancelJob(CancelHostTaskMsg msg, Completion completion) {
         CancelCmd cmd = new CancelCmd();
-        cmd.setCancellationApiId(apiId);
+        cmd.setCancellationApiId(msg.getCancellationApiId());
+        if (msg.getRetryInterval() != null && msg.getSleepTime() != null) {
+            cmd.setRetryInterval(msg.getRetryInterval());
+            cmd.setSleepTime(msg.getSleepTime());
+        }
         new Http<>(cancelJob, cmd, CancelRsp.class).call(new ReturnValueCompletion<CancelRsp>(completion) {
             @Override
             public void success(CancelRsp ret) {

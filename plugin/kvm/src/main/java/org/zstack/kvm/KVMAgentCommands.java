@@ -3497,6 +3497,24 @@ public class KVMAgentCommands {
 
     public static class CancelCmd extends AgentCommand implements CancelCommand {
         private String cancellationApiId;
+        private Integer sleepTime;
+        private Integer retryInterval;
+
+        public Integer getSleepTime() {
+            return sleepTime;
+        }
+
+        public void setSleepTime(Integer sleepTime) {
+            this.sleepTime = sleepTime;
+        }
+
+        public Integer getRetryInterval() {
+            return retryInterval;
+        }
+
+        public void setRetryInterval(Integer retryInterval) {
+            this.retryInterval = retryInterval;
+        }
 
         @Override
         public void setCancellationApiId(String cancellationApiId) {
