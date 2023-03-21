@@ -3,7 +3,6 @@ package org.zstack.kvm;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
-import org.zstack.header.agent.ReloadableCommand;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.host.VmNicRedirectConfig;
@@ -3497,23 +3496,23 @@ public class KVMAgentCommands {
 
     public static class CancelCmd extends AgentCommand implements CancelCommand {
         private String cancellationApiId;
-        private Integer sleepTime;
-        private Integer retryInterval;
+        private Integer times;
+        private Integer interval;
 
-        public Integer getSleepTime() {
-            return sleepTime;
+        public Integer getTimes() {
+            return times;
         }
 
-        public void setSleepTime(Integer sleepTime) {
-            this.sleepTime = sleepTime;
+        public void setTimes(Integer times) {
+            this.times = times;
         }
 
-        public Integer getRetryInterval() {
-            return retryInterval;
+        public Integer getInterval() {
+            return interval;
         }
 
-        public void setRetryInterval(Integer retryInterval) {
-            this.retryInterval = retryInterval;
+        public void setInterval(Integer interval) {
+            this.interval = interval;
         }
 
         @Override

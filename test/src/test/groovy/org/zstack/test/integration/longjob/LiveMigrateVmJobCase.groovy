@@ -29,7 +29,6 @@ import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by camile on 18-3-7.
@@ -344,8 +343,16 @@ class LiveMigrateVmJobCase extends SubCase {
         }
         assert host2.uuid == dbf.findByUuid(vm1.uuid, VmInstanceVO.class).hostUuid
         assert canceled
-        assert cmd.getRetryInterval() == 3
-        assert cmd.getSleepTime() == 1
+        assert cmd.getInterval() == 1
+        assert cmd.getTimes() == 3
+
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.getUuid()).set(LongJobVO_.state, org.zstack.header.longjob.LongJobState.Canceled).update();
+
+        cancelLongJob {
+            uuid = jobInv.uuid
+        }
+
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.getUuid()).set(LongJobVO_.state, org.zstack.header.longjob.LongJobState.Succeeded).update();
 
         env.cleanSimulatorHandlers()
     }
