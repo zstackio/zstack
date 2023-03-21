@@ -92,6 +92,14 @@ public class L3NetworkInventory  {
         return this.ipVersion;
     }
 
+    public java.lang.Boolean enableIPAM;
+    public void setEnableIPAM(java.lang.Boolean enableIPAM) {
+        this.enableIPAM = enableIPAM;
+    }
+    public java.lang.Boolean getEnableIPAM() {
+        return this.enableIPAM;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

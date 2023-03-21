@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.tag.SystemTagVO;
@@ -11,6 +12,7 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.TagUtils;
+import org.zstack.utils.network.NicIpAddressInfo;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
@@ -41,6 +43,78 @@ public class StaticIpOperator {
             String ip = tokens.get(VmSystemTags.STATIC_IP_TOKEN);
             ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
             ret.computeIfAbsent(l3Uuid, k -> new ArrayList<>()).add(ip);
+        }
+
+        return ret;
+    }
+
+    public Map<String, NicIpAddressInfo> getNicNetworkInfoByVmUuid(String vmUuid) {
+        return getNicNetworkInfoBySystemTag(Q.New(SystemTagVO.class).select(SystemTagVO_.tag)
+                .eq(SystemTagVO_.resourceUuid, vmUuid).listValues());
+    }
+
+    public Map<String, NicIpAddressInfo> getNicNetworkInfoBySystemTag(List<String> systemTags) {
+        Map<String, NicIpAddressInfo> ret = new HashMap<>();
+        if (systemTags == null || systemTags.isEmpty()) {
+            return ret;
+        }
+
+        for (String sysTag : systemTags) {
+            if(VmSystemTags.STATIC_IP.isMatch(sysTag)) {
+                Map<String, String> token = TagUtils.parse(VmSystemTags.STATIC_IP.getTagFormat(), sysTag);
+                String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
+                NicIpAddressInfo nicIpAddressInfo = ret.get(l3Uuid);
+                if (nicIpAddressInfo == null) {
+                    ret.put(l3Uuid, new NicIpAddressInfo("", "", "",
+                            "", "", ""));
+                }
+                String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
+                ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
+                if (NetworkUtils.isIpv4Address(ip)) {
+                    ret.get(l3Uuid).ipv4Address = ip;
+                } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
+                    ret.get(l3Uuid).ipv6Address = ip;
+                }
+            }
+        }
+
+        if (ret.isEmpty()) {
+            return ret;
+        }
+
+        for (String sysTag : systemTags) {
+            if(VmSystemTags.IPV4_GATEWAY.isMatch(sysTag)) {
+                Map<String, String> token = TagUtils.parse(VmSystemTags.IPV4_GATEWAY.getTagFormat(), sysTag);
+                String l3Uuid = token.get(VmSystemTags.IPV4_GATEWAY_L3_UUID_TOKEN);
+                if (ret.get(l3Uuid) == null) {
+                    continue;
+                }
+                ret.get(l3Uuid).ipv4Gateway = token.get(VmSystemTags.IPV4_GATEWAY_TOKEN);
+            }
+            if(VmSystemTags.IPV4_NETMASK.isMatch(sysTag)) {
+                Map<String, String> token = TagUtils.parse(VmSystemTags.IPV4_NETMASK.getTagFormat(), sysTag);
+                String l3Uuid = token.get(VmSystemTags.IPV4_NETMASK_L3_UUID_TOKEN);
+                if (ret.get(l3Uuid) == null) {
+                    continue;
+                }
+                ret.get(l3Uuid).ipv4Netmask = token.get(VmSystemTags.IPV4_NETMASK_TOKEN);
+            }
+            if(VmSystemTags.IPV6_GATEWAY.isMatch(sysTag)) {
+                Map<String, String> token = TagUtils.parse(VmSystemTags.IPV6_GATEWAY.getTagFormat(), sysTag);
+                String l3Uuid = token.get(VmSystemTags.IPV6_GATEWAY_L3_UUID_TOKEN);
+                if (ret.get(l3Uuid) == null) {
+                    continue;
+                }
+                ret.get(l3Uuid).ipv6Gateway = IPv6NetworkUtils.ipv6TagValueToAddress(token.get(VmSystemTags.IPV6_GATEWAY_TOKEN));
+            }
+            if(VmSystemTags.IPV6_PREFIX.isMatch(sysTag)) {
+                Map<String, String> token = TagUtils.parse(VmSystemTags.IPV6_PREFIX.getTagFormat(), sysTag);
+                String l3Uuid = token.get(VmSystemTags.IPV6_PREFIX_L3_UUID_TOKEN);
+                if (ret.get(l3Uuid) == null) {
+                    continue;
+                }
+                ret.get(l3Uuid).ipv6Prefix = token.get(VmSystemTags.IPV6_PREFIX_TOKEN);
+            }
         }
 
         return ret;

@@ -49,6 +49,9 @@ public class CreateL3NetworkAction extends AbstractAction {
     @Param(required = false)
     public java.lang.String dnsDomain;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean enableIPAM = true;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

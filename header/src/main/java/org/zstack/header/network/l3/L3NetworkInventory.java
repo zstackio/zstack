@@ -117,6 +117,8 @@ public class L3NetworkInventory implements Serializable {
     @Deprecated
     private Integer ipVersion;
 
+    private Boolean enableIPAM;
+
     /**
      * @desc the time this resource gets created
      */
@@ -170,6 +172,7 @@ public class L3NetworkInventory implements Serializable {
         inv.setCategory(vo.getCategory().toString());
         inv.setHostRoute(L3NetworkHostRouteInventory.valueOf(vo.getHostRoutes()));
         inv.setIpVersion(vo.getIpVersion());
+        inv.setEnableIPAM(vo.getEnableIPAM());
         return inv;
     }
 
@@ -367,5 +370,13 @@ public class L3NetworkInventory implements Serializable {
         }
 
         return ipVersions;
+    }
+
+    public Boolean getEnableIPAM() {
+        return enableIPAM;
+    }
+
+    public void setEnableIPAM(Boolean enableIPAM) {
+        this.enableIPAM = enableIPAM;
     }
 }
