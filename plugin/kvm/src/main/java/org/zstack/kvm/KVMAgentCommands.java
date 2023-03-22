@@ -3,7 +3,6 @@ package org.zstack.kvm;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
-import org.zstack.header.agent.ReloadableCommand;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.host.VmNicRedirectConfig;
@@ -434,6 +433,7 @@ public class KVMAgentCommands {
         private String cpuCache;
         private List<String> ipAddresses;
         private List<String> libvirtCapabilities;
+        private VirtualizerInfoTO virtualizerInfo;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -593,6 +593,14 @@ public class KVMAgentCommands {
 
         public void setLibvirtCapabilities(List<String> libvirtCapabilities) {
             this.libvirtCapabilities = libvirtCapabilities;
+        }
+
+        public VirtualizerInfoTO getVirtualizerInfo() {
+            return virtualizerInfo;
+        }
+
+        public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
+            this.virtualizerInfo = virtualizerInfo;
         }
     }
 
@@ -2286,6 +2294,7 @@ public class KVMAgentCommands {
         private List<VmNicInfo> nicInfos;
         private List<VirtualDeviceInfo> virtualDeviceInfoList;
         private VirtualDeviceInfo memBalloonInfo;
+        private VirtualizerInfoTO virtualizerInfo;
 
         public VirtualDeviceInfo getMemBalloonInfo() {
             return memBalloonInfo;
@@ -2309,6 +2318,14 @@ public class KVMAgentCommands {
 
         public void setVirtualDeviceInfoList(List<VirtualDeviceInfo> virtualDeviceInfoList) {
             this.virtualDeviceInfoList = virtualDeviceInfoList;
+        }
+
+        public VirtualizerInfoTO getVirtualizerInfo() {
+            return virtualizerInfo;
+        }
+
+        public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
+            this.virtualizerInfo = virtualizerInfo;
         }
     }
 
@@ -2681,6 +2698,15 @@ public class KVMAgentCommands {
     }
 
     public static class RebootVmResponse extends AgentResponse {
+        private VirtualizerInfoTO virtualizerInfo;
+
+        public VirtualizerInfoTO getVirtualizerInfo() {
+            return virtualizerInfo;
+        }
+
+        public void setVirtualizerInfo(VirtualizerInfoTO virtualizerInfo) {
+            this.virtualizerInfo = virtualizerInfo;
+        }
     }
 
     public static class DestroyVmCmd extends AgentCommand {
@@ -2763,21 +2789,51 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class GetVmVirtualizerVersionCmd extends AgentCommand {
-        private String uuid;
+    public static class GetVirtualizerInfoCmd extends AgentCommand {
+        private List<String> vmUuids;
 
-        public void setUuid(String uuid) {
-            this.uuid = uuid;
+        public List<String> getVmUuids() {
+            return vmUuids;
         }
+
+        public void setVmUuids(List<String> vmUuids) {
+            this.vmUuids = vmUuids;
+        }
+    }
+
+    public static class GetVirtualizerInfoRsp extends AgentResponse {
+        private VirtualizerInfoTO hostInfo;
+        private List<VirtualizerInfoTO> vmInfoList;
+
+        public VirtualizerInfoTO getHostInfo() {
+            return hostInfo;
+        }
+
+        public void setHostInfo(VirtualizerInfoTO hostInfo) {
+            this.hostInfo = hostInfo;
+        }
+
+        public List<VirtualizerInfoTO> getVmInfoList() {
+            return vmInfoList;
+        }
+
+        public void setVmInfoList(List<VirtualizerInfoTO> vmInfoList) {
+            this.vmInfoList = vmInfoList;
+        }
+    }
+
+    public static class VirtualizerInfoTO {
+        private String uuid;
+        private String virtualizer;
+        private String version;
 
         public String getUuid() {
             return uuid;
         }
-    }
 
-    public static class GetVmVirtualizerVersionRsp extends AgentResponse {
-        private String virtualizer;
-        private String version;
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
 
         public void setVirtualizer(String virtualizer) {
             this.virtualizer = virtualizer;
@@ -2795,7 +2851,7 @@ public class KVMAgentCommands {
             return version;
         }
     }
-    
+
     public static class VmDeviceAddressTO {
         private String addressType;
         private String address;

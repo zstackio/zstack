@@ -1,21 +1,10 @@
 package org.zstack.testlib
 
-import com.google.common.collect.ImmutableMap
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
-import org.zstack.core.db.SQLBatch
-import org.zstack.header.Constants
-import org.zstack.header.host.HostNUMANode
-import org.zstack.header.storage.primary.PrimaryStorageVO
-import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmJobStruct
 import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
-import org.zstack.header.vm.VmInstanceState
-import org.zstack.header.vm.VmInstanceVO
-import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.core.db.SQLBatch
 import org.zstack.header.Constants
 import org.zstack.header.storage.primary.PrimaryStorageVO
@@ -40,6 +29,8 @@ import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.persistence.Tuple
 import java.util.concurrent.ConcurrentHashMap
+
+import static org.zstack.kvm.KVMAgentCommands.*
 
 /**
  * Created by xing5 on 2017/6/6.
@@ -144,10 +135,31 @@ class KVMSimulator implements Simulator {
             return rsp
         }
 
-        spec.simulator(KVMConstant.GET_VM_VIRTUALIZER_VERSION_PATH) {
-            def rsp = new KVMAgentCommands.GetVmVirtualizerVersionRsp()
-            rsp.version = "4.2.0-627.g36ee592.el7"
-            rsp.virtualizer = "qemu-kvm"
+        spec.simulator(KVMConstant.GET_VIRTUALIZER_INFO_PATH) { HttpEntity<String> e ->
+            def rsp = new GetVirtualizerInfoRsp()
+            rsp.hostInfo = new VirtualizerInfoTO()
+            rsp.hostInfo.version = "4.2.0-627.g36ee592.el7"
+            rsp.hostInfo.virtualizer = "qemu-kvm"
+            String hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            rsp.hostInfo.uuid = hostUuid
+
+            def cmd = JSONObjectUtil.toObject(e.body, GetVirtualizerInfoCmd.class)
+            rsp.vmInfoList = cmd.vmUuids.collect { vmUuid ->
+                def to = new VirtualizerInfoTO()
+                to.uuid = vmUuid
+                to.version = "4.2.0-627.g36ee592.el7"
+                to.virtualizer = "qemu-kvm"
+                return to
+            }
+
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_HOST_FACT_PATH) { HttpEntity<String> e ->
+            def rsp = new HostFactResponse()
+            rsp.virtualizerInfo = new VirtualizerInfoTO()
+            rsp.virtualizerInfo.version = "4.2.0-627.g36ee592.el7"
+            rsp.virtualizerInfo.virtualizer = "qemu-kvm"
             return rsp
         }
 
@@ -389,14 +401,21 @@ class KVMSimulator implements Simulator {
         }
 
         spec.simulator(KVMConstant.KVM_SYNC_VM_DEVICEINFO_PATH) { HttpEntity<String> e ->
-            KVMAgentCommands.SyncVmDeviceInfoCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.SyncVmDeviceInfoCmd.class)
-            return new KVMAgentCommands.SyncVmDeviceInfoResponse()
+            SyncVmDeviceInfoCmd cmd = JSONObjectUtil.toObject(e.body, SyncVmDeviceInfoCmd.class)
+            def rsp = new SyncVmDeviceInfoResponse()
+
+            rsp.virtualizerInfo = new VirtualizerInfoTO()
+            rsp.virtualizerInfo.uuid = cmd.vmInstanceUuid
+            rsp.virtualizerInfo.virtualizer = "qemu-kvm"
+            rsp.virtualizerInfo.version = "4.2.0-632.g6a6222b.el7"
+
+            return rsp
         }
 
         spec.simulator(KVMConstant.KVM_START_VM_PATH) { HttpEntity<String> e ->
-            KVMAgentCommands.StartVmCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            StartVmCmd cmd = JSONObjectUtil.toObject(e.body, StartVmCmd.class)
             assert new HashSet<>(cmd.dataVolumes.deviceId).size() == cmd.dataVolumes.size()
-            KVMAgentCommands.StartVmResponse  rsp = new KVMAgentCommands.StartVmResponse()
+            StartVmResponse  rsp = new StartVmResponse()
             rsp.virtualDeviceInfoList = []
             List<VolumeTO> pciInfo = new ArrayList<VolumeTO>()
             pciInfo.add(cmd.rootVolume)
@@ -416,6 +435,11 @@ class KVMSimulator implements Simulator {
 
                 rsp.virtualDeviceInfoList.add(info)
             }
+
+            rsp.virtualizerInfo = new VirtualizerInfoTO()
+            rsp.virtualizerInfo.uuid = cmd.vmInstanceUuid
+            rsp.virtualizerInfo.virtualizer = "qemu-kvm"
+            rsp.virtualizerInfo.version = "4.2.0-632.g6a6222b.el7"
 
             return rsp
         }

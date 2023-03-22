@@ -175,4 +175,30 @@
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="KvmHypervisorInfoManager" class="org.zstack.kvm.hypervisor.KvmHypervisorInfoManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
+    <bean id="KvmHypervisorInfoExtensions" class="org.zstack.kvm.hypervisor.KvmHypervisorInfoExtensions">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMSyncVmDeviceInfoExtensionPoint"/>
+            <zstack:extension interface="org.zstack.kvm.KVMRebootVmExtensionPoint"/>
+            <zstack:extension interface="org.zstack.kvm.KVMDestroyVmExtensionPoint"/>
+            <zstack:extension interface="org.zstack.kvm.KVMStopVmExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.VmAfterExpungeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+    <bean id="HypervisorMetadataCollector" class="org.zstack.kvm.hypervisor.HypervisorMetadataCollectorImpl">
+    </bean>
+
+    <bean id="KvmHypervisorZQLExtension" class="org.zstack.kvm.hypervisor.KvmHypervisorZQLExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.zql.RestrictByExprExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>

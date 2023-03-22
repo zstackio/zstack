@@ -6,6 +6,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
@@ -230,5 +231,16 @@ public class TimeUtils {
 
     public static String instantToString(Instant instant, String format) {
         return DateTimeFormatter.ofPattern(format).withZone(ZoneId.systemDefault()).format(instant);
+    }
+
+    /**
+     * @param timestamp using milliseconds from the epoch of 1970-01-01T00:00:00Z
+     */
+    public static LocalDateTime toLocalDateTime(long timestamp) {
+        return toLocalDateTime(Instant.ofEpochMilli(timestamp));
+    }
+
+    public static LocalDateTime toLocalDateTime(Instant instant) {
+        return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
     }
 }
