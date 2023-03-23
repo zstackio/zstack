@@ -131,6 +131,15 @@ doc {
 					optional true
 					since "3.4.0"
 				}
+				column {
+					name "enableIPAM"
+					enclosedIn "params"
+					desc "IP地址管理是否启用"
+					location "body"
+					type "Boolean"
+					optional true
+					since "0.6"
+				}
 			}
         }
 

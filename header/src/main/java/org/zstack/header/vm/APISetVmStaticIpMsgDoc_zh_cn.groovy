@@ -78,6 +78,42 @@ doc {
 					optional true
 					since "0.6"
 				}
+				column {
+					name "netmask"
+					enclosedIn "setVmStaticIp"
+					desc "IPv4子网掩码"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+				}
+				column {
+					name "gateway"
+					enclosedIn "setVmStaticIp"
+					desc "IPv4网关"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+				}
+				column {
+					name "ipv6Gateway"
+					enclosedIn "setVmStaticIp"
+					desc "IPv6网关"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+				}
+				column {
+					name "ipv6Prefix"
+					enclosedIn "setVmStaticIp"
+					desc "IPv6前缀长度"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+				}
 			}
         }
 
