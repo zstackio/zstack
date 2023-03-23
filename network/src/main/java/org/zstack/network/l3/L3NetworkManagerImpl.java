@@ -198,23 +198,25 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 for (Tuple tuple : tuples) {
                     String sip = tuple.get(0, String.class);
                     String eip = tuple.get(1, String.class);
-                    int ipVersion = tuple.get(2, Integer.class);
-                    String elementUuid = tuple.get(3, String.class);
+                    int ipVersion = tuple.get(3, Integer.class);
+                    String elementUuid = tuple.get(4, String.class);
 
                     IpCapacity element = elements.getOrDefault(elementUuid, new IpCapacity());
                     elements.put(elementUuid, element);
                     if (ipVersion == IPv6Constants.IPv4) {
-                        int t = NetworkUtils.getTotalIpInRange(sip, eip);
-                        element.total += t;
-                        element.total = Math.min(element.total, Integer.MAX_VALUE);
-                        element.avail = element.total;
-                        element.ipv4TotalCapacity += t;
-                        element.ipv4TotalCapacity = Math.min(element.ipv4TotalCapacity, Integer.MAX_VALUE);
-                        element.ipv4AvailableCapacity = element.ipv4TotalCapacity;
-                        ipv4TotalCapacity += t;
-                        total += t;
-                        ipv4TotalCapacity = Math.min(ipv4TotalCapacity, (long)Integer.MAX_VALUE);
-                        total = Math.min(total, (long)Integer.MAX_VALUE);
+                        if (NetworkUtils.isValidIpRange(sip, eip)) {
+                            int t = NetworkUtils.getTotalIpInRange(sip, eip);
+                            element.total += t;
+                            element.total = Math.min(element.total, Integer.MAX_VALUE);
+                            element.avail = element.total;
+                            element.ipv4TotalCapacity += t;
+                            element.ipv4TotalCapacity = Math.min(element.ipv4TotalCapacity, Integer.MAX_VALUE);
+                            element.ipv4AvailableCapacity = element.ipv4TotalCapacity;
+                            ipv4TotalCapacity += t;
+                            total += t;
+                            ipv4TotalCapacity = Math.min(ipv4TotalCapacity, (long) Integer.MAX_VALUE);
+                            total = Math.min(total, (long) Integer.MAX_VALUE);
+                        }
                     } else {
                         long t = IPv6NetworkUtils.getIpv6RangeSize(sip, eip);
                         element.total += t;
@@ -290,10 +292,11 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
                 if (msg.getIpRangeUuids() != null && !msg.getIpRangeUuids().isEmpty()) {
                     reply.setResourceType(IpRangeVO.class.getSimpleName());
-                    String sql = "select ipr.startIp, ipr.endIp, ipr.ipVersion, ipr.uuid from IpRangeVO ipr where ipr.uuid in (:uuids)";
+                    String sql = "select ipr.startIp, ipr.endIp, ipr.netmask, ipr.ipVersion, ipr.uuid from IpRangeVO ipr where ipr.uuid in (:uuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("uuids", msg.getIpRangeUuids());
                     List<Tuple> ts = q.getResultList();
+                    ts = IpRangeHelper.stripNetworkAndBroadcastAddress(ts);
                     calcElementTotalIp(ts, ret);
 
                     sql = "select count(distinct uip.ip), uip.ipRangeUuid, uip.ipVersion from UsedIpVO uip where uip.ipRangeUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by uip.ipRangeUuid, uip.ipVersion";
@@ -305,10 +308,11 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     return ret;
                 } else if (msg.getL3NetworkUuids() != null && !msg.getL3NetworkUuids().isEmpty()) {
                     reply.setResourceType(L3NetworkVO.class.getSimpleName());
-                    String sql = "select ipr.startIp, ipr.endIp, ipr.ipVersion, l3.uuid from IpRangeVO ipr, L3NetworkVO l3 where ipr.l3NetworkUuid = l3.uuid and l3.uuid in (:uuids)";
+                    String sql = "select ipr.startIp, ipr.endIp, ipr.netmask, ipr.ipVersion, l3.uuid from IpRangeVO ipr, L3NetworkVO l3 where ipr.l3NetworkUuid = l3.uuid and l3.uuid in (:uuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("uuids", msg.getL3NetworkUuids());
                     List<Tuple> ts = q.getResultList();
+                    ts = IpRangeHelper.stripNetworkAndBroadcastAddress(ts);
                     calcElementTotalIp(ts, ret);
 
                     sql = "select count(distinct uip.ip), uip.l3NetworkUuid, uip.ipVersion from UsedIpVO uip where uip.l3NetworkUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by uip.l3NetworkUuid, uip.ipVersion";
@@ -320,10 +324,11 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     return ret;
                 } else if (msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty()) {
                     reply.setResourceType(ZoneVO.class.getSimpleName());
-                    String sql = "select ipr.startIp, ipr.endIp, ipr.ipVersion, zone.uuid from IpRangeVO ipr, L3NetworkVO l3, ZoneVO zone where ipr.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids)";
+                    String sql = "select ipr.startIp, ipr.endIp, ipr.netmask, ipr.ipVersion, zone.uuid from IpRangeVO ipr, L3NetworkVO l3, ZoneVO zone where ipr.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("uuids", msg.getZoneUuids());
                     List<Tuple> ts = q.getResultList();
+                    ts = IpRangeHelper.stripNetworkAndBroadcastAddress(ts);
                     calcElementTotalIp(ts, ret);
 
                     sql = "select count(distinct uip.ip), zone.uuid, uip.ipVersion from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by zone.uuid, uip.ipVersion";

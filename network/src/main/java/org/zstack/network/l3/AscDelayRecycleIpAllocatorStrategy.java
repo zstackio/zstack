@@ -299,7 +299,7 @@ public class AscDelayRecycleIpAllocatorStrategy extends AbstractIpAllocatorStrat
             return;
         }
 
-        List<IpRangeVO> ranges = getIpRanges(rangeType, l3NetworkUuid, IPv6Constants.IPv4);
+        List<IpRangeVO> ranges = getIpRanges(rangeType, l3NetworkUuid, IPv6Constants.IPv4, true);
         List<IpRangeVO> rightRanges = new ArrayList<>();
 
         for (IpRangeVO ipr : ranges) {

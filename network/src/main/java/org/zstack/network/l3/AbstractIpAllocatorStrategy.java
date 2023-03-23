@@ -18,6 +18,7 @@ import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 
@@ -43,7 +44,7 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         }
     }
 
-    protected List<IpRangeVO> getIpRanges(String ipRangeType, String l3NetworkUuid, int ipVersion) {
+    protected List<IpRangeVO> getIpRanges(String ipRangeType, String l3NetworkUuid, int ipVersion, boolean needStrip) {
         List<IpRangeVO> iprs;
         if (ipRangeType.equals(IpRangeType.Normal.toString())) {
             iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, l3NetworkUuid)
@@ -53,6 +54,9 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
                     .eq(AddressPoolVO_.ipVersion, ipVersion).list();
         }
         if (ipVersion == IPv6Constants.IPv4) {
+            if (needStrip) {
+                iprs = iprs.stream().filter(ipr -> IpRangeHelper.stripNetworkAndBroadcastAddress(ipr)).collect(Collectors.toList());
+            }
             iprs.sort(AbstractIpAllocatorStrategy::compareIpv4Range);
         } else {
             iprs.sort(Comparator.comparing(r -> IPv6NetworkUtils.ipv6AddressToBigInteger(r.getStartIp())));
@@ -66,9 +70,11 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         if (msg.getIpRangeUuid() != null) {
             iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
         } else {
-            iprs = getIpRanges(getReqIpRangeType(msg), msg.getL3NetworkUuid(), ipVersion);
+            iprs = getIpRanges(getReqIpRangeType(msg), msg.getL3NetworkUuid(), ipVersion, false);
         }
-
+        if (ipVersion == IPv6Constants.IPv4) {
+            iprs = iprs.stream().filter(ipr -> IpRangeHelper.stripNetworkAndBroadcastAddress(ipr)).collect(Collectors.toList());
+        }
         return iprs;
     }
 

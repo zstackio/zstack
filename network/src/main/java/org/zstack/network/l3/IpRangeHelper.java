@@ -1,16 +1,25 @@
 package org.zstack.network.l3;
+import org.zstack.header.exception.CloudRuntimeException;
 
+import javax.persistence.Tuple;
+import javax.persistence.TupleElement;
+
+import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.network.l3.*;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.*;
+
+import static org.junit.runner.Request.aClass;
 
 
 public class IpRangeHelper {
@@ -125,5 +134,96 @@ public class IpRangeHelper {
             List<String> used = q.listValues();
             return used.stream().distinct().map(IPv6NetworkUtils::getBigIntegerFromString).sorted().collect(Collectors.toList());
         }
+    }
+
+    public static boolean stripNetworkAndBroadcastAddress(IpRangeVO ipr) {
+        SubnetUtils sub = new SubnetUtils(ipr.getStartIp(), ipr.getNetmask());
+        SubnetUtils.SubnetInfo info = sub.getInfo();
+        boolean ret = true;
+
+        if (ipr.getStartIp().equals(ipr.getEndIp())) {
+            if (ipr.getStartIp().equals(info.getNetworkAddress()) || ipr.getEndIp().equals(info.getBroadcastAddress())) {
+                ret = false;
+            }
+        }
+
+        if (ipr.getStartIp().equals(info.getNetworkAddress())) {
+            ipr.setStartIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(ipr.getStartIp())+1));
+        }
+        if (ipr.getEndIp().equals(info.getBroadcastAddress())) {
+            ipr.setEndIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(ipr.getEndIp())-1));
+        }
+
+        return ret;
+    }
+
+    public static List<Tuple> stripNetworkAndBroadcastAddress(List<Tuple> tuples) {
+        List<Tuple> ret = new ArrayList<>();
+        for (Tuple tuple : tuples) {
+            String sip = tuple.get(0, String.class);
+            String eip = tuple.get(1, String.class);
+            String netmask = tuple.get(2, String.class);
+            int ipVersion = tuple.get(3, Integer.class);
+            if (ipVersion == IPv6Constants.IPv4) {
+                IpRangeVO ipr = new IpRangeVO();
+                ipr.setStartIp(sip);
+                ipr.setEndIp(eip);
+                ipr.setNetmask(netmask);
+                stripNetworkAndBroadcastAddress(ipr);
+
+                Tuple myTuple = new Tuple() {
+
+                    private Map<Integer, Object> data = new HashMap<>();
+
+                    {
+                        data.put(0, ipr.getStartIp());
+                        data.put(1, ipr.getEndIp());
+                        data.put(2, tuple.get(2));
+                        data.put(3, tuple.get(3));
+                        data.put(4, tuple.get(4));
+                    }
+
+                    @Override
+                    public <X> X get(TupleElement<X> tupleElement) {
+                        return null;
+                    }
+
+                    @Override
+                    public <X> X get(String s, Class<X> aClass) {
+                        return null;
+                    }
+
+                    @Override
+                    public Object get(String s) {
+                        return null;
+                    }
+
+                    @Override
+                    public <X> X get(int i, Class<X> aClass) {
+                        return aClass.cast(data.get(i));
+                    }
+
+                    @Override
+                    public Object get(int i) {
+                        return data.get(i);
+                    }
+
+                    @Override
+                    public Object[] toArray() {
+                        return new Object[0];
+                    }
+
+                    @Override
+                    public List<TupleElement<?>> getElements() {
+                        return null;
+                    }
+                };
+
+                ret.add(myTuple);
+            } else {
+                ret.add(tuple);
+            }
+        }
+        return ret;
     }
 }
