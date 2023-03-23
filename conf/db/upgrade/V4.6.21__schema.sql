@@ -46,3 +46,23 @@ ALTER TABLE `zstack`.`UsedIpVO` ADD CONSTRAINT fkUsedIpVOVmNicVO FOREIGN KEY (vm
 INSERT INTO SystemTagVO (`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`, `createDate`, `lastOpDate`)
 SELECT REPLACE(UUID(),'-',''), vm.uuid, 'VmInstanceVO', 0, 'System', 'vRingBufferSize::256::256', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
 FROM VmInstanceVO vm LEFT JOIN SystemTagVO st ON st.resourceUuid = vm.uuid AND st.tag LIKE 'vRingBufferSize::%' WHERE vm.state = 'running' AND st.uuid IS NULL;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`SSOTokenVO`(
+    `uuid` varchar(32) not null unique,
+    `clientUuid` varchar(32) DEFAULT NULL,
+    `userUuid` varchar(32) DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT `fkSSOTokenVOClientVO` FOREIGN KEY (`clientUuid`) REFERENCES `SSOClientVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`OAuth2TokenVO`(
+    `uuid` varchar(32) not null unique,
+    `accessToken` text not null,
+    `idToken` text not null,
+    `refreshToken` text not null,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT `fkOAuth2TokenVOSSOTokenVO` FOREIGN KEY (`uuid`) REFERENCES `SSOTokenVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
