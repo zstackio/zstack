@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.GuestToolsState;
-
 public class GuestToolsStateInventory  {
 
     public java.lang.String vmInstanceUuid;
@@ -12,12 +10,20 @@ public class GuestToolsStateInventory  {
         return this.vmInstanceUuid;
     }
 
-    public GuestToolsState state;
-    public void setState(GuestToolsState state) {
-        this.state = state;
+    public java.lang.String qgaState;
+    public void setQgaState(java.lang.String qgaState) {
+        this.qgaState = qgaState;
     }
-    public GuestToolsState getState() {
-        return this.state;
+    public java.lang.String getQgaState() {
+        return this.qgaState;
+    }
+
+    public java.lang.String zwatchState;
+    public void setZwatchState(java.lang.String zwatchState) {
+        this.zwatchState = zwatchState;
+    }
+    public java.lang.String getZwatchState() {
+        return this.zwatchState;
     }
 
     public java.lang.String version;

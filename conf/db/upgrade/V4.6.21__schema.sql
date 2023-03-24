@@ -66,3 +66,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`OAuth2TokenVO`(
     CONSTRAINT `fkOAuth2TokenVOSSOTokenVO` FOREIGN KEY (`uuid`) REFERENCES `SSOTokenVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `zstack`.`GuestToolsStateVO` ADD COLUMN `zwatchState` varchar(32) NOT NULL DEFAULT 'NotInstalled';
+ALTER TABLE `zstack`.`GuestToolsStateVO` CHANGE `state` `qgaState` varchar(32) NOT NULL DEFAULT 'NotInstalled';
