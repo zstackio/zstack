@@ -2028,6 +2028,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setReload(s.reload);
                         cmd.setTimeout(timeoutManager.getTimeout());
+                        cmd.setDownTime(s.downTime);
 
                         if (s.diskMigrationMap != null) {
                             Map<String, VolumeTO> diskMigrationMap = new HashMap<>();
@@ -2183,6 +2184,7 @@ public class KVMHost extends HostBase implements Host {
         String vmUuid;
         String dstHostMigrateIp;
         String strategy;
+        Integer downTime;
         String dstHostMnIp;
         String dstHostUuid;
         StorageMigrationPolicy storageMigrationPolicy;
@@ -2202,6 +2204,7 @@ public class KVMHost extends HostBase implements Host {
         s.storageMigrationPolicy = msg.getStorageMigrationPolicy();
         s.migrateFromDestition = msg.isMigrateFromDestination();
         s.strategy = msg.getStrategy();
+        s.downTime = msg.getDownTime();
         s.diskMigrationMap = msg.getDiskMigrationMap();
         s.reload = msg.isReload();
 
@@ -4549,7 +4552,7 @@ public class KVMHost extends HostBase implements Host {
 
     private void handle(final CancelHostTaskMsg msg) {
         CancelHostTaskReply reply = new CancelHostTaskReply();
-        cancelJob(msg.getCancellationApiId(), new Completion(msg) {
+        cancelJob(msg, new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -4563,9 +4566,13 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void cancelJob(String apiId, Completion completion) {
+    private void cancelJob(CancelHostTaskMsg msg, Completion completion) {
         CancelCmd cmd = new CancelCmd();
-        cmd.setCancellationApiId(apiId);
+        cmd.setCancellationApiId(msg.getCancellationApiId());
+        if (msg.getInterval() != null && msg.getTimes() != null) {
+            cmd.setInterval(msg.getInterval());
+            cmd.setTimes(msg.getTimes());
+        }
         new Http<>(cancelJob, cmd, CancelRsp.class).call(new ReturnValueCompletion<CancelRsp>(completion) {
             @Override
             public void success(CancelRsp ret) {

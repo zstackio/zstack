@@ -32,6 +32,15 @@ public class ProgressCommands {
         private String resourceUuid;
         private String progress;
         private String processType;
+        private Map<String, String> detail;
+
+        public Map<String, String> getDetail() {
+            return detail;
+        }
+
+        public void setDetail(Map<String, String> detail) {
+            this.detail = detail;
+        }
 
         public Map<String, String> getThreadContextMap() {
             return threadContextMap;

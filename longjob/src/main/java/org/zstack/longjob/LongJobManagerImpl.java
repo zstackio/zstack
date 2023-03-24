@@ -335,6 +335,11 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public void fail(ErrorCode errorCode) {
+                if (Q.New(LongJobVO.class).eq(LongJobVO_.uuid, vo.getUuid()).eq(LongJobVO_.state, LongJobState.Canceled).isExists()){
+                    completion.success();
+                    return;
+                }
+
                 logger.error(String.format("failed to cancel longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
                 completion.fail(errorCode);
             }

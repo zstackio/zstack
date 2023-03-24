@@ -13,6 +13,24 @@ import java.util.List;
 public class CancelHostTasksMsg extends CancelMessage {
     private List<String> searchedMnIds = new ArrayList<>();
     private List<String> hostUuids = new ArrayList<>();
+    private Integer times;
+    private Integer interval;
+
+    public Integer getInterval() {
+        return interval;
+    }
+
+    public void setInterval(Integer interval) {
+        this.interval = interval;
+    }
+
+    public Integer getTimes() {
+        return times;
+    }
+
+    public void setTimes(Integer times) {
+        this.times = times;
+    }
 
     public List<String> getSearchedMnIds() {
         return searchedMnIds;

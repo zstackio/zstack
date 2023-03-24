@@ -6672,6 +6672,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         CancelHostTasksMsg cmsg = new CancelHostTasksMsg();
         cmsg.setCancellationApiId(msg.getCancellationApiId());
+        cmsg.setInterval(1);
+        cmsg.setTimes(3);
         bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override

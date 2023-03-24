@@ -3004,11 +3004,20 @@ public class KVMAgentCommands {
         private boolean useNuma;
         private boolean migrateFromDestination;
         private boolean autoConverge;
+        private Integer downTime;
         private boolean xbzrle;
         private List<String> vdpaPaths;
         private Long timeout; // in seconds
         private Map<String, VolumeTO> disks;  // A map from old install path to new volume
         private boolean reload;
+
+        public Integer getDownTime() {
+            return downTime;
+        }
+
+        public void setDownTime(Integer downTime) {
+            this.downTime = downTime;
+        }
 
         public boolean isReload() {
             return reload;
@@ -3566,6 +3575,24 @@ public class KVMAgentCommands {
 
     public static class CancelCmd extends AgentCommand implements CancelCommand {
         private String cancellationApiId;
+        private Integer times;
+        private Integer interval;
+
+        public Integer getTimes() {
+            return times;
+        }
+
+        public void setTimes(Integer times) {
+            this.times = times;
+        }
+
+        public Integer getInterval() {
+            return interval;
+        }
+
+        public void setInterval(Integer interval) {
+            this.interval = interval;
+        }
 
         @Override
         public void setCancellationApiId(String cancellationApiId) {

@@ -65,7 +65,7 @@ class MigrateVmFromDestitonHostCase extends SubCase {
                 diskSize = SizeUnit.GIGABYTE.toByte(20)
             }
 
-            zone{
+            zone {
                 name = "zone"
                 cluster {
                     name = "cluster"
@@ -118,13 +118,13 @@ class MigrateVmFromDestitonHostCase extends SubCase {
                 }
 
                 cephPrimaryStorage {
-                    name="ps"
-                    description="Test"
+                    name = "ps"
+                    description = "Test"
                     totalCapacity = SizeUnit.GIGABYTE.toByte(100)
-                    availableCapacity= SizeUnit.GIGABYTE.toByte(100)
-                    url="ceph://pri"
-                    fsid="7ff218d9-f525-435f-8a40-3618d1772a64"
-                    monUrls=["root:password@localhost/?monPort=7777"]
+                    availableCapacity = SizeUnit.GIGABYTE.toByte(100)
+                    url = "ceph://pri"
+                    fsid = "7ff218d9-f525-435f-8a40-3618d1772a64"
+                    monUrls = ["root:password@localhost/?monPort=7777"]
 
                 }
 
@@ -133,21 +133,21 @@ class MigrateVmFromDestitonHostCase extends SubCase {
             }
 
             cephBackupStorage {
-                name="bs"
-                description="Test"
+                name = "bs"
+                description = "Test"
                 totalCapacity = SizeUnit.GIGABYTE.toByte(100)
-                availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                availableCapacity = SizeUnit.GIGABYTE.toByte(100)
                 url = "/bk"
-                fsid ="7ff218d9-f525-435f-8a40-3618d1772a64"
+                fsid = "7ff218d9-f525-435f-8a40-3618d1772a64"
                 monUrls = ["root:password@localhost/?monPort=7777"]
 
                 image {
                     name = "test-iso"
-                    url  = "http://zstack.org/download/test.iso"
+                    url = "http://zstack.org/download/test.iso"
                 }
                 image {
                     name = "image"
-                    url  = "http://zstack.org/download/image.qcow2"
+                    url = "http://zstack.org/download/image.qcow2"
                 }
             }
 
@@ -234,6 +234,7 @@ class MigrateVmFromDestitonHostCase extends SubCase {
         assert cmd != null
         assert cmd.migrateFromDestination
         assert cmd.autoConverge
+        assert cmd.downTime == null
         assert cmd.destHostIp == host.managementIp
         assert cmd.srcHostIp == host1.managementIp
         assert huuid == host.uuid
@@ -259,11 +260,13 @@ class MigrateVmFromDestitonHostCase extends SubCase {
             vmInstanceUuid = vm1.uuid
             hostUuid = host1.uuid
             strategy = "auto-converge"
+            downTime = 300
         }
 
         assert cmd != null
         assert !cmd.migrateFromDestination
         assert cmd.autoConverge
+        assert cmd.downTime != null
         assert !cmd.xbzrle
         assert cmd.destHostIp == host1.managementIp
         assert cmd.srcHostIp == host.managementIp
