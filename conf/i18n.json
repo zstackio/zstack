@@ -24385,7 +24385,7 @@
   {
     "raw": "metric[%s] of the namespace[%s] has no label named %s",
     "en_US": "metric[{0}] of the namespace[{1}] has no label named {2}",
-    "zh_CN": "名字空间(namespace)[{1}]的时序数据(metric)[{1}]没有名为{2}的标签",
+    "zh_CN": "名字空间(namespace)[{1}]的时序数据(metric)[{0}]没有名为{2}的标签",
     "arguments": [
       "m.getName()",
       "getName()",
