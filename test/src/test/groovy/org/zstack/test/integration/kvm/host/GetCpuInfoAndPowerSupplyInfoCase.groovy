@@ -45,12 +45,6 @@ class GetCpuInfoAndPowerSupplyInfoCase extends SubCase {
 
         HostInventory host = env.inventoryByName("kvm")
 
-        env.simulator(KVMConstant.KVM_HOST_FACT_PATH) { HttpEntity<String> entity, EnvSpec spec ->
-            def rsp = new KVMAgentCommands.AgentResponse()
-            rsp.success = true
-            return rsp
-        }
-
         KVMAgentCommands.ConnectCmd connectCmd = null
         env.afterSimulator(KVMConstant.KVM_CONNECT_PATH) { KVMAgentCommands.AgentResponse rsp, HttpEntity<String> e ->
             connectCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ConnectCmd.class)
