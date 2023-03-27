@@ -1,10 +1,13 @@
 package org.zstack.identity;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.Platform;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.EntityMetadata;
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.identity.UserVO;
+import org.zstack.header.identity.UserVO_;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint;
 import org.zstack.header.zql.RestrictByExprExtensionPoint;
@@ -24,6 +27,8 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
 
     @Autowired
     protected AccountManager acntMgr;
+    @Autowired
+    private PluginRegistry pluginRegistry;
 
     @Override
     public void marshalZQLASTTree(ASTNode.Query node) {
@@ -57,8 +62,15 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
 
         List<String> restrictAccountUuids = getRestrictAccountUuids(context.getAPISession());
         String accountUuid = context.getAPISession().getAccountUuid();
+        String userUuid = context.getAPISession().getUserUuid();
         if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(accountUuid) && restrictAccountUuids == null) {
-            throw new SkipThisRestrictExprException();
+            if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(userUuid)) {
+                throw new SkipThisRestrictExprException();
+            } else {
+                for (AdminAccountZQLFilterExtensionPoint ext : pluginRegistry.getExtensionList(AdminAccountZQLFilterExtensionPoint.class)) {
+                    ext.filterSanyuanSystemSystemPredefinedVirtualUuid(context);
+                }
+            }
         }
 
         if (restrictAccountUuids == null) {
@@ -69,7 +81,13 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
 
         ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(context.getQueryTargetInventoryName());
         if (!acntMgr.isResourceHavingAccountReference(src.inventoryAnnotation.mappingVOClass())) {
-            throw new SkipThisRestrictExprException();
+            if (Q.New(UserVO.class).eq(UserVO_.uuid, userUuid).isExists()) {
+                throw new SkipThisRestrictExprException();
+            }
+
+            for (AdminAccountZQLFilterExtensionPoint ext : pluginRegistry.getExtensionList(AdminAccountZQLFilterExtensionPoint.class)) {
+                ext.filterPhysicalResourceInventoriesMetadataByName(src);
+            }
         }
 
         String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
@@ -78,10 +96,10 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
                 .map(uuid -> String.format("'%s'", uuid))
                 .collect(Collectors.joining(","));
 
-        return getAccountResourceSql(src.simpleInventoryName(), primaryKey, accountStr);
+        return getAccountResourceSql(src.simpleInventoryName(), primaryKey, accountStr, context.getAPISession().getUserUuid());
     }
 
-    protected String getAccountResourceSql(String inventoryName, String primaryKey, String accountStr) {
+    protected String getAccountResourceSql(String inventoryName, String primaryKey, String accountStr, String userUuid) {
         return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
                         "  accountresourcerefvo.ownerAccountUuid in (%s) OR (accountresourcerefvo.resourceUuid" +
                         " IN (SELECT sharedresourcevo.resourceUuid FROM SharedResourceVO sharedresourcevo WHERE" +
