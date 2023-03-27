@@ -3818,20 +3818,20 @@ public class KVMHost extends HostBase implements Host {
             // send get host facts message, do NOT check reply.
             HostFactCmd cmd = new HostFactCmd();
             new Http<>(hostFactPath, cmd, HostFactResponse.class)
-                    .call(new ReturnValueCompletion<HostFactResponse>(null) {
+                    .call(new ReturnValueCompletion<HostFactResponse>(complete) {
                         @Override
                         public void success(HostFactResponse response) {
                             response.getVirtualizerInfo().setUuid(self.getUuid());
                             hypervisorManager.saveHostInfo(response.getVirtualizerInfo());
+                            continueConnect(info, complete);
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
                             logger.warn("failed to get host facts: " + errorCode.toString());
+                            complete.fail(errorCode);
                         }
                     });
-
-            continueConnect(info, complete);
         } else {
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
             chain.setName(String.format("run-ansible-for-kvm-%s", self.getUuid()));
