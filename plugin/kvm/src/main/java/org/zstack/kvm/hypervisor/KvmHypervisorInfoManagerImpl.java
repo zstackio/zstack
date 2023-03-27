@@ -13,6 +13,8 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.kvm.hypervisor.datatype.*;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.*;
@@ -28,6 +30,8 @@ import static org.zstack.kvm.hypervisor.HypervisorMetadataCollector.HypervisorMe
  * Created by Wenhao.Zhang on 23/02/23
  */
 public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, Component {
+    private static final CLogger logger = Utils.getLogger(KvmHypervisorInfoManagerImpl.class);
+
     @Autowired
     private DatabaseFacade db;
     @Autowired
@@ -93,16 +97,21 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
                 .collect(Collectors.toList());
         list.add(ResourceHypervisorInfo.fromHostVirtualizerInfo(rsp.getHostInfo()));
         save(list);
+
+        logger.debug(String.format("save GetVirtualizerInfoRsp for host[uuid:%s] successfully",
+                rsp.getHostInfo().getUuid()));
     }
 
     @Override
     public void saveHostInfo(VirtualizerInfoTO info) {
         save(Collections.singletonList(ResourceHypervisorInfo.fromHostVirtualizerInfo(info)));
+        logger.debug(String.format("save VirtualizerInfoTO for host[uuid:%s] successfully", info.getUuid()));
     }
 
     @Override
     public void saveVmInfo(VirtualizerInfoTO info) {
         save(Collections.singletonList(ResourceHypervisorInfo.fromVmVirtualizerInfo(info)));
+        logger.debug(String.format("save VirtualizerInfoTO for vm[uuid:%s] successfully", info.getUuid()));
     }
 
     @Transactional
