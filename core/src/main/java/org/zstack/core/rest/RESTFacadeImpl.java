@@ -527,6 +527,16 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
+    public <T> T syncJsonPut(String url, String body, Map<String, String> headers, Class<T> returnClass) {
+        return syncJsonPut(url, body, headers, returnClass, null, -1);
+    }
+
+    @Override
+    public <T> T syncJsonPut(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
+        return syncJson(url, body, headers, HttpMethod.PUT, returnClass, unit, timeout);
+    }
+
+    @Override
     public HttpHeaders syncHead(String url) {
         return template.headForHeaders(URI.create(url));
     }
