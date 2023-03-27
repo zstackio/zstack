@@ -537,16 +537,14 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
         SubnetUtils sub = new SubnetUtils(ipr.getStartIp(), ipr.getNetmask());
         SubnetInfo info = sub.getInfo();
-        if (ipr.getIpRangeType() == IpRangeType.Normal) {
-            if (!info.isInRange(ipr.getGateway())) {
-                throw new ApiMessageInterceptionException(argerr("the gateway[%s] is not in the subnet %s/%s", ipr.getGateway(), ipr.getStartIp(), ipr.getNetmask()));
-            }
+        if (!info.isInRange(ipr.getGateway())) {
+            throw new ApiMessageInterceptionException(argerr("the gateway[%s] is not in the subnet %s/%s", ipr.getGateway(), ipr.getStartIp(), ipr.getNetmask()));
+        }
 
-            if (ipr.getStartIp().equals(info.getNetworkAddress()) || ipr.getEndIp().equals(info.getBroadcastAddress())) {
-                throw new ApiMessageInterceptionException(argerr(
-                        "ip allocation can not contain network address or broadcast address")
-                );
-            }
+        if (ipr.getStartIp().equals(info.getNetworkAddress()) || ipr.getEndIp().equals(info.getBroadcastAddress())) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "ip allocation can not contain network address or broadcast address")
+            );
         }
 
         if (!NetworkUtils.isIpv4Address(ipr.getStartIp())) {

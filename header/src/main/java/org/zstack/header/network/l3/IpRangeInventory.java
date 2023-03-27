@@ -283,9 +283,9 @@ public class IpRangeInventory implements Serializable {
 
         ipr.setIpRangeType(IpRangeType.valueOf(msg.getIpRangeType()));
 
+        String lowAddress = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()));
+        String highAddress = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()));
         if (ipr.getIpRangeType() == IpRangeType.Normal) {
-            String lowAddress = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()));
-            String highAddress = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()));
             if (msg.getGateway() == null || msg.getGateway().equals(lowAddress)) {
                 ipr.setGateway(lowAddress);
                 ipr.setStartIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) + 1));
@@ -296,9 +296,9 @@ public class IpRangeInventory implements Serializable {
                 ipr.setEndIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) - 1));
             }
         } else {
-            ipr.setGateway(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress())));
-            ipr.setStartIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) - 1));
-            ipr.setEndIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) + 1));
+            ipr.setGateway(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(lowAddress)));
+            ipr.setStartIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(lowAddress)));
+            ipr.setEndIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(highAddress)));
         }
         ipr.setNetmask(subnet.getNetmask());
         ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(subnet.getNetmask()));

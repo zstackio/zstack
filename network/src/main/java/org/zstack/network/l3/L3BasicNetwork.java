@@ -494,7 +494,12 @@ public class L3BasicNetwork implements L3Network {
         if (ipr.getIpVersion() == IPv6Constants.IPv6) {
             spareIps.addAll(NetworkUtils.getFreeIpv6InRange(ipr.getStartIp(), ipr.getEndIp(), used, limit, start));
         } else {
-            spareIps.addAll(NetworkUtils.getFreeIpInRange(ipr.getStartIp(), ipr.getEndIp(), used, limit, start));
+            IpRangeVO cloneIpr = new IpRangeVO();
+            cloneIpr.setStartIp(ipr.getStartIp());
+            cloneIpr.setEndIp(ipr.getEndIp());
+            cloneIpr.setNetmask(ipr.getNetmask());
+            IpRangeHelper.stripNetworkAndBroadcastAddress(cloneIpr);
+            spareIps.addAll(NetworkUtils.getFreeIpInRange(cloneIpr.getStartIp(), cloneIpr.getEndIp(), used, limit, start));
         }
         return CollectionUtils.transformToList(spareIps, new Function<FreeIpInventory, String>() {
             @Override

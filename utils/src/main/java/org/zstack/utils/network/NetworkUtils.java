@@ -188,6 +188,14 @@ public class NetworkUtils {
         }
     }
 
+    public static boolean isValidIpRange(String startIp, String endIp) {
+        validateIp(startIp);
+        validateIp(endIp);
+        long s = ipv4StringToLong(startIp);
+        long e = ipv4StringToLong(endIp);
+        return e >= s;
+    }
+
     public static boolean isIpv4RangeOverlap(String startIp1, String endIp1, String startIp2, String endIp2) {
         validateIpRange(startIp1, endIp1);
         validateIpRange(startIp2, endIp2);
