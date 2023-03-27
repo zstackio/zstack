@@ -14,6 +14,7 @@ import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeStatus;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -36,6 +37,10 @@ public class AttachedVolumePrimaryStorageAllocatorFlow extends AbstractHostAlloc
         }
 
         VmInstanceInventory vm = spec.getVmInstance();
+        if (vm.getRootVolume() == null || !VolumeStatus.Ready.toString().equals(vm.getRootVolume().getStatus())) {
+            fail(Platform.operr("cannot find root volume of vm[uuid:%s]", vm.getUuid()));
+        }
+
         List<String> requiredPsUuids = CollectionUtils.transformToList(vm.getAllVolumes(), new Function<String, VolumeInventory>() {
             @Override
             public String call(VolumeInventory arg) {
