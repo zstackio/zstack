@@ -234,7 +234,6 @@
     <bean id="TfVmNicFactory" class="org.zstack.compute.vm.TfVmNicFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.VmInstanceNicFactory" />
-            <zstack:extension interface="org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

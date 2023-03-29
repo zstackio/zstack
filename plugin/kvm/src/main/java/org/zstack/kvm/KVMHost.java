@@ -3097,6 +3097,7 @@ public class KVMHost extends HostBase implements Host {
 
         DestroyVmCmd cmd = new DestroyVmCmd();
         cmd.setUuid(vminv.getUuid());
+        cmd.setVmNics(vminv.getVmNics());
 
         try {
             extEmitter.beforeDestroyVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv, cmd);
@@ -3229,6 +3230,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setUuid(vminv.getUuid());
         cmd.setType(msg.getType());
         cmd.setTimeout(120);
+        cmd.setVmNics(vminv.getVmNics());
 
         try {
             extEmitter.beforeStopVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv, cmd);

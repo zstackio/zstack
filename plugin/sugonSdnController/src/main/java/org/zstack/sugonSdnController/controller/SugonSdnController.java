@@ -243,7 +243,7 @@ public class SugonSdnController implements TfSdnController, SdnController {
             project.setParent(domain);
             project.setUuid(StringDSL.transToTfUuid(account.getUuid()));
             project.setDisplayName(account.getName());
-            project.setName(account.getName());
+            project.setName(StringDSL.transToTfUuid(account.getUuid()));
             Status status = apiConnector.create(project);
             if (!status.isSuccess()) {
                 String message = String.format("create tf project[name:%s] failed due to：%s ",account.getName(), status.getMsg());
