@@ -5,9 +5,14 @@ import org.zstack.core.db.Q;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
+import org.zstack.sugonSdnController.controller.api.ApiPropertyBase;
+import org.zstack.sugonSdnController.controller.api.ObjectReference;
 import org.zstack.sugonSdnController.controller.api.types.VirtualMachineInterface;
+import org.zstack.sugonSdnController.controller.api.types.VirtualNetwork;
 import org.zstack.sugonSdnController.controller.neutronClient.TfPortResponse;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
@@ -55,10 +60,16 @@ public class TfZstackPortSync implements ManagementNodeReadyExtensionPoint {
 
         private HashSet<String> getPortToDelete() {
             List<String> zstackPortsUuid = Q.New(VmNicVO.class).select(VmNicVO_.uuid).listValues();
+            List<String> zstackL2NetworksUuid = Q.New(L2NetworkVO.class).select(L2NetworkVO_.uuid).listValues();
             List<String> tfPortsUuid = new ArrayList<>();
             try{
                 List<VirtualMachineInterface> tfPorts = tfPortService.getTfPortsDetail();
                 for (VirtualMachineInterface vmi : tfPorts) {
+                    // skip port if it's network not in zstack
+                    List<ObjectReference<ApiPropertyBase>>  tfNetworks = vmi.getVirtualNetwork();
+                    if (!zstackL2NetworksUuid.contains(StringDSL.transToZstackUuid(tfNetworks.get(0).getUuid()))) {
+                        continue;
+                    }
                     // exclude the virtualmachineinterface of vip
                     if ("neutron:LOADBALANCER".equals(vmi.getDeviceOwner()) || "VIP".equals(vmi.getDeviceOwner())) {
                         continue;
