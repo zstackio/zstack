@@ -183,12 +183,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         bus.send(encryptedMsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                GetVolumeSnapshotEncryptedOnPrimaryStorageReply encryptedReply = reply.castReply();
                 if (!reply.isSuccess()) {
                     snapshotEncryptedReply.setError(reply.getError());
                     bus.reply(msg, snapshotEncryptedReply);
                     return;
                 }
+
+                GetVolumeSnapshotEncryptedOnPrimaryStorageReply encryptedReply = reply.castReply();
 
                 snapshotEncryptedReply.setEncrypt(encryptedReply.getEncrypt());
                 snapshotEncryptedReply.setSnapshotUuid(encryptedReply.getSnapshotUuid());
