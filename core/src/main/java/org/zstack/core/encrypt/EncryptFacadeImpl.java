@@ -26,6 +26,7 @@ import javax.persistence.Query;
 import javax.persistence.Table;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -121,13 +122,40 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         }.execute();
     }
 
-    private void decryptAllPassword() {
+    private void beforeRecoverDataDecryptAllPassword() {
+        Map<Field, List<String>> classnameFilter = new HashMap<>();
+        for (Field field : encryptedFields) {
+            List<String> classNames = new ArrayList<>();
+
+            if (field.getDeclaringClass().getAnnotation(Entity.class) != null && field.getDeclaringClass().getAnnotation(Table.class) != null) {
+                classNames.add(field.getDeclaringClass().getSimpleName());
+            } else {
+                List<String> subClassNames = BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
+                        .filter(aClass -> aClass.getAnnotation(Entity.class) != null && aClass.getAnnotation(Table.class) != null)
+                        .map(Class::getSimpleName)
+                        .collect(Collectors.toList());
+
+                classNames.addAll(subClassNames);
+            }
+
+            classnameFilter.put(field, classNames);
+        }
+
+        decryptAllPassword(classnameFilter);
+    }
+
+    private void decryptAllPassword(Map<Field, List<String>> classnameFilter) {
         new SQLBatch() {
             @Override
             protected void scripts() {
                 for (Field field : encryptedFields) {
-                    List<CovertSubClass> covertSubClasses = getCovertSubClassList(field);
-                    List<String> classNames = getClassName(field, covertSubClasses);
+                    List<CovertSubClass> covertSubClasses = new ArrayList<>();
+                    List<String> classNames = classnameFilter.get(field);
+
+                    if (classNames == null || classNames.isEmpty()) {
+                        covertSubClasses = getCovertSubClassList(field);
+                        classNames = getClassName(field, covertSubClasses);
+                    }
 
                     for (String className : classNames) {
                         List<String> uuids = sql(String.format("select uuid from %s", className)).list();
@@ -253,7 +281,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
                 if (PasswordEncryptType.None.toString().equals(newConfig.value())) {
-                    decryptAllPassword();
+                    decryptAllPassword(new HashMap<>());
                 }
             }
         });
@@ -396,7 +424,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
             return;
         }
 
-        decryptAllPassword();
+        beforeRecoverDataDecryptAllPassword();
         encryptAllPassword();
     }
 

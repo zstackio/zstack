@@ -1,6 +1,8 @@
 package org.zstack.storage.ceph;
 
 import org.zstack.core.convert.PasswordConverter;
+import org.zstack.header.core.encrypt.CovertSubClass;
+import org.zstack.header.core.encrypt.CovertSubClasses;
 import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
@@ -9,6 +11,11 @@ import java.sql.Timestamp;
 /**
  * Created by frank on 7/27/2015.
  */
+@CovertSubClasses({
+        @CovertSubClass(classSimpleName = "CephBackupStorageMonVO"),
+        @CovertSubClass(classSimpleName = "CephPrimaryStorageMonVO")
+})
+
 @MappedSuperclass
 public class CephMonAO extends ResourceVO {
     @Column
