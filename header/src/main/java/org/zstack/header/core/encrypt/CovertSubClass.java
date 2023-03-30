@@ -13,6 +13,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CovertSubClass {
     String classSimpleName();
-    String columnName();
-    String columnValue();
+    String columnName() default "";
+    String columnValue() default "";
 }
