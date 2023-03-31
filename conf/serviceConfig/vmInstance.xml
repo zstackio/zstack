@@ -218,6 +218,9 @@
         <name>org.zstack.header.vm.APISetVmQxlMemoryMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APIFlattenVmInstanceMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIGetSpiceCertificatesMsg</name>
     </message>
     <message>

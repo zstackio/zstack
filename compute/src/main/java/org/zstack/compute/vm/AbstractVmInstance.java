@@ -59,11 +59,14 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIGetVmConsoleAddressMsg.class.getName(),
                 APIDeleteVmStaticIpMsg.class.getName(),
                 APIPauseVmInstanceMsg.class.getName(),
-                CreateTemplateFromVmRootVolumeMsg.class.getName(),
-                CreateTemplateFromVmRootVolumeSnapShotMsg.class.getName(),
+                CreateTemplateFromRootVolumeSnapShotVmMsg.class.getName(),
+                CreateTemplateFromRootVolumeVmMsg.class.getName(),
                 AddL3NetworkToVmNicMsg.class.getName(),
                 DeleteL3NetworkFromVmNicMsg.class.getName(),
                 APIChangeVmNicNetworkMsg.class.getName(),
+                FlattenVmInstanceMsg.class.getName(),
+                APIFlattenVmInstanceMsg.class.getName(),
+                CancelFlattenVmInstanceMsg.class.getName(),
                 APISetVmStaticIpMsg.class.getName()
         );
 
@@ -75,8 +78,8 @@ public abstract class AbstractVmInstance implements VmInstance {
                 StartVmInstanceMsg.class.getName(),
                 AttachDataVolumeToVmMsg.class.getName(),
                 DetachDataVolumeFromVmMsg.class.getName(),
-                CreateTemplateFromVmRootVolumeMsg.class.getName(),
-                CreateTemplateFromVmRootVolumeSnapShotMsg.class.getName(),
+                CreateTemplateFromRootVolumeSnapShotVmMsg.class.getName(),
+                CreateTemplateFromRootVolumeVmMsg.class.getName(),
                 VmAttachNicMsg.class.getName(),
                 APIAttachL3NetworkToVmMsg.class.getName(),
                 APIChangeVmNicNetworkMsg.class.getName(),
@@ -98,6 +101,9 @@ public abstract class AbstractVmInstance implements VmInstance {
                 DeleteVmCdRomMsg.class.getName(),
                 CreateVmCdRomMsg.class.getName(),
                 RestoreVmInstanceMsg.class.getName(),
+                FlattenVmInstanceMsg.class.getName(),
+                APIFlattenVmInstanceMsg.class.getName(),
+                CancelFlattenVmInstanceMsg.class.getName(),
                 APISetVmBootVolumeMsg.class.getName()
         );
 
@@ -175,8 +181,11 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIAttachIsoToVmInstanceMsg.class.getName(),
                 AttachIsoToVmInstanceMsg.class.getName(),
                 APIDetachIsoFromVmInstanceMsg.class.getName(),
-                CreateTemplateFromVmRootVolumeMsg.class.getName(),
-                CreateTemplateFromVmRootVolumeSnapShotMsg.class.getName(),
+                CreateTemplateFromRootVolumeSnapShotVmMsg.class.getName(),
+                CreateTemplateFromRootVolumeVmMsg.class.getName(),
+                FlattenVmInstanceMsg.class.getName(),
+                APIFlattenVmInstanceMsg.class.getName(),
+                CancelFlattenVmInstanceMsg.class.getName(),
                 APIDeleteVmStaticIpMsg.class.getName());
 
         allowedOperations.addState(VmInstanceState.Pausing,

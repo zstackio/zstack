@@ -2,7 +2,7 @@ package org.zstack.header.vm;
 
 import org.zstack.header.message.MessageReply;
 
-public class CreateTemplateFromVmRootVolumeReply extends MessageReply {
+public class CreateTemplateFromRootVolumeVmReply extends MessageReply {
     private String installPath;
     private String format;
 

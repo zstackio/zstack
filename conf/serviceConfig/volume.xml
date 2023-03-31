@@ -85,4 +85,8 @@
     <message>
         <name>org.zstack.header.volume.APIBatchSyncVolumeSizeMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.volume.APIFlattenVolumeMsg</name>
+    </message>
 </service>

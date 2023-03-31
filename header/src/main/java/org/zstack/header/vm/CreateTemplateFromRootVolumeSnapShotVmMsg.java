@@ -1,6 +1,6 @@
 package org.zstack.header.vm;
 
-public class CreateTemplateFromVmRootVolumeSnapShotMsg extends CreateTemplateFromVmRootVolumeMsg {
+public class CreateTemplateFromRootVolumeSnapShotVmMsg extends CreateTemplateFromRootVolumeVmMsg {
     private String snapshotUuid;
 
     public String getSnapshotUuid() {

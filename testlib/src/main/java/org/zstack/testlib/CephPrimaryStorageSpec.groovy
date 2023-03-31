@@ -64,6 +64,17 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
         return str.startsWith("/") ? str : "/" + str
     }
 
+
+    static List<VFSFile> getSnapshotPaths(VFS VFS, String volumePath) {
+        List<VFSFile> ret = new ArrayList<>()
+        VFS.walkFileSystem({ vfile ->
+            if (vfile.pathString().contains(volumePath) && vfile.pathString() != volumePath) {
+                ret.add(vfile)
+            }
+        })
+        return ret
+    }
+
     class CephPrimaryStorageStruct {
         String rootVolumePoolName
         String dataVolumePoolName
@@ -364,9 +375,11 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(CephPrimaryStorageBase.CLONE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CloneCmd.class)
                 def rsp = new CephPrimaryStorageBase.CloneRsp()
                 rsp.size = 0
                 rsp.actualSize = 0
+                rsp.installPath = cmd.dstPath
                 return rsp
             }
 
@@ -675,12 +688,7 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 VFS vfs = vfs(cmd, spec)
                 String vfsPath = cephPathToVFSPath(cmd.volumePath)
                 vfs.Assert(vfs.exists(vfsPath), "cannot find the volume[${cmd.volumePath}]")
-                List<VFSFile> files = []
-                vfs.walkFileSystem({ vfile ->
-                    if (vfile.pathString().contains(vfsPath) && vfile.pathString() != vfsPath) {
-                        files.add(vfile)
-                    }
-                })
+                List<VFSFile> files = getSnapshotPaths(vfs, vfsPath)
 
                 rsp.setSnapInfos(new ArrayList<CephPrimaryStorageBase.SnapInfo>())
                 files.each { file ->
@@ -696,6 +704,53 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                     rsp.getSnapInfos().add(snapInfo)
                 }
 
+                return rsp
+            }
+
+            simulator(CephPrimaryStorageBase.GET_BACKING_CHAIN_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new CephPrimaryStorageBase.GetBackingChainRsp()
+            }
+
+            VFS.vfsHook(CephPrimaryStorageBase.GET_BACKING_CHAIN_PATH, espec) { CephPrimaryStorageBase.GetBackingChainRsp rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.GetBackingChainCmd.class)
+                VFS vfs = vfs(cmd, spec)
+                String vfsPath = cephPathToVFSPath(cmd.volumePath)
+                vfs.Assert(vfs.exists(vfsPath), "cannot find the volume[${cmd.volumePath}]")
+
+                CephRaw file = vfs.getFile(vfsPath)
+
+                while (file.parent != null) {
+                    rsp.backingChain.add("ceph:/" + file.pathString())
+                    String parentPath = file.parent.pathString().split("@")[0]
+                    vfs.Assert(vfs.exists(parentPath), "cannot find the parent[${file}]")
+                    file = vfs.getFile(parentPath)
+                }
+
+                return rsp
+            }
+
+            simulator(CephPrimaryStorageBase.DELETE_VOLUME_CHAIN_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new CephPrimaryStorageBase.GetBackingChainRsp()
+            }
+
+            VFS.vfsHook(CephPrimaryStorageBase.DELETE_VOLUME_CHAIN_PATH, espec) { CephPrimaryStorageBase.AgentResponse rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.DeleteVolumeChainCmd.class)
+                VFS vfs = vfs(cmd, spec)
+
+                for (String path : cmd.installPaths) {
+                    String vfsPath = cephPathToVFSPath(path)
+                    vfs.Assert(vfs.exists(vfsPath), "cannot find the volume[${vfsPath}]")
+
+                    if (vfsPath.contains("@")) {
+                        vfs.delete(vfsPath)
+                        String volPath = vfsPath.split("@")[0]
+                        //assert getSnapshotPaths(vfs, volPath).isEmpty() : "the volume[%s] has snapshots, cannot delete it".format(volPath)
+                        vfs.delete(volPath)
+                    } else {
+                        //assert getSnapshotPaths(vfs, vfsPath).isEmpty() : "the volume[%s] has snapshots, cannot delete it".format(vfsPath)
+                        vfs.delete(vfsPath)
+                    }
+                }
                 return rsp
             }
         }

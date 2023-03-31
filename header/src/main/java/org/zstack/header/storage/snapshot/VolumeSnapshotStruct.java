@@ -6,6 +6,7 @@ public class VolumeSnapshotStruct {
     private VolumeSnapshotInventory parent;
     private VolumeSnapshotInventory current;
     private boolean fullSnapshot;
+    private boolean newChain;
 
     public boolean isFullSnapshot() {
         return fullSnapshot;
@@ -29,5 +30,13 @@ public class VolumeSnapshotStruct {
 
     public void setCurrent(VolumeSnapshotInventory current) {
         this.current = current;
+    }
+
+    public boolean isNewChain() {
+        return newChain;
+    }
+
+    public void setNewChain(boolean newChain) {
+        this.newChain = newChain;
     }
 }
