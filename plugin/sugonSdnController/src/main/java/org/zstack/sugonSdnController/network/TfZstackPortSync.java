@@ -95,6 +95,7 @@ public class TfZstackPortSync implements ManagementNodeReadyExtensionPoint {
             logger.info("Port_Sync_Task: begin.");
             try {
                 HashSet<String> portsToDelete = getPortToDelete();
+                int maxDeleteCount = 10;
                 for (String portUuid: portsToDelete) {
                     TfPortResponse response = tfPortService.deleteTfPort(portUuid);
                     if (response.getCode() == 200) {
@@ -103,6 +104,10 @@ public class TfZstackPortSync implements ManagementNodeReadyExtensionPoint {
                     } else {
                         logger.warn(String.format("Port_Sync_Task: VirtualMachineInterface: %s delete failed," +
                                         " reason: %s.", portUuid, response.getMsg()));
+                    }
+                    maxDeleteCount --;
+                    if (maxDeleteCount == 0) {
+                        break;
                     }
                 }
             } catch (Exception e) {
