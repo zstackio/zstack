@@ -20,7 +20,9 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
-import org.zstack.utils.tester.ZTester
+
+import static org.zstack.kvm.KVMConstant.*
+import static org.zstack.kvm.KVMAgentCommands.*
 
 /**
  * Created by mingjian.deng on 2019/1/3.*/
@@ -64,7 +66,7 @@ class AddHostCase extends SubCase {
     }
 
     void testLongJobAddHostFailure() {
-        env.testter.clearAll()
+        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp -> rsp }
 
         AddKVMHostMsg akmsg = new AddKVMHostMsg(
                 accountUuid: loginAsAdmin().accountUuid,
@@ -104,7 +106,7 @@ class AddHostCase extends SubCase {
     }
 
     void testAddHostViaLongJob() {
-        env.testter.clearAll()
+        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp -> rsp }
 
         AddKVMHostMsg akmsg = new AddKVMHostMsg(
                 accountUuid: loginAsAdmin().accountUuid,
@@ -182,7 +184,11 @@ class AddHostCase extends SubCase {
     }
 
     void testCheckHostVersionFailure() {
-        env.testter.setNull(ZTester.KVM_HostVersion)
+        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp ->
+            rsp.osVersion = null
+            return rsp
+        }
+
         def action = new AddKVMHostAction()
         action.sessionId = adminSession()
         action.resourceUuid = Platform.uuid
@@ -198,7 +204,7 @@ class AddHostCase extends SubCase {
     }
 
     void testCheckHostManagementFailure() {
-        env.testter.clearAll()
+        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp -> rsp }
 
         def action = new AddKVMHostAction()
         action.sessionId = adminSession()
@@ -216,7 +222,7 @@ class AddHostCase extends SubCase {
     }
 
     void testInnerAddHostMsg() {
-        env.testter.clearAll()
+        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp -> rsp }
 
         AddKVMHostMsg amsg = new AddKVMHostMsg()
         amsg.accountUuid = loginAsAdmin().accountUuid

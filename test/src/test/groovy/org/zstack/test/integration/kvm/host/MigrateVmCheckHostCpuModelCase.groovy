@@ -9,6 +9,8 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
+import static org.zstack.kvm.KVMConstant.*
+import static org.zstack.kvm.KVMAgentCommands.*
 import static org.zstack.utils.CollectionDSL.e
 import static org.zstack.utils.CollectionDSL.map
 
@@ -129,6 +131,13 @@ class MigrateVmCheckHostCpuModelCase extends SubCase {
 
     @Override
     void test() {
+        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp ->
+            rsp.qemuImgVersion = ""
+            rsp.libvirtVersion = ""
+            rsp.cpuModelName = ""
+            return rsp
+        }
+
         env.create {
             testVmMigrateCheckHostCpuModel()
         }
