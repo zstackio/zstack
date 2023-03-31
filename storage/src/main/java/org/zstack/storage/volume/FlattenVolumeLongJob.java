@@ -46,7 +46,7 @@ public class FlattenVolumeLongJob implements LongJob {
         CancelFlattenVolumeMsg cmsg = new CancelFlattenVolumeMsg();
         cmsg.setCancellationApiId(job.getApiId());
         cmsg.setUuid(msg.getUuid());
-        bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, msg.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, msg.getUuid());
         bus.send(cmsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
