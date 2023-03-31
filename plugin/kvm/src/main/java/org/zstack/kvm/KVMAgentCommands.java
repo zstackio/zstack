@@ -2559,6 +2559,7 @@ public class KVMAgentCommands {
         private String uuid;
         private String type;
         private long timeout;
+        private List<VmNicInventory> vmNics;
 
         public String getUuid() {
             return uuid;
@@ -2582,6 +2583,14 @@ public class KVMAgentCommands {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public List<VmNicInventory> getVmNics() {
+            return vmNics;
+        }
+
+        public void setVmNics(List<VmNicInventory> vmNics) {
+            this.vmNics = vmNics;
         }
     }
 
@@ -2673,6 +2682,7 @@ public class KVMAgentCommands {
 
     public static class DestroyVmCmd extends AgentCommand {
         private String uuid;
+        private List<VmNicInventory> vmNics;
 
         public String getUuid() {
             return uuid;
@@ -2681,6 +2691,15 @@ public class KVMAgentCommands {
         public void setUuid(String uuid) {
             this.uuid = uuid;
         }
+
+        public List<VmNicInventory> getVmNics() {
+            return vmNics;
+        }
+
+        public void setVmNics(List<VmNicInventory> vmNics) {
+            this.vmNics = vmNics;
+        }
+
     }
 
     public static class DestroyVmResponse extends AgentResponse {
