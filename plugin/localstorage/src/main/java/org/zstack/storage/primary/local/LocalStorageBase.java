@@ -1214,15 +1214,36 @@ public class LocalStorageBase extends PrimaryStorageBase {
         final String hostUuid = getHostUuidByResourceUuid(msg.getTo().getUuid());
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, hostUuid, new ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply>(msg) {
+        MergeVolumeSnapshotOnPrimaryStorageReply r = new MergeVolumeSnapshotOnPrimaryStorageReply();
+        bkd.stream(msg.getFrom(), msg.getTo(), msg.isFullRebase(), hostUuid, new Completion(msg) {
             @Override
-            public void success(MergeVolumeSnapshotOnPrimaryStorageReply returnValue) {
-                bus.reply(msg, returnValue);
+            public void success() {
+                bus.reply(msg, r);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                MergeVolumeSnapshotOnPrimaryStorageReply r = new MergeVolumeSnapshotOnPrimaryStorageReply();
+                r.setError(errorCode);
+                bus.reply(msg, r);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(FlattenVolumeOnPrimaryStorageMsg msg) {
+        final String hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid());
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+
+        FlattenVolumeOnPrimaryStorageReply r = new FlattenVolumeOnPrimaryStorageReply();
+        bkd.stream(null, msg.getVolume(), true, hostUuid, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
                 r.setError(errorCode);
                 bus.reply(msg, r);
             }

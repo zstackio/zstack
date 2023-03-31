@@ -71,6 +71,8 @@ public interface NfsPrimaryStorageBackend {
 
     void createVolumeFromImageCache(PrimaryStorageInventory primaryStorage, ImageInventory image, ImageCacheInventory imageCache, VolumeInventory volume, ReturnValueCompletion<VolumeInfo> completion);
 
+    void createIncrementalImageCacheFromVolumeResource(PrimaryStorageInventory primaryStorage, String volumeResourceInstallPath, ImageInventory image, ReturnValueCompletion<BitsInfo> completion);
+
     void createImageCacheFromVolumeResource(PrimaryStorageInventory primaryStorage, String volumeResourceInstallPath, ImageInventory image, ReturnValueCompletion<BitsInfo> completion);
 
     void createTemplateFromVolume(PrimaryStorageInventory primaryStorage, VolumeInventory volume, ImageInventory image, ReturnValueCompletion<BitsInfo> completion);

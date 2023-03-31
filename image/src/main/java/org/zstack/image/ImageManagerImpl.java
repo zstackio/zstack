@@ -55,8 +55,8 @@ import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagValidator;
-import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg;
-import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
+import org.zstack.header.vm.CreateTemplateFromRootVolumeVmMsg;
+import org.zstack.header.vm.CreateTemplateFromRootVolumeVmReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
@@ -224,6 +224,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         cmsg.setImageUuid(vo.getUuid());
         cmsg.setVolumeUuid(volumeUuid);
         cmsg.setTreeUuid(treeUuid);
+        cmsg.setSystemTags(msg.getSystemTags());
         String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
         bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
         bus.send(cmsg, new CloudBusCallBack(msg) {
@@ -1517,10 +1518,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        List<CreateTemplateFromVmRootVolumeMsg> cmsgs = CollectionUtils.transformToList(targetBackupStorages, new Function<CreateTemplateFromVmRootVolumeMsg, BackupStorageInventory>() {
+                        List<CreateTemplateFromRootVolumeVmMsg> cmsgs = CollectionUtils.transformToList(targetBackupStorages, new Function<CreateTemplateFromRootVolumeVmMsg, BackupStorageInventory>() {
                             @Override
-                            public CreateTemplateFromVmRootVolumeMsg call(BackupStorageInventory arg) {
-                                CreateTemplateFromVmRootVolumeMsg cmsg = new CreateTemplateFromVmRootVolumeMsg();
+                            public CreateTemplateFromRootVolumeVmMsg call(BackupStorageInventory arg) {
+                                CreateTemplateFromRootVolumeVmMsg cmsg = new CreateTemplateFromRootVolumeVmMsg();
                                 cmsg.setRootVolumeInventory(rootVolume);
                                 cmsg.setBackupStorageUuid(arg.getUuid());
                                 cmsg.setImageInventory(ImageInventory.valueOf(imageVO));
@@ -1559,7 +1560,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         continue;
                                     }
 
-                                    CreateTemplateFromVmRootVolumeReply reply = (CreateTemplateFromVmRootVolumeReply) r;
+                                    CreateTemplateFromRootVolumeVmReply reply = (CreateTemplateFromRootVolumeVmReply) r;
                                     ref.setStatus(ImageStatus.Ready);
                                     ref.setInstallPath(reply.getInstallPath());
                                     dbf.update(ref);

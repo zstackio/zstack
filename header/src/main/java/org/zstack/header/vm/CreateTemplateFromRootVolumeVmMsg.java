@@ -4,7 +4,7 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.volume.VolumeInventory;
 
-public class CreateTemplateFromVmRootVolumeMsg extends NeedReplyMessage implements VmInstanceMessage {
+public class CreateTemplateFromRootVolumeVmMsg extends NeedReplyMessage implements VmInstanceMessage {
     private ImageInventory imageInventory;
     private VolumeInventory rootVolumeInventory;
     private String backupStorageUuid;

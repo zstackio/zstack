@@ -364,9 +364,11 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(CephPrimaryStorageBase.CLONE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CloneCmd.class)
                 def rsp = new CephPrimaryStorageBase.CloneRsp()
                 rsp.size = 0
                 rsp.actualSize = 0
+                rsp.installPath = cmd.dstPath
                 return rsp
             }
 
