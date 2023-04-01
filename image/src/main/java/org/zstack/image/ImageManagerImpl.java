@@ -366,7 +366,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "create-image-cache-from-volume";
-
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         CreateImageCacheFromVolumeMsg cmsg = new CreateImageCacheFromVolumeMsg();

@@ -14,6 +14,7 @@ public class CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg extends Need
     private boolean system;
     private SessionInventory session;
     private boolean virtio = true;
+    private String resourceUuid;
 
     public void setSnapshotUuid(String snapshotUuid) {
         this.snapshotUuid = snapshotUuid;
@@ -84,5 +85,15 @@ public class CreateTemporaryRootVolumeTemplateFromVolumeSnapshotMsg extends Need
 
     public void setSession(SessionInventory session) {
         this.session = session;
+    }
+
+    @Override
+    public void setResourceUuid(String resourceUuid) {
+        this.resourceUuid = resourceUuid;
+    }
+
+    @Override
+    public String getResourceUuid() {
+        return resourceUuid;
     }
 }
