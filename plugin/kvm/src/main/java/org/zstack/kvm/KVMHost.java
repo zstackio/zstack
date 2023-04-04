@@ -2931,8 +2931,8 @@ public class KVMHost extends HostBase implements Host {
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
 
         boolean emulateHyperV = false;
-        if (!ImagePlatform.isType(platform, ImagePlatform.Linux) &&
-                ImageArchitecture.x86_64.toString().equals(architecture)) {
+        if (ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio)
+                && ImageArchitecture.x86_64.toString().equals(architecture)) {
             emulateHyperV = rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class);
         }
         cmd.setEmulateHyperV(emulateHyperV);
