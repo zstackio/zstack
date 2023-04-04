@@ -122,6 +122,7 @@ public class SourceClassMap {
 			put("org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory", "org.zstack.sdk.FaultToleranceVmGroupInventory");
 			put("org.zstack.guesttools.GuestToolsInventory", "org.zstack.sdk.GuestToolsInventory");
 			put("org.zstack.guesttools.GuestToolsStateInventory", "org.zstack.sdk.GuestToolsStateInventory");
+			put("org.zstack.ha.HaStrategyConditionInventory", "org.zstack.sdk.HaStrategyConditionInventory");
 			put("org.zstack.header.acl.AccessControlListEntryInventory", "org.zstack.sdk.AccessControlListEntryInventory");
 			put("org.zstack.header.acl.AccessControlListInventory", "org.zstack.sdk.AccessControlListInventory");
 			put("org.zstack.header.affinitygroup.AffinityGroupInventory", "org.zstack.sdk.AffinityGroupInventory");
@@ -844,6 +845,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
 			put("org.zstack.sdk.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
 			put("org.zstack.sdk.GuestToolsStateInventory", "org.zstack.guesttools.GuestToolsStateInventory");
+			put("org.zstack.sdk.HaStrategyConditionInventory", "org.zstack.ha.HaStrategyConditionInventory");
 			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");

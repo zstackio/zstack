@@ -40,6 +40,9 @@ public class PrimaryStorageType {
     }
 
     public PrimaryStorageType(String typeName) {
+        if (types.containsKey(typeName)) {
+            throw new IllegalArgumentException(String.format("duplicate PrimaryStorageType for typeName[%s]", typeName));
+        }
         this.typeName = typeName;
         types.put(typeName, this);
     }
