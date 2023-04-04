@@ -130,7 +130,8 @@ class HostPasswordEncryptCase extends SubCase {
         retryInSecs {
             password = Q.New(KVMHostVO.class).select(KVMHostVO_.password).eq(KVMHostVO_.uuid, host.uuid).findValue()
 
-            assert password == encryptFacade.encrypt("password")
+            // the value of findValue query will be processed by convertToEntityAttribute
+            assert password == "password"
         }
 
         //  test handleNewAddedEncryptEntity again, result unchanged
@@ -146,7 +147,8 @@ class HostPasswordEncryptCase extends SubCase {
         retryInSecs {
             password = Q.New(KVMHostVO.class).select(KVMHostVO_.password).eq(KVMHostVO_.uuid, host.uuid).findValue()
 
-            assert password == encryptFacade.encrypt("password")
+            // the value of findValue query will be processed by convertToEntityAttribute
+            assert password == "password"
         }
 
         List<Tuple> needToChangeHosts = Q.New(KVMHostVO.class).select(KVMHostVO_.password, KVMHostVO_.uuid).listTuple()
