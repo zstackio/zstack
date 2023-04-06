@@ -20807,6 +20807,56 @@
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
+    "raw": "can not attach volume[%s] to host[%s], because host[status:%s] is not connected",
+    "en_US": "can not attach volume[{0}] to host[{1}], because host[status:{2}] is not connected",
+    "zh_CN": "无法将云盘[{0}]挂载到物理机[{1}]，因为物理机[status:{2}]未连接",
+    "arguments": [
+      "msg.getVolumeUuid()",
+      "msg.getHostUuid()",
+      "hostStatus"
+    ],
+    "line": 445,
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
+    "raw": "can not attach volume[%s] to host[%s], because volume is attaching to host[%s]",
+    "en_US": "can not attach volume[{0}] to host[{1}], because volume is attaching to host[{2}]",
+    "zh_CN": "无法将云盘[{0}]挂载到物理机[{1}]，因为云盘正在挂载到物理机[{2}]",
+    "arguments": [
+      "msg.getVolumeUuid()",
+      "msg.getHostUuid()",
+      "hostUuid"
+    ],
+    "line": 467,
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
+    "raw": "can not attach volume[%s] to host[%s], because the volume[%s] occupies the mount path[%s] on host[%s]",
+    "en_US": "can not attach volume[{0}] to host[{1}], because the volume[{2}] occupies the mount path[{3}] on host[{4}]",
+    "zh_CN": "无法将云盘[{0}]挂载到物理机[{1}]，因为云盘[{2}]在物理机[{4}]上占用了挂载路径[{3}]",
+    "arguments": [
+      "msg.getVolumeUuid()",
+      "msg.getHostUuid()",
+      "msg.getVolumeUuid()",
+      "mountPath",
+      "hostUuid"
+    ],
+    "line": 471,
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
+  "raw": "can not attach volume[%s] to host[%s], because the another volume occupies the mount path[%s]",
+  "en_US": "can not attach volume[{0}] to host[{1}], because the another volume occupies the mount path[{2}]",
+  "zh_CN": "无法将云盘[{0}]挂载到物理机[{1}]，因为另一个云盘占用了挂载路径[{2}]",
+  "arguments": [
+    "msg.getVolumeUuid()",
+    "msg.getHostUuid()",
+    "msg.getMountPath()"
+  ],
+  "line": 481,
+  "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
     "raw": "the volume[uuid:%s, name:%s] is not deleted yet, can\u0027t expunge it",
     "en_US": "the volume[uuid:{0}, name:{1}] is not deleted yet, can\u0027t expunge it",
     "zh_CN": "云盘[uuid:{0}, name:{1}]仍未被删除，不能清除该云盘",
