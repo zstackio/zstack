@@ -23,7 +23,8 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
-import org.zstack.utils.tester.ZTester
+
+import static org.zstack.kvm.KVMConstant.KVM_HOST_FACT_PATH
 
 
 class AddHostCheckNUMATopologyCase extends SubCase {
@@ -94,7 +95,7 @@ class AddHostCheckNUMATopologyCase extends SubCase {
     }
 
     void testLongJobAddHostFailure() {
-        env.testter.clearAll()
+        env.afterSimulator(KVM_HOST_FACT_PATH) { KVMAgentCommands.HostFactResponse rsp -> rsp }
 
         AddKVMHostMsg akmsg = new AddKVMHostMsg(
                 accountUuid: loginAsAdmin().accountUuid,
@@ -134,7 +135,7 @@ class AddHostCheckNUMATopologyCase extends SubCase {
     }
 
     void testAddHostViaLongJob() {
-        env.testter.clearAll()
+        env.afterSimulator(KVM_HOST_FACT_PATH) { KVMAgentCommands.HostFactResponse rsp -> rsp }
 
         AddKVMHostMsg akmsg = new AddKVMHostMsg(
                 accountUuid: loginAsAdmin().accountUuid,
@@ -212,7 +213,11 @@ class AddHostCheckNUMATopologyCase extends SubCase {
     }
 
     void testCheckHostVersionFailure() {
-        env.testter.setNull(ZTester.KVM_HostVersion)
+        env.afterSimulator(KVM_HOST_FACT_PATH) { KVMAgentCommands.HostFactResponse rsp ->
+            rsp.osVersion = null
+            return rsp
+        }
+
         def action = new AddKVMHostAction()
         action.sessionId = adminSession()
         action.resourceUuid = Platform.uuid
@@ -231,7 +236,7 @@ class AddHostCheckNUMATopologyCase extends SubCase {
     }
 
     void testCheckHostManagementFailure() {
-        env.testter.clearAll()
+        env.afterSimulator(KVM_HOST_FACT_PATH) { KVMAgentCommands.HostFactResponse rsp -> rsp }
 
         def action = new AddKVMHostAction()
         action.sessionId = adminSession()
@@ -249,7 +254,7 @@ class AddHostCheckNUMATopologyCase extends SubCase {
     }
 
     void testInnerAddHostMsg() {
-        env.testter.clearAll()
+        env.afterSimulator(KVM_HOST_FACT_PATH) { KVMAgentCommands.HostFactResponse rsp -> rsp }
 
         AddKVMHostMsg amsg = new AddKVMHostMsg()
         amsg.accountUuid = loginAsAdmin().accountUuid

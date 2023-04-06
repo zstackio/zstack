@@ -1,17 +1,17 @@
 package org.zstack.test.integration.kvm.host
 
 import org.zstack.header.host.HostVO
-import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.kvm.KVMSystemTags
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
-import org.zstack.tag.SystemTagCreator
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
+import static org.zstack.kvm.KVMConstant.*
+import static org.zstack.kvm.KVMAgentCommands.*
 import static org.zstack.utils.CollectionDSL.e
 import static org.zstack.utils.CollectionDSL.map
 
@@ -152,6 +152,14 @@ class MigrateVmCheckKvmPropertyCase extends SubCase {
 
     @Override
     void test() {
+        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp ->
+            rsp.eptFlag = ""
+            rsp.qemuImgVersion = ""
+            rsp.libvirtVersion = ""
+            rsp.cpuModelName = ""
+            return rsp
+        }
+
         env.create {
             vm1 = env.inventoryByName("vm") as VmInstanceInventory
             vm2 = env.inventoryByName("vm2") as VmInstanceInventory

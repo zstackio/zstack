@@ -157,6 +157,25 @@ class KVMSimulator implements Simulator {
 
         spec.simulator(KVMConstant.KVM_HOST_FACT_PATH) { HttpEntity<String> e ->
             def rsp = new HostFactResponse()
+
+            rsp.osDistribution = "zstack"
+            rsp.osRelease = "kvmSimulator"
+            rsp.osVersion = "0.1"
+            rsp.qemuImgVersion = "2.0.0"
+            rsp.libvirtVersion = "1.2.9"
+            rsp.cpuModelName = "Broadwell"
+            rsp.cpuProcessorNum = "10"
+            rsp.cpuGHz = "2.10"
+            rsp.hostCpuModelName = "Broadwell @ 2.10GHz"
+            rsp.ipmiAddress = null
+            rsp.ipmiAddress = "0.0.0.0"
+            rsp.eptFlag = "ept"
+            rsp.libvirtCapabilities = ["incrementaldrivemirror", "blockcopynetworktarget"]
+            rsp.powerSupplyModelName = ""
+            rsp.powerSupplyManufacturer = ""
+            rsp.hvmCpuFlag = ""
+            rsp.cpuCache = "64.0,4096.0,16384.0"
+
             rsp.virtualizerInfo = new VirtualizerInfoTO()
             rsp.virtualizerInfo.version = "4.2.0-627.g36ee592.el7"
             rsp.virtualizerInfo.virtualizer = "qemu-kvm"

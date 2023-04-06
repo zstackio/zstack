@@ -471,6 +471,10 @@ public class KVMAgentCommands {
             return eptFlag;
         }
 
+        public void setEptFlag(String eptFlag) {
+            this.eptFlag = eptFlag;
+        }
+
         public String getLibvirtVersion() {
             return libvirtVersion;
         }
