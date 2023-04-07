@@ -34,9 +34,7 @@ public class CreateSchedulerJobAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String targetResourceUuid;
 
-    @Param(required = true, validValues = {"startVm", "stopVm", "rebootVm", "volumeSnapshot", "volumeBackup", "volumeSnapshotGroup",
-            "rootVolumeBackup", "vmBackup", "databaseBackup", "localRaidSelfTest", "runAutoScalingGroup",
-            "cancelIAM2ProjectLoginExpired", "takeIAM2ProjectLoginExpired"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"startVm","stopVm","rebootVm","volumeSnapshot","volumeSnapshotGroup","volumeBackup","rootVolumeBackup","vmBackup","databaseBackup","localRaidSelfTest","runAutoScalingGroup","cancelIAM2ProjectLoginExpired","takeIAM2ProjectLoginExpired"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
