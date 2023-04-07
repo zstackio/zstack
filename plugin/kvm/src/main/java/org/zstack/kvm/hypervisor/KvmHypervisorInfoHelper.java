@@ -1,21 +1,20 @@
 package org.zstack.kvm.hypervisor;
 
 import org.zstack.core.db.Q;
-import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.header.host.HostOperationSystem;
 import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMHostVO;
+import org.zstack.kvm.KVMHostVO_;
 import org.zstack.kvm.hypervisor.datatype.HostOsCategoryVO;
 import org.zstack.kvm.hypervisor.datatype.HostOsCategoryVO_;
 import org.zstack.kvm.hypervisor.datatype.HypervisorVersionState;
-import org.zstack.utils.TagUtils;
 import org.zstack.utils.data.Pair;
 
+import javax.persistence.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.compute.host.HostSystemTags.*;
 
 /**
  * Created by Wenhao.Zhang on 23/02/21
@@ -28,35 +27,18 @@ public class KvmHypervisorInfoHelper {
      */
     public static Map<String, HostOsCategoryVO> collectExpectedHypervisorInfoForHosts(
             Collection<String> hostUuidList) {
-        Map<String, String> hostArchMap = Q.New(HostVO.class)
-                .select(HostVO_.uuid, HostVO_.architecture)
+        List<Tuple> tuples = Q.New(KVMHostVO.class)
+                .select(KVMHostVO_.uuid, KVMHostVO_.architecture,
+                        KVMHostVO_.osDistribution, KVMHostVO_.osRelease, KVMHostVO_.osVersion)
                 .notNull(HostVO_.architecture)
-                .in(HostVO_.uuid, hostUuidList)
-                .listTuple()
-                .stream()
+                .in(KVMHostVO_.uuid, hostUuidList)
+                .listTuple();
+        Map<String, String> hostArchMap = tuples.stream()
                 .collect(Collectors.toMap(tuple -> tuple.get(0, String.class), tuple -> tuple.get(1, String.class)));
-
-        Map<String, String> hostDistributionMap = Q.New(SystemTagVO.class)
-                .select(SystemTagVO_.resourceUuid, SystemTagVO_.tag)
-                .in(SystemTagVO_.resourceUuid, hostUuidList)
-                .like(SystemTagVO_.tag, TagUtils.tagPatternToSqlPattern(OS_DISTRIBUTION.getTagFormat()))
-                .listTuple()
-                .stream()
-                .collect(Collectors.toMap(tuple -> tuple.get(0, String.class), tuple -> tuple.get(1, String.class)));
-        Map<String, String> hostOsVersionMap = Q.New(SystemTagVO.class)
-                .select(SystemTagVO_.resourceUuid, SystemTagVO_.tag)
-                .in(SystemTagVO_.resourceUuid, hostUuidList)
-                .like(SystemTagVO_.tag, TagUtils.tagPatternToSqlPattern(OS_VERSION.getTagFormat()))
-                .listTuple()
-                .stream()
-                .collect(Collectors.toMap(tuple -> tuple.get(0, String.class), tuple -> tuple.get(1, String.class)));
-        Map<String, String> hostReleaseMap = Q.New(SystemTagVO.class)
-                .select(SystemTagVO_.resourceUuid, SystemTagVO_.tag)
-                .in(SystemTagVO_.resourceUuid, hostUuidList)
-                .like(SystemTagVO_.tag, TagUtils.tagPatternToSqlPattern(OS_RELEASE.getTagFormat()))
-                .listTuple()
-                .stream()
-                .collect(Collectors.toMap(tuple -> tuple.get(0, String.class), tuple -> tuple.get(1, String.class)));
+        Map<String, HostOperationSystem> hostOsMap = tuples.stream()
+                .collect(Collectors.toMap(tuple -> tuple.get(0, String.class),
+                        tuple -> HostOperationSystem.of(
+                                tuple.get(2, String.class), tuple.get(3, String.class), tuple.get(4, String.class))));
 
         final Map<Pair<String, String>, HostOsCategoryVO> caches = new HashMap<>();
         final Map<String, HostOsCategoryVO> results = new HashMap<>();
@@ -67,13 +49,8 @@ public class KvmHypervisorInfoHelper {
                 continue;
             }
 
-            String distributionTag = hostDistributionMap.get(hostUuid);
-            String distribution = OS_DISTRIBUTION.getTokenByTag(distributionTag, OS_DISTRIBUTION_TOKEN);
-            String osVersionTag = hostOsVersionMap.get(hostUuid);
-            String osVersion = OS_VERSION.getTokenByTag(osVersionTag, OS_VERSION_TOKEN);
-            String osReleaseTag = hostReleaseMap.get(hostUuid);
-            String osRelease = OS_RELEASE.getTokenByTag(osReleaseTag, OS_RELEASE_TOKEN);
-            String osReleaseVersion = generateOsReleaseVersion(distribution, osRelease, osVersion);
+            HostOperationSystem os = hostOsMap.get(hostUuid);
+            String osReleaseVersion = os.toString();
 
             Pair<String, String> key = new Pair<>(architecture, osReleaseVersion);
             HostOsCategoryVO vo = caches.get(key);
@@ -91,10 +68,6 @@ public class KvmHypervisorInfoHelper {
         }
 
         return results;
-    }
-
-    private static String generateOsReleaseVersion(String distribution, String osRelease, String osVersion) {
-        return String.format("%s %s %s", distribution, osRelease, osVersion);
     }
 
     public static HypervisorVersionState isQemuVersionMatched(String v1, String v2) {

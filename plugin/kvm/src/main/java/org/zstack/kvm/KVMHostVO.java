@@ -22,6 +22,15 @@ public class KVMHostVO extends HostVO {
     @Column
     private Integer port;
 
+    @Column
+    private String osDistribution;
+
+    @Column
+    private String osRelease;
+
+    @Column
+    private String osVersion;
+
     public KVMHostVO() {
     }
 
@@ -53,5 +62,28 @@ public class KVMHostVO extends HostVO {
         this.port = port;
     }
 
+    public String getOsDistribution() {
+        return osDistribution;
+    }
+
+    public void setOsDistribution(String osDistribution) {
+        this.osDistribution = osDistribution;
+    }
+
+    public String getOsRelease() {
+        return osRelease;
+    }
+
+    public void setOsRelease(String osRelease) {
+        this.osRelease = osRelease;
+    }
+
+    public String getOsVersion() {
+        return osVersion;
+    }
+
+    public void setOsVersion(String osVersion) {
+        this.osVersion = osVersion;
+    }
 }
 

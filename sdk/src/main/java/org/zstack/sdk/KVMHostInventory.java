@@ -20,4 +20,28 @@ public class KVMHostInventory extends org.zstack.sdk.HostInventory {
         return this.sshPort;
     }
 
+    public java.lang.String osDistribution;
+    public void setOsDistribution(java.lang.String osDistribution) {
+        this.osDistribution = osDistribution;
+    }
+    public java.lang.String getOsDistribution() {
+        return this.osDistribution;
+    }
+
+    public java.lang.String osRelease;
+    public void setOsRelease(java.lang.String osRelease) {
+        this.osRelease = osRelease;
+    }
+    public java.lang.String getOsRelease() {
+        return this.osRelease;
+    }
+
+    public java.lang.String osVersion;
+    public void setOsVersion(java.lang.String osVersion) {
+        this.osVersion = osVersion;
+    }
+    public java.lang.String getOsVersion() {
+        return this.osVersion;
+    }
+
 }

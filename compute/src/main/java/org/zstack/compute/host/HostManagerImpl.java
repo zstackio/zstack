@@ -366,47 +366,11 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                String distro = HostSystemTags.OS_DISTRIBUTION.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_DISTRIBUTION_TOKEN);
-                String release = HostSystemTags.OS_RELEASE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_RELEASE_TOKEN);
-                String version = HostSystemTags.OS_VERSION.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_VERSION_TOKEN);
-
-                if (distro == null || release == null || version == null) {
-                    trigger.fail(operr("after connecting, host[name:%s, ip:%s] returns a null os version", vo.getName(), vo.getManagementIp()));
+                final ErrorCode errorCode = factory.checkNewAddedHost(vo);
+                if (errorCode != null) {
+                    trigger.fail(errorCode);
                     return;
                 }
-
-                SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
-                q.select(HostVO_.uuid);
-                q.add(HostVO_.clusterUuid, Op.EQ, vo.getClusterUuid());
-                q.add(HostVO_.uuid, Op.NOT_EQ, vo.getUuid());
-                q.add(HostVO_.status, Op.NOT_EQ, HostStatus.Connecting);
-                q.setLimit(1);
-                List<String> huuids = q.listValue();
-                if (huuids.isEmpty()) {
-                    // this the first host in cluster
-                    trigger.next();
-                    return;
-                }
-
-                String otherHostUuid = huuids.get(0);
-                String cdistro = HostSystemTags.OS_DISTRIBUTION.getTokenByResourceUuid(otherHostUuid, HostSystemTags.OS_DISTRIBUTION_TOKEN);
-                String crelease = HostSystemTags.OS_RELEASE.getTokenByResourceUuid(otherHostUuid, HostSystemTags.OS_RELEASE_TOKEN);
-                String cversion = HostSystemTags.OS_VERSION.getTokenByResourceUuid(otherHostUuid, HostSystemTags.OS_VERSION_TOKEN);
-                if (cdistro == null || crelease == null || cversion == null) {
-                    // this the first host in cluster
-                    trigger.next();
-                    return;
-                }
-
-                String mineVersion = String.format("%s;%s;%s", distro, release, version);
-                String currentVersion = String.format("%s;%s;%s", cdistro, crelease, cversion);
-
-                if (!mineVersion.equals(currentVersion)) {
-                    trigger.fail(operr("cluster[uuid:%s] already has host with os version[%s], but new added host[name:%s ip:%s] has host os version[%s]",
-                            vo.getClusterUuid(), currentVersion, vo.getName(), vo.getManagementIp(), mineVersion));
-                    return;
-                }
-
                 trigger.next();
             }
         }).then(new NoRollbackFlow() {

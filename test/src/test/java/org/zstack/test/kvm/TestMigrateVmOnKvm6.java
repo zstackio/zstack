@@ -2,15 +2,16 @@ package org.zstack.test.kvm;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.kvm.KVMHostVO;
+import org.zstack.kvm.KVMHostVO_;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
-import org.zstack.tag.SystemTagCreator;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -21,9 +22,6 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * 1. add two hosts
@@ -69,11 +67,10 @@ public class TestMigrateVmOnKvm6 {
             }
         });
 
-        SystemTagCreator creator = HostSystemTags.OS_DISTRIBUTION.newSystemTagCreator(target.getUuid());
-        creator.setTagByTokens(map(e(HostSystemTags.OS_DISTRIBUTION_TOKEN, "some_fake_distribution")));
-        creator.inherent = true;
-        creator.recreate = true;
-        creator.create();
+        SQL.New(KVMHostVO.class)
+                .eq(KVMHostVO_.uuid, target.getUuid())
+                .set(KVMHostVO_.osDistribution, "some_fake_distribution")
+                .update();
 
         api.migrateVmInstance(vm.getUuid(), target.getUuid());
     }
