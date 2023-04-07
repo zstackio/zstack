@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
                 foreignKey = "zoneUuid", expandedInventoryKey = "uuid"),
 })
 public class VmSchedHistoryInventory implements Serializable {
-    @APINoSee
     private long id;
     private String vmInstanceUuid;
     private String accountUuid;
