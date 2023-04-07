@@ -4,6 +4,14 @@ package org.zstack.sdk;
 
 public class VmSchedHistoryInventory  {
 
+    public long id;
+    public void setId(long id) {
+        this.id = id;
+    }
+    public long getId() {
+        return this.id;
+    }
+
     public java.lang.String vmInstanceUuid;
     public void setVmInstanceUuid(java.lang.String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
