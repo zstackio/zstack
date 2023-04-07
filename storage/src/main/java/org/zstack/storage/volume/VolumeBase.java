@@ -1005,7 +1005,13 @@ public class VolumeBase implements Volume {
     }
 
     private void doCreateDataVolumeTemplateFromDataVolumeMsg(CreateDataVolumeTemplateFromDataVolumeMsg msg, NoErrorCompletion noErrorCompletion) {
-        final CreateTemplateFromVolumeOnPrimaryStorageMsg cmsg = new CreateTemplateFromVolumeOnPrimaryStorageMsg();
+        CreateTemplateFromVolumeOnPrimaryStorageMsg cmsg = new CreateTemplateFromVolumeOnPrimaryStorageMsg();
+        if (msg instanceof CreateDataVolumeTemplateFromDataVolumeSnapshotMsg) {
+            cmsg = new CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg();
+            ((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) cmsg).setSnapshotUuid(
+                    ((CreateDataVolumeTemplateFromDataVolumeSnapshotMsg) msg).getSnapshotUuid());
+        }
+
         cmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
         cmsg.setImageInventory(ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class)));
         cmsg.setVolumeInventory(getSelfInventory());

@@ -2768,6 +2768,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             final CreateTemplateFromVmRootVolumeReply reply = new CreateTemplateFromVmRootVolumeReply();
 
             CreateTemplateFromVolumeOnPrimaryStorageMsg cmsg = new CreateTemplateFromVolumeOnPrimaryStorageMsg();
+            if (msg instanceof CreateTemplateFromVmRootVolumeSnapShotMsg) {
+                cmsg = new CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg();
+                ((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) cmsg).setSnapshotUuid(
+                        ((CreateTemplateFromVmRootVolumeSnapShotMsg) msg).getSnapshotUuid());
+            }
+
             cmsg.setVolumeInventory(msg.getRootVolumeInventory());
             cmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
             cmsg.setImageInventory(msg.getImageInventory());

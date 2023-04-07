@@ -2685,6 +2685,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     String __name__ = "create-volume-snapshot";
 
                     @Override
+                    public boolean skip(Map data) {
+                        if (msg instanceof CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) {
+                            CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg vsmsg = (CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) msg;
+                            VolumeSnapshotVO snapshotVO = dbf.findByUuid(vsmsg.getSnapshotUuid(), VolumeSnapshotVO.class);
+                            snapshot = VolumeSnapshotInventory.valueOf(snapshotVO);
+                            return true;
+                        }
+                        return false;
+                    }
+                    @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         String volumeAccountUuid = acntMgr.getOwnerAccountUuidOfResource(volumeUuid);
                         TaskProgressRange stage = markTaskStage(parentStage, CREATE_SNAPSHOT_STAGE);
