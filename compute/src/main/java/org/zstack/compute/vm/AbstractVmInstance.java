@@ -60,6 +60,7 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIDeleteVmStaticIpMsg.class.getName(),
                 APIPauseVmInstanceMsg.class.getName(),
                 CreateTemplateFromVmRootVolumeMsg.class.getName(),
+                CreateTemplateFromVmRootVolumeSnapShotMsg.class.getName(),
                 AddL3NetworkToVmNicMsg.class.getName(),
                 DeleteL3NetworkFromVmNicMsg.class.getName(),
                 APIChangeVmNicNetworkMsg.class.getName(),
@@ -75,6 +76,7 @@ public abstract class AbstractVmInstance implements VmInstance {
                 AttachDataVolumeToVmMsg.class.getName(),
                 DetachDataVolumeFromVmMsg.class.getName(),
                 CreateTemplateFromVmRootVolumeMsg.class.getName(),
+                CreateTemplateFromVmRootVolumeSnapShotMsg.class.getName(),
                 VmAttachNicMsg.class.getName(),
                 APIAttachL3NetworkToVmMsg.class.getName(),
                 APIChangeVmNicNetworkMsg.class.getName(),
@@ -174,6 +176,7 @@ public abstract class AbstractVmInstance implements VmInstance {
                 AttachIsoToVmInstanceMsg.class.getName(),
                 APIDetachIsoFromVmInstanceMsg.class.getName(),
                 CreateTemplateFromVmRootVolumeMsg.class.getName(),
+                CreateTemplateFromVmRootVolumeSnapShotMsg.class.getName(),
                 APIDeleteVmStaticIpMsg.class.getName());
 
         allowedOperations.addState(VmInstanceState.Pausing,
