@@ -554,6 +554,13 @@
         </profile>
 
         <profile>
+            <id>sugon</id>
+            <modules>
+                <module>sugon</module>
+            </modules>
+        </profile>
+
+        <profile>
             <id>deploydb</id>
             <activation>
                 <property>
