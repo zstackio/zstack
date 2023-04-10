@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.HypervisorVersionState;
 
 public class KvmHypervisorInfoInventory  {
 
