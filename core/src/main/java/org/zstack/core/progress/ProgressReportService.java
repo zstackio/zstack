@@ -472,6 +472,14 @@ public class ProgressReportService extends AbstractService implements Management
         taskProgress(TaskType.Progress, fmt);
     }
 
+    public static void reportProgress(String fmt, Object... args) {
+        if (!ProgressGlobalConfig.PROGRESS_ON.value(Boolean.class)) {
+            return;
+        }
+
+        taskProgress(TaskType.Progress, fmt, args);
+    }
+
     public void reportProgressUntil(String end, int intervalSec) {
         reportProgressUntil(end, intervalSec, TimeUnit.SECONDS);
     }
