@@ -3610,8 +3610,7 @@ public class KVMHost extends HostBase implements Host {
                 boolean liveSnapshot = libvirtVersion.compare(KVMConstant.MIN_LIBVIRT_LIVESNAPSHOT_VERSION) >= 0
                         && qemuVersion.compare(KVMConstant.MIN_QEMU_LIVESNAPSHOT_VERSION) >= 0;
 
-                String hostOS = HostSystemTags.OS_DISTRIBUTION.getTokenByResourceUuid(self.getUuid(), HostSystemTags.OS_DISTRIBUTION_TOKEN);
-                //liveSnapshot = liveSnapshot && (!"CentOS".equals(hostOS) || KVMGlobalConfig.ALLOW_LIVE_SNAPSHOT_ON_REDHAT.value(Boolean.class));
+                final HostOperationSystem hostOS = factory.getHostOS(self.getUuid());
 
                 if (liveSnapshot) {
                     logger.debug(String.format("kvm host[OS:%s, uuid:%s, name:%s, ip:%s] supports live snapshot with libvirt[version:%s], qemu[version:%s]",
@@ -3710,10 +3709,12 @@ public class KVMHost extends HostBase implements Host {
         return inaccessiblePsCount == attachedPsCount && attachedPsCount > 0;
     }
 
-    private void createHostVersionSystemTags(String distro, String release, String version) {
-        createTagWithoutNonValue(HostSystemTags.OS_DISTRIBUTION, HostSystemTags.OS_DISTRIBUTION_TOKEN, distro, true);
-        createTagWithoutNonValue(HostSystemTags.OS_RELEASE, HostSystemTags.OS_RELEASE_TOKEN, release, true);
-        createTagWithoutNonValue(HostSystemTags.OS_VERSION, HostSystemTags.OS_VERSION_TOKEN, version, true);
+    private void updateHostOsInformation(String distro, String release, String version) {
+        final KVMHostVO kvmHostVO = getSelf();
+        kvmHostVO.setOsDistribution(distro);
+        kvmHostVO.setOsRelease(release);
+        kvmHostVO.setOsVersion(version);
+        self = dbf.updateAndRefresh(kvmHostVO);
     }
 
     private void createTagWithoutNonValue(SystemTag tag, String token, String value, boolean inherent) {
@@ -3907,7 +3908,7 @@ public class KVMHost extends HostBase implements Host {
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "check-Host-is-taken-over";
+                    String __name__ = "check-host-is-taken-over";
 
                     @Override
                     public boolean skip(Map data) {
@@ -4309,8 +4310,7 @@ public class KVMHost extends HostBase implements Host {
                                     return;
                                 }
 
-                                // create system tags of os::version etc
-                                createHostVersionSystemTags(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
+                                updateHostOsInformation(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
 
                                 createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
                                 createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion(), false);

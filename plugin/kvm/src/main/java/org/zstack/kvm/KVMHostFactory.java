@@ -6,11 +6,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.vm.CrashStrategy;
 import org.zstack.compute.vm.VmGlobalConfig;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagValidator;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO;
-import org.zstack.header.vm.devices.VmInstanceDeviceAddressVO_;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.CoreGlobalProperty;
@@ -62,6 +61,7 @@ import org.zstack.utils.function.ValidateFunction;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import javax.persistence.Tuple;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
@@ -250,6 +250,65 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public HostInventory getHostInventory(String uuid) {
         KVMHostVO vo = dbf.findByUuid(uuid, KVMHostVO.class);
         return vo == null ? null : KVMHostInventory.valueOf(vo);
+    }
+
+    @Override
+    public HostOperationSystem getHostOS(String uuid) {
+        Tuple tuple = Q.New(KVMHostVO.class)
+                .select(KVMHostVO_.osDistribution, KVMHostVO_.osRelease, KVMHostVO_.osVersion)
+                .eq(KVMHostVO_.uuid, uuid)
+                .findTuple();
+        return HostOperationSystem.of(tuple.get(0, String.class), tuple.get(1, String.class), tuple.get(2, String.class));
+    }
+
+    @Override
+    public Map<String, HostOperationSystem> getHostOsMap(Collection<String> hostUuidList) {
+        if (CollectionUtils.isEmpty(hostUuidList)) {
+            return Collections.emptyMap();
+        }
+
+        List<Tuple> tuples = Q.New(KVMHostVO.class)
+                .select(KVMHostVO_.osDistribution, KVMHostVO_.osRelease, KVMHostVO_.osVersion, KVMHostVO_.uuid)
+                .in(KVMHostVO_.uuid, hostUuidList)
+                .listTuple();
+        return tuples.stream().collect(Collectors.toMap(
+                tuple -> tuple.get(3, String.class),
+                tuple -> HostOperationSystem.of(
+                        tuple.get(0, String.class), tuple.get(1, String.class), tuple.get(2, String.class))));
+    }
+
+    @Override
+    public ErrorCode checkNewAddedHost(HostVO vo) {
+        final HostOperationSystem os = getHostOS(vo.getUuid());
+        if (!os.isValid()) {
+            return operr("the operation system[%s] of host[name:%s, ip:%s] is invalid",
+                    os, vo.getName(), vo.getManagementIp());
+        }
+
+        String otherHostUuid = Q.New(HostVO.class)
+                .select(HostVO_.uuid)
+                .eq(HostVO_.clusterUuid, vo.getClusterUuid())
+                .notEq(HostVO_.uuid, vo.getUuid())
+                .notEq(HostVO_.status, HostStatus.Connecting)
+                .limit(1)
+                .findValue();
+        if (otherHostUuid == null) {
+            // this the first host in cluster
+            return null;
+        }
+
+        final HostOperationSystem otherOs = getHostOS(otherHostUuid);
+        if (!otherOs.isValid()) {
+            // this the first host in cluster
+            return null;
+        }
+
+        if (os.equals(otherOs)) {
+            return null;
+        }
+
+        return operr("cluster[uuid:%s] already has host with os version[%s], but new added host[name:%s ip:%s] has different host os version[%s]",
+                vo.getClusterUuid(), otherOs, vo.getName(), vo.getManagementIp(), os);
     }
 
     protected void populateExtensions() {
