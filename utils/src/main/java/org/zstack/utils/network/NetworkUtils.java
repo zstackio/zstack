@@ -647,7 +647,7 @@ public class NetworkUtils {
 
                 maxsize--;
             }
-            double x = Math.log(end - start + 1) / Math.log(2);
+            double x = Math.log((double) end - start + 1) / Math.log(2);
             byte maxdiff = (byte) (32 - Math.floor(x));
             if (maxsize < maxdiff) {
                 maxsize = maxdiff;

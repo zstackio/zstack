@@ -47,27 +47,27 @@ public enum SizeUnit {
 
         @Override
         public double toKiloByte(double s) {
-            return (s / (k / b));
+            return (s / ((double) k / b));
         }
 
         @Override
         public double toMegaByte(double s) {
-            return (s / (m / b));
+            return (s / ((double) m / b));
         }
 
         @Override
         public double toGigaByte(double s) {
-            return (s / (g / b));
+            return (s / ((double) g / b));
         }
 
         @Override
         public double toTeraByte(double s) {
-            return (s / (t / b));
+            return (s / ((double) t / b));
         }
 
         @Override
         public double toPetaByte(double s) {
-            return (s / (p / b));
+            return (s / ((double) p / b));
         }
 
         @Override
@@ -131,7 +131,7 @@ public enum SizeUnit {
 
         @Override
         public double toByte(double s) {
-            return (s * (k / b));
+            return (s * ((double) k / b));
         }
 
         @Override
@@ -141,22 +141,22 @@ public enum SizeUnit {
 
         @Override
         public double toMegaByte(double s) {
-            return (s / (m / k));
+            return (s / ((double) m / k));
         }
 
         @Override
         public double toGigaByte(double s) {
-            return (s / (g / k));
+            return (s / ((double) g / k));
         }
 
         @Override
         public double toTeraByte(double s) {
-            return (s / (t / k));
+            return (s / ((double) t / k));
         }
 
         @Override
         public double toPetaByte(double s) {
-            return (s / (p / k));
+            return (s / ((double) p / k));
         }
 
         @Override
@@ -220,12 +220,12 @@ public enum SizeUnit {
 
         @Override
         public double toByte(double s) {
-            return (s * (m / b));
+            return (s * ((double) m / b));
         }
 
         @Override
         public double toKiloByte(double s) {
-            return (s * (m / k));
+            return (s * ((double) m / k));
         }
 
         @Override
@@ -235,17 +235,17 @@ public enum SizeUnit {
 
         @Override
         public double toGigaByte(double s) {
-            return (s / (g / m));
+            return (s / ((double) g / m));
         }
 
         @Override
         public double toTeraByte(double s) {
-            return (s / (t / m));
+            return (s / ((double) t / m));
         }
 
         @Override
         public double toPetaByte(double s) {
-            return (s / (p / m));
+            return (s / ((double) p / m));
         }
 
         @Override
@@ -310,17 +310,17 @@ public enum SizeUnit {
 
         @Override
         public double toByte(double s) {
-            return (s * (g / b));
+            return (s * ((double) g / b));
         }
 
         @Override
         public double toKiloByte(double s) {
-            return (s * (g / k));
+            return (s * ((double) g / k));
         }
 
         @Override
         public double toMegaByte(double s) {
-            return (s * (g / m));
+            return (s * ((double) g / m));
         }
 
         @Override
@@ -330,7 +330,7 @@ public enum SizeUnit {
 
         @Override
         public double toTeraByte(double s) {
-            return (s / (t / g));
+            return (s / ((double) t / g));
         }
 
         @Override
@@ -394,22 +394,22 @@ public enum SizeUnit {
 
         @Override
         public double toByte(double s) {
-            return (s * (t / b));
+            return (s * ((double) t / b));
         }
 
         @Override
         public double toKiloByte(double s) {
-            return (s * (t / k));
+            return (s * ((double) t / k));
         }
 
         @Override
         public double toMegaByte(double s) {
-            return (s * (t / m));
+            return (s * ((double) t / m));
         }
 
         @Override
         public double toGigaByte(double s) {
-            return (s * (t / g));
+            return (s * ((double) t / g));
         }
 
         @Override
@@ -419,7 +419,7 @@ public enum SizeUnit {
 
         @Override
         public double toPetaByte(double s) {
-            return (s / (p / t));
+            return (s / ((double) p / t));
         }
 
         @Override
@@ -453,27 +453,27 @@ public enum SizeUnit {
 
         @Override
         public double toByte(double s) {
-            return (s * (p / b));
+            return (s * ((double) p / b));
         }
 
         @Override
         public double toKiloByte(double s) {
-            return (s * (p / k));
+            return (s * ((double) p / k));
         }
 
         @Override
         public double toMegaByte(double s) {
-            return (s * (p / m));
+            return (s * ((double) p / m));
         }
 
         @Override
         public double toGigaByte(double s) {
-            return (s * (p / g));
+            return (s * ((double) p / g));
         }
 
         @Override
         public double toTeraByte(double s) {
-            return (s * (p / g));
+            return (s * ((double) p / g));
         }
 
         @Override
