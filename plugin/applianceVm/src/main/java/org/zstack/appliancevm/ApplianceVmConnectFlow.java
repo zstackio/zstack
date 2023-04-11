@@ -144,6 +144,7 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
                     logger.warn(e1.getMessage(), e1);
                     ErrorCode err = e1 instanceof OperationFailureException ? ((OperationFailureException)e1).getErrorCode() : err(ApplianceVmErrors.UNABLE_TO_START, e1.getMessage());
                     chain.fail(err);
+                    Thread.currentThread().interrupt();
                     return true;
                 }
             }

@@ -88,6 +88,7 @@ public abstract class Retry<T> {
                     TimeUnit.SECONDS.sleep(interval);
                 } catch (InterruptedException e) {
                     logger.warn(e.getMessage(), e);
+                    Thread.currentThread().interrupt();
                 }
 
 

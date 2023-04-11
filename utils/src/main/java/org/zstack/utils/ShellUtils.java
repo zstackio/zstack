@@ -258,6 +258,7 @@ public class ShellUtils {
                 StringBuilder sb = new StringBuilder();
                 sb.append("Shell command failed:\n");
                 sb.append(command);
+                Thread.currentThread().interrupt();
                 throw new ShellException(sb.toString(), e);
             } finally {
                 if (process != null) {

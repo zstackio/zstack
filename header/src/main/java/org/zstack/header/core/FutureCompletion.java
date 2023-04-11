@@ -83,6 +83,7 @@ public class FutureCompletion extends Completion {
         try {
             wait(timeout);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new CloudRuntimeException(e);
         }
     }
@@ -95,6 +96,7 @@ public class FutureCompletion extends Completion {
         try {
             wait();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new CloudRuntimeException(e);
         }
     }

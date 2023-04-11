@@ -3894,6 +3894,7 @@ public class KVMHost extends HostBase implements Host {
                             try {
                                 TimeUnit.SECONDS.sleep(3);
                             } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
                                 throw new RuntimeException(e.getMessage());
                             }
                             ret = sshShell.runCommand(cmd);

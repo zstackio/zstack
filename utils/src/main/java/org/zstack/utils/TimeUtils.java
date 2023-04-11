@@ -41,6 +41,7 @@ public class TimeUtils {
                 unit.sleep(interval);
             } catch (Throwable t) {
                 logger.debug(String.format("%s, after %s ms timeout", t.getMessage(), period-count));
+                Thread.currentThread().interrupt();
             }
             count += interval;
         }
