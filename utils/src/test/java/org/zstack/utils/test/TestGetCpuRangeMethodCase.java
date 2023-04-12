@@ -1,17 +1,14 @@
 package org.zstack.utils.test;
 
-import org.apache.commons.collections4.Get;
 import org.junit.Test;
-import org.zstack.utils.string.GetCPURangeMethod;
+import org.zstack.utils.string.GetCpuRangeMethod;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class TestGetCPURangeMethodCase {
+public class TestGetCpuRangeMethodCase {
     String betweenCPURangeString = "0-5";
     String eachCPURangeString = "6,8,9,11";
     String allString = "0-9,^7,11";
@@ -23,7 +20,7 @@ public class TestGetCPURangeMethodCase {
 
     @Test
     public void testBetweenCPURange() {
-        List<Integer> result = GetCPURangeMethod.getCPURange(betweenCPURangeString);
+        List<Integer> result = GetCpuRangeMethod.getCpuRange(betweenCPURangeString);
         result = result.stream().sorted().collect(Collectors.toList());
         assert betweenCPURange.size() == result.size();
         assert betweenCPURange.toString().equals(result.toString());
@@ -31,7 +28,7 @@ public class TestGetCPURangeMethodCase {
 
     @Test
     public void testEachCPURange() {
-        List<Integer> result = GetCPURangeMethod.getCPURange(eachCPURangeString);
+        List<Integer> result = GetCpuRangeMethod.getCpuRange(eachCPURangeString);
         result = result.stream().sorted().collect(Collectors.toList());
         assert eachCPURange.size() == result.size();
         assert eachCPURange.toString().equals(result.toString());
@@ -39,7 +36,7 @@ public class TestGetCPURangeMethodCase {
 
     @Test
     public void testGetCPURange() {
-        List<Integer> result = GetCPURangeMethod.getCPURange(allString);
+        List<Integer> result = GetCpuRangeMethod.getCpuRange(allString);
         result = result.stream().sorted().collect(Collectors.toList());
 
         assert all.size() == result.size();
@@ -48,24 +45,24 @@ public class TestGetCPURangeMethodCase {
 
     @Test
     public void testGetMaxCPUID() {
-        int maxID = GetCPURangeMethod.getMaxCPUIDInString(eachCPURangeString);
+        int maxID = GetCpuRangeMethod.getMaxCpuIdInString(eachCPURangeString);
         assert maxID == maxCPUID;
 
-        maxID = GetCPURangeMethod.getMaxCPUIDInString(allString);
+        maxID = GetCpuRangeMethod.getMaxCpuIdInString(allString);
         assert maxID == maxCPUID;
 
 
-        maxID = GetCPURangeMethod.getMaxCPUIDInString(betweenCPURangeString);
+        maxID = GetCpuRangeMethod.getMaxCpuIdInString(betweenCPURangeString);
         assert maxID == 5;
 
     }
 
     @Test
     public void testGetErrorCPURange() {
-        List<Integer> result = GetCPURangeMethod.getCPURange(errorString);
+        List<Integer> result = GetCpuRangeMethod.getCpuRange(errorString);
         assert result.isEmpty();
 
-        int maxID = GetCPURangeMethod.getMaxCPUIDInString(errorString);
+        int maxID = GetCpuRangeMethod.getMaxCpuIdInString(errorString);
         assert maxID == -1;
     }
 }
