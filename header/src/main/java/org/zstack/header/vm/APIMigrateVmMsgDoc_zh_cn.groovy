@@ -85,6 +85,15 @@ doc {
 					optional true
 					since "0.6"
 				}
+				column {
+					name "downTime"
+					enclosedIn "migrateVm"
+					desc "热迁移物理机停机时间"
+					location "body"
+					type "Integer"
+					optional true
+					since "4.6.21"
+				}
 			}
         }
 
