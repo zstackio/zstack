@@ -11,10 +11,12 @@ import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
 import org.zstack.kvm.APIAddKVMHostMsg
 import org.zstack.kvm.AddKVMHostMsg
+import org.zstack.kvm.KVMHostInventory
 import org.zstack.sdk.AddKVMHostAction
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.GetHypervisorTypesResult
 import org.zstack.sdk.LongJobInventory
+import org.zstack.sdk.SystemTagInventory
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -222,7 +224,11 @@ class AddHostCase extends SubCase {
     }
 
     void testInnerAddHostMsg() {
-        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp -> rsp }
+        String distribution = null
+        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp ->
+            distribution = rsp.osDistribution
+            return rsp
+        }
 
         AddKVMHostMsg amsg = new AddKVMHostMsg()
         amsg.accountUuid = loginAsAdmin().accountUuid
@@ -236,6 +242,18 @@ class AddHostCase extends SubCase {
         bus.makeLocalServiceId(amsg, HostConstant.SERVICE_ID)
         AddHostReply reply = (AddHostReply) bus.call(amsg)
         assert reply.inventory.status == HostStatus.Connected.toString()
+
+        // For compatibility.
+        // OS system tag is deprecated, check os version with KVMHostVO soon.
+        def tags = querySystemTag {
+            delegate.conditions = [
+                    "resourceUuid=${reply.inventory.uuid}",
+                    "tag=os::distribution::${distribution}"
+            ]
+        } as List<SystemTagInventory>
+        assert tags.size() == 1
+
+        assert (reply.inventory as KVMHostInventory).osDistribution == distribution
     }
 
     void testGetHypervisorTypes() {

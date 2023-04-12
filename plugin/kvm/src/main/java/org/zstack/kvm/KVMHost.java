@@ -3715,6 +3715,11 @@ public class KVMHost extends HostBase implements Host {
         kvmHostVO.setOsRelease(release);
         kvmHostVO.setOsVersion(version);
         self = dbf.updateAndRefresh(kvmHostVO);
+
+        // for compatibility
+        createTagWithoutNonValue(HostSystemTags.OS_DISTRIBUTION, HostSystemTags.OS_DISTRIBUTION_TOKEN, distro, true);
+        createTagWithoutNonValue(HostSystemTags.OS_RELEASE, HostSystemTags.OS_RELEASE_TOKEN, release, true);
+        createTagWithoutNonValue(HostSystemTags.OS_VERSION, HostSystemTags.OS_VERSION_TOKEN, version, true);
     }
 
     private void createTagWithoutNonValue(SystemTag tag, String token, String value, boolean inherent) {

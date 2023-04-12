@@ -17,6 +17,21 @@ public class HostSystemTags {
 
     public static SystemTag LIVE_SNAPSHOT = new SystemTag("capability::liveSnapshot", HostVO.class);
 
+    @Deprecated
+    public static String OS_DISTRIBUTION_TOKEN = "distribution";
+    @Deprecated
+    public static PatternedSystemTag OS_DISTRIBUTION = new PatternedSystemTag(String.format("os::distribution::{%s}", OS_DISTRIBUTION_TOKEN), HostVO.class);
+
+    @Deprecated
+    public static String OS_RELEASE_TOKEN = "release";
+    @Deprecated
+    public static PatternedSystemTag OS_RELEASE = new PatternedSystemTag(String.format("os::release::{%s}", OS_RELEASE_TOKEN), HostVO.class);
+
+    @Deprecated
+    public static String OS_VERSION_TOKEN = "version";
+    @Deprecated
+    public static PatternedSystemTag OS_VERSION = new PatternedSystemTag(String.format("os::version::{%s}", OS_VERSION_TOKEN), HostVO.class);
+
     public static String EXTRA_IPS_TOKEN = "extraips";
     public static PatternedSystemTag EXTRA_IPS = new PatternedSystemTag(String.format("extraips::{%s}", EXTRA_IPS_TOKEN), HostVO.class);
 
