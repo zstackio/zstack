@@ -56,7 +56,3 @@ DELIMITER ;
 
 call moveOsInfoToKVMHostVO();
 DROP PROCEDURE IF EXISTS moveOsInfoToKVMHostVO;
-
-DELETE FROM `zstack`.`SystemTagVO` WHERE tag LIKE 'os::distribution::%';
-DELETE FROM `zstack`.`SystemTagVO` WHERE tag LIKE 'os::release::%';
-DELETE FROM `zstack`.`SystemTagVO` WHERE tag LIKE 'os::version::%';
