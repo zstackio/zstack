@@ -56,3 +56,8 @@ DELIMITER ;
 
 call moveOsInfoToKVMHostVO();
 DROP PROCEDURE IF EXISTS moveOsInfoToKVMHostVO;
+
+# add default zone and recreate ZoneVO
+ALTER TABLE `zstack`.`ZoneEO` ADD COLUMN `isDefault` tinyint(1) unsigned DEFAULT 0;
+DROP VIEW IF EXISTS `zstack`.`ZoneVO`;
+CREATE VIEW `zstack`.`ZoneVO` AS SELECT uuid, name, type, description, state, isDefault, createDate, lastOpDate FROM `zstack`.`ZoneEO` WHERE deleted IS NULL;

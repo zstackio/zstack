@@ -34,6 +34,9 @@ public class UpdateZoneAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean isDefault;
+
     @Param(required = false)
     public java.util.List systemTags;
 
