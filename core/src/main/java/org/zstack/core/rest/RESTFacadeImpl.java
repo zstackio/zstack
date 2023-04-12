@@ -557,6 +557,23 @@ public class RESTFacadeImpl implements RESTFacade {
             requestHeaders.setContentLength(body.length());
         }
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
+        ResponseEntity<String> rsp = syncRawJson(url, req, method, unit, timeout);
+
+        if (rsp.getBody() != null && returnClass != Void.class) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("[http response(url: %s)] %s", url, rsp.getBody()));
+            }
+
+            return JSONObjectUtil.toObject(rsp.getBody(), returnClass);
+        } else {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("[http response(url: %s)] %s", url, rsp.getBody()));
+            }
+            return null;
+        }
+    }
+
+    public ResponseEntity<String> syncRawJson(String url, HttpEntity<String> req, HttpMethod method, TimeUnit unit, long timeout) {
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("json %s[%s], %s", method.toString().toLowerCase(), url, req));
         }
@@ -604,19 +621,7 @@ public class RESTFacadeImpl implements RESTFacade {
             throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
         }
 
-        if (rsp.getBody() != null && returnClass != Void.class && returnClass != null) {
-
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("[http response(url: %s)] %s", url, rsp.getBody()));
-            }
-
-            return JSONObjectUtil.toObject(rsp.getBody(), returnClass);
-        } else {
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("[http response(url: %s)] %s", url, rsp.getBody()));
-            }
-            return (T) rsp;
-        }
+        return rsp;
     }
 
     @Override
