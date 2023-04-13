@@ -134,8 +134,11 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                     }
                 });
                 to.setPrivateMac(priMac);
-                to.setPublicMac(vr.getVmNics().stream().filter(
-                        nic -> nic.getL3NetworkUuid().equals(struct.getVip().getL3NetworkUuid())).findFirst().get().getMac());
+                to.setPublicMac(vr.getVmNics().stream()
+                        .filter(nic -> nic.getL3NetworkUuid().equals(struct.getVip().getL3NetworkUuid()))
+                        .findFirst()
+                        .map(VmNicInventory::getMac)
+                        .orElse(null));
                 to.setVipIp(struct.getVip().getIp());
                 to.setGuestIp(struct.getNic().getIp());
                 to.setSnatInboundTraffic(struct.isSnatInboundTraffic());
@@ -280,9 +283,11 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                     }
                 });
 
-
-                to.setPublicMac(vr.getVmNics().stream().filter(
-                        nic -> nic.getL3NetworkUuid().equals(struct.getVip().getL3NetworkUuid())).findFirst().get().getMac());
+                to.setPublicMac(vr.getVmNics().stream()
+                        .filter(nic -> nic.getL3NetworkUuid().equals(struct.getVip().getL3NetworkUuid()))
+                        .findFirst()
+                        .map(VmNicInventory::getMac)
+                        .orElse(null));
 
                 to.setPrivateMac(priMac);
                 to.setSnatInboundTraffic(struct.isSnatInboundTraffic());
@@ -539,10 +544,13 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
             EipTO to = new EipTO();
             to.setVipIp(t.get(0, String.class));
             to.setGuestIp(t.get(1, String.class));
-            to.setPrivateMac(
-                    vr.getVmNics().stream()
-                            .filter(n -> n.getL3NetworkUuid().equals(t.get(2, String.class)))
-                            .findFirst().get().getMac());
+            Optional<VmNicInventory> priNic = vr.getVmNics().stream()
+                    .filter(n -> n.getL3NetworkUuid().equals(t.get(2, String.class)))
+                    .findFirst();
+            if (!priNic.isPresent()) {
+                continue;
+            }
+            to.setPrivateMac(priNic.get().getMac());
             to.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
             Optional<VmNicInventory> pubNic = vr.getVmNics().stream()
                     .filter(n -> n.getL3NetworkUuid().equals(t.get(4, String.class)))

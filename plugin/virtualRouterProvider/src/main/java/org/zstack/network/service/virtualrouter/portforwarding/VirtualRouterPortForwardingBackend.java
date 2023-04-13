@@ -315,10 +315,15 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
             to.setUuid(pf.getUuid());
             to.setAllowedCidr(pf.getAllowedCidr());
             to.setPrivateIp(t.get(1, String.class));
-            to.setPrivateMac(
-                    vr.getVmNics().stream()
-                            .filter(n -> n.getL3NetworkUuid().equals(nic.getL3NetworkUuid()))
-                            .findFirst().get().getMac());
+
+            Optional<VmNicInventory> priNic = vr.getVmNics().stream()
+                    .filter(n -> n.getL3NetworkUuid().equals(nic.getL3NetworkUuid()))
+                    .findFirst();
+            if (!priNic.isPresent()) {
+                continue;
+            }
+            to.setPrivateMac(priNic.get().getMac());
+
             Optional<VmNicInventory> publicNic = vr.getVmNics().stream()
                     .filter(n -> n.getL3NetworkUuid().equals(vipVO.getL3NetworkUuid()))
                     .findFirst();

@@ -20,6 +20,7 @@ import org.zstack.header.network.l3.L3NetworkDnsVO;
 import org.zstack.header.network.l3.L3NetworkDnsVO_;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.DnsInfo;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SetDnsCmd;
@@ -87,11 +88,13 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
         for (L3NetworkDnsVO vo : l3NetworkDnsVOS) {
             DnsInfo dinfo = new DnsInfo();
             dinfo.setDnsAddress(vo.getDns());
-            dinfo.setNicMac(vr.getGuestNics()
-                    .stream()
-                    .filter(nic -> nic.getL3NetworkUuid().equals(vo.getL3NetworkUuid()))
-                    .findFirst().get()
-                    .getMac());
+            Optional<VmNicInventory> nic = vr.getGuestNics().stream()
+                    .filter(n -> n.getL3NetworkUuid().equals(vo.getL3NetworkUuid()))
+                    .findFirst();
+            if (!nic.isPresent()) {
+                continue;
+            }
+            dinfo.setNicMac(nic.get().getMac());
             dns.add(dinfo);
         }
         List<String> lst = query.listValue();

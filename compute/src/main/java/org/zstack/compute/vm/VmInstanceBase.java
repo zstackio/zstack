@@ -4698,9 +4698,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 final VmInstanceSpec.IsoSpec isoSpec = spec.getDestIsoList().stream()
                         .filter(s -> s.getImageUuid().equals(isoUuid))
                         .findAny()
-                        .get();
+                        .orElse(null);
                 targetVmCdRomVO.setIsoUuid(isoUuid);
-                targetVmCdRomVO.setIsoInstallPath(isoSpec.getInstallPath());
+                targetVmCdRomVO.setIsoInstallPath(isoSpec != null ? isoSpec.getInstallPath() : null);
                 dbf.update(targetVmCdRomVO);
                 new IsoOperator().syncVmIsoSystemTag(self.getUuid());
                 completion.success();
