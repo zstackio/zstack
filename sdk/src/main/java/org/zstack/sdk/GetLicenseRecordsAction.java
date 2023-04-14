@@ -29,6 +29,9 @@ public class GetLicenseRecordsAction extends AbstractAction {
     public java.lang.Integer limit = 20;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List prodInfos;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer start = 0;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
