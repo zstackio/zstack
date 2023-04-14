@@ -3797,60 +3797,6 @@ abstract class ApiHelper {
     }
 
 
-    def attachServiceTypeToHostNetworkBonding(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AttachServiceTypeToHostNetworkBondingAction.class) Closure c) {
-        def a = new org.zstack.sdk.AttachServiceTypeToHostNetworkBondingAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def attachServiceTypeToHostNetworkInterface(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AttachServiceTypeToHostNetworkInterfaceAction.class) Closure c) {
-        def a = new org.zstack.sdk.AttachServiceTypeToHostNetworkInterfaceAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def attachTagToResources(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AttachTagToResourcesAction.class) Closure c) {
         def a = new org.zstack.sdk.AttachTagToResourcesAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -16192,60 +16138,6 @@ abstract class ApiHelper {
 
     def detachSecurityGroupFromL3Network(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DetachSecurityGroupFromL3NetworkAction.class) Closure c) {
         def a = new org.zstack.sdk.DetachSecurityGroupFromL3NetworkAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def detachServiceTypeFromHostNetworkBonding(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DetachServiceTypeFromHostNetworkBondingAction.class) Closure c) {
-        def a = new org.zstack.sdk.DetachServiceTypeFromHostNetworkBondingAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def detachServiceTypeFromHostNetworkInterface(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DetachServiceTypeFromHostNetworkInterfaceAction.class) Closure c) {
-        def a = new org.zstack.sdk.DetachServiceTypeFromHostNetworkInterfaceAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -33246,60 +33138,6 @@ abstract class ApiHelper {
 
     def setVipQos(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVipQosAction.class) Closure c) {
         def a = new org.zstack.sdk.SetVipQosAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def setVlanOnHostNetworkBonding(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVlanOnHostNetworkBondingAction.class) Closure c) {
-        def a = new org.zstack.sdk.SetVlanOnHostNetworkBondingAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def setVlanOnHostNetworkInterface(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVlanOnHostNetworkInterfaceAction.class) Closure c) {
-        def a = new org.zstack.sdk.SetVlanOnHostNetworkInterfaceAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
