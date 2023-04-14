@@ -25,6 +25,9 @@ public class ZoneAO extends ResourceVO {
     private ZoneState state;
 
     @Column
+    private boolean isDefault;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -93,5 +96,13 @@ public class ZoneAO extends ResourceVO {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public boolean isDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(boolean aDefault) {
+        isDefault = aDefault;
     }
 }

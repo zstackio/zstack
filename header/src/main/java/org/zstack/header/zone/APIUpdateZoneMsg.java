@@ -22,6 +22,8 @@ public class APIUpdateZoneMsg extends APIMessage implements ZoneMessage {
     private String description;
     @APIParam(resourceType = ZoneVO.class)
     private String uuid;
+    @APIParam(required = false)
+    private Boolean isDefault;
 
     public String getUuid() {
         return uuid;
@@ -51,12 +53,21 @@ public class APIUpdateZoneMsg extends APIMessage implements ZoneMessage {
     public String getZoneUuid() {
         return uuid;
     }
- 
+
+    public Boolean getDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(Boolean aDefault) {
+        isDefault = aDefault;
+    }
+
     public static APIUpdateZoneMsg __example__() {
         APIUpdateZoneMsg msg = new APIUpdateZoneMsg();
         msg.setName("TestZone2");
         msg.setDescription("test second zone");
         msg.setUuid(uuid());
+        msg.setDefault(true);
         return msg;
     }
 }
