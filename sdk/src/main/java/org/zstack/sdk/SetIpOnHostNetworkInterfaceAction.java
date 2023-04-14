@@ -37,9 +37,6 @@ public class SetIpOnHostNetworkInterfaceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String gateway;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean isDefaultRoute;
-
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
@@ -106,7 +103,7 @@ public class SetIpOnHostNetworkInterfaceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hosts/nics/{uuid}/ip";
+        info.path = "/hosts/nics/{interfaceUuid}/ip";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

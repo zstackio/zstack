@@ -91,7 +91,7 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/cluster/hosts-network-interfaces/{clusterUuid}";
+        info.path = "/cluster/hosts-network-interfaces";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
