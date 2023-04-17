@@ -207,4 +207,11 @@
             <zstack:extension interface="org.zstack.header.zql.RestrictByExprExtensionPoint"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="KvmHostIpmiPowerExecutor" class="org.zstack.kvm.KvmHostIpmiPowerExecutor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.compute.host.HostPowerExecutor"/>
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>

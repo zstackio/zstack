@@ -1,6 +1,7 @@
 package org.zstack.compute.host;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.resourceconfig.BindResourceConfig;

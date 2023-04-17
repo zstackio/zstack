@@ -158,9 +158,159 @@ public abstract class HostBase extends AbstractHost {
             handle((APIReconnectHostMsg) msg);
         } else if (msg instanceof APIUpdateHostMsg) {
             handle((APIUpdateHostMsg) msg);
+        } else if (msg instanceof APIUpdateHostIpmiMsg) {
+            handle((APIUpdateHostIpmiMsg) msg);
+        } else if (msg instanceof APIShutdownHostMsg) {
+            handle((APIShutdownHostMsg) msg);
+        } else if (msg instanceof APIPowerOnHostMsg ) {
+            handle((APIPowerOnHostMsg) msg);
+        } else if (msg instanceof APIPowerResetHostMsg) {
+            handle((APIPowerResetHostMsg) msg);
+        } else if (msg instanceof APIGetHostWebSshUrlMsg){
+            handle((APIGetHostWebSshUrlMsg) msg);
+        } else if (msg instanceof APIGetHostPowerStatusMsg) {
+            handle((APIGetHostPowerStatusMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetHostPowerStatusMsg msg) {
+        APIGetHostPowerStatusEvent event = new APIGetHostPowerStatusEvent(msg.getId());
+        GetHostPowerStatusMsg getPowerStatusMsg = new GetHostPowerStatusMsg();
+        getPowerStatusMsg.setUuid(msg.getUuid());
+        getPowerStatusMsg.setMethod(HostPowerManagementMethod.valueOf(msg.getMethod()));
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(getPowerStatusMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                GetHostPowerStatusReply r = reply.castReply();
+                if (!r.isSuccess()) {
+                    event.setSuccess(false);
+                    event.setError(r.getError());
+                } else {
+                    event.setInventory(r.getInventory());
+                }
+                bus.publish(event);
+            }
+        });
+    }
+
+    private void handle(APIGetHostWebSshUrlMsg msg) {
+        APIGetHostWebSshUrlReply reply = new APIGetHostWebSshUrlReply();
+        GetHostWebSshUrlMsg getHostWebSshUrlMsg = new GetHostWebSshUrlMsg();
+        getHostWebSshUrlMsg.setUuid(msg.getHostUuid());
+        bus.makeLocalServiceId(getHostWebSshUrlMsg ,HostConstant.SERVICE_ID);
+        bus.send(getHostWebSshUrlMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                    bus.reply(msg, reply);
+                    return;
+                }
+
+                GetHostWebSshUrlReply getUrlReply = r.castReply();
+                reply.setUrl(getUrlReply.getUrl());
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(APIPowerResetHostMsg msg) {
+        final APIPowerResetHostEvent event = new APIPowerResetHostEvent(msg.getId());
+        RebootHostMsg rebootHostMsg = new RebootHostMsg();
+        rebootHostMsg.setUuid(msg.getHostUuid());
+        rebootHostMsg.setMethod(HostPowerManagementMethod.valueOf(msg.getMethod()));
+        bus.makeTargetServiceIdByResourceUuid(rebootHostMsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(rebootHostMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                RebootHostReply rebootReply = reply.castReply();
+                if (null != rebootReply.getError()) {
+                    event.setError(rebootReply.getError());
+                    event.setSuccess(rebootReply.isSuccess());
+                } else {
+                    event.setInventory(getSelfInventory());
+                }
+                bus.publish(event);
+            }
+        });
+    }
+
+    private void handle(APIPowerOnHostMsg msg) {
+        final APIPowerOnHostEvent event = new APIPowerOnHostEvent(msg.getId());
+        PowerOnHostMsg powerOnHostMsg = new PowerOnHostMsg();
+        powerOnHostMsg.setUuid(msg.getHostUuid());
+        powerOnHostMsg.setReturnEarly(msg.isReturnEarly());
+        bus.makeTargetServiceIdByResourceUuid(powerOnHostMsg, HostConstant.SERVICE_ID, powerOnHostMsg.getHostUuid());
+        bus.send(powerOnHostMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                PowerOnHostReply powerOnHostReply = reply.castReply();
+                if (null != powerOnHostReply.getError()) {
+                    event.setError(powerOnHostReply.getError());
+                    event.setSuccess(powerOnHostReply.isSuccess());
+                } else {
+                    event.setInventory(getSelfInventory());
+                }
+                bus.publish(event);
+            }
+        });
+    }
+
+    private void handle(APIShutdownHostMsg msg) {
+        final APIShutdownHostEvent event = new APIShutdownHostEvent(msg.getId());
+        ShutdownHostMsg shutdownHostMsg = new ShutdownHostMsg();
+        shutdownHostMsg.setMethod(HostPowerManagementMethod.valueOf(msg.getMethod()));
+        shutdownHostMsg.setWaitTaskCompleted(msg.isWaitTaskCompleted());
+        shutdownHostMsg.setReturnEarly(msg.isReturnEarly());
+        shutdownHostMsg.setUuid(msg.getUuid());
+        shutdownHostMsg.setForce(msg.isForce());
+        bus.makeTargetServiceIdByResourceUuid(shutdownHostMsg, HostConstant.SERVICE_ID, shutdownHostMsg.getUuid());
+        bus.send(shutdownHostMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                ShutdownHostReply shutdownHostReply = reply.castReply();
+                if (null != shutdownHostReply.getError()) {
+                    event.setError(shutdownHostReply.getError());
+                    event.setSuccess(false);
+                } else {
+                    event.setInventory(getSelfInventory());
+                }
+                bus.publish(event);
+            }
+        });
+    }
+
+    private void handle(APIUpdateHostIpmiMsg msg) {
+        final APIUpdateHostIpmiEvent event = new APIUpdateHostIpmiEvent(msg.getId());
+        HostIpmiVO ipmi = dbf.findByUuid(msg.getHostUuid(), HostIpmiVO.class);
+        if (null == ipmi.getIpmiAddress()) {
+            event.setSuccess(false);
+            event.setError(operr("host[%s] does not have ipmi device or ipmi does not have address." +
+                    "After config ipmi address, please reconnect host to refresh " +
+                    "host ipmi information", msg.getHostUuid()));
+            bus.publish(event);
+            return;
+        }
+
+        if (null != msg.getIpmiAddress()) {
+            ipmi.setIpmiAddress(msg.getIpmiAddress());
+        }
+        if (null != msg.getIpmiUsername()) {
+            ipmi.setIpmiUsername(msg.getIpmiUsername());
+        }
+        if (null != msg.getIpmiPassword()) {
+            ipmi.setIpmiPassword(msg.getIpmiPassword());
+        }
+        if (0 != msg.getIpmiPort()) {
+            ipmi.setIpmiPort(msg.getIpmiPort());
+        }
+        ipmi.setIpmiPowerStatus(HostIpmiPowerExecutor.getPowerStatus(ipmi));
+        ipmi = dbf.updateAndRefresh(ipmi);
+        event.setHostIpmiInventory(HostIpmiInventory.valueOf(ipmi));
+        bus.publish(event);
     }
 
     protected HostVO updateHost(APIUpdateHostMsg msg) {
