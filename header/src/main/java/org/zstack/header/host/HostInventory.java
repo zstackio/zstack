@@ -131,6 +131,22 @@ public class HostInventory implements Serializable {
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "cpuNum"))
     private Integer cpuNum;
 
+    @Queryable(mappingClass = HostIpmiInventory.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "ipmiAddress"))
+    private String ipmiAddress;
+
+    @Queryable(mappingClass = HostIpmiInventory.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "ipmiUsername"))
+    private String ipmiUsername;
+
+    @Queryable(mappingClass = HostIpmiInventory.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "ipmiPort"))
+    private Integer ipmiPort;
+
+    @Queryable(mappingClass = HostIpmiInventory.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "ipmiPowerStatus"))
+    private String ipmiPowerStatus;
+
     private String architecture;
 
     /**
@@ -162,6 +178,12 @@ public class HostInventory implements Serializable {
             this.setAvailableMemoryCapacity(vo.getCapacity().getAvailableMemory());
             this.setCpuSockets(vo.getCapacity().getCpuSockets());
             this.setCpuNum(vo.getCapacity().getCpuNum());
+        }
+        if (vo.getIpmi() != null) {
+            this.setIpmiAddress(vo.getIpmi().getIpmiAddress());
+            this.setIpmiPort(vo.getIpmi().getIpmiPort());
+            this.setIpmiUsername(vo.getIpmi().getIpmiUsername());
+            this.setIpmiPowerStatus(vo.getIpmi().getIpmiPowerStatus().toString());
         }
     }
 
@@ -322,5 +344,37 @@ public class HostInventory implements Serializable {
 
     public void setArchitecture(String architecture) {
         this.architecture = architecture;
+    }
+
+    public String getIpmiAddress() {
+        return ipmiAddress;
+    }
+
+    public void setIpmiAddress(String ipmiAddress) {
+        this.ipmiAddress = ipmiAddress;
+    }
+
+    public String getIpmiUsername() {
+        return ipmiUsername;
+    }
+
+    public void setIpmiUsername(String ipmiUsername) {
+        this.ipmiUsername = ipmiUsername;
+    }
+
+    public Integer getIpmiPort() {
+        return ipmiPort;
+    }
+
+    public void setIpmiPort(Integer ipmiPort) {
+        this.ipmiPort = ipmiPort;
+    }
+
+    public String getIpmiPowerStatus() {
+        return ipmiPowerStatus;
+    }
+
+    public void setIpmiPowerStatus(String ipmiPowerStatus) {
+        this.ipmiPowerStatus = ipmiPowerStatus;
     }
 }

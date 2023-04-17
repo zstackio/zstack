@@ -3707,7 +3707,13 @@ public class KVMAgentCommands {
     public static class ShutdownHostCmd extends AgentCommand {
     }
 
+    public static class RebootHostCmd extends AgentCommand {
+    }
+
     public static class ShutdownHostResponse extends AgentResponse {
+    }
+
+    public static class RebootHostResponse extends AgentResponse {
     }
 
     public static class UpdateSpiceChannelConfigCmd extends AgentCommand {

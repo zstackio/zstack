@@ -1,10 +1,7 @@
 package org.zstack.header.host
 
 import java.lang.Long
-import java.lang.Long
-import java.lang.Long
-import java.lang.Long
-import java.sql.Timestamp
+import java.lang.Integer
 import java.sql.Timestamp
 
 doc {
@@ -78,6 +75,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "cpuSockets"
+		desc "物理CPU插槽数量"
+		type "Integer"
+		since "0.6"
+	}
+	field {
 		name "totalMemoryCapacity"
 		desc ""
 		type "Long"
@@ -87,6 +90,42 @@ doc {
 		name "availableMemoryCapacity"
 		desc ""
 		type "Long"
+		since "0.6"
+	}
+	field {
+		name "cpuNum"
+		desc "逻辑CPU数量"
+		type "Integer"
+		since "0.6"
+	}
+	field {
+		name "ipmiAddress"
+		desc "IPMI地址"
+		type "String"
+		since "0.6"
+	}
+	field {
+		name "ipmiUsername"
+		desc "IPMI用户名"
+		type "String"
+		since "0.6"
+	}
+	field {
+		name "ipmiPort"
+		desc "IPMI端口"
+		type "Integer"
+		since "0.6"
+	}
+	field {
+		name "ipmiPowerStatus"
+		desc "IPMI电源状态"
+		type "String"
+		since "0.6"
+	}
+	field {
+		name "architecture"
+		desc ""
+		type "String"
 		since "0.6"
 	}
 	field {

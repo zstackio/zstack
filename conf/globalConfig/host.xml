@@ -119,4 +119,11 @@
         <defaultValue>10000</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+    <config>
+        <category>host</category>
+        <name>host.power.refresh.interval</name>
+        <description>The interval to refresh host power status, in seconds</description>
+        <defaultValue>30</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>

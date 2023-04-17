@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.vm.VmInstanceVO;
@@ -101,4 +102,10 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig SUSPEND_TO_DISK = new GlobalConfig(CATEGORY, "vm.suspend.to.disk");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig WEBSSH_IDLE_TIMEOUT = new GlobalConfig(CATEGORY, "webssh.idleTimeout");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigDef(defaultValue = "8888", type = Long.class, description = "the default port used by web-based SSH server")
+    public static GlobalConfig HOST_WEBSSH_PORT = new GlobalConfig(CATEGORY, "host.webssh.port");
 }

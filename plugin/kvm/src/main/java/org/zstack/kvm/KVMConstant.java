@@ -68,6 +68,7 @@ public interface KVMConstant {
     String KVM_UPDATE_HOST_OS_PATH = "/host/updateos";
     String KVM_HOST_UPDATE_DEPENDENCY_PATH = "/host/updatedependency";
     String HOST_SHUTDOWN = "/host/shutdown";
+    String HOST_REBOOT = "/host/reboot";
     String HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH = "/host/updateSpiceChannelConfig";
     String KVM_GET_VM_FIRST_BOOT_DEVICE_PATH = "/vm/getfirstbootdevice";
     String GET_VM_DEVICE_ADDRESS_PATH = "/vm/getdeviceaddress";
@@ -123,6 +124,9 @@ public interface KVMConstant {
 
     String VIRTUALIZER_QEMU_KVM = "qemu-kvm";
     String VIRTUALIZER_QEMU = "qemu";
+
+    int IPMI_DEFAULT_PORT = 623;
+    String IPMI_NONE_VALUE = "None";
 
     enum KvmVmState {
         NoState,
