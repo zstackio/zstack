@@ -12,7 +12,7 @@ public class AddIntegrityResourceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddIntegrityResourceResult value;
+        public AddIntegrityResourceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,11 @@ public class AddIntegrityResourceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, validValues = {"AuditsVO"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String resourceType;
+    @Param(required = true, validValues = {"AccessControlRuleVO","GlobalConfigVO","AuditsVO","RolePolicyStatementVO","IAM2VirtualIDAttributeVO"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public String resourceType;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
-    public java.lang.Integer integrityResourceDataRangeInDays;
+    public Integer integrityResourceDataRangeInDays;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +63,8 @@ public class AddIntegrityResourceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddIntegrityResourceResult value = res.getResult(org.zstack.sdk.AddIntegrityResourceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddIntegrityResourceResult() : value; 
+        AddIntegrityResourceResult value = res.getResult(AddIntegrityResourceResult.class);
+        ret.value = value == null ? new AddIntegrityResourceResult() : value;
 
         return ret;
     }
