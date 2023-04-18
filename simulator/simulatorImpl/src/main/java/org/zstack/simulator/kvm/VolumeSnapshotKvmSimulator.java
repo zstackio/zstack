@@ -307,6 +307,10 @@ public class VolumeSnapshotKvmSimulator {
     public synchronized RevertVolumeFromSnapshotResponse revert(RevertVolumeFromSnapshotCmd cmd) {
         RevertVolumeFromSnapshotResponse rsp = new RevertVolumeFromSnapshotResponse();
         Qcow2 current = findByInstallPath(cmd.getSnapshotInstallPath());
+        if (current == null) {
+            dumpAllQcow2();
+            Assert.fail(String.format("cannot find source snapshot[%s]", cmd.getSnapshotInstallPath()));
+        }
         String dir = PathUtil.parentFolder(cmd.getSnapshotInstallPath());
         String newVolumeInstallPath = String.format("%s/%s.qcow2", dir, Platform.getUuid());
         logger.debug(String.format("created new volume[%s] for reverting snapshot", newVolumeInstallPath));

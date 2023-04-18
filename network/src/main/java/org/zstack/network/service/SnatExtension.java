@@ -96,10 +96,12 @@ public class SnatExtension extends AbstractNetworkServiceExtension implements Co
 
         SnatStruct struct = new SnatStruct();
         struct.setL3Network(l3);
-        struct.setGuestGateway(nic.getGateway());
-        struct.setGuestIp(nic.getIp());
-        struct.setGuestMac(nic.getMac());
-        struct.setGuestNetmask(nic.getNetmask());
+        if (nic != null) {
+            struct.setGuestGateway(nic.getGateway());
+            struct.setGuestIp(nic.getIp());
+            struct.setGuestMac(nic.getMac());
+            struct.setGuestNetmask(nic.getNetmask());
+        }
         return struct;
     }
 

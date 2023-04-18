@@ -63,7 +63,7 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
             }
         }
 
-        if (!temp.getUuid().equals(nic.getUsedIpUuid())) {
+        if (temp != null && !temp.getUuid().equals(nic.getUsedIpUuid())) {
             SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, vmNicUUid)
                     .set(VmNicVO_.ip, temp.getIp())
                     .set(VmNicVO_.netmask, temp.getNetmask())

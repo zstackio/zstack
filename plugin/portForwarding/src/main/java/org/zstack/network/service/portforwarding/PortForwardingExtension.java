@@ -50,6 +50,9 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
             }
         }
 
+        if (nic == null) {
+            return new ArrayList<PortForwardingStruct>();
+        }
         SimpleQuery<PortForwardingRuleVO> q = dbf.createQuery(PortForwardingRuleVO.class);
         q.add(PortForwardingRuleVO_.vmNicUuid, SimpleQuery.Op.EQ, nic.getUuid());
         List<PortForwardingRuleVO> pfvos = q.list();

@@ -1196,9 +1196,9 @@ public class LoadBalancerBase {
         }
 
         LoadBalancerBackend bkd = getBackend();
-        if( (vmNicUuids.isEmpty() && serverIps.isEmpty() ) || bkd == null){
+        if ((vmNicUuids != null && vmNicUuids.isEmpty() && serverIps.isEmpty()) || bkd == null) {
             completion.success();
-        }else {
+        } else {
             bkd.removeVmNics(removeNicStruct(serverGroupUuids, listenerUuids, vmNicUuids, serverIps), nics, completion);
         }
     }
