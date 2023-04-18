@@ -354,6 +354,12 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         if (field.getDeclaringClass().getAnnotation(CovertSubClasses.class) != null) {
             covertSubClasses.addAll(Arrays.asList(field.getDeclaringClass().getAnnotation(CovertSubClasses.class).value()));
         }
+
+	    List<CovertSubClass> subClassNames = BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
+			    .filter(aClass -> aClass.getAnnotation(CovertSubClasses.class) != null)
+			    .map(subClass -> subClass.getAnnotation(CovertSubClasses.class).value())
+			    .flatMap(Arrays::stream).collect(Collectors.toList());
+        covertSubClasses.addAll(subClassNames);
     }
 
     private List<String> getClassName(Field field, List<CovertSubClass> covertSubClasses) {
@@ -371,7 +377,8 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                     .collect(Collectors.toList());
 
             List<String> filterClassName = covertSubClasses.stream().map(CovertSubClass::classSimpleName).collect(Collectors.toList());
-            classNames.addAll(subClassNames.stream().filter(filterClassName::contains).collect(Collectors.toList()));
+            List<String> covertSubClassNames = subClassNames.stream().filter(filterClassName::contains).collect(Collectors.toList());
+            classNames.addAll(covertSubClassNames.isEmpty() ? subClassNames : covertSubClassNames);
         }
 
         return classNames;

@@ -12,6 +12,8 @@ import org.zstack.header.core.encrypt.EncryptEntityState
 import org.zstack.kvm.KVMHostVO
 import org.zstack.kvm.KVMHostVO_
 import org.zstack.sdk.HostInventory
+import org.zstack.storage.ceph.backup.CephBackupStorageMonVO
+import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -196,6 +198,8 @@ class HostPasswordEncryptCase extends SubCase {
         ((EncryptFacadeImpl) encryptFacade).handleNewAddedEncryptEntity()
 
         assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, KVMHostVO.class.getSimpleName()).findValue() == EncryptEntityState.NewAdded
+        assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, CephBackupStorageMonVO.class.getSimpleName()).findValue() == EncryptEntityState.NewAdded
+        assert Q.New(EncryptEntityMetadataVO.class).select(EncryptEntityMetadataVO_.state).eq(EncryptEntityMetadataVO_.entityName, CephPrimaryStorageMonVO.class.getSimpleName()).findValue() == EncryptEntityState.NewAdded
 
         retryInSecs {
             password = Q.New(KVMHostVO.class).select(KVMHostVO_.password).eq(KVMHostVO_.uuid, host.uuid).findValue()
