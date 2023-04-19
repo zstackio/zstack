@@ -4,7 +4,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Integrity encrypted field, the field is not encrypted.
  * @Author: DaoDao
  * @Date: 2021/11/23
  */
