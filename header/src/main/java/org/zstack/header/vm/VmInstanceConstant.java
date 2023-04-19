@@ -41,6 +41,8 @@ public interface VmInstanceConstant {
         ApplianceVmSyncHaConfig_applianceVm,
         ApplianceVmSyncHaConfig_haUuid,
         AllocatedUrlForAttachingVolume,
+
+        VmInstanceUuid,
     }
 
     enum VmOperation {
