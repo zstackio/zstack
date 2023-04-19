@@ -10,11 +10,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.db.UpdateQuery;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
@@ -48,7 +45,9 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -286,6 +285,49 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         completion.success();
     }
 
+    protected List<DetachNicFromVmMsg> handleDeletionForIpRange(List<VmDeletionStruct> vminvs, List<IpRangeInventory> iprs) {
+        List<DetachNicFromVmMsg> msgs = new ArrayList<>();
+        List<String> uuids = iprs.stream().map(IpRangeInventory::getUuid).collect(Collectors.toList());
+        for (VmDeletionStruct vm : vminvs) {
+            for (VmNicInventory nic : vm.getInventory().getVmNics()) {
+                UsedIpInventory ip4 = null, ip6 = null;
+                for (UsedIpInventory ip : nic.getUsedIps()) {
+                    if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                        ip4 = ip;
+                    } else if (ip.getIpVersion() == IPv6Constants.IPv6) {
+                        ip6 = ip;
+                    }
+                }
+
+                /* both ipv4 and ipv6 has been deleted or deleting, then delete nic */
+                if ((ip4 == null || uuids.contains(ip4.getIpRangeUuid()))
+                        && (ip6 == null || uuids.contains(ip6.getIpRangeUuid()))) {
+                    DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
+                    msg.setVmInstanceUuid(nic.getVmInstanceUuid());
+                    msg.setVmNicUuid(nic.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getInventory().getUuid());
+                    msgs.add(msg);
+                } else {
+                    boolean deleteIp4 = false, hasIp6 = false;
+                    if (ip4 != null && uuids.contains(ip4.getIpRangeUuid())) {
+                        deleteIp4 = true;
+                    }
+                    if (ip6 != null && !uuids.contains(ip6.getIpRangeUuid())) {
+                        hasIp6 = true;
+                    }
+
+                    /* ipv4 is deleted and ipv6 is not deleted, move ipv6 address to nic ip */
+                    if (deleteIp4 && hasIp6) {
+                        SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, nic.getUuid())
+                                .set(VmNicVO_.ip, ip6.getIp()).set(VmNicVO_.gateway, ip6.getGateway()).update();
+                    }
+                }
+            }
+        }
+
+        return msgs;
+    }
+
     protected void handleDeletion(final CascadeAction action, final Completion completion) {
         int op = toDeletionOpCode(action);
         if (op == OP_NOPE) {
@@ -448,19 +490,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
                 List<IpRangeInventory> iprs = action.getParentIssuerContext();
-                List<String> uuids = iprs.stream().map(IpRangeInventory::getUuid).collect(Collectors.toList());
-                for (VmDeletionStruct vm : vminvs) {
-                    for (VmNicInventory nic : vm.getInventory().getVmNics()) {
-                        /* if any ip of the nic is in the rang of delete, then delete the nic */
-                        if (nic.getUsedIps().stream().anyMatch(ip -> uuids.contains(ip.getIpRangeUuid()))) {
-                            DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
-                            msg.setVmInstanceUuid(vm.getInventory().getUuid());
-                            msg.setVmNicUuid(nic.getUuid());
-                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getInventory().getUuid());
-                            msgs.add(msg);
-                        }
-                    }
-                }
+                List<DetachNicFromVmMsg> dmsgs = handleDeletionForIpRange(vminvs, iprs);
+                msgs.addAll(dmsgs);
             }
 
             detachVmNicCascade(msgs, true, completion);
