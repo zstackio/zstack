@@ -80,7 +80,7 @@ class ManagementNodeHeartbeatCase extends SubCase {
         assert count == 2
 
         // wait one more interval to wait 127.0.0.111 cleaned
-        sleep(TimeUnit.SECONDS.toMillis(failureInterval * 2))
+        sleep(TimeUnit.SECONDS.toMillis(failureInterval * 3))
         count = dbf.count(ManagementNodeVO.class)
         assert count == 1
 

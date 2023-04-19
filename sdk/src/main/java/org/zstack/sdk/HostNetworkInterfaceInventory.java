@@ -76,6 +76,14 @@ public class HostNetworkInterfaceInventory  {
         return this.ipAddresses;
     }
 
+    public java.lang.String gateway;
+    public void setGateway(java.lang.String gateway) {
+        this.gateway = gateway;
+    }
+    public java.lang.String getGateway() {
+        return this.gateway;
+    }
+
     public java.lang.String mac;
     public void setMac(java.lang.String mac) {
         this.mac = mac;
@@ -98,6 +106,14 @@ public class HostNetworkInterfaceInventory  {
     }
     public java.lang.String getOffloadStatus() {
         return this.offloadStatus;
+    }
+
+    public java.lang.String description;
+    public void setDescription(java.lang.String description) {
+        this.description = description;
+    }
+    public java.lang.String getDescription() {
+        return this.description;
     }
 
     public java.sql.Timestamp createDate;
