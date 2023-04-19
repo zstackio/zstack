@@ -6,11 +6,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Created by mingjian.deng on 16/11/1.
+ * @Author: DaoDao
+ * @Date: 2023/3/9
  */
-@Deprecated
-@Target({ElementType.METHOD})
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ENCRYPT {
-    String value() default "/root/RSAPrivate";
+public @interface CovertSubClass {
+    String classSimpleName();
+    String columnName();
+    String columnValue();
 }
