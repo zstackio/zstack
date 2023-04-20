@@ -28,7 +28,7 @@ public class CheckBatchDataIntegrityAction extends AbstractAction {
     @Param(required = false)
     public java.util.List resourceUuids;
 
-    @Param(required = true, validValues = {"AccessControlRuleVO","GlobalConfigVO","AuditsVO","RolePolicyStatementVO","IAM2VirtualIDAttributeVO"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public String resourceType;
 
     @Param(required = false)
