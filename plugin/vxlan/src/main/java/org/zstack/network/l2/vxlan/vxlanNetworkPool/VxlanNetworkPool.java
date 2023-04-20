@@ -268,7 +268,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
     protected void handle(CreateVtepMsg msg) {
         List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, msg.getPoolUuid()).eq(VtepVO_.vtepIp, msg.getVtepIp()).list();
-        for (VtepVO vtep: vteps) {
+        if (vteps.size() != 0) {
+            VtepVO vtep = vteps.get(0);
             if (!vtep.getHostUuid().equals(msg.getHostUuid())) {
                 logger.warn(String.format("same vtepip[%s] in host[%s] and host[%s], which in same cluster[%s]",
                         msg.getVtepIp(), vtep.getHostUuid(), msg.getHostUuid(), msg.getClusterUuid()));
