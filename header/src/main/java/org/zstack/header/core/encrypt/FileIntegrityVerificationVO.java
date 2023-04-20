@@ -19,13 +19,13 @@ public class FileIntegrityVerificationVO {
     private String path;
 
     @Column
-    private String nodeType;
+    private String nodeType; //for managementNode, node="managementNode", for host, node="host"
 
     @Column
-    private String nodeUuid;
+    private String nodeUuid; //for managementNode, node=mnUUid, for host, node=hostUuid
 
     @Column
-    private String hexType;
+    private String hexType; //eg: "md5","sha1","sha256","sha384","sha512"
 
     @Column
     private String digest;

@@ -12,7 +12,7 @@ public class CheckBatchDataIntegrityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CheckBatchDataIntegrityResult value;
+        public CheckBatchDataIntegrityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,8 +28,8 @@ public class CheckBatchDataIntegrityAction extends AbstractAction {
     @Param(required = false)
     public java.util.List resourceUuids;
 
-    @Param(required = true, validValues = {"AccessControlRuleVO","GlobalConfigVO","AuditsVO"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String resourceType;
+    @Param(required = true, validValues = {"AccessControlRuleVO","GlobalConfigVO","AuditsVO","RolePolicyStatementVO","IAM2VirtualIDAttributeVO"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public String resourceType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +57,8 @@ public class CheckBatchDataIntegrityAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CheckBatchDataIntegrityResult value = res.getResult(org.zstack.sdk.CheckBatchDataIntegrityResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CheckBatchDataIntegrityResult() : value; 
+        CheckBatchDataIntegrityResult value = res.getResult(CheckBatchDataIntegrityResult.class);
+        ret.value = value == null ? new CheckBatchDataIntegrityResult() : value;
 
         return ret;
     }
