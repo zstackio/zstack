@@ -124,10 +124,11 @@ public class TestLinkDocumentGenerator {
         ret.setReqSpec(rspec);
 
         File retFile = new File(PathUtil.join(outputDir, String.format("reqSpec-%s", tfile.getName())));
-        retFile.createNewFile();
-        Marshaller marshaller = context.createMarshaller();
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-        marshaller.marshal(ret, retFile);
+        if (retFile.createNewFile()) {
+            Marshaller marshaller = context.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+            marshaller.marshal(ret, retFile);
+        }
     }
 
     public static void generateRequirementSpec(String outputDir) {

@@ -127,8 +127,8 @@ public class PathUtil {
                     parentFile.mkdirs();
                 }
 
-                if (!file.exists()) {
-                    file.createNewFile();
+                if (!file.exists() && !file.createNewFile()) {
+                    logger.error(String.format("fail to create new File[%s]", file));
                 }
             } catch (IOException e) {
                 logger.error(String.format("create file error: %s", e.getMessage()));
@@ -144,7 +144,9 @@ public class PathUtil {
             } catch (IOException e) {
                 logger.error(String.format("read jar resource error: %s", e.getMessage()));
 
-                file.delete();
+                if (!file.delete()) {
+                    logger.warn(String.format("failed to delete file[%s]", file));
+                }
                 return null;
             }
         }

@@ -273,7 +273,9 @@ public class AnsibleRunner {
                 Defer.defer(new Runnable() {
                     @Override
                     public void run() {
-                        tempKeyFile.delete();
+                        if (!tempKeyFile.delete()) {
+                            logger.warn(String.format("failed to delete file[%s]", tempKeyFile));
+                        }
                     }
                 });
 

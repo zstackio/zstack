@@ -256,8 +256,12 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                     Defer.defer(new Runnable() {
                         @Override
                         public void run() {
-                            tmpInclude.delete();
-                            tmpAgentYaml.delete();
+                            if (!tmpInclude.delete()) {
+                                logger.warn(String.format("failed to delete file[%s]", tmpInclude));
+                            }
+                            if (!tmpAgentYaml.delete()) {
+                                logger.warn(String.format("failed to delete file[%s]", tmpAgentYaml));
+                            }
                         }
                     });
 
@@ -283,8 +287,12 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                     Defer.defer(new Runnable() {
                         @Override
                         public void run() {
-                            tmpInclude.delete();
-                            tmpAgentYaml.delete();
+                            if (!tmpInclude.delete()) {
+                                logger.warn(String.format("failed to delete file[%s]", tmpInclude));
+                            }
+                            if (!tmpAgentYaml.delete()) {
+                                logger.warn(String.format("failed to delete file[%s]", tmpAgentYaml));
+                            }
                         }
                     });
 
