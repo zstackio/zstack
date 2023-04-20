@@ -311,7 +311,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                                           .in(AccessControlListVO_.uuid, newAclUuids).list();
         if (!acls.isEmpty()) {
             /*check if the ip version is same*/
-            List<String> aclUuids = acls.stream().filter(acl -> acl.getIpVersion() != NetworkUtils.getIpversion(vip.getIp())).map(AccessControlListVO::getUuid).collect(Collectors.toList());
+            List<String> aclUuids = acls.stream().filter(acl -> !acl.getIpVersion().equals(NetworkUtils.getIpversion(vip.getIp()))).map(AccessControlListVO::getUuid).collect(Collectors.toList());
             if (!aclUuids.isEmpty()) {
                 throw new ApiMessageInterceptionException(argerr("Can't attach the type access-control-list group[%s] whose ip version is different with LoadBalancer[%s]", aclUuids, lbUuid));
             }
