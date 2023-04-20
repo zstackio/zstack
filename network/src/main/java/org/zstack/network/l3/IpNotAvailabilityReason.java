@@ -23,7 +23,7 @@ public enum IpNotAvailabilityReason {
             return i18n("it is gateway");
         } else if (this.equals(NO_IN_RANGE)) {
             return i18n("it is not in this range");
-        } else if (this.equals(NO_IN_RANGE)) {
+        } else if (this.equals(USED)) {
             return i18n("it is used");
         } else {
             return this.toString();
