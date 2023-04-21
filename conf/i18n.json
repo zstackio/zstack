@@ -13057,7 +13057,17 @@
     "arguments": [
       "msg.getAllowedCidr()"
     ],
-    "line": 173,
+    "line": 191,
+    "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
+  },
+  {
+    "raw": "invalid CIDR[%s], only ipv4 is supported",
+    "en_US": "invalid CIDR[{0}], only ipv4 is supported",
+    "zh_CN": "无效的CIDR[{0}]，仅支持ipv4",
+    "arguments": [
+      "msg.getAllowedCidr()"
+    ],
+    "line": 193,
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
