@@ -1,6 +1,5 @@
 package org.zstack.network.l3;
 
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.network.l3.*;
@@ -18,6 +17,7 @@ import java.util.stream.Collectors;
 public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
     private static final CLogger logger = Utils.getLogger(RandomIpAllocatorStrategy.class);
     public static final IpAllocatorType type = new IpAllocatorType(L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY);
+    private static final Random random = new Random();
 
     @Override
     public IpAllocatorType getType() {
@@ -108,7 +108,6 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
 
     private String allocateIp(IpRangeAO vo, String excludeIp) {
         int total = vo.size();
-        Random random = new Random();
         long s = random.nextInt(total) + NetworkUtils.ipv4StringToLong(vo.getStartIp());
         long e = NetworkUtils.ipv4StringToLong(vo.getEndIp());
 

@@ -27,6 +27,7 @@ public class NetworkUtils {
 
     private static final Map<String, Integer> validNetmasks = new HashMap<String, Integer>();
 
+    private static final Random random = new Random();
 
     static {
         validNetmasks.put("255.255.255.255", 32);
@@ -327,7 +328,6 @@ public class NetworkUtils {
             full.set((int) (alloc-startIp));
         }
 
-        Random random = new Random();
         int next = random.nextInt(total);
         int a = full.nextClearBit(next);
 
@@ -371,7 +371,7 @@ public class NetworkUtils {
     }
 
     public static String generateMacWithDeviceId(short deviceId) {
-        int seed = new Random().nextInt();
+        int seed = random.nextInt();
         String seedStr = Integer.toHexString(seed);
         if (seedStr.length() < 8) {
             String compensate = StringUtils.repeat("0", 8 - seedStr.length());
