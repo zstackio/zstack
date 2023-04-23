@@ -25,7 +25,7 @@ public class AddIntegrityResourceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, validValues = {"AccessControlRuleVO","GlobalConfigVO","AuditsVO","RolePolicyStatementVO","IAM2VirtualIDAttributeVO"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public String resourceType;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
