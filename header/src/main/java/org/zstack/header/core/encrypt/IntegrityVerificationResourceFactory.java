@@ -20,4 +20,10 @@ public interface IntegrityVerificationResourceFactory {
 
     default void upgradeExtension(){
     }
+
+    default void doIntegrityAfterSaveDbRecord(Object entity) {
+    }
+
+    default void doIntegrityAfterUpdateDbRecord(Object entity) {
+    }
 }
