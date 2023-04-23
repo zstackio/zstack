@@ -79,7 +79,7 @@ public class FutureCompletion extends Completion {
         return done;
     }
 
-    private void doWait(long timeout) {
+    private synchronized void doWait(long timeout) {
         try {
             wait(timeout);
         } catch (InterruptedException e) {
