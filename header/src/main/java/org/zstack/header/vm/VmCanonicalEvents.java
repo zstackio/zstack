@@ -15,6 +15,7 @@ public class VmCanonicalEvents {
     public static final String VM_CONFIG_CHANGED_PATH = "/vm/config/change";
     public static final String VM_LIBVIRT_REPORT_REBOOT = "/vm/libvirtReportReboot";
     public static final String VM_LIBVIRT_REPORT_CRASH = "/vm/libvirtReportCrash";
+    public static final String VM_NIC_INFO_CHANGED_PATH = "/vm/nicinfo/change";
 
     @NeedJsonSchema
     public static class VmCrashReportData {
@@ -191,6 +192,55 @@ public class VmCanonicalEvents {
 
         public void setNewState(String newState) {
             this.newState = newState;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class VmInternalIpChangedData {
+        private String vmUuid;
+        private String l3NetworkUuid;
+        private String oldInternalIp;
+        private String newInternalIp;
+        private String relateResourceUuid;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getL3NetworkUuid() {
+            return l3NetworkUuid;
+        }
+
+        public void setL3NetworkUuid(String l3NetworkUuid) {
+            this.l3NetworkUuid = l3NetworkUuid;
+        }
+
+        public String getOldInternalIp() {
+            return oldInternalIp;
+        }
+
+        public void setOldInternalIp(String oldInternalIp) {
+            this.oldInternalIp = oldInternalIp;
+        }
+
+        public String getNewInternalIp() {
+            return newInternalIp;
+        }
+
+        public void setNewInternalIp(String newInternalIp) {
+            this.newInternalIp = newInternalIp;
+        }
+
+        public String getRelateResourceUuid() {
+            return relateResourceUuid;
+        }
+
+        public void setRelateResourceUuid(String relateResourceUuid) {
+            this.relateResourceUuid = relateResourceUuid;
         }
     }
 }

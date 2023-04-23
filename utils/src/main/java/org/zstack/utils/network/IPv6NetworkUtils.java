@@ -13,6 +13,11 @@ import java.util.Arrays;
 public class IPv6NetworkUtils {
     private final static CLogger logger = Utils.getLogger(IPv6NetworkUtils.class);
 
+    // IPv4 地址正则表达式
+    private static String ipv4Regex = "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+    // MAC 地址正则表达式
+    private static String macRegex = "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$";
+
     private static boolean isConsecutiveRange(BigInteger[] allocatedIps) {
         BigInteger first = allocatedIps[0];
         BigInteger last = allocatedIps[allocatedIps.length - 1];
@@ -375,4 +380,13 @@ public class IPv6NetworkUtils {
     public static String ipv6TagValueToAddress(String tag) {
         return tag.replace("--", "::");
     }
+
+    public static boolean isValidIpv4(String ipv4) {
+        return ipv4.matches(IPv6NetworkUtils.ipv4Regex);
+    }
+
+    public static boolean isValidMac(String mac) {
+        return mac.matches(IPv6NetworkUtils.macRegex);
+    }
+
 }
