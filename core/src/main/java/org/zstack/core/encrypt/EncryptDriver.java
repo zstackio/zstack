@@ -1,6 +1,9 @@
 package org.zstack.core.encrypt;
 
 public interface EncryptDriver {
+    String encryptError = "%s encrypt failed";
+    String decryptError = "%s decrypt failed";
+
     EncryptDriverType getDriverType();
 
     String encrypt(String data);
