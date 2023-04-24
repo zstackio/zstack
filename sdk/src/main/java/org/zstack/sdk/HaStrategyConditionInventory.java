@@ -20,12 +20,20 @@ public class HaStrategyConditionInventory  {
         return this.name;
     }
 
-    public java.lang.String strategyCondition;
-    public void setStrategyCondition(java.lang.String strategyCondition) {
-        this.strategyCondition = strategyCondition;
+    public java.lang.String fencerName;
+    public void setFencerName(java.lang.String fencerName) {
+        this.fencerName = fencerName;
     }
-    public java.lang.String getStrategyCondition() {
-        return this.strategyCondition;
+    public java.lang.String getFencerName() {
+        return this.fencerName;
+    }
+
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
+        this.state = state;
+    }
+    public java.lang.String getState() {
+        return this.state;
     }
 
     public java.sql.Timestamp createDate;

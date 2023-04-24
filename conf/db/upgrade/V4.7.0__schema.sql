@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 CREATE TABLE IF NOT EXISTS `zstack`.`FileIntegrityVerificationVO` (
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `path` varchar(256) NOT NULL,
@@ -592,14 +593,13 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HaStrategyConditionVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 INSERT INTO HaStrategyConditionVO(`uuid`, `name`, `fencerName`, `state`, `lastOpDate`, `createDate`)
 values ((REPLACE(UUID(), '-', '')), 'ha strategy condition', 'hostBusinessNic', 'Disable', current_timestamp(), current_timestamp());
 
 DELIMITER $$
 CREATE PROCEDURE addHaStrategyConditionOnVmHaLevel()
-BEGIN
+    BEGIN
         DECLARE isHaEnable VARCHAR(32);
         DECLARE fencerStrategy VARCHAR(32);
         DECLARE resourceUuid VARCHAR(32);
