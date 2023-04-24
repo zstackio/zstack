@@ -31,8 +31,8 @@ public class UpdateHaStrategyConditionAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, maxLength = 512, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String strategyCondition;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String state;
 
     @Param(required = false)
     public java.util.List systemTags;

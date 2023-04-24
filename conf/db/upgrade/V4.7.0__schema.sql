@@ -1,11 +1,14 @@
 CREATE TABLE IF NOT EXISTS `zstack`.`HaStrategyConditionVO` (
     `uuid` varchar(32) NOT NULL,
     `name` varchar(256),
-    `strategyCondition` varchar(256) NOT NULL,
+    `fencerName` varchar(256) NOT NULL,
+    `state` varchar(64) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+INSERT INTO HaStrategyConditionVO(`uuid`, `name`, `fencerName`, `state`, `lastOpDate`, `createDate`)
+values ((REPLACE(UUID(), '-', '')), 'ha strategy condition', 'hostBusinessNic', 'Disable', current_timestamp(), current_timestamp());
 
 DELIMITER $$
 CREATE PROCEDURE addHaStrategyConditionOnVmHaLevel()
@@ -30,9 +33,9 @@ CREATE PROCEDURE addHaStrategyConditionOnVmHaLevel()
             SET resourceUuid = (REPLACE(UUID(), '-', ''));
             SET current_time_stamp = current_timestamp();
             IF (LOWER(isHaEnable) = 'false' OR fencerStrategy = 'Permissive') THEN
-                INSERT INTO HaStrategyConditionVO(`uuid`, `name`, `strategyCondition`, `lastOpDate`, `createDate`) values (resourceUuid, 'ha strategy condition', '{"hostStorageStatue":false,"hostBusinessNic":false}', current_time_stamp, current_time_stamp);
+                INSERT INTO HaStrategyConditionVO(`uuid`, `name`, `fencerName`, `state`, `lastOpDate`, `createDate`) values (resourceUuid, 'ha strategy condition', 'hostStorageState', 'Disable', current_time_stamp, current_time_stamp);
             ELSE
-                INSERT INTO HaStrategyConditionVO(`uuid`, `name`, `strategyCondition`, `lastOpDate`, `createDate`) values (resourceUuid, 'ha strategy condition', '{"hostStorageStatue":true,"hostBusinessNic":false}', current_time_stamp, current_time_stamp);
+                INSERT INTO HaStrategyConditionVO(`uuid`, `name`, `fencerName`, `state`, `lastOpDate`, `createDate`) values (resourceUuid, 'ha strategy condition', 'hostStorageState', 'Enable', current_time_stamp, current_time_stamp);
             END IF;
         END LOOP;
         CLOSE haCursor;
