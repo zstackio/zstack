@@ -52,7 +52,7 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component, Glo
 
     @Override
     @Transactional
-    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion) {
+    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
         VxlanNetworkPoolVO vo = new VxlanNetworkPoolVO(ovo);
         if (vo.getPhysicalInterface() == null) {
             vo.setPhysicalInterface("");

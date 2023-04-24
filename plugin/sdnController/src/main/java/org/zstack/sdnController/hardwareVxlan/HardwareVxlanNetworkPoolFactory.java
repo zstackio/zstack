@@ -44,7 +44,7 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
 
     @Override
     @Transactional
-    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion) {
+    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
         HardwareL2VxlanNetworkPoolVO vo = new HardwareL2VxlanNetworkPoolVO(ovo);
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo.setSdnControllerUuid(((APICreateL2HardwareVxlanNetworkPoolMsg) msg).getSdnControllerUuid());
