@@ -55,7 +55,12 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
 
     @Override
     public String decrypt(String encryptString) {
-        return encryptDriver.decrypt(encryptString);
+        try {
+            return encryptDriver.decrypt(encryptString);
+        } catch (Exception e) {
+            logger.debug(e.getMessage());
+            return encryptString;
+        }
     }
 
     @Override

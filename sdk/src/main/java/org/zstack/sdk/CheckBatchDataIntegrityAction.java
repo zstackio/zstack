@@ -12,7 +12,7 @@ public class CheckBatchDataIntegrityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CheckBatchDataIntegrityResult value;
+        public org.zstack.sdk.CheckBatchDataIntegrityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -29,7 +29,7 @@ public class CheckBatchDataIntegrityAction extends AbstractAction {
     public java.util.List resourceUuids;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String resourceType;
+    public java.lang.String resourceType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +57,8 @@ public class CheckBatchDataIntegrityAction extends AbstractAction {
             return ret;
         }
         
-        CheckBatchDataIntegrityResult value = res.getResult(CheckBatchDataIntegrityResult.class);
-        ret.value = value == null ? new CheckBatchDataIntegrityResult() : value;
+        org.zstack.sdk.CheckBatchDataIntegrityResult value = res.getResult(org.zstack.sdk.CheckBatchDataIntegrityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CheckBatchDataIntegrityResult() : value; 
 
         return ret;
     }
