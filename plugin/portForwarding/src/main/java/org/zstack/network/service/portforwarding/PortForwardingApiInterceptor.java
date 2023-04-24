@@ -19,6 +19,7 @@ import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.vip.*;
 import org.zstack.utils.VipUseForList;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
@@ -188,6 +189,8 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         if (msg.getAllowedCidr() != null) {
             if (!NetworkUtils.isCidr(msg.getAllowedCidr())) {
                 throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s]", msg.getAllowedCidr()));
+            } else if (!NetworkUtils.isCidr(msg.getAllowedCidr(), IPv6Constants.IPv4)) {
+                throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s], only ipv4 is supported", msg.getAllowedCidr()));
             }
         }
 
