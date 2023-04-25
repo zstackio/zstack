@@ -255,10 +255,10 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     @Override
     public HostOperationSystem getHostOS(String uuid) {
         Tuple tuple = Q.New(KVMHostVO.class)
-                .select(KVMHostVO_.osDistribution, KVMHostVO_.osRelease, KVMHostVO_.osVersion)
+                .select(KVMHostVO_.osDistribution, KVMHostVO_.osVersion)
                 .eq(KVMHostVO_.uuid, uuid)
                 .findTuple();
-        return HostOperationSystem.of(tuple.get(0, String.class), tuple.get(1, String.class), tuple.get(2, String.class));
+        return HostOperationSystem.of(tuple.get(0, String.class), tuple.get(1, String.class));
     }
 
     @Override
@@ -268,13 +268,13 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         }
 
         List<Tuple> tuples = Q.New(KVMHostVO.class)
-                .select(KVMHostVO_.osDistribution, KVMHostVO_.osRelease, KVMHostVO_.osVersion, KVMHostVO_.uuid)
+                .select(KVMHostVO_.osDistribution, KVMHostVO_.osVersion, KVMHostVO_.uuid)
                 .in(KVMHostVO_.uuid, hostUuidList)
                 .listTuple();
         return tuples.stream().collect(Collectors.toMap(
-                tuple -> tuple.get(3, String.class),
+                tuple -> tuple.get(2, String.class),
                 tuple -> HostOperationSystem.of(
-                        tuple.get(0, String.class), tuple.get(1, String.class), tuple.get(2, String.class))));
+                        tuple.get(0, String.class), tuple.get(1, String.class))));
     }
 
     @Override

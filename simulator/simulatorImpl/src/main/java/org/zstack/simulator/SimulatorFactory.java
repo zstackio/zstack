@@ -21,7 +21,7 @@ public class SimulatorFactory implements HypervisorFactory, HostBaseExtensionFac
     private static final HypervisorType hypervisorType = new HypervisorType(SimulatorConstant.SIMULATOR_HYPERVISOR_TYPE, CoreGlobalProperty.EXPOSE_SIMULATOR_TYPE);
     public static final VolumeFormat SIMULATOR_VOLUME_FORMAT = new VolumeFormat(SimulatorConstant.SIMULATOR_VOLUME_FORMAT_STRING, hypervisorType, CoreGlobalProperty.EXPOSE_SIMULATOR_TYPE);
     private Map<String, Host> hosts = Collections.synchronizedMap(new HashMap<>());
-    public static final HostOperationSystem DEFAULT_OS = HostOperationSystem.of("zstack", "simulator", "0.1");
+    public static final HostOperationSystem DEFAULT_OS = HostOperationSystem.of("zstack", "0.1");
 
     @Autowired
     private DatabaseFacade dbf;
