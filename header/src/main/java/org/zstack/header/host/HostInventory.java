@@ -130,6 +130,9 @@ public class HostInventory implements Serializable {
     @Queryable(mappingClass = HostCapacityInventory.class,
             joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "cpuNum"))
     private Integer cpuNum;
+    @Queryable(mappingClass = HostHaStateInventory.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "state"))
+    private String haState;
 
     private String architecture;
 
@@ -162,6 +165,10 @@ public class HostInventory implements Serializable {
             this.setAvailableMemoryCapacity(vo.getCapacity().getAvailableMemory());
             this.setCpuSockets(vo.getCapacity().getCpuSockets());
             this.setCpuNum(vo.getCapacity().getCpuNum());
+        }
+
+        if (vo.getHaStateVO() != null) {
+            this.setHaState(vo.getHaStateVO().getState().toString());
         }
     }
 
@@ -226,6 +233,14 @@ public class HostInventory implements Serializable {
 
     public void setAvailableMemoryCapacity(Long availableMemoryCapacity) {
         this.availableMemoryCapacity = availableMemoryCapacity;
+    }
+
+    public String getHaState() {
+        return haState;
+    }
+
+    public void setHaState(String haState) {
+        this.haState = haState;
     }
 
     public String getZoneUuid() {
