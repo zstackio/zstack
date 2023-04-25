@@ -50,7 +50,7 @@ public class KvmHypervisorInfoHelper {
             }
 
             HostOperationSystem os = hostOsMap.get(hostUuid);
-            String osReleaseVersion = os.toString();
+            String osReleaseVersion = String.format("%s %s", os.distribution, os.version);
 
             Pair<String, String> key = new Pair<>(architecture, osReleaseVersion);
             HostOsCategoryVO vo = caches.get(key);

@@ -271,7 +271,10 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
     private void saveMetadataList(List<HypervisorMetadataDefinition> definitions) {
         List<HostOsCategoryVO> categoryVOS = definitions.stream()
                 .map(this::mapToHostOsCategory)
-                .collect(Collectors.toList());
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toCollection(() -> new TreeSet<>(Comparator
+                                .comparing(HostOsCategoryVO::getArchitecture)
+                                .thenComparing(HostOsCategoryVO::getOsReleaseVersion))), ArrayList::new));
         saveHostOsCategoryList(categoryVOS);
     }
 
