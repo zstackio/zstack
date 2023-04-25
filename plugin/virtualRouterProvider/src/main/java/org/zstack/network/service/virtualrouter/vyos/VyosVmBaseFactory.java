@@ -175,7 +175,7 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
         return new VyosVm(vr);
     }
 
-    private void buildWorkFlowBuilder() {
+    protected void buildWorkFlowBuilder() {
         postCreateFlowsBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(vyosPostCreateFlows).construct();
         postStartFlowsBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(vyosPostStartFlows).construct();
         postRebootFlowsBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(vyosPostRebootFlows).construct();
