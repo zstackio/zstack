@@ -80,3 +80,6 @@ DROP PROCEDURE IF EXISTS moveOsInfoToKVMHostVO;
 ALTER TABLE `zstack`.`ZoneEO` ADD COLUMN `isDefault` tinyint(1) unsigned DEFAULT 0;
 DROP VIEW IF EXISTS `zstack`.`ZoneVO`;
 CREATE VIEW `zstack`.`ZoneVO` AS SELECT uuid, name, type, description, state, isDefault, createDate, lastOpDate FROM `zstack`.`ZoneEO` WHERE deleted IS NULL;
+
+UPDATE SNSTextTemplateVO SET subject = replace('报警器 %{ALARM_METRIC} %{ALARM_COMPARISON_OPERATOR} %{ALARM_THRESHOLD} %{ALARM_CURRENT_STATUS}','%','$') WHERE subject IS NULL or subject = '';
+UPDATE SNSTextTemplateVO SET recoverySubject = replace('报警器 %{ALARM_NAME} %{TITLE_ALARM_RESOURCE_NAME} %{ALARM_CURRENT_STATUS}','%','$') WHERE recoverySubject IS NULL or subject = '';
