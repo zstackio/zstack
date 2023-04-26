@@ -390,6 +390,24 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
+    @Override
+    protected void handle(FlattenVolumeOnPrimaryStorageMsg msg) {
+        final FlattenVolumeOnPrimaryStorageReply reply = new FlattenVolumeOnPrimaryStorageReply();
+        final NfsPrimaryStorageBackend backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(msg.getVolume().getFormat(), self.getUuid()));
+        backend.mergeSnapshotToVolume(getSelfInventory(), null, msg.getVolume(), true, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     private void handle(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg) {
         final NfsPrimaryStorageBackend backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(msg.getSnapshot().getFormat(), self.getUuid()));
         backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply>(msg) {
@@ -1005,6 +1023,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         job.setPrimaryStorage(getSelfInventory());
         job.setImage(spec);
         job.setVolumeResourceInstallPath(msg.getVolumeSnapshot().getPrimaryStorageInstallPath());
+        job.setIncremental(msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat()));
 
         jobf.execute(NfsPrimaryStorageKvmHelper.makeDownloadImageJobName(msg.getImageInventory(), job.getPrimaryStorage()),
                 NfsPrimaryStorageKvmHelper.makeJobOwnerName(job.getPrimaryStorage()), job,
@@ -1012,7 +1031,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void success(ImageCacheInventory cache) {
-                        reply.setActualSize(cache.getSize());
+                        reply.setIncremental(job.isIncremental());
+                        reply.setInventory(cache);
                         bus.reply(msg, reply);
                     }
 

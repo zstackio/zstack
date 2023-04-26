@@ -63,6 +63,7 @@ import org.zstack.longjob.LongJobUtils;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.storage.volume.VolumeSystemTags;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TimeUtils;
@@ -398,7 +399,38 @@ public class VolumeSnapshotTreeBase {
                 .eq(PrimaryStorageVO_.uuid, getSelfInventory().getPrimaryStorageUuid()).findValue();
 
         chain.then(new NoRollbackFlow() {
-            String __name__ = String.format("run snapshot protector");
+            String __name__ = "check-snapshot-reference";
+
+            @Override
+            public boolean skip(Map data) {
+                return msg.isDbOnly();
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<String> descendantUuids = currentLeaf.getDescendants().stream()
+                        .map(VolumeSnapshotInventory::getUuid)
+                        .collect(Collectors.toList());
+                List<String> refVolUuids = Q.New(VolumeSnapshotReferenceVO.class).select(VolumeSnapshotReferenceVO_.referenceVolumeUuid)
+                        .in(VolumeSnapshotReferenceVO_.volumeSnapshotUuid, descendantUuids)
+                        .notNull(VolumeSnapshotReferenceVO_.referenceVolumeUuid)
+                        .listValues();
+
+                if (refVolUuids.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                trigger.fail(operr("snapshot or its desendant has reference volume[uuids:%s]", refVolUuids));
+            }
+        });
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "run snapshot protector";
+
+            @Override
+            public boolean skip(Map data) {
+                return msg.isDbOnly();
+            }
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -603,6 +635,11 @@ public class VolumeSnapshotTreeBase {
             String __name__ = "delete-volume-snapshots-from-primary-storage";
 
             @Override
+            public boolean skip(Map data) {
+                return msg.isDbOnly();
+            }
+
+            @Override
             public void run(final FlowTrigger trigger, Map data) {
                 final List<VolumeSnapshotPrimaryStorageDeletionMsg> pmsgs = CollectionUtils.transformToList(currentLeaf.getDescendants(), new Function<VolumeSnapshotPrimaryStorageDeletionMsg, VolumeSnapshotInventory>() {
                     @Override
@@ -763,18 +800,33 @@ public class VolumeSnapshotTreeBase {
                         bus.send(cmsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
-                                if (reply.isSuccess()) {
-                                    CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply cr = reply.castReply();
-                                    installPath = cr.getInstallPath();
-                                    actualSize = cr.getActualSize();
-                                    size = cr.getSize();
-                                    //update volume install path for ps allocate
-                                    //TODO: remove this
-                                    SQL.New(VolumeVO.class).set(VolumeVO_.installPath, installPath).eq(VolumeVO_.uuid, msg.getVolume().getUuid()).update();
-                                    trigger.next();
-                                } else {
+                                if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
+                                    return;
                                 }
+
+                                CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply cr = reply.castReply();
+                                installPath = cr.getInstallPath();
+                                actualSize = cr.getActualSize();
+                                size = cr.getSize();
+                                if (cr.isIncremental()) {
+                                    VolumeSnapshotReferenceVO ref = new VolumeSnapshotReferenceVO();
+                                    ref.setReferenceVolumeUuid(msg.getVolume().getUuid());
+                                    ref.setReferenceUuid(msg.getVolume().getUuid());
+                                    ref.setReferenceType(VolumeVO.class.getSimpleName());
+                                    ref.setReferenceInstallUrl(installPath);
+                                    ref.setVolumeSnapshotInstallUrl(currentRoot.getPrimaryStorageInstallPath());
+                                    ref.setVolumeSnapshotUuid(currentRoot.getUuid());
+                                    ref.setVolumeUuid(currentRoot.getVolumeUuid());
+                                    dbf.persist(ref);
+                                    logger.debug(String.format("refer volume[uuid:%s] from volume snapshot[uuid:%s, volumeUuid:%s]" +
+                                            " because of incremental volume creation", ref.getReferenceVolumeUuid(), currentRoot.getUuid(), currentRoot.getVolumeUuid()));
+                                }
+
+                                //update volume install path for ps allocate
+                                //TODO: remove this
+                                SQL.New(VolumeVO.class).set(VolumeVO_.installPath, installPath).eq(VolumeVO_.uuid, msg.getVolume().getUuid()).update();
+                                trigger.next();
                             }
                         });
                     }
@@ -1099,17 +1151,35 @@ public class VolumeSnapshotTreeBase {
         CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg cmsg = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg();
         cmsg.setImageInventory(image);
         cmsg.setVolumeSnapshot(VolumeSnapshotInventory.valueOf(currentRoot));
+        cmsg.setSystemTags(msg.getSystemTags());
         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, cmsg.getPrimaryStorageUuid());
-        bus.send(cmsg, new CloudBusCallBack(completion) {
+        bus.send(cmsg, new CloudBusCallBack(msg, completion) {
             @Override
             public void run(MessageReply r) {
                 if (!r.isSuccess()) {
                     reply.setError(r.getError());
-                } else {
-                    CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply cr = r.castReply();
-                    reply.setLocationHostUuid(cr.getLocateHostUuid());
-                    reply.setActualSize(cr.getActualSize());
+                    bus.reply(msg, reply);
+                    return;
                 }
+
+                CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply cr = r.castReply();
+                reply.setLocationHostUuid(cr.getLocateHostUuid());
+                reply.setActualSize(cr.getActualSize());
+
+                if (cr.isIncremental()) {
+                    VolumeSnapshotReferenceVO ref = new VolumeSnapshotReferenceVO();
+                    ref.setReferenceUuid(msg.getImageUuid());
+                    ref.setReferenceType(ImageCacheVO.class.getSimpleName());
+                    ref.setReferenceInstallUrl(cr.getInventory().getInstallUrl());
+                    ref.setVolumeSnapshotInstallUrl(currentRoot.getPrimaryStorageInstallPath());
+                    ref.setVolumeSnapshotUuid(currentRoot.getUuid());
+                    ref.setVolumeUuid(currentRoot.getVolumeUuid());
+                    dbf.persist(ref);
+
+                    logger.debug(String.format("refer image cache[uuid:%s] from volume snapshot[uuid:%s, volumeUuid:%s]" +
+                            " because of incremental image cache creation", msg.getImageUuid(), currentRoot.getUuid(), currentRoot.getVolumeUuid()));
+                }
+
                 bus.reply(msg, reply);
                 completion.done();
             }

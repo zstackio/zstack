@@ -146,6 +146,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg);
 
+    protected abstract void handle(FlattenVolumeOnPrimaryStorageMsg msg);
+
     protected abstract void handle(DeleteSnapshotOnPrimaryStorageMsg msg);
 
     protected abstract void handle(RevertVolumeFromSnapshotOnPrimaryStorageMsg msg);
@@ -294,6 +296,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().maintenance()
                     .validate();
+        } else if (msg instanceof FlattenVolumeOnPrimaryStorageMsg) {
+            new PrimaryStorageValidater().maintenance()
+                    .validate();
         } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().maintenance()
                     .validate();
@@ -361,6 +366,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
             handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof FlattenVolumeOnPrimaryStorageMsg) {
+            handle((FlattenVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
             handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof UpdatePrimaryStorageHostStatusMsg) {

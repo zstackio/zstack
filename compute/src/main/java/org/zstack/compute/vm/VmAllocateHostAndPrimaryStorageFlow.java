@@ -35,6 +35,8 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import java.util.*;
 
+import static org.zstack.core.Platform.operr;
+
 /**
  * Create by lining at 2020/08/17
  */
@@ -55,6 +57,21 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+
+        if (spec.getImageSpec().relyOnImageCache()) {
+            String imageUuid = spec.getImageSpec().getInventory().getUuid();
+            String requirdPsUuid = spec.getRequiredPrimaryStorageUuidForRootVolume();
+            List<String> cachedPsUuids = Q.New(ImageCacheVO.class).select(ImageCacheVO_.primaryStorageUuid)
+                    .eq(ImageCacheVO_.imageUuid, imageUuid)
+                    .listValues();
+
+            if (requirdPsUuid != null && !cachedPsUuids.contains(requirdPsUuid)) {
+                trigger.fail(operr("creation rely on image cache[uuid:%s, locate ps uuids: [%s]], cannot create other places.", imageUuid, cachedPsUuids));
+                return;
+            } else if (requirdPsUuid == null) {
+                spec.setRequiredPrimaryStorageUuidForRootVolume(cachedPsUuids.get(0));
+            }
+        }
 
         // The creation parameter specifies the primary storage, no need to automatically allocate the primary storage
         if (!needAutoAllocatePS(spec)) {

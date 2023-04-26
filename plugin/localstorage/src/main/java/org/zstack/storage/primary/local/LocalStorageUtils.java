@@ -19,6 +19,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
+import java.util.Collection;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
@@ -246,5 +247,12 @@ public class LocalStorageUtils {
             fullPath = String.format("file://%s;hostUuid://%s", installPath, hostUuid);
             return fullPath;
         }
+    }
+
+    public static String getHostUuidFromInstallUrl(String installUrl) {
+        InstallPath p = new InstallPath();
+        p.fullPath = installUrl;
+        p.disassemble();
+        return p.hostUuid;
     }
 }

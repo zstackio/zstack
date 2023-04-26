@@ -3134,14 +3134,12 @@ public class KVMAgentCommands {
     public static class MergeSnapshotRsp extends AgentResponse {
     }
 
-    public static class MergeSnapshotCmd extends AgentCommand {
+    public static class MergeSnapshotCmd extends AgentCommand implements HasThreadContext {
         private String vmUuid;
         private VolumeTO volume;
         private String srcPath;
         private String destPath;
         private boolean fullRebase;
-        // timeout seconds
-        private long timeout;
 
         public boolean isFullRebase() {
             return fullRebase;
@@ -3181,14 +3179,6 @@ public class KVMAgentCommands {
 
         public void setVolume(VolumeTO volume) {
             this.volume = volume;
-        }
-
-        public long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(long timeout) {
-            this.timeout = timeout;
         }
     }
 

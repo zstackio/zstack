@@ -39,6 +39,7 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -48,6 +49,7 @@ import org.zstack.storage.snapshot.group.MemorySnapshotGroupReferenceFactory;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
+import org.zstack.storage.volume.VolumeCascadeExtension;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
@@ -60,6 +62,7 @@ import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -80,7 +83,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         AfterReimageVmInstanceExtensionPoint,
         VmJustBeforeDeleteFromDbExtensionPoint,
         VolumeJustBeforeDeleteFromDbExtensionPoint,
-        OverwriteVolumeExtensionPoint, CleanUpVmBackupExtensionPoint {
+        OverwriteVolumeExtensionPoint, FlattenVolumeExtensionPoint,
+        CleanUpVmBackupExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotManagerImpl.class);
     private String syncSignature;
     @Autowired
@@ -1245,68 +1249,15 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public void volumePreExpunge(VolumeInventory volume) {
-        List<String> snapUuids = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid)
-                .eq(VolumeSnapshotVO_.volumeUuid, volume.getUuid())
-                .listValues();
-
-        if (snapUuids.isEmpty()) {
-            return;
-        }
-
-        String tagFmt = getBackingVolumeTag("%");
-        List<String> protectedSnapUuids = Q.New(SystemTagVO.class).select(SystemTagVO_.resourceUuid)
-                .eq(SystemTagVO_.resourceType, VolumeSnapshotVO.class.getSimpleName())
-                .in(SystemTagVO_.resourceUuid, snapUuids)
-                .like(SystemTagVO_.tag, tagFmt)
-                .listValues();
-        if (!protectedSnapUuids.isEmpty()) {
-            throw new OperationFailureException(operr("volume snapshot[uuids:%s] is protected, " +
-                    "do not allow to delete volume.", new HashSet<>(protectedSnapUuids).toString()));
-        }
-    }
+    public void volumePreExpunge(VolumeInventory volume) {}
 
     @Override
     public void volumeBeforeExpunge(VolumeInventory volume, Completion completion) {
-        List<VolumeSnapshotDeletionMsg> msgs = new ArrayList<>();
-        SimpleQuery<VolumeSnapshotTreeVO> cq = dbf.createQuery(VolumeSnapshotTreeVO.class);
-        cq.select(VolumeSnapshotTreeVO_.uuid);
-        cq.add(VolumeSnapshotTreeVO_.volumeUuid, Op.EQ, volume.getUuid());
-        List<String> cuuids = cq.listValue();
-
-        for (String cuuid : cuuids) {
-            // deleting full snapshot of chain will cause whole chain to be deleted
-            SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-            q.select(VolumeSnapshotVO_.uuid);
-            q.add(VolumeSnapshotVO_.treeUuid, Op.EQ, cuuid);
-            q.add(VolumeSnapshotVO_.parentUuid, Op.NULL);
-            String suuid = q.findValue();
-
-            if (suuid == null) {
-                // this is a storage snapshot, don't delete it on primary storage
-                continue;
-            }
-
-            SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
-            sq.select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid);
-            sq.add(VolumeSnapshotVO_.uuid, Op.EQ, suuid);
-            Tuple t = sq.findTuple();
-            String volumeUuid = t.get(0, String.class);
-            String treeUuid = t.get(1, String.class);
-
-            VolumeSnapshotDeletionMsg msg = new VolumeSnapshotDeletionMsg();
-            msg.setSnapshotUuid(suuid);
-            msg.setTreeUuid(treeUuid);
-            msg.setVolumeUuid(volumeUuid);
-            msg.setVolumeDeletion(true);
-            String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
-            bus.makeTargetServiceIdByResourceUuid(msg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
-
-            msgs.add(msg);
-        }
+        List<VolumeSnapshotDeletionMsg> msgs = VolumeSnapshotCascadeExtension.handleVolumeExpunge(volume.getUuid());
 
         new While<>(msgs).all((msg, c) -> {
+            String resourceUuid = msg.getVolumeUuid() != null ? msg.getVolumeUuid() : msg.getTreeUuid();
+            bus.makeTargetServiceIdByResourceUuid(msg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
             bus.send(msg, new CloudBusCallBack(c) {
                 @Override
                 public void run(MessageReply reply) {
@@ -1407,6 +1358,34 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     @Override
     public void afterOverwriteVolume(VolumeInventory volume, VolumeInventory transientVolume) {
         removeVolumeFromOldSnapshotTreeInDb(volume.getUuid());
+    }
+
+    @Override
+    @Transactional
+    public void afterFlattenVolume(VolumeInventory volume) {
+        String currentSnapshotTreeUuid = Q.New(VolumeSnapshotTreeVO.class).select(VolumeSnapshotTreeVO_.uuid)
+                .eq(VolumeSnapshotTreeVO_.volumeUuid, volume.getUuid())
+                .eq(VolumeSnapshotTreeVO_.current, true)
+                .findValue();
+
+        removeVolumeFromOldSnapshotTreeInDb(volume.getUuid());
+
+        List<VolumeSnapshotReferenceVO> refers = Q.New(VolumeSnapshotReferenceVO.class)
+                .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, volume.getUuid())
+                .list();
+
+        if (!refers.isEmpty()) {
+            if (currentSnapshotTreeUuid != null) {
+                SQL.New(VolumeSnapshotVO.class).set(VolumeSnapshotVO_.state, VolumeSnapshotState.Disabled)
+                        .eq(VolumeSnapshotVO_.treeUuid, currentSnapshotTreeUuid)
+                        .update();
+
+                logger.warn(String.format("disable current snapshot tree[volumeUuid: %s] because of volume flatten.", volume.getUuid()));
+            }
+
+            refers.forEach(refer -> dbf.getEntityManager().remove(refer));
+            logger.debug(String.format("remove volume snapshot reference[referenceVolumeUuid: %s] because of volume flatten.", volume.getUuid()));
+        }
     }
 
     @Transactional

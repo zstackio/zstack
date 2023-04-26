@@ -679,20 +679,13 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 reply.setActualSize(rsp.getActualSize());
                 reply.setSize(rsp.getSize());
                 reply.setInstallPath(volPath);
-                createProtectTag();
+                reply.setIncremental(true);
                 completion.success(reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
-            }
-
-            private void createProtectTag() {
-                SystemTagCreator creator = VolumeSnapshotSystemTags.BACKING_TO_VOLUME.newSystemTagCreator(sp.getUuid());
-                creator.unique = false;
-                creator.setTagByTokens(Collections.singletonMap(VolumeSnapshotSystemTags.BACKING_VOLUME_TOKEN, volumeUuid));
-                creator.create();
             }
         });
     }
@@ -1327,24 +1320,31 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
+    public void createIncrementalImageCacheFromVolumeResource(PrimaryStorageInventory primaryStorage, String volumeResource, ImageInventory image, ReturnValueCompletion<BitsInfo> completion) {
+        final String installPath = NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrl(primaryStorage, image);
+        doCreateTemplateFromVolume(installPath, primaryStorage, volumeResource, image, true, completion);
+    }
+
+    @Override
     public void createImageCacheFromVolumeResource(PrimaryStorageInventory primaryStorage, String volumeResource, ImageInventory image, ReturnValueCompletion<BitsInfo> completion) {
         final String installPath = NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrl(primaryStorage, image);
-        doCreateTemplateFromVolume(installPath, primaryStorage, volumeResource, image, completion);
+        doCreateTemplateFromVolume(installPath, primaryStorage, volumeResource, image, false, completion);
     }
 
     @Override
     public void createTemplateFromVolume(final PrimaryStorageInventory primaryStorage, final VolumeInventory volume, final ImageInventory image, final ReturnValueCompletion<BitsInfo> completion) {
         final String installPath = NfsPrimaryStorageKvmHelper.makeTemplateFromVolumeInWorkspacePath(primaryStorage, image.getUuid());
-        doCreateTemplateFromVolume(installPath, primaryStorage, volume.getInstallPath(), image, completion);
+        doCreateTemplateFromVolume(installPath, primaryStorage, volume.getInstallPath(), image, false, completion);
     }
 
-    private void doCreateTemplateFromVolume(final String installPath, final PrimaryStorageInventory primaryStorage, final String volumeResourceInstallPath, final ImageInventory image, final ReturnValueCompletion<BitsInfo> completion) {
+    private void doCreateTemplateFromVolume(final String installPath, final PrimaryStorageInventory primaryStorage, final String volumeResourceInstallPath, final ImageInventory image, boolean incremental, final ReturnValueCompletion<BitsInfo> completion) {
         final HostInventory destHost = nfsFactory.getConnectedHostForOperation(primaryStorage).get(0);
 
         CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
         cmd.setInstallPath(installPath);
         cmd.setVolumePath(volumeResourceInstallPath);
         cmd.setUuid(primaryStorage.getUuid());
+        cmd.setIncremental(incremental);
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -1408,8 +1408,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
 
             OfflineMergeSnapshotCmd cmd = new OfflineMergeSnapshotCmd();
-            cmd.setFullRebase(fullRebase);
-            cmd.setSrcPath(snapshot.getPrimaryStorageInstallPath());
+            cmd.setFullRebase(fullRebase || snapshot == null);
+            cmd.setSrcPath(snapshot != null ? snapshot.getPrimaryStorageInstallPath() : null);
             cmd.setDestPath(volume.getInstallPath());
             cmd.setUuid(pinv.getUuid());
 
@@ -1438,7 +1438,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             });
         } else {
             MergeVolumeSnapshotOnKvmMsg msg = new MergeVolumeSnapshotOnKvmMsg();
-            msg.setFullRebase(fullRebase);
+            msg.setFullRebase(fullRebase || snapshot == null);
             msg.setHostUuid(hostUuid);
             msg.setFrom(snapshot);
             msg.setTo(volume);

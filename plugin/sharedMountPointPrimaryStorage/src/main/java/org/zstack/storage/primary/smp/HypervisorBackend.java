@@ -4,7 +4,9 @@ import org.zstack.header.cluster.ClusterConnectionStatus;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.volume.VolumeInventory;
 
 /**
  * Created by frank on 6/30/2015.
@@ -47,7 +49,7 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
 
     abstract void handle(CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion);
 
-    abstract void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg, ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply> completion);
+    abstract void stream(VolumeSnapshotInventory from, VolumeInventory to, boolean fullRebase, Completion completion);
 
     abstract void handle(DownloadBitsFromKVMHostToPrimaryStorageMsg msg, ReturnValueCompletion<DownloadBitsFromKVMHostToPrimaryStorageReply> completion);
 

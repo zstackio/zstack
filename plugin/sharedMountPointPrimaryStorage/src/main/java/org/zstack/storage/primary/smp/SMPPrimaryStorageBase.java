@@ -803,15 +803,33 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
     protected void handle(final MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
         HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getTo().getUuid());
-        bkd.handle(msg, new ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply>(msg) {
+        MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
+        bkd.stream(msg.getFrom(), msg.getTo(), msg.isFullRebase(), new Completion(msg) {
             @Override
-            public void success(MergeVolumeSnapshotOnPrimaryStorageReply returnValue) {
-                bus.reply(msg, returnValue);
+            public void success() {
+                bus.reply(msg, reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(FlattenVolumeOnPrimaryStorageMsg msg) {
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getVolume().getUuid());
+        FlattenVolumeOnPrimaryStorageReply reply = new FlattenVolumeOnPrimaryStorageReply();
+        bkd.stream(null, msg.getVolume(), true, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

@@ -80,3 +80,20 @@ DROP PROCEDURE IF EXISTS moveOsInfoToKVMHostVO;
 ALTER TABLE `zstack`.`ZoneEO` ADD COLUMN `isDefault` tinyint(1) unsigned DEFAULT 0;
 DROP VIEW IF EXISTS `zstack`.`ZoneVO`;
 CREATE VIEW `zstack`.`ZoneVO` AS SELECT uuid, name, type, description, state, isDefault, createDate, lastOpDate FROM `zstack`.`ZoneEO` WHERE deleted IS NULL;
+
+CREATE TABLE `VolumeSnapshotReferenceVO` (
+    `id`                       bigint(20) NOT NULL AUTO_INCREMENT,
+    `volumeUuid`               varchar(32)   DEFAULT NULL,
+    `volumeSnapshotUuid`       varchar(32)   DEFAULT NULL,
+    `volumeSnapshotInstallUrl` varchar(1024) DEFAULT NULL,
+    `referenceUuid`            varchar(32)   DEFAULT NULL,
+    `referenceType`            varchar(32)   DEFAULT NULL,
+    `referenceInstallUrl`      varchar(1024) DEFAULT NULL,
+    `referenceVolumeUuid`      varchar(32)   DEFAULT NULL,
+    `lastOpDate`               timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`               timestamp,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fkVolumeSnapshotReferenceReferenceVolumeUuid` FOREIGN KEY (`referenceVolumeUuid`) REFERENCES `VolumeEO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkVolumeSnapshotReferenceSnapshotUuid` FOREIGN KEY (`volumeSnapshotUuid`) REFERENCES `VolumeSnapshotEO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkVolumeSnapshotReferenceVolumeUuid` FOREIGN KEY (`volumeUuid`) REFERENCES `VolumeEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

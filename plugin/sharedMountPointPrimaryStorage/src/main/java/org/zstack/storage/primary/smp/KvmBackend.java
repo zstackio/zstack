@@ -51,10 +51,8 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
-import org.zstack.storage.snapshot.VolumeSnapshotSystemTags;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
-import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -571,6 +569,7 @@ public class KvmBackend extends HypervisorBackend {
         String primaryStorageInstallPath;
         String backupStorageInstallPath;
         String volumeResourceInstallPath;
+        boolean incremental;
 
         void download(final ReturnValueCompletion<ImageCacheInventory> completion) {
             DebugUtils.Assert(image != null, "image cannot be null");
@@ -643,10 +642,35 @@ public class KvmBackend extends HypervisorBackend {
                                 @Override
                                 public void run(final FlowTrigger trigger, Map data) {
                                     if (volumeResourceInstallPath != null) {
-                                        downloadFromVolumeResource(trigger);
+                                        if (incremental) {
+                                            incrementalDownloadFromVolume(trigger);
+                                        } else {
+                                            downloadFromVolumeResource(trigger);
+                                        }
                                     } else {
                                         downloadFromBackupStorage(trigger);
                                     }
+                                }
+
+                                private void incrementalDownloadFromVolume(FlowTrigger trigger) {
+                                    CreateVolumeWithBackingCmd cmd = new CreateVolumeWithBackingCmd();
+                                    cmd.installPath = primaryStorageInstallPath;
+                                    cmd.templatePathInCache = volumeResourceInstallPath;
+
+                                    new Do().go(CREATE_VOLUME_WITH_BACKING_PATH, cmd, CreateVolumeWithBackingRsp.class,
+                                            new ReturnValueCompletion<AgentRsp>(trigger) {
+                                                @Override
+                                                public void success(AgentRsp r) {
+                                                    CreateVolumeWithBackingRsp rsp = (CreateVolumeWithBackingRsp) r;
+                                                    actualSize = rsp.actualSize;
+                                                    trigger.next();
+                                                }
+
+                                                @Override
+                                                public void fail(ErrorCode errorCode) {
+                                                    trigger.fail(errorCode);
+                                                }
+                                            });
                                 }
 
                                 private void downloadFromVolumeResource(FlowTrigger trigger) {
@@ -1375,7 +1399,7 @@ public class KvmBackend extends HypervisorBackend {
                 reply.setActualSize(rsp.actualSize);
                 reply.setInstallPath(installPath);
                 reply.setSize(rsp.size);
-                createProtectTag();
+                reply.setIncremental(true);
                 completion.success(reply);
             }
 
@@ -1383,17 +1407,10 @@ public class KvmBackend extends HypervisorBackend {
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
             }
-
-            private void createProtectTag() {
-                SystemTagCreator creator = VolumeSnapshotSystemTags.BACKING_TO_VOLUME.newSystemTagCreator(latest.getUuid());
-                creator.unique = false;
-                creator.setTagByTokens(Collections.singletonMap(VolumeSnapshotSystemTags.BACKING_VOLUME_TOKEN, volumeUuid));
-                creator.create();
-            }
         });
     }
 
-        @Override
+    @Override
     void handle(GetDownloadBitsFromKVMHostProgressMsg msg, final ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressReply> completion) {
         GetDownloadBitsFromKVMHostProgressCmd cmd = new GetDownloadBitsFromKVMHostProgressCmd();
         cmd.volumePaths = msg.getVolumePaths();
@@ -1414,18 +1431,17 @@ public class KvmBackend extends HypervisorBackend {
         });
     }
 
-
-    void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg, final ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply> completion) {
+    @Override
+    void stream(VolumeSnapshotInventory from, VolumeInventory to, boolean fullRebase, final Completion completion) {
         boolean offline = true;
-        VolumeInventory volume = msg.getTo();
+        VolumeInventory volume = to;
+        fullRebase |= from == null;
 
-        final MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
         if (volume.getType().equals(VolumeType.Memory.toString())) {
-            completion.success(reply);
+            completion.success();
             return;
         }
 
-        VolumeSnapshotInventory sp = msg.getFrom();
         String hostUuid = null;
         if (volume.getVmInstanceUuid() != null) {
             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
@@ -1446,14 +1462,14 @@ public class KvmBackend extends HypervisorBackend {
 
         if (offline) {
             OfflineMergeSnapshotCmd cmd = new OfflineMergeSnapshotCmd();
-            cmd.fullRebase = msg.isFullRebase();
-            cmd.srcPath = sp.getPrimaryStorageInstallPath();
+            cmd.fullRebase = fullRebase;
+            cmd.srcPath =  from != null ? from.getPrimaryStorageInstallPath() : null;
             cmd.destPath = volume.getInstallPath();
 
             new Do().go(OFFLINE_MERGE_SNAPSHOT_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
                 @Override
                 public void success(AgentRsp returnValue) {
-                    completion.success(reply);
+                    completion.success();
                 }
 
                 @Override
@@ -1463,16 +1479,16 @@ public class KvmBackend extends HypervisorBackend {
             });
         } else {
             MergeVolumeSnapshotOnKvmMsg kmsg = new MergeVolumeSnapshotOnKvmMsg();
-            kmsg.setFullRebase(msg.isFullRebase());
+            kmsg.setFullRebase(fullRebase);
             kmsg.setHostUuid(hostUuid);
-            kmsg.setFrom(sp);
+            kmsg.setFrom(from);
             kmsg.setTo(volume);
             bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, hostUuid);
             bus.send(kmsg, new CloudBusCallBack(completion) {
                 @Override
                 public void run(MessageReply r) {
                     if (r.isSuccess()) {
-                        completion.success(reply);
+                        completion.success();
                     } else {
                         completion.fail(r.getError());
                     }
@@ -1681,10 +1697,12 @@ public class KvmBackend extends HypervisorBackend {
         cache.image = msg.getImageInventory();
         cache.primaryStorageInstallPath = makeCachedImageInstallUrl(msg.getImageInventory());
         cache.volumeResourceInstallPath = msg.getVolumeSnapshot().getPrimaryStorageInstallPath();
+        cache.incremental = msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
         cache.download(new ReturnValueCompletion<ImageCacheInventory>(completion) {
             @Override
-            public void success(ImageCacheInventory cache) {
-                reply.setActualSize(cache.getSize());
+            public void success(ImageCacheInventory inv) {
+                reply.setInventory(inv);
+                reply.setIncremental(cache.incremental);
                 completion.success(reply);
             }
 
@@ -1997,7 +2015,7 @@ public class KvmBackend extends HypervisorBackend {
     @Override
     void handleHypervisorSpecificMessage(SMPPrimaryStorageHypervisorSpecificMessage msg) {
         if (msg instanceof InitKvmHostMsg) {
-            handle((InitKvmHostMsg) msg);
+            stream((InitKvmHostMsg) msg);
         } else {
             bus.dealWithUnknownMessage((Message) msg);
         }
@@ -2184,7 +2202,7 @@ public class KvmBackend extends HypervisorBackend {
         });
     }
 
-    private void handle(final InitKvmHostMsg msg) {
+    private void stream(final InitKvmHostMsg msg) {
         final InitKvmHostReply reply = new InitKvmHostReply();
         thdf.chainSubmit(new ChainTask(msg) {
             @Override

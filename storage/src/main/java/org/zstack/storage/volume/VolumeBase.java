@@ -160,6 +160,10 @@ public class VolumeBase implements Volume {
             handle((ChangeVolumeTypeMsg) msg);
         } else if (msg instanceof CreateVolumeSnapshotGroupMsg) {
             handle((CreateVolumeSnapshotGroupMsg) msg);
+        } else if (msg instanceof FlattenVolumeMsg) {
+            handle((FlattenVolumeMsg) msg);
+        } else if (msg instanceof CancelFlattenVolumeMsg) {
+            handle((CancelFlattenVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -483,6 +487,7 @@ public class VolumeBase implements Volume {
                     String __name__ = "instantiate-volume-on-primary-storage";
 
                     boolean success;
+                    VolumeSnapshotReferenceVO templateRef = getTemplateRef(msg);
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -500,6 +505,11 @@ public class VolumeBase implements Volume {
                                     installPath = ret.getInstallPath();
                                     format = ret.getFormat();
                                     actualSize = ret.getActualSize();
+
+                                    if (templateRef != null) {
+                                        persistSelfTemplateRef();
+                                    }
+
                                     trigger.next();
                                 }
 
@@ -519,6 +529,22 @@ public class VolumeBase implements Volume {
                                 instantiateDataVolume(msg, trigger);
                             }
                         }
+                    }
+
+                    private VolumeSnapshotReferenceVO getTemplateRef(InstantiateVolumeMsg msg) {
+                        if (msg instanceof InstantiateRootVolumeMsg &&
+                                ImageConstant.ImageMediaType.RootVolumeTemplate.toString().equals(((InstantiateRootVolumeMsg) msg).getTemplateSpec().getInventory().getMediaType())) {
+                            return Q.New(VolumeSnapshotReferenceVO.class)
+                                    .eq(VolumeSnapshotReferenceVO_.referenceUuid, ((InstantiateRootVolumeMsg) msg).getTemplateSpec().getInventory().getUuid())
+                                    .limit(1).find();
+                        }
+                        return null;
+                    }
+
+                    private void persistSelfTemplateRef() {
+                        VolumeSnapshotReferenceVO selfRef = templateRef.clone();
+                        selfRef.setReferenceVolumeUuid(self.getUuid());
+                        dbf.persist(selfRef);
                     }
 
                     private void instantiateMemoryVolume(InstantiateVolumeMsg msg, FlowTrigger trigger) {
@@ -546,7 +572,6 @@ public class VolumeBase implements Volume {
                         InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg imsg = new InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg();
                         prepareMsg(msg, imsg);
                         imsg.setTemplateSpec(msg.getTemplateSpec());
-
                         doInstantiateVolume(imsg, trigger);
                     }
 
@@ -587,6 +612,10 @@ public class VolumeBase implements Volume {
                                 for (AfterInstantiateVolumeExtensionPoint ext : exts) {
                                     ext.afterInstantiateVolume(imsg);
                                 }
+
+                                if (templateRef != null) {
+                                    persistSelfTemplateRef();
+                                }
                                 trigger.next();
                             }
                         });
@@ -600,6 +629,12 @@ public class VolumeBase implements Volume {
                             dmsg.setVolume(getSelfInventory());
                             bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                             bus.send(dmsg);
+                        }
+
+                        if (templateRef != null) {
+                            SQL.New(VolumeSnapshotReferenceVO.class)
+                                    .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, self.getUuid())
+                                    .delete();
                         }
 
                         trigger.rollback();
@@ -1945,6 +1980,8 @@ public class VolumeBase implements Volume {
             handle((APIAttachDataVolumeToHostMsg) msg);
         } else if (msg instanceof APIDetachDataVolumeFromHostMsg) {
             handle((APIDetachDataVolumeFromHostMsg) msg);
+        } else if (msg instanceof APIFlattenVolumeMsg) {
+            handle((APIFlattenVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -3016,6 +3053,183 @@ public class VolumeBase implements Volume {
                 dbf.persist(group);
                 dbf.persistCollection(refs);
                 return group;
+            }
+        });
+    }
+
+    private void handle(APIFlattenVolumeMsg msg) {
+        FlattenVolumeMsg fmsg = new FlattenVolumeMsg();
+        fmsg.setUuid(msg.getUuid());
+        fmsg.setDryRun(msg.isDryRun());
+        bus.makeTargetServiceIdByResourceUuid(fmsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+        bus.send(fmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                APIFlattenVolumeEvent evt = new APIFlattenVolumeEvent(msg.getId());
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                } else {
+                    FlattenVolumeReply fr = reply.castReply();
+                    evt.setInventory(fr.getInventory());
+                }
+                bus.publish(evt);;
+            }
+        });
+    }
+
+    private void handle(FlattenVolumeMsg msg) {
+        if (msg.isDryRun()) {
+            FlattenVolumeReply reply = new FlattenVolumeReply();
+            estimateTemplateSize(new ReturnValueCompletion<Long>(msg) {
+                @Override
+                public void success(Long templateSize) {
+                    // TODO: use measure result
+                    self.setActualSize(templateSize);
+                    reply.setInventory(getSelfInventory());
+                    bus.reply(msg, reply);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                }
+            });
+            return;
+        }
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("flattern-volume-%s", msg.getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                FlattenVolumeReply reply = new FlattenVolumeReply();
+                flattenVolume(new Completion(chain) {
+                    @Override
+                    public void success() {
+                        refreshVO();
+                        reply.setInventory(getSelfInventory());
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(err(VolumeErrors.FLATTEN_ERROR, errorCode, "failed to flatten volume[uuid:%s]", self.getUuid()));
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    private void handle(CancelFlattenVolumeMsg msg) {
+        String hostUuid = !self.isAttached() ? null : Q.New(VmInstanceVO.class).select(VmInstanceVO_.hostUuid)
+                .eq(VmInstanceVO_.uuid, self.getVmInstanceUuid())
+                .findValue();
+
+        CancelFlattenVolumeReply reply = new CancelFlattenVolumeReply();
+        Completion completion = new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        };
+        if (hostUuid == null) {
+            cancelVolumeTaskOffline(msg.getCancellationApiId(), completion);
+        } else {
+            cancelVolumeTaskOnline(hostUuid, msg.getCancellationApiId(), completion);
+        }
+    }
+
+    private void flattenVolume(Completion completion) {
+        FlattenVolumeOnPrimaryStorageMsg mmsg = new FlattenVolumeOnPrimaryStorageMsg();
+        mmsg.setVolume(getSelfInventory());
+        bus.makeTargetServiceIdByResourceUuid(mmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+        bus.send(mmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                pluginRgty.getExtensionList(FlattenVolumeExtensionPoint.class).forEach(it ->
+                        it.afterFlattenVolume(getSelfInventory()));
+
+                SyncVolumeSizeMsg smsg = new SyncVolumeSizeMsg();
+                smsg.setVolumeUuid(self.getUuid());
+                bus.makeLocalServiceId(smsg, VolumeConstant.SERVICE_ID);
+                bus.send(smsg);
+                completion.success();
+            }
+        });
+    }
+
+    private void cancelVolumeTaskOnline(String hostUuid, String apiId, Completion completion) {
+        CancelHostTaskMsg cmsg = new CancelHostTaskMsg();
+        cmsg.setCancellationApiId(apiId);
+        bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(cmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                completion.success();
+            }
+        });
+    }
+
+    private void cancelVolumeTaskOffline(String apiId, Completion completion) {
+        CancelJobOnPrimaryStorageMsg cmsg = new CancelJobOnPrimaryStorageMsg();
+        cmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+        cmsg.setCancellationApiId(apiId);
+        bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+        bus.send(cmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                completion.success();
+            }
+        });
+    }
+
+    private void estimateTemplateSize(ReturnValueCompletion<Long> completion) {
+        EstimateVolumeTemplateSizeMsg msg = new EstimateVolumeTemplateSizeMsg();
+        msg.setVolumeUuid(self.getUuid());
+        bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                EstimateVolumeTemplateSizeReply sr = reply.castReply();
+                completion.success(sr.getActualSize());
             }
         });
     }

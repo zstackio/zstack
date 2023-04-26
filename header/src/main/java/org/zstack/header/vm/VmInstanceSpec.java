@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.host.HostInventory;
@@ -144,6 +145,10 @@ public class VmInstanceSpec implements Serializable {
 
         public void setNeedDownload(boolean needDownload) {
             this.needDownload = needDownload;
+        }
+
+        public boolean relyOnImageCache() {
+            return !needDownload && CollectionUtils.isEmpty(inventory.getBackupStorageRefs());
         }
     }
 

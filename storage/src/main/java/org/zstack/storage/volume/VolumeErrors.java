@@ -1,7 +1,8 @@
 package org.zstack.storage.volume;
 
 public enum VolumeErrors {
-    VOLUME_IN_USE(1000);
+    VOLUME_IN_USE(1000),
+    FLATTEN_ERROR(1001);
 
     private String code;
 

@@ -461,7 +461,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    public static class FlattenCmd extends AgentCommand {
+    public static class FlattenCmd extends AgentCommand implements HasThreadContext {
         String path;
 
         public String getPath() {
@@ -1937,6 +1937,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     class DownloadToCache {
         ImageSpec image;
         VolumeSnapshotInventory snapshot;
+        boolean incremental;
         private void doDownload(final ReturnValueCompletion<ImageCacheVO> completion) {
             ImageCacheVO cache = Q.New(ImageCacheVO.class)
                     .eq(ImageCacheVO_.primaryStorageUuid, self.getUuid())
@@ -2005,54 +2006,86 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         String __name__ = "download-from-" + (snapshot != null ? "volume" : "backup-storage");
 
                         boolean deleteOnRollback;
+                        String dstPath;
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            String dstPath = makeVolumeInstallPathByTargetPool(image.getInventory().getUuid(),
+                            dstPath = makeVolumeInstallPathByTargetPool(image.getInventory().getUuid(),
                                     getTargetPoolNameFromAllocatedUrl(allocatedInstall));
                             if (snapshot != null) {
-                                deleteOnRollback = true;
-                                CpCmd cmd = new CpCmd();
-                                cmd.srcPath = snapshot.getPrimaryStorageInstallPath();
-                                cmd.dstPath = dstPath;
-                                cmd.shareable = false;
-                                httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(completion) {
-                                    @Override
-                                    public void success(CpRsp rsp) {
-                                        if (rsp.actualSize != null) {
-                                            actualSize = rsp.actualSize;
-                                        }
-                                        cachePath = rsp.installPath;
-                                        trigger.next();
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        trigger.fail(errorCode);
-                                    }
-                                });
+                                if (incremental) {
+                                    incrementalCreateFromVolumeSnapshot(trigger);
+                                } else {
+                                    createFromVolumeSnapshot(trigger);
+                                }
                             } else {
-                                MediatorDownloadParam param = new MediatorDownloadParam();
-                                param.setImage(image);
-                                param.setInstallPath(dstPath);
-                                param.setPrimaryStorageUuid(self.getUuid());
-                                BackupStorageMediator mediator = getBackupStorageMediator(image.getSelectedBackupStorage().getBackupStorageUuid());
-                                mediator.param = param;
-
-                                deleteOnRollback = mediator.deleteWhenRollbackDownload();
-                                mediator.download(new ReturnValueCompletion<String>(trigger) {
-                                    @Override
-                                    public void success(String path) {
-                                        cachePath = path;
-                                        trigger.next();
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        trigger.fail(errorCode);
-                                    }
-                                });
+                                downloadFromBackupStorage(trigger);
                             }
+                        }
+
+                        private void incrementalCreateFromVolumeSnapshot(FlowTrigger trigger) {
+                            cloneAndProtectSnaphost(snapshot.getPrimaryStorageInstallPath(), dstPath, new ReturnValueCompletion<CloneRsp>(trigger) {
+                                @Override
+                                public void success(CloneRsp rsp) {
+                                    if (rsp.actualSize != null) {
+                                        actualSize = rsp.actualSize;
+                                    }
+                                    cachePath = rsp.installPath;
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
+
+                        private void createFromVolumeSnapshot(FlowTrigger trigger) {
+                            deleteOnRollback = true;
+                            CpCmd cmd = new CpCmd();
+                            cmd.srcPath = snapshot.getPrimaryStorageInstallPath();
+                            cmd.dstPath = dstPath;
+                            cmd.shareable = false;
+                            httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(completion) {
+                                @Override
+                                public void success(CpRsp rsp) {
+                                    if (rsp.actualSize != null) {
+                                        actualSize = rsp.actualSize;
+                                    }
+                                    cachePath = rsp.installPath;
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
+                        private void downloadFromBackupStorage(FlowTrigger trigger) {
+                            MediatorDownloadParam param = new MediatorDownloadParam();
+                            param.setImage(image);
+                            param.setInstallPath(dstPath);
+                            param.setPrimaryStorageUuid(self.getUuid());
+                            BackupStorageMediator mediator = getBackupStorageMediator(image.getSelectedBackupStorage().getBackupStorageUuid());
+                            mediator.param = param;
+
+                            deleteOnRollback = mediator.deleteWhenRollbackDownload();
+                            mediator.download(new ReturnValueCompletion<String>(trigger) {
+                                @Override
+                                public void success(String path) {
+                                    cachePath = path;
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
                         }
 
                         @Override
@@ -2640,10 +2673,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cache.image = new ImageSpec();
         cache.image.setInventory(msg.getImageInventory());
         cache.snapshot = msg.getVolumeSnapshot();
+        cache.incremental = msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
         cache.download(new ReturnValueCompletion<ImageCacheVO>(msg) {
             @Override
-            public void success(ImageCacheVO cache) {
+            public void success(ImageCacheVO inv) {
                 reportProgress(getTaskStage().getEnd().toString());
+                reply.setIncremental(cache.incremental);
+                reply.setInventory(inv.toInventory());
                 bus.reply(msg, reply);
             }
 
@@ -4579,69 +4615,47 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         final CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply();
         // create volume first, then reserve size for it, so we use snapshot poolName for volume create
         String snapShotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
-        final String volPath =  makeVolumeInstallPathByTargetPool(msg.getVolumeUuid(), getTargetPoolNameFromAllocatedUrl(snapShotPath));
+        final String volPath = makeVolumeInstallPathByTargetPool(msg.getVolumeUuid(), getTargetPoolNameFromAllocatedUrl(snapShotPath));
         VolumeSnapshotInventory sp = msg.getSnapshot();
-
-        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.then(new NoRollbackFlow() {
-            String __name__ = "protect-snapshot";
-
+        cloneAndProtectSnaphost(sp.getPrimaryStorageInstallPath(), volPath, new ReturnValueCompletion<CloneRsp>(completion) {
             @Override
-            public void run(FlowTrigger trigger, Map data) {
-                ProtectSnapshotCmd cmd = new ProtectSnapshotCmd();
-                cmd.snapshotPath = sp.getPrimaryStorageInstallPath();
-                cmd.ignoreError = true;
-                httpCall(PROTECT_SNAPSHOT_PATH, cmd, ProtectSnapshotRsp.class, new ReturnValueCompletion<ProtectSnapshotRsp>(trigger) {
-                    @Override
-                    public void success(ProtectSnapshotRsp returnValue) {
-                        trigger.next();
-                        completion.done();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                        completion.done();
-                    }
-                });
+            public void success(CloneRsp rsp) {
+                reply.setInstallPath(volPath);
+                reply.setSize(rsp.size);
+                // current ceph has no way to get the actual size
+                long asize = rsp.actualSize == null ? 1 : rsp.actualSize;
+                reply.setActualSize(asize);
+                reply.setIncremental(true);
+                bus.reply(msg, reply);
             }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "clone-snapshot";
 
             @Override
-            public void run(FlowTrigger trigger, Map data) {
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+
+    }
+
+    private void cloneAndProtectSnaphost(String snapshotPath, String dstPath, ReturnValueCompletion<CloneRsp> completion) {
+        ProtectSnapshotCmd cmd = new ProtectSnapshotCmd();
+        cmd.snapshotPath = snapshotPath;
+        cmd.ignoreError = true;
+        httpCall(PROTECT_SNAPSHOT_PATH, cmd, ProtectSnapshotRsp.class, new ReturnValueCompletion<ProtectSnapshotRsp>(completion) {
+            @Override
+            public void success(ProtectSnapshotRsp returnValue) {
                 CloneCmd cmd = new CloneCmd();
-                cmd.srcPath = sp.getPrimaryStorageInstallPath();
-                cmd.dstPath = volPath;
-                httpCall(CLONE_PATH, cmd, CloneRsp.class, new ReturnValueCompletion<CloneRsp>(msg) {
-                    @Override
-                    public void success(CloneRsp rsp) {
-                        reply.setInstallPath(volPath);
-                        reply.setSize(rsp.size);
-                        // current ceph has no way to get the actual size
-                        long asize = rsp.actualSize == null ? 1 : rsp.actualSize;
-                        reply.setActualSize(asize);
-                        trigger.next();
-                    }
+                cmd.srcPath = snapshotPath;
+                cmd.dstPath = dstPath;
+                httpCall(CLONE_PATH, cmd, CloneRsp.class, completion);
+            }
 
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
-            }
-        }).error(new FlowErrorHandler(msg) {
             @Override
-            public void handle(ErrorCode errCode, Map data) {
-                reply.setError(errCode);
-                bus.reply(msg, reply);
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
             }
-        }).done(new FlowDoneHandler(msg) {
-            @Override
-            public void handle(Map data) {
-                bus.reply(msg, reply);
-            }
-        }).start();
+        });
     }
 
     private void createVolumeFromSnapshot(final CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
@@ -4974,6 +4988,27 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     protected void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
         MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
         bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(FlattenVolumeOnPrimaryStorageMsg msg) {
+        FlattenVolumeOnPrimaryStorageReply reply = new FlattenVolumeOnPrimaryStorageReply();
+        FlattenCmd cmd = new FlattenCmd();
+        cmd.path = msg.getVolume().getInstallPath();
+
+        // TODO unprotect snapshot
+        httpCall(FLATTEN_PATH, cmd, FlattenRsp.class, new ReturnValueCompletion<FlattenRsp>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(FlattenRsp rsp) {
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(CheckSnapshotMsg msg) {

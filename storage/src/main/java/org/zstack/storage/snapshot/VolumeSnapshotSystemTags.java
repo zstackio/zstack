@@ -14,6 +14,10 @@ public class VolumeSnapshotSystemTags {
             new PatternedSystemTag(String.format("%s", VOLUMESNAPSHOT_CREATED_BY_SYSTEM_TOKEN), VolumeSnapshotVO.class);
 
     public static String BACKING_VOLUME_TOKEN = "VolumeUuid";
-    public static PatternedSystemTag BACKING_TO_VOLUME = new PatternedSystemTag(String.format("backingTo::{%s}",
+    public static PatternedSystemTag BACKING_TO_VOLUME = new PatternedSystemTag(String.format("backingTo::{%s}::volume",
             BACKING_VOLUME_TOKEN), VolumeSnapshotVO.class);
+
+    public static String BACKING_IMAGE_TOKEN = "imageUuid";
+    public static PatternedSystemTag BACKING_TO_IMAGE = new PatternedSystemTag(String.format("backingTo::{%s}::image",
+            BACKING_IMAGE_TOKEN), VolumeSnapshotVO.class);
 }
