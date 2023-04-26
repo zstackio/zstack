@@ -46,7 +46,7 @@ public class FlattenVmLongJob implements LongJob {
         CancelFlattenVmInstanceMsg cmsg = new CancelFlattenVmInstanceMsg();
         cmsg.setCancellationApiId(job.getApiId());
         cmsg.setUuid(msg.getUuid());
-        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, msg.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, msg.getUuid());
         bus.send(cmsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
