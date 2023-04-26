@@ -39,6 +39,7 @@ class ZoneCase extends SubCase {
             testBatchUpdateZoneToDefaultZone()
             testQueryDefaultZone()
             testDeleteDefaultZone()
+            testBatchUnsetDefaultZone()
         }
     }
 
@@ -75,6 +76,8 @@ class ZoneCase extends SubCase {
                     description = "zone$zoneSuffix"
                     isDefault = true
                 } as ZoneInventory
+
+                assert zone.isDefault
             }
 
             list.add(thread)
@@ -95,6 +98,7 @@ class ZoneCase extends SubCase {
             description = "zone1"
             isDefault = false
         } as ZoneInventory
+        assert !zone.isDefault
 
         assert Q.New(ZoneVO.class)
                 .eq(ZoneVO_.uuid, zone.uuid)
@@ -129,10 +133,11 @@ class ZoneCase extends SubCase {
                     isDefault = false
                 } as ZoneInventory
 
-                updateZone {
+                zone = updateZone {
                     uuid = zone.uuid
                     isDefault = true
                 }
+                assert zone.isDefault
             }
 
             list.add(thread)
@@ -193,5 +198,38 @@ class ZoneCase extends SubCase {
                 .eq(ZoneVO_.uuid, zone.uuid)
                 .eq(ZoneVO_.isDefault, true)
                 .isExists()
+    }
+
+    void testBatchUnsetDefaultZone () {
+        def list = []
+
+        for (int i = 0; i < 10; i++) {
+            int zoneSuffix = i
+
+            def thread = Thread.start {
+                ZoneInventory zone = createZone {
+                    name = "zone$zoneSuffix"
+                    description = "zone$zoneSuffix"
+                    isDefault = true
+                } as ZoneInventory
+
+                zone = updateZone {
+                    uuid = zone.uuid
+                    isDefault = false
+                }
+
+                assert !zone.isDefault
+            }
+
+            list.add(thread)
+        }
+
+        list.each {
+            it.join()
+        }
+
+        assert Q.New(ZoneVO.class)
+                .eq(ZoneVO_.isDefault, true)
+                .count() == 0
     }
 }

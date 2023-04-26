@@ -153,8 +153,6 @@ public class ZoneBase extends AbstractZone {
                 return String.format("update-zone-%s", self.getUuid());
             }
         });
-
-        completion.success();
     }
 
     private void handle(APIUpdateZoneMsg msg) {
