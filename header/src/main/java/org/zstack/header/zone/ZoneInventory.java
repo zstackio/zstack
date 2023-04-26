@@ -106,7 +106,7 @@ public class ZoneInventory implements Serializable {
         inv.setUuid(vo.getUuid());
         inv.setState(vo.getState().toString());
         inv.setType(vo.getType());
-        inv.setDefault(true);
+        inv.setDefault(vo.isDefault());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
