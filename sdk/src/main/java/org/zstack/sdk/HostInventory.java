@@ -124,14 +124,6 @@ public class HostInventory  {
         return this.cpuNum;
     }
 
-    public java.lang.String haState;
-    public void setHaState(java.lang.String haState) {
-        this.haState = haState;
-    }
-    public java.lang.String getHaState() {
-        return this.haState;
-    }
-
     public java.lang.String architecture;
     public void setArchitecture(java.lang.String architecture) {
         this.architecture = architecture;
