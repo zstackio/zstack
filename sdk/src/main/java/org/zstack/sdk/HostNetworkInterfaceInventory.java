@@ -92,6 +92,14 @@ public class HostNetworkInterfaceInventory  {
         return this.mac;
     }
 
+    public java.lang.String callBackIp;
+    public void setCallBackIp(java.lang.String callBackIp) {
+        this.callBackIp = callBackIp;
+    }
+    public java.lang.String getCallBackIp() {
+        return this.callBackIp;
+    }
+
     public java.lang.String pciDeviceAddress;
     public void setPciDeviceAddress(java.lang.String pciDeviceAddress) {
         this.pciDeviceAddress = pciDeviceAddress;
