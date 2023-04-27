@@ -15,7 +15,9 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.thread.*;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -777,11 +779,6 @@ public class VolumeBase implements Volume {
     }
 
     private void expunge(final Completion completion) {
-        if (self == null) {
-            completion.success();
-            return;
-        }
-
         if (self.getStatus() != VolumeStatus.Deleted) {
             completion.fail(operr("the volume[uuid:%s, name:%s] is not deleted yet, can't expunge it",
                             self.getUuid(), self.getName()));
