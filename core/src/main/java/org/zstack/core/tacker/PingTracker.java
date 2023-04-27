@@ -163,7 +163,7 @@ public abstract class PingTracker implements Component {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             trackerThread = thdf.submitPeriodicTask(new Tracker(), getPingInterval());
         } else {
-            trackerThread = thdf.submitPeriodicTask(new Tracker(), getPingInterval() + new Random().nextInt(30));
+            trackerThread = thdf.submitPeriodicTask(new Tracker(), (long) getPingInterval() + new Random().nextInt(30));
         }
     }
 

@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
     public static final IpAllocatorType type = new IpAllocatorType(L3NetworkConstant.RANDOM_IPV6_ALLOCATOR_STRATEGY);
+    private static final Random random = new Random();
     @Autowired
     private PluginRegistry pluginRgty;
 
@@ -84,7 +85,6 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
             usedIps.add(exclude);
         }
 
-        Random rnd = new Random();
         /* a stateful dhcp range with 2^24 is big enough */
         int total = end.subtract(start).intValue();
         if ((total > (1 << 23)) || (total < 0)) {
@@ -92,7 +92,7 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
         }
         String address = null;
         do {
-            num = start.add(new BigInteger(String.valueOf(rnd.nextInt(total + 1))));
+            num = start.add(new BigInteger(String.valueOf(random.nextInt(total + 1))));
             if (!usedIps.contains(num)) {
                 address = IPv6NetworkUtils.ipv6AddressToString(num);
                 break;

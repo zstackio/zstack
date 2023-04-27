@@ -121,13 +121,14 @@ public class Session implements Component {
 
             @Override
             protected SessionInventory scripts() {
-               Timestamp expiredDate = new Timestamp(TimeUnit.SECONDS.toMillis(finalExtendPeriod) + getCurrentSqlDate().getTime());
-               SessionInventory s = getSession(uuid);
-               s.setExpiredDate(expiredDate);
+                Timestamp expiredDate = new Timestamp(TimeUnit.SECONDS.toMillis(finalExtendPeriod) + getCurrentSqlDate().getTime());
+                SessionInventory s = getSession(uuid);
+                if (s != null) {
+                    s.setExpiredDate(expiredDate);
+                    sql(SessionVO.class).eq(SessionVO_.uuid, uuid).set(SessionVO_.expiredDate, expiredDate).update();
+                }
 
-               sql(SessionVO.class).eq(SessionVO_.uuid, uuid).set(SessionVO_.expiredDate, expiredDate).update();
-
-               return s;
+                return s;
             }
         }.execute();
 

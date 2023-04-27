@@ -51,7 +51,7 @@ public class VmDownloadIsoFlow extends NoRollbackFlow {
         final VmInstanceSpec.IsoSpec isoSpec = spec.getDestIsoList().stream()
                 .filter(s -> s.getImageUuid().equals(iso.getUuid()))
                 .findAny()
-                .get();
+                .orElse(null);
 
         SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
         q.select(VolumeVO_.primaryStorageUuid);
@@ -98,9 +98,11 @@ public class VmDownloadIsoFlow extends NoRollbackFlow {
                     return;
                 }
 
-                DownloadIsoToPrimaryStorageReply r = reply.castReply();
-                isoSpec.setInstallPath(r.getInstallPath());
-                isoSpec.setPrimaryStorageUuid(psUuid);
+                if (isoSpec != null) {
+                    DownloadIsoToPrimaryStorageReply r = reply.castReply();
+                    isoSpec.setInstallPath(r.getInstallPath());
+                    isoSpec.setPrimaryStorageUuid(psUuid);
+                }
                 trigger.next();
             }
         });

@@ -626,6 +626,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     this.wait(TimeUnit.SECONDS.toMillis(1));
                 } catch (InterruptedException e) {
                     logger.warn("Interrupted while daemon is running, continue ...", e);
+                    Thread.currentThread().interrupt();
                 }
             }
         }
@@ -902,6 +903,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 try {
                     TimeUnit.SECONDS.sleep(ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Long.class));
                 } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
                 }
             }
 
@@ -1090,6 +1092,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             try {
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new CloudRuntimeException(e);
             }
         }

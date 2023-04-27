@@ -1196,9 +1196,9 @@ public class LoadBalancerBase {
         }
 
         LoadBalancerBackend bkd = getBackend();
-        if( (vmNicUuids.isEmpty() && serverIps.isEmpty() ) || bkd == null){
+        if ((vmNicUuids != null && vmNicUuids.isEmpty() && serverIps.isEmpty()) || bkd == null) {
             completion.success();
-        }else {
+        } else {
             bkd.removeVmNics(removeNicStruct(serverGroupUuids, listenerUuids, vmNicUuids, serverIps), nics, completion);
         }
     }
@@ -2759,7 +2759,7 @@ public class LoadBalancerBase {
                                 .find();
                         if (vmNic.containsKey("weight")) {
                             Long vmNicWeight = Long.valueOf(vmNic.get("weight"));
-                            if (vmNicWeight != vmNicRefVO.getWeight()) {
+                            if (!vmNicWeight.equals(vmNicRefVO.getWeight())) {
                                 vmNicRefVO.setWeight(vmNicWeight);
                                 dbf.update(vmNicRefVO);
                                 canRefresh = true;
@@ -2777,7 +2777,7 @@ public class LoadBalancerBase {
                                 .find();
                         if (server.containsKey("weight")) {
                             Long serverIpWeight = Long.valueOf(server.get("weight"));
-                            if(serverIpWeight != serverIpVO.getWeight()){
+                            if(!serverIpWeight.equals(serverIpVO.getWeight())){
                                 serverIpVO.setWeight(serverIpWeight);
                                 dbf.update(serverIpVO);
                                 canRefresh = true;

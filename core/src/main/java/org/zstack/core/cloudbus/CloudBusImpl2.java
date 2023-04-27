@@ -158,6 +158,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 TimeUnit.SECONDS.sleep(CloudBusGlobalProperty.RABBITMQ_RETRY_DELAY_ON_RETURN);
             } catch (InterruptedException e) {
                 logger.warn(e.getMessage(), e);
+                Thread.currentThread().interrupt();
             }
 
             if (msg instanceof Event) {
@@ -213,6 +214,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 DebugUtils.Assert(chan!=null, String.format("cannot get a channel after 10 minutes"));
                 return chan;
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new CloudRuntimeException(e);
             }
         }
@@ -477,6 +479,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                         TimeUnit.SECONDS.sleep(interval);
                     } catch (InterruptedException e1) {
                         logger.warn(e1.getMessage());
+                        Thread.currentThread().interrupt();
                     }
 
                     try {
@@ -1833,6 +1836,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 try {
                     e.wait(msg.getTimeout());
                 } catch (InterruptedException e1) {
+                    Thread.currentThread().interrupt();
                     throw new CloudRuntimeException(e1);
                 }
             }
@@ -1929,6 +1933,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 try {
                     e.wait(minTimeout);
                 } catch (InterruptedException e1) {
+                    Thread.currentThread().interrupt();
                     throw new CloudRuntimeException(e1);
                 }
             }

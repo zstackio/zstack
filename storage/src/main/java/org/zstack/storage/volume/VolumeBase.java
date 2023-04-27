@@ -1415,10 +1415,10 @@ public class VolumeBase implements Volume {
             public void run(final SyncTaskChain chain) {
                 self = dbf.reload(self);
                 if (self == null || self.getStatus() == VolumeStatus.Deleted) {
-                    VolumeDeletionPolicy deletionPolicy;
-                    if (msg.getDeletionPolicy() == null) {
+                    VolumeDeletionPolicy deletionPolicy = null;
+                    if (self != null && msg.getDeletionPolicy() == null) {
                         deletionPolicy = deletionPolicyMgr.getDeletionPolicy(self.getUuid());
-                    } else {
+                    } else if (msg.getDeletionPolicy() != null){
                         deletionPolicy = VolumeDeletionPolicy.valueOf(msg.getDeletionPolicy());
                     }
                     if (deletionPolicy == VolumeDeletionPolicy.DBOnly) {

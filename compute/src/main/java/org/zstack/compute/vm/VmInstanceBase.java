@@ -4704,9 +4704,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 final VmInstanceSpec.IsoSpec isoSpec = spec.getDestIsoList().stream()
                         .filter(s -> s.getImageUuid().equals(isoUuid))
                         .findAny()
-                        .get();
+                        .orElse(null);
                 targetVmCdRomVO.setIsoUuid(isoUuid);
-                targetVmCdRomVO.setIsoInstallPath(isoSpec.getInstallPath());
+                targetVmCdRomVO.setIsoInstallPath(isoSpec != null ? isoSpec.getInstallPath() : null);
                 dbf.update(targetVmCdRomVO);
                 new IsoOperator().syncVmIsoSystemTag(self.getUuid());
                 completion.success();
@@ -5225,7 +5225,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(FlowTrigger chain, Map data) {
                 DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
-                msg.setCpuCapacity(cpuNum - oldCpuNum);
+                msg.setCpuCapacity((long) cpuNum - oldCpuNum);
                 msg.setMemoryCapacity(struct.alignedMemory - oldMemorySize);
                 msg.setOldMemoryCapacity(oldMemorySize);
                 msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
@@ -5258,7 +5258,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void rollback(FlowRollback chain, Map data) {
                 if (result) {
                     ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
-                    msg.setCpuCapacity(cpuNum - oldCpuNum);
+                    msg.setCpuCapacity((long) cpuNum - oldCpuNum);
                     msg.setMemoryCapacity(struct.alignedMemory - oldMemorySize);
                     msg.setHostUuid(self.getHostUuid());
                     msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));

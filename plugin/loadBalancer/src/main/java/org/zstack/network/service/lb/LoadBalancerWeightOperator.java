@@ -135,7 +135,7 @@ public class LoadBalancerWeightOperator {
                     .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,defaultServerGroupUuid)
                     .eq(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,nicUuid)
                     .find();
-            if(weight != vmNicRefVOS.getWeight()){
+            if(!weight.equals(vmNicRefVOS.getWeight())){
                 vmNicRefVOS.setWeight(weight);
                 dbf.update(vmNicRefVOS);
             }

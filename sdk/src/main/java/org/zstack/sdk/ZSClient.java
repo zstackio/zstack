@@ -266,6 +266,7 @@ public class ZSClient {
                 try {
                     this.wait(timeout);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new ApiException(e);
                 }
 
@@ -642,6 +643,7 @@ public class ZSClient {
                 } catch (InterruptedException e) {
                     //ignore
                 } catch (IOException e) {
+                    Thread.currentThread().interrupt();
                     throw new ApiException(e);
                 }
             }

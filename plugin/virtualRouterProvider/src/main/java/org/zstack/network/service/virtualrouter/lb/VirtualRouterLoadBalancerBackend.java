@@ -2126,11 +2126,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     private boolean isVirtualRouterHaPair(List<String> vrUuids) {
+        boolean isVirtualRouterHaPair = false;
         for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-             return ext.isVirtualRouterInSameHaPair(vrUuids);
+            isVirtualRouterHaPair = ext.isVirtualRouterInSameHaPair(vrUuids);
         }
 
-        return false;
+        return isVirtualRouterHaPair;
     }
 
     private void refreshCertificateOnHaRouter(String vrUuid, List<LoadBalancerStruct> structs, Completion completion) {

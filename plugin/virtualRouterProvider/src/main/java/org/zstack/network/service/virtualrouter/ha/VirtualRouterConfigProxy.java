@@ -79,20 +79,22 @@ public abstract class VirtualRouterConfigProxy {
         if (!vrVo.isHaEnabled()) {
             return getServiceUuidsByNoHaVirtualRouter(vrUuid);
         } else {
+            List<String> services = new ArrayList<>();
             for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-                return ext.getNetworkServicesFromHaVrUuid(type, vrUuid);
+                services = ext.getNetworkServicesFromHaVrUuid(type, vrUuid);
             }
 
-            return new ArrayList<>();
+            return services;
         }
     }
 
     final public List<String> getServiceUuidsByHaGrupUuid(String haGroupUuid, String type) {
+        List<String> services = new ArrayList<>();
         for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-            return ext.getNetworkServicesFromHaGroupUuid(type, haGroupUuid);
+            services = ext.getNetworkServicesFromHaGroupUuid(type, haGroupUuid);
         }
 
-        return new ArrayList<>();
+        return services;
     }
 }
 

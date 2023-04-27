@@ -211,7 +211,7 @@ public class VolumeSnapshotKvmSimulator {
             dumpAllQcow2();
             String err = String.format("cannot find snapshot[%s] and it's full snapshot", cmd.getVolumeInstallPath());
             DebugUtils.dumpStackTrace(err);
-            Assert.fail(err);
+            DebugUtils.Assert(false, err);
         }
 
         if (current == null) {
@@ -253,7 +253,7 @@ public class VolumeSnapshotKvmSimulator {
         Qcow2 qdest = qsrc.find(dest);
         if (qdest == null) {
             dumpAllQcow2();
-            Assert.fail(String.format("cannot find target volume[%s] to merge", dest));
+            DebugUtils.Assert(false, String.format("cannot find target volume[%s] to merge", dest));
         }
 
         if (fullRebase) {
@@ -307,6 +307,10 @@ public class VolumeSnapshotKvmSimulator {
     public synchronized RevertVolumeFromSnapshotResponse revert(RevertVolumeFromSnapshotCmd cmd) {
         RevertVolumeFromSnapshotResponse rsp = new RevertVolumeFromSnapshotResponse();
         Qcow2 current = findByInstallPath(cmd.getSnapshotInstallPath());
+        if (current == null) {
+            dumpAllQcow2();
+            DebugUtils.Assert(false, String.format("cannot find source snapshot[%s]", cmd.getSnapshotInstallPath()));
+        }
         String dir = PathUtil.parentFolder(cmd.getSnapshotInstallPath());
         String newVolumeInstallPath = String.format("%s/%s.qcow2", dir, Platform.getUuid());
         logger.debug(String.format("created new volume[%s] for reverting snapshot", newVolumeInstallPath));
@@ -369,7 +373,7 @@ public class VolumeSnapshotKvmSimulator {
         Qcow2 root = findByInstallPath(start.getPrimaryStorageInstallPath());
         if (root == null) {
             dumpAllQcow2();
-            Assert.fail(String.format("cannot find root qcow2 with path[%s]", start.getPrimaryStorageInstallPath()));
+            DebugUtils.Assert(false, String.format("cannot find root qcow2 with path[%s]", start.getPrimaryStorageInstallPath()));
         }
 
         List<List<String>> qcowChains = findOutAllQcow2Chains(root);
@@ -416,14 +420,14 @@ public class VolumeSnapshotKvmSimulator {
 
             String err = sb.toString();
             logger.warn(err);
-            Assert.fail(err);
+            DebugUtils.Assert(false, err);
         }
     }
 
     public void validateNotExisting(String installPath) {
         Qcow2 q = findByInstallPath(installPath);
         if (q != null) {
-            Assert.fail(String.format("still found snapshot[%s]", q.getInstallPath()));
+            DebugUtils.Assert(false, String.format("still found snapshot[%s]", q.getInstallPath()));
         }
     }
 
@@ -449,7 +453,7 @@ public class VolumeSnapshotKvmSimulator {
         VolumeSnapshotTree tree = VolumeSnapshotTree.fromVOs(vos);
         SnapshotLeaf leaf = tree.getRoot();
         if (!leaf.getInventory().getUuid().equals(uuid)) {
-            Assert.fail(String.format("snapshot[%s] is not root snapshot", uuid));
+            DebugUtils.Assert(false, String.format("snapshot[%s] is not root snapshot", uuid));
         }
         return leaf;
     }

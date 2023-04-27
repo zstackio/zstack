@@ -17,6 +17,7 @@ import java.util.Random;
 public class RandomVniAllocatorStrategy extends AbstractVniAllocatorStrategy {
     private static final CLogger logger = Utils.getLogger(RandomVniAllocatorStrategy.class);
     public static final VniAllocatorType type = new VniAllocatorType(VxlanNetworkPoolConstant.RANDOM_VNI_ALLOCATOR_STRATEGY);
+    private static final Random random = new Random();
 
     @Override
     public VniAllocatorType getType() {
@@ -57,7 +58,6 @@ public class RandomVniAllocatorStrategy extends AbstractVniAllocatorStrategy {
 
     private Integer allocateVni(VniRangeVO vo) {
         int total = vo.size();
-        Random random = new Random();
         Integer s = random.nextInt(total) + vo.getStartVni();
         Integer e = vo.getEndVni();
         Integer ret = steppingAllocate(s, e, total, vo.getUuid(), vo.getL2NetworkUuid());
@@ -128,7 +128,6 @@ public class RandomVniAllocatorStrategy extends AbstractVniAllocatorStrategy {
             full.set(alloc - startVni);
         }
 
-        Random random = new Random();
         int next = random.nextInt(total);
         int a = full.nextClearBit(next);
 

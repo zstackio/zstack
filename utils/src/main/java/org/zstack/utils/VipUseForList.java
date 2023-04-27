@@ -72,7 +72,7 @@ public class VipUseForList {
         final String delimiter = ",";
 
         if (useForList.isEmpty()){
-            return null;
+            return "";
         }
         else {
             return String.join(delimiter, useForList);

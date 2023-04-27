@@ -417,10 +417,12 @@ public class GlobalConfig {
     }
 
     public GlobalConfigOptions getOptions() {
+        GlobalConfigOptions configOptions = null;
         for  (GlobalConfigQueryExtensionPoint ext : queryExtensions) {
-            return ext.getConfigOptions();
+            configOptions = ext.getConfigOptions();
+
         }
-        return null;
+        return configOptions;
     }
 
     public void updateValueSkipValidation(Object val) {

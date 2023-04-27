@@ -2,6 +2,7 @@ package org.zstack.core.ansible;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -14,6 +15,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 7/22/2015.
@@ -30,8 +33,8 @@ public class PrepareAnsible {
 
     static {
         try {
-            if (!hostsFile.exists()) {
-                hostsFile.createNewFile();
+            if (!hostsFile.exists() && !hostsFile.createNewFile()) {
+                throw new OperationFailureException(operr("fail to create new File[%s]", hostsFile));
             }
 
             if (AnsibleGlobalProperty.KEEP_HOSTS_FILE_IN_MEMORY) {

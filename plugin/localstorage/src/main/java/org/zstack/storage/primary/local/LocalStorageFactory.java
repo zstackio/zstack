@@ -1216,9 +1216,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             ref.setCreateDate(job.getVolumeSnapshotStruct().getCurrent().getCreateDate());
             ref.setLastOpDate(job.getVolumeSnapshotStruct().getCurrent().getLastOpDate());
             ref.setResourceUuid(job.getVolumeSnapshotStruct().getCurrent().getUuid());
-            ref.setSize(treply.getSnapshotsResults().stream()
+            ref.setSize(treply == null ? 0L : treply.getSnapshotsResults().stream()
                     .filter(r -> r.getVolumeUuid().equals(job.getVolumeUuid()))
-                    .findFirst().get().getSize());
+                    .findFirst()
+                    .map(TakeSnapshotsOnKvmResultStruct::getSize)
+                    .orElse(0L));
             dbf.persistAndRefresh(ref);
         }
         completion.success();

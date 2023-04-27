@@ -1539,6 +1539,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             TimeUnit.SECONDS.sleep(CephGlobalConfig.BACKUP_STORAGE_MON_RECONNECT_DELAY.value(Long.class));
                         } catch (InterruptedException e) {
                             e.printStackTrace();
+                            Thread.currentThread().interrupt();
                         }
                     }
 
@@ -1561,6 +1562,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 } catch (Throwable t) {
                     releaseLock.done();
                     logger.warn(t.getMessage(), t);
+                    Thread.currentThread().interrupt();
                 }
             }
 

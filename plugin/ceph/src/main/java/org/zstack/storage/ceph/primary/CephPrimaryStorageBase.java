@@ -3544,6 +3544,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         try {
                             TimeUnit.SECONDS.sleep(CephGlobalConfig.PRIMARY_STORAGE_MON_RECONNECT_DELAY.value(Long.class));
                         } catch (InterruptedException ignored) {
+                            Thread.currentThread().interrupt();
                         }
                     }
 
@@ -3565,6 +3566,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 } catch (Throwable t) {
                     releaseLock.done();
                     logger.warn(t.getMessage(), t);
+                    Thread.currentThread().interrupt();
                 }
             }
 

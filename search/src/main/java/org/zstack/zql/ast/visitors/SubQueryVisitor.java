@@ -26,7 +26,7 @@ public class SubQueryVisitor implements ASTVisitor<String, ASTNode.SubQuery> {
         ZQLContext.pushQueryTargetInventoryName(inventory.fullInventoryName());
 
         String fieldName = node.getTarget().getFields() == null || node.getTarget().getFields().isEmpty() ? "" : node.getTarget().getFields().get(0);
-        if (fieldName != "") {
+        if (!"".equals(fieldName)) {
             inventory.errorIfNoField(fieldName);
         }
 

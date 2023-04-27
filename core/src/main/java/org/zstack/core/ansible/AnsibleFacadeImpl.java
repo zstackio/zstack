@@ -102,8 +102,8 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 invDir.mkdirs();
             }
 
-            if (!invFile.exists()) {
-                invFile.createNewFile();
+            if (!invFile.exists() && !invFile.createNewFile()) {
+                throw new OperationFailureException(operr("fail to create new File[%s]", invFile));
             }
             Wini ini = new Wini(invFile);
             Map<String, String> cfgs = Platform.getGlobalPropertiesStartWith("Ansible.cfg.");
@@ -519,8 +519,8 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 if (f.getName().equals(playBookName)) {
                     String lnPath = PathUtil.join(AnsibleConstant.ROOT_DIR, playBookName);
                     File lnFile = new File(lnPath);
-                    if (lnFile.exists()) {
-                        lnFile.delete();
+                    if (lnFile.exists() && !lnFile.delete()) {
+                        logger.warn(String.format("failed to delete file[%s]", lnFile));
                     }
                     Files.createSymbolicLink(Paths.get(lnPath), Paths.get(f.getAbsolutePath()));
                     isPlaybookLinked = true;

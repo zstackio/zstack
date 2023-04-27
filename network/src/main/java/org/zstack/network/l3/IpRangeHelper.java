@@ -107,7 +107,7 @@ public class IpRangeHelper {
             ipVersion = IPv6Constants.IPv6;
         }
 
-        if (l3VO.getIpVersion() != ipVersion) {
+        if (!ipVersion.equals(l3VO.getIpVersion())) {
             SQL.New(L3NetworkVO.class).set(L3NetworkVO_.ipVersion, ipVersion).eq(L3NetworkVO_.uuid, l3VO.getUuid()).update();
         }
     }

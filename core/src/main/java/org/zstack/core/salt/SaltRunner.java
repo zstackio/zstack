@@ -288,6 +288,7 @@ public class SaltRunner {
                         try {
                             TimeUnit.SECONDS.sleep(interval);
                         } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
                             throw new CloudRuntimeException(e);
                         }
                     }
@@ -302,6 +303,7 @@ public class SaltRunner {
                 } catch (Exception e) {
                     logger.warn(String.format("failed to run salt state[%s] on system[%s], %s", stateName, targetIp, e.getMessage()));
                     completion.fail(operr(e.getMessage()));
+                    Thread.currentThread().interrupt();
                 }
             }
 

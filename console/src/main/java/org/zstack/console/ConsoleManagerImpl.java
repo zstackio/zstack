@@ -232,6 +232,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
             }
         } catch (InterruptedException e) {
             logger.warn(e.getMessage(), e);
+            Thread.currentThread().interrupt();
         }
     }
 

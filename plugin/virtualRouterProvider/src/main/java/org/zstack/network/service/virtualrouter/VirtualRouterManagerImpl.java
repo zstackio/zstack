@@ -1679,10 +1679,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private String getVipPeerL3NetworkAttachedVirtualRouter(VipInventory vip) {
-	    for (String l3Uuid : vip.getPeerL3NetworkUuids()) {
-	        List<String> vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid).eq(VmNicVO_.l3NetworkUuid, l3Uuid).eq(VmNicVO_.metaData, GUEST_NIC_MASK).listValues();
-	        if (vrUuids == null || vrUuids.isEmpty()) {
-	            return null;
+        String vrUuid = null;
+        for (String l3Uuid : vip.getPeerL3NetworkUuids()) {
+            List<String> vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid).eq(VmNicVO_.l3NetworkUuid, l3Uuid).eq(VmNicVO_.metaData, GUEST_NIC_MASK).listValues();
+            if (vrUuids == null || vrUuids.isEmpty()) {
+                return null;
             }
 
             vrUuids = Q.New(ApplianceVmVO.class).select(ApplianceVmVO_.uuid).in(ApplianceVmVO_.uuid, vrUuids)
@@ -1691,10 +1692,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 return null;
             }
 
-            return vrUuids.get(0);
+            vrUuid = vrUuids.get(0);
         }
 
-        return null;
+        return vrUuid;
     }
 
     private String getDedicatedRoleVrUuidFromVrUuids(List<String> uuids, String loadBalancerUuid) {

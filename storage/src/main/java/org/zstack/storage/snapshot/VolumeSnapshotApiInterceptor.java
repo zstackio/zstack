@@ -194,7 +194,7 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
         for (VolumeSnapshotVO snapshotVO : snapshotVOS) {
             if (msg.getVolumeUuid() == null) {
                 msg.setVolumeUuid(snapshotVO.getVolumeUuid());
-            } else if (!msg.getVolumeUuid().equals(msg.getVolumeUuid())) {
+            } else if (!snapshotVO.getVolumeUuid().equals(msg.getVolumeUuid())) {
                 throw new ApiMessageInterceptionException(operr("not support delete snapshots on different volumes[uuid: %s, %s]", msg.getVolumeUuid(), snapshotVO.getVolumeUuid()));
             }
         }

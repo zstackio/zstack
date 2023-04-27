@@ -724,6 +724,7 @@ public abstract class HostBase extends AbstractHost {
                         try {
                             TimeUnit.SECONDS.sleep(sleep);
                         } catch (InterruptedException ignored) {
+                            Thread.currentThread().interrupt();
                         }
                     }
                 }

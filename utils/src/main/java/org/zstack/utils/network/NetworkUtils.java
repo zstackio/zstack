@@ -27,6 +27,7 @@ public class NetworkUtils {
 
     private static final Map<String, Integer> validNetmasks = new HashMap<String, Integer>();
 
+    private static final Random random = new Random();
 
     static {
         validNetmasks.put("255.255.255.255", 32);
@@ -65,7 +66,7 @@ public class NetworkUtils {
     }
 
     public static boolean isHostname(String hostname) {
-        String PATTERN = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
+        String PATTERN = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
         Pattern pattern = Pattern.compile(PATTERN);
         Matcher matcher = pattern.matcher(hostname);
         return matcher.matches();
@@ -327,7 +328,6 @@ public class NetworkUtils {
             full.set((int) (alloc-startIp));
         }
 
-        Random random = new Random();
         int next = random.nextInt(total);
         int a = full.nextClearBit(next);
 
@@ -371,7 +371,7 @@ public class NetworkUtils {
     }
 
     public static String generateMacWithDeviceId(short deviceId) {
-        int seed = new Random().nextInt();
+        int seed = random.nextInt();
         String seedStr = Integer.toHexString(seed);
         if (seedStr.length() < 8) {
             String compensate = StringUtils.repeat("0", 8 - seedStr.length());
@@ -647,7 +647,7 @@ public class NetworkUtils {
 
                 maxsize--;
             }
-            double x = Math.log(end - start + 1) / Math.log(2);
+            double x = Math.log((double) end - start + 1) / Math.log(2);
             byte maxdiff = (byte) (32 - Math.floor(x));
             if (maxsize < maxdiff) {
                 maxsize = maxdiff;

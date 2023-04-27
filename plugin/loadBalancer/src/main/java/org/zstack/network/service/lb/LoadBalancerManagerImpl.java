@@ -160,7 +160,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 aclOfListenerUuids = loadBalancerListenerACLRefVOS.stream().filter(ref -> ref.getListenerUuid().equals(listenUuid))
                         .map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList());
             } else {
-                aclOfListenerUuids = loadBalancerListenerACLRefVOS.stream().filter(ref -> ref.getListenerUuid().equals(listenUuid) && ref.getType().equals(msg.getType()))
+                aclOfListenerUuids = loadBalancerListenerACLRefVOS.stream().filter(ref -> ref.getListenerUuid().equals(listenUuid) && msg.getType().equals(ref.getType().toString()))
                         .map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList());
             }
             aclOfListenerUuids = aclOfListenerUuids.stream().distinct().collect(Collectors.toList());

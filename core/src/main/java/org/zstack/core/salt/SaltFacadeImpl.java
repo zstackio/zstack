@@ -90,7 +90,9 @@ public class SaltFacadeImpl extends AbstractService implements SaltFacade {
                 ShellUtils.run("service salt-master restart");
             }
         } finally {
-            srcMasterConf.delete();
+            if (!srcMasterConf.delete()) {
+                logger.warn(String.format("failed to delete file[%s]", srcMasterConf));
+            }
         }
     }
 
