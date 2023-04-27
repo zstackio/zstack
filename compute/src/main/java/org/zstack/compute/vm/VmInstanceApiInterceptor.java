@@ -925,7 +925,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
                 SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
                 uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-                uq.add(UsedIpVO_.ip, Op.EQ, msg.getStaticIp());
+                uq.add(UsedIpVO_.ip, Op.EQ, staticIp);
                 if (uq.isExists()) {
                     throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", staticIp, l3Uuid));
                 }
