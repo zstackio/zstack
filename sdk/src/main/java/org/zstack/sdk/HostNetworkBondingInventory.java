@@ -84,6 +84,14 @@ public class HostNetworkBondingInventory  {
         return this.gateway;
     }
 
+    public java.lang.String callBackIp;
+    public void setCallBackIp(java.lang.String callBackIp) {
+        this.callBackIp = callBackIp;
+    }
+    public java.lang.String getCallBackIp() {
+        return this.callBackIp;
+    }
+
     public java.lang.Long miimon;
     public void setMiimon(java.lang.Long miimon) {
         this.miimon = miimon;
