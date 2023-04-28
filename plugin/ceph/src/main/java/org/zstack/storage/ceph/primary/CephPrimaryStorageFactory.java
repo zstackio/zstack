@@ -1265,7 +1265,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             return customPoolName;
         }
 
-        CephPrimaryStoragePoolVO pool = getPoolFromPoolName(defaultPoolName, psUuid);
+        CephPrimaryStoragePoolVO pool = getPoolFromPoolName(defaultPoolName, psUuid, poolType);
 
         boolean capacityChecked = osdHelper.checkVirtualSizeByRatio(pool.getUuid(), volumeSize);
 
@@ -1305,11 +1305,16 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         return CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL.getTokenByResourceUuid(psUuid, CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL_TOKEN);
     }
 
-    private CephPrimaryStoragePoolVO getPoolFromPoolName(String poolName, String psUuid) {
-        List<CephPrimaryStoragePoolVO> poolVOS = Q.New(CephPrimaryStoragePoolVO.class)
+    private CephPrimaryStoragePoolVO getPoolFromPoolName(String poolName, String psUuid, String poolType) {
+        Q q = Q.New(CephPrimaryStoragePoolVO.class)
                 .eq(CephPrimaryStoragePoolVO_.poolName, poolName)
-                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, psUuid)
-                .list();
+                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, psUuid);
+
+        if (poolType != null) {
+            q.eq(CephPrimaryStoragePoolVO_.type, poolType);
+        }
+
+        List<CephPrimaryStoragePoolVO> poolVOS = q.list();
 
         if (poolVOS.size() == 0) {
             throw new OperationFailureException(operr("cannot find cephPrimaryStorage pool[poolName=%s]", poolName));
@@ -1319,7 +1324,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     private void checkCephPoolCapacityForNewVolume(String poolName, long volumeSize, String psUuid) {
-        CephPrimaryStoragePoolVO poolVO = getPoolFromPoolName(poolName, psUuid);
+        CephPrimaryStoragePoolVO poolVO = getPoolFromPoolName(poolName, psUuid, null);
 
         if (!new CephOsdGroupCapacityHelper(psUuid).checkVirtualSizeByRatio(poolVO.getUuid(), volumeSize)) {
             throw new OperationFailureException(operr("cephPrimaryStorage pool[poolName=%s] available virtual capacity not enough for size %s",
