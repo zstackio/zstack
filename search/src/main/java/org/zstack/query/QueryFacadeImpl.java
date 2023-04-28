@@ -40,6 +40,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -387,20 +388,49 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         if (c.getValue() == null) {
             return String.format("%s %s", c.getName(), c.getOp());
         } else if (op == QueryOp.IN || op == QueryOp.NOT_IN) {
-            Set<String> values = new HashSet<>();
-            for (String v : c.getValue().split(",")) {
-                values.add(String.format("'%s'", v));
-            }
-
-            if (values.isEmpty()) {
-                // use '' to represent an empty collection
-                values.add("''");
-            }
-
-            return String.format("%s %s (%s)", c.getName(), c.getOp(), StringUtils.join(values, ","));
+            return String.format("%s %s %s", c.getName(), c.getOp(), toZQLConditionString(c.getValue(), true));
         } else {
-            return String.format("%s %s '%s'", c.getName(), c.getOp(), c.getValue());
+            return String.format("%s %s %s", c.getName(), c.getOp(), toZQLConditionString(c.getValue(), false));
         }
+    }
+
+    private static String toZQLConditionString(String rawText, final boolean supportSplitByComma) {
+        if (rawText.isEmpty()) {
+            return supportSplitByComma ? "('')" : "''";
+        }
+
+        boolean specialCharFound = rawText.contains("'") || rawText.contains("\\");
+        specialCharFound |= (supportSplitByComma && rawText.contains(","));
+        if (!specialCharFound) {
+            return supportSplitByComma ? "('" + rawText + "')" : '\'' + rawText + '\'';
+        }
+
+        StringBuilder builder = new StringBuilder(rawText.length() << 1);
+        IntConsumer consumer = supportSplitByComma ? ch -> {
+            switch (ch) {
+                case '\'': builder.append("\\'"); break;
+                case '\\': builder.append("\\\\"); break;
+                case ',': builder.append("','"); break;
+                default: builder.append((char) ch); break;
+            }
+        } : ch -> {
+            switch (ch) {
+                case '\'': builder.append("\\'"); break;
+                case '\\': builder.append("\\\\"); break;
+                default: builder.append((char) ch); break;
+            }
+        };
+
+        builder.append('\'');
+        rawText.chars().forEach(consumer);
+        builder.append('\'');
+
+        if (supportSplitByComma) {
+            builder.insert(0, '(');
+            builder.append(')');
+        }
+
+        return builder.toString();
     }
 
     private Class getQueryTargetInventoryClass(APIQueryMessage msg, Class inventoryClass) {
@@ -431,9 +461,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
 
         if (msg.getConditions() != null && !msg.getConditions().isEmpty()) {
             Set<String> conds = new HashSet<>();
-            msg.getConditions().forEach(c -> {
-                conds.add(toZQLConditionString(c));
-            });
+            msg.getConditions().forEach(c -> conds.add(toZQLConditionString(c)));
 
             if (!conds.isEmpty()) {
                 sb.add("where");
@@ -465,17 +493,24 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             sb.add(String.format("offset %s", msg.getStart()));
         }
 
-        ZQLContext.putAPISession(msg.getSession());
         String text = StringUtils.join(sb, " ");
         if (logger.isTraceEnabled()) {
             logger.trace(text);
         }
         ZQL zql = ZQL.fromString(text);
-        ZQLQueryReturn result = zql.getSingleResult();
+        ZQLQueryReturn result;
+
+        try {
+            ZQLContext.putAPISession(msg.getSession());
+            result = zql.getSingleResult();
+        } finally {
+            ZQLContext.cleanAPISession();
+        }
+
         if (result.inventories != null) {
             dropAPINoSee(result.inventories, targetInventoryClass);
         }
-        ZQLContext.cleanAPISession();
+
         return result;
     }
 
