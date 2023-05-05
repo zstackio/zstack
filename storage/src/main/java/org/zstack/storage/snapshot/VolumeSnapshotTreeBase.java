@@ -1159,6 +1159,7 @@ public class VolumeSnapshotTreeBase {
                 if (!r.isSuccess()) {
                     reply.setError(r.getError());
                     bus.reply(msg, reply);
+                    completion.done();
                     return;
                 }
 
