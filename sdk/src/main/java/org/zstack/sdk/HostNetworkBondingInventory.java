@@ -28,6 +28,14 @@ public class HostNetworkBondingInventory  {
         return this.bondingName;
     }
 
+    public java.lang.String bondingType;
+    public void setBondingType(java.lang.String bondingType) {
+        this.bondingType = bondingType;
+    }
+    public java.lang.String getBondingType() {
+        return this.bondingType;
+    }
+
     public java.lang.Long speed;
     public void setSpeed(java.lang.Long speed) {
         this.speed = speed;
