@@ -899,5 +899,23 @@ public class NetworkUtils {
 
     public static final String NETWORK_CFG_EMPTY = "none";
 
+    public static final String DEFAULT_IPV4_PREFIX = "32";
+    public static final String DEFAULT_IPV4_PREFIX_SPLIT = "/";
+
+    public static String ipv4PrefixToNetmask(String prefix) {
+        int prefixLength = Integer.parseInt(prefix);
+        if (prefixLength < 1 || prefixLength > 32) {
+            return String.format("255.255.255.255");
+        }
+
+        int mask = 0xFFFFFFFF << (32 - prefixLength);
+        int netmask1 = (mask >> 24) & 0xFF;
+        int netmask2 = (mask >> 16) & 0xFF;
+        int netmask3 = (mask >> 8) & 0xFF;
+        int netmask4 = mask & 0xFF;
+
+        return String.format("%d.%d.%d.%d", netmask1, netmask2, netmask3, netmask4);
+    }
+
 }
 

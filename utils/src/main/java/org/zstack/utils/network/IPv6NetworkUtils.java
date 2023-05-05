@@ -382,7 +382,13 @@ public class IPv6NetworkUtils {
     }
 
     public static boolean isValidIpv4(String ipv4) {
-        return ipv4.matches(IPv6NetworkUtils.ipv4Regex);
+        if (ipv4.split(NetworkUtils.DEFAULT_IPV4_PREFIX_SPLIT).length == 2) {
+            return ipv4.split(NetworkUtils.DEFAULT_IPV4_PREFIX_SPLIT)[0].matches(IPv6NetworkUtils.ipv4Regex) &&
+                    Integer.parseInt(ipv4.split(NetworkUtils.DEFAULT_IPV4_PREFIX_SPLIT)[1]) >= 1 &&
+                    Integer.parseInt(ipv4.split(NetworkUtils.DEFAULT_IPV4_PREFIX_SPLIT)[1]) <= 32;
+        } else {
+            return ipv4.matches(IPv6NetworkUtils.ipv4Regex);
+        }
     }
 
     public static boolean isValidMac(String mac) {
