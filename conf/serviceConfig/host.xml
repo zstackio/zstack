@@ -36,4 +36,28 @@
         <name>org.zstack.header.host.APIGetHostTaskMsg</name>
         <serviceId>core</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.header.host.APIUpdateHostIpmiMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIShutdownHostMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIPowerOnHostMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIPowerResetHostMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIGetHostWebSshUrlMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.host.APIGetHostPowerStatusMsg</name>
+    </message>
 </service>
