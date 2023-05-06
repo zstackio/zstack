@@ -88,7 +88,10 @@ Installation and upgrade are as simple as deploying a **Java WAR file**. A POC e
 a bootstrap script; A multi-node production environment can be deployed in **30 minutes** including the time you read the
 documentation.
 
-     >> [root@localhost ~]# curl http://download.zstack.org/install.sh |  bash -s -- -a
+Quick access:  
+
+* [Product download page(CN)](https://www.zstack.io/product/product_downloads/)
+* [Product download page(EN)](https://www.zstack-cloud.com/product/product_downloads/)
      
 #### Full automation
 
@@ -110,53 +113,53 @@ that adding or removing features will not impact the core orchestration, promisi
 Installation of ZStack is super easy; users can choose different methods depending on their needs to install the first
 ZStack environment:
 
-* For users wanting to try out quickly, see [Quick Installation](http://en.zstack.io/installation/index.html).
+* For users wanting to try out quickly, see [Quick Installation](https://www.zstack-cloud.com/help/en/tutorials/quick_install_guide/v4/).
 
-* For users wanting to deploy a production environment, see [Manual Installation](http://en.zstack.io/installation/manual.html).
+* For users wanting to deploy a production environment, see [Manual Installation](http://zstack.org/installation/manual.html).
 
-* For users wanting to deploy a multi-node environment, see [Multi-node Installation](http://en.zstack.io/installation/multi-node.html).
+* For users wanting to deploy a multi-node environment, see [Multi-node Installation](https://www.zstack-cloud.com/help/en/tutorials/double_mn_ha_solution/v4/).
 
 Once the installation is done, users can follow one of getting started guides:
 
-* [Getting Started With Quick Installation](http://en.zstack.io/documentation/getstart-quick.html).
+* [Getting Started With Quick Installation](https://www.zstack-cloud.com/help/en/tutorials/quick_install_guide/v4/3.html).
 
-* [Getting Started With Manual Installation](http://en.zstack.io/documentation/getstart-manual.html).
+* [Getting Started With Manual Installation](http://zstack.org/documentation/getstart-manual.html).
 
-* [Getting Started With Multi-node Installation](http://en.zstack.io/documentation/getstart-multi.html).
+* [Getting Started With Multi-node Installation](https://www.zstack-cloud.com/help/en/tutorials/double_mn_ha_solution/v4/2.html).
 
 ## Tutorials
 
 Six tutorials are prepared for your first journey in ZStack, building classic cloud deployments all on one single Linux machine:
 
-##### Amazon EC2 classic EIP zone:
+##### Elastic IP:
 
-* [Web UI](http://en.zstack.io/tutorials/ec2-ui.html)
-* [Command Line Tool](http://en.zstack.io/tutorials/ec2-cli.html)
+* [Web UI](https://www.zstack-cloud.com/help/en/tutorials/vpc_tutorial/v4/3.html#chapter-3-7-Elastic-IP)
+* [Command Line Tool](http://zstack.org/tutorials/ec2-cli.html)
 
 ##### Flat Network:
 
-* [Web UI](http://en.zstack.io/tutorials/flat-network-ui.html)
-* [Command Line Tool](http://en.zstack.io/tutorials/flat-network-cli.html)
+* [Web UI](https://www.zstack-cloud.com/help/en/tutorials/flat_tutorial/v4/)
+* [Command Line Tool](http://zstack.org/tutorials/flat-network-cli.html)
 
 ##### Three Tiered Network:
 
-* [Web UI](http://en.zstack.io/tutorials/three-tiered-ui.html)
-* [Command Line Tool](http://en.zstack.io/tutorials/three-tiered-cli.html)
+* [Web UI](http://zstack.org/tutorials/three-tiered-ui.html)
+* [Command Line Tool](http://zstack.org/tutorials/three-tiered-cli.html)
 
 ##### Security Group:
 
-* [Web UI](http://en.zstack.io/tutorials/security-group-ui.html)
-* [Command Line Tool](http://en.zstack.io/tutorials/security-group-cli.html)
+* [Web UI](https://www.zstack-cloud.com/help/en/tutorials/vpc_tutorial/v4/3.html#chapter-3-6-Security-Group)
+* [Command Line Tool](http://zstack.org/tutorials/security-group-cli.html)
 
-##### Elastic Port Forwarding:
+##### Port Forwarding:
 
-* [Web UI](http://en.zstack.io/tutorials/elastic-port-forwarding-ui.html)
-* [Command Line Tool](http://en.zstack.io/tutorials/elastic-port-forwarding-cli.html)
+* [Web UI](https://www.zstack-cloud.com/help/en/tutorials/vpc_tutorial/v4/3.html#chapter-3-8-Port-Forwarding)
+* [Command Line Tool](http://zstack.org/tutorials/elastic-port-forwarding-cli.html)
 
 ##### Snapshots:
 
-* [Web UI](http://en.zstack.io/tutorials/snapshot-ui.html)
-* [Command Line Tool](http://en.zstack.io/tutorials/snapshot-cli.html)
+* [Web UI](https://www-zstack-io.translate.goog/help/tutorials/volume_snapshot_tutorial/v4/1.html?_x_tr_sl=zh-CN&_x_tr_tl=en&_x_tr_hl=en&_x_tr_pto=wapp)
+* [Command Line Tool](http://zstack.org/tutorials/snapshot-cli.html)
 
 ## Under the hood 
 
@@ -164,47 +167,51 @@ Under the hood, ZStack is built on an architecture explained by following articl
 
 ##### Scalability:
 
-[ZStack's Scalability Secrets Part 1: Asynchronous Architecture](http://en.zstack.io/blog/asynchronous-architecture.html)
+[ZStack's Scalability Secrets Part 1: Asynchronous Architecture](http://zstack.org/blog/asynchronous-architecture.html)
 
-[ZStack's Scalability Secrets Part 2: Stateless Services](http://en.zstack.io/blog/stateless-clustering.html)
+[ZStack's Scalability Secrets Part 2: Stateless Services](http://zstack.org/blog/stateless-clustering.html)
 
-[ZStack's Scalability Secrets Part 3: Lock-free Architecture](http://en.zstack.io/blog/lock-free.html)
+[ZStack's Scalability Secrets Part 3: Lock-free Architecture](http://zstack.org/blog/lock-free.html)
 
 ##### Plugin Architecture:
 
-[The In-Process Microservices Architecture](http://en.zstack.io/blog/microservices.html)
+[The In-Process Microservices Architecture](http://zstack.org/blog/microservices.html)
 
-[The Versatile Plugin System](http://en.zstack.io/blog/plugin.html)
+[The Versatile Plugin System](http://zstack.org/blog/plugin.html)
 
-[The Tag System](http://en.zstack.io/blog/tag.html)
+[The Tag System](http://zstack.org/blog/tag.html)
 
-[The Workflow Engine](http://en.zstack.io/blog/workflow.html)
+[The Workflow Engine](http://zstack.org/blog/workflow.html)
 
-[The Cascade Framework](http://en.zstack.io/blog/cascade.html)
+[The Cascade Framework](http://zstack.org/blog/cascade.html)
 
 ##### Query API:
 
-[The Query API](http://en.zstack.io/blog/query.html)
+[The Query API](http://zstack.org/blog/query.html)
 
 ##### Automation:
 
-[Full Automation By Ansible](http://en.zstack.io/blog/ansible.html)
+[Full Automation By Ansible](http://zstack.org/blog/ansible.html)
 
 ##### Storage And Network:
 
-[Networking Model 1: L2 and L3 Network](http://en.zstack.io/blog/network-l2.html)
+[Networking Model 1: L2 and L3 Network](http://zstack.org/blog/network-l2.html)
 
-[Networking Model 2: Virtual Router Network Service Provider](http://en.zstack.io/blog/virtual-router.html)
+[Networking Model 2: Virtual Router Network Service Provider](http://zstack.org/blog/virtual-router.html)
 
-[Storage Model: Primary Storage and Backup Storage](http://en.zstack.io/blog/storage.html)
+[Storage Model: Primary Storage and Backup Storage](http://zstack.org/blog/storage.html)
 
 ##### Testing:
 
-[The Automation Testing System 1: Integration Testing](http://en.zstack.io/blog/integration-testing.html)
+[The Automation Testing System 1: Integration Testing](http://zstack.org/blog/integration-testing.html)
 
-[The Automation Testing System 2: System Testing](http://en.zstack.io/blog/system-testing.html)
+[The Automation Testing System 2: System Testing](http://zstack.org/blog/system-testing.html)
 
-[The Automation Testing System 3: Model-based Testing](http://en.zstack.io/blog/model-based-testing.html)
+[The Automation Testing System 3: Model-based Testing](http://zstack.org/blog/model-based-testing.html)
+
+## More Documentation Resources
+
+[ZStack documentation](https://www.zstack-cloud.com/help/en/product_manuals/index.html)
 
 ## License
 
