@@ -154,7 +154,11 @@ ${dstToSrc.join("\n")}
                     String simpleName = at != null && !at.sdkClassName().isEmpty() ? at.sdkClassName() : f.type.getSimpleName()
                     imports.add("${SdkApiTemplate.getPackageName(f.type)}.${simpleName}")
                 }
-                output.add(makeFieldText(f.name, f))
+
+                def text = makeFieldText(f.name, f)
+                if (text != null) {
+                    output.add(text)
+                }
             }
         } else {
             for (Enum e : clz.getEnumConstants()) {
@@ -274,7 +278,10 @@ ${output.join("\n")}
                 imports.add("${SdkApiTemplate.getPackageName(f.type)}.${simpleName}")
             }
 
-            output.add(makeFieldText(name, f))
+            def text = makeFieldText(name, f)
+            if (text != null) {
+                output.add(text)
+            }
         }
 
         def className = responseClass.simpleName
@@ -313,6 +320,11 @@ ${output.join("\n")}
         return this.${fname};
     }
 """
+        }
+
+        // skip static fields
+        if (Modifier.isStatic(field.modifiers)) {
+            return null
         }
 
         // java type
