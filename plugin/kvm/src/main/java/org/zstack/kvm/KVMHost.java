@@ -4137,6 +4137,16 @@ public class KVMHost extends HostBase implements Host {
         chain.setName(String.format("continue-connecting-kvm-host-%s-%s", self.getManagementIp(), self.getUuid()));
         chain.getData().put(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR, new ErrorCodeList());
         chain.allowWatch();
+        for (KVMHostPreConnectExtensionPoint extp : factory.getPreConnectExtensions()) {
+            KVMHostConnectedContext ctx = new KVMHostConnectedContext();
+            ctx.setInventory((KVMHostInventory) getSelfInventory());
+            ctx.setNewAddedHost(info.isNewAdded());
+            ctx.setBaseUrl(baseUrl);
+            ctx.setSkipPackages(info.getSkipPackages());
+
+            chain.then(extp.createKvmHostPreConnectingFlow(ctx));
+        }
+
         for (KVMHostConnectExtensionPoint extp : factory.getConnectExtensions()) {
             KVMHostConnectedContext ctx = new KVMHostConnectedContext();
             ctx.setInventory((KVMHostInventory) getSelfInventory());

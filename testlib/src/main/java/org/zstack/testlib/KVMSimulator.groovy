@@ -414,6 +414,14 @@ class KVMSimulator implements Simulator {
             return rsp
         }
 
+        spec.simulator(KVMConstant.KVM_PRECONFIGURE_OVSDPDK_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_SYNC_VDPA_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
         spec.simulator(KVMConstant.KVM_DELETE_VDPA_PATH) {
             return new KVMAgentCommands.AgentResponse()
         }

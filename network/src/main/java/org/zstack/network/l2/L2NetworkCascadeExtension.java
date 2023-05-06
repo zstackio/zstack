@@ -72,7 +72,9 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                 DetachL2NetworkFromClusterMsg msg = new DetachL2NetworkFromClusterMsg();
                 msg.setClusterUuid(arg.getClusterUuid());
                 msg.setL2NetworkUuid(arg.getL2NetworkUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, arg.getL2NetworkUuid());
+                // vlan bridges and novlan bridge use the same bridge in ovs, so before delete l2 network we should check if the PhysicalInterface is using by another l2 network.
+                // and different l2 will send to different management node, so use cluster uuid for hash key instead of l2uuid
+                bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, arg.getClusterUuid());
                 return msg;
             }
         });
