@@ -99,10 +99,11 @@ public class HardwareVxlanNetworkPoolFactory implements L2NetworkFactory, Global
             return;
         }
 
-        String overlappedPool = vxlanInterceptor.getOverlapVniRangePool(L2NetworkInventory.valueOf(l2NetworkVO), msg.getClusterUuid());
-        if (overlappedPool != null) {
-            throw new ApiMessageInterceptionException(argerr("overlap vni range with vxlan network pool [%s]", overlappedPool));
+        if (msg.getSystemTags() != null) {
+            vxlanInterceptor.validateSystemTagFormat(msg.getSystemTags());
         }
+
+        vxlanInterceptor.validateVniRangeOverlap(L2NetworkInventory.valueOf(l2NetworkVO), msg.getClusterUuid());
     }
 
     private void validate(APICreateL3NetworkMsg msg) {
