@@ -9268,9 +9268,9 @@
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
-    "raw": "cannot adapt version for the bellow rpm: livirt / qemu / cpumodel",
-    "en_US": "cannot adapt version for the bellow rpm: livirt / qemu / cpumodel",
-    "zh_CN": "源和目的之间的以下组件版本不兼容：livirt、qemu、cpumodel",
+    "raw": "cannot adapt version for the bellow rpm: libvirt / qemu / cpumodel",
+    "en_US": "cannot adapt version for the bellow rpm: libvirt / qemu / cpumodel",
+    "zh_CN": "源和目的之间的以下组件版本不兼容：libvirt、qemu、cpumodel",
     "arguments": [],
     "line": 63,
     "fileName": "src/main/java/org/zstack/kvm/KVMHostAllocatorFilterExtensionPoint.java"
