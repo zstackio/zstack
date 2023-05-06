@@ -845,8 +845,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
 			put("org.zstack.sdk.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
 			put("org.zstack.sdk.GuestToolsStateInventory", "org.zstack.guesttools.GuestToolsStateInventory");
-			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.HaiTaiSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory");
+			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");
 			put("org.zstack.sdk.HostIommuStateType", "org.zstack.pciDevice.HostIommuStateType");
