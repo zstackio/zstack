@@ -75,6 +75,15 @@ doc {
 					optional true
 					since "3.4.0"
 				}
+				column {
+					name "isDefault"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Boolean"
+					optional true
+					since "4.6.31"
+				}
 			}
         }
 
