@@ -497,6 +497,7 @@ public class SourceClassMap {
 			put("org.zstack.policyRoute.PolicyRouteTableVRouterRefInventory", "org.zstack.sdk.PolicyRouteTableVRouterRefInventory");
 			put("org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct", "org.zstack.sdk.ResourceBindableConfigStruct");
 			put("org.zstack.resourceconfig.ResourceConfigInventory", "org.zstack.sdk.ResourceConfigInventory");
+			put("org.zstack.resourceconfig.ResourceConfigStruct", "org.zstack.sdk.ResourceConfigStruct");
 			put("org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdnController.header.SdnControllerInventory", "org.zstack.sdk.SdnControllerInventory");
 			put("org.zstack.sdnController.header.SdnVniRange", "org.zstack.sdk.SdnVniRange");
@@ -1053,6 +1054,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ResourceBackupState", "org.zstack.externalbackup.ResourceBackupState");
 			put("org.zstack.sdk.ResourceBindableConfigStruct", "org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct");
 			put("org.zstack.sdk.ResourceConfigInventory", "org.zstack.resourceconfig.ResourceConfigInventory");
+			put("org.zstack.sdk.ResourceConfigStruct", "org.zstack.resourceconfig.ResourceConfigStruct");
 			put("org.zstack.sdk.ResourceExternalBackupInfo", "org.zstack.externalbackup.ResourceExternalBackupInfo");
 			put("org.zstack.sdk.ResourceInventory", "org.zstack.header.vo.ResourceInventory");
 			put("org.zstack.sdk.ResourceSpending", "org.zstack.billing.ResourceSpending");

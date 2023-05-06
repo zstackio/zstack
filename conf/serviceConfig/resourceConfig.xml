@@ -24,4 +24,8 @@
         <name>org.zstack.resourceconfig.APIGetResourceConfigMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.resourceconfig.APIGetResourceConfigsMsg</name>
+    </message>
+
 </service>
