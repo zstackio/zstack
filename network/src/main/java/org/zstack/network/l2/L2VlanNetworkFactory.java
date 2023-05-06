@@ -40,7 +40,7 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
     }
 
     @Override
-    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion) {
+    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
         APICreateL2VlanNetworkMsg amsg = (APICreateL2VlanNetworkMsg) msg;
         L2VlanNetworkVO vo = new L2VlanNetworkVO(ovo);
         vo.setVlan(amsg.getVlan());

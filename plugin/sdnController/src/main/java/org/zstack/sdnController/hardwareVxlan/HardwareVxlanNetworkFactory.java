@@ -73,7 +73,7 @@ public class HardwareVxlanNetworkFactory implements L2NetworkFactory, VmInstance
     }
 
     @Override
-    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion) {
+    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
         APICreateL2HardwareVxlanNetworkMsg amsg = (APICreateL2HardwareVxlanNetworkMsg) msg;
         VxlanNetworkVO vo = new VxlanNetworkVO(ovo);
         vo.setAccountUuid(msg.getSession().getAccountUuid());

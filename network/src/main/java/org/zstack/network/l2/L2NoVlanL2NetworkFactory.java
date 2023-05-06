@@ -30,7 +30,7 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
     }
 
     @Override
-    public void createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion) {
+    public void createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
         vo = dbf.persistAndRefresh(vo);
         L2NetworkInventory inv = L2NetworkInventory.valueOf(vo);
         logger.debug("Successfully created NoVlanL2Network: " + printer.print(inv));
