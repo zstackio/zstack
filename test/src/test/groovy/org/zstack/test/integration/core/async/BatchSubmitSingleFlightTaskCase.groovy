@@ -1,7 +1,8 @@
 package org.zstack.test.integration.core.async
 
-import org.zstack.core.Platform
+
 import org.zstack.core.thread.SingleFlightTask
+import org.zstack.core.thread.SingleFlightTaskResult
 import org.zstack.core.thread.ThreadFacade
 import org.zstack.core.thread.ThreadFacadeImpl
 import org.zstack.testlib.SubCase
@@ -28,6 +29,8 @@ class BatchSubmitSingleFlightTaskCase extends SubCase {
     }
 
     void testBatchSubmitSingleFlightTasks() {
+        List<String> objectForTest = ["test1", "test2"]
+
         ConcurrentLinkedQueue results = new ConcurrentLinkedQueue<>()
         ThreadFacade threadFacade = bean(ThreadFacadeImpl.class)
         int num = 100
@@ -39,7 +42,7 @@ class BatchSubmitSingleFlightTaskCase extends SubCase {
                 threadFacade.singleFlightSubmit(new SingleFlightTask(null)
                         .setSyncSignature("test")
                         .run({ completion ->
-                            completion.success()
+                            completion.success(objectForTest)
                         }).done({ done ->
                     results.add(done)
                 }))
@@ -50,12 +53,18 @@ class BatchSubmitSingleFlightTaskCase extends SubCase {
 
         threads.each { it.join() }
 
+        retryInSecs {
+            assert results.size() == num
+            results.each { SingleFlightTaskResult result ->
+                assert result.getResult() == objectForTest}
+        }
+
         for (int i = 0; i < num; i++) {
             def thread = Thread.start {
                 threadFacade.singleFlightSubmit(new SingleFlightTask(null)
                         .setSyncSignature("test")
                         .run({ completion ->
-                            completion.success()
+                            completion.success(objectForTest)
                         }).done({ done ->
                     results.add(done)
                 }))
@@ -68,6 +77,8 @@ class BatchSubmitSingleFlightTaskCase extends SubCase {
 
         retryInSecs {
             assert results.size() == num * 2
+            results.each { SingleFlightTaskResult result ->
+                assert result.getResult() == objectForTest}
         }
     }
 }
