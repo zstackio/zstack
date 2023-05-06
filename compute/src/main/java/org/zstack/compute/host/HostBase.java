@@ -1061,7 +1061,17 @@ public abstract class HostBase extends AbstractHost {
     private void handle(final ConnectHostMsg msg) {
         thdf.singleFlightSubmit(new SingleFlightTask(msg)
                 .setSyncSignature(String.format("connect-host-%s-single-flight", msg.getHostUuid()))
-                .run((completion) -> connect(msg, completion))
+                .run((completion) -> connect(msg, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.success(null);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                }))
                 .done(((result) -> {
                     ConnectHostReply reply = new ConnectHostReply();
 

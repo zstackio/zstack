@@ -10,6 +10,7 @@ import org.zstack.core.debug.DebugSignalHandler;
 import org.zstack.header.Constants;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ExceptionSafe;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.ChainInfo;
 import org.zstack.header.core.progress.PendingTaskInfo;
 import org.zstack.header.core.progress.SingleFlightChainInfo;
@@ -537,7 +538,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             return true;
         }
 
-        void singleFlightRun(final Completion completion) {
+        void singleFlightRun(final ReturnValueCompletion<Object> completion) {
             if (isCancelled()) {
                 completion.fail(err(SysErrors.CANCEL_ERROR, "task failed due to cancelled"));
                 return;
@@ -686,23 +687,23 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
                     processTimeoutTask(runningTask);
                     runningTask.setStartExecutionTimeInMills(zTimer.getCurrentTimeMillis());
-                    runningTask.singleFlightRun(new Completion(null) {
+                    runningTask.singleFlightRun(new ReturnValueCompletion<Object>(null) {
                         @Override
-                        public void success() {
-                            executeSingleRunTasks(null);
+                        public void success(Object object) {
+                            executeSingleRunTasks(object, null);
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            executeSingleRunTasks(errorCode);
+                            executeSingleRunTasks(null, errorCode);
                         }
                     });
                 }
 
-                private void executeSingleRunTasks(ErrorCode errorCode) {
+                private void executeSingleRunTasks(Object object, ErrorCode errorCode) {
                     synchronized (singleFlightTasks) {
-                        safeRun(runningTask, errorCode);
-                        pendingQueue.forEach(task -> safeRun((SingleFlightFuture) task, errorCode));
+                        safeRun(object, runningTask, errorCode);
+                        pendingQueue.forEach(task -> safeRun(object, (SingleFlightFuture) task, errorCode));
 
                         // all tasks done, reset counter
                         taskCounter.set(0);
@@ -713,8 +714,9 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     runSingleFlight();
                 }
 
-                private void safeRun(SingleFlightFuture<T> flightFuture, ErrorCode errorCode) {
+                private void safeRun(Object object, SingleFlightFuture<T> flightFuture, ErrorCode errorCode) {
                     SingleFlightTaskResult result = new SingleFlightTaskResult();
+                    result.setResult(object);
                     try {
                         if (errorCode != null) {
                             result.setErrorCode(errorCode);
