@@ -55,6 +55,7 @@ import javax.persistence.Tuple;
 @RestRequest(
         path = "/port-forwarding/{ruleUuid}/vm-instances/nics/{vmNicUuid}",
         method = HttpMethod.POST,
+        parameterName = "params",
         responseClass = APIAttachPortForwardingRuleEvent.class
 )
 public class APIAttachPortForwardingRuleMsg extends APIMessage {

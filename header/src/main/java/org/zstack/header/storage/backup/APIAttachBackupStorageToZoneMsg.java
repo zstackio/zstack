@@ -37,6 +37,7 @@ import org.zstack.header.zone.ZoneVO;
 @RestRequest(
         path = "/zones/{zoneUuid}/backup-storage/{backupStorageUuid}",
         method = HttpMethod.POST,
+        parameterName = "params",
         responseClass = APIAttachBackupStorageToZoneEvent.class
 )
 public class APIAttachBackupStorageToZoneMsg extends APIMessage implements BackupStorageMessage {
