@@ -1020,7 +1020,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 .addCounterQuota(ImageQuotaConstant.IMAGE_NUM)
                 .addMessageRequiredQuotaHandler(ImageQuotaConstant.IMAGE_SIZE, (msg) -> new ImageQuotaUtil().getLocalImageSizeOnBackupStorage(msg)));
         quota.addQuotaMessageChecker(new QuotaMessageHandler<>(APIRecoverImageMsg.class)
-                .addCounterQuota(ImageQuotaConstant.IMAGE_NUM)
                 .addMessageRequiredQuotaHandler(ImageQuotaConstant.IMAGE_SIZE, (msg) -> {
                     ImageVO image = dbf.getEntityManager().find(ImageVO.class, msg.getImageUuid());
                     return image.getSize();
