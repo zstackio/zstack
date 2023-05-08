@@ -38,6 +38,7 @@ import org.zstack.header.vm.VmInstanceVO;
 @RestRequest(
         path = "/volumes/{volumeUuid}/vm-instances/{vmInstanceUuid}",
         method = HttpMethod.POST,
+        parameterName = "params",
         responseClass = APIAttachDataVolumeToVmEvent.class
 )
 public class APIAttachDataVolumeToVmMsg extends APIMessage implements VolumeMessage {

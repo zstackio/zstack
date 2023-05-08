@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "zoneUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "区域UUID"
 					location "url"
 					type "String"
@@ -32,7 +32,7 @@ doc {
 				}
 				column {
 					name "backupStorageUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "镜像存储UUID"
 					location "url"
 					type "String"

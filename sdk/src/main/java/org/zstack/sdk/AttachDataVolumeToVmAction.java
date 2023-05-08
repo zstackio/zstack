@@ -97,7 +97,7 @@ public class AttachDataVolumeToVmAction extends AbstractAction {
         info.path = "/volumes/{volumeUuid}/vm-instances/{vmInstanceUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

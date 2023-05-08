@@ -36,6 +36,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/clusters/{clusterUuid}/primary-storage/{primaryStorageUuid}",
         method = HttpMethod.POST,
+        parameterName = "params",
         responseClass = APIAttachPrimaryStorageToClusterEvent.class
 )
 public class APIAttachPrimaryStorageToClusterMsg extends APIMessage implements PrimaryStorageMessage {

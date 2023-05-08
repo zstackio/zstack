@@ -97,7 +97,7 @@ public class AttachAppBuildSystemToZoneAction extends AbstractAction {
         info.path = "/zones/{zoneUuid}/buildsystem/{buildSystemUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

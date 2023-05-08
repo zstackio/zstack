@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "roleUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc ""
 					location "url"
 					type "String"
@@ -32,7 +32,7 @@ doc {
 				}
 				column {
 					name "accountUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "账户UUID"
 					location "url"
 					type "String"

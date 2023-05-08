@@ -14,7 +14,9 @@ import java.util.List;
 @RestRequest(
         path = "/debug",
         method = HttpMethod.POST,
-        responseClass = APIDebugSignalEvent.class)
+        parameterName = "params",
+        responseClass = APIDebugSignalEvent.class
+)
 public class APIDebugSignalMsg extends APIMessage {
     @APIParam
     private List<String> signals;
