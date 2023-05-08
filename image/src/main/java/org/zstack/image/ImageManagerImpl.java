@@ -1013,8 +1013,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
                     if (msg instanceof APIAddImageMsg) {
                         check((APIAddImageMsg) msg, pairs);
-                    } else if (msg instanceof APIRecoverImageMsg) {
-                        check((APIRecoverImageMsg) msg, pairs);
                     } else if (msg instanceof APIChangeResourceOwnerMsg) {
                         check((APIChangeResourceOwnerMsg) msg, pairs);
                     } else if (msg instanceof APICreateRootVolumeTemplateFromRootVolumeMsg) {
@@ -1102,44 +1100,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     }
                 }
 
-            }
-
-            @Transactional(readOnly = true)
-            private void check(APIRecoverImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                String currentAccountUuid = msg.getSession().getAccountUuid();
-                String resourceTargetOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getImageUuid());
-
-                long imageNumQuota = pairs.get(ImageQuotaConstant.IMAGE_NUM).getValue();
-                long imageSizeQuota = pairs.get(ImageQuotaConstant.IMAGE_SIZE).getValue();
-                long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
-                long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(resourceTargetOwnerAccountUuid);
-
-                ImageVO image = dbf.getEntityManager().find(ImageVO.class, msg.getImageUuid());
-                long imageNumAsked = 1;
-                long imageSizeAsked = image.getSize();
-
-                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
-                {
-                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
-                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
-                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = ImageQuotaConstant.IMAGE_NUM;
-                    quotaCompareInfo.quotaValue = imageNumQuota;
-                    quotaCompareInfo.currentUsed = imageNumUsed;
-                    quotaCompareInfo.request = imageNumAsked;
-                    new QuotaUtil().CheckQuota(quotaCompareInfo);
-                }
-
-                {
-                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
-                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
-                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = ImageQuotaConstant.IMAGE_SIZE;
-                    quotaCompareInfo.quotaValue = imageSizeQuota;
-                    quotaCompareInfo.currentUsed = imageSizeUsed;
-                    quotaCompareInfo.request = imageSizeAsked;
-                    new QuotaUtil().CheckQuota(quotaCompareInfo);
-                }
             }
 
             @Transactional(readOnly = true)
