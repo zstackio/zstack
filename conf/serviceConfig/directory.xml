@@ -24,4 +24,8 @@
     <message>
         <name>org.zstack.directory.APIMoveResourcesToDirectoryMsg</name>
     </message>
+    <message>
+        <name>org.zstack.directory.APIQueryDirectoryMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>
