@@ -84,7 +84,7 @@ public class KVMGlobalConfig {
 
     // vm cpu features stored in cpuid
     @GlobalConfigValidation(validValues = {"true", "false"})
-    @BindResourceConfig({VmInstanceVO.class})
+    @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_CPU_HYPERVISOR_FEATURE = new GlobalConfig(CATEGORY, "vm.cpu.hypervisor.feature");
 
     @GlobalConfigValidation(validValues = {"true", "false"})
