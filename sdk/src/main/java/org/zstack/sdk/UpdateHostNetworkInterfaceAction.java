@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetIpOnHostNetworkInterfaceAction extends AbstractAction {
+public class UpdateHostNetworkInterfaceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetIpOnHostNetworkInterfaceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetIpOnHostNetworkInterfaceResult value;
+        public org.zstack.sdk.UpdateHostNetworkInterfaceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,11 +28,8 @@ public class SetIpOnHostNetworkInterfaceAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String interfaceUuid;
 
-    @Param(required = false)
-    public java.lang.String ipAddress;
-
-    @Param(required = false)
-    public java.lang.String netmask;
+    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +63,8 @@ public class SetIpOnHostNetworkInterfaceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetIpOnHostNetworkInterfaceResult value = res.getResult(org.zstack.sdk.SetIpOnHostNetworkInterfaceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetIpOnHostNetworkInterfaceResult() : value; 
+        org.zstack.sdk.UpdateHostNetworkInterfaceResult value = res.getResult(org.zstack.sdk.UpdateHostNetworkInterfaceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateHostNetworkInterfaceResult() : value; 
 
         return ret;
     }
@@ -97,7 +94,7 @@ public class SetIpOnHostNetworkInterfaceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hosts/nics/{interfaceUuid}/ip";
+        info.path = "/hosts/nics/{interfaceUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
