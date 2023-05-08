@@ -84,7 +84,7 @@ class SingleFlightPendingQueueCase extends SubCase {
                 .setSyncSignature(syncSignature)
                 .run({ completion ->
                     taskExecution()
-                    completion.success()
+                    completion.success(null)
                 }).done({ done ->
             // do nothing
         }))
