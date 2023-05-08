@@ -759,13 +759,13 @@ public class KVMHost extends HostBase implements Host {
                             bus.reply(msg, reply);
                             return true;
                         }
-                        String status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
+                        HostPowerStatus status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
                         if (HostPowerStatus.POWER_ON.equals(status)) {
                             return true;
                         }
                         if (HostPowerStatus.POWER_OFF.equals(status)) {
                             HostIpmiVO ipmi = host.getIpmi();
-                            ipmi.setIpmiPowerStatus(HostPowerStatus.POWER_BOOTING);
+                            ipmi.setIpmiPowerStatus(HostPowerStatus.POWER_OFF.nextStatus(HostPowerStatusEvent.on));
                             dbf.updateAndRefresh(ipmi);
                         }
                         return false;
@@ -835,13 +835,13 @@ public class KVMHost extends HostBase implements Host {
                             bus.reply(msg, reply);
                             return true;
                         }
-                        String status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
+                        HostPowerStatus status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
                         if (HostPowerStatus.POWER_OFF.equals(status)) {
                             return true;
                         }
                         if (HostPowerStatus.POWER_ON.equals(status)) {
                             HostIpmiVO ipmi = host.getIpmi();
-                            ipmi.setIpmiPowerStatus(HostPowerStatus.POWER_SHUTDOWN);
+                            ipmi.setIpmiPowerStatus(HostPowerStatus.POWER_ON.nextStatus(HostPowerStatusEvent.off));
                             dbf.updateAndRefresh(ipmi);
                         }
                         return false;
@@ -4833,9 +4833,20 @@ public class KVMHost extends HostBase implements Host {
             }
 
             private void waitForHostShutdown(ShutdownHostReply reply, NoErrorCompletion noErrorCompletion) {
-                thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(msg, noErrorCompletion) {
+                long timeoutInSec = KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Integer.class).longValue();
+                long ctimeout = TimeUnit.SECONDS.toMillis(timeoutInSec);
+                Long deadline = timeHelper.getCurrentTimeMillis() + ctimeout;
+                thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(msg, completion) {
                     @Override
                     public boolean run() {
+                        if (isTimeout()) {
+                            reply.setSuccess(false);
+                            reply.setError(operr("host[%s] not shutdown in %d seconds",msg.getHostUuid(), ctimeout));
+                            bus.reply(msg,reply);
+                            noErrorCompletion.done();
+                            return true;
+                        }
+
                         if (testPort()) {
                             return false;
                         }
@@ -4843,6 +4854,10 @@ public class KVMHost extends HostBase implements Host {
                         bus.reply(msg, reply);
                         noErrorCompletion.done();
                         return true;
+                    }
+
+                    private boolean isTimeout() {
+                        return timeHelper.getCurrentTimeMillis() > deadline;
                     }
 
                     @Override

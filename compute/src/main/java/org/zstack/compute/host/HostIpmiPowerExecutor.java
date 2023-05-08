@@ -61,7 +61,7 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     }
 
     public HostIpmiVO refreshHostPowerStatus(HostVO host) {
-        String status = getPowerStatus(host);
+        HostPowerStatus status = getPowerStatus(host);
         HostIpmiVO ipmi = host.getIpmi();
         ipmi.setIpmiPowerStatus(status);
         return dbf.updateAndRefresh(ipmi);
@@ -119,17 +119,15 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     }
 
     @Override
-    public String getPowerStatus(HostVO host) {
+    public HostPowerStatus getPowerStatus(HostVO host) {
         HostIpmiVO ipmi = host.getIpmi();
         return getPowerStatus(ipmi);
     }
 
-    public static String getPowerStatus(HostIpmiVO ipmi) {
-        if (null == ipmi || null == ipmi.getIpmiAddress()) {
-            return HostPowerStatus.POWER_UNKNOWN;
-        }
-
-        if (null == ipmi.getIpmiUsername() || null == ipmi.getIpmiPassword()) {
+    public static HostPowerStatus getPowerStatus(HostIpmiVO ipmi) {
+        if (null == ipmi || null == ipmi.getIpmiAddress()
+                || null == ipmi.getIpmiUsername()
+                || null == ipmi.getIpmiPassword()) {
             return HostPowerStatus.UN_CONFIGURED;
         }
 

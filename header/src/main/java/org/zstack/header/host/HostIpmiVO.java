@@ -3,10 +3,7 @@ package org.zstack.header.host;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 /**
  * @Author : jingwang
@@ -38,7 +35,8 @@ public class HostIpmiVO {
     private String ipmiPassword;
 
     @Column
-    private String ipmiPowerStatus;
+    @Enumerated(EnumType.STRING)
+    private HostPowerStatus ipmiPowerStatus;
 
     public String getUuid() {
         return uuid;
@@ -80,11 +78,11 @@ public class HostIpmiVO {
         this.ipmiPassword = ipmiPassword;
     }
 
-    public String getIpmiPowerStatus() {
+    public HostPowerStatus getIpmiPowerStatus() {
         return ipmiPowerStatus;
     }
 
-    public void setIpmiPowerStatus(String ipmiPowerStatus) {
+    public void setIpmiPowerStatus(HostPowerStatus ipmiPowerStatus) {
         this.ipmiPowerStatus = ipmiPowerStatus;
     }
 }

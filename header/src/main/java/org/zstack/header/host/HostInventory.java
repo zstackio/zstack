@@ -183,7 +183,7 @@ public class HostInventory implements Serializable {
             this.setIpmiAddress(vo.getIpmi().getIpmiAddress());
             this.setIpmiPort(vo.getIpmi().getIpmiPort());
             this.setIpmiUsername(vo.getIpmi().getIpmiUsername());
-            this.setIpmiPowerStatus(vo.getIpmi().getIpmiPowerStatus());
+            this.setIpmiPowerStatus(vo.getIpmi().getIpmiPowerStatus().toString());
         }
     }
 
