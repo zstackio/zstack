@@ -167,8 +167,7 @@ class KVMSimulator implements Simulator {
             rsp.cpuProcessorNum = "10"
             rsp.cpuGHz = "2.10"
             rsp.hostCpuModelName = "Broadwell @ 2.10GHz"
-            rsp.ipmiAddress = null
-            rsp.ipmiAddress = "0.0.0.0"
+            rsp.ipmiAddress = "None"
             rsp.eptFlag = "ept"
             rsp.libvirtCapabilities = ["incrementaldrivemirror", "blockcopynetworktarget"]
             rsp.powerSupplyModelName = ""

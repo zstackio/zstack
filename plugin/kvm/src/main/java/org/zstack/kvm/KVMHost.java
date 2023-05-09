@@ -707,6 +707,7 @@ public class KVMHost extends HostBase implements Host {
         kvmHostIpmiPowerExecutor.powerReset(self, new Completion(msg) {
             @Override
             public void success() {
+                changeConnectionState(HostStatusEvent.disconnected);
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -761,6 +762,7 @@ public class KVMHost extends HostBase implements Host {
                         }
                         HostPowerStatus status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
                         if (HostPowerStatus.POWER_ON.equals(status)) {
+                            bus.reply(msg, reply);
                             return true;
                         }
                         if (HostPowerStatus.POWER_OFF.equals(status)) {
@@ -778,7 +780,7 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public long getInterval() {
-                        return 3;
+                        return 2;
                     }
 
                     @Override
@@ -805,6 +807,7 @@ public class KVMHost extends HostBase implements Host {
         Completion newCompletion = new Completion(completion) {
             @Override
             public void success() {
+                changeConnectionState(HostStatusEvent.disconnected);
                 if (msg.isReturnEarly()) {
                     bus.reply(msg, reply);
                 } else {
@@ -837,6 +840,7 @@ public class KVMHost extends HostBase implements Host {
                         }
                         HostPowerStatus status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
                         if (HostPowerStatus.POWER_OFF.equals(status)) {
+                            bus.reply(msg, reply);
                             return true;
                         }
                         if (HostPowerStatus.POWER_ON.equals(status)) {
@@ -854,7 +858,7 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public long getInterval() {
-                        return 3;
+                        return 2;
                     }
 
                     @Override
@@ -908,6 +912,7 @@ public class KVMHost extends HostBase implements Host {
                     completion.done();
                     return;
                 }
+                changeConnectionState(HostStatusEvent.disconnected);
                 bus.reply(msg, reply);
                 completion.done();
             }

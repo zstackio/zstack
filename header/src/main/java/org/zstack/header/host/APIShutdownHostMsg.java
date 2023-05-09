@@ -20,11 +20,7 @@ public class APIShutdownHostMsg extends APIMessage implements HostMessage {
     @APIParam(nonempty = true, resourceType = HostVO.class)
     private String uuid;
     @APIParam(required = false)
-    private boolean waitTaskCompleted;
-    @APIParam(required = false)
     private boolean returnEarly = false;
-    @APIParam(required = false)
-    private long maxWaitTime;
     @APIParam(required = false)
     private boolean force = false;
     @APIParam(required = false, validValues = {"AUTO","AGENT","IPMI"})
@@ -36,22 +32,6 @@ public class APIShutdownHostMsg extends APIMessage implements HostMessage {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
-    }
-
-    public boolean isWaitTaskCompleted() {
-        return waitTaskCompleted;
-    }
-
-    public void setWaitTaskCompleted(boolean waitTaskCompleted) {
-        this.waitTaskCompleted = waitTaskCompleted;
-    }
-
-    public long getMaxWaitTime() {
-        return maxWaitTime;
-    }
-
-    public void setMaxWaitTime(long maxWaitTime) {
-        this.maxWaitTime = maxWaitTime;
     }
 
     public boolean isForce() {
