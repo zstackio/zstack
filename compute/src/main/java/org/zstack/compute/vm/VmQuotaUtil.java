@@ -108,7 +108,8 @@ public class VmQuotaUtil {
                 " where vm.uuid = ref.resourceUuid" +
                 " and ref.accountUuid = :auuid" +
                 " and ref.resourceType = :rtype" +
-                " and not (vm.hostUuid is null and vm.lastHostUuid is null)" +
+                // for vm without host and volume info, treat them as new creating vm
+                " and not (vm.hostUuid is null and vm.lastHostUuid is null and vm.rootVolumeUuid is null)" +
                 " and vm.state not in (:states)" +
                 " and vm.type != :vmtype";
         TypedQuery<Long> q2 = dbf.getEntityManager().createQuery(sql2, Long.class);
@@ -118,7 +119,6 @@ public class VmQuotaUtil {
         q2.setParameter("vmtype", "baremetal2");
         Long totalVmNum = q2.getSingleResult();
         quota.totalVmNum = totalVmNum == null ? 0 : totalVmNum;
-
         return quota;
     }
 
