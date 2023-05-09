@@ -24,6 +24,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import static org.zstack.core.Platform.inerr;
 
@@ -111,7 +112,7 @@ public abstract class GarbageCollector {
         dbf.update(vo);
     }
 
-    private String buildContext() {
+    protected String buildContext() {
         Map context = new HashMap<>();
 
         for (Field f : FieldUtils.getAllFields(getClass())) {
@@ -159,6 +160,17 @@ public abstract class GarbageCollector {
         SQL.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.uuid, uuid)
                 .set(GarbageCollectorVO_.context, buildContext())
                 .update();
+    }
+
+    public static <T extends GarbageCollector> String updateContext(String uuid, String context, Class<T> clazz, Consumer<T> consumer) {
+        T gc  = JSONObjectUtil.toObject(context, clazz);
+        consumer.accept(gc);
+        context = gc.buildContext();
+        SQL.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.uuid, uuid)
+                .set(GarbageCollectorVO_.context, context)
+                .update();
+
+        return context;
     }
 
     void loadFromVO(GarbageCollectorVO vo) {
