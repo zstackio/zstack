@@ -198,6 +198,6 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
 
     @Override
     public String filterErrorReason() {
-        return Platform.i18n("cannot adapt version for the bellow rpm: livirt / qemu / cpumodel");
+        return Platform.i18n("cannot adapt version for the bellow rpm: libvirt / qemu / cpumodel");
     }
 }
