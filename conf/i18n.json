@@ -11368,6 +11368,56 @@
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanPoolApiInterceptor.java"
   },
   {
+    "raw": "need to input one system tag like : [%s]",
+    "en_US": "need to input one system tag like : [{0}]",
+    "zh_CN": "需要输入一个系统标签，格式为：[{0}]",
+    "arguments": [
+      "VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTagFormat()"
+    ],
+    "line": 36,
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
+  },
+  {
+    "raw": "wrong system tag [%s], should be like : [%s]",
+    "en_US": "wrong system tag [{0}], should be like : [{1}]",
+    "zh_CN": "错误的系统标签[{0}]，格式应该为：[{1}]",
+    "arguments": [
+      "tag",
+      "VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTagFormat()"
+    ],
+    "line": 48,
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
+  },
+  {
+    "raw": "wrong cidr format in system tag [%s]",
+    "en_US": "wrong cidr format in system tag [{0}]",
+    "zh_CN": "系统标签[{0}]中的cidr格式错误",
+    "arguments": [
+      "tag"
+    ],
+    "line": 53,
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
+  },
+  {
+    "raw": "overlap vni range with %s [%s]",
+    "en_US": "overlap vni range with {0} [{1}]",
+    "zh_CN": "与{0}[{1}]的vni范围重叠",
+    "arguments": [
+      "inv.getType()",
+      "overlappedPool"
+    ],
+    "line": 62,
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
+  },
+  {
+    "raw": "vxlan network pool doesn\u0027t support create l3 network",
+    "en_US": "vxlan network pool doesn\u0027t support create l3 network",
+    "zh_CN": "vxlan network pool不支持创建L3网络",
+    "arguments": [],
+    "line": 97,
+    "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanNetworkCheckerImpl.java"
+  },
+  {
     "raw": "it is used",
     "en_US": "it is used",
     "zh_CN": "被占用",
@@ -15755,16 +15805,6 @@
     ],
     "line": 259,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkFactory.java"
-  },
-  {
-    "raw": "overlap vni range with vxlan network pool [%s]",
-    "en_US": "overlap vni range with vxlan network pool [{0}]",
-    "zh_CN": "",
-    "arguments": [
-      "overlappedPool"
-    ],
-    "line": 103,
-    "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
     "raw": "hardware vxlan network pool doesn\u0027t support create l3 network",

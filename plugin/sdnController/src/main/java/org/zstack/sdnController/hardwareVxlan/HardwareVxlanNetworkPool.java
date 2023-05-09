@@ -73,10 +73,12 @@ public class HardwareVxlanNetworkPool extends VxlanNetworkPool {
 
     @Override
     protected void afterDetachVxlanPoolFromCluster(APIDetachL2NetworkFromClusterMsg msg) {
+        super.afterDetachVxlanPoolFromCluster(msg);
     }
 
     @Override
     protected void afterAttachVxlanPoolFromClusterFailed(APIAttachL2NetworkToClusterMsg msg) {
+        super.afterAttachVxlanPoolFromClusterFailed(msg);
     }
 
     @Override

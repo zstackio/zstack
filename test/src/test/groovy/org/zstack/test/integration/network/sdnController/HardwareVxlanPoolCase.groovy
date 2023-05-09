@@ -59,6 +59,14 @@ class HardwareVxlanPoolCase extends SubCase {
             name = "TestRange2"
         }
 
+        expectError {
+            attachL2NetworkToCluster {
+                l2NetworkUuid = poolinv.getUuid()
+                clusterUuid = cluster.uuid
+                systemTags = ["l2NetworkUuid::${poolinv.getUuid()}::clusterUuid::${cluster.uuid}::cidr::{}".toString()]
+            }
+        }
+
         attachL2NetworkToCluster {
             l2NetworkUuid = poolinv.getUuid()
             clusterUuid = cluster.uuid
