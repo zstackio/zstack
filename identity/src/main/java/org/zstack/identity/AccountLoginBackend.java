@@ -4,18 +4,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.login.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
 
 /**
  * Created by kayo on 2018/7/10.
@@ -67,6 +66,15 @@ public class AccountLoginBackend implements LoginBackend {
         }
 
         completion.success(info);
+    }
+
+    @Override
+    public Set<String> possibleUserUuidSetForGettingProcedures(LoginContext loginContext) {
+        List<String> userUuidList = Q.New(AccountVO.class)
+                .select(AccountVO_.uuid)
+                .eq(AccountVO_.name, loginContext.getUsername())
+                .listValues();
+        return new HashSet<>(userUuidList);
     }
 
     protected String getResourceIdentity(String name) {

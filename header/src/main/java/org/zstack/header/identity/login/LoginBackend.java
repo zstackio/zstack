@@ -3,7 +3,9 @@ package org.zstack.header.identity.login;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.identity.LoginType;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Login implementation interface.
@@ -24,4 +26,8 @@ public interface LoginBackend {
     void collectUserInfoIntoContext(LoginContext loginContext);
 
     List<AdditionalAuthFeature> getRequiredAdditionalAuthFeature();
+
+    default Set<String> possibleUserUuidSetForGettingProcedures(LoginContext loginContext) {
+        return Collections.emptySet();
+    }
 }

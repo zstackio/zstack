@@ -5,6 +5,7 @@ import org.zstack.header.identity.SessionInventory;
 
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  *
@@ -38,6 +39,16 @@ public class LoginContext {
 
     private Map<String, String> properties = new HashMap<>();
     private List<AdditionalAuthFeature> ignoreFeatures = new ArrayList<>();
+
+    /**
+     * Only for {@link APIGetLoginProceduresMsg}
+     * 
+     * This method is used to get possible users when not logged in,
+     * in order to set login rules for specific users.
+     * 
+     * The input to this function is this, output is user uuid set.
+     */
+    private Function<LoginContext, Set<String>> possibleUsersGetter;
 
     private String captchaUuid;
     private String verifyCode;
@@ -144,6 +155,10 @@ public class LoginContext {
         this.ignoreFeatures = ignoreFeatures;
     }
 
+    public void setPossibleUsersGetter(Function<LoginContext, Set<String>> possibleUsersGetter) {
+        this.possibleUsersGetter = possibleUsersGetter;
+    }
+
     public Map<String, String> getProperties() {
         return properties;
     }
@@ -158,6 +173,16 @@ public class LoginContext {
 
     public void setLoginPluginName(String loginPluginName) {
         this.loginPluginName = loginPluginName;
+    }
+
+    public Set<String> findPossibleUserUuidSet() {
+        if (this.userUuid != null) {
+            return Collections.singleton(userUuid);
+        }
+        if (this.possibleUsersGetter == null) {
+            return Collections.emptySet();
+        }
+        return this.possibleUsersGetter.apply(this);
     }
 
     public static LoginContext fromApiLoginMessage(APISessionMessage msg) {
