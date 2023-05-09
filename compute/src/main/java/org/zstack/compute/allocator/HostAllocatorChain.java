@@ -220,7 +220,8 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         return flows.indexOf(flow) == skipCounter;
     }
 
-    private void fail(ErrorCode errorCode) {
+    @Override
+    public void fail(ErrorCode errorCode) {
         result = null;
         if (seriesErrorWhenPagination.isEmpty()) {
             logger.debug(String.format("[Host Allocation] flow[%s] failed to allocate host; %s",

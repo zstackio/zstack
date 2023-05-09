@@ -79,6 +79,9 @@ public class KVMGlobalConfig {
     public static GlobalConfig CONNECTION_SERVER_UPDATE_INTERVAL = new GlobalConfig(CATEGORY, "connection.server.update.interval");
 
     @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig ENABLE_VM_MIGRATION_HOST_CPU_FUNCTION_CHECK = new GlobalConfig(CATEGORY, "enable.vm.migration.host.cpu.function.check");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig REDIRECT_CONSOLE_LOG_TO_FILE = new GlobalConfig(CATEGORY, "redirect.vm.log.to.file");
 

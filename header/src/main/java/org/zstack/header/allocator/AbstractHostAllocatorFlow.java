@@ -56,6 +56,10 @@ public abstract class AbstractHostAllocatorFlow {
         trigger.next(candidates);
     }
 
+    protected void allocatorTriggerFail(ErrorCode errorCode) {
+        trigger.fail(errorCode);
+    }
+
     protected void skip() {
         trigger.skip();
     }
