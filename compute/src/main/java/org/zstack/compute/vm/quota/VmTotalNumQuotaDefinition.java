@@ -27,7 +27,7 @@ public class VmTotalNumQuotaDefinition implements QuotaDefinition {
                 " where vm.uuid = ref.resourceUuid" +
                 " and ref.accountUuid = :auuid" +
                 " and ref.resourceType = :rtype" +
-                " and not (vm.hostUuid is null and vm.lastHostUuid is null)" +
+                " and not (vm.hostUuid is null and vm.lastHostUuid is null and vm.rootVolumeUuid is null)" +
                 " and vm.state not in (:states)" +
                 " and vm.type != :vmtype";
 
