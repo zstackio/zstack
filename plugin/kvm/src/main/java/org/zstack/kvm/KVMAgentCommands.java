@@ -1669,6 +1669,10 @@ public class KVMAgentCommands {
         private boolean hypervClock;
         private String vendorId;
 
+        // suspend features
+        private boolean suspendToRam;
+        private boolean suspendToDisk;
+
         private boolean additionalQmp;
         private boolean isApplianceVm;
         private String systemSerialNumber;
@@ -2132,6 +2136,22 @@ public class KVMAgentCommands {
 
         public void setVendorId(String vendorId) {
             this.vendorId = vendorId;
+        }
+
+        public boolean isSuspendToRam() {
+            return suspendToRam;
+        }
+
+        public void setSuspendToRam(boolean suspendToRam) {
+            this.suspendToRam = suspendToRam;
+        }
+
+        public boolean isSuspendToDisk() {
+            return suspendToDisk;
+        }
+
+        public void setSuspendToDisk(boolean suspendToDisk) {
+            this.suspendToDisk = suspendToDisk;
         }
 
         @Override
