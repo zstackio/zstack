@@ -94,7 +94,7 @@ public class DebugSignalAction extends AbstractAction {
         info.path = "/debug";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

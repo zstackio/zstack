@@ -100,7 +100,7 @@ public class CreateIAM2VirtualIDFromLdapUidAction extends AbstractAction {
         info.path = "/iam2/virtual-id/ldap/uid";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
