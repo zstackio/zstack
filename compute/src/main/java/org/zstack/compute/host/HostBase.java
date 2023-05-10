@@ -50,6 +50,7 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.Pair;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
@@ -227,10 +228,12 @@ public abstract class HostBase extends AbstractHost {
             @Override
             public void run(MessageReply reply) {
                 RebootHostReply rebootReply = reply.castReply();
-                if (null != rebootReply.getError()) {
+                if (!rebootReply.isSuccess()) {
                     event.setError(rebootReply.getError());
                     event.setSuccess(rebootReply.isSuccess());
                 } else {
+                    changeConnectionState(HostStatusEvent.disconnected);
+                    self = dbf.findByUuid(msg.getUuid(), HostVO.class);
                     event.setInventory(getSelfInventory());
                 }
                 bus.publish(event);
@@ -252,6 +255,7 @@ public abstract class HostBase extends AbstractHost {
                     event.setError(powerOnHostReply.getError());
                     event.setSuccess(powerOnHostReply.isSuccess());
                 } else {
+                    self = dbf.findByUuid(msg.getUuid(), HostVO.class);
                     event.setInventory(getSelfInventory());
                 }
                 bus.publish(event);
@@ -263,7 +267,7 @@ public abstract class HostBase extends AbstractHost {
         final APIShutdownHostEvent event = new APIShutdownHostEvent(msg.getId());
         ShutdownHostMsg shutdownHostMsg = new ShutdownHostMsg();
         shutdownHostMsg.setMethod(HostPowerManagementMethod.valueOf(msg.getMethod()));
-        shutdownHostMsg.setWaitTaskCompleted(msg.isWaitTaskCompleted());
+        shutdownHostMsg.setWaitTaskCompleted(!msg.isReturnEarly());
         shutdownHostMsg.setReturnEarly(msg.isReturnEarly());
         shutdownHostMsg.setUuid(msg.getUuid());
         shutdownHostMsg.setForce(msg.isForce());
@@ -276,6 +280,7 @@ public abstract class HostBase extends AbstractHost {
                     event.setError(shutdownHostReply.getError());
                     event.setSuccess(false);
                 } else {
+                    self = dbf.findByUuid(msg.getUuid(), HostVO.class);
                     event.setInventory(getSelfInventory());
                 }
                 bus.publish(event);
@@ -307,7 +312,18 @@ public abstract class HostBase extends AbstractHost {
         if (0 != msg.getIpmiPort()) {
             ipmi.setIpmiPort(msg.getIpmiPort());
         }
-        ipmi.setIpmiPowerStatus(HostIpmiPowerExecutor.getPowerStatus(ipmi));
+
+        Pair<HostPowerStatus, ErrorCode> pair = HostIpmiPowerExecutor.getPowerStatusWithErrorCode(ipmi);
+        ErrorCode err = pair.second();
+        if (err != null) {
+            event.setSuccess(false);
+            event.setError(err);
+            bus.publish(event);
+            return;
+        }
+
+        HostPowerStatus status = pair.first();
+        ipmi.setIpmiPowerStatus(status);
         ipmi = dbf.updateAndRefresh(ipmi);
         event.setHostIpmiInventory(HostIpmiInventory.valueOf(ipmi));
         bus.publish(event);

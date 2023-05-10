@@ -33,7 +33,7 @@ public class APIGetHostPowerStatusEvent extends APIEvent {
         hi.setIpmiPort(623);
         hi.setIpmiUsername("admin");
         hi.setIpmiPassword("password");
-        hi.setIpmiPowerStatus(HostPowerStatus.POWER_ON);
+        hi.setIpmiPowerStatus(HostPowerStatus.POWER_ON.toString());
         event.setInventory(hi);
         return event;
     }

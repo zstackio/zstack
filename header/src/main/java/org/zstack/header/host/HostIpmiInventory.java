@@ -33,7 +33,7 @@ public class HostIpmiInventory implements Serializable {
         this.setIpmiUsername(vo.getIpmiUsername());
         this.setIpmiPort(vo.getIpmiPort());
         this.setIpmiPassword(vo.getIpmiPassword());
-        this.setIpmiPowerStatus(vo.getIpmiPowerStatus());
+        this.setIpmiPowerStatus(vo.getIpmiPowerStatus().toString());
     }
 
     public static HostIpmiInventory valueOf(HostIpmiVO vo) {

@@ -1,7 +1,6 @@
 package org.zstack.compute.host;
 
 import org.zstack.header.core.Completion;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostPowerStatus;
 import org.zstack.header.host.HostVO;
 
@@ -13,5 +12,5 @@ public interface HostPowerExecutor {
     void powerOff(HostVO host, Boolean force, Completion completion);
     void powerOn(HostVO host, Completion completion);
     void powerReset(HostVO host, Completion completion);
-    String getPowerStatus(HostVO host);
+    HostPowerStatus getPowerStatus(HostVO host);
 }

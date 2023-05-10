@@ -1,6 +1,7 @@
 package org.zstack.compute.host;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
@@ -13,6 +14,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.Pair;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -25,11 +27,20 @@ import static org.zstack.core.Platform.operr;
 public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     @Autowired
     DatabaseFacade dbf;
+    protected static HostPowerStatus mockedPowerStatus;
+    protected static boolean mockFail = false;
 
     private static final CLogger logger = Utils.getLogger(HostIpmiPowerExecutor.class);
 
     @Override
     public void powerOff(HostVO host, Boolean force, Completion completion) {
+        if (HostPowerStatus.POWER_OFF.equals(refreshHostPowerStatus(host).getIpmiPowerStatus())) {
+            logger.debug(String.format("host[%s:%d] is already powered off",
+                    host.getIpmi().getIpmiAddress(), host.getIpmi().getIpmiPort()));
+            completion.success();
+            return;
+        }
+
         ErrorCode err = powerOff(host, force);
         if (err == null) {
             completion.success();
@@ -39,9 +50,10 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     }
 
     private ErrorCode powerOff(HostVO host, Boolean force) {
-        if (HostPowerStatus.POWER_OFF.equals(refreshHostPowerStatus(host).getIpmiPowerStatus())) {
-            logger.debug(String.format("host[%s:%d] is already powered off",
-                    host.getIpmi().getIpmiAddress(), host.getIpmi().getIpmiPort()));
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            if (mockFail) {
+                return operr("mock power off host[%s] by ipmi failed.", host.getUuid());
+            }
             return null;
         }
 
@@ -61,7 +73,7 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     }
 
     public HostIpmiVO refreshHostPowerStatus(HostVO host) {
-        String status = getPowerStatus(host);
+        HostPowerStatus status = getPowerStatus(host);
         HostIpmiVO ipmi = host.getIpmi();
         ipmi.setIpmiPowerStatus(status);
         return dbf.updateAndRefresh(ipmi);
@@ -69,6 +81,13 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
 
     @Override
     public void powerOn(HostVO host, Completion completion) {
+        if (HostPowerStatus.POWER_ON.equals(refreshHostPowerStatus(host).getIpmiPowerStatus())) {
+            logger.debug(String.format("host[%s:%d] is already powered on",
+                    host.getIpmi().getIpmiAddress(), host.getIpmi().getIpmiPort()));
+            completion.success();
+            return;
+        }
+
         ErrorCode err = powerOn(host);
         if (err == null) {
             completion.success();
@@ -78,9 +97,10 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     }
 
     private ErrorCode powerOn(HostVO host) {
-        if (HostPowerStatus.POWER_ON.equals(refreshHostPowerStatus(host).getIpmiPowerStatus())) {
-            logger.debug(String.format("host[%s:%d] is already powered on",
-                    host.getIpmi().getIpmiAddress(), host.getIpmi().getIpmiPort()));
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            if (mockFail) {
+                return operr("mock power on host[%s] by ipmi failed.", host.getUuid());
+            }
             return null;
         }
 
@@ -89,12 +109,19 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
         if (0 == ret) {
             return null;
         } else {
-            return operr("power off host[%s] by ipmi failed.", host.getUuid());
+            return operr("power on host[%s] by ipmi failed.", host.getUuid());
         }
     }
 
     @Override
     public void powerReset(HostVO host, Completion completion) {
+        if (HostPowerStatus.POWER_OFF.equals(refreshHostPowerStatus(host).getIpmiPowerStatus())) {
+            ErrorCode err = operr(String.format("reboot host[%s:%d] failed. because host is already powered off",
+                    host.getIpmi().getIpmiAddress(), host.getIpmi().getIpmiPort()));
+            completion.fail(err);
+            return;
+        }
+
         ErrorCode err = powerReset(host);
         if (err == null) {
             completion.success();
@@ -104,9 +131,11 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     }
 
     private ErrorCode powerReset(HostVO host) {
-        if (HostPowerStatus.POWER_OFF.equals(refreshHostPowerStatus(host).getIpmiPowerStatus())) {
-            return operr(String.format("power reset host[%s:%d] failed. because host is already powered off",
-                    host.getIpmi().getIpmiAddress(), host.getIpmi().getIpmiPort()));
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            if (mockFail) {
+                return operr("mock power reset host[%s] by ipmi failed.", host.getUuid());
+            }
+            return null;
         }
 
         final IPMIToolCaller caller = IPMIToolCaller.fromHostVo(host);
@@ -114,37 +143,65 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
         if (0 == ret) {
             return null;
         } else {
-            return operr("power off host[%s] by ipmi failed.", host.getUuid());
+            return operr("power reset host[%s] by ipmi failed.", host.getUuid());
         }
     }
 
     @Override
-    public String getPowerStatus(HostVO host) {
+    public HostPowerStatus getPowerStatus(HostVO host) {
         HostIpmiVO ipmi = host.getIpmi();
         return getPowerStatus(ipmi);
     }
 
-    public static String getPowerStatus(HostIpmiVO ipmi) {
-        if (null == ipmi || null == ipmi.getIpmiAddress()) {
-            return HostPowerStatus.POWER_UNKNOWN;
+    public static HostPowerStatus getPowerStatus(HostIpmiVO ipmi) {
+        return getPowerStatusWithErrorCode(ipmi).first();
+    }
+
+    public static Pair<HostPowerStatus, ErrorCode> getPowerStatusWithErrorCode(HostIpmiVO ipmi) {
+        if (mockedPowerStatus != null) {
+            return new Pair(mockedPowerStatus, null);
         }
 
-        if (null == ipmi.getIpmiUsername() || null == ipmi.getIpmiPassword()) {
-            return HostPowerStatus.UN_CONFIGURED;
+        if (null == ipmi || null == ipmi.getIpmiAddress()
+                || null == ipmi.getIpmiUsername()
+                || null == ipmi.getIpmiPassword()) {
+            return new Pair(HostPowerStatus.UN_CONFIGURED,
+                    operr("ipmi information is not complete."));
         }
 
         ShellResult rst = IPMIToolCaller.fromHostIpmiVo(ipmi).status();
         if (rst.getRetCode() == 0) {
             if (rst.getStdout().trim().equals("Chassis Power is on")) {
-                return HostPowerStatus.POWER_ON;
+                return new Pair(HostPowerStatus.POWER_ON, null);
             } else if (rst.getStdout().trim().equals("Chassis Power is off")) {
-                return HostPowerStatus.POWER_OFF;
+                return new Pair(HostPowerStatus.POWER_OFF, null);
             } else {
-                return HostPowerStatus.POWER_UNKNOWN;
+                return new Pair(HostPowerStatus.POWER_UNKNOWN, operr("host[%s] got unexpected return value", ipmi.getUuid()));
             }
         } else {
-            return HostPowerStatus.POWER_UNKNOWN;
+            return new Pair(HostPowerStatus.POWER_UNKNOWN, operr("host[%s] can not connect ipmi[%s], because:%s",
+                    ipmi.getUuid(),
+                    rst.getStderr()));
         }
+    }
+
+    public static ErrorCode isIpmiReachable(HostIpmiVO ipmi) {
+        ShellResult rst = IPMIToolCaller.fromHostIpmiVo(ipmi).status();
+        if (rst.getRetCode() == 0) {
+            return null;
+        } else {
+            return operr("host ipmi[%s] is not reachable.because %s",
+                    ipmi.getIpmiAddress(),
+                    rst.getStderr());
+        }
+    }
+
+    public static void setMockedPowerStatus(HostPowerStatus mockedPowerStatus) {
+        HostIpmiPowerExecutor.mockedPowerStatus = mockedPowerStatus;
+    }
+
+    public static void setMockFail(boolean mockFail) {
+        HostIpmiPowerExecutor.mockFail = mockFail;
     }
 
     protected static class IPMIToolCaller {
