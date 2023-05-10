@@ -53,6 +53,8 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
             handle((APIGetResourceBindableConfigMsg) msg);
         } else if (msg instanceof APIGetResourceConfigMsg) {
             handle((APIGetResourceConfigMsg) msg);
+        } else if (msg instanceof APIGetResourceConfigsMsg) {
+            handle((APIGetResourceConfigsMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -85,6 +87,26 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
 
         reply.setBindableConfigs(results);
         bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetResourceConfigsMsg msg) {
+        APIGetResourceConfigsReply reply = new APIGetResourceConfigsReply();
+        List<String> identities = new ArrayList<>(msg.getNames().stream().map(msg::getIdentity).collect(Collectors.toList()));
+
+        reply.setConfigs(new ArrayList<>());
+        for (String identity : identities) {
+            ResourceConfig rc = getResourceConfig(identity);
+            List<ResourceConfigInventory> configs = rc.getEffectiveResourceConfigs(msg.getResourceUuid());
+            ResourceConfigStruct struct = new ResourceConfigStruct();
+            struct.setEffectiveConfigs(configs);
+            struct.setName(rc.globalConfig.getName());
+            struct.setValue(configs.isEmpty() ? rc.defaultValue(String.class) : configs.get(0).getValue());
+
+            reply.getConfigs().add(struct);
+        }
+
+        bus.reply(msg, reply);
+
     }
 
     private void handle(APIGetResourceConfigMsg msg) {

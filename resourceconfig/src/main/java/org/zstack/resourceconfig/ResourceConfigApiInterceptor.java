@@ -12,7 +12,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.rbac.CheckIfAccountCanAccessResource;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -33,25 +36,52 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
 
         if (msg instanceof APIGetResourceConfigMsg) {
             validate((APIGetResourceConfigMsg) msg);
+        } else if (msg instanceof APIGetResourceConfigsMsg) {
+            validate((APIGetResourceConfigsMsg) msg);
         }
         return msg;
     }
 
     private void validate(ResourceConfigMessage msg) {
-        GlobalConfig gc = gcf.getAllConfig().get(msg.getIdentity());
-        if (gc == null) {
-            throw new ApiMessageInterceptionException(argerr("no global config[category:%s, name:%s] found",
-                    msg.getCategory(), msg.getName()));
+        List<String> identities = new ArrayList<>();
+
+        if (msg.getName() != null) {
+            identities.add(msg.getIdentity(msg.getName()));
         }
 
-        ResourceConfig rc = rcf.getResourceConfig(gc.getIdentity());
-        if (rc == null) {
-            throw new ApiMessageInterceptionException(argerr("global config[category:%s, name:%s] cannot bind resource",
-                    msg.getCategory(), msg.getName()));
+        if (msg.getNames() != null) {
+            for (String name : msg.getNames()) {
+                identities.add(msg.getIdentity(name));
+            }
+        }
+
+        for (String identity : identities) {
+            GlobalConfig gc = gcf.getAllConfig().get(identity);
+            if (gc == null) {
+                throw new ApiMessageInterceptionException(argerr("no global config[category:%s, name:%s] found",
+                        msg.getCategory(), identity));
+            }
+
+            ResourceConfig rc = rcf.getResourceConfig(gc.getIdentity());
+            if (rc == null) {
+                throw new ApiMessageInterceptionException(argerr("global config[category:%s, name:%s] cannot bind resource",
+                        msg.getCategory(), identity));
+            }
         }
     }
 
     private void validate(APIGetResourceConfigMsg msg) {
+        if (acMgr.isAdmin(msg.getSession())) {
+            return;
+        }
+
+        if (!CheckIfAccountCanAccessResource.check(Collections.singletonList(msg.getResourceUuid()), msg.getSession().getAccountUuid()).isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("account has no access to the resource[uuid: %s]",
+                    msg.getResourceUuid()));
+        }
+    }
+
+    private void validate(APIGetResourceConfigsMsg msg) {
         if (acMgr.isAdmin(msg.getSession())) {
             return;
         }
