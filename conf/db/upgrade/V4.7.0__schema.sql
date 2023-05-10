@@ -28,5 +28,3 @@ CREATE TABLE IF NOT EXISTS `zstack`.`CpuFeaturesHistoryVO` (
   PRIMARY KEY  (`id`),
   CONSTRAINT CpuFeaturesHistoryVOHostVO FOREIGN KEY (srcHostUuid) REFERENCES HostEO (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-DELETE FROM HostOsCategoryVO;

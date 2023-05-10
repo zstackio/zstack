@@ -19,7 +19,7 @@ public interface HypervisorMetadataCollector {
          */
         private String architecture;
         /**
-         * "centos 7.6.1810" / "centos 7.4.1708" ...
+         * "centos core 7.6.1810" / "centos core 7.4.1708" ...
          */
         private String osReleaseVersion;
         /**
