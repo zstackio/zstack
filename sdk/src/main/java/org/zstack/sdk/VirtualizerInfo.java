@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.HypervisorVersionState;
-
 public class VirtualizerInfo  {
 
     public java.lang.String hypervisor;
