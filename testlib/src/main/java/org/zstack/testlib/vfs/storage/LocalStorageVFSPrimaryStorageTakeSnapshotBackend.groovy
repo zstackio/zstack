@@ -68,27 +68,26 @@ class LocalStorageVFSPrimaryStorageTakeSnapshotBackend implements AbstractFileSy
                 .param("deviceId", cmd.volume.getDeviceId())
                 .find()
 
-        assert src : "cannot find source snapshot[path: ${cmd.srcPath}] of VM[uuid: ${cmd.vmUuid}] in database"
-        VolumeSnapshotInventory sp = src.toInventory()
+        assert src || cmd.fullRebase: "cannot find source snapshot[path: ${cmd.srcPath}] of VM[uuid: ${cmd.vmUuid}] in database"
+        VolumeSnapshotInventory sp = src?.toInventory()
 
         String storagePath = Q.New(PrimaryStorageVO.class)
                 .select(PrimaryStorageVO_.mountPath)
-                .eq(PrimaryStorageVO_.uuid, sp.primaryStorageUuid)
+                .eq(PrimaryStorageVO_.uuid, volume.primaryStorageUuid)
                 .findValue()
 
         VFS vfs = LocalStorageSpec.vfs(LocalStorageSpec.hostUuidFromHTTPHeaders(e), storagePath, spec)
-        vfs.Assert(vfs.exists(sp.primaryStorageInstallPath), "missing snapshot install ${sp.primaryStorageInstallPath}")
-        Qcow2 from = vfs.getFile(sp.primaryStorageInstallPath, true)
-        vfs.Assert(vfs.exists(volume.installPath), "missing snapshot install ${sp.primaryStorageInstallPath}")
+
+        vfs.Assert(vfs.exists(volume.installPath), "missing snapshot install ${volume.installPath}")
         Qcow2 to = vfs.getFile(volume.installPath, true)
         assert to.backingFile != null : "the target[${to.pathString()}] volume has no backing file"
-        if (to.backingQcow2().pathString() == from.pathString()) {
-            assert cmd.fullRebase : "the snapshot is volume's backing file, this must be a fullRebase: ${e.body}"
-        }
 
         if (cmd.fullRebase) {
             to.rebase((String)null)
         } else {
+            vfs.Assert(vfs.exists(sp.primaryStorageInstallPath), "missing snapshot install ${sp.primaryStorageInstallPath}")
+            Qcow2 from = vfs.getFile(sp.primaryStorageInstallPath, true)
+            assert to.backingQcow2().pathString() != from.pathString() : "the snapshot is volume's backing file, this must be a fullRebase: ${e.body}"
             to.rebase(from.path)
         }
     }

@@ -50,6 +50,8 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
+import org.zstack.storage.primary.ImageCacheUtil;
+import org.zstack.storage.primary.PrimaryStorageGlobalProperty;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
@@ -894,7 +896,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public String makeCachedImageInstallUrl(ImageInventory iminv) {
-        return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv));
+        return ImageCacheUtil.getImageCachePath(iminv, it -> PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv)));
     }
 
     public String makeCachedImageInstallUrlFromImageUuidForTemplate(String imageUuid) {
@@ -2112,7 +2114,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.volumeUuid = volumeUuid;
         cmd.installPath = installPath;
         cmd.templatePathInCache = sp.getPrimaryStorageInstallPath();
-
         httpCall(CREATE_VOLUME_WITH_BACKING_PATH, hostUuid, cmd, CreateVolumeWithBackingRsp.class, new ReturnValueCompletion<CreateVolumeWithBackingRsp>(completion) {
             @Override
             public void success(CreateVolumeWithBackingRsp rsp) {
@@ -3183,12 +3184,27 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getVolumeSnapshot().getUuid())
                 .find();
 
+        boolean incremental = msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
+        if (incremental && PrimaryStorageGlobalProperty.USE_SNAPSHOT_AS_INCREMENTAL_CACHE) {
+            ImageCacheVO cache = createTemporaryImageCacheFromVolumeSnapshot(msg.getImageInventory(), msg.getVolumeSnapshot());
+            LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
+            path.volumeSnapshotUuid = msg.getVolumeSnapshot().getUuid();
+            path.hostUuid = ref.getHostUuid();
+            cache.setInstallUrl(path.makeFullPath());
+            dbf.persist(cache);
+            reply.setLocateHostUuid(ref.getHostUuid());
+            reply.setInventory(cache.toInventory());
+            reply.setIncremental(true);
+            completion.success(reply);
+            return;
+        }
+
         ImageCache cache = new ImageCache();
         cache.primaryStorageInstallPath = makeCachedImageInstallUrl(msg.getImageInventory());
         cache.hostUuid = ref.getHostUuid();
         cache.image = msg.getImageInventory();
         cache.volumeResourceInstallPath = msg.getVolumeSnapshot().getPrimaryStorageInstallPath();
-        cache.incremental = msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
+        cache.incremental =incremental;
         cache.download(new ReturnValueCompletion<ImageCacheInventory>(completion) {
             @Override
             public void success(ImageCacheInventory inv) {

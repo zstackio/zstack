@@ -1,10 +1,7 @@
 package org.zstack.header.storage.snapshot;
 
 
-import org.zstack.header.cluster.ClusterEO;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vo.BaseResource;
-import org.zstack.header.vo.EO;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.volume.VolumeEO;
@@ -31,12 +28,19 @@ public class VolumeSnapshotReferenceVO {
     private long id;
 
     @Column
-    @ForeignKey(parentEntityClass = VolumeEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String volumeUuid;
 
     @Column
     @ForeignKey(parentEntityClass = VolumeSnapshotVO.class, onDeleteAction = ForeignKey.ReferenceOption.RESTRICT)
     private String volumeSnapshotUuid;
+
+    @Column
+    @ForeignKey(parentEntityClass = VolumeSnapshotReferenceTreeVO.class, onDeleteAction = ForeignKey.ReferenceOption.RESTRICT)
+    private String treeUuid;
+
+    @Column
+    @ForeignKey(parentEntityClass = VolumeSnapshotReferenceVO.class, onDeleteAction = ForeignKey.ReferenceOption.SET_NULL)
+    private Long parentId;
 
     @Column
     private String volumeSnapshotInstallUrl;
@@ -73,6 +77,13 @@ public class VolumeSnapshotReferenceVO {
         this.id = id;
     }
 
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
+    }
     public String getVolumeUuid() {
         return volumeUuid;
     }
@@ -87,6 +98,14 @@ public class VolumeSnapshotReferenceVO {
 
     public void setVolumeSnapshotUuid(String volumeSnapshotUuid) {
         this.volumeSnapshotUuid = volumeSnapshotUuid;
+    }
+
+    public String getTreeUuid() {
+        return treeUuid;
+    }
+
+    public void setTreeUuid(String treeUuid) {
+        this.treeUuid = treeUuid;
     }
 
     public String getVolumeSnapshotInstallUrl() {

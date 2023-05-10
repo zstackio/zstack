@@ -17,6 +17,9 @@ public class VolumeSnapshotTreeAO extends ResourceVO {
     private String volumeUuid;
 
     @Column
+    private String rootImageUuid;
+
+    @Column
     private boolean current;
 
     @Column
@@ -40,6 +43,14 @@ public class VolumeSnapshotTreeAO extends ResourceVO {
 
     public void setVolumeUuid(String volumeUuid) {
         this.volumeUuid = volumeUuid;
+    }
+
+    public void setRootImageUuid(String rootImageUuid) {
+        this.rootImageUuid = rootImageUuid;
+    }
+
+    public String getRootImageUuid() {
+        return rootImageUuid;
     }
 
     public Timestamp getCreateDate() {

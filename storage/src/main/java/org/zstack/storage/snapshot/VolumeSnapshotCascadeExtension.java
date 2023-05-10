@@ -10,7 +10,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacadeImpl;
@@ -209,18 +208,8 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
                 .eq(VolumeSnapshotTreeVO_.volumeUuid, volumeUuid)
                 .listValues();
 
-        List<Tuple> ts = SQL.New("select ref.volumeSnapshotUuid, snapshot.treeUuid" +
-                        " from VolumeSnapshotReferenceVO ref, VolumeSnapshotVO snapshot" +
-                        " where ref.volumeUuid = :volumeUuid" +
-                        " and ref.volumeSnapshotUuid = snapshot.uuid" +
-                        " group by ref.volumeSnapshotUuid", Tuple.class)
-                .param("volumeUuid", volumeUuid)
-                .list();
-
-        Map<String, List<String>> referenceSnapshotTrees = ts.stream().collect(Collectors.groupingBy(
-                tuple -> tuple.get(1, String.class),
-                Collectors.mapping(tuple -> tuple.get(0, String.class), Collectors.toList())
-        ));
+        Map<String, List<String>> referenceSnapshotTrees = VolumeSnapshotReferenceUtils
+                .getDirectReferencedSnapshotUuidsGroupByTree(volumeUuid);
 
         return cuuids.stream().flatMap(it ->
                         getDeletableSnapshotUuidOnVolumeExpunge(it,  referenceSnapshotTrees.get(it)).stream())

@@ -8,6 +8,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.Volume;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
+import org.zstack.storage.primary.ImageCacheUtil;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.path.PathUtil;
@@ -40,7 +41,7 @@ public class NfsPrimaryStorageKvmHelper {
     }
     
     public static String makeCachedImageInstallUrl(PrimaryStorageInventory pinv, ImageInventory iminv) {
-        return PathUtil.join(pinv.getMountPath(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv));
+        return ImageCacheUtil.getImageCachePath(iminv, it -> PathUtil.join(pinv.getMountPath(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv)));
     }
 
     public static String getCachedImageDir(PrimaryStorageInventory pinv){

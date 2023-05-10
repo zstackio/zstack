@@ -26,6 +26,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.volume.VolumeType;
+import org.zstack.storage.snapshot.VolumeSnapshotReferenceUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -298,7 +299,7 @@ public abstract class ImageCacheCleaner {
             return null;
         }
 
-        return deleted;
+        return VolumeSnapshotReferenceUtils.filterStaleImageCache(deleted);
     }
 
     @Transactional
@@ -347,7 +348,7 @@ public abstract class ImageCacheCleaner {
             return null;
         }
 
-        return deleted;
+        return VolumeSnapshotReferenceUtils.filterStaleImageCache(deleted);
     }
 
     @Transactional

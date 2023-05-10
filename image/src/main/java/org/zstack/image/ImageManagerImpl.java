@@ -240,6 +240,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                 vo.setActualSize(cr.getActualSize());
                 vo.setStatus(ImageStatus.Ready);
+                if (cr.getImageUrl() != null) {
+                    vo.setUrl(cr.getImageUrl());
+                }
                 dbf.update(vo);
                 reply.setInventory(ImageInventory.valueOf(vo));
                 reply.setLocateHostUuid(cr.getLocationHostUuid());
