@@ -9,20 +9,22 @@ import java.util.Objects;
  */
 public class HostOperationSystem {
     public final String distribution;
+    public final String release;
     public final String version;
 
-    private HostOperationSystem(String osDistribution, String version) {
+    private HostOperationSystem(String osDistribution, String release, String version) {
         this.distribution = osDistribution;
+        this.release = release;
         this.version = version;
     }
 
     public boolean isValid() {
-        return distribution != null && version != null;
+        return distribution != null && release != null && version != null;
     }
 
     @Override
     public String toString() {
-        return String.format("%s %s", distribution, version);
+        return String.format("%s %s %s", distribution, release, version);
     }
 
     @Override
@@ -33,15 +35,16 @@ public class HostOperationSystem {
             return false;
         HostOperationSystem that = (HostOperationSystem) o;
         return Objects.equals(distribution, that.distribution)
+                && Objects.equals(release, that.release)
                 && Objects.equals(version, that.version);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(distribution, version);
+        return Objects.hash(distribution, release, version);
     }
 
-    public static HostOperationSystem of(String distribution, String osVersion) {
-        return new HostOperationSystem(distribution, osVersion);
+    public static HostOperationSystem of(String distribution, String osRelease, String osVersion) {
+        return new HostOperationSystem(distribution, osRelease, osVersion);
     }
 }
