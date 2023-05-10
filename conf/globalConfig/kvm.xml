@@ -233,4 +233,20 @@
         <defaultValue>true</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+
+    <config>
+        <category>kvm</category>
+        <name>vm.suspend.to.ram</name>
+        <description>Enable vm suspend to ram</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>vm.suspend.to.disk</name>
+        <description>Enable vm suspend to disk</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>
