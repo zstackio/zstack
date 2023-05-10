@@ -29,7 +29,7 @@ public class KvmHypervisorInfoHelper {
             Collection<String> hostUuidList) {
         List<Tuple> tuples = Q.New(KVMHostVO.class)
                 .select(KVMHostVO_.uuid, KVMHostVO_.architecture,
-                        KVMHostVO_.osDistribution, KVMHostVO_.osRelease, KVMHostVO_.osVersion)
+                        KVMHostVO_.osDistribution, KVMHostVO_.osVersion)
                 .notNull(HostVO_.architecture)
                 .in(KVMHostVO_.uuid, hostUuidList)
                 .listTuple();
@@ -38,7 +38,7 @@ public class KvmHypervisorInfoHelper {
         Map<String, HostOperationSystem> hostOsMap = tuples.stream()
                 .collect(Collectors.toMap(tuple -> tuple.get(0, String.class),
                         tuple -> HostOperationSystem.of(
-                                tuple.get(2, String.class), tuple.get(3, String.class), tuple.get(4, String.class))));
+                                tuple.get(2, String.class), tuple.get(3, String.class))));
 
         final Map<Pair<String, String>, HostOsCategoryVO> caches = new HashMap<>();
         final Map<String, HostOsCategoryVO> results = new HashMap<>();
