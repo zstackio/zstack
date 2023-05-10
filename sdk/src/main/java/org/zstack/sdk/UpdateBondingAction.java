@@ -31,14 +31,17 @@ public class UpdateBondingAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List slaveUuids;
 
-    @Param(required = true, validValues = {"LinuxBonding","OvsBonding"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type = "LinuxBonding";
+    @Param(required = false, validValues = {"LinuxBonding","OvsBonding"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
-    @Param(required = true, validValues = {"802.3ad","active-backup"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String mode = "active-backup";
+    @Param(required = false, validValues = {"802.3ad","active-backup"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String mode;
 
     @Param(required = false, validValues = {"layer2","layer2+3","layer3+4"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String xmitHashPolicy;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
     public java.util.List systemTags;

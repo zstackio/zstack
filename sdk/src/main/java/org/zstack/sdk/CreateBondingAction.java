@@ -43,6 +43,9 @@ public class CreateBondingAction extends AbstractAction {
     @Param(required = false, validValues = {"layer2","layer2+3","layer3+4"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String xmitHashPolicy;
 
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
