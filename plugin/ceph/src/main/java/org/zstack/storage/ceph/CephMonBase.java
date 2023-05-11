@@ -134,7 +134,7 @@ public abstract class CephMonBase {
             this.success = success;
         }
 
-        protected ErrorCode buildErrorCode() {
+        public ErrorCode buildErrorCode() {
             if (success) {
                 return null;
             }

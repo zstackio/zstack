@@ -28,6 +28,9 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
+import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
 import org.zstack.header.storage.snapshot.ConsistentType;
 import org.zstack.header.storage.snapshot.group.MemorySnapshotValidatorExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -343,7 +346,24 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                             hvType, maxDataVolumeNum, count, msg.getVmInstanceUuid()));
                 }
 
+                String hostUuid = Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
+                        .select(VmInstanceVO_.hostUuid)
+                        .findValue();
+                if (hostUuid == null) {
+                    return;
+                }
 
+                PrimaryStorageHostStatus primaryStorageHostStatus = Q.New(PrimaryStorageHostRefVO.class)
+                        .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
+                        .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, vol.getPrimaryStorageUuid())
+                        .select(PrimaryStorageHostRefVO_.status)
+                        .findValue();
+                if (primaryStorageHostStatus == PrimaryStorageHostStatus.Disconnected) {
+                    throw new ApiMessageInterceptionException(argerr("Can not attach volume to vm runs" +
+                            " on host[uuid: %s] which is disconnected with volume's storage[uuid: %s]",
+                            hostUuid, vol.getPrimaryStorageUuid()));
+                }
             }
         }.execute();
 

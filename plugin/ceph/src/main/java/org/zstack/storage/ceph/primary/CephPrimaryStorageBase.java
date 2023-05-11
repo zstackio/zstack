@@ -4515,16 +4515,24 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             public void run(MessageReply reply) {
                 KVMHostAsyncHttpCallReply kr = reply.castReply();
                 CheckHostStorageConnectionRsp rsp = kr.toResponse(CheckHostStorageConnectionRsp.class);
-                if (!rsp.isSuccess()) {
-                    wc.addError(operr("operation error, because:%s", rsp.getError()));
-                    wc.done();
-                    return;
-                }
 
                 UpdatePrimaryStorageHostStatusMsg umsg = new UpdatePrimaryStorageHostStatusMsg();
                 umsg.setHostUuid(msg.getHostUuid());
                 umsg.setPrimaryStorageUuid(self.getUuid());
-                umsg.setStatus(PrimaryStorageHostStatus.Connected);
+
+                if (rsp == null) {
+                    wc.addError(operr("operation error, because: failed to get response"));
+                    umsg.setStatus(PrimaryStorageHostStatus.Disconnected);
+                } else {
+                    ErrorCode errorCode = rsp.buildErrorCode();
+                    if (errorCode != null) {
+                        wc.addError(operr("operation error, because:%s", errorCode));
+                        umsg.setStatus(PrimaryStorageHostStatus.Disconnected);
+                    } else {
+                        umsg.setStatus(PrimaryStorageHostStatus.Connected);
+                    }
+                }
+
                 bus.makeTargetServiceIdByResourceUuid(umsg, PrimaryStorageConstant.SERVICE_ID, umsg.getPrimaryStorageUuid());
                 bus.send(umsg);
                 wc.done();
@@ -4533,8 +4541,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (!errorCodeList.getCauses().isEmpty()) {
-                    completion.fail(errorCodeList.getCauses().get(0));
-                    return;
+                    logger.warn(String.format("check host storage connection failed, because: %s", errorCodeList.getCauses()));
                 }
 
                 completion.success();
