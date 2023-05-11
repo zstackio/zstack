@@ -214,6 +214,12 @@
     </osInfo>
     <osInfo>
         <platform>Other</platform>
+        <name>Oracle</name>
+        <version>7</version>
+        <osRelease>Oracle Linux 7</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Other</platform>
         <name>Other</name>
         <version></version>
         <osRelease>Other</osRelease>
