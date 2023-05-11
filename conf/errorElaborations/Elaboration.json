@@ -496,6 +496,14 @@
     "message_en": "Could not perform this operation, because the host is disconnected."
   },
   {
+    "category": "HOST",
+    "code": "1031",
+    "method": "regex",
+    "regex": ".*failed to migrate vm\\[uuid:.*] from kvm host\\[uuid:.*, ip:.*] to dest host\\[ip:.*].*.No enough physical memory for guest.*",
+    "message_cn": "在物理机上迁移云主机失败，因为物理机已经没有足够的物理内存可供虚拟机使用。",
+    "message_en": "Failed to migrate VM on KVM host, because host does not have enough physical memory for VM."
+  },
+  {
     "category": "IAM2",
     "code": "1000",
     "method": "regex",
