@@ -66,6 +66,15 @@ doc {
 					optional true
 					since "0.6"
 				}
+				column {
+					name "isDefault"
+					enclosedIn "updateZone"
+					desc ""
+					location "body"
+					type "Boolean"
+					optional true
+					since "0.6"
+				}
 			}
         }
 
