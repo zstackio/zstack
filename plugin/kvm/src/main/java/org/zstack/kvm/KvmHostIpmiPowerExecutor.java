@@ -8,9 +8,13 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.host.HostIpmiVO;
+import org.zstack.header.host.HostPowerStatus;
 import org.zstack.header.host.HostVO;
+import org.zstack.utils.data.Pair;
 
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * @Author : jingwang
@@ -25,29 +29,38 @@ public class KvmHostIpmiPowerExecutor extends HostIpmiPowerExecutor implements K
 
     @Override
     public Flow createKvmHostConnectingFlow(KVMHostConnectedContext context) {
-        final String hostUuid = context.getInventory().getUuid();
-        String currentIpmiAddress = HostSystemTags.IPMI_ADDRESS.getTokenByResourceUuid(hostUuid, HostSystemTags.IPMI_ADDRESS_TOKEN);
-        if (IPMI_NONE_VALUE.equals(currentIpmiAddress)) {
-            currentIpmiAddress = null;
-        }
-        HostVO host = dbf.findByUuid(hostUuid, HostVO.class);
-        HostIpmiVO ipmi = host.getIpmi();
-        if (ipmi != null) {
-            ipmi.setIpmiAddress(currentIpmiAddress);
-            ipmi.setIpmiPowerStatus(getPowerStatus(ipmi));
-            dbf.update(ipmi);
-        } else {
-            final HostIpmiVO hostIpmiVO = new HostIpmiVO();
-            hostIpmiVO.setUuid(hostUuid);
-            hostIpmiVO.setIpmiAddress(currentIpmiAddress);
-            hostIpmiVO.setIpmiPort(IPMI_DEFAULT_PORT);
-            hostIpmiVO.setIpmiPowerStatus(getPowerStatus(hostIpmiVO));
-            dbf.persist(hostIpmiVO);
-        }
-
         return new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                String __name__ = "update-host-ipmi-info";
+
+                final KVMHostInventory inventory = context.getInventory();
+                String hostUuid = inventory.getUuid();
+                String currentIpmiAddress = HostSystemTags.IPMI_ADDRESS.getTokenByResourceUuid(hostUuid, HostSystemTags.IPMI_ADDRESS_TOKEN);
+                HostPowerStatus status = HostPowerStatus.POWER_ON;
+                if (IPMI_NONE_VALUE.equals(currentIpmiAddress)) {
+                    currentIpmiAddress = null;
+                }
+
+                HostVO host = dbf.findByUuid(hostUuid, HostVO.class);
+                HostIpmiVO ipmi = host.getIpmi();
+                if (isIpmiUnConfigured(ipmi)) {
+                    status = HostPowerStatus.UN_CONFIGURED;
+                }
+
+                if (ipmi != null) {
+                    ipmi.setIpmiAddress(currentIpmiAddress);
+                    ipmi.setIpmiPowerStatus(status);
+                    dbf.update(ipmi);
+                } else {
+                    final HostIpmiVO hostIpmiVO = new HostIpmiVO();
+                    hostIpmiVO.setUuid(hostUuid);
+                    hostIpmiVO.setIpmiAddress(currentIpmiAddress);
+                    hostIpmiVO.setIpmiPort(IPMI_DEFAULT_PORT);
+                    hostIpmiVO.setIpmiPowerStatus(status);
+                    dbf.persist(hostIpmiVO);
+                }
+
                 trigger.next();
             }
         };

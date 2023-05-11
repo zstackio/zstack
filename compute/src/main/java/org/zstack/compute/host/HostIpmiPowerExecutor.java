@@ -162,9 +162,7 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
             return new Pair(mockedPowerStatus, null);
         }
 
-        if (null == ipmi || null == ipmi.getIpmiAddress()
-                || null == ipmi.getIpmiUsername()
-                || null == ipmi.getIpmiPassword()) {
+        if (isIpmiUnConfigured(ipmi)) {
             return new Pair(HostPowerStatus.UN_CONFIGURED,
                     operr("ipmi information is not complete."));
         }
@@ -183,6 +181,12 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
                     ipmi.getUuid(),
                     rst.getStderr()));
         }
+    }
+
+    public static boolean isIpmiUnConfigured(HostIpmiVO ipmi) {
+        return null == ipmi || null == ipmi.getIpmiAddress()
+                || null == ipmi.getIpmiUsername()
+                || null == ipmi.getIpmiPassword();
     }
 
     public static ErrorCode isIpmiReachable(HostIpmiVO ipmi) {

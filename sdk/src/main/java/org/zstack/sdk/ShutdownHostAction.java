@@ -29,13 +29,7 @@ public class ShutdownHostAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean waitTaskCompleted = false;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean returnEarly = false;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long maxWaitTime = 0L;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean force = false;

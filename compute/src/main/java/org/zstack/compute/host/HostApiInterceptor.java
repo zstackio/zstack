@@ -59,22 +59,10 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             validate((APIChangeHostStateMsg) msg);
         } else if (msg instanceof APIReconnectHostMsg){
             validate((APIReconnectHostMsg) msg);
-        } else if (msg instanceof APIGetHostWebSshUrlMsg) {
-            validate((APIGetHostWebSshUrlMsg) msg);
         }
 
         return msg;
     }
-
-    private void validate(APIGetHostWebSshUrlMsg msg) {
-        String ZOPS_CONTAINER_NAME = "zops-controller";
-        ShellResult ret = ShellUtils.runAndReturn(String.format("docker exec %s systemctl is-active webssh", ZOPS_CONTAINER_NAME));
-
-        if (!ret.isReturnCode(0)) {
-            throw new ApiMessageInterceptionException(operr("webssh server is not running."));
-        }
-    }
-
     private void validate(APIDeleteHostMsg msg) {
         if (!dbf.isExist(msg.getUuid(), HostVO.class)) {
             APIDeleteHostEvent evt = new APIDeleteHostEvent(msg.getId());
