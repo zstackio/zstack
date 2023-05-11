@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class GuestToolsStateInventory  {
 
     public java.lang.String vmInstanceUuid;
