@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.core.encrypt.EncryptAfterSaveDbRecordExtensionPoint;
 import org.zstack.header.core.encrypt.EncryptColumn;
+import org.zstack.header.core.encrypt.IntegrityVerificationResourceFactory;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -25,6 +26,13 @@ public aspect EncryptColumnAspect {
            && target(mgr)
            && args(entity) {
          Field[] fields = entity.getClass().getDeclaredFields();
+         for (IntegrityVerificationResourceFactory f : pluginRegistry.getExtensionList(IntegrityVerificationResourceFactory.class)) {
+             if (entity.getClass().getSimpleName().equals(f.getResourceType())) {
+                 f.doIntegrityAfterSaveDbRecord(entity);
+                 break;
+             }
+         }
+
          for (Field field : fields) {
              if (field.getAnnotation(EncryptColumn.class) != null) {
                  ResourceVO resourceVO = (ResourceVO) entity;
@@ -38,6 +46,13 @@ public aspect EncryptColumnAspect {
             && target(mgr)
             && args(entity) {
         Field[] fields = entity.getClass().getDeclaredFields();
+        for (IntegrityVerificationResourceFactory f : pluginRegistry.getExtensionList(IntegrityVerificationResourceFactory.class)) {
+            if (entity.getClass().getSimpleName().equals(f.getResourceType())) {
+                f.doIntegrityAfterUpdateDbRecord(entity);
+                break;
+            }
+        }
+
         for (Field field : fields) {
             if (field.getAnnotation(EncryptColumn.class) != null) {
                 ResourceVO resourceVO = (ResourceVO) entity;

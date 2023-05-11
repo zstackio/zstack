@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class StartDataProtectionAction extends AbstractAction {
+public class AddIntegrityResourceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class StartDataProtectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.StartDataProtectionResult value;
+        public org.zstack.sdk.AddIntegrityResourceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,10 @@ public class StartDataProtectionAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String encryptType;
+    public java.lang.String resourceType;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
-    public java.lang.Integer auditsIntegrityDate;
+    public java.lang.Integer integrityResourceDataRangeInDays;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +63,8 @@ public class StartDataProtectionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.StartDataProtectionResult value = res.getResult(org.zstack.sdk.StartDataProtectionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.StartDataProtectionResult() : value; 
+        org.zstack.sdk.AddIntegrityResourceResult value = res.getResult(org.zstack.sdk.AddIntegrityResourceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddIntegrityResourceResult() : value; 
 
         return ret;
     }
@@ -94,7 +94,7 @@ public class StartDataProtectionAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/start/data/protection/";
+        info.path = "/integrity/resource/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
