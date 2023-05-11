@@ -103,7 +103,7 @@ public class CreateIAM2VirtualIDLdapBindingAction extends AbstractAction {
         info.path = "/iam2/ldap/bindings";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

@@ -97,7 +97,7 @@ public class AttachPrimaryStorageToClusterAction extends AbstractAction {
         info.path = "/clusters/{clusterUuid}/primary-storage/{primaryStorageUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

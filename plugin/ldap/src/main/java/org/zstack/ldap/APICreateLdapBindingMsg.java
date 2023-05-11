@@ -9,6 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/ldap/bindings",
         method = HttpMethod.POST,
+        parameterName = "params",
         responseClass = APICreateLdapBindingEvent.class
 )
 public class APICreateLdapBindingMsg extends APIMessage {

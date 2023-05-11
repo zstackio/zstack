@@ -97,7 +97,7 @@ public class AttachIAM2ProjectToIAM2OrganizationAction extends AbstractAction {
         info.path = "/iam2/projects/{projectUuid}/iam2/organizations/{organizationUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
