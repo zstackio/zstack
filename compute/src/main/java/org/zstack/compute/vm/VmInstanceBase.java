@@ -6000,6 +6000,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         changeVmNicNetwork(msg, nic, destL3, new ReturnValueCompletion<VmNicInventory>(msg) {
             @Override
             public void success(VmNicInventory returnValue) {
+                String originalL3Uuid = nic.getL3NetworkUuid();
+                new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), originalL3Uuid);
                 reply.setInventory(returnValue);
                 bus.reply(msg, reply);
             }
