@@ -1,8 +1,8 @@
 package org.zstack.header.host;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -11,10 +11,11 @@ import org.zstack.header.rest.RestRequest;
  */
 @RestRequest(
         path = "/hosts/webssh",
-        method = HttpMethod.GET,
-        responseClass = APIGetHostWebSshUrlReply.class
+        method = HttpMethod.POST,
+        responseClass = APIGetHostWebSshUrlEvent.class,
+        parameterName = "params"
 )
-public class APIGetHostWebSshUrlMsg extends APISyncCallMessage implements HostMessage {
+public class APIGetHostWebSshUrlMsg extends APIMessage implements HostMessage {
     @APIParam(nonempty = true, resourceType = HostVO.class)
     private String uuid;
 

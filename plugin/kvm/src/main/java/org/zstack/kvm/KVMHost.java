@@ -648,6 +648,13 @@ public class KVMHost extends HostBase implements Host {
 
     private void handle(GetHostWebSshUrlMsg msg) {
         GetHostWebSshUrlReply reply = new GetHostWebSshUrlReply();
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            String port = KVMGlobalConfig.HOST_WEBSSH_PORT.value();
+            reply.setUrl(String.format("ws://{{ip}}:%s/ws?id=%s", port, "mockId"));
+            bus.reply(msg, reply);
+            return;
+        }
+
         KVMHostVO host = dbf.findByUuid(msg.getHostUuid(), KVMHostVO.class);
         File privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY, true);
 

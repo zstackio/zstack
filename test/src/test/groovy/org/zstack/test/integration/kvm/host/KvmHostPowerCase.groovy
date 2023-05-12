@@ -61,6 +61,7 @@ class KvmHostPowerCase extends SubCase {
             testKvmHostRebootByAgent()
             testKvmHostRebootByIpmi()
             testKvmHostPowerOn()
+            testKvmHostPowerStatus()
         }
     }
 
@@ -237,5 +238,20 @@ class KvmHostPowerCase extends SubCase {
         t1.join()
         assert ret != null
         assert ret.getIpmiPowerStatus() == HostPowerStatus.POWER_ON.toString()
+    }
+
+    void testKvmHostPowerStatus() {
+        executor.mockedPowerStatus = HostPowerStatus.POWER_OFF
+        assert Q.New(HostIpmiVO)
+                .eq(HostIpmiVO_.uuid, host5.uuid)
+                .eq(HostIpmiVO_.ipmiPowerStatus, HostPowerStatus.POWER_ON)
+                .isExists()
+        getHostPowerStatus {
+            uuid = host5.uuid
+        }
+        assert Q.New(HostIpmiVO)
+                .eq(HostIpmiVO_.uuid, host5.uuid)
+                .eq(HostIpmiVO_.ipmiPowerStatus, HostPowerStatus.POWER_OFF)
+                .isExists()
     }
 }
