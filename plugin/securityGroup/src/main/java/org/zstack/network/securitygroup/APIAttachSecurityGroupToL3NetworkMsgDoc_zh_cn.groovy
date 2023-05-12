@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "securityGroupUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "安全组UUID"
 					location "url"
 					type "String"
@@ -32,7 +32,7 @@ doc {
 				}
 				column {
 					name "l3NetworkUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "三层网络UUID"
 					location "url"
 					type "String"

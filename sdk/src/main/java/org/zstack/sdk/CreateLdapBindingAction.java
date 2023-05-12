@@ -97,7 +97,7 @@ public class CreateLdapBindingAction extends AbstractAction {
         info.path = "/ldap/bindings";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

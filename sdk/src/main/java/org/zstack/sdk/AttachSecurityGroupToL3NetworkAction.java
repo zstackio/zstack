@@ -97,7 +97,7 @@ public class AttachSecurityGroupToL3NetworkAction extends AbstractAction {
         info.path = "/security-groups/{securityGroupUuid}/l3-networks/{l3NetworkUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

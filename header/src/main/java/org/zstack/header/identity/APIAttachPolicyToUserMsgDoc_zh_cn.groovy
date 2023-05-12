@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "userUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "用户UUID"
 					location "url"
 					type "String"
@@ -32,7 +32,7 @@ doc {
 				}
 				column {
 					name "policyUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "权限策略UUID"
 					location "body"
 					type "String"

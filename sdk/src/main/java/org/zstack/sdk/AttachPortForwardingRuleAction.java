@@ -97,7 +97,7 @@ public class AttachPortForwardingRuleAction extends AbstractAction {
         info.path = "/port-forwarding/{ruleUuid}/vm-instances/nics/{vmNicUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

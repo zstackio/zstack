@@ -97,7 +97,7 @@ public class AttachBackupStorageToZoneAction extends AbstractAction {
         info.path = "/zones/{zoneUuid}/backup-storage/{backupStorageUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
