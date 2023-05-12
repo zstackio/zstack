@@ -24,6 +24,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.agent.versioncontrol.AgentVersionVO;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -47,9 +48,7 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.data.Pair;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
@@ -181,7 +180,7 @@ public abstract class HostBase extends AbstractHost {
         GetHostPowerStatusMsg getPowerStatusMsg = new GetHostPowerStatusMsg();
         getPowerStatusMsg.setUuid(msg.getUuid());
         getPowerStatusMsg.setMethod(HostPowerManagementMethod.valueOf(msg.getMethod()));
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(getPowerStatusMsg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(getPowerStatusMsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
@@ -199,6 +198,15 @@ public abstract class HostBase extends AbstractHost {
 
     private void handle(APIGetHostWebSshUrlMsg msg) {
         APIGetHostWebSshUrlReply reply = new APIGetHostWebSshUrlReply();
+        String ZOPS_CONTAINER_NAME = "zops-controller";
+        ShellResult ret = ShellUtils.runAndReturn(String.format("docker exec %s systemctl is-active webssh", ZOPS_CONTAINER_NAME));
+        if (!ret.isReturnCode(0)) {
+            logger.debug(String.format("webssh server is not running.stdout: %s.stderr: %s",ret.getStdout(), ret.getStderr()));
+            reply.setError(operr("webssh server is not running."));
+            bus.reply(msg, reply);
+            return;
+        }
+
         GetHostWebSshUrlMsg getHostWebSshUrlMsg = new GetHostWebSshUrlMsg();
         getHostWebSshUrlMsg.setUuid(msg.getHostUuid());
         bus.makeLocalServiceId(getHostWebSshUrlMsg ,HostConstant.SERVICE_ID);
