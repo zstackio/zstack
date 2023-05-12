@@ -3602,14 +3602,63 @@ public class VmInstanceBase extends AbstractVmInstance {
         bus.publish(evt);
     }
 
+    private void setVmHostName(String vmInstanceUuid, Completion completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain().setName(String.format("set-hostname-%s", vmInstanceUuid));
+        chain.allowEmptyFlow();
+        chain.getData().put(VmInstanceConstant.Params.VmInstanceUuid.toString(), vmInstanceUuid);
+
+        final List<SetVmHostNameFlowInterface> exts = pluginRgty.getExtensionList(SetVmHostNameFlowInterface.class);
+        for (SetVmHostNameFlowInterface ext : exts) {
+            chain.then(ext.getSetVmHostNameFlow());
+        }
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
     private void handle(APIDeleteVmHostnameMsg msg) {
         APIDeleteVmHostnameEvent evt = new APIDeleteVmHostnameEvent(msg.getId());
+        String hostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(self.getUuid(), VmSystemTags.HOSTNAME_TOKEN);
+        if (hostname == null || hostname.isEmpty()) {
+            bus.publish(evt);
+            return;
+        }
+
         VmSystemTags.HOSTNAME.delete(self.getUuid());
-        bus.publish(evt);
+        setVmHostName(msg.getVmInstanceUuid(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                /* recover the hostName */
+                SystemTagCreator creator = VmSystemTags.HOSTNAME.newSystemTagCreator(self.getUuid());
+                creator.setTagByTokens(map(
+                        e(VmSystemTags.HOSTNAME_TOKEN, hostname)
+                ));
+                creator.create();
+
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+
+
     }
 
     private void handle(APISetVmHostnameMsg msg) {
-        if (!VmSystemTags.HOSTNAME.hasTag(self.getUuid())) {
+        String hostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(self.getUuid(), VmSystemTags.HOSTNAME_TOKEN);
+        if (hostname == null || hostname.isEmpty()) {
             SystemTagCreator creator = VmSystemTags.HOSTNAME.newSystemTagCreator(self.getUuid());
             creator.setTagByTokens(map(
                     e(VmSystemTags.HOSTNAME_TOKEN, msg.getHostname())
@@ -3622,7 +3671,26 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         APISetVmHostnameEvent evt = new APISetVmHostnameEvent(msg.getId());
-        bus.publish(evt);
+        setVmHostName(msg.getVmInstanceUuid(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                if (hostname != null && !hostname.isEmpty()) {
+                    VmSystemTags.HOSTNAME.update(self.getUuid(), VmSystemTags.HOSTNAME.instantiateTag(
+                            map(e(VmSystemTags.HOSTNAME_TOKEN, hostname))
+                    ));
+                } else {
+                    VmSystemTags.HOSTNAME.delete(self.getUuid());
+                }
+
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(final APIGetVmConsoleAddressMsg msg) {
