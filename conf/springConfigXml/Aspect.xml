@@ -19,6 +19,7 @@
     <bean class="org.zstack.core.aspect.AsyncSafeAspect" factory-method="aspectOf" />
     <bean class="org.zstack.core.aspect.BackAspect" factory-method="aspectOf" />
     <bean class="org.zstack.core.aspect.EncryptColumnAspect" factory-method="aspectOf" />
+    <bean class="org.zstack.core.aspect.ExceptionSafeAspect" factory-method="aspectOf" />
 
 </beans>
 

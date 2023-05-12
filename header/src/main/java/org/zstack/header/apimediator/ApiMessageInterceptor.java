@@ -10,4 +10,8 @@ import org.zstack.header.message.APIMessage;
  */
 public interface ApiMessageInterceptor {
     APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException;
+
+    default int getPriority() {
+        return 0;
+    }
 }
