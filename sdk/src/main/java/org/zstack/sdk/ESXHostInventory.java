@@ -20,4 +20,12 @@ public class ESXHostInventory extends org.zstack.sdk.HostInventory {
         return this.morval;
     }
 
+    public java.lang.String esxiVersion;
+    public void setEsxiVersion(java.lang.String esxiVersion) {
+        this.esxiVersion = esxiVersion;
+    }
+    public java.lang.String getEsxiVersion() {
+        return this.esxiVersion;
+    }
+
 }
