@@ -9,6 +9,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -78,9 +79,14 @@ public class VyosWaitAgentStartFlow extends NoRollbackFlow {
                 String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_GET_TYPE_PATH);
                 VirtualRouterCommands.GetTypeCommand cmd = new VirtualRouterCommands.GetTypeCommand();
                 cmd.setUuid(vrUuid);
-                VirtualRouterCommands.GetTypeRsp rsp = restf.syncJsonPost(url, cmd, VirtualRouterCommands.GetTypeRsp.class);
-                if (rsp.isSuccess()) {
-                    updateVrLoginUser(vrUuid, rsp.isVyos());
+                try {
+                    VirtualRouterCommands.GetTypeRsp rsp = restf.syncJsonPost(url, cmd, VirtualRouterCommands.GetTypeRsp.class, TimeUnit.SECONDS, 10);
+                    if (rsp.isSuccess()) {
+                        updateVrLoginUser(vrUuid, rsp.isVyos());
+                    }
+                }catch (OperationFailureException e){
+                    // old zvr will return 404
+                    updateVrLoginUser(vrUuid, true);
                 }
                 trigger.next();
             }
