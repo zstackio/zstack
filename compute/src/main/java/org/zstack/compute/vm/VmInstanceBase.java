@@ -1466,6 +1466,15 @@ public class VmInstanceBase extends AbstractVmInstance {
             bus.reply(msg, reply);
             completion.done();
             return;
+        } else if (operation == VmAbnormalLifeCycleOperation.VmNoStateFromRunningStateHostNotChanged
+                || operation == VmAbnormalLifeCycleOperation.VmNoStateFromCrashedStateHostNotChanged) {
+            // the vm is detected on the host again. It's largely because the host disconnected before
+            // and now reconnected
+            changeVmStateInDb(VmInstanceStateEvent.noState, () -> self.setHostUuid(msg.getHostUuid()));
+            fireEvent.run();
+            bus.reply(msg, reply);
+            completion.done();
+            return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmStoppedFromUnknownStateHostNotChanged) {
             // the vm comes out of the unknown state to the stopped state
             // it happens when an operation failure led the vm from the stopped state to the unknown state,

@@ -152,6 +152,38 @@ public class VmAbnormalLifeCycleStruct {
                         && struct.getCurrentState() == VmInstanceState.Stopped
                         && struct.getCurrentHostUuid().equals(struct.getOriginalHostUuid());
             }
+        },
+        VmNoStateFromRunningStateHostNotChanged {
+            @Override
+            boolean match(VmAbnormalLifeCycleStruct struct) {
+                return struct.getOriginalState() == VmInstanceState.Running
+                        && struct.getCurrentState() == VmInstanceState.NoState
+                        && Objects.equals(struct.getCurrentHostUuid(), struct.getOriginalHostUuid());
+            }
+        },
+        VmNoStateFromCrashedStateHostNotChanged {
+            @Override
+            boolean match(VmAbnormalLifeCycleStruct struct) {
+                return struct.getOriginalState() == VmInstanceState.Crashed
+                        && struct.getCurrentState() == VmInstanceState.NoState
+                        && Objects.equals(struct.getCurrentHostUuid(), struct.getOriginalHostUuid());
+            }
+        },
+        VmNoStateFromIntermediateState {
+            @Override
+            boolean match(VmAbnormalLifeCycleStruct struct) {
+                return VmInstanceState.intermediateStates.contains(struct.getOriginalState())
+                        && struct.getCurrentState() == VmInstanceState.NoState
+                        && Objects.equals(struct.getCurrentHostUuid(), struct.getOriginalHostUuid());
+            }
+        },
+        VmNoStateFromStoppedStateHostNotChanged {
+            @Override
+            boolean match(VmAbnormalLifeCycleStruct struct) {
+                return struct.getOriginalState() == VmInstanceState.Stopped
+                        && struct.getCurrentState() == VmInstanceState.NoState
+                        && Objects.equals(struct.getCurrentHostUuid(), struct.getOriginalHostUuid());
+            }
         };
 
         abstract boolean match(VmAbnormalLifeCycleStruct struct);
