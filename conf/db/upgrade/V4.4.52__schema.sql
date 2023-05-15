@@ -10,6 +10,19 @@ CREATE TABLE IF NOT EXISTS `zstack`.`CpuFeaturesHistoryVO` (
   CONSTRAINT CpuFeaturesHistoryVOHostVO FOREIGN KEY (srcHostUuid) REFERENCES HostEO (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`EncryptEntityMetadataVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `entityName` varchar(255) NOT NULL,
+    `columnName` varchar(255) NOT NULL,
+    `state` varchar(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT IGNORE INTO `zstack`.`EncryptEntityMetadataVO` (`entityName`, `columnName`, `state`, `lastOpDate`, `createDate`)
+                VALUES ('IAM2VirtualIDVO', 'password', 'NeedDecrypt', NOW(), NOW());
+
 DELIMITER $$
 CREATE PROCEDURE CheckAndCreateResourceConfig()
     BEGIN
