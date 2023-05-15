@@ -1189,8 +1189,8 @@
     "code": "1007",
     "method": "regex",
     "regex": "after filtering, .* returns zero candidate host, it means: .*",
-    "message_cn": "创建云主机失败，未找到合适的物理机。",
-    "message_en": "Failed to create VM, because no qualified host found."
+    "message_cn": "创建/启动云主机失败，未找到合适的物理机。",
+    "message_en": "Failed to create/start VM, because no qualified host found."
   },
   {
     "category": "VM",
