@@ -292,10 +292,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             ownedVips.addAll(acntMgr.getResourceUuidsCanAccessByAccount(msg.getSession().getAccountUuid(), VipVO.class));
         }
 
+        Map<String, String> ipToVip= new HashMap<>();
         for (Object[] result : results) {
             IpStatisticData element = new IpStatisticData();
             ipStatistics.add(element);
             element.setIp((String) result[0]);
+            if(result[1] != null) {
+               ipToVip.put((String) result[0], (String) result[1]);
+            }
             List<String> resourceTypes = new ArrayList<>();
             element.setResourceTypes(resourceTypes);
             if (dhcp.contains(element.getIp())) {
@@ -355,7 +359,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
             L3NetworkGetIpStatisticExtensionPoint exp = getExtensionPointFactory(element.getVmInstanceType());
             if (exp != null) {
-                element.setApplianceVmOwnerUuid(exp.getParentUuid(element.getVmInstanceUuid()));
+                element.setApplianceVmOwnerUuid(exp.getParentUuid(element.getVmInstanceUuid(), ipToVip.get(element.getIp())));
             }
         }
 
