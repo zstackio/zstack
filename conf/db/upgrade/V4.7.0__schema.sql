@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS `zstack`.`EncryptEntityMetadataVO` (
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+INSERT IGNORE INTO `zstack`.`EncryptEntityMetadataVO` (`entityName`, `columnName`, `state`, `lastOpDate`, `createDate`)
+                VALUES ('IAM2VirtualIDVO', 'password', 'NeedDecrypt', NOW(), NOW());
+
 CREATE TABLE IF NOT EXISTS `zstack`.`CpuFeaturesHistoryVO` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `srcHostUuid` varchar(32) NOT NULL,
