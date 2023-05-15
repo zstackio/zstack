@@ -11,6 +11,7 @@ import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
@@ -51,6 +52,8 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.ReconnectMeCmd;
 import org.zstack.kvm.KVMAgentCommands.TransmitVmOperationToMnCmd;
+import org.zstack.resourceconfig.ResourceConfigUpdateExtensionPoint;
+import org.zstack.resourceconfig.ResourceConfigValidatorExtensionPoint;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.SizeUtils;
@@ -83,6 +86,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
 
 public class KVMHostFactory extends AbstractService implements HypervisorFactory, Component,
         ManagementNodeReadyExtensionPoint, MaxDataVolumeNumberExtensionPoint, HypervisorMessageFactory {
@@ -384,6 +388,27 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 }
             }
         });
+        KVMGlobalConfig.VM_CPU_HYPERVISOR_FEATURE.installValidateExtension((category, name, oldValue, newValue) -> {
+            if (Boolean.TRUE.toString().equals(newValue)) {
+                return;
+            }
+
+            if (CPU_MODE_NONE.equals(KVMGlobalConfig.NESTED_VIRTUALIZATION.value())) {
+                throw new GlobalConfigException("Can not disable cpu hypervisor feature with vm.cpuMode none");
+            }
+        });
+        ResourceConfig resourceConfig = rcf.getResourceConfig(KVMGlobalConfig.VM_CPU_HYPERVISOR_FEATURE.getIdentity());
+        resourceConfig.installValidatorExtension((resourceUuid, oldValue, newValue) -> {
+            if (Boolean.TRUE.toString().equals(newValue)) {
+                return;
+            }
+
+            ResourceConfig cpuMode = rcf.getResourceConfig(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
+            if (CPU_MODE_NONE.equals(cpuMode.getResourceConfigValue(resourceUuid, String.class))) {
+                throw new GlobalConfigException("Can not disable cpu hypervisor feature with vm.cpuMode none");
+            }
+        });
+
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_RECONNECT_ME, ReconnectMeCmd.class, new SyncHttpCallHandler<ReconnectMeCmd>() {
             @Override
             public String handleSyncHttpCall(ReconnectMeCmd cmd) {
