@@ -145,6 +145,8 @@ public interface KVMConstant {
                 return VmInstanceState.Paused;
             } else if (this == Crashed) {
                 return VmInstanceState.Crashed;
+            } else if (this == NoState) {
+                return VmInstanceState.NoState;
             } else {
                 return VmInstanceState.Unknown;
             }
