@@ -1,6 +1,7 @@
 package org.zstack.test.integration.kvm.host
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.host.HostGlobalConfig
 import org.zstack.core.db.Q
 import org.zstack.header.host.HostIpmiVO
 import org.zstack.header.host.HostIpmiVO_
@@ -62,6 +63,7 @@ class KvmHostPowerCase extends SubCase {
             testKvmHostRebootByIpmi()
             testKvmHostPowerOn()
             testKvmHostPowerStatus()
+            testKvmHostPowerStatusIntervalRefresh()
         }
     }
 
@@ -253,5 +255,19 @@ class KvmHostPowerCase extends SubCase {
                 .eq(HostIpmiVO_.uuid, host5.uuid)
                 .eq(HostIpmiVO_.ipmiPowerStatus, HostPowerStatus.POWER_OFF)
                 .isExists()
+    }
+
+    void testKvmHostPowerStatusIntervalRefresh() {
+        int interval = HostGlobalConfig.HOST_POWER_REFRESH_INTERVAL.value(Integer.class)
+        executor.mockedPowerStatus = HostPowerStatus.POWER_ON
+        // wait ipiPowerStatus change by period task
+        TimeUnit.SECONDS.sleep(interval+1)
+        List<HostIpmiVO> ipmis = Q.New(HostIpmiVO)
+                .eq(HostIpmiVO_.uuid, host5.uuid)
+                .eq(HostIpmiVO_.ipmiPowerStatus, HostPowerStatus.POWER_OFF)
+                .list()
+        assert ipmis.find {
+            it.ipmiPowerStatus != HostPowerStatus.POWER_ON
+        } == null
     }
 }

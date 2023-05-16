@@ -248,7 +248,6 @@ public abstract class HostBase extends AbstractHost {
                     event.setError(rebootReply.getError());
                     event.setSuccess(rebootReply.isSuccess());
                 } else {
-                    changeConnectionState(HostStatusEvent.disconnected);
                     self = dbf.findByUuid(msg.getUuid(), HostVO.class);
                     event.setInventory(getSelfInventory());
                 }

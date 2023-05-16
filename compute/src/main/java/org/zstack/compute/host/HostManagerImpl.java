@@ -102,6 +102,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private Map<String, HypervisorFactory> hypervisorFactories = Collections.synchronizedMap(new HashMap<String, HypervisorFactory>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
     private Future reportHostCapacityTask;
+    private Future refreshHostPowerStatusTask;
 
     static {
         allowedMessageAfterSoftDeletion.add(HostDeletionMsg.class);
@@ -570,7 +571,51 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
     private void startPeriodTasks() {
         HostGlobalConfig.REPORT_HOST_CAPACITY_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> startReportHostCapacityTask());
+        HostGlobalConfig.HOST_POWER_REFRESH_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> startRefreshHostPowerStatusTask());
         startReportHostCapacityTask();
+        startRefreshHostPowerStatusTask();
+    }
+
+    private void startRefreshHostPowerStatusTask() {
+        if (refreshHostPowerStatusTask != null) {
+            refreshHostPowerStatusTask.cancel(true);
+        }
+        refreshHostPowerStatusTask = thdf.submitPeriodicTask(new PeriodicTask() {
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return HostGlobalConfig.HOST_POWER_REFRESH_INTERVAL.value(Integer.class).longValue();
+            }
+
+            @Override
+            public String getName() {
+                return "update-host-ipmi-power-status";
+            }
+
+            @Override
+            public void run() {
+                List<HostIpmiVO> ipmis = Q.New(HostIpmiVO.class).list();
+                new While<>(ipmis).step((ipmi, comp) -> {
+                    refreshHostPowerStatus(ipmi);
+                    comp.done();
+                },10).run(new NopeWhileDoneCompletion());
+            }
+
+            @AsyncThread
+            private void refreshHostPowerStatus(HostIpmiVO ipmi) {
+                if (ipmi == null || HostPowerStatus.POWER_BOOTING == ipmi.getIpmiPowerStatus()
+                        || HostPowerStatus.POWER_SHUTDOWN == ipmi.getIpmiPowerStatus()) {
+                    return;
+                }
+                HostPowerStatus status = HostIpmiPowerExecutor.getPowerStatus(ipmi);
+                ipmi.setIpmiPowerStatus(status);
+                dbf.update(ipmi);
+            }
+        });
     }
 
     private void startReportHostCapacityTask() {

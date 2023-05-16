@@ -73,8 +73,16 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     }
 
     public HostIpmiVO refreshHostPowerStatus(HostVO host) {
-        HostPowerStatus status = getPowerStatus(host);
         HostIpmiVO ipmi = host.getIpmi();
+        return refreshHostPowerStatus(ipmi);
+    }
+
+    public HostIpmiVO refreshHostPowerStatus(HostIpmiVO ipmi) {
+        HostPowerStatus status = getPowerStatus(ipmi);
+        return updateIpmiPowerStatusInDB(ipmi, status);
+    }
+
+    public HostIpmiVO updateIpmiPowerStatusInDB(HostIpmiVO ipmi, HostPowerStatus status) {
         ipmi.setIpmiPowerStatus(status);
         return dbf.updateAndRefresh(ipmi);
     }
