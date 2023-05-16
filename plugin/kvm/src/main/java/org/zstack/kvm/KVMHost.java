@@ -2987,21 +2987,35 @@ public class KVMHost extends HostBase implements Host {
         }
     }
 
-    protected void startVm(final VmInstanceSpec spec, final NeedReplyMessage msg, final NoErrorCompletion completion) {
-        checkStateAndStatus();
+    /**
+     * set cpu topology for vm, use the cpu topology from vm spec if it's not null,
+     * otherwise use the cpu topology from image platform
+     * <p>
+     *     TODO: image should support cpu topology to use a more suitable topology for
+     *     applications inside it
+     * </p>
+     *
+     * @param spec vm spec
+     * @param cmd start vm cmd
+     * @param platform image platform
+     */
+    private void setStartVmCpuTopology(final VmInstanceSpec spec, final StartVmCmd cmd, String platform) {
+        int cpuNum = cmd.getCpuNum();
 
-        final StartVmCmd cmd = new StartVmCmd();
+        if (VmHardwareSystemTags.CPU_SOCKETS.hasTag(spec.getVmInventory().getUuid())) {
+            String sockets = VmHardwareSystemTags.CPU_SOCKETS.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_SOCKETS_TOKEN);
+            String cores = VmHardwareSystemTags.CPU_CORES.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_CORES_TOKEN);
+            String threads = VmHardwareSystemTags.CPU_THREADS.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_THREADS_TOKEN);
 
-        String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
-                spec.getVmInventory().getPlatform();
-        if(ImagePlatform.Other.toString().equals(platform)){
-            checkPlatformWithOther(spec);
+            cmd.setSocketNum(Integer.parseInt(sockets));
+            cmd.setCpuOnSocket(Integer.parseInt(cores));
+            cmd.setThreadsPerCore(Integer.parseInt(threads));
+            return;
         }
 
-        String architecture = spec.getDestHost().getArchitecture();
-
-        int cpuNum = spec.getVmInventory().getCpuNum();
-        cmd.setCpuNum(cpuNum);
+        if (cmd.isUseNuma()) {
+            return;
+        }
 
         int socket;
         int cpuOnSocket;
@@ -3021,10 +3035,31 @@ public class KVMHost extends HostBase implements Host {
             socket = 1;
             cpuOnSocket = cpuNum;
         }
-        cmd.setImagePlatform(platform);
-        cmd.setImageArchitecture(architecture);
+
         cmd.setSocketNum(socket);
         cmd.setCpuOnSocket(cpuOnSocket);
+    }
+
+    protected void startVm(final VmInstanceSpec spec, final NeedReplyMessage msg, final NoErrorCompletion completion) {
+        checkStateAndStatus();
+
+        final StartVmCmd cmd = new StartVmCmd();
+
+        String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
+                spec.getVmInventory().getPlatform();
+        if(ImagePlatform.Other.toString().equals(platform)){
+            checkPlatformWithOther(spec);
+        }
+
+        String architecture = spec.getDestHost().getArchitecture();
+
+        int cpuNum = spec.getVmInventory().getCpuNum();
+        cmd.setCpuNum(cpuNum);
+        cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, spec.getVmInventory().getUuid(), Boolean.class));
+        setStartVmCpuTopology(spec, cmd, platform);
+
+        cmd.setImagePlatform(platform);
+        cmd.setImageArchitecture(architecture);
         cmd.setVmName(spec.getVmInventory().getName());
         cmd.setVmInstanceUuid(spec.getVmInventory().getUuid());
         cmd.setCpuSpeed(spec.getVmInventory().getCpuSpeed());
@@ -3174,7 +3209,6 @@ public class KVMHost extends HostBase implements Host {
         cmd.setUsbRedirect(spec.isUsbRedirect());
         cmd.setEnableSecurityElement(spec.isEnableSecurityElement());
         cmd.setVDIMonitorNumber(Integer.valueOf(spec.getVDIMonitorNumber()));
-        cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setVmPortOff(VmGlobalConfig.VM_PORT_OFF.value(Boolean.class));
         cmd.setConsoleMode("vnc");
         cmd.setTimeout(TimeUnit.MINUTES.toSeconds(5));
