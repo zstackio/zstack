@@ -56,7 +56,7 @@ public interface NfsPrimaryStorageBackend {
 
     void createMemoryVolume(PrimaryStorageInventory pinv, VolumeInventory volume, ReturnValueCompletion<String> completion);
 
-    void instantiateVolume(PrimaryStorageInventory pinv, VolumeInventory volume, ReturnValueCompletion<VolumeInventory> complete);
+    void instantiateVolume(PrimaryStorageInventory pinv, HostInventory hostInventory, VolumeInventory volume, ReturnValueCompletion<VolumeInventory> complete);
 
     void deleteImageCache(ImageCacheInventory imageCache);
 

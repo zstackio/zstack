@@ -1018,7 +1018,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
-    public void instantiateVolume(final PrimaryStorageInventory pinv, final VolumeInventory volume, final ReturnValueCompletion<VolumeInventory> complete) {
+    public void instantiateVolume(final PrimaryStorageInventory pinv, HostInventory hostInventory, final VolumeInventory volume, final ReturnValueCompletion<VolumeInventory> complete) {
         String accounUuid = acntMgr.getOwnerAccountUuidOfResource(volume.getUuid());
 
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
@@ -1044,7 +1044,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             cmd.setWithoutVolume(true);
         }
 
-        final HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
+        final HostInventory host = hostInventory == null ? nfsFactory.getConnectedHostForOperation(pinv).get(0) : hostInventory;
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
