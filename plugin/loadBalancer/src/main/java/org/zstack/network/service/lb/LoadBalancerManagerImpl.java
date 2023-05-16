@@ -991,8 +991,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
                     if (!uuids.containsAll(nicUuids)) {
                         throw new CloudRuntimeException(String.format("load balancer listener [uuid:%s] upgraded failed," +
-                                "vmnics directly attached are [%s], vmnic attached to its serverGroup are",
-                                vo.getUuid(), uuids));
+                                "vmnics directly attached are [%s], vmnic attached to its serverGroup are %s",
+                                vo.getUuid(), nicUuids, uuids));
                     }
                 }
             }
@@ -1023,7 +1023,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         List<LoadBalancerListenerVO> listenerVOS = Q.New(LoadBalancerListenerVO.class).list();
         List<LoadBalancerServerGroupVmNicRefVO> vmNicRefVOS = new ArrayList<>();
         for (LoadBalancerListenerVO vo : listenerVOS) {
-            boolean isExist = Q.New(LoadBalancerServerGroupVO.class).eq(LoadBalancerServerGroupVO_.name, String.format("default-server-group-%s", vo.getName()))
+            boolean isExist = Q.New(LoadBalancerServerGroupVO.class).eq(LoadBalancerServerGroupVO_.name, String.format("default-server-group-%s-%s", vo.getName(), vo.getUuid().substring(0, 5)))
                     .eq(LoadBalancerServerGroupVO_.description, String.format("default server group for load balancer listener %s", vo.getName()))
                     .eq(LoadBalancerServerGroupVO_.loadBalancerUuid, vo.getLoadBalancerUuid()).isExists();
             if (isExist) {
@@ -1035,7 +1035,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             groupVO.setAccountUuid(Account.getAccountUuidOfResource(vo.getUuid()));
             groupVO.setDescription(String.format("default server group for load balancer listener %s", vo.getName()));
             groupVO.setLoadBalancerUuid(vo.getLoadBalancerUuid());
-            groupVO.setName(String.format("default-server-group-%s", vo.getName()));
+            groupVO.setName(String.format("default-server-group-%s-%s", vo.getName(), vo.getUuid().substring(0, 5)));
             dbf.persist(groupVO);
 
             vo.setServerGroupUuid(groupVO.getUuid());

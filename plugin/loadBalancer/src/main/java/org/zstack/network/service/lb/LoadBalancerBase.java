@@ -1277,7 +1277,7 @@ public class LoadBalancerBase {
                     groupVO.setAccountUuid(accountUuid);
                     groupVO.setDescription(String.format("default server group for load balancer listener %s", listenerVO.getName()));
                     groupVO.setLoadBalancerUuid(listenerVO.getLoadBalancerUuid());
-                    groupVO.setName(String.format("default-server-group-%s", listenerVO.getName()));
+                    groupVO.setName(String.format("default-server-group-%s-%s", listenerVO.getName(), listenerVO.getUuid().substring(0, 5)));
                     dbf.persist(groupVO);
 
                     listenerVO.setServerGroupUuid(groupVO.getUuid());
