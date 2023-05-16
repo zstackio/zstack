@@ -163,6 +163,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KvmVmHardwareVerifyExtensionPoint" class="org.zstack.kvm.KvmVmHardwareVerifyExtensionPoint">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmBeforeStartOnHypervisorExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="KvmResourceConfigExtension" class="org.zstack.kvm.KvmResourceConfigExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.ResourceConfigMemorySnapshotExtensionPoint" />
