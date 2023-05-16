@@ -765,6 +765,8 @@ public class KVMHost extends HostBase implements Host {
                             reply.setError(operr(String.format("Host[%s] has not been power on within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
                             reply.setSuccess(false);
                             bus.reply(msg, reply);
+                            HostIpmiVO ipmi = host.getIpmi();
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi, HostPowerStatus.POWER_OFF);
                             return true;
                         }
                         HostPowerStatus status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
@@ -774,8 +776,8 @@ public class KVMHost extends HostBase implements Host {
                         }
                         if (HostPowerStatus.POWER_OFF.equals(status)) {
                             HostIpmiVO ipmi = host.getIpmi();
-                            ipmi.setIpmiPowerStatus(HostPowerStatus.POWER_OFF.nextStatus(HostPowerStatusEvent.on));
-                            dbf.updateAndRefresh(ipmi);
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi,
+                                    HostPowerStatus.POWER_OFF.nextStatus(HostPowerStatusEvent.on));
                         }
                         return false;
                     }
@@ -843,6 +845,8 @@ public class KVMHost extends HostBase implements Host {
                             reply.setError(operr(String.format("Host[%s] has not been shut down within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
                             reply.setSuccess(false);
                             bus.reply(msg, reply);
+                            HostIpmiVO ipmi = host.getIpmi();
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi, HostPowerStatus.POWER_ON);
                             return true;
                         }
                         HostPowerStatus status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
@@ -852,8 +856,8 @@ public class KVMHost extends HostBase implements Host {
                         }
                         if (HostPowerStatus.POWER_ON.equals(status)) {
                             HostIpmiVO ipmi = host.getIpmi();
-                            ipmi.setIpmiPowerStatus(HostPowerStatus.POWER_ON.nextStatus(HostPowerStatusEvent.off));
-                            dbf.updateAndRefresh(ipmi);
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi,
+                                    HostPowerStatus.POWER_ON.nextStatus(HostPowerStatusEvent.off));
                         }
                         return false;
                     }
