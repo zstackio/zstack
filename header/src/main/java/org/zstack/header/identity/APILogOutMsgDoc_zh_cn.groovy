@@ -39,7 +39,7 @@ doc {
 					type "Map"
 					optional true
 					since "3.5.0"
-
+					
 				}
 				column {
 					name "systemTags"

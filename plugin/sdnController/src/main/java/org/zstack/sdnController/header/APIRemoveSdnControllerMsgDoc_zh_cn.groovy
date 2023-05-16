@@ -1,5 +1,7 @@
 package org.zstack.sdnController.header
 
+import org.zstack.sdnController.header.APIRemoveSdnControllerEvent
+
 doc {
     title "RemoveSdnController"
 

@@ -1,5 +1,7 @@
 package org.zstack.sdnController.header
 
+import org.zstack.sdnController.header.APICreateL2HardwareVxlanNetworkEvent
+
 doc {
     title "CreateL2HardwareVxlanNetwork"
 
@@ -128,6 +130,16 @@ doc {
 					optional true
 					since "3.7"
 					
+				}
+				column {
+					name "vSwitchType"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					values ("LinuxBridge","OvsDpdk")
 				}
 			}
         }
