@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.vm.VmSchedHistoryRecorder;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -24,7 +25,6 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.agent.versioncontrol.AgentVersionVO;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -197,15 +197,23 @@ public abstract class HostBase extends AbstractHost {
     }
 
     private void handle(APIGetHostWebSshUrlMsg msg) {
-        APIGetHostWebSshUrlReply reply = new APIGetHostWebSshUrlReply();
+        APIGetHostWebSshUrlEvent event = new APIGetHostWebSshUrlEvent(msg.getId());
         String ZOPS_CONTAINER_NAME = "zops-controller";
-        ShellResult ret = ShellUtils.runAndReturn(String.format("docker exec %s systemctl is-active webssh", ZOPS_CONTAINER_NAME));
+        ShellResult ret;
+        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+            ret = ShellUtils.runAndReturn(String.format("docker exec %s systemctl is-active webssh", ZOPS_CONTAINER_NAME));
+        } else {
+            ret = new ShellResult();
+            ret.setCommand(String.format("docker exec %s systemctl is-active webssh", ZOPS_CONTAINER_NAME));
+            ret.setRetCode(0);
+        }
         if (!ret.isReturnCode(0)) {
             logger.debug(String.format("webssh server is not running.stdout: %s.stderr: %s",ret.getStdout(), ret.getStderr()));
-            reply.setError(operr("webssh server is not running."));
-            bus.reply(msg, reply);
+            event.setError(operr("webssh server is not running."));
+            bus.publish(event);
             return;
         }
+
 
         GetHostWebSshUrlMsg getHostWebSshUrlMsg = new GetHostWebSshUrlMsg();
         getHostWebSshUrlMsg.setUuid(msg.getHostUuid());
@@ -214,14 +222,14 @@ public abstract class HostBase extends AbstractHost {
             @Override
             public void run(MessageReply r) {
                 if (!r.isSuccess()) {
-                    reply.setError(r.getError());
-                    bus.reply(msg, reply);
+                    event.setError(r.getError());
+                    bus.publish(event);
                     return;
                 }
 
                 GetHostWebSshUrlReply getUrlReply = r.castReply();
-                reply.setUrl(getUrlReply.getUrl());
-                bus.reply(msg, reply);
+                event.setUrl(getUrlReply.getUrl());
+                bus.publish(event);
             }
         });
     }
