@@ -894,7 +894,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
         VolumeInventory vol = msg.getVolume();
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
-        backend.instantiateVolume(PrimaryStorageInventory.valueOf(self), vol, new ReturnValueCompletion<VolumeInventory>(msg) {
+        backend.instantiateVolume(PrimaryStorageInventory.valueOf(self), msg.getDestHost(), vol, new ReturnValueCompletion<VolumeInventory>(msg) {
             @Override
             public void success(VolumeInventory returnValue) {
                 reply.setVolume(returnValue);
