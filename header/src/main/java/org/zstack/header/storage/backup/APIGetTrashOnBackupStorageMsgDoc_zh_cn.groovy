@@ -39,7 +39,7 @@ doc {
 					type "String"
 					optional true
 					since "3.5.0"
-
+					
 				}
 				column {
 					name "resourceType"
@@ -49,7 +49,7 @@ doc {
 					type "String"
 					optional true
 					since "3.5.0"
-
+					
 				}
 				column {
 					name "trashType"

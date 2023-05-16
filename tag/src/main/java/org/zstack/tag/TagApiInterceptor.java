@@ -32,8 +32,8 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIDeleteTagMsg) {
             validate((APIDeleteTagMsg) msg);
-        } else if (msg instanceof APICreateTagMsg) {
-            validate((APICreateTagMsg) msg);
+        } else if (msg instanceof APIAbstractCreateTagMsg) {
+            validate((APIAbstractCreateTagMsg) msg);
         } else if (msg instanceof APIUpdateSystemTagMsg) {
             validate((APIUpdateSystemTagMsg) msg);
         }
@@ -51,7 +51,7 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
     }
 
 
-    private void validate(APICreateTagMsg msg) {
+    private void validate(APIAbstractCreateTagMsg msg) {
         if (!tagMgr.getManagedEntityNames().contains(msg.getResourceType())) {
             throw new ApiMessageInterceptionException(argerr("no resource type[%s] found in tag system", msg.getResourceType()));
         }
