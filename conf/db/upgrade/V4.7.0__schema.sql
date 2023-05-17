@@ -100,6 +100,7 @@ ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `bondingType` varchar(32)
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `gateway` varchar(128) DEFAULT NULL;
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `callBackIp` varchar(128) DEFAULT NULL;
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `description` varchar(2048) DEFAULT NULL;
+ALTER TABLE `zstack`.`VolumeBackupVO` ADD COLUMN `vmInstanceUuid` varchar(32) DEFAULT NULL;
 
 CREATE TABLE IF NOT EXISTS `HostIpmiVO`
 (
@@ -113,3 +114,78 @@ CREATE TABLE IF NOT EXISTS `HostIpmiVO`
     CONSTRAINT `ukHostIpmiVO` UNIQUE (`ipmiAddress`, `ipmiPort`),
     CONSTRAINT `fkHostIpmiVO` FOREIGN KEY (`uuid`) REFERENCES `HostEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS `Json_simpleGetKeyValue` $$
+
+CREATE FUNCTION `Json_simpleGetKeyValue`(
+    in_JsonArray text,
+    in_KeyName VARCHAR(64)
+) RETURNS VARCHAR(4096) CHARSET utf8
+
+BEGIN
+    DECLARE vs_return, vs_KeyName VARCHAR(4096);
+    DECLARE vs_JsonArray, vs_JsonString, vs_Json text;
+    DECLARE vi_pos1, vi_pos2 SMALLINT UNSIGNED;
+
+    SET vs_JsonArray = TRIM(in_JsonArray);
+    SET vs_KeyName = TRIM(in_KeyName);
+
+    IF vs_JsonArray = '' OR vs_JsonArray IS NULL
+        OR vs_KeyName = '' OR vs_KeyName IS NULL
+    THEN
+        SET vs_return = NULL;
+    ELSE
+        SET vs_JsonArray = REPLACE(REPLACE(vs_JsonArray, '[', ''), ']', '');
+        SET vs_json = REPLACE(REPLACE(vs_JsonArray, '{', ''), '}', '');
+        SET vs_JsonString = CONCAT("'", vs_JsonArray, "'");
+
+        IF vs_json = '' OR vs_json IS NULL THEN
+            SET vs_return = NULL;
+        ELSE
+            SET vs_KeyName = CONCAT('"', vs_KeyName, '":');
+            SET vi_pos1 = INSTR(vs_json, vs_KeyName);
+
+            IF vi_pos1 > 0 THEN
+                SET vi_pos1 = vi_pos1 + CHAR_LENGTH(vs_KeyName);
+                SET vi_pos2 = LOCATE('","', vs_json, vi_pos1);
+
+                IF vi_pos2 = 0 THEN
+                    SET vi_pos2 = CHAR_LENGTH(vs_json) + 1;
+                END IF;
+
+            SET vs_return = REPLACE(MID(vs_json, vi_pos1, vi_pos2 - vi_pos1), '"', '');
+            END IF;
+        END IF;
+    END IF;
+
+    RETURN(vs_return);
+END$$
+
+DELIMITER  ;
+
+DELIMITER $$
+CREATE PROCEDURE UpdateVolumeBackupVmInstanceUuid()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE backup_data text;
+        DECLARE backup_uuid VARCHAR(32);
+        DECLARE cur CURSOR FOR SELECT metadata, uuid FROM `zstack`.`VolumeBackupVO`;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+        OPEN cur;
+
+        read_loop: LOOP
+            FETCH cur INTO backup_data, backup_uuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+            UPDATE `zstack`.`VolumeBackupVO` SET `vmInstanceUuid`= Json_simpleGetKeyValue(backup_data, "vmInstanceUuid") WHERE `uuid`= backup_uuid;
+
+        END LOOP;
+        CLOSE cur;
+    END $$
+DELIMITER ;
+CALL UpdateVolumeBackupVmInstanceUuid();
+DROP PROCEDURE IF EXISTS UpdateVolumeBackupVmInstanceUuid;
