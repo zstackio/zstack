@@ -88,7 +88,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
 
-public class KVMHostFactory extends AbstractService implements HypervisorFactory, Component,
+public class KVMHostFactory extends AbstractHypervisorFactory implements Component,
         ManagementNodeReadyExtensionPoint, MaxDataVolumeNumberExtensionPoint, HypervisorMessageFactory {
     private static final CLogger logger = Utils.getLogger(KVMHostFactory.class);
 
@@ -110,6 +110,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         RAW_FORMAT.newFormatInputOutputMapping(hypervisorType, QCOW2_FORMAT.toString());
         VMDK_FORMAT.newFormatInputOutputMapping(hypervisorType, QCOW2_FORMAT.toString());
         QCOW2_FORMAT.setFirstChoice(hypervisorType);
+        allowedOperations.addState(VmInstanceState.Running, AttachVolumeToVmOnHypervisorMsg.class.getName())
+                .addState(VmInstanceState.Paused, AttachVolumeToVmOnHypervisorMsg.class.getName());
     }
 
     @Autowired
