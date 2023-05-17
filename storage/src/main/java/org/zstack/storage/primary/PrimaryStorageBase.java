@@ -27,8 +27,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.*;
-import org.zstack.header.core.trash.CleanTrashResult;
-import org.zstack.header.core.trash.InstallPathRecycleInventory;
+import org.zstack.header.core.trash.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -412,9 +411,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             @Override
             public void run(SyncTaskChain chain) {
-                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<CleanTrashResult>(msg) {
+                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<List<TrashCleanupResult>>(msg) {
                     @Override
-                    public void success(CleanTrashResult returnValue) {
+                    public void success(List<TrashCleanupResult> returnValues) {
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -898,19 +897,17 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         result.setSize(result.getSize() + size);
     }
 
-    private void cleanTrash(Long trashId, final ReturnValueCompletion<CleanTrashResult> completion) {
-        CleanTrashResult result = new CleanTrashResult();
+    private void cleanTrash(Long trashId, final ReturnValueCompletion<TrashCleanupResult> completion) {
         InstallPathRecycleInventory inv = trash.getTrash(trashId);
         if (inv == null) {
-            completion.success(result);
+            completion.success(new TrashCleanupResult(trashId));
             return;
         }
 
         String details = trash.makeSureInstallPathNotUsed(inv);
         if (details != null) {
-            result.getDetails().add(details);
 //            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
-            completion.success(result);
+            completion.success(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), operr(details)));
             return;
         }
 
@@ -936,18 +933,13 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     bus.send(imsg);
                     trash.removeFromDb(trashId);
                     logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", inv.getSize(), self.getUuid()));
-
-                    result.setSize(inv.getSize());
-                    result.setResourceUuids(CollectionDSL.list(inv.getResourceUuid()));
-                    completion.success(result);
+                    completion.success(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), inv.getSize()));
                 } else {
                     logger.warn(String.format("Failed to delete volume %s in Trash, because: %s", inv.getInstallPath(), reply.getError().getDetails()));
                     if ("LocalStorage".equals(self.getType()) && inv.getHostUuid() == null) {
                         // to compatible old version(they did not record hostUuid)
-                        result.setSize(0L);
-                        result.setResourceUuids(CollectionDSL.list(inv.getResourceUuid()));
                         trash.removeFromDb(trashId);
-                        completion.success(result);
+                        completion.success(new TrashCleanupResult(inv.getResourceUuid(), inv.getTrashId(), 0L));
                     } else {
                         completion.fail(reply.getError());
                     }
@@ -968,9 +960,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             @Override
             public void run(SyncTaskChain chain) {
-                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<CleanTrashResult>(chain) {
+                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<List<TrashCleanupResult>>(chain) {
                     @Override
-                    public void success(CleanTrashResult result) {
+                    public void success(List<TrashCleanupResult> results) {
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -991,26 +983,35 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         });
     }
 
-    private void cleanUpTrash(Long trashId, final ReturnValueCompletion<CleanTrashResult> completion) {
+    private void cleanUpTrash(Long trashId, final ReturnValueCompletion<List<TrashCleanupResult>> completion) {
         if (trashId != null) {
-            cleanTrash(trashId, completion);
+            cleanTrash(trashId, new ReturnValueCompletion<TrashCleanupResult>(completion) {
+                @Override
+                public void success(TrashCleanupResult res) {
+                    completion.success(CollectionDSL.list(res));
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
+                }
+            });
             return;
         }
 
-        CleanTrashResult result = new CleanTrashResult();
+        List<TrashCleanupResult> results = new ArrayList<>();
         List<InstallPathRecycleInventory> trashs = trash.getTrashList(self.getUuid(), trashLists);
         if (trashs.isEmpty()) {
-            completion.success(result);
+            completion.success(results);
             return;
         }
 
         List<ErrorCode> errs = new ArrayList<>();
         new While<>(trashs).step((trash, coml) -> {
-            cleanTrash(trash.getTrashId(), new ReturnValueCompletion<CleanTrashResult>(coml) {
+            cleanTrash(trash.getTrashId(), new ReturnValueCompletion<TrashCleanupResult>(coml) {
                 @Override
-                public void success(CleanTrashResult res) {
-                    result.getResourceUuids().add(res.getResourceUuids().get(0));
-                    updateTrashSize(result, res.getSize());
+                public void success(TrashCleanupResult res) {
+                    results.add(res);
                     coml.done();
                 }
 
@@ -1024,7 +1025,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (errs.isEmpty()) {
-                    completion.success(result);
+                    completion.success(results);
                 } else {
                     completion.fail(errs.get(0));
                 }
@@ -1044,10 +1045,11 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             @Override
             public void run(SyncTaskChain chain) {
-                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<CleanTrashResult>(chain) {
+                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<List<TrashCleanupResult>>(chain) {
                     @Override
-                    public void success(CleanTrashResult result) {
-                        evt.setResult(result);
+                    public void success(List<TrashCleanupResult> results) {
+                        evt.setResult(TrashCleanupResult.buildCleanTrashResult(results));
+                        evt.setResults(results);
                         bus.publish(evt);
                         chain.next();
                     }
