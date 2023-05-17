@@ -1051,6 +1051,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 creator.create();
             }
         }
+        SystemTagCreator creator = VmSystemTags.SYNC_PORTS.newSystemTagCreator(finalVo.getUuid());
+        creator.recreate = true;
+        creator.setTagByTokens(map(e(VmSystemTags.SYNC_PORTS_TOKEN, finalVo.getUuid())));
+        creator.create();
     }
 
     private List<ErrorCode> extEmitterHandleSystemTag(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, VmInstanceVO finalVo) {
