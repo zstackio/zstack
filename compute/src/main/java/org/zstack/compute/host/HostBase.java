@@ -166,8 +166,6 @@ public abstract class HostBase extends AbstractHost {
             handle((APIPowerOnHostMsg) msg);
         } else if (msg instanceof APIPowerResetHostMsg) {
             handle((APIPowerResetHostMsg) msg);
-        } else if (msg instanceof APIGetHostWebSshUrlMsg){
-            handle((APIGetHostWebSshUrlMsg) msg);
         } else if (msg instanceof APIGetHostPowerStatusMsg) {
             handle((APIGetHostPowerStatusMsg) msg);
         } else {
@@ -191,44 +189,6 @@ public abstract class HostBase extends AbstractHost {
                 } else {
                     event.setInventory(r.getInventory());
                 }
-                bus.publish(event);
-            }
-        });
-    }
-
-    private void handle(APIGetHostWebSshUrlMsg msg) {
-        APIGetHostWebSshUrlEvent event = new APIGetHostWebSshUrlEvent(msg.getId());
-        String ZOPS_CONTAINER_NAME = "zops-controller";
-        ShellResult ret;
-        if (!CoreGlobalProperty.UNIT_TEST_ON) {
-            ret = ShellUtils.runAndReturn(String.format("docker exec %s systemctl is-active webssh", ZOPS_CONTAINER_NAME));
-        } else {
-            ret = new ShellResult();
-            ret.setCommand(String.format("docker exec %s systemctl is-active webssh", ZOPS_CONTAINER_NAME));
-            ret.setRetCode(0);
-        }
-        if (!ret.isReturnCode(0)) {
-            logger.debug(String.format("webssh server is not running.stdout: %s.stderr: %s",ret.getStdout(), ret.getStderr()));
-            event.setError(operr("webssh server is not running."));
-            bus.publish(event);
-            return;
-        }
-
-
-        GetHostWebSshUrlMsg getHostWebSshUrlMsg = new GetHostWebSshUrlMsg();
-        getHostWebSshUrlMsg.setUuid(msg.getHostUuid());
-        bus.makeLocalServiceId(getHostWebSshUrlMsg ,HostConstant.SERVICE_ID);
-        bus.send(getHostWebSshUrlMsg, new CloudBusCallBack(msg) {
-            @Override
-            public void run(MessageReply r) {
-                if (!r.isSuccess()) {
-                    event.setError(r.getError());
-                    bus.publish(event);
-                    return;
-                }
-
-                GetHostWebSshUrlReply getUrlReply = r.castReply();
-                event.setUrl(getUrlReply.getUrl());
                 bus.publish(event);
             }
         });
