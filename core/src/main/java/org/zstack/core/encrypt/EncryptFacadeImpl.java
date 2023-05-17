@@ -424,6 +424,59 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         query.executeUpdate();
     }
 
+    @Override
+    public List<EncryptedFieldBundle> getIntegrityEncryptionBundle() {
+        List<EncryptedFieldBundle> fieldBundles = new ArrayList<>();
+        return fieldBundles;
+    }
+
+    private EncryptedFieldBundle getSm4EncryptedFieldBundle(String className, String columnName) {
+        EncryptedFieldBundle encryptedFieldBundle = new EncryptedFieldBundle();
+        encryptedFieldBundle.setEncryptedColumn(columnName);
+        encryptedFieldBundle.setEncryptedType(EncryptType.SM4.toString());
+        encryptedFieldBundle.setEncryptedClass(className);
+        return encryptedFieldBundle;
+    }
+    @Override
+    public List<EncryptedFieldBundle> getConfidentialityEncryptionBundle() {
+        List<EncryptedFieldBundle> fieldBundles = new ArrayList<>();
+
+        encryptedFields.forEach(field -> {
+            // all VO
+            if (field.getDeclaringClass().getAnnotation(Entity.class) != null && field.getDeclaringClass().getAnnotation(Table.class) != null) {
+                fieldBundles.add(getSm4EncryptedFieldBundle(field.getDeclaringClass().getSimpleName(), field.getName()));
+                return;
+            }
+
+            // is sub VO and has CovertSubClass annotation
+            List<CovertSubClass> subCovertSubClasss = BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
+                    .filter(aClass -> aClass.getAnnotation(CovertSubClasses.class) != null)
+                    .map(subClass -> subClass.getAnnotation(CovertSubClasses.class).value())
+                    .flatMap(Arrays::stream).collect(Collectors.toList());
+            if (!subCovertSubClasss.isEmpty()) {
+                subCovertSubClasss.forEach(subCovertSubClass -> {
+                    EncryptedFieldBundle encryptedFieldBundle = getSm4EncryptedFieldBundle(field.getDeclaringClass().getSimpleName(), field.getName());
+                    encryptedFieldBundle.setEncryptedClass(field.getDeclaringClass().getSimpleName());
+                    encryptedFieldBundle.setConditionKey(((CovertSubClass) subCovertSubClass).columnName());
+                    encryptedFieldBundle.setConditionValue(((CovertSubClass) subCovertSubClass).columnValue());
+                    fieldBundles.add(encryptedFieldBundle);
+                });
+                return;
+            }
+
+            // all AO
+            List<String> subClassNames = BeanUtils.reflections.getSubTypesOf(field.getDeclaringClass()).stream()
+                    .filter(aClass -> aClass.getAnnotation(Entity.class) != null && aClass.getAnnotation(Table.class) != null)
+                    .map(Class::getSimpleName)
+                    .collect(Collectors.toList());
+            for (String subClassName : subClassNames) {
+                fieldBundles.add(getSm4EncryptedFieldBundle(subClassName, field.getName()));
+            }
+        });
+
+        return fieldBundles;
+    }
+
     private void removeConvertRecoverData() {
         if (Q.New(EncryptEntityMetadataVO.class)
                 .isExists()) {
