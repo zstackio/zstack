@@ -21,6 +21,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.persistence.Query;
 
 /**
@@ -41,7 +42,8 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
         return SecurityGroupProviderFactory.networkServiceType;
     }
 
-    private void syncSystemTagToVmNicSecurityGroup(String vmUuid) {
+    private List<String> syncSystemTagToVmNicSecurityGroup(String vmUuid) {
+        final List<String> sgUuids = new ArrayList<>();
         List<String> tags = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vmUuid);
         List<VmNicSecurityGroupRefVO> refVOS = new ArrayList<>();
         for (String tag : tags) {
@@ -49,6 +51,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
             String l3Uuid = tokens.get(VmSystemTags.L3_UUID_TOKEN);
             List<String> securityGroupUuids = Arrays.asList(tokens.get(VmSystemTags.SECURITY_GROUP_UUIDS_TOKEN).split(","));
 
+            sgUuids.addAll(securityGroupUuids);
             String vmNicUuid = Q.New(VmNicVO.class)
                     .eq(VmNicVO_.l3NetworkUuid, l3Uuid)
                     .eq(VmNicVO_.vmInstanceUuid, vmUuid)
@@ -72,12 +75,13 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
 
         dbf.persistCollection(refVOS);
         VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.delete(vmUuid);
+        return sgUuids.stream().distinct().collect(Collectors.toList());
     }
 
 
     @Override
     public void applyNetworkService(VmInstanceSpec servedVm, Map<String, Object> data, final Completion completion) {
-        syncSystemTagToVmNicSecurityGroup(servedVm.getVmInventory().getUuid());
+        List<String> sgUuids = syncSystemTagToVmNicSecurityGroup(servedVm.getVmInventory().getUuid());
 
         Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(SecurityGroupProviderFactory.networkServiceType,
                 VmNicSpec.getL3NetworkInventoryOfSpec(servedVm.getL3Networks()));
@@ -89,6 +93,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
         RefreshSecurityGroupRulesOnVmMsg msg = new RefreshSecurityGroupRulesOnVmMsg();
         msg.setVmInstanceUuid(servedVm.getVmInventory().getUuid());
         msg.setHostUuid(servedVm.getDestHost().getUuid());
+        msg.setSgUuids(sgUuids);
         bus.makeLocalServiceId(msg, SecurityGroupConstant.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -147,7 +152,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
 
     @Override
     public void afterAttachNic(VmInstanceInventory vmInstanceInventory, Completion completion) {
-        syncSystemTagToVmNicSecurityGroup(vmInstanceInventory.getUuid());
+        List<String> sgUuids = syncSystemTagToVmNicSecurityGroup(vmInstanceInventory.getUuid());
         if (StringUtils.isEmpty(vmInstanceInventory.getHostUuid())) {
             completion.success();
             return;
@@ -155,6 +160,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
         RefreshSecurityGroupRulesOnVmMsg msg = new RefreshSecurityGroupRulesOnVmMsg();
         msg.setVmInstanceUuid(vmInstanceInventory.getUuid());
         msg.setHostUuid(vmInstanceInventory.getHostUuid());
+        msg.setSgUuids(sgUuids);
         bus.makeLocalServiceId(msg, SecurityGroupConstant.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
