@@ -45,10 +45,7 @@ import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.Bucket;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.data.Pair;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
@@ -113,12 +110,35 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             handle((APIAddHostMsg) msg);
         } else if (msg instanceof APIGetHypervisorTypesMsg) {
             handle((APIGetHypervisorTypesMsg) msg);
+        }  else if (msg instanceof APIGetHostWebSshUrlMsg){
+            handle((APIGetHostWebSshUrlMsg) msg);
         } else if (msg instanceof HostMessage) {
             HostMessage hmsg = (HostMessage) msg;
             passThrough(hmsg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetHostWebSshUrlMsg msg) {
+        APIGetHostWebSshUrlEvent event = new APIGetHostWebSshUrlEvent(msg.getId());
+        GetHostWebSshUrlMsg getHostWebSshUrlMsg = new GetHostWebSshUrlMsg();
+        getHostWebSshUrlMsg.setUuid(msg.getUuid());
+        bus.makeLocalServiceId(getHostWebSshUrlMsg ,HostConstant.SERVICE_ID);
+        bus.send(getHostWebSshUrlMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    event.setError(r.getError());
+                    bus.publish(event);
+                    return;
+                }
+
+                GetHostWebSshUrlReply getUrlReply = r.castReply();
+                event.setUrl(getUrlReply.getUrl());
+                bus.publish(event);
+            }
+        });
     }
 
     private void handle(APIGetHypervisorTypesMsg msg) {
@@ -612,8 +632,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     return;
                 }
                 HostPowerStatus status = HostIpmiPowerExecutor.getPowerStatus(ipmi);
-                ipmi.setIpmiPowerStatus(status);
-                dbf.update(ipmi);
+                if (ipmi.getIpmiPowerStatus() != status) {
+                    ipmi.setIpmiPowerStatus(status);
+                    dbf.update(ipmi);
+                }
             }
         });
     }

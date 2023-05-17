@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetHostWebSshUrlEvent.class,
         parameterName = "params"
 )
-public class APIGetHostWebSshUrlMsg extends APIMessage implements HostMessage {
+public class APIGetHostWebSshUrlMsg extends APIMessage {
     @APIParam(nonempty = true, resourceType = HostVO.class)
     private String uuid;
 
@@ -25,10 +25,5 @@ public class APIGetHostWebSshUrlMsg extends APIMessage implements HostMessage {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
-    }
-
-    @Override
-    public String getHostUuid() {
-        return uuid;
     }
 }
