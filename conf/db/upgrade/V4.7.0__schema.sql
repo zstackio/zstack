@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 CREATE TABLE IF NOT EXISTS `zstack`.`FileIntegrityVerificationVO` (
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `path` varchar(256) NOT NULL,
