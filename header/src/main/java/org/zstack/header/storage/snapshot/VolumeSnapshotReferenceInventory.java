@@ -3,14 +3,9 @@ package org.zstack.header.storage.snapshot;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
-import org.zstack.header.query.ExpandedQueryAlias;
-import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
-import org.zstack.header.vo.ForeignKey;
-import org.zstack.header.volume.VolumeEO;
 import org.zstack.header.volume.VolumeInventory;
 
-import javax.persistence.Column;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;
@@ -29,6 +24,7 @@ import java.util.stream.Collectors;
 public class VolumeSnapshotReferenceInventory {
     private long id;
 
+    private Long parentId;
     private String volumeUuid;
 
     private String volumeSnapshotUuid;
@@ -50,6 +46,7 @@ public class VolumeSnapshotReferenceInventory {
     public static VolumeSnapshotReferenceInventory valueOf(VolumeSnapshotReferenceVO vo) {
         VolumeSnapshotReferenceInventory inv = new VolumeSnapshotReferenceInventory();
         inv.id = vo.getId();
+        inv.parentId = vo.getParentId();
         inv.volumeUuid = vo.getVolumeUuid();
         inv.volumeSnapshotUuid = vo.getVolumeSnapshotUuid();
         inv.volumeSnapshotInstallUrl = vo.getVolumeSnapshotInstallUrl();
@@ -72,6 +69,14 @@ public class VolumeSnapshotReferenceInventory {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
     }
 
     public String getVolumeUuid() {

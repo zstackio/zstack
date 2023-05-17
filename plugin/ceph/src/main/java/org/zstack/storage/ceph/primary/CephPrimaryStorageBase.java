@@ -52,7 +52,6 @@ import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshot
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
@@ -71,12 +70,14 @@ import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionDSL;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.Tuple;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -2255,7 +2256,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     if (cache != null) {
                         final CheckIsBitsExistingCmd cmd = new CheckIsBitsExistingCmd();
-                        cmd.setInstallPath(cache.getInstallUrl());
+                        cmd.setInstallPath(ImageCacheUtil.getImageCachePath(cache.toInventory()));
                         httpCall(CHECK_BITS_PATH, cmd, CheckIsBitsExistingRsp.class, new ReturnValueCompletion<CheckIsBitsExistingRsp>(chain) {
                             @Override
                             public void success(CheckIsBitsExistingRsp returnValue) {
@@ -2359,7 +2360,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 }
 
                                 cache = ((DownloadVolumeTemplateToPrimaryStorageReply) reply).getImageCache();
-                                cloneInstallPath = cache.getInstallUrl();
+                                cloneInstallPath = ImageCacheUtil.getImageCachePath(cache);
                                 trigger.next();
                             }
                         });
@@ -2669,11 +2670,35 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     protected void handle(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg) {
         CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
 
+        boolean incremental = msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
+        if (incremental && PrimaryStorageGlobalProperty.USE_SNAPSHOT_AS_INCREMENTAL_CACHE) {
+            ProtectSnapshotCmd cmd = new ProtectSnapshotCmd();
+            cmd.snapshotPath = msg.getVolumeSnapshot().getPrimaryStorageInstallPath();
+            cmd.ignoreError = true;
+            httpCall(PROTECT_SNAPSHOT_PATH, cmd, ProtectSnapshotRsp.class, new ReturnValueCompletion<ProtectSnapshotRsp>(msg) {
+                @Override
+                public void success(ProtectSnapshotRsp returnValue) {
+                    ImageCacheVO cache = createTemporaryImageCacheFromVolumeSnapshot(msg.getImageInventory(), msg.getVolumeSnapshot());
+                    dbf.persist(cache);
+                    reply.setInventory(cache.toInventory());
+                    reply.setIncremental(true);
+                    bus.reply(msg, reply);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                }
+            });
+            return;
+        }
+
         DownloadToCache cache = new DownloadToCache();
         cache.image = new ImageSpec();
         cache.image.setInventory(msg.getImageInventory());
         cache.snapshot = msg.getVolumeSnapshot();
-        cache.incremental = msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
+        cache.incremental = incremental;
         cache.download(new ReturnValueCompletion<ImageCacheVO>(msg) {
             @Override
             public void success(ImageCacheVO inv) {

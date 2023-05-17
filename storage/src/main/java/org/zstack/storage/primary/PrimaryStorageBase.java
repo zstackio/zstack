@@ -35,6 +35,8 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -1699,5 +1701,20 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             throw new OperationFailureException(
                     operr("cannot attach volume[uuid:%s] whose primary storage is Maintenance", volumeUuid));
         }
+    }
+
+    protected ImageCacheVO createTemporaryImageCacheFromVolumeSnapshot(ImageInventory image, VolumeSnapshotInventory volumeSnapshot) {
+        ImageCacheVO cvo = new ImageCacheVO();
+        cvo.setMd5sum("not calculated");
+
+        cvo.setSize(volumeSnapshot.getSize());
+        cvo.setInstallUrl(ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA + volumeSnapshot.getUuid());
+        cvo.setImageUuid(image.getUuid());
+        cvo.setPrimaryStorageUuid(self.getUuid());
+        cvo.setMediaType(ImageConstant.ImageMediaType.valueOf(image.getMediaType()));
+        cvo.setState(ImageCacheState.creating);
+
+        logger.debug(String.format("mark volume snapshot[uuid:%s] as temporary image cache", volumeSnapshot.getUuid()));
+        return cvo;
     }
 }

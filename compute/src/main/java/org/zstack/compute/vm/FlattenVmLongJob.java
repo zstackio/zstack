@@ -20,10 +20,12 @@ public class FlattenVmLongJob implements LongJob {
     @Autowired
     private CloudBus bus;
 
+    private String vmInstanceUuid;
 
     @Override
     public void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
         FlattenVmInstanceMsg msg = JSONObjectUtil.toObject(job.getJobData(), FlattenVmInstanceMsg.class);
+        vmInstanceUuid = msg.getUuid();
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, msg.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -58,5 +60,15 @@ public class FlattenVmLongJob implements LongJob {
                 completion.success(false);
             }
         });
+    }
+
+    @Override
+    public Class getAuditType() {
+        return VmInstanceVO.class;
+    }
+
+    @Override
+    public String getAuditResourceUuid() {
+        return vmInstanceUuid;
     }
 }

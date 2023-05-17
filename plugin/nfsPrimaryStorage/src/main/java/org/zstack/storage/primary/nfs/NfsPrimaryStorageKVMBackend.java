@@ -45,6 +45,7 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
+import org.zstack.storage.primary.ImageCacheUtil;
 import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
@@ -1281,7 +1282,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 NfsPrimaryStorageKvmHelper.makeRootVolumeInstallUrl(primaryStorage, volume);
         final String accountUuid = acntMgr.getOwnerAccountUuidOfResource(volume.getUuid());
         final CreateRootVolumeFromTemplateCmd cmd = new CreateRootVolumeFromTemplateCmd();
-        cmd.setTemplatePathInCache(imageCache.getInstallUrl());
+        cmd.setTemplatePathInCache(ImageCacheUtil.getImageCachePath(imageCache));
         cmd.setInstallUrl(installPath);
         cmd.setAccountUuid(accountUuid);
         cmd.setName(volume.getName());

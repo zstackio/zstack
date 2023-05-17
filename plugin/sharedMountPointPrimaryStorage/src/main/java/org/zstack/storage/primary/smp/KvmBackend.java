@@ -47,10 +47,7 @@ import org.zstack.kvm.*;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
-import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
-import org.zstack.storage.primary.PrimaryStoragePathMaker;
-import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
-import org.zstack.storage.primary.PrimaryStorageSystemTags;
+import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.utils.CollectionUtils;
@@ -518,7 +515,7 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     public String makeCachedImageInstallUrl(ImageInventory iminv) {
-        return PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv));
+        return ImageCacheUtil.getImageCachePath(iminv, it -> PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv)));
     }
 
     public String makeCachedImageInstallUrlFromImageUuidForTemplate(String imageUuid) {
@@ -1692,6 +1689,16 @@ public class KvmBackend extends HypervisorBackend {
     @Override
     void handle(CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg msg, ReturnValueCompletion<CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply> completion) {
         CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply();
+
+        boolean incremental = msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
+        if (incremental && PrimaryStorageGlobalProperty.USE_SNAPSHOT_AS_INCREMENTAL_CACHE) {
+            ImageCacheVO cache = createTemporaryImageCacheFromVolumeSnapshot(msg.getImageInventory(), msg.getVolumeSnapshot());
+            dbf.persist(cache);
+            reply.setInventory(cache.toInventory());
+            reply.setIncremental(true);
+            completion.success(reply);
+            return;
+        }
 
         final ImageCache cache = new ImageCache();
         cache.image = msg.getImageInventory();

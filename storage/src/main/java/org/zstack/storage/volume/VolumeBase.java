@@ -29,20 +29,12 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.ImageConstant;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImagePlatform;
-import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.*;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.storage.snapshot.group.MemorySnapshotGroupExtensionPoint;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
-import org.zstack.header.storage.snapshot.group.DeleteVolumeSnapshotGroupInnerMsg;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupOverlayMsg;
+import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
@@ -51,6 +43,7 @@ import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
+import org.zstack.storage.snapshot.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupCreationValidator;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -191,6 +184,25 @@ public class VolumeBase implements Volume {
 
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-template-available";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        boolean cacheExists = Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, self.getRootImageUuid())
+                                .eq(ImageCacheVO_.primaryStorageUuid, self.getPrimaryStorageUuid())
+                                .isExists();
+
+                        boolean imageExists = Q.New(ImageVO.class).eq(ImageVO_.uuid, self.getRootImageUuid()).isExists();
+                        if (!cacheExists && !imageExists) {
+                            trigger.fail(operr("cannot find image cache[imageUuid: %s] for reinit volume", self.getRootImageUuid()));
+                            return;
+                        }
+
+                        trigger.next();
+                    }
+                });
+
                 flow(new Flow() {
                     String __name__ = "allocate-primary-storage";
 
@@ -487,7 +499,8 @@ public class VolumeBase implements Volume {
                     String __name__ = "instantiate-volume-on-primary-storage";
 
                     boolean success;
-                    VolumeSnapshotReferenceVO templateRef = getTemplateRef(msg);
+
+                    boolean incremental;
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -506,9 +519,7 @@ public class VolumeBase implements Volume {
                                     format = ret.getFormat();
                                     actualSize = ret.getActualSize();
 
-                                    if (templateRef != null) {
-                                        persistSelfTemplateRef();
-                                    }
+                                    buildSnapshotRefFromTemplateIfNeed(ret);
 
                                     trigger.next();
                                 }
@@ -531,20 +542,13 @@ public class VolumeBase implements Volume {
                         }
                     }
 
-                    private VolumeSnapshotReferenceVO getTemplateRef(InstantiateVolumeMsg msg) {
+                    private void buildSnapshotRefFromTemplateIfNeed(VolumeInventory inv) {
                         if (msg instanceof InstantiateRootVolumeMsg &&
                                 ImageConstant.ImageMediaType.RootVolumeTemplate.toString().equals(((InstantiateRootVolumeMsg) msg).getTemplateSpec().getInventory().getMediaType())) {
-                            return Q.New(VolumeSnapshotReferenceVO.class)
-                                    .eq(VolumeSnapshotReferenceVO_.referenceUuid, ((InstantiateRootVolumeMsg) msg).getTemplateSpec().getInventory().getUuid())
-                                    .limit(1).find();
+                            incremental = VolumeSnapshotReferenceUtils.buildSnapshotReferenceForNewVolumeIfNeed(
+                                     inv, ((InstantiateRootVolumeMsg) msg).getTemplateSpec().getInventory().getUuid()
+                            ) != null;
                         }
-                        return null;
-                    }
-
-                    private void persistSelfTemplateRef() {
-                        VolumeSnapshotReferenceVO selfRef = templateRef.clone();
-                        selfRef.setReferenceVolumeUuid(self.getUuid());
-                        dbf.persist(selfRef);
                     }
 
                     private void instantiateMemoryVolume(InstantiateVolumeMsg msg, FlowTrigger trigger) {
@@ -613,9 +617,8 @@ public class VolumeBase implements Volume {
                                     ext.afterInstantiateVolume(imsg);
                                 }
 
-                                if (templateRef != null) {
-                                    persistSelfTemplateRef();
-                                }
+                                buildSnapshotRefFromTemplateIfNeed(ir.getVolume());
+
                                 trigger.next();
                             }
                         });
@@ -631,10 +634,8 @@ public class VolumeBase implements Volume {
                             bus.send(dmsg);
                         }
 
-                        if (templateRef != null) {
-                            SQL.New(VolumeSnapshotReferenceVO.class)
-                                    .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, self.getUuid())
-                                    .delete();
+                        if (incremental) {
+                            VolumeSnapshotReferenceUtils.rollbackSnapshotReferenceForNewVolume(self.getUuid());
                         }
 
                         trigger.rollback();
@@ -908,6 +909,7 @@ public class VolumeBase implements Volume {
             public void handle(Map data) {
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class), arg -> arg.volumeAfterExpunge(inv));
 
+                callVolumeJustBeforeDeleteFromDbExtensionPoint();
                 VolumeInventory volumeInventory = getSelfInventory();
                 dbf.remove(self);
                 cleanupVolumeEO(self.getUuid());
@@ -1243,7 +1245,7 @@ public class VolumeBase implements Volume {
                         String accountUuid = self.getAccountUuid();
 
                         if (deletionPolicy == VolumeDeletionPolicy.Direct) {
-                            callVmJustBeforeDeleteFromDbExtensionPoint();
+                            callVolumeJustBeforeDeleteFromDbExtensionPoint();
                             self.setStatus(VolumeStatus.Deleted);
                             self = dbf.updateAndRefresh(self);
                             VolumeInventory volumeInventory = getSelfInventory();
@@ -1259,7 +1261,7 @@ public class VolumeBase implements Volume {
                             self = dbf.updateAndRefresh(self);
                             new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
                         } else if (deletionPolicy == VolumeDeletionPolicy.DBOnly) {
-                            callVmJustBeforeDeleteFromDbExtensionPoint();
+                            callVolumeJustBeforeDeleteFromDbExtensionPoint();
                             VolumeInventory inventory = getSelfInventory();
                             inventory.setStatus(VolumeStatus.Deleted.toString());
                             dbf.remove(self);
@@ -1428,7 +1430,7 @@ public class VolumeBase implements Volume {
         }).start();
     }
 
-    private void callVmJustBeforeDeleteFromDbExtensionPoint() {
+    private void callVolumeJustBeforeDeleteFromDbExtensionPoint() {
         VolumeInventory inv = getSelfInventory();
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeJustBeforeDeleteFromDbExtensionPoint.class), p -> p.volumeJustBeforeDeleteFromDb(inv));
     }
@@ -1451,7 +1453,7 @@ public class VolumeBase implements Volume {
                         deletionPolicy = VolumeDeletionPolicy.valueOf(msg.getDeletionPolicy());
                     }
                     if (deletionPolicy == VolumeDeletionPolicy.DBOnly) {
-                        callVmJustBeforeDeleteFromDbExtensionPoint();
+                        callVolumeJustBeforeDeleteFromDbExtensionPoint();
                         VolumeInventory inventory = getSelfInventory();
                         String accountUuid = self.getAccountUuid();
                         dbf.remove(self);

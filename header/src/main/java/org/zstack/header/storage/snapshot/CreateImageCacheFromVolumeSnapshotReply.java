@@ -8,6 +8,7 @@ import org.zstack.header.message.MessageReply;
 public class CreateImageCacheFromVolumeSnapshotReply extends MessageReply {
     private long actualSize;
     private String locationHostUuid;
+    private String imageUrl;
 
     public long getActualSize() {
         return actualSize;
@@ -23,5 +24,13 @@ public class CreateImageCacheFromVolumeSnapshotReply extends MessageReply {
 
     public void setLocationHostUuid(String locationHostUuid) {
         this.locationHostUuid = locationHostUuid;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

@@ -1,4 +1,4 @@
-package org.zstack.compute.vm;
+package org.zstack.storage.volume;
 
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,10 +20,12 @@ public class FlattenVolumeLongJob implements LongJob {
     @Autowired
     private CloudBus bus;
 
+    private String volumeUuid;
 
     @Override
     public void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
         FlattenVolumeMsg msg = JSONObjectUtil.toObject(job.getJobData(), FlattenVolumeMsg.class);
+        volumeUuid = msg.getVolumeUuid();
         bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, msg.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -58,5 +60,15 @@ public class FlattenVolumeLongJob implements LongJob {
                 completion.success(false);
             }
         });
+    }
+
+    @Override
+    public Class getAuditType() {
+        return VolumeVO.class;
+    }
+
+    @Override
+    public String getAuditResourceUuid() {
+        return volumeUuid;
     }
 }
