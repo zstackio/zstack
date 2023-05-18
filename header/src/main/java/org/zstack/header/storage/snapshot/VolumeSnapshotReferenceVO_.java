@@ -7,6 +7,7 @@ import javax.persistence.metamodel.StaticMetamodel;
 @StaticMetamodel(VolumeSnapshotReferenceVO.class)
 public class VolumeSnapshotReferenceVO_ {
     public static volatile SingularAttribute<VolumeSnapshotBackupStorageRefVO, Long> id;
+    public static volatile SingularAttribute<VolumeSnapshotBackupStorageRefVO, Long> parentId;
     public static volatile SingularAttribute<VolumeSnapshotBackupStorageRefVO, String> volumeUuid;
     public static volatile SingularAttribute<VolumeSnapshotBackupStorageRefVO, String> volumeSnapshotUuid;
     public static volatile SingularAttribute<VolumeSnapshotBackupStorageRefVO, String> volumeSnapshotInstallUrl;
