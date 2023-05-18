@@ -1,9 +1,11 @@
 package org.zstack.header.identity.role
 
 import org.zstack.header.identity.role.RoleType
+import org.zstack.header.identity.role.RoleState
 import java.sql.Timestamp
 import java.sql.Timestamp
 import org.zstack.header.identity.role.RolePolicyStatementInventory
+import org.zstack.header.identity.role.RolePolicyRefInventory
 
 doc {
 
@@ -27,6 +29,18 @@ doc {
 		type "String"
 		since "0.6"
 	}
+	field {
+		name "identity"
+		desc ""
+		type "String"
+		since "0.6"
+	}
+	field {
+		name "rootUuid"
+		desc ""
+		type "String"
+		since "0.6"
+	}
 	ref {
 		name "type"
 		path "org.zstack.header.identity.role.RoleInventory.type"
@@ -34,6 +48,14 @@ doc {
 		type "RoleType"
 		since "0.6"
 		clz RoleType.class
+	}
+	ref {
+		name "state"
+		path "org.zstack.header.identity.role.RoleInventory.state"
+		desc "null"
+		type "RoleState"
+		since "0.6"
+		clz RoleState.class
 	}
 	field {
 		name "createDate"
@@ -54,5 +76,13 @@ doc {
 		type "List"
 		since "0.6"
 		clz RolePolicyStatementInventory.class
+	}
+	ref {
+		name "policies"
+		path "org.zstack.header.identity.role.RoleInventory.policies"
+		desc "null"
+		type "List"
+		since "0.6"
+		clz RolePolicyRefInventory.class
 	}
 }
