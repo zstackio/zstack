@@ -1,10 +1,12 @@
 package org.zstack.storage.snapshot;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.security.core.parameters.P;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.ImageCacheVO;
@@ -238,11 +240,41 @@ public class VolumeSnapshotReferenceUtils {
         }
 
         VolumeSnapshotReferenceVO ref = Q.New(VolumeSnapshotReferenceVO.class)
-                .eq(VolumeSnapshotReferenceVO_.referenceUuid, volume.getUuid())
+                .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, volume.getUuid())
                 .find();
         if (ref != null) {
+            redirectSnapshotRefIfNeed(ref);
             deleteSnapshotRef(ref);
         }
+    }
+
+    private static void redirectSnapshotRefIfNeed(VolumeSnapshotReferenceVO ref) {
+        if (ref.getTreeUuid() == null) {
+            return;
+        }
+
+        List<Long> childrenRefIds = Q.New(VolumeSnapshotReferenceVO.class).select(VolumeSnapshotReferenceVO_.id)
+                .eq(VolumeSnapshotReferenceVO_.treeUuid, ref.getTreeUuid())
+                .eq(VolumeSnapshotReferenceVO_.parentId, ref.getId())
+                .listValues();
+        if (childrenRefIds.isEmpty()) {
+            return;
+        }
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                sql(VolumeSnapshotReferenceVO.class).in(VolumeSnapshotReferenceVO_.id, childrenRefIds)
+                        .set(VolumeSnapshotReferenceVO_.parentId, ref.getParentId())
+                        .set(VolumeSnapshotReferenceVO_.volumeUuid, ref.getVolumeUuid())
+                        .set(VolumeSnapshotReferenceVO_.volumeSnapshotUuid, ref.getVolumeSnapshotUuid())
+                        .set(VolumeSnapshotReferenceVO_.volumeSnapshotInstallUrl, ref.getVolumeSnapshotInstallUrl())
+                        .update();
+
+                logger.debug(String.format("redirect snapshot ref[ids:%s, volumeUuid: from %s to %s, parentId: to %s]",
+                        childrenRefIds, ref.getReferenceVolumeUuid(), ref.getVolumeUuid(), ref.getParentId()));
+            }
+        }.execute();
     }
 
     private static void deleteSnapshotRef(VolumeSnapshotReferenceVO ref) {
