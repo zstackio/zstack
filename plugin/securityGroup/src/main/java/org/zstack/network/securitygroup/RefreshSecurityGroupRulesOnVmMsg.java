@@ -9,6 +9,7 @@ public class RefreshSecurityGroupRulesOnVmMsg extends NeedReplyMessage {
     private String hostUuid;
     private boolean deleteAllRules;
     private List<String> vNicUuids;
+    private List<String> sgUuids;
 
     public List<String> getNicUuids() { return vNicUuids; }
     public void setNicUuids(List<String> uuids) { this.vNicUuids = uuids; }
@@ -35,5 +36,13 @@ public class RefreshSecurityGroupRulesOnVmMsg extends NeedReplyMessage {
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
+    }
+
+    public List<String> getSgUuids() {
+        return sgUuids;
+    }
+
+    public void setSgUuids(List<String> sgUuids) {
+        this.sgUuids = sgUuids;
     }
 }

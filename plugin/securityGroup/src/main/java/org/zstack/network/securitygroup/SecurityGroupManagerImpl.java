@@ -168,7 +168,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             hto.setGroupMembersTO(gto);
             Set<String> hostUuids = new HashSet<>();
 
-            List<Tuple> ts = SQL.New("select vm.hostUuid, vm.hypervisorType" +
+            List<Tuple> ts = SQL.New("select distinct vm.hostUuid, vm.hypervisorType" +
                     " from VmNicVO nic, VmInstanceVO vm, VmNicSecurityGroupRefVO ref" +
                     " where vm.uuid = nic.vmInstanceUuid" +
                     " and nic.uuid = ref.vmNicUuid" +
@@ -695,6 +695,17 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
 
         applyRules(htos);
+
+        if (msg.getSgUuids() != null && !msg.getSgUuids().isEmpty()) {
+            Q.New(SecurityGroupVO.class)
+                .select(SecurityGroupVO_.uuid).in(SecurityGroupVO_.uuid, msg.getSgUuids())
+                .eq(SecurityGroupVO_.state, SecurityGroupState.Enabled).listValues().forEach(sgUuid -> {
+                    HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember((String) sgUuid);
+                    if (!groupMemberTO.getHostUuids().isEmpty()) {
+                        updateGroupMembers(groupMemberTO);
+                    }
+                });
+        }
 
         if (htos.isEmpty()) {
             checkDefaultRulesOnHost(msg.getHostUuid());
