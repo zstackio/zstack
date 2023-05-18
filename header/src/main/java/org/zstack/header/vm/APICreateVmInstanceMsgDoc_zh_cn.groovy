@@ -37,7 +37,7 @@ doc {
 					desc "计算规格UUID。指定云主机的CPU、内存等参数。"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 					
 				}
@@ -89,7 +89,7 @@ doc {
 					type "List"
 					optional true
 					since "4.4.6"
-
+					
 				}
 				column {
 					name "dataDiskOfferingUuids"
@@ -179,7 +179,7 @@ doc {
 					type "List"
 					optional true
 					since "3.4"
-
+					
 				}
 				column {
 					name "systemTags"
@@ -229,6 +229,36 @@ doc {
 					type "List"
 					optional true
 					since "3.0"
+					
+				}
+				column {
+					name "cpuNum"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Integer"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "memorySize"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Long"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "rootDiskSize"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "Long"
+					optional true
+					since "0.6"
 					
 				}
 			}

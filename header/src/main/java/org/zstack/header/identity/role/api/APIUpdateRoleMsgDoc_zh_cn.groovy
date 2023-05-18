@@ -11,10 +11,9 @@ doc {
 
     rest {
         request {
-			url "PUT /v1/identities/roles/{uuid}"
+			url "PUT /v1/identities/roles/{uuid}/actions"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateRoleMsg.class
 
@@ -38,7 +37,7 @@ doc {
 					desc "资源名称"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 					
 				}

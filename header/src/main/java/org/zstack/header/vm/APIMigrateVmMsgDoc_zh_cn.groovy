@@ -59,7 +59,7 @@ doc {
 					type "boolean"
 					optional true
 					since "3.6.0"
-
+					
 				}
 				column {
 					name "strategy"

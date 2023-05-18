@@ -81,6 +81,16 @@ doc {
 					since "3.0"
 					
 				}
+				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 

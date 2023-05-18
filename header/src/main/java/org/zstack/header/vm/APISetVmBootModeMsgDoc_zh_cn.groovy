@@ -13,8 +13,7 @@ doc {
         request {
 			url "PUT /v1/vm-instances/{uuid}/actions"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APISetVmBootModeMsg.class
 
