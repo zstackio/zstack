@@ -21,6 +21,7 @@ import org.zstack.storage.primary.PrimaryStorageGlobalProperty;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import java.util.Collections;
 import java.util.List;
@@ -140,12 +141,18 @@ public class VolumeSnapshotReferenceUtils {
             return dbf.persist(ref);
         }
 
-        VolumeSnapshotReferenceVO parentRef = SQL.New("select ref" +
-                " from VolumeSnapshotReferenceVO ref, VolumeSnapshotVO snapshot" +
-                " where snapshot.treeUuid = :treeUuid" +
-                " and ref.referenceUuid = snapshot.uuid", VolumeSnapshotReferenceVO.class)
-                .param("treeUuid", baseSnapshot.getTreeUuid())
+        VolumeSnapshotReferenceVO parentRef = Q.New(VolumeSnapshotReferenceVO.class)
+                .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, baseSnapshot.getVolumeUuid())
                 .find();
+
+        if (parentRef != null && parentRef.getReferenceType().equals(VolumeSnapshotVO.class.getSimpleName())) {
+            String parentSnapshotTreeUuid = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.treeUuid)
+                    .eq(VolumeSnapshotVO_.uuid, parentRef.getReferenceUuid())
+                    .findValue();
+            if (!baseSnapshot.getTreeUuid().equals(parentSnapshotTreeUuid)) {
+                parentRef = null;
+            }
+        }
 
         VolumeSnapshotReferenceTreeVO tree;
         if (parentRef == null) {
@@ -243,36 +250,39 @@ public class VolumeSnapshotReferenceUtils {
                 .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, volume.getUuid())
                 .find();
         if (ref != null) {
-            redirectSnapshotRefIfNeed(ref);
-            deleteSnapshotRef(ref);
+            deleteAndRedirectSnapshotRef(ref);
         }
     }
 
-    private static void redirectSnapshotRefIfNeed(VolumeSnapshotReferenceVO ref) {
+    private static void deleteAndRedirectSnapshotRef(VolumeSnapshotReferenceVO ref) {
         if (ref.getTreeUuid() == null) {
-            return;
-        }
-
-        List<Long> childrenRefIds = Q.New(VolumeSnapshotReferenceVO.class).select(VolumeSnapshotReferenceVO_.id)
-                .eq(VolumeSnapshotReferenceVO_.treeUuid, ref.getTreeUuid())
-                .eq(VolumeSnapshotReferenceVO_.parentId, ref.getId())
-                .listValues();
-        if (childrenRefIds.isEmpty()) {
+            deleteSnapshotRef(ref);
             return;
         }
 
         new SQLBatch() {
             @Override
             protected void scripts() {
-                sql(VolumeSnapshotReferenceVO.class).in(VolumeSnapshotReferenceVO_.id, childrenRefIds)
-                        .set(VolumeSnapshotReferenceVO_.parentId, ref.getParentId())
-                        .set(VolumeSnapshotReferenceVO_.volumeUuid, ref.getVolumeUuid())
-                        .set(VolumeSnapshotReferenceVO_.volumeSnapshotUuid, ref.getVolumeSnapshotUuid())
-                        .set(VolumeSnapshotReferenceVO_.volumeSnapshotInstallUrl, ref.getVolumeSnapshotInstallUrl())
-                        .update();
+                databaseFacade.getEntityManager().find(VolumeSnapshotReferenceTreeVO.class, ref.getTreeUuid(), LockModeType.PESSIMISTIC_WRITE);
 
-                logger.debug(String.format("redirect snapshot ref[ids:%s, volumeUuid: from %s to %s, parentId: to %s]",
-                        childrenRefIds, ref.getReferenceVolumeUuid(), ref.getVolumeUuid(), ref.getParentId()));
+                VolumeSnapshotReferenceVO finalRef =  databaseFacade.getEntityManager().find(VolumeSnapshotReferenceVO.class, ref.getId());
+                List<Long> childrenRefIds = Q.New(VolumeSnapshotReferenceVO.class).select(VolumeSnapshotReferenceVO_.id)
+                        .eq(VolumeSnapshotReferenceVO_.treeUuid, finalRef.getTreeUuid())
+                        .eq(VolumeSnapshotReferenceVO_.parentId, finalRef.getId())
+                        .listValues();
+
+                if (!childrenRefIds.isEmpty()) {
+                    sql(VolumeSnapshotReferenceVO.class).in(VolumeSnapshotReferenceVO_.id, childrenRefIds)
+                            .set(VolumeSnapshotReferenceVO_.parentId, finalRef.getParentId())
+                            .set(VolumeSnapshotReferenceVO_.volumeUuid, finalRef.getVolumeUuid())
+                            .set(VolumeSnapshotReferenceVO_.volumeSnapshotUuid, finalRef.getVolumeSnapshotUuid())
+                            .set(VolumeSnapshotReferenceVO_.volumeSnapshotInstallUrl, finalRef.getVolumeSnapshotInstallUrl())
+                            .update();
+                    logger.debug(String.format("redirect snapshot ref[ids:%s, volumeUuid: from %s to %s, parentId: to %s]",
+                            childrenRefIds, finalRef.getReferenceVolumeUuid(), finalRef.getVolumeUuid(), finalRef.getParentId()));
+                }
+
+                deleteSnapshotRef(finalRef);
             }
         }.execute();
     }
@@ -280,12 +290,12 @@ public class VolumeSnapshotReferenceUtils {
     private static void deleteSnapshotRef(VolumeSnapshotReferenceVO ref) {
         SQL.New(VolumeSnapshotReferenceVO.class)
                 .eq(VolumeSnapshotReferenceVO_.id, ref.getId())
-                .delete();
+                .hardDelete();
         logger.debug(String.format("remove volume snapshot reference[referenceVolumeUuid: %s].", ref.getReferenceVolumeUuid()));
 
         if (!Q.New(VolumeSnapshotReferenceVO.class).eq(VolumeSnapshotReferenceVO_.treeUuid, ref.getTreeUuid()).isExists()) {
             logger.debug(String.format("volume snapshot reference tree[uuid:%s] has no leaf, delete it", ref.getTreeUuid()));
-            SQL.New(VolumeSnapshotReferenceTreeVO.class).eq(VolumeSnapshotReferenceTreeVO_.uuid, ref.getTreeUuid()).delete();
+            SQL.New(VolumeSnapshotReferenceTreeVO.class).eq(VolumeSnapshotReferenceTreeVO_.uuid, ref.getTreeUuid()).hardDelete();
         }
     }
 
