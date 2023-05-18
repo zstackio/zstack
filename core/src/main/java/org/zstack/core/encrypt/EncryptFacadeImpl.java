@@ -490,6 +490,53 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         beforeRecoverDataDecryptAllPassword();
     }
 
+    protected void handleNeedDecryptEntity() {
+        if (PasswordEncryptType.None.toString().equals(EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.value())) {
+            return;
+        }
+
+        List<EncryptEntityMetadataVO> metadataVOList = Q.New(EncryptEntityMetadataVO.class)
+                .eq(EncryptEntityMetadataVO_.state, EncryptEntityState.NeedDecrypt)
+                .list();
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                for (EncryptEntityMetadataVO metadata : metadataVOList) {
+                    long count = SQL.New(String.format("select count(1) from %s", metadata.getEntityName()), Long.class).find();
+                    String className = metadata.getEntityName();
+                    String fieldName = metadata.getColumnName();
+                    sql(String.format("select uuid from %s", metadata.getEntityName()), String.class)
+                            .limit(1000)
+                            .paginate(count, (List<String> uuids) -> {
+                                for (String uuid : uuids) {
+                                    String querySql = String.format("select %s from %s where uuid = '%s'", fieldName, className, uuid);
+                                    String value = sql(querySql).find();
+
+                                    if (StringUtils.isEmpty(value)) {
+                                        continue;
+                                    }
+
+                                    try {
+                                        String decryptedString = decrypt(value);
+                                        String sql = String.format("update %s set %s = :decrypted where uuid = :uuid", className, fieldName);
+                                        Query query = dbf.getEntityManager().createQuery(sql);
+                                        query.setParameter("decrypted", decryptedString);
+                                        query.setParameter("uuid", uuid);
+                                        query.executeUpdate();
+                                    } catch (Exception e) {
+                                        logger.debug(String.format("handleNeedDecryptEntity error because : %s", e.getMessage()));
+
+                                    }
+                                }
+
+                            });
+                    dbf.remove(metadata);
+                }
+            }
+        }.execute();
+    }
+
     @Override
     public boolean start() {
         initEncryptDriver();
@@ -498,6 +545,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
         removeConvertRecoverData();
         collectEncryptEntityMetadata();
         handleNewAddedEncryptEntity();
+        handleNeedDecryptEntity();
         return true;
     }
 
