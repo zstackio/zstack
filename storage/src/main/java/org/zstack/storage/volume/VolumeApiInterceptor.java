@@ -98,6 +98,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             validate((APIAttachDataVolumeToHostMsg) msg);
         } else if (msg instanceof APIDetachDataVolumeFromHostMsg) {
             validate((APIDetachDataVolumeFromHostMsg) msg);
+        } else if (msg instanceof APIFlattenVolumeMsg) {
+            validate((APIFlattenVolumeMsg) msg);
         }
 
         setServiceId(msg);
@@ -487,6 +489,13 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         if (!Q.New(VolumeHostRefVO.class).eq(VolumeHostRefVO_.volumeUuid, msg.getVolumeUuid()).isExists()) {
             throw new ApiMessageInterceptionException(operr("can not detach volume[%s] from host. " +
                     "it may have been detached", msg.getVolumeUuid()));
+        }
+    }
+
+    private void validate(APIFlattenVolumeMsg msg) {
+        boolean isShareable = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).select(VolumeVO_.isShareable).findValue();
+        if (isShareable) {
+            throw new ApiMessageInterceptionException(argerr("cannot flatten a shareable volume[uuid:%s]", msg.getVolumeUuid()));
         }
     }
 
