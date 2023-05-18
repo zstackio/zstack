@@ -8463,6 +8463,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         List<VolumeInventory> vols = new ArrayList<>();
         new While<>(self.getAllDiskVolumes()).each((vol, compl) ->{
+            if (vol.isShareable()) {
+                vols.add(vol.toInventory());
+                compl.done();
+                return;
+            }
+
             FlattenVolumeMsg fmsg = new FlattenVolumeMsg();
             fmsg.setUuid(vol.getUuid());
             fmsg.setDryRun(msg.isDryRun());
