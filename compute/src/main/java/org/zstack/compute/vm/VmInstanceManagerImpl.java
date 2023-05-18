@@ -96,6 +96,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static java.lang.Integer.parseInt;
+import static java.lang.Integer.valueOf;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.*;
@@ -1672,6 +1674,33 @@ public class VmInstanceManagerImpl extends AbstractService implements
         tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), hostnameValidator);
         VmSystemTags.HOSTNAME.installValidator(hostnameValidator);
 
+        // TODO: system tags should support token format validation
+        VmHardwareSystemTags.CPU_SOCKETS.installValidator((resourceUuid, resourceType, systemTag) -> {
+            String sockets = VmHardwareSystemTags.CPU_SOCKETS.getTokenByTag(systemTag, VmHardwareSystemTags.CPU_SOCKETS_TOKEN);
+            try {
+                Integer.valueOf(sockets);
+            } catch (NumberFormatException e) {
+                throw new ApiMessageInterceptionException(argerr("cpuSockets must be an integer"));
+            }
+        });
+
+        VmHardwareSystemTags.CPU_CORES.installValidator((resourceUuid, resourceType, systemTag) -> {
+            String cores = VmHardwareSystemTags.CPU_CORES.getTokenByTag(systemTag, VmHardwareSystemTags.CPU_CORES_TOKEN);
+            try {
+                Integer.valueOf(cores);
+            } catch (NumberFormatException e) {
+                throw new ApiMessageInterceptionException(argerr("cpuCores must be an integer"));
+            }
+        });
+
+        VmHardwareSystemTags.CPU_THREADS.installValidator((resourceUuid, resourceType, systemTag) -> {
+            String threads = VmHardwareSystemTags.CPU_THREADS.getTokenByTag(systemTag, VmHardwareSystemTags.CPU_THREADS_TOKEN);
+            try {
+                Integer.valueOf(threads);
+            } catch (NumberFormatException e) {
+                throw new ApiMessageInterceptionException(argerr("cpuThreads must be an integer"));
+            }
+        });
     }
 
     private void installUserdataValidator() {

@@ -72,8 +72,8 @@ public class TestVmSocketOnKvm {
         creator.create();
 
         KVMAgentCommands.StartVmCmd cmd = config.startVmCmd;
-        Assert.assertEquals(1, cmd.getSocketNum());
-        Assert.assertEquals(1, cmd.getCpuOnSocket());
+        Assert.assertEquals(Integer.valueOf(1), cmd.getSocketNum());
+        Assert.assertEquals(Integer.valueOf(1), cmd.getCpuOnSocket());
 
         // socket = 2 cpu = 1
         creator = new VmCreator(api);
@@ -84,8 +84,8 @@ public class TestVmSocketOnKvm {
         creator.create();
 
         cmd = config.startVmCmd;
-        Assert.assertEquals(2, cmd.getSocketNum());
-        Assert.assertEquals(1, cmd.getCpuOnSocket());
+        Assert.assertEquals(Integer.valueOf(2), cmd.getSocketNum());
+        Assert.assertEquals(Integer.valueOf(1), cmd.getCpuOnSocket());
 
         // socket = 3 cpu = 1
         creator = new VmCreator(api);
@@ -96,8 +96,8 @@ public class TestVmSocketOnKvm {
         creator.create();
 
         cmd = config.startVmCmd;
-        Assert.assertEquals(3, cmd.getSocketNum());
-        Assert.assertEquals(1, cmd.getCpuOnSocket());
+        Assert.assertEquals(Integer.valueOf(3), cmd.getSocketNum());
+        Assert.assertEquals(Integer.valueOf(1), cmd.getCpuOnSocket());
 
         // socket = 1 cpu = 3
         creator = new VmCreator(api);
@@ -108,8 +108,8 @@ public class TestVmSocketOnKvm {
         creator.create();
 
         cmd = config.startVmCmd;
-        Assert.assertEquals(1, cmd.getSocketNum());
-        Assert.assertEquals(3, cmd.getCpuOnSocket());
+        Assert.assertEquals(Integer.valueOf(1), cmd.getSocketNum());
+        Assert.assertEquals(Integer.valueOf(3), cmd.getCpuOnSocket());
     }
 
 }
