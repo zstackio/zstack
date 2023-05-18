@@ -552,14 +552,13 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             return;
         }
 
-        List<TrashCleanupResult> results = new ArrayList<>();
+        List<TrashCleanupResult> results = Collections.synchronizedList(new ArrayList<>());
         List<InstallPathRecycleInventory> trashs = trash.getTrashList(self.getUuid(), trashLists);
         if (trashs.isEmpty()) {
             completion.success(results);
             return;
         }
 
-        List<ErrorCode> errs = new ArrayList<>();
         new While<>(trashs).all((inv, coml) -> {
             String details = trash.makeSureInstallPathNotUsed(inv);
             if (details != null) {
@@ -586,7 +585,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                         trash.removeFromDb(inv.getTrashId());
                     } else {
                         logger.warn(String.format("Failed to delete image %s in image migration.", inv.getInstallPath()));
-                        errs.add(reply.getError());
+                        coml.addError(reply.getError());
                     }
                     coml.done();
                 }
@@ -594,10 +593,10 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (errs.isEmpty()) {
+                if (errorCodeList.getCauses().isEmpty()) {
                     completion.success(results);
                 } else {
-                    completion.fail(errs.get(0));
+                    completion.fail(errorCodeList.getCauses().get(0));
                 }
             }
         });
