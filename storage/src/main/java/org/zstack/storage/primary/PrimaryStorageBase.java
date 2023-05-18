@@ -999,14 +999,13 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             return;
         }
 
-        List<TrashCleanupResult> results = new ArrayList<>();
+        List<TrashCleanupResult> results = Collections.synchronizedList(new ArrayList<>());
         List<InstallPathRecycleInventory> trashs = trash.getTrashList(self.getUuid(), trashLists);
         if (trashs.isEmpty()) {
             completion.success(results);
             return;
         }
 
-        List<ErrorCode> errs = new ArrayList<>();
         new While<>(trashs).step((trash, coml) -> {
             cleanTrash(trash.getTrashId(), new ReturnValueCompletion<TrashCleanupResult>(coml) {
                 @Override
@@ -1017,17 +1016,17 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    errs.add(errorCode);
+                    coml.addError(errorCode);
                     coml.done();
                 }
             });
         }, 5).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (errs.isEmpty()) {
+                if (errorCodeList.getCauses().isEmpty()) {
                     completion.success(results);
                 } else {
-                    completion.fail(errs.get(0));
+                    completion.fail(errorCodeList.getCauses().get(0));
                 }
             }
         });
