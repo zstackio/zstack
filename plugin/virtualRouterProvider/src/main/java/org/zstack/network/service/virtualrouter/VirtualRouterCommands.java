@@ -17,8 +17,8 @@ public class VirtualRouterCommands {
 	}
 	
 	public static class AgentResponse {
-		private boolean success = true;
-		private String error;
+		public boolean success = true;
+		public String error;
 		public boolean isSuccess() {
 			return success;
 		}
@@ -30,6 +30,30 @@ public class VirtualRouterCommands {
 		}
 		public void setError(String error) {
 			this.error = error;
+		}
+	}
+
+	public static class GetTypeCommand extends AgentCommand{
+		private String uuid;
+
+		public String getUuid() {
+			return uuid;
+		}
+
+		public void setUuid(String uuid) {
+			this.uuid = uuid;
+		}
+	}
+
+	public static class GetTypeRsp extends AgentResponse {
+		private boolean isVyos;
+
+		public boolean isVyos() {
+			return isVyos;
+		}
+
+		public void setVyos(boolean vyos) {
+			isVyos = vyos;
 		}
 	}
 

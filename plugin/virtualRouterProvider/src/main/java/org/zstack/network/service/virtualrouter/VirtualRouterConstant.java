@@ -22,6 +22,7 @@ public interface VirtualRouterConstant {
 	public static final String SERVICE_ID = "virtualRouter";
 
 	public static final String VR_ECHO_PATH = "/echo";
+	public static final String VR_GET_TYPE_PATH = "/type";
 	public static final String VR_CONFIGURE_NIC_PATH = "/configurenic";
 	public static final String VR_REMOVE_NIC_PATH = "/removenic";
 	public static final String VR_CONFIGURE_NIC_FIREWALL_DEFAULT_ACTION_PATH = "/configurenicdefaultaction";

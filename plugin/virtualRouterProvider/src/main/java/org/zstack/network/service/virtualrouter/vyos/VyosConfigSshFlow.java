@@ -19,6 +19,8 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
+import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -55,6 +57,10 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
         }
 
         boolean isReconnect = Boolean.parseBoolean((String) data.get(Params.isReconnect.toString()));
+        final String vrUuid = (String) data.get(VmInstanceConstant.Params.vmInstanceUuid.toString());
+        String vrUserTag = VirtualRouterSystemTags.VIRTUAL_ROUTER_LOGIN_USER.getTokenByResourceUuid(
+                vrUuid, VirtualRouterVmVO.class, VirtualRouterSystemTags.VIRTUAL_ROUTER_LOGIN_USER_TOKEN);
+        String sshUser = vrUserTag != null ? vrUserTag : "vyos"; //old vpc vrouter has no tag, that's vyos.
 
         String mgmtNicIp;
         if (!isReconnect) {
@@ -89,7 +95,7 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
                     long now = System.currentTimeMillis();
                     if (now > timeout) {
                         trigger.fail(err(ApplianceVmErrors.UNABLE_TO_START, "the SSH port is not" +
-                                " open after %s seconds. Failed to login the vyos router[ip:%s]", timeoutInSeconds, mgmtNicIp));
+                                " open after %s seconds. Failed to login the virtual router[ip:%s]", timeoutInSeconds, mgmtNicIp));
                         return true;
                     }
 
@@ -108,25 +114,26 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
             private void configAgentSsh() {
                 Boolean  passwordAuth = VirtualRouterGlobalConfig.SSH_LOGIN_PASSWORD.value(Boolean.class);
                 String password = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
+                String restartSshCmd = sshUser.equals("vyos") ? "service ssh restart" : "systemctl restart sshd";
                 String script;
                 if (!passwordAuth) {
-                    script = "sudo sed -i \"/PasswordAuthentication /c PasswordAuthentication no\" /etc/ssh/sshd_config\n"+
-                            "sudo service ssh restart\n";
+                    script = String.format("sudo sed -i \"/PasswordAuthentication /c PasswordAuthentication no\" /etc/ssh/sshd_config\n"+
+                            "sudo %s\n", restartSshCmd);
                 } else {
-                    script = " sudo sed -i \"/PasswordAuthentication /c PasswordAuthentication yes\" /etc/ssh/sshd_config\n"+
-                            "sudo service ssh restart\n";
+                    script = String.format("sudo sed -i \"/PasswordAuthentication /c PasswordAuthentication yes\" /etc/ssh/sshd_config\n"+
+                            "sudo %s\n", restartSshCmd);
                 }
                 script = String.format("echo \"%s\" > .ssh/authorized_keys\n %s", asf.getPublicKey(), script);
 
                 try {
                     new Ssh().shell(script
-                    ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(sshPort).runErrorByExceptionAndClose();
+                    ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername(sshUser).setHostname(mgmtNicIp).setPort(sshPort).runErrorByExceptionAndClose();
                 } catch (SshException e ) {
                      /*
                     ZSTAC-18352, try again with password when key fail
                      */
                     new Ssh().shell(script
-                    ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(sshPort).runErrorByExceptionAndClose();
+                    ).setTimeout(300).setPassword(password).setUsername(sshUser).setHostname(mgmtNicIp).setPort(sshPort).runErrorByExceptionAndClose();
                 }
 
                 try {
@@ -139,14 +146,14 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
                             if (NetworkUtils.isRemotePortOpen(mgmtNicIp, sshPort, 2000)) {
                                 return true;
                             } else {
-                                throw new RuntimeException(String.format("unable to ssh in to the vyos[%s]", mgmtNicIp));
+                                throw new RuntimeException(String.format("unable to ssh in to the virtual router[%s]", mgmtNicIp));
                             }
                         }
                     }.run();
 
                     trigger.next();
                 } catch (Exception e) {
-                    trigger.fail(operr("unable to ssh in to the vyos[%s] after configure ssh", mgmtNicIp));
+                    trigger.fail(operr("unable to ssh in to the virtual router[%s] after configure ssh", mgmtNicIp));
                 }
 
             }
