@@ -390,15 +390,6 @@ public class KVMHostFactory extends AbstractHypervisorFactory implements Compone
                 }
             }
         });
-        KVMGlobalConfig.VM_CPU_HYPERVISOR_FEATURE.installValidateExtension((category, name, oldValue, newValue) -> {
-            if (Boolean.TRUE.toString().equals(newValue)) {
-                return;
-            }
-
-            if (CPU_MODE_NONE.equals(KVMGlobalConfig.NESTED_VIRTUALIZATION.value())) {
-                throw new GlobalConfigException("Can not disable cpu hypervisor feature with vm.cpuMode none");
-            }
-        });
         ResourceConfig resourceConfig = rcf.getResourceConfig(KVMGlobalConfig.VM_CPU_HYPERVISOR_FEATURE.getIdentity());
         resourceConfig.installValidatorExtension((resourceUuid, oldValue, newValue) -> {
             if (Boolean.TRUE.toString().equals(newValue)) {
