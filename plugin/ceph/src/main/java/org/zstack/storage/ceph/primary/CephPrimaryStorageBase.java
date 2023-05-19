@@ -3184,7 +3184,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    if (!errorCode.isError(SysErrors.OPERATION_ERROR) && !errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
+                    if (!errorCode.isError(SysErrors.OPERATION_ERROR) && !errorCode.isError(VolumeErrors.VOLUME_IN_USE)
+                            && !errorCode.isError(SysErrors.TIMEOUT)) {
                         logger.warn(String.format("mon[%s] failed to execute http call[%s], error is: %s",
                                 base.getSelf().getHostname(), path, JSONObjectUtil.toJsonString(errorCode)));
                         errorCodes.getCauses().add(errorCode);

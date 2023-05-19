@@ -288,6 +288,12 @@ public class RESTFacadeImpl implements RESTFacade {
             }
         }
 
+        if (unit.toMillis(timeout) <= 1) {
+            callback.fail(touterr("url: %s, current timeout: %s, api message timeout, skip post async call",
+                    url, unit.toMillis(timeout)));
+            return;
+        }
+
         long stime = 0;
         if (CoreGlobalProperty.PROFILER_HTTP_CALL) {
             stime = System.currentTimeMillis();
