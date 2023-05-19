@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>externalService</id>
+
+    <message>
+        <name>org.zstack.header.core.external.service.APIGetExternalServicesMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.core.external.service.APIReloadExternalServiceMsg</name>
+    </message>
+</service>

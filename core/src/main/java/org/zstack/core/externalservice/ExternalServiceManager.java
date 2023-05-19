@@ -3,6 +3,8 @@ package org.zstack.core.externalservice;
 import java.util.function.Supplier;
 
 public interface ExternalServiceManager {
+    String SERVICE_ID = "externalService";
+
     ExternalService registerService(ExternalService service);
 
     void deregisterService(String name);
