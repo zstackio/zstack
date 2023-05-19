@@ -456,7 +456,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
             if (!subCovertSubClasss.isEmpty()) {
                 subCovertSubClasss.forEach(subCovertSubClass -> {
                     EncryptedFieldBundle encryptedFieldBundle = getSm4EncryptedFieldBundle(field.getDeclaringClass().getSimpleName(), field.getName());
-                    encryptedFieldBundle.setEncryptedClass(field.getDeclaringClass().getSimpleName());
+                    encryptedFieldBundle.setEncryptedClass(((CovertSubClass) subCovertSubClass).classSimpleName());
                     encryptedFieldBundle.setConditionKey(((CovertSubClass) subCovertSubClass).columnName());
                     encryptedFieldBundle.setConditionValue(((CovertSubClass) subCovertSubClass).columnValue());
                     fieldBundles.add(encryptedFieldBundle);

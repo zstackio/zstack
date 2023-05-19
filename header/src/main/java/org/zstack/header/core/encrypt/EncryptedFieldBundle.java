@@ -5,18 +5,18 @@ package org.zstack.header.core.encrypt;
  * @date 2023/5/5 16:35
  */
 public class EncryptedFieldBundle {
-    private String EncryptedType;
+    private String encryptedType;
     private String encryptedClass;
     private String encryptedColumn;
     private String conditionValue;
     private String conditionKey;
 
     public String getEncryptedType() {
-        return EncryptedType;
+        return encryptedType;
     }
 
     public void setEncryptedType(String encryptedType) {
-        EncryptedType = encryptedType;
+        this.encryptedType = encryptedType;
     }
 
     public String getEncryptedClass() {
