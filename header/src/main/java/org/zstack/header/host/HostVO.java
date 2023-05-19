@@ -28,12 +28,25 @@ public class HostVO extends HostAO {
     @NoView
     private HostCapacityVO capacity;
 
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "uuid")
+    @NoView
+    private HostIpmiVO ipmi;
+
     public HostCapacityVO getCapacity() {
         return capacity;
     }
 
     public void setCapacity(HostCapacityVO capacity) {
         this.capacity = capacity;
+    }
+
+    public HostIpmiVO getIpmi() {
+        return ipmi;
+    }
+
+    public void setIpmi(HostIpmiVO ipmi) {
+        this.ipmi = ipmi;
     }
 
     public HostVO() {
@@ -52,6 +65,7 @@ public class HostVO extends HostAO {
         this.setUuid(vo.getUuid());
         this.setZoneUuid(vo.getZoneUuid());
         this.setCapacity(vo.getCapacity());
+        this.setIpmi(vo.getIpmi());
     }
 }
 

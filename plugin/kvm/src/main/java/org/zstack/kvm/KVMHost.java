@@ -1,5 +1,7 @@
 package org.zstack.kvm;
 
+import okhttp3.Response;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.cluster.ClusterGlobalConfig;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
+import org.zstack.core.timeout.TimeHelper;
+import org.zstack.header.core.*;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
@@ -34,10 +38,6 @@ import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
-import org.zstack.header.core.AsyncLatch;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -88,6 +88,11 @@ import org.zstack.utils.ssh.SshShell;
 import org.zstack.utils.tester.ZTester;
 
 import javax.persistence.TypedQuery;
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -132,6 +137,10 @@ public class KVMHost extends HostBase implements Host {
     private VmInstanceDeviceManager vidm;
     @Autowired
     private KvmHypervisorInfoManager hypervisorManager;
+    @Autowired
+    private KvmHostIpmiPowerExecutor kvmHostIpmiPowerExecutor;
+    @Autowired
+    private TimeHelper timeHelper;
 
     private KVMHostContext context;
 
@@ -172,6 +181,7 @@ public class KVMHost extends HostBase implements Host {
     private String updateHostOSPath;
     private String updateDependencyPath;
     private String shutdownHost;
+    private String rebootHost;
     private String updateVmPriorityPath;
     private String updateSpiceChannelConfigPath;
     private String cancelJob;
@@ -337,6 +347,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.HOST_SHUTDOWN);
         shutdownHost = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.HOST_REBOOT);
+        rebootHost = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VM_UPDATE_PRIORITY_PATH);
@@ -583,7 +597,11 @@ public class KVMHost extends HostBase implements Host {
             handle((GetKVMHostDownloadCredentialMsg) msg);
         } else if (msg instanceof ShutdownHostMsg) {
             handle((ShutdownHostMsg) msg);
-        } else if (msg instanceof CancelHostTaskMsg) {
+        } else if (msg instanceof RebootHostMsg) {
+            handle((RebootHostMsg) msg);
+        } else if (msg instanceof PowerOnHostMsg) {
+            handle((PowerOnHostMsg) msg);
+        }else if (msg instanceof CancelHostTaskMsg) {
             handle((CancelHostTaskMsg) msg);
         } else if (msg instanceof GetVmFirstBootDeviceOnHypervisorMsg) {
             handle((GetVmFirstBootDeviceOnHypervisorMsg) msg);
@@ -613,9 +631,322 @@ public class KVMHost extends HostBase implements Host {
             handle((AttachDataVolumeToHostMsg) msg);
         } else if (msg instanceof DetachDataVolumeFromHostMsg) {
             handle((DetachDataVolumeFromHostMsg) msg);
+        } else if (msg instanceof GetHostWebSshUrlMsg) {
+            handle((GetHostWebSshUrlMsg) msg);
+        } else if (msg instanceof GetHostPowerStatusMsg) {
+            handle((GetHostPowerStatusMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(GetHostPowerStatusMsg msg) {
+        handleGetPowerStatusByIpmi(msg);
+    }
+
+    private void handleGetPowerStatusByIpmi(GetHostPowerStatusMsg msg) {
+        GetHostPowerStatusReply reply = new GetHostPowerStatusReply();
+        HostVO host = dbf.findByUuid(msg.getUuid(), HostVO.class);
+        HostIpmiVO ipmi = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host);
+        reply.setInventory(HostIpmiInventory.valueOf(ipmi));
+        bus.reply(msg, reply);
+    }
+
+    class WebSshResponseStruct {
+        String id;
+        String status;
+        String encoding;
+    }
+
+    private void handle(GetHostWebSshUrlMsg msg) {
+        GetHostWebSshUrlReply reply = new GetHostWebSshUrlReply();
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            String port = KVMGlobalConfig.HOST_WEBSSH_PORT.value();
+            reply.setUrl(String.format("ws://{{ip}}:%s/ws?id=%s", port, "mockId"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        KVMHostVO host = dbf.findByUuid(msg.getHostUuid(), KVMHostVO.class);
+        File privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY, true);
+
+        String privKeyContent;
+        try {
+            privKeyContent = FileUtils.readFileToString(privKeyFile, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new CloudRuntimeException(
+                    String.format("read host[%s] private key failed. because %s", host.getUuid(), e.getMessage())
+            );
+        }
+
+        HTTP.Builder hb = HTTP.post();
+        hb.body("");
+        try {
+            hb.url(String.format("http://localhost:%s?username=%s&&hostname=%s&&port=%s&&privatekey=%s",
+                    KVMGlobalConfig.HOST_WEBSSH_PORT.value(),
+                    "root",
+                    host.getManagementIp(),
+                    host.getPort().toString(),
+                    URLEncoder.encode(privKeyContent, "UTF-8")));
+
+            Response r = hb.callWithException();
+            // 1. webssh maybe is not running
+            if (!r.isSuccessful()) {
+                reply.setError(inerr("webssh server is unreachable for %s", r.message()));
+                reply.setSuccess(false);
+                bus.reply(msg, reply);
+                return;
+            }
+
+            WebSshResponseStruct webSsh = JSONObjectUtil.toObject(Objects.requireNonNull(r.body()).string(), WebSshResponseStruct.class);
+            // 2. return id is null, because authentication fail or connections is full
+            if (null == webSsh.id) {
+                reply.setError(operr("create connection to host[%s] failed, because %s", host.getUuid(), webSsh.status));
+                reply.setSuccess(false);
+                bus.reply(msg, reply);
+                return;
+            }
+
+            String port = KVMGlobalConfig.HOST_WEBSSH_PORT.value();
+            reply.setUrl(String.format("ws://{{ip}}:%s/ws?id=%s", port, webSsh.id));
+            bus.reply(msg, reply);
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException(
+                    String.format("urlencode host[%s] private key failed. because %s", host.getUuid(), e.getMessage())
+            );
+        } catch (IOException | NullPointerException e) {
+            throw new CloudRuntimeException(
+                    String.format("get host[%s] webssh url failed. because %s", host.getUuid(), e.getMessage())
+            );
+        }
+    }
+
+    private void handleRebootHostByIpmi(RebootHostMsg msg, NoErrorCompletion completion) {
+        RebootHostReply reply = new RebootHostReply();
+        kvmHostIpmiPowerExecutor.powerReset(self, new Completion(msg) {
+            @Override
+            public void success() {
+                changeConnectionState(HostStatusEvent.disconnected);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setSuccess(false);
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(PowerOnHostMsg msg) {
+        inQueue().name(String.format("power-on-kvm-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> handlePowerOnHost(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void handlePowerOnHost(PowerOnHostMsg msg, NoErrorCompletion completion) {
+        PowerOnHostReply reply = new PowerOnHostReply();
+        Completion newCompletion = new Completion(completion) {
+            @Override
+            public void success() {
+                if (msg.isReturnEarly()) {
+                    bus.reply(msg, reply);
+                } else {
+                    submitTaskWaitHostPowerOnByIpmi();
+                }
+                completion.done();
+            }
+
+            private void submitTaskWaitHostPowerOnByIpmi() {
+                HostVO host = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
+                long timeoutInSec = KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Integer.class).longValue();
+                long ctimeout = TimeUnit.SECONDS.toMillis(timeoutInSec);
+                Long deadline = timeHelper.getCurrentTimeMillis() + ctimeout;
+                thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
+                    @Override
+                    public boolean run() {
+                        if (timeHelper.getCurrentTimeMillis() > deadline) {
+                            reply.setError(operr(String.format("Host[%s] has not been power on within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
+                            reply.setSuccess(false);
+                            bus.reply(msg, reply);
+                            HostIpmiVO ipmi = host.getIpmi();
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi, HostPowerStatus.POWER_OFF);
+                            return true;
+                        }
+                        HostPowerStatus status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
+                        if (HostPowerStatus.POWER_ON.equals(status)) {
+                            bus.reply(msg, reply);
+                            return true;
+                        }
+                        if (HostPowerStatus.POWER_OFF.equals(status)) {
+                            HostIpmiVO ipmi = host.getIpmi();
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi,
+                                    HostPowerStatus.POWER_OFF.nextStatus(HostPowerStatusEvent.on));
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public TimeUnit getTimeUnit() {
+                        return TimeUnit.SECONDS;
+                    }
+
+                    @Override
+                    public long getInterval() {
+                        return 2;
+                    }
+
+                    @Override
+                    public String getName() {
+                        return String.format("wait-host[%s]-power-on", msg.getHostUuid());
+                    }
+                });
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setSuccess(false);
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        };
+
+        kvmHostIpmiPowerExecutor.powerOn(self, newCompletion);
+    }
+
+    private void handleShutdownHostByIpmi(ShutdownHostMsg msg, NoErrorCompletion completion) {
+        ShutdownHostReply reply = new ShutdownHostReply();
+        Completion newCompletion = new Completion(completion) {
+            @Override
+            public void success() {
+                changeConnectionState(HostStatusEvent.disconnected);
+                if (msg.isReturnEarly()) {
+                    bus.reply(msg, reply);
+                } else {
+                    submitTaskWaitHostShutdownByIpmi();
+                }
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setSuccess(false);
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            private void submitTaskWaitHostShutdownByIpmi() {
+                HostVO host = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
+                long timeoutInSec = KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Integer.class).longValue();
+                long ctimeout = TimeUnit.SECONDS.toMillis(timeoutInSec);
+                Long deadline = timeHelper.getCurrentTimeMillis() + ctimeout;
+                thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
+                    @Override
+                    public boolean run() {
+                        if (timeHelper.getCurrentTimeMillis() > deadline) {
+                            reply.setError(operr(String.format("Host[%s] has not been shut down within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
+                            reply.setSuccess(false);
+                            bus.reply(msg, reply);
+                            HostIpmiVO ipmi = host.getIpmi();
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi, HostPowerStatus.POWER_ON);
+                            return true;
+                        }
+                        HostPowerStatus status = kvmHostIpmiPowerExecutor.refreshHostPowerStatus(host).getIpmiPowerStatus();
+                        if (HostPowerStatus.POWER_OFF.equals(status)) {
+                            bus.reply(msg, reply);
+                            return true;
+                        }
+                        if (HostPowerStatus.POWER_ON.equals(status)) {
+                            HostIpmiVO ipmi = host.getIpmi();
+                            kvmHostIpmiPowerExecutor.updateIpmiPowerStatusInDB(ipmi,
+                                    HostPowerStatus.POWER_ON.nextStatus(HostPowerStatusEvent.off));
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public TimeUnit getTimeUnit() {
+                        return TimeUnit.SECONDS;
+                    }
+
+                    @Override
+                    public long getInterval() {
+                        return 2;
+                    }
+
+                    @Override
+                    public String getName() {
+                        return String.format("wait-host[%s]-power-off", msg.getHostUuid());
+                    }
+                });
+            }
+        };
+        kvmHostIpmiPowerExecutor.powerOff(self, msg.isForce(), newCompletion);
+    }
+
+    private void handle(RebootHostMsg msg) {
+        inQueue().name(String.format("reboot-kvm-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> handleRebootMsg(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void handleRebootMsg(RebootHostMsg msg, NoErrorCompletion completion) {
+        switch (msg.getMethod()) {
+            case AGENT:
+                handleRebootHostByAgent(msg, completion);
+                break;
+            case IPMI:
+                handleRebootHostByIpmi(msg, completion);
+                break;
+            default:
+                HostIpmiVO ipmi = dbf.findByUuid(msg.getHostUuid(), HostIpmiVO.class);
+                if (null != ipmi && null != ipmi.getIpmiAddress() && null != ipmi.getIpmiUsername() && null != ipmi.getIpmiPassword()) {
+                    handleRebootHostByIpmi(msg, completion);
+                } else {
+                    handleRebootHostByAgent(msg, completion);
+                }
+        }
+    }
+
+    private void handleRebootHostByAgent(RebootHostMsg msg, NoErrorCompletion completion) {
+        RebootHostReply reply = new RebootHostReply();
+        KVMAgentCommands.RebootHostCmd cmd = new KVMAgentCommands.RebootHostCmd();
+        new Http<>(rebootHost, cmd, RebootHostResponse.class).call(new ReturnValueCompletion<RebootHostResponse>(msg, completion) {
+            @Override
+            public void success(RebootHostResponse returnValue) {
+                if (!returnValue.isSuccess()) {
+                    reply.setError(operr("operation error, because:%s", returnValue.getError()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+                changeConnectionState(HostStatusEvent.disconnected);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
     }
 
     private void handle(SyncVmDeviceInfoMsg msg) {
@@ -4618,6 +4949,24 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handleShutdownHost(final ShutdownHostMsg msg, final NoErrorCompletion completion) {
+        switch (msg.getMethod()) {
+            case AGENT:
+                handleShutdownHostByAgent(msg, completion);
+                break;
+            case IPMI:
+                handleShutdownHostByIpmi(msg, completion);
+                break;
+            default:
+                HostIpmiVO ipmi = dbf.findByUuid(msg.getHostUuid(), HostIpmiVO.class);
+                if (null != ipmi && null != ipmi.getIpmiAddress() && null != ipmi.getIpmiUsername() && null != ipmi.getIpmiPassword()) {
+                    handleShutdownHostByIpmi(msg, completion);
+                } else {
+                    handleShutdownHostByAgent(msg, completion);
+                }
+        }
+    }
+
+    private void handleShutdownHostByAgent(ShutdownHostMsg msg, NoErrorCompletion completion) {
         ShutdownHostReply reply = new ShutdownHostReply();
         KVMAgentCommands.ShutdownHostCmd cmd = new KVMAgentCommands.ShutdownHostCmd();
         new Http<>(shutdownHost, cmd, ShutdownHostResponse.class).call(new ReturnValueCompletion<ShutdownHostResponse>(msg, completion) {
@@ -4662,9 +5011,20 @@ public class KVMHost extends HostBase implements Host {
             }
 
             private void waitForHostShutdown(ShutdownHostReply reply, NoErrorCompletion noErrorCompletion) {
-                thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(msg, noErrorCompletion) {
+                long timeoutInSec = KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Integer.class).longValue();
+                long ctimeout = TimeUnit.SECONDS.toMillis(timeoutInSec);
+                Long deadline = timeHelper.getCurrentTimeMillis() + ctimeout;
+                thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(msg, completion) {
                     @Override
                     public boolean run() {
+                        if (isTimeout()) {
+                            reply.setSuccess(false);
+                            reply.setError(operr("host[%s] not shutdown in %d seconds",msg.getHostUuid(), ctimeout));
+                            bus.reply(msg,reply);
+                            noErrorCompletion.done();
+                            return true;
+                        }
+
                         if (testPort()) {
                             return false;
                         }
@@ -4672,6 +5032,10 @@ public class KVMHost extends HostBase implements Host {
                         bus.reply(msg, reply);
                         noErrorCompletion.done();
                         return true;
+                    }
+
+                    private boolean isTimeout() {
+                        return timeHelper.getCurrentTimeMillis() > deadline;
                     }
 
                     @Override

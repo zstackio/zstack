@@ -187,5 +187,6 @@
         <class>org.zstack.directory.DirectoryVO</class>
         <class>org.zstack.directory.ResourceDirectoryRefVO</class>
         <class>org.zstack.header.agent.versioncontrol.AgentVersionVO</class>
+        <class>org.zstack.header.host.HostIpmiVO</class>
     </persistence-unit>
 </persistence>

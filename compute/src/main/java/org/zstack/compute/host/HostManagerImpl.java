@@ -45,10 +45,7 @@ import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.Bucket;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.data.Pair;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
@@ -102,6 +99,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private Map<String, HypervisorFactory> hypervisorFactories = Collections.synchronizedMap(new HashMap<String, HypervisorFactory>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
     private Future reportHostCapacityTask;
+    private Future refreshHostPowerStatusTask;
 
     static {
         allowedMessageAfterSoftDeletion.add(HostDeletionMsg.class);
@@ -112,12 +110,35 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             handle((APIAddHostMsg) msg);
         } else if (msg instanceof APIGetHypervisorTypesMsg) {
             handle((APIGetHypervisorTypesMsg) msg);
+        }  else if (msg instanceof APIGetHostWebSshUrlMsg){
+            handle((APIGetHostWebSshUrlMsg) msg);
         } else if (msg instanceof HostMessage) {
             HostMessage hmsg = (HostMessage) msg;
             passThrough(hmsg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetHostWebSshUrlMsg msg) {
+        APIGetHostWebSshUrlEvent event = new APIGetHostWebSshUrlEvent(msg.getId());
+        GetHostWebSshUrlMsg getHostWebSshUrlMsg = new GetHostWebSshUrlMsg();
+        getHostWebSshUrlMsg.setUuid(msg.getUuid());
+        bus.makeLocalServiceId(getHostWebSshUrlMsg ,HostConstant.SERVICE_ID);
+        bus.send(getHostWebSshUrlMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    event.setError(r.getError());
+                    bus.publish(event);
+                    return;
+                }
+
+                GetHostWebSshUrlReply getUrlReply = r.castReply();
+                event.setUrl(getUrlReply.getUrl());
+                bus.publish(event);
+            }
+        });
     }
 
     private void handle(APIGetHypervisorTypesMsg msg) {
@@ -570,7 +591,53 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
     private void startPeriodTasks() {
         HostGlobalConfig.REPORT_HOST_CAPACITY_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> startReportHostCapacityTask());
+        HostGlobalConfig.HOST_POWER_REFRESH_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> startRefreshHostPowerStatusTask());
         startReportHostCapacityTask();
+        startRefreshHostPowerStatusTask();
+    }
+
+    private void startRefreshHostPowerStatusTask() {
+        if (refreshHostPowerStatusTask != null) {
+            refreshHostPowerStatusTask.cancel(true);
+        }
+        refreshHostPowerStatusTask = thdf.submitPeriodicTask(new PeriodicTask() {
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return HostGlobalConfig.HOST_POWER_REFRESH_INTERVAL.value(Integer.class).longValue();
+            }
+
+            @Override
+            public String getName() {
+                return "update-host-ipmi-power-status";
+            }
+
+            @Override
+            public void run() {
+                List<HostIpmiVO> ipmis = Q.New(HostIpmiVO.class).list();
+                new While<>(ipmis).step((ipmi, comp) -> {
+                    refreshHostPowerStatus(ipmi);
+                    comp.done();
+                },10).run(new NopeWhileDoneCompletion());
+            }
+
+            @AsyncThread
+            private void refreshHostPowerStatus(HostIpmiVO ipmi) {
+                if (ipmi == null || HostPowerStatus.POWER_BOOTING == ipmi.getIpmiPowerStatus()
+                        || HostPowerStatus.POWER_SHUTDOWN == ipmi.getIpmiPowerStatus()) {
+                    return;
+                }
+                HostPowerStatus status = HostIpmiPowerExecutor.getPowerStatus(ipmi);
+                if (ipmi.getIpmiPowerStatus() != status) {
+                    ipmi.setIpmiPowerStatus(status);
+                    dbf.update(ipmi);
+                }
+            }
+        });
     }
 
     private void startReportHostCapacityTask() {

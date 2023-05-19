@@ -249,4 +249,12 @@
         <defaultValue>false</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+
+    <config>
+        <category>kvm</category>
+        <name>webssh.idleTimeout</name>
+        <description>WebSSH timeout in seconds duration starts counting after the user has stopped interacting.</description>
+        <defaultValue>1800</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>

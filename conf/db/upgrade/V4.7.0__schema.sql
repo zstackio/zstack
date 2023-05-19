@@ -100,3 +100,16 @@ ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `bondingType` varchar(32)
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `gateway` varchar(128) DEFAULT NULL;
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `callBackIp` varchar(128) DEFAULT NULL;
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `description` varchar(2048) DEFAULT NULL;
+
+CREATE TABLE IF NOT EXISTS `HostIpmiVO`
+(
+    `uuid`            varchar(32)  NOT NULL UNIQUE,
+    `ipmiAddress`     varchar(32),
+    `ipmiPort`        int unsigned,
+    `ipmiUsername`    varchar(255),
+    `ipmiPassword`    varchar(255),
+    `ipmiPowerStatus` varchar(255),
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `ukHostIpmiVO` UNIQUE (`ipmiAddress`, `ipmiPort`),
+    CONSTRAINT `fkHostIpmiVO` FOREIGN KEY (`uuid`) REFERENCES `HostEO` (`uuid`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;

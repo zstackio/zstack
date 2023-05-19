@@ -1,6 +1,7 @@
 package org.zstack.compute.host;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
@@ -14,6 +15,11 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
+import org.zstack.utils.ShellResult;
+import org.zstack.utils.ShellUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
@@ -54,9 +60,26 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             validate((APIChangeHostStateMsg) msg);
         } else if (msg instanceof APIReconnectHostMsg){
             validate((APIReconnectHostMsg) msg);
+        } else if (msg instanceof APIGetHostWebSshUrlMsg) {
+            validate((APIGetHostWebSshUrlMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIGetHostWebSshUrlMsg msg) {
+        String ZOPS_CONTAINER_NAME = "zops-controller";
+        ShellResult ret;
+        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+            ret = ShellUtils.runAndReturn(String.format("docker exec %s systemctl is-active webssh", ZOPS_CONTAINER_NAME));
+        } else {
+            ret = new ShellResult();
+            ret.setCommand(String.format("docker exec %s systemctl is-active webssh", ZOPS_CONTAINER_NAME));
+            ret.setRetCode(0);
+        }
+        if (!ret.isReturnCode(0)) {
+            throw new ApiMessageInterceptionException(operr("webssh server is not running."));
+        }
     }
 
     private void validate(APIDeleteHostMsg msg) {
