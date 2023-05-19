@@ -5971,60 +5971,69 @@ public class VmInstanceBase extends AbstractVmInstance {
                     flowChain.then(new VmReleaseNetworkServiceOnChangeIPFlow());
                 }
 
-                flowChain.then(new NoRollbackFlow() {
-                    String __name__ = "update-nic-ip";
+                flowChain.then(new Flow() {
+                    String __name__ = "update-nic-old-ip";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        new While<>(nic.getUsedIps()).all((ip, comp) -> {
-                            ReturnIpMsg msg = new ReturnIpMsg();
-                            msg.setUsedIpUuid(ip.getUuid());
-                            msg.setL3NetworkUuid(ip.getL3NetworkUuid());
-                            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
-                            bus.send(msg, new CloudBusCallBack(comp) {
-                                @Override
-                                public void run(MessageReply reply) {
-                                    comp.done();
+                        SQL.New(UsedIpVO.class).eq(UsedIpVO_.vmNicUuid, nic.getUuid())
+                                .set(UsedIpVO_.vmNicUuid, null).update();
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        for (UsedIpInventory ip : nic.getUsedIps()) {
+                            SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, ip.getUuid())
+                                    .set(UsedIpVO_.vmNicUuid, nic.getUuid()).update();
+                        }
+                        SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, nic.getUuid())
+                                .set(VmNicVO_.l3NetworkUuid, nic.getL3NetworkUuid())
+                                .set(VmNicVO_.usedIpUuid, nic.getUsedIpUuid())
+                                .set(VmNicVO_.ip, nic.getIp())
+                                .set(VmNicVO_.gateway, nic.getGateway())
+                                .set(VmNicVO_.netmask, nic.getNetmask()).update();
+                        trigger.rollback();
+                    }
+                });
+
+                flowChain.then(new NoRollbackFlow() {
+                    String __name__ = "update-nic-ip";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
+                            self.setDefaultL3NetworkUuid(destL3.getUuid());
+                        }
+                        self = dbf.updateAndRefresh(self);
+                        VmNicVO nicVO = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
+                        List<UsedIpInventory> allocateIps = (List<UsedIpInventory>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString());
+                        List<UsedIpVO> ipVOS = new ArrayList<>();
+                        for (UsedIpInventory ip : allocateIps) {
+                            /* update usedIpVo */
+                            UsedIpVO ipVO = dbf.findByUuid(ip.getUuid(), UsedIpVO.class);
+                            ipVO.setVmNicUuid(nic.getUuid());
+                            ipVOS.add(ipVO);
+                            if (allocateIps.size() == 2) {
+                                if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                                    nicVO.setIp(ip.getIp());
+                                    nicVO.setGateway(ip.getGateway());
+                                    nicVO.setNetmask(ip.getNetmask());
+                                    nicVO.setL3NetworkUuid(ip.getL3NetworkUuid());
+                                    nicVO.setUsedIpUuid(ip.getUuid());
                                 }
-                            });
-                        }).run(new WhileDoneCompletion(trigger) {
-                            @Override
-                            public void done(ErrorCodeList errorCodeList) {
-                                if (self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
-                                    self.setDefaultL3NetworkUuid(destL3.getUuid());
-                                }
-                                self = dbf.updateAndRefresh(self);
-                                VmNicVO nicVO = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
-                                List<UsedIpInventory> allocateIps = (List<UsedIpInventory>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString());
-                                List<UsedIpVO> ipVOS = new ArrayList<>();
-                                for (UsedIpInventory ip : allocateIps) {
-                                    /* update usedIpVo */
-                                    UsedIpVO ipVO = dbf.findByUuid(ip.getUuid(), UsedIpVO.class);
-                                    ipVO.setVmNicUuid(nic.getUuid());
-                                    ipVOS.add(ipVO);
-                                    if (allocateIps.size() == 2) {
-                                        if (ip.getIpVersion() == IPv6Constants.IPv4) {
-                                            nicVO.setIp(ip.getIp());
-                                            nicVO.setGateway(ip.getGateway());
-                                            nicVO.setNetmask(ip.getNetmask());
-                                            nicVO.setL3NetworkUuid(ip.getL3NetworkUuid());
-                                            nicVO.setUsedIpUuid(ip.getUuid());
-                                        }
-                                    } else {
-                                        nicVO.setIp(ip.getIp());
-                                        nicVO.setGateway(ip.getGateway());
-                                        nicVO.setNetmask(ip.getNetmask());
-                                        nicVO.setL3NetworkUuid(ip.getL3NetworkUuid());
-                                        nicVO.setUsedIpUuid(ip.getUuid());
-                                    }
-                                }
-                                dbf.updateAndRefresh(nicVO);
-                                dbf.updateCollection(ipVOS);
-                                data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
-                                data.put(VmInstanceConstant.Params.vmInventory.toString(), getSelfInventory());
-                                trigger.next();
+                            } else {
+                                nicVO.setIp(ip.getIp());
+                                nicVO.setGateway(ip.getGateway());
+                                nicVO.setNetmask(ip.getNetmask());
+                                nicVO.setL3NetworkUuid(ip.getL3NetworkUuid());
+                                nicVO.setUsedIpUuid(ip.getUuid());
                             }
-                        });
+                        }
+                        dbf.updateAndRefresh(nicVO);
+                        dbf.updateCollection(ipVOS);
+                        data.put(VmInstanceConstant.Params.VmNicInventory.toString(), nicVO);
+                        data.put(VmInstanceConstant.Params.vmInventory.toString(), getSelfInventory());
+                        trigger.next();
                     }
                 });
 
@@ -6040,7 +6049,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
 
                         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                        VmNicVO nicVO = (VmNicVO) data.get(VmInstanceConstant.Params.VmNicInventory.toString());
                         HostInventory dest = spec.getDestHost();
                         VmInstanceInventory vm = getSelfInventory();
 
@@ -6052,7 +6060,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         VmUpdateNicOnHypervisorMsg cmsg = new VmUpdateNicOnHypervisorMsg();
                         cmsg.setVmInstanceUuid(vm.getUuid());
                         cmsg.setHostUuid(dest.getUuid());
-                        cmsg.setNicsUuid(list(nicVO.getUuid()));
+                        cmsg.setNicsUuid(list(nic.getUuid()));
                         bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, vm.getUuid());
                         bus.send(cmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -6071,6 +6079,31 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (self.getState() == VmInstanceState.Running) {
                     flowChain.then(new VmApplyNetworkServiceOnChangeIPFlow());
                 }
+
+                flowChain.then(new NoRollbackFlow() {
+                    String __name__ = "return-old-ip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new While<>(nic.getUsedIps()).all((ip, comp) -> {
+                            ReturnIpMsg msg = new ReturnIpMsg();
+                            msg.setUsedIpUuid(ip.getUuid());
+                            msg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+                            bus.send(msg, new CloudBusCallBack(comp) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    comp.done();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(chain) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
 
                 flowChain.done(new FlowDoneHandler(chain) {
                     @Override
