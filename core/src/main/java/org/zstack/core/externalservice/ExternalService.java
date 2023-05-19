@@ -1,5 +1,7 @@
 package org.zstack.core.externalservice;
 
+import org.zstack.header.core.external.service.ExternalServiceCapabilities;
+
 public interface ExternalService {
     String getName();
 
@@ -10,4 +12,8 @@ public interface ExternalService {
     void restart();
 
     boolean isAlive();
+
+    ExternalServiceCapabilities getExternalServiceCapabilities();
+
+    void reload();
 }
