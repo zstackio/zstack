@@ -118,10 +118,11 @@ class ProgressCase extends SubCase {
 
         threads.forEach({t -> t.join()})
         reportProgress("100")
-        List<TaskProgressVO> pvos = Q.New(TaskProgressVO.class).orderBy(TaskProgressVO_.time, SimpleQuery.Od.ASC)
-                .orderBy(TaskProgressVO_.content, SimpleQuery.Od.ASC).list()
+        List<TaskProgressVO> progresses = Q.New(TaskProgressVO.class)
+                .orderBy(TaskProgressVO_.id, SimpleQuery.Od.ASC) // DO NOT SORT BY TIME! time value may repeat
+                .list()
         // TODO: solve the boundary condition
-        assert pvos.content.unique() == ["0", "10", "20", "30", "40", "50", "60", "70", "100"]
+        assert progresses.content.unique() == ["0", "10", "20", "30", "40", "50", "60", "70", "100"]
     }
 }
 
