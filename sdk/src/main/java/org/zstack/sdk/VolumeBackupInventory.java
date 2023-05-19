@@ -92,6 +92,14 @@ public class VolumeBackupInventory  {
         return this.mode;
     }
 
+    public java.lang.String vmInstanceUuid;
+    public void setVmInstanceUuid(java.lang.String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
+    }
+    public java.lang.String getVmInstanceUuid() {
+        return this.vmInstanceUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
