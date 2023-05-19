@@ -1,6 +1,12 @@
 package org.zstack.test.integration.kvm.capacity
 
 import org.zstack.compute.allocator.HostAllocatorGlobalConfig
+import org.zstack.core.db.SQL
+import org.zstack.header.host.HostStatus
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.GetCpuMemoryCapacityResult
@@ -105,8 +111,28 @@ class CheckHostMemCapacityWhenCreateVmCase extends SubCase {
     void test() {
         env.create {
             createVmWithHostSameMemTest()
+            testVMHostDisconnectedAndCapacityUsageChanged()
             createVmWithBiggerHostMemTest()
         }
+    }
+
+    void testVMHostDisconnectedAndCapacityUsageChanged() {
+        SQL.New(HostVO.class)
+                .eq(HostVO_.uuid, vm.hostUuid)
+                .set(HostVO_.status, HostStatus.Disconnected)
+                .update()
+
+        GetCpuMemoryCapacityResult result = getCpuMemoryCapacity {
+            hostUuids = [vm.hostUuid]
+        } as GetCpuMemoryCapacityResult
+
+        assert result.totalMemory == 0
+        assert result.availableMemory == 0
+
+        SQL.New(HostVO.class)
+                .eq(HostVO_.uuid, vm.hostUuid)
+                .set(HostVO_.status, HostStatus.Connected)
+                .update()
     }
 
     void createVmWithHostSameMemTest() {
