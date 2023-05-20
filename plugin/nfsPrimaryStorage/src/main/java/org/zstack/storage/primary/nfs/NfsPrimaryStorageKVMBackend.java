@@ -824,6 +824,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setUuid(msg.getSrcPrimaryStorageUuid());
         cmd.srcFolderPath = msg.getSrcFolderPath();
         cmd.dstFolderPath = msg.getDstFolderPath();
+        cmd.independentPath = msg.getIndependentPath();
         cmd.filtPaths = trash.findTrashInstallPath(msg.getSrcFolderPath(), msg.getSrcPrimaryStorageUuid());
         cmd.isMounted = mounted;
 

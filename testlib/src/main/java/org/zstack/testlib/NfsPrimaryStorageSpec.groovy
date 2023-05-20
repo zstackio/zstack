@@ -276,10 +276,6 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(NfsPrimaryStorageKVMBackend.CREATE_VOLUME_WITH_BACKING_PATH) {
-                return new NfsPrimaryStorageKVMBackendCommands.CreateVolumeWithBackingRsp()
-            }
-
             simulator(NfsPrimaryStorageKVMBackend.GET_VOLUME_SIZE_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.GetVolumeActualSizeCmd.class)
                 NfsPrimaryStorageKVMBackendCommands.GetVolumeActualSizeRsp rsp = new NfsPrimaryStorageKVMBackendCommands.GetVolumeActualSizeRsp()
@@ -382,7 +378,21 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(NfsPrimaryStorageKVMBackend.NFS_TO_NFS_MIGRATE_BITS_PATH) {
+            simulator(NfsPrimaryStorageKVMBackend.CREATE_VOLUME_WITH_BACKING_PATH) {
+                return new NfsPrimaryStorageKVMBackendCommands.CreateVolumeWithBackingRsp()
+            }
+
+            VFS.vfsHook(NfsPrimaryStorageKVMBackend.CREATE_VOLUME_WITH_BACKING_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.CreateVolumeWithBackingCmd.class)
+                VFS vfs = vfs(cmd, xspec)
+                Volume image = vfs.getFile(cmd.templatePathInCache, true)
+                vfs.createQcow2(cmd.installUrl, image.actualSize, image.virtualSize, cmd.templatePathInCache)
+                return rsp
+            }
+
+            simulator(NfsPrimaryStorageKVMBackend.NFS_TO_NFS_MIGRATE_BITS_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.NfsToNfsMigrateBitsCmd.class)
+                assert cmd.independentPath == null
                 return new NfsPrimaryStorageKVMBackendCommands.NfsToNfsMigrateBitsRsp()
             }
 

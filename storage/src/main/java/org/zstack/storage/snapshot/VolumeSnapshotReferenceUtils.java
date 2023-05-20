@@ -1,7 +1,6 @@
 package org.zstack.storage.snapshot;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.security.core.parameters.P;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -56,10 +55,23 @@ public class VolumeSnapshotReferenceUtils {
         ));
     }
 
+    public static String getVolumeInstallUrlBackingOtherVolume(String volumeUuid) {
+        VolumeSnapshotReferenceVO ref = getVolumeBackingRef(volumeUuid);
+        if (ref != null) {
+            return ref.getReferenceInstallUrl();
+        }
+
+        return null;
+    }
+
+    public static List<String> getVolumeInstallUrlsReferenceByOtherVolumes(String volumeUuid) {
+        return getVolumeReferenceRef(volumeUuid).stream()
+                .map(VolumeSnapshotReferenceVO::getVolumeSnapshotInstallUrl)
+                .collect(Collectors.toList());
+    }
+
     public static void handleChainVolumeSnapshotReferenceAfterFlatten(VolumeInventory volume) {
-        VolumeSnapshotReferenceVO ref = Q.New(VolumeSnapshotReferenceVO.class)
-                .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, volume.getUuid())
-                .find();
+        VolumeSnapshotReferenceVO ref = getVolumeBackingRef(volume.getUuid());
         if (ref == null) {
             return;
         }
@@ -172,9 +184,7 @@ public class VolumeSnapshotReferenceUtils {
     }
 
     public static void rollbackSnapshotReferenceForNewVolume(String volumeUuid) {
-        VolumeSnapshotReferenceVO ref = Q.New(VolumeSnapshotReferenceVO.class)
-                .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, volumeUuid)
-                .find();
+        VolumeSnapshotReferenceVO ref = getVolumeBackingRef(volumeUuid);
         if (ref != null) {
             deleteSnapshotRef(ref);
         }
@@ -246,9 +256,7 @@ public class VolumeSnapshotReferenceUtils {
             return;
         }
 
-        VolumeSnapshotReferenceVO ref = Q.New(VolumeSnapshotReferenceVO.class)
-                .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, volume.getUuid())
-                .find();
+        VolumeSnapshotReferenceVO ref = getVolumeBackingRef(volume.getUuid());
         if (ref != null) {
             deleteAndRedirectSnapshotRef(ref);
         }
@@ -330,5 +338,17 @@ public class VolumeSnapshotReferenceUtils {
         }
 
         return false;
+    }
+
+    private static VolumeSnapshotReferenceVO getVolumeBackingRef(String volumeUuid) {
+        return Q.New(VolumeSnapshotReferenceVO.class)
+                .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, volumeUuid)
+                .find();
+    }
+
+    private static List<VolumeSnapshotReferenceVO> getVolumeReferenceRef(String volumeUuid) {
+        return Q.New(VolumeSnapshotReferenceVO.class)
+                .eq(VolumeSnapshotReferenceVO_.volumeUuid, volumeUuid)
+                .list();
     }
 }
