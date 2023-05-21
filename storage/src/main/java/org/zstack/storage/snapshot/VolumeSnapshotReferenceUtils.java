@@ -195,18 +195,14 @@ public class VolumeSnapshotReferenceUtils {
             return;
         }
 
-        String refInstancePath = Q.New(VolumeSnapshotReferenceVO.class).select(VolumeSnapshotReferenceVO_.referenceInstallUrl)
-                .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, snapshot.getVolumeUuid())
-                .eq(VolumeSnapshotReferenceVO_.referenceUuid, snapshot.getVolumeUuid())
-                .findValue();
-
-        if (snapshot.getPrimaryStorageInstallPath().equals(refInstancePath)) {
-            SQL.New(VolumeSnapshotReferenceVO.class)
-                    .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, snapshot.getVolumeUuid())
-                    .eq(VolumeSnapshotReferenceVO_.referenceUuid, snapshot.getVolumeUuid())
+        VolumeSnapshotReferenceVO ref = getVolumeBackingRef(snapshot.getVolumeUuid());
+        if (ref != null && snapshot.getPrimaryStorageInstallPath().equals(ref.getReferenceInstallUrl())) {
+            SQL.New(VolumeSnapshotReferenceVO.class).eq(VolumeSnapshotReferenceVO_.id, ref.getId())
                     .set(VolumeSnapshotReferenceVO_.referenceUuid, snapshot.getUuid())
                     .set(VolumeSnapshotReferenceVO_.referenceType, VolumeSnapshotVO.class.getSimpleName())
                     .update();
+            logger.debug(String.format("update volume snapshot reference[referVolumeSnapshotUuid:%s, referVolumeUuid:%s] for first snapshot",
+                    snapshot.getUuid(), snapshot.getVolumeUuid()));
         }
     }
 
