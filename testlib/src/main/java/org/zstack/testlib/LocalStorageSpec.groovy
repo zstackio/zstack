@@ -1,8 +1,6 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
-import org.zstack.core.Platform
-import org.zstack.core.db.Q
 import org.zstack.compute.host.HostSystemTags
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
@@ -25,9 +23,7 @@ import org.zstack.testlib.vfs.VFSFile
 import org.zstack.testlib.vfs.Volume
 import org.zstack.utils.gson.JSONObjectUtil
 
-import java.nio.file.Files
 import java.nio.file.Path
-
 /**
  * Created by xing5 on 2017/2/20.
  */
@@ -119,6 +115,29 @@ class LocalStorageSpec extends PrimaryStorageSpec {
 
                 rsp.backingFilePath = file.backingFile.toAbsolutePath().toString()
                 rsp.size = 0
+                return rsp
+            }
+
+            simulator(LocalStorageKvmBackend.GET_BACKING_CHAIN_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new LocalStorageKvmBackend.GetBackingChainRsp()
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.GET_BACKING_CHAIN_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.GetBackingChainCmd.class)
+
+                List<String> chain = []
+                VFS vfs = vfs(e, cmd, spec)
+                Qcow2 file = vfs.getFile(cmd.installPath)
+                if (file == null) {
+                    logger.debug("Dump of whole VFS:\\n${vfs.dumpAsString()}")
+                }
+                assert file != null : "cannot find file[${cmd.installPath}]"
+                while (file.backingQcow2() != null) {
+                    chain.add(file.backingQcow2().pathString())
+                    file = file.backingQcow2()
+                }
+
+                rsp.backingChain = chain
                 return rsp
             }
 

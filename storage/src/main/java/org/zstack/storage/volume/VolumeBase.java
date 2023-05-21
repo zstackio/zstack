@@ -43,7 +43,7 @@ import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
-import org.zstack.storage.snapshot.VolumeSnapshotReferenceUtils;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupCreationValidator;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -823,7 +823,8 @@ public class VolumeBase implements Volume {
 
         final VolumeInventory inv = getSelfInventory();
         String accountUuid = self.getAccountUuid();
-        pluginRgty.getExtensionList(VolumeBeforeExpungeExtensionPoint.class).forEach(ext -> ext.volumePreExpunge(inv));
+        List<VolumeBeforeExpungeExtensionPoint> exts = pluginRgty.getExtensionList(VolumeBeforeExpungeExtensionPoint.class);
+        exts.forEach(ext -> ext.volumePreExpunge(inv));
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("expunge-volume");
         chain.then(new ShareFlow() {
@@ -834,20 +835,18 @@ public class VolumeBase implements Volume {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        new While<>(pluginRgty.getExtensionList(VolumeBeforeExpungeExtensionPoint.class)).each((ext, c) -> {
-                            ext.volumeBeforeExpunge(inv, new Completion(c) {
-                                @Override
-                                public void success() {
-                                    c.done();
-                                }
+                        new While<>(exts).each((ext, c) -> ext.volumeBeforeExpunge(inv, new Completion(c) {
+                            @Override
+                            public void success() {
+                                c.done();
+                            }
 
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    logger.debug(String.format("failed to execute extension, because %s", errorCode.getDetails()));
-                                    c.done();
-                                }
-                            });
-                        }).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.debug(String.format("failed to execute extension, because %s", errorCode.getDetails()));
+                                c.done();
+                            }
+                        })).run(new WhileDoneCompletion(trigger) {
                             @Override
                             public void done(ErrorCodeList errorCodeList) {
                                 trigger.next();
@@ -859,6 +858,11 @@ public class VolumeBase implements Volume {
                 if (self.getPrimaryStorageUuid() != null) {
                     flow(new NoRollbackFlow() {
                         String __name__ = String.format("delete-volume-%s-on-primary-storage", inv.getUuid());
+
+                        @Override
+                        public boolean skip(Map data) {
+                            return exts.stream().anyMatch(ext -> ext.skipExpungeVolume(inv));
+                        }
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
@@ -1153,6 +1157,12 @@ public class VolumeBase implements Volume {
                 if (deletionPolicy == VolumeDeletionPolicy.Direct) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "delete-volume-from-primary-storage";
+
+                        @Override
+                        public boolean skip(Map data) {
+                            return pluginRgty.getExtensionList(VolumeBeforeExpungeExtensionPoint.class).stream()
+                                    .anyMatch(ext -> ext.skipExpungeVolume(self.toInventory()));
+                        }
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {

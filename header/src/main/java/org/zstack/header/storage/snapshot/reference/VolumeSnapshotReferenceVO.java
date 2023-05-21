@@ -1,6 +1,7 @@
-package org.zstack.header.storage.snapshot;
+package org.zstack.header.storage.snapshot.reference;
 
 
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
@@ -31,8 +32,16 @@ public class VolumeSnapshotReferenceVO {
     private String volumeUuid;
 
     @Column
-    @ForeignKey(parentEntityClass = VolumeSnapshotVO.class, onDeleteAction = ForeignKey.ReferenceOption.RESTRICT)
     private String volumeSnapshotUuid;
+
+    @Column
+    private String volumeSnapshotInstallUrl;
+
+    @Column
+    private String directSnapshotUuid;
+
+    @Column
+    private String directSnapshotInstallUrl;
 
     @Column
     @ForeignKey(parentEntityClass = VolumeSnapshotReferenceTreeVO.class, onDeleteAction = ForeignKey.ReferenceOption.RESTRICT)
@@ -42,8 +51,6 @@ public class VolumeSnapshotReferenceVO {
     @ForeignKey(parentEntityClass = VolumeSnapshotReferenceVO.class, onDeleteAction = ForeignKey.ReferenceOption.SET_NULL)
     private Long parentId;
 
-    @Column
-    private String volumeSnapshotInstallUrl;
 
     @Column
     private String referenceUuid;
@@ -168,11 +175,29 @@ public class VolumeSnapshotReferenceVO {
         VolumeSnapshotReferenceVO vo = new VolumeSnapshotReferenceVO();
         vo.volumeUuid = this.volumeUuid;
         vo.volumeSnapshotUuid = this.volumeSnapshotUuid;
+        vo.directSnapshotUuid = this.directSnapshotUuid;
+        vo.directSnapshotInstallUrl = this.directSnapshotInstallUrl;
         vo.volumeSnapshotInstallUrl = this.volumeSnapshotInstallUrl;
         vo.referenceUuid = this.referenceUuid;
         vo.referenceType = this.referenceType;
         vo.referenceInstallUrl = this.referenceInstallUrl;
         vo.referenceVolumeUuid = this.referenceVolumeUuid;
         return vo;
+    }
+
+    public String getDirectSnapshotUuid() {
+        return directSnapshotUuid;
+    }
+
+    public void setDirectSnapshotUuid(String directSnapshotUuid) {
+        this.directSnapshotUuid = directSnapshotUuid;
+    }
+
+    public String getDirectSnapshotInstallUrl() {
+        return directSnapshotInstallUrl;
+    }
+
+    public void setDirectSnapshotInstallUrl(String directSnapshotInstallUrl) {
+        this.directSnapshotInstallUrl = directSnapshotInstallUrl;
     }
 }

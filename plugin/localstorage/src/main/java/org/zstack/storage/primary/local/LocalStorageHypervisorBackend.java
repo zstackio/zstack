@@ -82,6 +82,8 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
 
     abstract void handle(GetVolumeRootImageUuidFromPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply> completion);
 
+    abstract void handle(GetVolumeBackingChainFromPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeBackingChainFromPrimaryStorageReply> returnValueCompletion);
+
     abstract void handleHypervisorSpecificMessage(LocalStorageHypervisorSpecificMessage msg);
 
     abstract void downloadImageToCache(ImageInventory img, String hostUuid, ReturnValueCompletion<String> completion);

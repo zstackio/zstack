@@ -917,6 +917,23 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public List<String> watchers;
     }
 
+    public static class GetBackingChainCmd extends AgentCommand {
+        public String volumePath;
+    }
+
+    public static class GetBackingChainRsp extends AgentResponse {
+        public List<String> backingChain;
+
+        public long totalSize;
+    }
+
+    public static class DeleteVolumeChainCmd extends AgentCommand {
+        public List<String> installPaths;
+    }
+
+    public static class DeleteVolumeChainRsp extends AgentResponse {
+    }
+
     public static class CephToCephMigrateVolumeSegmentCmd extends AgentCommand implements HasThreadContext, Serializable {
         String parentUuid;
         String resourceUuid;
@@ -1250,6 +1267,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String CHECK_SNAPSHOT_COMPLETED = "/ceph/primarystorage/check/snapshot";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/ceph/primarystorage/kvmhost/download/progress";
     public static final String GET_IMAGE_WATCHERS_PATH = "/ceph/primarystorage/getvolumewatchers";
+    public static final String GET_BACKING_CHAIN_PATH = "/ceph/primarystorage/volume/getbackingchain";
+    public static final String DELETE_VOLUME_CHAIN_PATH = "/ceph/primarystorage/volume/deletechain";
 
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
@@ -4096,7 +4115,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else if (msg instanceof GetVolumeWatchersMsg) {
             handle((GetVolumeWatchersMsg) msg);
-        }else {
+        } else if (msg instanceof GetVolumeBackingChainFromPrimaryStorageMsg) {
+            handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteVolumeChainOnPrimaryStorageMsg) {
+            handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
+        } else {
             super.handleLocalMessage(msg);
         }
 
@@ -5448,8 +5471,73 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }).setAvoidMonUuids(msg.getAvoidCephMonUuids()).tryNext().call();
     }
 
+    protected void handle(GetVolumeBackingChainFromPrimaryStorageMsg msg) {
+        GetVolumeBackingChainFromPrimaryStorageReply reply = new GetVolumeBackingChainFromPrimaryStorageReply();
+        new While<>(msg.getRootInstallPaths()).each((installPath, compl) -> {
+            GetBackingChainCmd cmd = new GetBackingChainCmd();
+            cmd.volumePath = installPath;
+            new HttpCaller<>(GET_BACKING_CHAIN_PATH, cmd, GetBackingChainRsp.class, new ReturnValueCompletion<GetBackingChainRsp>(msg) {
+                @Override
+                public void success(GetBackingChainRsp rsp) {
+                    if (CollectionUtils.isEmpty(rsp.backingChain)) {
+                        reply.putBackingChainInstallPath(installPath, Collections.emptyList());
+                        reply.putBackingChainSize(installPath, 0L);
+                    } else {
+                        reply.putBackingChainInstallPath(installPath, rsp.backingChain.stream()
+                                .map(it -> makeCephPath(it)).collect(Collectors.toList()));
+                        reply.putBackingChainSize(installPath, rsp.totalSize);
+                    }
+
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.done();
+                }
+            }).call();
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    reply.setError(errorCodeList.getCauses().get(0));
+                }
+
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(DeleteVolumeChainOnPrimaryStorageMsg msg) {
+        DeleteVolumeChainOnPrimaryStorageReply reply = new DeleteVolumeChainOnPrimaryStorageReply();
+        DeleteVolumeChainCmd cmd = new DeleteVolumeChainCmd();
+        cmd.installPaths = msg.getInstallPaths();
+        new HttpCaller<>(DELETE_VOLUME_CHAIN_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
+            @Override
+            public void success(AgentResponse rsp) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        }).call();
+    }
+
     private String makeVolumeInstallPathByTargetPool(String volUuid, String targetPoolName) {
         return String.format("ceph://%s/%s", targetPoolName, volUuid);
+    }
+
+    private String makeCephPath(String originPath) {
+        if (originPath.startsWith("ceph://")) {
+            return originPath;
+        }
+
+        return String.format("ceph://%s", originPath);
     }
 
     private String getTargetPoolNameFromAllocatedUrl(String allocatedUrl) {

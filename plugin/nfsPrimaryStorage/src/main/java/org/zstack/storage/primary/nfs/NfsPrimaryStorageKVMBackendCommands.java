@@ -794,6 +794,16 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String path;
     }
 
+    public static class GetBackingChainCmd extends NfsPrimaryStorageAgentCommand {
+        public String volumeUuid;
+        public String installPath;
+    }
+
+    public static class GetBackingChainRsp extends NfsPrimaryStorageAgentResponse {
+        public List<String> backingChain;
+        public long totalSize;
+    }
+
     public static class UpdateMountPointCmd extends NfsPrimaryStorageAgentCommand {
         public String oldMountPoint;
         public String newMountPoint;

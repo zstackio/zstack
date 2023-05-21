@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
@@ -22,6 +23,7 @@ import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
@@ -325,6 +327,16 @@ public class KvmBackend extends HypervisorBackend {
         }
     }
 
+    public static class GetBackingChainCmd extends AgentCmd {
+        public String volumeUuid;
+        public String installPath;
+    }
+
+    public static class GetBackingChainRsp extends AgentRsp {
+        public List<String> backingChain;
+        public long totalSize;
+    }
+
     public static final String CONNECT_PATH = "/sharedmountpointprimarystorage/connect";
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/sharedmountpointprimarystorage/createrootvolume";
     public static final String CREATE_VOLUME_WITH_BACKING_PATH = "/sharedmountpointprimarystorage/createvolumewithbacking";
@@ -346,6 +358,7 @@ public class KvmBackend extends HypervisorBackend {
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/sharedmountpointprimarystorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/sharedmountpointprimarystorage/kvmhost/download/progress";
     public static final String GET_QCOW2_HASH_VALUE_PATH = "/sharedmountpointprimarystorage/getqcow2hash";
+    public static final String GET_BACKING_CHAIN_PATH = "/sharedmountpointprimarystorage/volume/getbackingchain";
 
     public KvmBackend(PrimaryStorageVO self) {
         super(self);
@@ -1638,6 +1651,45 @@ public class KvmBackend extends HypervisorBackend {
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(GetVolumeBackingChainFromPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeBackingChainFromPrimaryStorageReply> completion) {
+        GetVolumeBackingChainFromPrimaryStorageReply reply = new GetVolumeBackingChainFromPrimaryStorageReply();
+        new While<>(msg.getRootInstallPaths()).each((installPath, compl) -> {
+            GetBackingChainCmd cmd = new GetBackingChainCmd();
+            cmd.installPath = installPath;
+            cmd.volumeUuid = msg.getVolumeUuid();
+            new Do().go(GET_BACKING_CHAIN_PATH, cmd, GetBackingChainRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+                @Override
+                public void success(AgentRsp r) {
+                    GetBackingChainRsp rsp = (GetBackingChainRsp) r;
+                    if (CollectionUtils.isEmpty(rsp.backingChain)) {
+                        reply.putBackingChainInstallPath(installPath, Collections.emptyList());
+                        reply.putBackingChainSize(installPath, 0L);
+                    } else {
+                        reply.putBackingChainInstallPath(installPath, rsp.backingChain);
+                        reply.putBackingChainSize(installPath, rsp.totalSize);
+                    }
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList err) {
+                if (!err.getCauses().isEmpty()) {
+                    completion.fail(err.getCauses().get(0));
+                } else {
+                    completion.success(reply);
+                }
             }
         });
     }

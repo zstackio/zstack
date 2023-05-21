@@ -620,11 +620,12 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else if ((msg instanceof GetDownloadBitsFromKVMHostProgressMsg)) {
             handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
+        } else if (msg instanceof GetVolumeBackingChainFromPrimaryStorageMsg) {
+            handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
     }
-
     private void handle(final DownloadBitsFromKVMHostToPrimaryStorageMsg msg) {
         HypervisorFactory f = getHypervisorFactoryByHostUuid(msg.getDestHostUuid());
         HypervisorBackend bkd = f.getHypervisorBackend(self);
@@ -679,6 +680,24 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             }
         });
     }
+
+    private void handle(GetVolumeBackingChainFromPrimaryStorageMsg msg) {
+        HypervisorFactory f = getHypervisorFactoryByHostUuid(msg.getHostUuid());
+        HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<GetVolumeBackingChainFromPrimaryStorageReply>(msg) {
+            public void success(GetVolumeBackingChainFromPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                GetVolumeBackingChainFromPrimaryStorageReply reply = new GetVolumeBackingChainFromPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
 
     private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {
         DeleteImageCacheOnPrimaryStorageReply sreply = new DeleteImageCacheOnPrimaryStorageReply();

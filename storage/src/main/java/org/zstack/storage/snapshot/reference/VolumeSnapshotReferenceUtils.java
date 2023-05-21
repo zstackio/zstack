@@ -1,11 +1,9 @@
-package org.zstack.storage.snapshot;
+package org.zstack.storage.snapshot.reference;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.zstack.core.Platform;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SQLBatch;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.db.*;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.ImageCacheVO;
@@ -13,11 +11,13 @@ import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.storage.primary.ImageCacheVolumeRefVO;
 import org.zstack.header.storage.primary.ImageCacheVolumeRefVO_;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.reference.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageGlobalProperty;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
@@ -29,6 +29,13 @@ import java.util.stream.Collectors;
 
 public class VolumeSnapshotReferenceUtils {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotReferenceUtils.class);
+
+    private static Function<String, String> getResourceLocateHostUuidGetter;
+
+    public static void setGetResourceLocateHostUuidGetter(Function<String, String> getter) {
+        VolumeSnapshotReferenceUtils.getResourceLocateHostUuidGetter = getter;
+    }
+
     public static List<String> getAllReferenceVolumeUuids(VolumeSnapshotTree.SnapshotLeaf currentLeaf) {
         List<String> descendantUuids = currentLeaf.getDescendants().stream()
                 .map(VolumeSnapshotInventory::getUuid)
@@ -53,6 +60,12 @@ public class VolumeSnapshotReferenceUtils {
                 tuple -> tuple.get(1, String.class),
                 Collectors.mapping(tuple -> tuple.get(0, String.class), Collectors.toList())
         ));
+    }
+
+    public static boolean isVolumeDirectlyReferenceByOthers(VolumeInventory volume) {
+        return Q.New(VolumeSnapshotReferenceVO.class).eq(VolumeSnapshotReferenceVO_.volumeUuid, volume.getUuid())
+                .like(VolumeSnapshotReferenceVO_.volumeSnapshotInstallUrl, volume.getInstallPath() + "%%")
+                .isExists();
     }
 
     public static String getVolumeInstallUrlBackingOtherVolume(String volumeUuid) {
@@ -144,23 +157,25 @@ public class VolumeSnapshotReferenceUtils {
         ref.setReferenceType(VolumeVO.class.getSimpleName());
         ref.setReferenceInstallUrl(volume.getInstallPath());
         ref.setVolumeSnapshotInstallUrl(baseSnapshot.getPrimaryStorageInstallPath());
+        ref.setDirectSnapshotInstallUrl(baseSnapshot.getPrimaryStorageInstallPath());
         ref.setVolumeSnapshotUuid(baseSnapshot.getUuid());
+        ref.setDirectSnapshotUuid(baseSnapshot.getUuid());
         ref.setVolumeUuid(baseSnapshot.getVolumeUuid());
-
+        /*
         if (VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString().equals(baseSnapshot.getType())) {
             logger.debug(String.format("create volume snapshot reference[volumeSnapshotUuid:%s, referVolumeUuid:%s]",
                     ref.getVolumeSnapshotUuid(), ref.getReferenceVolumeUuid()));
             return dbf.persist(ref);
         }
+        */
 
-        VolumeSnapshotReferenceVO parentRef = Q.New(VolumeSnapshotReferenceVO.class)
-                .eq(VolumeSnapshotReferenceVO_.referenceVolumeUuid, baseSnapshot.getVolumeUuid())
-                .find();
+        VolumeSnapshotReferenceVO parentRef = getVolumeBackingRef(baseSnapshot.getVolumeUuid());
 
         if (parentRef != null && parentRef.getReferenceType().equals(VolumeSnapshotVO.class.getSimpleName())) {
             String parentSnapshotTreeUuid = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.treeUuid)
                     .eq(VolumeSnapshotVO_.uuid, parentRef.getReferenceUuid())
                     .findValue();
+            // different tree
             if (!baseSnapshot.getTreeUuid().equals(parentSnapshotTreeUuid)) {
                 parentRef = null;
             }
@@ -168,10 +183,11 @@ public class VolumeSnapshotReferenceUtils {
 
         VolumeSnapshotReferenceTreeVO tree;
         if (parentRef == null) {
-            tree = new VolumeSnapshotReferenceTreeVO();
-            tree.setUuid(Platform.getUuid());
-            tree.setRootImageUuid(baseImageUuid);
-            dbf.persist(tree);
+            if (VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString().equals(baseSnapshot.getType())) {
+                tree = getOrBuildStorageSnapshotRefTree(baseSnapshot, baseImageUuid);
+            } else {
+                tree = getOrBuildChainSnapshotRefTree(baseSnapshot, baseImageUuid);
+            }
         } else {
             tree = Q.New(VolumeSnapshotReferenceTreeVO.class).eq(VolumeSnapshotReferenceTreeVO_.uuid, parentRef.getTreeUuid()).find();
             ref.setParentId(parentRef.getId());
@@ -181,6 +197,58 @@ public class VolumeSnapshotReferenceUtils {
         logger.debug(String.format("create volume snapshot reference[volumeSnapshotUuid:%s, referVolumeUuid:%s, treeUuid:%s]",
                 ref.getVolumeSnapshotUuid(), ref.getReferenceVolumeUuid(), ref.getTreeUuid()));
         return dbf.persist(ref);
+    }
+
+    private static VolumeSnapshotReferenceTreeVO getOrBuildStorageSnapshotRefTree(VolumeSnapshotVO baseSnapshot, String baseImageUuid) {
+        return new SQLBatchWithReturn<VolumeSnapshotReferenceTreeVO>() {
+            @Override
+            protected VolumeSnapshotReferenceTreeVO scripts() {
+                VolumeVO vol = databaseFacade.getEntityManager().find(VolumeVO.class, baseSnapshot.getVolumeUuid(), LockModeType.PESSIMISTIC_WRITE);
+                VolumeSnapshotReferenceTreeVO tree = Q.New(VolumeSnapshotReferenceTreeVO.class)
+                        .eq(VolumeSnapshotReferenceTreeVO_.rootVolumeUuid, baseSnapshot.getVolumeUuid())
+                        .find();
+                if (tree != null) {
+                    return tree;
+                }
+
+                tree = new VolumeSnapshotReferenceTreeVO();
+                tree.setUuid(Platform.getUuid());
+                tree.setRootImageUuid(baseImageUuid);
+                tree.setRootVolumeUuid(baseSnapshot.getVolumeUuid());
+                tree.setRootInstallUrl(vol.getInstallPath());
+                tree.setPrimaryStorageUuid(baseSnapshot.getPrimaryStorageUuid());
+                return persist(tree);
+            }
+        }.execute();
+    }
+
+    private static VolumeSnapshotReferenceTreeVO getOrBuildChainSnapshotRefTree(VolumeSnapshotVO baseSnapshot, String baseImageUuid) {
+        return new SQLBatchWithReturn<VolumeSnapshotReferenceTreeVO>() {
+            @Override
+            protected VolumeSnapshotReferenceTreeVO scripts() {
+                databaseFacade.getEntityManager().find(VolumeSnapshotTreeVO.class, baseSnapshot.getTreeUuid(), LockModeType.PESSIMISTIC_WRITE);
+                VolumeSnapshotReferenceTreeVO tree = Q.New(VolumeSnapshotReferenceTreeVO.class)
+                        .eq(VolumeSnapshotReferenceTreeVO_.rootVolumeSnapshotTreeUuid, baseSnapshot.getTreeUuid())
+                        .find();
+                if (tree != null) {
+                    return tree;
+                }
+
+                Tuple t = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.treeUuid, baseSnapshot.getTreeUuid()).isNull(VolumeSnapshotVO_.parentUuid)
+                        .select(VolumeSnapshotVO_.uuid, VolumeSnapshotVO_.primaryStorageInstallPath).findTuple();
+
+                tree = new VolumeSnapshotReferenceTreeVO();
+                tree.setUuid(Platform.getUuid());
+                tree.setRootImageUuid(baseImageUuid);
+                tree.setRootVolumeSnapshotTreeUuid(baseSnapshot.getTreeUuid());
+                tree.setRootVolumeUuid(baseSnapshot.getVolumeUuid());
+                tree.setRootVolumeSnapshotUuid(t.get(0, String.class));
+                tree.setRootInstallUrl(t.get(1, String.class));
+                tree.setPrimaryStorageUuid(baseSnapshot.getPrimaryStorageUuid());
+                tree.setHostUuid(getResourceLocateHostUuidGetter.call(baseSnapshot.getVolumeUuid()));
+                return persist(tree);
+            }
+        }.execute();
     }
 
     public static void rollbackSnapshotReferenceForNewVolume(String volumeUuid) {
@@ -263,15 +331,10 @@ public class VolumeSnapshotReferenceUtils {
     }
 
     private static void deleteAndRedirectSnapshotRef(VolumeSnapshotReferenceVO ref) {
-        if (ref.getTreeUuid() == null) {
-            deleteSnapshotRef(ref);
-            return;
-        }
-
         new SQLBatch() {
             @Override
             protected void scripts() {
-                databaseFacade.getEntityManager().find(VolumeSnapshotReferenceTreeVO.class, ref.getTreeUuid(), LockModeType.PESSIMISTIC_WRITE);
+                VolumeSnapshotReferenceTreeVO tree = databaseFacade.getEntityManager().find(VolumeSnapshotReferenceTreeVO.class, ref.getTreeUuid(), LockModeType.PESSIMISTIC_WRITE);
 
                 VolumeSnapshotReferenceVO finalRef =  databaseFacade.getEntityManager().find(VolumeSnapshotReferenceVO.class, ref.getId());
                 List<Long> childrenRefIds = Q.New(VolumeSnapshotReferenceVO.class).select(VolumeSnapshotReferenceVO_.id)
@@ -288,11 +351,40 @@ public class VolumeSnapshotReferenceUtils {
                             .update();
                     logger.debug(String.format("redirect snapshot ref[ids:%s, volumeUuid: from %s to %s, parentId: to %s]",
                             childrenRefIds, finalRef.getReferenceVolumeUuid(), finalRef.getVolumeUuid(), finalRef.getParentId()));
+                    deleteSnapshotRef(finalRef);
+                } else {
+                    if (!finalRef.getDirectSnapshotUuid().equals(finalRef.getVolumeSnapshotUuid()) ||
+                            findByUuid(ref.getVolumeUuid(), VolumeVO.class) == null) {
+                        deleteBitsOnPs(tree, finalRef);
+                    }
+                    deleteSnapshotRef(finalRef);
                 }
 
-                deleteSnapshotRef(finalRef);
             }
         }.execute();
+    }
+
+    //TODO
+    private static void deleteBitsOnPs(VolumeSnapshotReferenceTreeVO treeVO, VolumeSnapshotReferenceVO ref) {
+        List<VolumeSnapshotReferenceVO> treeRefs = Q.New(VolumeSnapshotReferenceVO.class).eq(VolumeSnapshotReferenceVO_.treeUuid, treeVO.getUuid()).list();
+
+        List<VolumeSnapshotReferenceInventory> otherLeafs;
+        if (ref.getParentId() == null) {
+            otherLeafs = treeRefs.stream().filter(it -> it.getParentId() == null).map(VolumeSnapshotReferenceInventory::valueOf).collect(Collectors.toList());
+        } else {
+            otherLeafs = treeRefs.stream().filter(it -> it.getParentId().equals(ref.getParentId())).map(VolumeSnapshotReferenceInventory::valueOf).collect(Collectors.toList());
+        }
+        otherLeafs.removeIf(it -> it.getId() == ref.getId());
+
+        DeleteVolumeSnapshotReferenceLeafMsg msg = new DeleteVolumeSnapshotReferenceLeafMsg();
+        msg.setLeaf(VolumeSnapshotReferenceInventory.valueOf(ref));
+        msg.setOtherLeafs(otherLeafs);
+        msg.setTree(treeVO.toInventory());
+        VolumeVO deletedVolume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, ref.getReferenceVolumeUuid()).find();
+        msg.setDeletedVolume(deletedVolume.toInventory());
+        CloudBus bus = Platform.getComponentLoader().getComponent(CloudBus.class);
+        bus.makeTargetServiceIdByResourceUuid(msg, VolumeSnapshotConstant.SERVICE_ID, treeVO.getUuid());
+        bus.send(msg);
     }
 
     private static void deleteSnapshotRef(VolumeSnapshotReferenceVO ref) {

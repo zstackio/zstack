@@ -52,6 +52,7 @@ import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtens
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTree.SnapshotLeaf;
 import org.zstack.header.storage.snapshot.group.*;
+import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -60,6 +61,7 @@ import org.zstack.header.volume.*;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageGlobalProperty;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -1169,6 +1171,8 @@ public class VolumeSnapshotTreeBase {
                     ref.setReferenceType(ImageCacheVO.class.getSimpleName());
                     ref.setReferenceInstallUrl(cr.getInventory().getInstallUrl());
                     ref.setVolumeSnapshotInstallUrl(currentRoot.getPrimaryStorageInstallPath());
+                    ref.setDirectSnapshotInstallUrl(currentRoot.getPrimaryStorageInstallPath());
+                    ref.setDirectSnapshotUuid(currentRoot.getUuid());
                     ref.setVolumeSnapshotUuid(currentRoot.getUuid());
                     ref.setVolumeUuid(currentRoot.getVolumeUuid());
                     dbf.persist(ref);

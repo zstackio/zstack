@@ -404,9 +404,44 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((UnlinkBitsOnPrimaryStorageMsg) msg);
         } else if (msg instanceof GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) {
             handle((GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteVolumeChainOnPrimaryStorageMsg) {
+            handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    protected void handle(DeleteVolumeChainOnPrimaryStorageMsg msg) {
+        DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
+        new While<>(msg.getInstallPaths()).each((path, c) -> {
+            DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
+            dmsg.setInstallPath(path);
+            dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+            dmsg.setHostUuid(msg.getHostUuid());
+            dmsg.setFormat(msg.getVolumeFormat());
+            bus.makeLocalServiceId(dmsg, PrimaryStorageConstant.SERVICE_ID);
+            bus.send(dmsg, new CloudBusCallBack(c) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        c.addError(reply.getError());
+                        c.allDone();
+                        return;
+                    }
+
+                    c.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    reply.setError(errorCodeList.getCauses().get(0));
+                }
+
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     protected void handle(final CleanUpTrashOnPrimaryStroageMsg msg) {

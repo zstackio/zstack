@@ -8,4 +8,8 @@ import org.zstack.header.core.Completion;
 public interface VolumeBeforeExpungeExtensionPoint {
     void volumePreExpunge(VolumeInventory volume);
     void volumeBeforeExpunge(VolumeInventory volume, Completion completion);
+
+    default boolean skipExpungeVolume(VolumeInventory volume) {
+        return false;
+    }
 }
