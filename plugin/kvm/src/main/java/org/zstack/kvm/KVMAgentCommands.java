@@ -1825,6 +1825,7 @@ public class KVMAgentCommands {
         private long memory;
         private long maxMemory;
         private int cpuNum;
+        private int maxVcpuNum;
         private long cpuSpeed;
         // cpu topology
         private Integer socketNum;
@@ -1892,6 +1893,26 @@ public class KVMAgentCommands {
 
         // TODO: only for test
         private boolean useColoBinary;
+
+        public void setSocketNum(Integer socketNum) {
+            this.socketNum = socketNum;
+        }
+
+        public void setCpuOnSocket(Integer cpuOnSocket) {
+            this.cpuOnSocket = cpuOnSocket;
+        }
+
+        public void setThreadsPerCore(Integer threadsPerCore) {
+            this.threadsPerCore = threadsPerCore;
+        }
+
+        public int getMaxVcpuNum() {
+            return maxVcpuNum;
+        }
+
+        public void setMaxVcpuNum(int maxVcpuNum) {
+            this.maxVcpuNum = maxVcpuNum;
+        }
 
         public String getChassisAssetTag() {
             return chassisAssetTag;

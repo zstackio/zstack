@@ -1,8 +1,11 @@
 package org.zstack.compute.vm;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceStartExtensionPoint;
+import org.zstack.header.vm.VmInstanceStartNewCreatedVmExtensionPoint;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -10,8 +13,11 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
-public class VmHardwareExtensionPoint implements VmInstanceStartExtensionPoint {
+public class VmHardwareExtensionPoint implements VmInstanceStartExtensionPoint, VmInstanceStartNewCreatedVmExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmHardwareExtensionPoint.class);
+
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     @Override
     public String preStartVm(VmInstanceInventory inv) {
@@ -32,24 +38,34 @@ public class VmHardwareExtensionPoint implements VmInstanceStartExtensionPoint {
             return "cpuSockets must be specified";
         }
 
+        Integer cpuNum = inv.getCpuNum();
+        Integer maxVcpuNum = null;
+        Boolean isNuma = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, inv.getUuid(), Boolean.class);
+        if (isNuma != null && isNuma) {
+            maxVcpuNum = rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, inv.getUuid(), Integer.class);
+        }
+
         int socketNum = Integer.parseInt(sockets);
         int coreNum, threadNum;
-        if (threads == null) {
+        if (threads == null && cores != null) {
+            coreNum = Integer.parseInt(cores);
+            threadNum = maxVcpuNum != null ? maxVcpuNum : cpuNum / coreNum / socketNum;
+        } else if (threads == null) {
             threadNum = 1;
         } else {
             threadNum = Integer.parseInt(threads);
         }
 
         if (cores == null) {
-            coreNum = inv.getCpuNum() / threadNum / socketNum;
+            coreNum = maxVcpuNum != null ? maxVcpuNum : cpuNum / threadNum / socketNum;
         } else {
             coreNum = Integer.parseInt(cores);
         }
 
-        if (inv.getCpuNum() != coreNum * threadNum * socketNum) {
-            return String.format("cpu topology is not correct, cpuNum[%s], configured cpuSockets[%s], cpuCores[%s], cpuThreads[%s];" +
+        if ((maxVcpuNum != null ? maxVcpuNum : cpuNum) != coreNum * threadNum * socketNum) {
+            return String.format("cpu topology is not correct, cpuNum[%s], maxVcpuNum[%s], configured cpuSockets[%s], cpuCores[%s], cpuThreads[%s];" +
                             " Calculated cpuSockets[%s], cpuCores[%s], cpuThreads[%s]",
-                    inv.getCpuNum(), sockets, cores, threads, socketNum, coreNum, threadNum);
+                    cpuNum, maxVcpuNum, sockets, cores, threads, socketNum, coreNum, threadNum);
         }
 
         // update missing topology tag
@@ -71,9 +87,9 @@ public class VmHardwareExtensionPoint implements VmInstanceStartExtensionPoint {
             creator.create();
         }
 
-        logger.debug(String.format("cpu topology is correct, cpuNum[%s], configured cpuSockets[%s], cpuCores[%s], cpuThreads[%s]. " +
+        logger.debug(String.format("cpu topology is correct, cpuNum[%s], maxVcpuNum[%s], configured cpuSockets[%s], cpuCores[%s], cpuThreads[%s]. " +
                         "Calculated cpuSockets[%s], cpuCores[%s], cpuThreads[%s]",
-                inv.getCpuNum(), sockets, cores, threads, socketNum, coreNum, threadNum));
+                cpuNum, maxVcpuNum, sockets, cores, threads, socketNum, coreNum, threadNum));
 
         return null;
     }
@@ -90,6 +106,26 @@ public class VmHardwareExtensionPoint implements VmInstanceStartExtensionPoint {
 
     @Override
     public void failedToStartVm(VmInstanceInventory inv, ErrorCode reason) {
+
+    }
+
+    @Override
+    public String preStartNewCreatedVm(VmInstanceInventory inv) {
+        return verifyCpuTopology(inv);
+    }
+
+    @Override
+    public void beforeStartNewCreatedVm(VmInstanceInventory inv) {
+
+    }
+
+    @Override
+    public void afterStartNewCreatedVm(VmInstanceInventory inv) {
+
+    }
+
+    @Override
+    public void failedToStartNewCreatedVm(VmInstanceInventory inv, ErrorCode reason) {
 
     }
 }
