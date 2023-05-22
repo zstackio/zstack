@@ -1129,27 +1129,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(operr(
                         "Not allowed same mac [%s]", duplicateMac.get()));
             }
-
-            if (msg.getSystemTags().stream()
-                    .anyMatch(t -> VmHardwareSystemTags.CPU_SOCKETS.isMatch(t))) {
-                CpuTopology t = new CpuTopology(msg.getCpuNum(), msg.getSystemTags());
-                t.calculateValidTopology();
-                if (!t.isEmpty()) {
-                    msg.getSystemTags().removeIf(this::isCpuTopologyTags);
-
-                    msg.getSystemTags().add(VmHardwareSystemTags.CPU_SOCKETS.instantiateTag(map(
-                            e(VmHardwareSystemTags.CPU_SOCKETS_TOKEN, String.valueOf(t.cpuSockets)))
-                    ));
-
-                    msg.getSystemTags().add(VmHardwareSystemTags.CPU_CORES.instantiateTag(map(
-                            e(VmHardwareSystemTags.CPU_CORES_TOKEN, String.valueOf(t.cpuCores)))
-                    ));
-
-                    msg.getSystemTags().add(VmHardwareSystemTags.CPU_THREADS.instantiateTag(map(
-                            e(VmHardwareSystemTags.CPU_THREADS_TOKEN, String.valueOf(t.cpuThreads)))
-                    ));
-                }
-            }
         }
 
         SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
