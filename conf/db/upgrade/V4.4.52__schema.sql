@@ -40,3 +40,5 @@ CREATE PROCEDURE CheckAndCreateResourceConfig()
 DELIMITER ;
 CALL CheckAndCreateResourceConfig();
 DROP PROCEDURE IF EXISTS CheckAndCreateResourceConfig;
+ALTER TABLE `zstack`.`HostNumaNodeVO` MODIFY COLUMN `nodeCPUs` TEXT NOT NULL;
+ALTER TABLE `zstack`.`VmInstanceNumaNodeVO` MODIFY COLUMN `vNodeCPUs` TEXT NOT NULL;
