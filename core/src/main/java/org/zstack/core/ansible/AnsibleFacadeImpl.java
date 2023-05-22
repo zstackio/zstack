@@ -139,7 +139,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     "else echo \"Warning: can't remove ansible from unknown platform\"; " +
                     "fi; " +
                     "sudo pip uninstall -y ansible; " +
-                    "sudo pip install -i file://%s --trusted-host localhost -I setuptools=39.2.0; " +
+                    "sudo pip install -i file://%s --trusted-host localhost -I setuptools==39.2.0; " +
                     "sudo pip install -i file://%s --trusted-host localhost -I ansible==4.10.0; " +
                     "fi", AnsibleConstant.PYPI_REPO, AnsibleConstant.PYPI_REPO), false);
 
