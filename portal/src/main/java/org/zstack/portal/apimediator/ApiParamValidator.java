@@ -31,7 +31,7 @@ public class ApiParamValidator implements GlobalApiMessageInterceptor {
 
     @Override
     public InterceptorPosition getPosition() {
-        return InterceptorPosition.FIRST;
+        return InterceptorPosition.SYSTEM;
     }
 
     @Override
