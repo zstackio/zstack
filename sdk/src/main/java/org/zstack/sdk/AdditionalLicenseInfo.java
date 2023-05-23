@@ -44,4 +44,12 @@ public class AdditionalLicenseInfo  {
         return this.info;
     }
 
+    public java.lang.String keyId;
+    public void setKeyId(java.lang.String keyId) {
+        this.keyId = keyId;
+    }
+    public java.lang.String getKeyId() {
+        return this.keyId;
+    }
+
 }
