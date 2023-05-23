@@ -126,7 +126,6 @@ public interface KVMConstant {
     String VIRTUALIZER_QEMU = "qemu";
 
     int IPMI_DEFAULT_PORT = 623;
-    String IPMI_NONE_VALUE = "None";
 
     enum KvmVmState {
         NoState,
