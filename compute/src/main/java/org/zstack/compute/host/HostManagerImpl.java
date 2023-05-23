@@ -627,11 +627,21 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
             @AsyncThread
             private void refreshHostPowerStatus(HostIpmiVO ipmi) {
-                if (ipmi == null || HostPowerStatus.POWER_BOOTING == ipmi.getIpmiPowerStatus()
-                        || HostPowerStatus.POWER_SHUTDOWN == ipmi.getIpmiPowerStatus()) {
+                if (ipmi == null) {
                     return;
                 }
+
                 HostPowerStatus status = HostIpmiPowerExecutor.getPowerStatus(ipmi);
+                if ( HostPowerStatus.POWER_BOOTING == ipmi.getIpmiPowerStatus()
+                        && HostPowerStatus.POWER_OFF == status) {
+                    return;
+                }
+
+                if ( HostPowerStatus.POWER_SHUTDOWN == ipmi.getIpmiPowerStatus()
+                        && HostPowerStatus.POWER_ON == status) {
+                    return;
+                }
+
                 if (ipmi.getIpmiPowerStatus() != status) {
                     ipmi.setIpmiPowerStatus(status);
                     dbf.update(ipmi);
