@@ -88,6 +88,14 @@
 	</config>
 
 	<config>
+		<category>vm</category>
+		<name>vm.max.vcpu</name>
+		<description>vm's maximum vcpu number</description>
+		<type>java.lang.Integer</type>
+		<defaultValue>128</defaultValue>
+	</config>
+
+	<config>
 		<name>bootMenu</name>
 		<description>whether to enable boot menu</description>
 		<category>vm</category>
