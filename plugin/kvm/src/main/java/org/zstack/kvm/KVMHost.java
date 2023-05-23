@@ -3106,6 +3106,13 @@ public class KVMHost extends HostBase implements Host {
         cmd.setRootVolume(rootVolume);
         cmd.setUseBootMenu(VmGlobalConfig.VM_BOOT_MENU.value(Boolean.class));
 
+        if (cmd.isUseBootMenu()) {
+            cmd.setBootMenuSplashTimeout(rcf.getResourceConfigValue(
+                    VmGlobalConfig.VM_BOOT_MENU_SPLASH_TIMEOUT,
+                    spec.getVmInventory().getUuid(),
+                    Integer.class));
+        }
+
         List<VolumeTO> dataVolumes = new ArrayList<>(spec.getDestDataVolumes().size());
         for (VolumeInventory data : spec.getDestDataVolumes()) {
             VolumeTO v = VolumeTO.valueOfWithOutExtension(data, (KVMHostInventory) getSelfInventory(), spec.getVmInventory().getPlatform());

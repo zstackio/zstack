@@ -1658,6 +1658,7 @@ public class KVMAgentCommands {
         private String MemAccess;
         private boolean usbRedirect;
         private boolean useBootMenu;
+        private Integer bootMenuSplashTimeout;
         private boolean createPaused;
         private boolean kvmHiddenState;
         private boolean vmPortOff;
@@ -1812,6 +1813,14 @@ public class KVMAgentCommands {
 
         public boolean isUseBootMenu() {
             return useBootMenu;
+        }
+
+        public Integer getBootMenuSplashTimeout() {
+            return bootMenuSplashTimeout;
+        }
+
+        public void setBootMenuSplashTimeout(Integer bootMenuSplashTimeout) {
+            this.bootMenuSplashTimeout = bootMenuSplashTimeout;
         }
 
         public void setCreatePaused(boolean createPaused) {
