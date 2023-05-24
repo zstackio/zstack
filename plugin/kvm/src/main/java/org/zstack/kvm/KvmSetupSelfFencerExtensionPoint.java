@@ -3,6 +3,8 @@ package org.zstack.kvm;
 import org.zstack.header.core.Completion;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 
+import java.util.List;
+
 /**
  * Created by xing5 on 2016/5/10.
  */
@@ -35,6 +37,7 @@ public interface KvmSetupSelfFencerExtensionPoint {
         private int storageCheckerTimeout;
         private PrimaryStorageInventory primaryStorage;
         private String strategy;
+        private List<String> fencers;
 
         public String getHostUuid() {
             return hostUuid;
@@ -82,6 +85,14 @@ public interface KvmSetupSelfFencerExtensionPoint {
 
         public void setStrategy(String strategy) {
             this.strategy = strategy;
+        }
+
+        public List<String> getFencers() {
+            return fencers;
+        }
+
+        public void setFencers(List<String> fencers) {
+            this.fencers = fencers;
         }
     }
 

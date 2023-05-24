@@ -53,7 +53,7 @@ public aspect CompletionSingleCallAspect {
         proceed(completion);
     }
 
-    pointcut haSuccess() : execution(void org.zstack.header.core.HaCheckerCompletion+.success());
+    pointcut haSuccess() : execution(void org.zstack.header.core.HaCheckerCompletion+.success(*));
     pointcut haFail() : execution(void org.zstack.header.core.HaCheckerCompletion+.fail(*));
     pointcut haNoWay() : execution(void org.zstack.header.core.HaCheckerCompletion+.noWay());
     pointcut haNotStable() : execution(void org.zstack.header.core.HaCheckerCompletion+.notStable());

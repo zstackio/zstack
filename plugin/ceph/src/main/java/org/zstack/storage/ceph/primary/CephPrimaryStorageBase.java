@@ -878,6 +878,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public List<String> monUrls;
         public String strategy;
         public String manufacturer;
+        public List<String> fencers;
     }
 
     public static class KvmCancelSelfFencerCmd extends AgentCommand {
@@ -4340,6 +4341,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             }
         });
         cmd.strategy = param.getStrategy();
+        cmd.fencers = param.getFencers();
 
         if (CephSystemTags.CEPH_MANUFACTURER.hasTag(self.getUuid())) {
             cmd.manufacturer = CephSystemTags.CEPH_MANUFACTURER.getTokenByResourceUuid(self.getUuid(), CephSystemTags.CEPH_MANUFACTURER_TOKEN);
