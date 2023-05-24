@@ -81,6 +81,7 @@ public class LoginManagerImpl extends AbstractService implements LoginManager {
 
         LoginContext loginContext = LoginContext.fromAPIGetLoginProceduresMsg(msg);
         LoginBackend loginBackend = getLoginBackend(msg.getLoginType());
+        loginContext.setPossibleUsersGetter(loginBackend::possibleUserUuidSetForGettingProcedures);
         List<LoginAuthExtensionPoint> matchedAuthExtensions =
                 getBackendSupportedLoginAuthExtension(
                         loginBackend.getRequiredAdditionalAuthFeature(),

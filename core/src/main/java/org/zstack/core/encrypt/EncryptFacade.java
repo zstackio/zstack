@@ -2,6 +2,7 @@ package org.zstack.core.encrypt;
 
 import org.zstack.header.core.encrypt.EncryptEntityState;
 import org.zstack.header.core.encrypt.EncryptedFieldBundle;
+import org.zstack.header.errorcode.ErrorableValue;
 
 import java.util.List;
 
@@ -13,9 +14,9 @@ public interface EncryptFacade {
 
     String decrypt(String encryptString);
 
-    EncryptFacadeResult<String> encrypt(String data, String algType);
+    ErrorableValue<String> encrypt(String data, String algType);
 
-    EncryptFacadeResult<String> decrypt(String data, String algType);
+    ErrorableValue<String> decrypt(String data, String algType);
 
     void updateEncryptDataStateIfExists(String entity, String column, EncryptEntityState state);
 

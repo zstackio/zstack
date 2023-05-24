@@ -36,4 +36,10 @@
             <zstack:extension interface="org.zstack.header.message.ApiMessageValidator"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="ApiParamValidator" class="org.zstack.portal.apimediator.ApiParamValidator">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
+        </zstack:plugin>
+    </bean>
 </beans>

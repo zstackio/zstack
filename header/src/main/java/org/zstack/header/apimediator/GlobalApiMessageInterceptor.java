@@ -4,12 +4,16 @@ import java.util.List;
 
 public interface GlobalApiMessageInterceptor extends ApiMessageInterceptor {
     enum InterceptorPosition {
-        SYSTEM,
-        FRONT,
-        END,
+        // In execution order
+        SYSTEM, FRONT, DEFAULT, END
     }
 
     List<Class> getMessageClassToIntercept();
 
-    InterceptorPosition getPosition();
+    /**
+     * Sort by position, then {@link #getPriority()}
+     */
+    default InterceptorPosition getPosition() {
+        return InterceptorPosition.FRONT;
+    }
 }

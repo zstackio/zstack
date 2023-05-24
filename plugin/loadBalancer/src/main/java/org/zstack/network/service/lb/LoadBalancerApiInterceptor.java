@@ -91,6 +91,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     @Override
+    public int getPriority() {
+        return -1;
+    }
+
+    @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIDeleteLoadBalancerListenerMsg) {
             validate((APIDeleteLoadBalancerListenerMsg)msg);
