@@ -3345,6 +3345,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         if (cmd.isUseNuma()) {
+            cmd.setMaxVcpuNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, spec.getVmInventory().getUuid(), Integer.class));
             return;
         }
 
