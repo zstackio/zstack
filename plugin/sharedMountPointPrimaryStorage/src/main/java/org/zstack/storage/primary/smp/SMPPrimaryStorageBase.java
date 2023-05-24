@@ -37,6 +37,7 @@ import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
@@ -169,6 +170,13 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
+                if (errorCode.isError(VolumeErrors.VOLUME_IN_USE)) {
+                    logger.debug(String.format("unable to delete path:%s right now, skip this GC job because it's in use", msg.getVolume().getInstallPath()));
+                    bus.reply(msg, reply);
+                    return;
+                }
+
                 logger.debug( String.format("can't delete volume[uuid:%s] right now, add a GC job", msg.getVolume().getUuid()));
                 SMPDeleteVolumeGC gc = new SMPDeleteVolumeGC();
                 gc.NAME = String.format("gc-smp-%s-volume-%s", self.getUuid(), msg.getVolume().getUuid());
@@ -177,7 +185,6 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 gc.volume = msg.getVolume();
                 gc.deduplicateSubmit(SMPPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
 
-                DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
                 bus.reply(msg, reply);
             }
         });
