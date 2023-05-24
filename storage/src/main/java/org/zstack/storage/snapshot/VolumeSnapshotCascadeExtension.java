@@ -27,6 +27,7 @@ import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.header.volume.VolumeDeletionStruct;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;

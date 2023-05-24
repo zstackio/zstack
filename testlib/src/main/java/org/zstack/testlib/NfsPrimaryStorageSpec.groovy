@@ -22,7 +22,9 @@ import org.zstack.testlib.vfs.Qcow2
 import org.zstack.testlib.vfs.VFS
 import org.zstack.testlib.vfs.VFSFile
 import org.zstack.testlib.vfs.Volume
+import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.utils.logging.CLogger
 
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -30,6 +32,7 @@ import java.nio.file.Paths
  * Created by xing5 on 2017/2/13.
  */
 class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
+    private static final CLogger logger = Utils.getLogger(NfsPrimaryStorageSpec.class);
 
     NfsPrimaryStorageSpec(EnvSpec envSpec) {
         super(envSpec)
@@ -47,6 +50,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
     }
 
     static VFS vfs(String uuid, EnvSpec spec) {
+        assert uuid != null
         return spec.getVirtualFileSystem("nfs-${uuid}")
     }
 
@@ -84,6 +88,30 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.path = backingFiles[0]
                 return rsp
             }
+
+            simulator(NfsPrimaryStorageKVMBackend.GET_BACKING_CHAIN_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new LocalStorageKvmBackend.GetBackingChainRsp()
+            }
+
+            VFS.vfsHook(NfsPrimaryStorageKVMBackend.GET_BACKING_CHAIN_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.GetBackingChainCmd.class)
+
+                List<String> chain = []
+                VFS vfs = NfsPrimaryStorageSpec.vfs(cmd, spec)
+                Qcow2 file = vfs.getFile(cmd.installPath)
+                if (file == null) {
+                    logger.debug("Dump of whole VFS:\\n${vfs.dumpAsString()}")
+                }
+                assert file != null : "cannot find file[${cmd.installPath}]"
+                while (file.backingQcow2() != null) {
+                    chain.add(file.backingQcow2().pathString())
+                    file = file.backingQcow2()
+                }
+
+                rsp.backingChain = chain
+                return rsp
+            }
+
 
             simulator(NfsPrimaryStorageKVMBackend.UNMOUNT_PRIMARY_STORAGE_PATH) { HttpEntity<String> e ->
                 Spec.checkHttpCallType(e, true)

@@ -26,7 +26,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.volume.VolumeType;
-import org.zstack.storage.snapshot.VolumeSnapshotReferenceUtils;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

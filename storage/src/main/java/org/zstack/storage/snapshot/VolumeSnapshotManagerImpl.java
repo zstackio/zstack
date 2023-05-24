@@ -35,6 +35,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
+import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceMessage;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
@@ -45,6 +46,8 @@ import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.snapshot.group.MemorySnapshotGroupReferenceFactory;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceTreeBase;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
@@ -144,6 +147,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             passThrough((VolumeSnapshotMessage) msg);
         } else if (msg instanceof VolumeSnapshotGroupMessage) {
             handleSnapshotGroup((VolumeSnapshotGroupMessage) msg);
+        } else if (msg instanceof VolumeSnapshotReferenceMessage) {
+            handleSnapshotReference((VolumeSnapshotReferenceMessage) msg);
         } else if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {
@@ -247,6 +252,11 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 bus.publish(event);
             }
         });
+    }
+
+    private void handleSnapshotReference(VolumeSnapshotReferenceMessage msg) {
+        VolumeSnapshotReferenceTreeBase tree = new VolumeSnapshotReferenceTreeBase(msg.getTree());
+        tree.handleMessage((Message) msg);
     }
 
     @Transactional(readOnly = true)
@@ -1251,6 +1261,11 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     public void volumePreExpunge(VolumeInventory volume) {}
 
     @Override
+    public boolean skipExpungeVolume(VolumeInventory volume) {
+        return VolumeSnapshotReferenceUtils.isVolumeDirectlyReferenceByOthers(volume);
+    }
+
+    @Override
     public void volumeBeforeExpunge(VolumeInventory volume, Completion completion) {
         List<VolumeSnapshotDeletionMsg> msgs = VolumeSnapshotCascadeExtension.handleVolumeExpunge(volume.getUuid());
 
@@ -1380,8 +1395,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     @Override
     public void vmJustBeforeDeleteFromDb(VmInstanceInventory inv) {
-        deleteStaleSnapshotRecords(inv.getRootVolumeUuid(), VolumeType.Root, inv.getUuid());
         VolumeSnapshotReferenceUtils.handleVolumeDeletion(inv.getRootVolume());
+        deleteStaleSnapshotRecords(inv.getRootVolumeUuid(), VolumeType.Root, inv.getUuid());
     }
 
     private void deleteStaleSnapshotRecords(String volumeUuid, VolumeType volumeType, String vmUuid) {
@@ -1411,7 +1426,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     @Override
     public void volumeJustBeforeDeleteFromDb(VolumeInventory inv) {
-        deleteStaleSnapshotRecords(inv.getUuid(), VolumeType.valueOf(inv.getType()), inv.getVmInstanceUuid());
         VolumeSnapshotReferenceUtils.handleVolumeDeletion(inv);
+        deleteStaleSnapshotRecords(inv.getUuid(), VolumeType.valueOf(inv.getType()), inv.getVmInstanceUuid());
     }
 }

@@ -1,5 +1,7 @@
-package org.zstack.header.storage.snapshot;
+package org.zstack.header.storage.snapshot.reference;
 
+
+import org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefVO;
 
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;

@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -23,10 +24,12 @@ import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
@@ -717,6 +720,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public Long size;
     }
 
+    public static class GetBackingChainCmd extends AgentCommand {
+        public String volumeUuid;
+        public String installPath;
+    }
+
+    public static class GetBackingChainRsp extends AgentResponse {
+        public List<String> backingChain;
+        public long totalSize;
+    }
+
     public static class GetVolumeSizeCmd extends AgentCommand {
         public String volumeUuid;
         public String installPath;
@@ -852,6 +865,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String BATCH_GET_VOLUME_SIZE = "/localstorage/volume/batchgetsize";
     public static final String HARD_LINK_VOLUME = "/localstorage/volume/hardlink";
     public static final String GET_BASE_IMAGE_PATH = "/localstorage/volume/getbaseimagepath";
+    public static final String GET_BACKING_CHAIN_PATH = "/localstorage/volume/getbackingchain";
     public static final String GET_QCOW2_REFERENCE = "/localstorage/getqcow2reference";
     public static final String CHECK_INITIALIZED_FILE = "/localstorage/check/initializedfile";
     public static final String CREATE_INITIALIZED_FILE = "/localstorage/create/initializedfile";
@@ -2366,6 +2380,44 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(GetVolumeBackingChainFromPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeBackingChainFromPrimaryStorageReply> completion) {
+        GetVolumeBackingChainFromPrimaryStorageReply reply = new GetVolumeBackingChainFromPrimaryStorageReply();
+        new While<>(msg.getRootInstallPaths()).each((installPath, compl) -> {
+            GetBackingChainCmd cmd = new GetBackingChainCmd();
+            cmd.installPath = installPath;
+            cmd.volumeUuid = msg.getVolumeUuid();
+            httpCall(GET_BACKING_CHAIN_PATH, msg.getHostUuid(), cmd, GetBackingChainRsp.class, new ReturnValueCompletion<GetBackingChainRsp>(compl) {
+                @Override
+                public void success(GetBackingChainRsp rsp) {
+                    if (CollectionUtils.isEmpty(rsp.backingChain)) {
+                        reply.putBackingChainInstallPath(installPath, Collections.emptyList());
+                        reply.putBackingChainSize(installPath, 0L);
+                    } else {
+                        reply.putBackingChainInstallPath(installPath, rsp.backingChain);
+                        reply.putBackingChainSize(installPath, rsp.totalSize);
+                    }
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList err) {
+                if (!err.getCauses().isEmpty()) {
+                    completion.fail(err.getCauses().get(0));
+                } else {
+                    completion.success(reply);
+                }
             }
         });
     }

@@ -837,6 +837,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else if ((msg instanceof LocalStorageRecalculateCapacityMsg)) {
             handle((LocalStorageRecalculateCapacityMsg) msg);
+        } else if (msg instanceof GetVolumeBackingChainFromPrimaryStorageMsg) {
+            handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -932,6 +934,24 @@ public class LocalStorageBase extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 GetVolumeRootImageUuidFromPrimaryStorageReply reply = new GetVolumeRootImageUuidFromPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(GetVolumeBackingChainFromPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<GetVolumeBackingChainFromPrimaryStorageReply>(msg) {
+            @Override
+            public void success(GetVolumeBackingChainFromPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                GetVolumeBackingChainFromPrimaryStorageReply reply = new GetVolumeBackingChainFromPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

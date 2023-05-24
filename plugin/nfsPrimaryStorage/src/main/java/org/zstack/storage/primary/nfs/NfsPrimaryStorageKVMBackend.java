@@ -50,10 +50,8 @@ import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
-import org.zstack.storage.snapshot.VolumeSnapshotSystemTags;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
-import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -121,6 +119,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String HARD_LINK_VOLUME = "/nfsprimarystorage/volume/hardlink";
     public static final String PING_PATH = "/nfsprimarystorage/ping";
     public static final String GET_VOLUME_BASE_IMAGE_PATH = "/nfsprimarystorage/getvolumebaseimage";
+
+    public static final String GET_BACKING_CHAIN_PATH = "/nfsprimarystorage/volume/getbackingchain";
     public static final String UPDATE_MOUNT_POINT_PATH = "/nfsprimarystorage/updatemountpoint";
     public static final String NFS_TO_NFS_MIGRATE_BITS_PATH = "/nfsprimarystorage/migratebits";
     public static final String NFS_REBASE_VOLUME_BACKING_FILE_PATH = "/nfsprimarystorage/rebasevolumebackingfile";
@@ -771,6 +771,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.volumeUuid = msg.getVolume().getUuid();
         cmd.volumeInstallDir = NfsPrimaryStorageKvmHelper.makeVolumeInstallDir(inv, msg.getVolume());
         cmd.imageCacheDir = NfsPrimaryStorageKvmHelper.getCachedImageDir(inv);
+        cmd.setUuid(inv.getUuid());
 
         final HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
         new KvmCommandSender(host.getUuid()).send(cmd, GET_VOLUME_BASE_IMAGE_PATH, new KvmCommandFailureChecker() {
@@ -796,6 +797,55 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory inv, GetVolumeBackingChainFromPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeBackingChainFromPrimaryStorageReply> completion) {
+        GetVolumeBackingChainFromPrimaryStorageReply reply = new GetVolumeBackingChainFromPrimaryStorageReply();
+
+        final HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
+        new While<>(msg.getRootInstallPaths()).each((installPath, compl) -> {
+            GetBackingChainCmd cmd = new GetBackingChainCmd();
+            cmd.volumeUuid = msg.getVolumeUuid();
+            cmd.installPath = installPath;
+            cmd.setUuid(inv.getUuid());
+
+            new KvmCommandSender(host.getUuid()).send(cmd, GET_BACKING_CHAIN_PATH, new KvmCommandFailureChecker() {
+                @Override
+                public ErrorCode getError(KvmResponseWrapper wrapper) {
+                    GetBackingChainRsp rsp = wrapper.getResponse(GetBackingChainRsp.class);
+                    return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+                }
+            }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+                @Override
+                public void success(KvmResponseWrapper w) {
+                    GetBackingChainRsp rsp = w.getResponse(GetBackingChainRsp.class);
+                    if (CollectionUtils.isEmpty(rsp.backingChain)) {
+                        reply.putBackingChainInstallPath(installPath, Collections.emptyList());
+                        reply.putBackingChainSize(installPath, 0L);
+                    } else {
+                        reply.putBackingChainInstallPath(installPath, rsp.backingChain);
+                        reply.putBackingChainSize(installPath, rsp.totalSize);
+                    }
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList err) {
+                if (!err.getCauses().isEmpty()) {
+                    completion.fail(err.getCauses().get(0));
+                } else {
+                    completion.success(reply);
+                }
             }
         });
     }

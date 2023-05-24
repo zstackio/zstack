@@ -12,6 +12,15 @@ CREATE TABLE `VolumeSnapshotReferenceTreeVO` (
 
 ALTER TABLE `VolumeSnapshotReferenceVO` ADD `parentId` bigint(20) DEFAULT NULL;
 ALTER TABLE `VolumeSnapshotReferenceVO` ADD `treeUuid` VARCHAR(32) DEFAULT NULL;
+ALTER TABLE `VolumeSnapshotReferenceVO` ADD `directSnapshotUuid` VARCHAR(32) DEFAULT NULL;
+ALTER TABLE `VolumeSnapshotReferenceVO` ADD `directSnapshotInstallUrl` VARCHAR(1024) DEFAULT NULL;
+ALTER TABLE `VolumeSnapshotReferenceTreeVO` ADD `rootInstallUrl` VARCHAR(1024) DEFAULT NULL;
+ALTER TABLE `VolumeSnapshotReferenceTreeVO` ADD `rootVolumeSnapshotTreeUuid` VARCHAR(32) DEFAULT NULL;
+ALTER TABLE `VolumeSnapshotReferenceTreeVO` ADD `rootVolumeSnapshotUuid` VARCHAR(32) DEFAULT NULL;
+ALTER TABLE `VolumeSnapshotReferenceTreeVO` ADD `rootVolumeUuid` VARCHAR(32) DEFAULT NULL;
+ALTER TABLE `VolumeSnapshotReferenceTreeVO` ADD `primaryStorageUuid` VARCHAR(32) DEFAULT NULL;
+ALTER TABLE `VolumeSnapshotReferenceTreeVO` ADD `hostUuid` VARCHAR(32) DEFAULT NULL;
+
 
 ALTER TABLE `VolumeSnapshotReferenceVO` ADD CONSTRAINT `fkVolumeSnapshotReferenceReferenceParentId` FOREIGN KEY (`parentId`) REFERENCES `VolumeSnapshotReferenceVO` (`id`) ON DELETE SET NULL;
 ALTER TABLE `VolumeSnapshotReferenceVO` ADD CONSTRAINT `fkVolumeSnapshotReferenceReferenceTreeUuid` FOREIGN KEY (`treeUuid`) REFERENCES `VolumeSnapshotReferenceTreeVO` (`uuid`) ON DELETE SET NULL;
@@ -55,3 +64,4 @@ BEGIN
 END $$
 DELIMITER ;
 CALL upgradeVolumeSnapshotRefSystemTags();
+

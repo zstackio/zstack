@@ -48,6 +48,7 @@ import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -343,6 +344,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         }, ResizeVolumeOnHypervisorReply.class);
 
+        VolumeSnapshotReferenceUtils.setGetResourceLocateHostUuidGetter(resourceUuid -> Q.New(LocalStorageResourceRefVO.class)
+                .select(LocalStorageResourceRefVO_.hostUuid)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, resourceUuid)
+                .findValue());
         return true;
     }
 

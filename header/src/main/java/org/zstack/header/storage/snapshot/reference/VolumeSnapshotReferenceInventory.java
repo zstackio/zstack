@@ -1,9 +1,10 @@
-package org.zstack.header.storage.snapshot;
+package org.zstack.header.storage.snapshot.reference;
 
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeInventory;
 
 import java.sql.Timestamp;
@@ -31,6 +32,10 @@ public class VolumeSnapshotReferenceInventory {
 
     private String volumeSnapshotInstallUrl;
 
+    private String directSnapshotUuid;
+
+    private String directSnapshotInstallUrl;
+
     private String referenceUuid;
 
     private String referenceType;
@@ -49,7 +54,9 @@ public class VolumeSnapshotReferenceInventory {
         inv.parentId = vo.getParentId();
         inv.volumeUuid = vo.getVolumeUuid();
         inv.volumeSnapshotUuid = vo.getVolumeSnapshotUuid();
+        inv.directSnapshotUuid = vo.getDirectSnapshotUuid();
         inv.volumeSnapshotInstallUrl = vo.getVolumeSnapshotInstallUrl();
+        inv.directSnapshotInstallUrl = vo.getDirectSnapshotInstallUrl();
         inv.referenceUuid = vo.getReferenceUuid();
         inv.referenceType = vo.getReferenceType();
         inv.referenceInstallUrl = vo.getReferenceInstallUrl();
@@ -149,5 +156,21 @@ public class VolumeSnapshotReferenceInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getDirectSnapshotUuid() {
+        return directSnapshotUuid;
+    }
+
+    public void setDirectSnapshotUuid(String directSnapshotUuid) {
+        this.directSnapshotUuid = directSnapshotUuid;
+    }
+
+    public String getDirectSnapshotInstallUrl() {
+        return directSnapshotInstallUrl;
+    }
+
+    public void setDirectSnapshotInstallUrl(String directSnapshotInstallUrl) {
+        this.directSnapshotInstallUrl = directSnapshotInstallUrl;
     }
 }

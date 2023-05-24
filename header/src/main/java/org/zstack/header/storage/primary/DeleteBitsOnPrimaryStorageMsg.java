@@ -11,6 +11,7 @@ public class DeleteBitsOnPrimaryStorageMsg extends NeedReplyMessage implements P
     private String primaryStorageUuid;
     private String installPath;
     private String hostUuid;
+    private String format;
     private boolean folder;
 
     @Override
@@ -46,4 +47,11 @@ public class DeleteBitsOnPrimaryStorageMsg extends NeedReplyMessage implements P
         this.hostUuid = hostUuid;
     }
 
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
 }
