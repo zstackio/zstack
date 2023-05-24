@@ -258,8 +258,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
 
         private List<HostRuleTO> calculateByL3NetworkAndSecurityGroup() {
-            String sql = "select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupL3NetworkRefVO l3ref, VmNicVO nic, UsedIpVO ip, SecurityGroupVO sg" +
-                    " where l3ref.securityGroupUuid = ref.securityGroupUuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3ref.l3NetworkUuid" +
+            String sql = "select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupL3NetworkRefVO l3ref, VmNicVO nic, SecurityGroupVO sg" +
+                    " where l3ref.securityGroupUuid = ref.securityGroupUuid and nic.l3NetworkUuid = l3ref.l3NetworkUuid" +
                     " and ref.securityGroupUuid in (:sgUuids) and l3ref.l3NetworkUuid in (:l3Uuids)" +
                     " and ref.securityGroupUuid = sg.uuid and sg.state in (:sgStates)";
             TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
@@ -798,13 +798,13 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         if (nicUuidsToInclude == null) {
             // accessed by an admin
             if (nicUuidsToExclued.isEmpty()) {
-                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref, UsedIpVO ip " +
-                        "where nic.vmInstanceUuid = vm.uuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
+                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
+                        "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
                         " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) group by nic.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
             } else {
-                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref, UsedIpVO ip" +
-                        " where nic.vmInstanceUuid = vm.uuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
+                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref" +
+                        " where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
                         " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid not in (:nicUuids) group by nic.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
                 q.setParameter("nicUuids", nicUuidsToExclued);
@@ -812,14 +812,14 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         } else {
             // accessed by a normal account
             if (nicUuidsToExclued.isEmpty()) {
-                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref, UsedIpVO ip " +
-                        " where nic.vmInstanceUuid = vm.uuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
+                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref" +
+                        " where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
                         " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid in (:iuuids) group by nic.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
                 q.setParameter("iuuids", nicUuidsToInclude);
             } else {
-                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref, UsedIpVO ip " +
-                        " where nic.vmInstanceUuid = vm.uuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
+                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref" +
+                        " where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
                         " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid not in (:nicUuids) and nic.uuid in (:iuuids) group by nic.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
                 q.setParameter("nicUuids", nicUuidsToExclued);
@@ -842,8 +842,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     @Transactional
     private void detachSecurityGroupFromL3Network(String sgUuid, String l3Uuid) {
-        String sql = "select distinct ref.uuid from VmNicSecurityGroupRefVO ref, VmNicVO nic, UsedIpVO ip, SecurityGroupVO sg" +
-                " where nic.uuid = ref.vmNicUuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = :l3Uuid and ref.securityGroupUuid = :sgUuid";
+        String sql = "select distinct ref.uuid from VmNicSecurityGroupRefVO ref, VmNicVO nic, SecurityGroupVO sg" +
+                " where nic.uuid = ref.vmNicUuid and nic.l3NetworkUuid = :l3Uuid and ref.securityGroupUuid = :sgUuid";
         TypedQuery<String> tq = dbf.getEntityManager().createQuery(sql, String.class);
         tq.setParameter("l3Uuid", l3Uuid);
         tq.setParameter("sgUuid", sgUuid);
@@ -864,8 +864,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     @Transactional(readOnly = true)
     private List<String> getVmNicUuidsToRemoveForDetachSecurityGroup(String sgUuid, String l3Uuid) {
-        String sql = "select distinct nic.uuid from VmNicVO nic, VmNicSecurityGroupRefVO ref, UsedIpVO ip, SecurityGroupVO sg" +
-                " where ref.vmNicUuid = nic.uuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = :l3Uuid and ref.securityGroupUuid = :sgUuid";
+        String sql = "select distinct nic.uuid from VmNicVO nic, VmNicSecurityGroupRefVO ref, SecurityGroupVO sg" +
+                " where ref.vmNicUuid = nic.uuid and nic.l3NetworkUuid = :l3Uuid and ref.securityGroupUuid = :sgUuid";
         TypedQuery<String> tq = dbf.getEntityManager().createQuery(sql, String.class);
         tq.setParameter("l3Uuid", l3Uuid);
         tq.setParameter("sgUuid", sgUuid);

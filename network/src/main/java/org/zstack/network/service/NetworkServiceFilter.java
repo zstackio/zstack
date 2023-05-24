@@ -21,8 +21,8 @@ public class NetworkServiceFilter {
     @Transactional(readOnly = true)
     public List<String> filterNicByServiceTypeAndProviderType(Collection<String> nicUuids, String serviceType, String providerType) {
         String sql = "select nic.uuid from VmNicVO nic, NetworkServiceL3NetworkRefVO l3ref, NetworkServiceProviderVO provider," +
-                " NetworkServiceProviderL2NetworkRefVO l2ref, L3NetworkVO l3, UsedIpVO ip where nic.uuid = ip.vmNicUuid and " +
-                " ip.l3NetworkUuid = l3.uuid and nic.uuid in (:uuids)" +
+                " NetworkServiceProviderL2NetworkRefVO l2ref, L3NetworkVO l3 where nic.l3NetworkUuid = l3.uuid" +
+                " and nic.uuid in (:uuids)" +
                 " and l3.uuid = l3ref.l3NetworkUuid and l3ref.networkServiceType = :serviceType and l3ref.networkServiceProviderUuid = provider.uuid" +
                 " and provider.uuid = l2ref.networkServiceProviderUuid and l2ref.l2NetworkUuid = l3.l2NetworkUuid" +
                 " and provider.type = :providerType";
@@ -37,8 +37,8 @@ public class NetworkServiceFilter {
     @Transactional(readOnly = true)
     public List<String> filterVmByServiceTypeAndProviderType(Collection<String> vmUuids, String serviceType, String providerType) {
         String sql = "select distinct vm.uuid from VmNicVO nic, VmInstanceVO vm, NetworkServiceL3NetworkRefVO l3ref, NetworkServiceProviderVO provider," +
-                " NetworkServiceProviderL2NetworkRefVO l2ref, L3NetworkVO l3, UsedIpVO ip " +
-                " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid and ip.l3NetworkUuid = vm.defaultL3NetworkUuid" +
+                " NetworkServiceProviderL2NetworkRefVO l2ref, L3NetworkVO l3 " +
+                " where nic.l3NetworkUuid = l3.uuid and nic.l3NetworkUuid = vm.defaultL3NetworkUuid" +
                 " and nic.vmInstanceUuid = vm.uuid and vm.uuid in (:uuids)" +
                 " and l3.uuid = l3ref.l3NetworkUuid and l3ref.networkServiceType = :serviceType and l3ref.networkServiceProviderUuid = provider.uuid" +
                 " and provider.uuid = l2ref.networkServiceProviderUuid and l2ref.l2NetworkUuid = l3.l2NetworkUuid" +
