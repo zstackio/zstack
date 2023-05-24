@@ -3056,6 +3056,11 @@ public class KVMHost extends HostBase implements Host {
         }
         cmd.setEmulateHyperV(emulateHyperV);
 
+        boolean enableHypervClock = rcf.getResourceConfigValue(
+                KVMGlobalConfig.VM_HYPERV_CLOCK_FEATURE,
+                spec.getVmInventory().getUuid(), Boolean.class);
+        cmd.setHypervClock(enableHypervClock);
+
         cmd.setVendorId(rcf.getResourceConfigValue(VmGlobalConfig.VENDOR_ID, spec.getVmInventory().getUuid(), String.class));
         cmd.setAdditionalQmp(VmGlobalConfig.ADDITIONAL_QMP.value(Boolean.class));
         cmd.setApplianceVm(spec.getVmInventory().getType().equals("ApplianceVm"));

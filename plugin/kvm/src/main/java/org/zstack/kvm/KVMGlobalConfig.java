@@ -82,4 +82,7 @@ public class KVMGlobalConfig {
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig REDIRECT_CONSOLE_LOG_TO_FILE = new GlobalConfig(CATEGORY, "redirect.vm.log.to.file");
 
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig VM_HYPERV_CLOCK_FEATURE = new GlobalConfig(CATEGORY, "vm.hyperv.clock.feature");
 }
