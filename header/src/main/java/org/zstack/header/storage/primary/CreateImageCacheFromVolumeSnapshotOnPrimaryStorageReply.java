@@ -8,7 +8,8 @@ import org.zstack.header.message.NeedReplyMessage;
  */
 public class CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply extends MessageReply {
     private String locateHostUuid;
-    private long actualSize;
+    private ImageCacheInventory inventory;
+    private boolean incremental;
 
     public String getLocateHostUuid() {
         return locateHostUuid;
@@ -19,10 +20,22 @@ public class CreateImageCacheFromVolumeSnapshotOnPrimaryStorageReply extends Mes
     }
 
     public long getActualSize() {
-        return actualSize;
+        return inventory == null ? 0 : inventory.getSize();
     }
 
-    public void setActualSize(long actualSize) {
-        this.actualSize = actualSize;
+    public void setInventory(ImageCacheInventory inventory) {
+        this.inventory = inventory;
+    }
+
+    public ImageCacheInventory getInventory() {
+        return inventory;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
     }
 }

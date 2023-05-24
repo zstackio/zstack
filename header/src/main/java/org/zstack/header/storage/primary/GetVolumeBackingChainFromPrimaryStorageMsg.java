@@ -12,6 +12,8 @@ public class GetVolumeBackingChainFromPrimaryStorageMsg extends NeedReplyMessage
     private String volumeUuid;
     private List<String> rootInstallPaths = new ArrayList<>();
     private String primaryStorageUuid;
+    private String hostUuid;
+    private String volumeFormat;
 
     public List<String> getRootInstallPaths() {
         return rootInstallPaths;
@@ -36,5 +38,21 @@ public class GetVolumeBackingChainFromPrimaryStorageMsg extends NeedReplyMessage
 
     public void setVolumeUuid(String volumeUuid) {
         this.volumeUuid = volumeUuid;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
+
+    public String getVolumeFormat() {
+        return volumeFormat;
+    }
+
+    public void setVolumeFormat(String volumeFormat) {
+        this.volumeFormat = volumeFormat;
     }
 }

@@ -11,8 +11,8 @@ import org.zstack.header.storage.backup.AllocateBackupStorageMsg
 import org.zstack.header.storage.backup.AllocateBackupStorageReply
 import org.zstack.header.storage.backup.BackupStorageInventory
 import org.zstack.header.storage.backup.BackupStorageVO
-import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg
-import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply
+import org.zstack.header.vm.CreateTemplateFromRootVolumeVmMsg
+import org.zstack.header.vm.CreateTemplateFromRootVolumeVmReply
 import org.zstack.header.volume.CreateDataVolumeTemplateFromDataVolumeMsg
 import org.zstack.header.volume.CreateDataVolumeTemplateFromDataVolumeReply
 import org.zstack.header.volume.SyncVolumeSizeMsg
@@ -323,8 +323,8 @@ class ImageOperationsCase extends SubCase {
             bus.reply(msg, reply)
         }
 
-        env.message(CreateTemplateFromVmRootVolumeMsg.class) { CreateTemplateFromVmRootVolumeMsg msg, CloudBus bus ->
-            def reply = new CreateTemplateFromVmRootVolumeReply()
+        env.message(CreateTemplateFromRootVolumeVmMsg.class) { CreateTemplateFromRootVolumeVmMsg msg, CloudBus bus ->
+            def reply = new CreateTemplateFromRootVolumeVmReply()
             reply.installPath = "/root/hello/root-volume/path"
             bus.reply(msg, reply)
         }
@@ -405,8 +405,8 @@ class ImageOperationsCase extends SubCase {
             bus.reply(msg, reply)
         }
 
-        env.message(CreateTemplateFromVmRootVolumeMsg.class) { CreateTemplateFromVmRootVolumeMsg msg, CloudBus bus ->
-            def reply = new CreateTemplateFromVmRootVolumeReply()
+        env.message(CreateTemplateFromRootVolumeVmMsg.class) { CreateTemplateFromRootVolumeVmMsg msg, CloudBus bus ->
+            def reply = new CreateTemplateFromRootVolumeVmReply()
             reply.installPath = "/root/hello/root-volume/path"
             ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.name, imageName).find()
             assert image != null
@@ -433,8 +433,8 @@ class ImageOperationsCase extends SubCase {
         long beforeRefCount = Q.New(ImageBackupStorageRefVO.class).count()
         long beforeImageCount = Q.New(ImageVO.class).count()
 
-        env.message(CreateTemplateFromVmRootVolumeMsg.class) { CreateTemplateFromVmRootVolumeMsg msg, CloudBus bus ->
-            def reply = new CreateTemplateFromVmRootVolumeReply()
+        env.message(CreateTemplateFromRootVolumeVmMsg.class) { CreateTemplateFromRootVolumeVmMsg msg, CloudBus bus ->
+            def reply = new CreateTemplateFromRootVolumeVmReply()
             reply.setError(new ErrorCode("10000", "on purpose"))
             bus.reply(msg, reply)
         }
@@ -453,8 +453,8 @@ class ImageOperationsCase extends SubCase {
         long beforeRefCount = Q.New(ImageBackupStorageRefVO.class).count()
         long beforeImageCount = Q.New(ImageVO.class).count()
 
-        env.message(CreateTemplateFromVmRootVolumeMsg.class) { CreateTemplateFromVmRootVolumeMsg msg, CloudBus bus ->
-            def reply = new CreateTemplateFromVmRootVolumeReply()
+        env.message(CreateTemplateFromRootVolumeVmMsg.class) { CreateTemplateFromRootVolumeVmMsg msg, CloudBus bus ->
+            def reply = new CreateTemplateFromRootVolumeVmReply()
             reply.installPath = "/root/hello/root-volume/path"
             ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.name, imageName).find()
             assert image != null

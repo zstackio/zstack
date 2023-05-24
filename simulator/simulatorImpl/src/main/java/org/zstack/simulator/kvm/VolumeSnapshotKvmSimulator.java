@@ -249,7 +249,7 @@ public class VolumeSnapshotKvmSimulator {
 
     public synchronized void merge(String src, String dest, boolean fullRebase) {
         Qcow2 qsrc = findByInstallPath(src);
-        DebugUtils.Assert(qsrc!=null, String.format("cannot find source snapshot[%s]", src));
+        DebugUtils.Assert(qsrc!=null || fullRebase, String.format("cannot find source snapshot[%s]", src));
         Qcow2 qdest = qsrc.find(dest);
         if (qdest == null) {
             dumpAllQcow2();
@@ -257,7 +257,9 @@ public class VolumeSnapshotKvmSimulator {
         }
 
         if (fullRebase) {
-            snapshots.remove(qsrc.getInstallPath());
+            if (src != null) {
+                snapshots.remove(qsrc.getInstallPath());
+            }
             qdest.setPrev(null);
             snapshots.put(qdest.getInstallPath(), qdest);
             return;

@@ -6,8 +6,10 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageMsg;
 import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageReply;
+import org.zstack.header.volume.VolumeInventory;
 
 import java.util.List;
 
@@ -58,7 +60,7 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
 
     abstract void handle(CreateVolumeFromVolumeSnapshotOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<CreateVolumeFromVolumeSnapshotOnPrimaryStorageReply> completion);
 
-    abstract void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply> completion);
+    abstract void stream(VolumeSnapshotInventory from, VolumeInventory to, boolean fullRebase, String hostUuid, Completion completion);
 
     abstract void handle(LocalStorageCreateEmptyVolumeMsg msg, ReturnValueCompletion<LocalStorageCreateEmptyVolumeReply> completion);
 
@@ -79,6 +81,8 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
     abstract void handle(UploadBitsFromLocalStorageToBackupStorageMsg msg, String hostUuid, ReturnValueCompletion<UploadBitsFromLocalStorageToBackupStorageReply> completion);
 
     abstract void handle(GetVolumeRootImageUuidFromPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply> completion);
+
+    abstract void handle(GetVolumeBackingChainFromPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeBackingChainFromPrimaryStorageReply> returnValueCompletion);
 
     abstract void handleHypervisorSpecificMessage(LocalStorageHypervisorSpecificMessage msg);
 

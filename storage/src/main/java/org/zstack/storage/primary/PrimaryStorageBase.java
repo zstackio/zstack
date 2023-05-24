@@ -34,6 +34,8 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -144,6 +146,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected abstract void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg);
 
     protected abstract void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg);
+
+    protected abstract void handle(FlattenVolumeOnPrimaryStorageMsg msg);
 
     protected abstract void handle(DeleteSnapshotOnPrimaryStorageMsg msg);
 
@@ -293,6 +297,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().maintenance()
                     .validate();
+        } else if (msg instanceof FlattenVolumeOnPrimaryStorageMsg) {
+            new PrimaryStorageValidater().maintenance()
+                    .validate();
         } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().maintenance()
                     .validate();
@@ -360,6 +367,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
             handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof FlattenVolumeOnPrimaryStorageMsg) {
+            handle((FlattenVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
             handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof UpdatePrimaryStorageHostStatusMsg) {
@@ -394,9 +403,44 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((UnlinkBitsOnPrimaryStorageMsg) msg);
         } else if (msg instanceof GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) {
             handle((GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteVolumeChainOnPrimaryStorageMsg) {
+            handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    protected void handle(DeleteVolumeChainOnPrimaryStorageMsg msg) {
+        DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
+        new While<>(msg.getInstallPaths()).each((path, c) -> {
+            DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
+            dmsg.setInstallPath(path);
+            dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+            dmsg.setHostUuid(msg.getHostUuid());
+            dmsg.setFormat(msg.getVolumeFormat());
+            bus.makeLocalServiceId(dmsg, PrimaryStorageConstant.SERVICE_ID);
+            bus.send(dmsg, new CloudBusCallBack(c) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        c.addError(reply.getError());
+                        c.allDone();
+                        return;
+                    }
+
+                    c.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    reply.setError(errorCodeList.getCauses().get(0));
+                }
+
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     protected void handle(final CleanUpTrashOnPrimaryStroageMsg msg) {
@@ -1693,5 +1737,20 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             throw new OperationFailureException(
                     operr("cannot attach volume[uuid:%s] whose primary storage is Maintenance", volumeUuid));
         }
+    }
+
+    protected ImageCacheVO createTemporaryImageCacheFromVolumeSnapshot(ImageInventory image, VolumeSnapshotInventory volumeSnapshot) {
+        ImageCacheVO cvo = new ImageCacheVO();
+        cvo.setMd5sum("not calculated");
+
+        cvo.setSize(volumeSnapshot.getSize());
+        cvo.setInstallUrl(ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA + volumeSnapshot.getUuid());
+        cvo.setImageUuid(image.getUuid());
+        cvo.setPrimaryStorageUuid(self.getUuid());
+        cvo.setMediaType(ImageConstant.ImageMediaType.valueOf(image.getMediaType()));
+        cvo.setState(ImageCacheState.creating);
+
+        logger.debug(String.format("mark volume snapshot[uuid:%s] as temporary image cache", volumeSnapshot.getUuid()));
+        return cvo;
     }
 }

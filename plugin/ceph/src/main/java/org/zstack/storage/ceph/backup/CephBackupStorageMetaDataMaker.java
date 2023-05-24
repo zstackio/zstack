@@ -224,9 +224,8 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
     protected  String getBackupStorageTypeFromImageInventory(ImageInventory img) {
         String sql = "select bs.type from BackupStorageVO bs, ImageBackupStorageRefVO refVo where  " +
                 "bs.uuid = refVo.backupStorageUuid and refVo.imageUuid = :uuid";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("uuid", img.getUuid());
-        return q.getSingleResult();
+
+        return SQL.New(sql, String.class).param("uuid", img.getUuid()).find();
     }
 
     protected  void dumpImagesBackupStorageInfoToMetaDataFile(ImageInventory img, boolean allImagesInfo,  String hostName, String bsUuid ) {
@@ -309,7 +308,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
     @Override
     public void afterAddImage(ImageInventory img) {
-        if (!getBackupStorageTypeFromImageInventory(img).equals(CephConstants.CEPH_BACKUP_STORAGE_TYPE)) {
+        if (!CephConstants.CEPH_BACKUP_STORAGE_TYPE.equals(getBackupStorageTypeFromImageInventory(img))) {
             return;
         }
 
@@ -413,7 +412,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
     @Override
     public void afterCreateTemplate(ImageInventory inv) {
-        if (!getBackupStorageTypeFromImageInventory(inv).equals(CephConstants.CEPH_BACKUP_STORAGE_TYPE)) {
+        if (!CephConstants.CEPH_BACKUP_STORAGE_TYPE.equals(getBackupStorageTypeFromImageInventory(inv))) {
             return;
         }
 

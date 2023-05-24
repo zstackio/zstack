@@ -142,6 +142,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class CreateTemplateFromVolumeCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext{
         private String installPath;
         private String rootVolumePath;
+        private boolean incremental;
 
         public String getInstallPath() {
             return installPath;
@@ -155,6 +156,14 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
         public void setVolumePath(String rootVolumePath) {
             this.rootVolumePath = rootVolumePath;
+        }
+
+        public void setIncremental(boolean incremental) {
+            this.incremental = incremental;
+        }
+
+        public boolean isIncremental() {
+            return incremental;
         }
     }
     public static class CreateTemplateFromVolumeRsp extends NfsPrimaryStorageAgentResponse {
@@ -785,6 +794,16 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String path;
     }
 
+    public static class GetBackingChainCmd extends NfsPrimaryStorageAgentCommand {
+        public String volumeUuid;
+        public String installPath;
+    }
+
+    public static class GetBackingChainRsp extends NfsPrimaryStorageAgentResponse {
+        public List<String> backingChain;
+        public long totalSize;
+    }
+
     public static class UpdateMountPointCmd extends NfsPrimaryStorageAgentCommand {
         public String oldMountPoint;
         public String newMountPoint;
@@ -799,6 +818,8 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String srcFolderPath;
         public String dstFolderPath;
         public List<String> filtPaths;
+
+        public String independentPath;
         public boolean isMounted = false;
         public String url;
         public String options;

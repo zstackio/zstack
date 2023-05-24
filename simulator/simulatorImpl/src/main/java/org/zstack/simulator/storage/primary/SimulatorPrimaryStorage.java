@@ -183,6 +183,12 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(FlattenVolumeOnPrimaryStorageMsg msg) {
+        FlattenVolumeOnPrimaryStorageReply reply = new FlattenVolumeOnPrimaryStorageReply();
+        bus.reply(msg, reply);
+    }
+
+    @Override
     protected void handle(DeleteSnapshotOnPrimaryStorageMsg msg) {
         DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
         reply.setSuccess(true);
