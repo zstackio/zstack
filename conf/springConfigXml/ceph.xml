@@ -122,6 +122,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ZStoneCephPrimaryCapacityBaseUpdater" class="org.zstack.storage.ceph.primary.capacity.ZStoneCephPrimaryCapacityBaseUpdater">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="CephStorageAttachKvmClusterMetric" class="org.zstack.storage.ceph.primary.CephStorageAttachKvmClusterMetric">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.storage.primary.StorageAttachClusterMetric"/>
