@@ -895,12 +895,13 @@ public class Platform {
         }
     }
 
-    private static ErrorCodeElaboration elaborate(String details, Object...args) {
+    private static ErrorCodeElaboration elaborate(String fmt, Object...args) {
         try {
-            if (String.format(details, args).length() > StringSimilarity.maxElaborationRegex) {
+            if (String.format(fmt, args).length() > StringSimilarity.maxElaborationRegex) {
                 return null;
             }
-            ErrorCodeElaboration elaboration = StringSimilarity.findSimilar(details, args);
+
+            ErrorCodeElaboration elaboration = StringSimilarity.findSimilar(fmt, args);
             if (elaboration == null) {
                 return null;
             }
@@ -934,66 +935,108 @@ public class Platform {
         }
 
         ErrorCode result = errf.instantiateErrorCode(errCode, details, cause);
-        // start to generate elaboration...
-        if (CoreGlobalProperty.ENABLE_ELABORATION) {
-            try {
-                ErrorCode coreError = cause == null ? getCoreError(result) : getCoreError(cause);
-                // use the core cause as elaboration if it existed
-                if (coreError.getElaboration() != null) {
-                    result.setCost(coreError.getCost());
-                    result.setElaboration(coreError.getElaboration());
-                    result.setMessages(coreError.getMessages());
-                } else if (cause instanceof ErrorCodeList && ((ErrorCodeList) cause).getCauses() != null) {
-                    // suppose elaborations are existed in causes...
-                    ErrorCodeList errList = (ErrorCodeList)cause;
-                    String costs = null;
-                    String elas = null;
-                    ErrorCodeElaboration messages = null;
-                    for (ErrorCode c: errList.getCauses()) {
-                        ErrorCode lcError = getCoreError(c);
-                        if (lcError.getElaboration() != null && !lcError.getElaboration().equals(elas) && !lcError.getMessages().equals(messages)) {
-                            costs = costs == null ? lcError.getCost() : addTwoCosts(costs, lcError.getCost());
-                            elas = elas == null ? lcError.getElaboration() : String.join(",", elas, lcError.getElaboration());
-                            messages = messages == null ? lcError.getMessages() : messages.addElaborationMessage(lcError.getMessages());
-                        }
-                    }
-                    result.setCost(costs);
-                    result.setElaboration(elas);
-                    result.setMessages(messages);
-                }
-
-                if (result.getElaboration() == null && cause == null) {
-                    long start = System.currentTimeMillis();
-                    /**
-                     * try details first, then descriptions
-                     */
-                    ErrorCodeElaboration ela = elaborate(fmt, args);
-                    if (ela == null && allowCode.contains(errCode)) {
-                        ela = elaborate(result.getDescription());
-                    }
-                    if (ela != null) {
-                        if (args != null && args.length == 1 && StringSimilarity.isRegexMatched(ela.getRegex(), String.valueOf(args[0]))) {
-                            result.setMessages(new ErrorCodeElaboration(ela));
-                            result.setElaboration(StringSimilarity.formatElaboration(String.valueOf(args[0])));
-                            StringSimilarity.addErrors(fmt, ela);
-                        } else {
-                            result.setMessages(new ErrorCodeElaboration(ela, args));
-                            result.setElaboration(StringSimilarity.formatElaboration(ela.getMessage_cn(), args));
-                            StringSimilarity.addErrors(fmt, ela);
-                        }
-                    } else {
-                        StringSimilarity.addMissed(fmt);
-                    }
-                    result.setCost((System.currentTimeMillis() - start) + "ms");
-                }
-            } catch (Throwable e) {
-                logger.warn("exception happened when found elaboration");
-                logger.warn(e.getMessage());
-            }
-        }
+        handleErrorElaboration(errCode, fmt, result, cause, args);
         addErrorCounter(result);
 
         return result;
+    }
+
+    private static void findElaborationFromCoreError(ErrorCode cause, ErrorCode result) {
+        ErrorCode coreError = cause == null ? getCoreError(result) : getCoreError(cause);
+        // use the core cause as elaboration if it existed
+        if (coreError.getElaboration() != null) {
+            result.setCost(coreError.getCost());
+            result.setElaboration(coreError.getElaboration());
+            result.setMessages(coreError.getMessages());
+        } else if (cause instanceof ErrorCodeList && ((ErrorCodeList) cause).getCauses() != null) {
+            // suppose elaborations are existed in causes...
+            ErrorCodeList errList = (ErrorCodeList) cause;
+            String costs = null;
+            String elas = null;
+            ErrorCodeElaboration messages = null;
+            for (ErrorCode c: errList.getCauses()) {
+                ErrorCode lcError = getCoreError(c);
+                if (lcError.getElaboration() != null && !lcError.getElaboration().equals(elas) && !lcError.getMessages().equals(messages)) {
+                    costs = costs == null ? lcError.getCost() : addTwoCosts(costs, lcError.getCost());
+                    elas = elas == null ? lcError.getElaboration() : String.join(",", elas, lcError.getElaboration());
+                    messages = messages == null ? lcError.getMessages() : messages.addElaborationMessage(lcError.getMessages());
+                }
+            }
+            result.setCost(costs);
+            result.setElaboration(elas);
+            result.setMessages(messages);
+        }
+    }
+
+    private static void generateElaboration(Enum errCode, ErrorCode result, String fmt, Object...args) {
+        // try to find same error with fmt and args
+        ErrorCodeElaboration ela = elaborate(fmt, args);
+
+        // only elaborate the error code in allowCode if fmt missed
+        if (ela == null && allowCode.contains(errCode)) {
+            ela = elaborate(result.getDescription());
+        }
+
+        // failed to find elaboration, add the error code fmt string to missed list
+        if (ela == null) {
+            if (args != null) {
+                StringSimilarity.addMissed(String.format(fmt, args));
+            } else {
+                StringSimilarity.addMissed(fmt);
+            }
+
+            // note: if allowCode failed to find elaboration,
+            // we still need to add the description to missed list
+            if (allowCode.contains(errCode)) {
+                StringSimilarity.addMissed(result.getDescription());
+            }
+
+            return;
+        }
+
+        String prefix, msg;
+        if (locale.equals(Locale.SIMPLIFIED_CHINESE)) {
+            prefix = "错误信息: %s\n";
+            msg = ela.getMessage_cn();
+        } else {
+            prefix = "Error message: %s\n";
+            msg = ela.getMessage_en();
+        }
+
+        // tricky code that we treat the only one args error maybe use the cause or
+        // error from other component directly, so we need to check if the args is
+        // matched with the regex at first
+        if (args != null && args.length == 1 && StringSimilarity.isRegexMatched(ela.getRegex(), String.valueOf(args[0]))) {
+            result.setMessages(new ErrorCodeElaboration(ela));
+            String formatError = String.format(prefix, args[0]);
+            result.setElaboration(StringSimilarity.formatElaboration(formatError));
+        } else {
+            result.setMessages(new ErrorCodeElaboration(ela, args));
+            result.setElaboration(StringSimilarity.formatElaboration(String.format(prefix, msg), args));
+        }
+
+        StringSimilarity.addErrors(fmt, ela);
+    }
+
+    private static void handleErrorElaboration(Enum errCode, String fmt, ErrorCode result, ErrorCode cause, Object...args) {
+        if (!CoreGlobalProperty.ENABLE_ELABORATION) {
+            return;
+        }
+
+        // start to generate elaboration...
+        try {
+            findElaborationFromCoreError(cause, result);
+
+            // if the elaboration is not found, try to generate it
+            if (result.getElaboration() == null && cause == null) {
+                long start = System.currentTimeMillis();
+                generateElaboration(errCode, result, fmt, args);
+                result.setCost((System.currentTimeMillis() - start) + "ms");
+            }
+        } catch (Throwable e) {
+            logger.warn("exception happened when found elaboration");
+            logger.warn(e.getMessage());
+        }
     }
 
     private static String addTwoCosts(String origin, String increase) {

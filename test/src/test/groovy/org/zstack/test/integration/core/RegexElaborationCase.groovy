@@ -4,6 +4,7 @@ import org.zstack.core.Platform
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.errorcode.ErrorCodeList
 import org.zstack.header.storage.primary.PrimaryStorageErrors
+import org.zstack.header.vm.VmErrors
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.string.ElaborationSearchMethod
@@ -38,6 +39,8 @@ class RegexElaborationCase extends SubCase {
         testElaboration4()
         testElaboration5()
         testElaboration6()
+        testElaboration7()
+        testElaboration8()
         testElaboration7()
     }
 
@@ -88,8 +91,8 @@ class RegexElaborationCase extends SubCase {
         ErrorCode errorCodes = new ErrorCodeList()
         List<ErrorCode> causes = Collections.synchronizedList(new ArrayList<>())
 
-        def errCode1 = Platform.operr(".*can not find vg .* and create vg with forceWipw=.*") as ErrorCode
-        def errCode2 = Platform.operr(".*can not find vg .* and create vg with forceWipw=.*") as ErrorCode
+        def errCode1 = Platform.operr("operation error, because:%s", ".*can not find vg .* and create vg with forceWipw=.*") as ErrorCode
+        def errCode2 = Platform.operr("operation error, because:%s", ".*can not find vg .* and create vg with forceWipw=.*") as ErrorCode
 
         causes.add(errCode1)
         causes.add(errCode2)
@@ -97,8 +100,32 @@ class RegexElaborationCase extends SubCase {
 
         ErrorCode result = err(PrimaryStorageErrors.ATTACH_ERROR, errorCodes, errorCodes.getDetails())
 
+        assert result.elaboration.trim().equals("错误信息: .*can not find vg .* and create vg with forceWipw=.*")
+        assert result.messages.message_cn.trim().equals("无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
+        assert result.messages.message_en.trim().equals("Could not attach shared block storage to cluster, because device is not empty. Please select the checkbox \"Clear LUN\" and try again.")
+
+        errCode1 = Platform.operr("operation error, because:.*can not find vg .* and create vg with forceWipw=.*") as ErrorCode
+        errCode2 = Platform.operr("operation error, because:.*can not find vg .* and create vg with forceWipw=.*") as ErrorCode
+
+        causes.clear()
+        causes.add(errCode1)
+        causes.add(errCode2)
+        errorCodes.setCauses(causes)
+
+        result = err(PrimaryStorageErrors.ATTACH_ERROR, errorCodes, errorCodes.getDetails())
         assert result.elaboration.trim().equals("错误信息: 无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
         assert result.messages.message_cn.trim().equals("无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
         assert result.messages.message_en.trim().equals("Could not attach shared block storage to cluster, because device is not empty. Please select the checkbox \"Clear LUN\" and try again.")
+
+    }
+
+    /**
+     * test error do not match wrong elaboration
+     */
+    void testElaboration8() {
+        ErrorCode errorCode = Platform.operr("operation error, because:%s", "failed to execute bash")
+        ErrorCode result = err(VmErrors.START_ERROR, errorCode, errorCode.getDetails())
+        // current error do not match elaboration
+        assert result.elaboration == null
     }
 }
