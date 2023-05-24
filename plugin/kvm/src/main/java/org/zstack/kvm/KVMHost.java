@@ -3061,6 +3061,10 @@ public class KVMHost extends HostBase implements Host {
                 spec.getVmInventory().getUuid(), Boolean.class);
         cmd.setHypervClock(enableHypervClock);
 
+        // suspend features
+        cmd.setSuspendToDisk(rcf.getResourceConfigValue(KVMGlobalConfig.SUSPEND_TO_DISK, spec.getVmInventory().getUuid(), Boolean.class));
+        cmd.setSuspendToRam(rcf.getResourceConfigValue(KVMGlobalConfig.SUSPEND_TO_RAM, spec.getVmInventory().getUuid(), Boolean.class));
+
         cmd.setVendorId(rcf.getResourceConfigValue(VmGlobalConfig.VENDOR_ID, spec.getVmInventory().getUuid(), String.class));
         cmd.setAdditionalQmp(VmGlobalConfig.ADDITIONAL_QMP.value(Boolean.class));
         cmd.setApplianceVm(spec.getVmInventory().getType().equals("ApplianceVm"));
