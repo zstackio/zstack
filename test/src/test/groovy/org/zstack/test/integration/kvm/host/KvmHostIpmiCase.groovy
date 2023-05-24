@@ -48,6 +48,8 @@ class KvmHostIpmiCase extends SubCase {
             testAddKvmHostWithIpmi()
             testUpdateKvmHostIpmi()
             testDeleteKvmHostWithIpmi()
+            testAddHostsWithSameIpmiAddr()
+            testAddHostWithNoneIpmiAddr()
         }
     }
 
@@ -73,9 +75,7 @@ class KvmHostIpmiCase extends SubCase {
             ]
         } as List<SystemTagInventory>
         assert tags.size() == 1
-
-        def cnt = Q.New(HostIpmiVO.class).count()
-        assert 1L == cnt
+        assert Q.New(HostIpmiVO.class).eq(HostIpmiVO_.ipmiAddress, "172.25.10.159").isExists()
     }
 
     void testDeleteKvmHostWithIpmi() {
@@ -111,5 +111,50 @@ class KvmHostIpmiCase extends SubCase {
         assert ipmi.ipmiAddress == "127.0.0.11"
         assert ipmi.ipmiUsername == "admin"
         assert ipmi.ipmiPassword == "password"
+    }
+
+    void testAddHostsWithSameIpmiAddr() {
+        def ipmiAddress = "0.0.0.0"
+        env.afterSimulator(KVMConstant.KVM_HOST_FACT_PATH) { KVMAgentCommands.HostFactResponse rsp ->
+            rsp.ipmiAddress = ipmiAddress
+            return rsp
+        }
+
+        addKVMHost {
+            name = "host"
+            username = "root"
+            password = "password"
+            managementIp = "127.0.0.12"
+            clusterUuid = cluster1.uuid
+        } as KVMHostInventory
+        addKVMHost {
+            name = "host"
+            username = "root"
+            password = "password"
+            managementIp = "127.0.0.13"
+            clusterUuid = cluster1.uuid
+        } as KVMHostInventory
+
+        assert Q.New(HostIpmiVO.class).eq(HostIpmiVO_.ipmiAddress, "0.0.0.0").count() == 2
+    }
+
+    void testAddHostWithNoneIpmiAddr() {
+        def ipmiAddress = "None"
+        env.afterSimulator(KVMConstant.KVM_HOST_FACT_PATH) { KVMAgentCommands.HostFactResponse rsp ->
+            rsp.ipmiAddress = ipmiAddress
+            return rsp
+        }
+
+        def host = addKVMHost {
+            name = "host"
+            username = "root"
+            password = "password"
+            managementIp = "127.0.0.14"
+            clusterUuid = cluster1.uuid
+        } as KVMHostInventory
+
+        def ipmi = Q.New(HostIpmiVO.class).eq(HostIpmiVO_.uuid, host.uuid)
+                .find() as HostIpmiVO
+        assert ipmi.ipmiAddress == null
     }
 }
