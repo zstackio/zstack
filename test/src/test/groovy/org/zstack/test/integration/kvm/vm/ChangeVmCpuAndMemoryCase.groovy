@@ -409,11 +409,18 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
             return rsp
         }
 
+        KVMAgentCommands.StartVmCmd startCmd = null
+        env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
+            startCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            return rsp
+        }
+
         startVmInstance {
             uuid = vm.uuid
         }
         VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
         assert vo.state == VmInstanceState.Running
+        assert startCmd.maxVcpuNum == 128
 
         VmInstanceInventory vmInstanceInventory = updateVmInstance {
             uuid = vm.uuid

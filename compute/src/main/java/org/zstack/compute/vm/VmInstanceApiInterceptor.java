@@ -39,6 +39,7 @@ import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -51,9 +52,12 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.lang.Integer.parseInt;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.CollectionUtils.getDuplicateElementsOfList;
 
 /**
@@ -1208,6 +1212,73 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         validateCdRomsTag(msg);
+    }
+
+    private boolean isCpuTopologyTags(String tag) {
+        return VmHardwareSystemTags.CPU_SOCKETS.isMatch(tag)
+                || VmHardwareSystemTags.CPU_CORES.isMatch(tag)
+                || VmHardwareSystemTags.CPU_THREADS.isMatch(tag);
+    }
+
+    private static class CpuTopology {
+        int cpuNum;
+        Integer cpuSockets;
+        Integer cpuCores;
+        Integer cpuThreads;
+
+        public CpuTopology(int cpuNum, List<String> systemTags) {
+            this.cpuNum = cpuNum;
+
+            this.cpuSockets = getValueFromSystemTag(systemTags, VmHardwareSystemTags.CPU_SOCKETS, VmHardwareSystemTags.CPU_SOCKETS_TOKEN);
+            this.cpuCores = getValueFromSystemTag(systemTags, VmHardwareSystemTags.CPU_CORES, VmHardwareSystemTags.CPU_CORES_TOKEN);
+            this.cpuThreads = getValueFromSystemTag(systemTags, VmHardwareSystemTags.CPU_THREADS, VmHardwareSystemTags.CPU_THREADS_TOKEN);
+        }
+
+        private Integer getValueFromSystemTag(List<String> systemTags, PatternedSystemTag tag, String token) {
+            for (String t : systemTags) {
+                if (tag.isMatch(t)) {
+                    try {
+                        return Integer.valueOf(tag.getTokenByTag(t, token));
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        boolean isEmpty() {
+            return cpuSockets == null && cpuCores == null && cpuThreads == null;
+        }
+
+        void calculateValidTopology() {
+            if (cpuSockets == null) {
+                if (cpuCores == null && cpuThreads == null) {
+                    return;
+                }
+
+                throw new ApiMessageInterceptionException(argerr("cpuSockets must be specified when cpuCores or cpuThreads is set"));
+            }
+
+            if (cpuCores == null && cpuThreads == null) {
+                cpuCores = cpuNum / cpuSockets;
+                cpuThreads = 1;
+            } else if (cpuCores != null && cpuThreads == null) {
+                cpuThreads = cpuNum / cpuSockets / cpuCores;
+            } else if (cpuCores == null) {
+                cpuCores = cpuNum / cpuSockets / cpuThreads;
+            }
+
+            // check the topology is valid
+            if (cpuNum == cpuSockets * cpuCores * cpuThreads) {
+                return;
+            }
+
+            throw new ApiMessageInterceptionException(argerr("invalid cpu topology." +
+                            " cpuNum[%s], cpuSockets[%s], cpuCores[%s], cpuThreads[%s]",
+                    cpuNum, cpuSockets, cpuCores, cpuThreads));
+        }
     }
 
     private void validateCdRomsTag(NewVmInstanceMessage msg) {

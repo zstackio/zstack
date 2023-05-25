@@ -1635,9 +1635,14 @@ public class KVMAgentCommands {
         private long memory;
         private long maxMemory;
         private int cpuNum;
+        private int maxVcpuNum;
         private long cpuSpeed;
-        private int socketNum;
-        private int cpuOnSocket;
+        // cpu topology
+        private Integer socketNum;
+        private Integer cpuOnSocket;
+        // set thread per core default 1 to keep backward compatibility
+        private Integer threadsPerCore = 1;
+
         private List<String> bootDev;
         private VolumeTO rootVolume;
         private VirtualDeviceInfo memBalloon;
@@ -1694,6 +1699,26 @@ public class KVMAgentCommands {
 
         // TODO: only for test
         private boolean useColoBinary;
+
+        public void setSocketNum(Integer socketNum) {
+            this.socketNum = socketNum;
+        }
+
+        public void setCpuOnSocket(Integer cpuOnSocket) {
+            this.cpuOnSocket = cpuOnSocket;
+        }
+
+        public void setThreadsPerCore(Integer threadsPerCore) {
+            this.threadsPerCore = threadsPerCore;
+        }
+
+        public int getMaxVcpuNum() {
+            return maxVcpuNum;
+        }
+
+        public void setMaxVcpuNum(int maxVcpuNum) {
+            this.maxVcpuNum = maxVcpuNum;
+        }
 
         public String getChassisAssetTag() {
             return chassisAssetTag;
@@ -1887,7 +1912,7 @@ public class KVMAgentCommands {
             this.clockTrack = clockTrack;
         }
 
-        public int getSocketNum() {
+        public Integer getSocketNum() {
             return socketNum;
         }
 
@@ -1895,12 +1920,20 @@ public class KVMAgentCommands {
             this.socketNum = socketNum;
         }
 
-        public int getCpuOnSocket() {
+        public Integer getCpuOnSocket() {
             return cpuOnSocket;
         }
 
         public void setCpuOnSocket(int cpuOnSocket) {
             this.cpuOnSocket = cpuOnSocket;
+        }
+
+        public Integer getThreadsPerCore() {
+            return threadsPerCore;
+        }
+
+        public void setThreadsPerCore(int threadsPerCore) {
+            this.threadsPerCore = threadsPerCore;
         }
 
         public String getVmName() {

@@ -152,6 +152,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="VmHardwareExtensionPoint" class="org.zstack.compute.vm.VmHardwareExtensionPoint">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceStartExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceStartNewCreatedVmExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="UserVmFactory" class="org.zstack.compute.vm.UserVmFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.VmInstanceFactory" />
