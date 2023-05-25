@@ -76,9 +76,9 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
     }
 
     private void placeAnsible4100() {
-        File ansible = PathUtil.findFileOnClassPath("tools/ansible-4.10.0.tar.gz");
+        File ansible = PathUtil.findFileOnClassPath("tools/ansible-4.10.0-py2.py3-none-any.whl");
         if (ansible == null) {
-            throw new CloudRuntimeException("cannot find tools/ansible-4.10.0.tar.gz on classpath");
+            throw new CloudRuntimeException("cannot find tools/ansible-4.10.0-py2.py3-none-any.whl on classpath");
         }
 
         File root = new File(filesDir);
