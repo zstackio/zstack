@@ -9,6 +9,7 @@ import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.*
 import org.zstack.storage.primary.smp.KvmBackend
 import org.zstack.storage.primary.smp.SMPDeleteVolumeGC
@@ -88,11 +89,14 @@ class SMPAttachCase extends SubCase{
             uuid = vol.uuid
         }
 
-        expungeDataVolume {
-            uuid = vol.uuid
+        expectError {
+            expungeDataVolume {
+                uuid = vol.uuid
+            }
         }
 
         assert call
+        assert Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.uuid).isExists()
         assert queryGCJob {
             conditions = ["context~=%${vol.uuid}%"]
         }[0] == null

@@ -1,9 +1,10 @@
 package org.zstack.test.integration.storage.primary.nfs
 
-
+import org.zstack.core.db.Q
 import org.zstack.core.gc.GCStatus
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.*
 import org.zstack.storage.primary.nfs.*
 import org.zstack.storage.volume.VolumeGlobalConfig
@@ -225,11 +226,14 @@ class NfsGCCase extends SubCase {
             uuid = vol.uuid
         }
 
-        expungeDataVolume {
-            uuid = vol.uuid
+        expectError {
+            expungeDataVolume {
+                uuid = vol.uuid
+            }
         }
 
         assert call
+        assert Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.uuid).isExists()
         assert queryGCJob {
             conditions = ["context~=%${vol.uuid}%"]
         }[0] == null

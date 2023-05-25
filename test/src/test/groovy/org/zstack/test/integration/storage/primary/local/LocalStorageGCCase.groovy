@@ -3,11 +3,11 @@ package org.zstack.test.integration.storage.primary.local
 import org.zstack.core.db.Q
 import org.zstack.core.gc.GCStatus
 import org.zstack.header.volume.VolumeDeletionPolicyManager
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.*
 import org.zstack.storage.primary.local.LocalStorageDeleteBitsGC
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
-import org.zstack.storage.primary.local.LocalStorageResourceRefVO
-import org.zstack.storage.primary.local.LocalStorageResourceRefVO_
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
@@ -183,11 +183,14 @@ class LocalStorageGCCase extends SubCase {
             uuid = vol.uuid
         }
 
-        expungeDataVolume {
-            uuid = vol.uuid
+        expectError {
+            expungeDataVolume {
+                uuid = vol.uuid
+            }
         }
 
         assert call
+        assert Q.New(VolumeVO.class).eq(VolumeVO_.uuid, vol.uuid).isExists()
         assert queryGCJob {
             conditions = ["context~=%${vol.uuid}%"]
         }[0] == null
@@ -216,13 +219,13 @@ class LocalStorageGCCase extends SubCase {
     @Override
     void test() {
         env.create {
-            VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())
-
             local = (env.specByName("local") as PrimaryStorageSpec).inventory
             diskOffering = (env.specByName("diskOffering") as DiskOfferingSpec).inventory
             host = (env.specByName("kvm") as HostSpec).inventory
 
             testSkipVolumeGCWhenVolumeInUse()
+            VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())
+
             testGCSuccess()
             testGCCancelledAfterHostDeleted()
 
