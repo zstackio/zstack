@@ -658,7 +658,7 @@ public class KVMHost extends HostBase implements Host {
                 .run((com) -> compareCpuFunctionOnHost(msg, new ReturnValueCompletion<CompareCpuFunctionOnHostReply>(com) {
                     @Override
                     public void success(CompareCpuFunctionOnHostReply returnValue) {
-                        com.success();
+                        com.success(returnValue);
                     }
 
                     @Override
@@ -734,7 +734,7 @@ public class KVMHost extends HostBase implements Host {
                     public void success(GetCpuFunctionXmlOnHostReply returnValue) {
                         reply.setCpuModelName(returnValue.getCpuModelName());
                         reply.setCpuXml(returnValue.getCpuXml());
-                        com.success();
+                        com.success(returnValue);
                     }
 
                     @Override

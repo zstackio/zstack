@@ -1,7 +1,7 @@
 package org.zstack.core.thread;
 
 import org.zstack.header.core.AsyncBackup;
-import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 
 import java.util.function.Consumer;
 
@@ -20,7 +20,7 @@ public class SingleFlightTask extends AbstractChainTask {
     }
 
     private String syncSignature;
-    private Consumer<Completion> consumer;
+    private Consumer<ReturnValueCompletion<Object>> consumer;
     private SingleFlightDone singleFlightDone;
 
     @Override
@@ -33,7 +33,7 @@ public class SingleFlightTask extends AbstractChainTask {
         return this;
     }
 
-    public SingleFlightTask run(Consumer<Completion> consumer) {
+    public SingleFlightTask run(Consumer<ReturnValueCompletion<Object>> consumer) {
         this.consumer = consumer;
         return this;
     }
@@ -47,7 +47,7 @@ public class SingleFlightTask extends AbstractChainTask {
         singleFlightDone.accept(taskResult);
     }
 
-    protected void start(Completion externalCompletion) {
+    public void start(ReturnValueCompletion<Object> externalCompletion) {
         consumer.accept(externalCompletion);
     }
 }
