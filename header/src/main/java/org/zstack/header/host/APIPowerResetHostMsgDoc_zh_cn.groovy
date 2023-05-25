@@ -58,6 +58,15 @@ doc {
 					optional true
 					since "4.7.0"
 				}
+				column {
+					name "returnEarly"
+					enclosedIn "powerResetHost"
+					desc "是否提前返回"
+					location "body"
+					type "boolean"
+					optional true
+					since "4.7.0"
+				}
 			}
         }
 

@@ -8,6 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
  */
 public class RebootHostMsg extends NeedReplyMessage implements HostMessage {
     private String uuid;
+    private boolean returnEarly;
     private HostPowerManagementMethod method = HostPowerManagementMethod.AUTO;
 
     public String getUuid() {
@@ -16,6 +17,14 @@ public class RebootHostMsg extends NeedReplyMessage implements HostMessage {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public boolean isReturnEarly() {
+        return returnEarly;
+    }
+
+    public void setReturnEarly(boolean returnEarly) {
+        this.returnEarly = returnEarly;
     }
 
     @Override

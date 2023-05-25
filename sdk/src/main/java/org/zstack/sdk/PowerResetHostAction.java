@@ -28,6 +28,9 @@ public class PowerResetHostAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean returnEarly = false;
+
     @Param(required = false, validValues = {"AUTO","AGENT","IPMI"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String method = "AUTO";
 
