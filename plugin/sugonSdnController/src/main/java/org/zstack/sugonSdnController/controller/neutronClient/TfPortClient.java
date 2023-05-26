@@ -67,11 +67,9 @@ public class TfPortClient {
                         VirtualMachineInterface.class, Arrays.asList("default-domain", tenantId));
 
                 for (VirtualMachineInterface port : ports) {
-                    VirtualMachineInterface byId = (VirtualMachineInterface) apiConnector.findById(
-                            VirtualMachineInterface.class, port.getUuid());
                     MacAddressesType macAddressesType = null;
-                    if (byId != null && byId.getMacAddresses() != null) {
-                        macAddressesType = byId.getMacAddresses();
+                    if (port != null && port.getMacAddresses() != null) {
+                        macAddressesType = port.getMacAddresses();
                         List<String> macAddresses = macAddressesType.getMacAddress();
                         for (String macAddress : macAddresses) {
                             if (macAddress.equals(mac)) {
