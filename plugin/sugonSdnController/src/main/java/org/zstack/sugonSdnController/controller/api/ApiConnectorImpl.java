@@ -611,7 +611,7 @@ class ApiConnectorImpl implements ApiConnector {
     @Override
     public synchronized List<? extends ApiObjectBase> list(Class<? extends ApiObjectBase> cls, List<String> parent) throws IOException {
         final String typename = _apiBuilder.getTypename(cls);
-        final HttpResponse response = execute(HttpGet.METHOD_NAME, '/' + typename + 's', null);
+        final HttpResponse response = execute(HttpGet.METHOD_NAME, '/' + typename + "s?detail=true", null);
 
         if (response == null ||  response.getStatusLine() == null) {
             return null;
