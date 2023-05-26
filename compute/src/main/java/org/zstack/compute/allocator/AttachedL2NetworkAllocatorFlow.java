@@ -6,20 +6,26 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.service.NetworkServiceHostRouteBackend;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
 
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     @Transactional(readOnly = true)
     private List<HostVO> allocate(Collection<String> l3NetworkUuids, Collection<String> hostUuids) {
@@ -93,10 +99,20 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
             }
         }
 
+        List<String> l3Uuids = spec.getL3NetworkUuids();
+        List<L3NetworkInventory> serviceL3s = new ArrayList<>();
+        for (GetL3NetworkForVmNetworkService extp : pluginRgty.getExtensionList(GetL3NetworkForVmNetworkService.class)) {
+            serviceL3s.addAll(extp.getL3NetworkForVmNetworkService(spec.getVmInstance()));
+        }
+        if (!serviceL3s.isEmpty()) {
+            l3Uuids.addAll(serviceL3s.stream().map(L3NetworkInventory::getUuid).distinct().collect(Collectors.toList()));
+        }
+
+
         if (amITheFirstFlow()) {
-            candidates = allocate(spec.getL3NetworkUuids(), new ArrayList<>());
+            candidates = allocate(l3Uuids, new ArrayList<>());
         } else {
-            candidates = allocate(spec.getL3NetworkUuids(), getHostUuidsFromCandidates());
+            candidates = allocate(l3Uuids, getHostUuidsFromCandidates());
         }
 
         if (candidates.isEmpty()) {
