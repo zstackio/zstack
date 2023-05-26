@@ -81,3 +81,5 @@ DELIMITER ;
 
 call addColumnsToSNSTextTemplateVO();
 DROP PROCEDURE IF EXISTS addColumnsToSNSTextTemplateVO;
+
+ALTER TABLE `zstack`.`SNSTopicVO` ADD COLUMN `locale` varchar(32);
