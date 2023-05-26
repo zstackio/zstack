@@ -81,8 +81,8 @@ class CreateRootVolumeTemplateLongJobCase extends SubCase {
         int flag = 0
         myDescription = "my-test"
 
-        env.afterSimulator(LocalStorageKvmBackend.GET_VOLUME_SIZE) { Object response ->
-            //SyncVolumeSizeMsg
+        env.afterSimulator(LocalStorageKvmBackend.ESTIMATE_TEMPLATE_SIZE_PATH) { Object response ->
+            // EstimateTemplateSizeMsg
             LongJobVO vo = Q.New(LongJobVO.class).eq(LongJobVO_.description, myDescription).find()
             assert vo.state == LongJobState.Running
             flag += 1

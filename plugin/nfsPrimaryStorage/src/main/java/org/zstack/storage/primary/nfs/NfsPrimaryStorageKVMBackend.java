@@ -45,10 +45,8 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
-import org.zstack.storage.primary.ImageCacheUtil;
+import org.zstack.storage.primary.*;
 import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
-import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
-import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
@@ -111,6 +109,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String REVERT_VOLUME_FROM_SNAPSHOT_PATH = "/nfsprimarystorage/revertvolumefromsnapshot";
     public static final String REINIT_IMAGE_PATH = "/nfsprimarystorage/reinitimage";
     public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/nfsprimarystorage/sftp/createtemplatefromvolume";
+    public static final String ESTIMATE_TEMPLATE_SIZE_PATH = "/nfsprimarystorage/estimatetemplatesize";
     public static final String CREATE_VOLUME_WITH_BACKING_PATH = "/nfsprimarystorage/createvolumewithbacking";
     public static final String OFFLINE_SNAPSHOT_MERGE = "/nfsprimarystorage/offlinesnapshotmerge";
     public static final String REMOUNT_PATH = "/nfsprimarystorage/remount";
@@ -733,6 +732,29 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 GetVolumeActualSizeRsp rsp = returnValue.getResponse(GetVolumeActualSizeRsp.class);
                 reply.setSize(rsp.size);
                 reply.setActualSize(rsp.actualSize);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory inv, EstimateVolumeTemplateSizeOnPrimaryStorageMsg msg, ReturnValueCompletion<EstimateVolumeTemplateSizeOnPrimaryStorageReply> completion) {
+        EstimateVolumeTemplateSizeOnPrimaryStorageReply reply = new EstimateVolumeTemplateSizeOnPrimaryStorageReply();
+
+        EstimateTemplateSizeCmd cmd = new EstimateTemplateSizeCmd();
+        cmd.setVolumePath(msg.getInstallPath());
+
+        final HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
+        asyncHttpCall(ESTIMATE_TEMPLATE_SIZE_PATH, host.getUuid(), cmd, EstimateTemplateSizeRsp.class, inv, new ReturnValueCompletion<EstimateTemplateSizeRsp>(completion) {
+            @Override
+            public void success(EstimateTemplateSizeRsp rsp) {
+                reply.setActualSize(rsp.getActualSize());
+                reply.setSize(rsp.getSize());
                 completion.success(reply);
             }
 

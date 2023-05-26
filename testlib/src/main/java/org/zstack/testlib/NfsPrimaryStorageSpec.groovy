@@ -14,7 +14,6 @@ import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
 import org.zstack.storage.primary.nfs.NfsPrimaryToSftpBackupKVMBackend
@@ -66,7 +65,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(NfsPrimaryStorageKVMBackend.GET_VOLUME_BASE_IMAGE_PATH) {
-                def rsp = new LocalStorageKvmBackend.GetVolumeBaseImagePathRsp()
+                def rsp = new NfsPrimaryStorageKVMBackendCommands.GetVolumeBaseImagePathRsp()
                 rsp.path = "/some/fake/path"
                 return rsp
             }
@@ -90,7 +89,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(NfsPrimaryStorageKVMBackend.GET_BACKING_CHAIN_PATH) { HttpEntity<String> e, EnvSpec spec ->
-                return new LocalStorageKvmBackend.GetBackingChainRsp()
+                return new NfsPrimaryStorageKVMBackendCommands.GetBackingChainRsp()
             }
 
             VFS.vfsHook(NfsPrimaryStorageKVMBackend.GET_BACKING_CHAIN_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
@@ -262,6 +261,22 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 VFS vfs = vfs(cmd, spec)
                 vfs.getFile(cmd.rootVolumePath)
                 vfs.createQcow2(cmd.installPath, 0L)
+                return rsp
+            }
+
+            simulator(NfsPrimaryStorageKVMBackend.ESTIMATE_TEMPLATE_SIZE_PATH) {
+                def rsp = new NfsPrimaryStorageKVMBackendCommands.EstimateTemplateSizeRsp()
+                rsp.size = 0
+                rsp.actualSize = 0
+                return rsp
+            }
+
+            VFS.vfsHook(NfsPrimaryStorageKVMBackend.ESTIMATE_TEMPLATE_SIZE_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.EstimateTemplateSizeCmd.class)
+                VFS srcVFS = vfs(cmd, spec)
+                Qcow2 qcow2 = srcVFS.getFile(cmd.volumePath)
+                rsp.size = qcow2.virtualSize
+                rsp.actualSize = qcow2.actualSize
                 return rsp
             }
 

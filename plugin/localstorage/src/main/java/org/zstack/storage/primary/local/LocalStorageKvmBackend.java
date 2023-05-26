@@ -53,10 +53,7 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
-import org.zstack.storage.primary.ImageCacheUtil;
-import org.zstack.storage.primary.PrimaryStorageGlobalProperty;
-import org.zstack.storage.primary.PrimaryStoragePathMaker;
-import org.zstack.storage.primary.PrimaryStorageSystemTags;
+import org.zstack.storage.primary.*;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.storage.volume.VolumeErrors;
@@ -430,6 +427,39 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CreateTemplateFromVolumeRsp extends AgentResponse {
+        private long size;
+        private long actualSize;
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+    }
+
+    public static class EstimateTemplateSizeCmd extends AgentCommand {
+        private String volumePath;
+
+        public String getVolumePath() {
+            return volumePath;
+        }
+
+        public void setVolumePath(String rootVolumePath) {
+            this.volumePath = rootVolumePath;
+        }
+    }
+
+    public static class EstimateTemplateSizeRsp extends AgentResponse {
         private long size;
         private long actualSize;
 
@@ -854,6 +884,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CHECK_BITS_PATH = "/localstorage/checkbits";
     public static final String UNLINK_BITS_PATH = "/localstorage/unlink";
     public static final String CREATE_TEMPLATE_FROM_VOLUME = "/localstorage/volume/createtemplate";
+    public static final String ESTIMATE_TEMPLATE_SIZE_PATH = "/localstorage/volume/estimatetemplatesize";
     public static final String REVERT_SNAPSHOT_PATH = "/localstorage/snapshot/revert";
     public static final String REINIT_IMAGE_PATH = "/localstorage/reinit/image";
     public static final String MERGE_SNAPSHOT_PATH = "/localstorage/snapshot/merge";
@@ -2275,10 +2306,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         GetVolumeSizeCmd cmd = new GetVolumeSizeCmd();
         cmd.installPath = msg.getInstallPath();
         cmd.volumeUuid = msg.getVolumeUuid();
-        cmd.storagePath = Q.New(PrimaryStorageVO.class)
-                .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
-                .select(PrimaryStorageVO_.url)
-                .findValue();
+        cmd.storagePath = self.getUrl();
 
         KvmCommandSender sender = new KvmCommandSender(hostUuid);
         sender.send(cmd, GET_VOLUME_SIZE, new KvmCommandFailureChecker() {
@@ -2293,6 +2321,27 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 GetVolumeSizeRsp rsp = returnValue.getResponse(GetVolumeSizeRsp.class);
                 reply.setActualSize(rsp.actualSize);
                 reply.setSize(rsp.size);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(EstimateVolumeTemplateSizeOnPrimaryStorageMsg msg, String huuid, ReturnValueCompletion<EstimateVolumeTemplateSizeOnPrimaryStorageReply> completion) {
+        final EstimateVolumeTemplateSizeOnPrimaryStorageReply reply = new EstimateVolumeTemplateSizeOnPrimaryStorageReply();
+        EstimateTemplateSizeCmd cmd = new EstimateTemplateSizeCmd();
+        cmd.volumePath = msg.getInstallPath();
+
+        httpCall(ESTIMATE_TEMPLATE_SIZE_PATH, huuid, cmd, EstimateTemplateSizeRsp.class, new ReturnValueCompletion<EstimateTemplateSizeRsp>(completion) {
+            @Override
+            public void success(EstimateTemplateSizeRsp rsp) {
+                reply.setSize(rsp.size);
+                reply.setActualSize(rsp.actualSize);
                 completion.success(reply);
             }
 

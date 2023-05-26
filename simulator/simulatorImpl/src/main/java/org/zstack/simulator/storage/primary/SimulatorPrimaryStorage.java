@@ -12,6 +12,7 @@ import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMs
 import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageMsg;
 import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageReply;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -161,6 +162,13 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(SyncVolumeSizeOnPrimaryStorageMsg msg) {
+        SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
+        reply.setActualSize(0);
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(EstimateVolumeTemplateSizeOnPrimaryStorageMsg msg) {
         SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
         reply.setActualSize(0);
         bus.reply(msg, reply);

@@ -162,12 +162,21 @@ public class KvmBackend extends HypervisorBackend {
         public List<String> paths;
     }
 
-    public static class CreateTemplateFromVolumeCmd extends AgentCmd implements HasThreadContext{
+    public static class CreateTemplateFromVolumeCmd extends AgentCmd implements HasThreadContext {
         public String installPath;
         public String volumePath;
     }
 
     public static class CreateTemplateFromVolumeRsp extends AgentRsp {
+        public long actualSize;
+        public long size;
+    }
+
+    public static class EstimateTemplateSizeCmd extends AgentCmd {
+        public String volumePath;
+    }
+
+    public static class EstimateTemplateSizeRsp extends AgentRsp {
         public long actualSize;
         public long size;
     }
@@ -343,6 +352,7 @@ public class KvmBackend extends HypervisorBackend {
     public static final String DELETE_BITS_PATH = "/sharedmountpointprimarystorage/bits/delete";
     public static final String UNLINK_BITS_PATH = "/sharedmountpointprimarystorage/bits/unlink";
     public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/sharedmountpointprimarystorage/createtemplatefromvolume";
+    public static final String ESTIMATE_TEMPLATE_SIZE_PATH = "/sharedmountpointprimarystorage/estimatetemplatesize";
     public static final String UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/upload";
     public static final String DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/download";
     public static final String REVERT_VOLUME_FROM_SNAPSHOT_PATH = "/sharedmountpointprimarystorage/volume/revertfromsnapshot";
@@ -2197,6 +2207,28 @@ public class KvmBackend extends HypervisorBackend {
             }
         });
 
+    }
+
+    @Override
+    void handle(EstimateVolumeTemplateSizeOnPrimaryStorageMsg msg, ReturnValueCompletion<EstimateVolumeTemplateSizeOnPrimaryStorageReply> completion) {
+        EstimateTemplateSizeCmd cmd = new EstimateTemplateSizeCmd();
+        cmd.volumePath = msg.getInstallPath();
+
+        new Do().go(ESTIMATE_TEMPLATE_SIZE_PATH, cmd, EstimateTemplateSizeRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+            @Override
+            public void success(AgentRsp r) {
+                EstimateTemplateSizeRsp rsp = (EstimateTemplateSizeRsp) r;
+                EstimateVolumeTemplateSizeOnPrimaryStorageReply reply = new EstimateVolumeTemplateSizeOnPrimaryStorageReply();
+                reply.setActualSize(rsp.actualSize);
+                reply.setSize(rsp.size);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override

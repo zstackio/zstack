@@ -35,6 +35,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
+import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
+import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.VolumeErrors;
@@ -415,6 +417,31 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(EstimateVolumeTemplateSizeOnPrimaryStorageMsg msg) {
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.format);
+        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
+        String format = q.findValue();
+
+        HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(format);
+        HypervisorFactory f = getHypervisorFactoryByHypervisorType(type.toString());
+        HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<EstimateVolumeTemplateSizeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(EstimateVolumeTemplateSizeOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                EstimateVolumeTemplateSizeOnPrimaryStorageReply reply = new EstimateVolumeTemplateSizeOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

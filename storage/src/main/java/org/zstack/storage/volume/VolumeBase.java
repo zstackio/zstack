@@ -41,6 +41,8 @@ import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
+import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
+import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupCreationValidator;
 import org.zstack.tag.SystemTagCreator;
@@ -762,17 +764,34 @@ public class VolumeBase implements Volume {
 
     private void handle(final EstimateVolumeTemplateSizeMsg msg) {
         final EstimateVolumeTemplateSizeReply reply = new EstimateVolumeTemplateSizeReply();
-        syncVolumeVolumeSize(new ReturnValueCompletion<VolumeSize>(msg) {
-            @Override
-            public void success(VolumeSize ret) {
-                reply.setActualSize(Math.min(ret.actualSize, ret.size));
-                reply.setSize(ret.size);
-                bus.reply(msg, reply);
-            }
 
+        EstimateVolumeTemplateSizeOnPrimaryStorageMsg emsg = new EstimateVolumeTemplateSizeOnPrimaryStorageMsg();
+        emsg.setVolumeUuid(msg.getVolumeUuid());
+        emsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+        emsg.setInstallPath(self.getInstallPath());
+        bus.makeTargetServiceIdByResourceUuid(emsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+        bus.send(emsg, new CloudBusCallBack(msg) {
             @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
+            public void run(MessageReply r) {
+                if (r.isSuccess()) {
+                    EstimateVolumeTemplateSizeOnPrimaryStorageReply er = r.castReply();
+                    reply.setActualSize(er.getActualSize());
+                    reply.setSize(self.getSize());
+                    reply.setWithInternalSnapshot(er.isWithInternalSnapshot());
+                    bus.reply(msg, reply);
+                    return;
+                }
+
+                if (msg.isIgnoreError()) {
+                    logger.warn(String.format("failed to estimate size of the volume[uuid:%s] on the primary storage[uuid:%s], %s," +
+                            " however, as the message[ignoreError] is set, use actual size in db instead.", self.getUuid(), self.getPrimaryStorageUuid(), r.getError()));
+                    reply.setSize(self.getSize());
+                    reply.setActualSize(self.getActualSize());
+                    bus.reply(msg, reply);
+                    return;
+                }
+
+                reply.setError(r.getError());
                 bus.reply(msg, reply);
             }
         });
@@ -2064,16 +2083,16 @@ public class VolumeBase implements Volume {
                 size.size = self.getSize();
                 completion.success(size);
             }
-
-            @Transactional(readOnly = true)
-            private long calculateSnapshotSize() {
-                String sql = "select sum(sp.size) from VolumeSnapshotVO sp where sp.volumeUuid = :uuid";
-                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-                q.setParameter("uuid", self.getUuid());
-                Long size = q.getSingleResult();
-                return size == null ? 0 : size;
-            }
         });
+    }
+
+    @Transactional(readOnly = true)
+    private long calculateSnapshotSize() {
+        String sql = "select sum(sp.size) from VolumeSnapshotVO sp  where sp.volumeUuid = :uuid";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("uuid", self.getUuid());
+        Long size = q.getSingleResult();
+        return size == null ? 0 : size;
     }
 
     private void handle(APISyncVolumeSizeMsg msg) {
@@ -3102,10 +3121,14 @@ public class VolumeBase implements Volume {
     private void handle(FlattenVolumeMsg msg) {
         if (msg.isDryRun()) {
             FlattenVolumeReply reply = new FlattenVolumeReply();
-            estimateTemplateSize(new ReturnValueCompletion<Long>(msg) {
+            estimateTemplateSize(new ReturnValueCompletion<EstimateVolumeTemplateSizeReply>(msg) {
                 @Override
-                public void success(Long templateSize) {
-                    // TODO: use measure result
+                public void success(EstimateVolumeTemplateSizeReply er) {
+                    long templateSize = er.getSize();
+                    if (!er.isWithInternalSnapshot()) {
+                        templateSize += calculateSnapshotSize();
+                    }
+
                     self.setActualSize(templateSize);
                     reply.setInventory(getSelfInventory());
                     bus.reply(msg, reply);
@@ -3238,8 +3261,9 @@ public class VolumeBase implements Volume {
         });
     }
 
-    private void estimateTemplateSize(ReturnValueCompletion<Long> completion) {
+    private void estimateTemplateSize(ReturnValueCompletion<EstimateVolumeTemplateSizeReply> completion) {
         EstimateVolumeTemplateSizeMsg msg = new EstimateVolumeTemplateSizeMsg();
+        msg.setIgnoreError(false);
         msg.setVolumeUuid(self.getUuid());
         bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -3251,7 +3275,7 @@ public class VolumeBase implements Volume {
                 }
 
                 EstimateVolumeTemplateSizeReply sr = reply.castReply();
-                completion.success(sr.getActualSize());
+                completion.success(sr);
             }
         });
     }
