@@ -617,6 +617,12 @@ public class SourceClassMap {
 			put("org.zstack.zbox.ZBoxLocationRefInventory", "org.zstack.sdk.ZBoxLocationRefInventory");
 			put("org.zstack.zbox.ZBoxState", "org.zstack.sdk.ZBoxState");
 			put("org.zstack.zbox.ZBoxStatus", "org.zstack.sdk.ZBoxStatus");
+			put("org.zstack.zops.CephHealthInfo", "org.zstack.sdk.CephHealthInfo");
+			put("org.zstack.zops.CephHealthStatus", "org.zstack.sdk.CephHealthStatus");
+			put("org.zstack.zops.ChronyServerInfo", "org.zstack.sdk.ChronyServerInfo");
+			put("org.zstack.zops.ChronyServerInfoPair", "org.zstack.sdk.ChronyServerInfoPair");
+			put("org.zstack.zops.HostConnectedStatus", "org.zstack.sdk.HostConnectedStatus");
+			put("org.zstack.zops.NetworkReachablePair", "org.zstack.sdk.NetworkReachablePair");
 			put("org.zstack.zql.ZQLQueryReturn", "org.zstack.sdk.ZQLQueryReturn");
 			put("org.zstack.zwatch.alarm.APICreateAlarmMsg$ActionParam", "org.zstack.sdk.zwatch.alarm.ActionParam");
 			put("org.zstack.zwatch.alarm.AlarmActionInventory", "org.zstack.sdk.zwatch.alarm.AlarmActionInventory");
@@ -778,12 +784,16 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CdpTaskType", "org.zstack.header.storage.cdp.CdpTaskType");
 			put("org.zstack.sdk.CephBackupStorageInventory", "org.zstack.storage.ceph.backup.CephBackupStorageInventory");
 			put("org.zstack.sdk.CephBackupStorageMonInventory", "org.zstack.storage.ceph.backup.CephBackupStorageMonInventory");
+			put("org.zstack.sdk.CephHealthInfo", "org.zstack.zops.CephHealthInfo");
+			put("org.zstack.sdk.CephHealthStatus", "org.zstack.zops.CephHealthStatus");
 			put("org.zstack.sdk.CephOsdGroupInventory", "org.zstack.storage.ceph.primary.CephOsdGroupInventory");
 			put("org.zstack.sdk.CephPrimaryStorageInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageInventory");
 			put("org.zstack.sdk.CephPrimaryStorageMonInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageMonInventory");
 			put("org.zstack.sdk.CephPrimaryStoragePoolInventory", "org.zstack.storage.ceph.primary.CephPrimaryStoragePoolInventory");
 			put("org.zstack.sdk.CertificateInventory", "org.zstack.network.service.lb.CertificateInventory");
 			put("org.zstack.sdk.ChainInfo", "org.zstack.header.core.progress.ChainInfo");
+			put("org.zstack.sdk.ChronyServerInfo", "org.zstack.zops.ChronyServerInfo");
+			put("org.zstack.sdk.ChronyServerInfoPair", "org.zstack.zops.ChronyServerInfoPair");
 			put("org.zstack.sdk.CleanTrashResult", "org.zstack.header.core.trash.CleanTrashResult");
 			put("org.zstack.sdk.CloneVmInstanceInventory", "org.zstack.header.vm.CloneVmInstanceInventory");
 			put("org.zstack.sdk.CloneVmInstanceResults", "org.zstack.header.vm.CloneVmInstanceResults");
@@ -845,6 +855,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
 			put("org.zstack.sdk.GuestToolsStateInventory", "org.zstack.guesttools.GuestToolsStateInventory");
 			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
+			put("org.zstack.sdk.HostConnectedStatus", "org.zstack.zops.HostConnectedStatus");
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");
 			put("org.zstack.sdk.HostIommuStateType", "org.zstack.pciDevice.HostIommuStateType");
@@ -956,6 +967,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NasMountTargetInventory", "org.zstack.nas.NasMountTargetInventory");
 			put("org.zstack.sdk.NasProtocolType", "org.zstack.nas.NasProtocolType");
 			put("org.zstack.sdk.Neighbor", "org.zstack.header.protocol.Neighbor");
+			put("org.zstack.sdk.NetworkReachablePair", "org.zstack.zops.NetworkReachablePair");
 			put("org.zstack.sdk.NetworkRouterAreaRefInventory", "org.zstack.header.protocol.NetworkRouterAreaRefInventory");
 			put("org.zstack.sdk.NetworkRouterFlowMeterRefInventory", "org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory");
 			put("org.zstack.sdk.NetworkServiceL3NetworkRefInventory", "org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory");
