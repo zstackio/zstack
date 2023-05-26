@@ -100,7 +100,6 @@ ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `bondingType` varchar(32)
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `gateway` varchar(128) DEFAULT NULL;
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `callBackIp` varchar(128) DEFAULT NULL;
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `description` varchar(2048) DEFAULT NULL;
-ALTER TABLE `zstack`.`VolumeBackupVO` ADD COLUMN `vmInstanceUuid` varchar(32) DEFAULT NULL;
 
 CREATE TABLE IF NOT EXISTS `HostIpmiVO`
 (
@@ -173,17 +172,25 @@ CREATE PROCEDURE UpdateVolumeBackupVmInstanceUuid()
         DECLARE cur CURSOR FOR SELECT metadata, uuid FROM `zstack`.`VolumeBackupVO`;
         DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
-        OPEN cur;
+        IF NOT EXISTS( SELECT 1
+                       FROM INFORMATION_SCHEMA.COLUMNS
+                       WHERE table_name = 'VolumeBackupVO'
+                             AND table_schema = 'zstack'
+                             AND column_name = 'vmInstanceUuid') THEN
 
-        read_loop: LOOP
-            FETCH cur INTO backup_data, backup_uuid;
-            IF done THEN
-                LEAVE read_loop;
-            END IF;
-            UPDATE `zstack`.`VolumeBackupVO` SET `vmInstanceUuid`= Json_simpleGetKeyValue(backup_data, "vmInstanceUuid") WHERE `uuid`= backup_uuid;
+           ALTER TABLE `zstack`.`VolumeBackupVO` ADD COLUMN `vmInstanceUuid` varchar(32) DEFAULT NULL;
 
-        END LOOP;
-        CLOSE cur;
+           OPEN cur;
+           read_loop: LOOP
+               FETCH cur INTO backup_data, backup_uuid;
+               IF done THEN
+                   LEAVE read_loop;
+               END IF;
+
+               UPDATE `zstack`.`VolumeBackupVO` SET `vmInstanceUuid`= Json_simpleGetKeyValue(backup_data, "vmInstanceUuid") WHERE `uuid`= backup_uuid;
+           END LOOP;
+           CLOSE cur;
+        END IF;
     END $$
 DELIMITER ;
 CALL UpdateVolumeBackupVmInstanceUuid();
@@ -312,7 +319,24 @@ CREATE TABLE `VolumeSnapshotReferenceVO` (
     CONSTRAINT `fkVolumeSnapshotReferenceReferenceTreeUuid` FOREIGN KEY (`treeUuid`) REFERENCES `VolumeSnapshotReferenceTreeVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
-ALTER TABLE `VolumeSnapshotTreeEO` ADD `rootImageUuid` VARCHAR(32) DEFAULT NULL;
+DROP PROCEDURE IF EXISTS `Alter_Volume_Snapshot_Tree_Table`;
+DELIMITER $$
+CREATE PROCEDURE Alter_Volume_Snapshot_Tree_Table()
+    BEGIN
+        IF NOT EXISTS( SELECT NULL
+                       FROM INFORMATION_SCHEMA.COLUMNS
+                       WHERE table_name = 'VolumeSnapshotTreeEO'
+                             AND table_schema = 'zstack'
+                             AND column_name = 'rootImageUuid')  THEN
+
+            ALTER TABLE `VolumeSnapshotTreeEO` ADD `rootImageUuid` VARCHAR(32) DEFAULT NULL;
+        END IF;
+    END $$
+DELIMITER ;
+
+CALL Alter_Volume_Snapshot_Tree_Table();
+DROP PROCEDURE Alter_Volume_Snapshot_Tree_Table;
+
 DROP VIEW IF EXISTS `zstack`.`VolumeSnapshotTreeVO`;
 CREATE VIEW `zstack`.`VolumeSnapshotTreeVO` AS SELECT uuid, volumeUuid, rootImageUuid, current, status, createDate, lastOpDate FROM `zstack`.`VolumeSnapshotTreeEO` WHERE deleted IS NULL;
 
