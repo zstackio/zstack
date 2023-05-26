@@ -30,4 +30,5 @@ public interface CephConstants {
     String CEPH_MANUFACTURER_XSKY = "xsky";
     String CEPH_MANUFACTURER_SANDSTONE = "sandstone";
     String CEPH_MANUFACTURER_OPENSOURCE = "open-source";
+    String CEPH_MANUFACTURER_ZSTONE = "zstone";
 }
