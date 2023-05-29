@@ -1239,6 +1239,13 @@ public class VolumeSnapshotTreeBase {
                 }
 
                 GetVolumeSnapshotSizeOnPrimaryStorageReply reply = (GetVolumeSnapshotSizeOnPrimaryStorageReply) rly;
+
+                if (reply.getActualSize() != null && reply.getActualSize() > 0) {
+                    SQL.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, msg.getUuid())
+                            .set(VolumeSnapshotVO_.size, reply.getActualSize())
+                            .update();
+                }
+
                 event.setActualSize(reply.getActualSize());
                 event.setSize(reply.getSize());
                 bus.publish(event);

@@ -3132,6 +3132,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 long asize = rsp.actualSize == null ? vol.getActualSize() : rsp.actualSize;
                 reply.setActualSize(asize);
                 reply.setSize(rsp.size);
+                reply.setWithInternalSnapshot(true);
                 bus.reply(msg, reply);
                 completion.done();
             }
