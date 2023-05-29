@@ -359,12 +359,11 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         }
 
         SimpleQuery<CephPrimaryStorageMonVO> q = dbf.createQuery(CephPrimaryStorageMonVO.class);
-        q.select(CephPrimaryStorageMonVO_.monAddr, CephPrimaryStorageMonVO_.monPort);
+        q.select(CephPrimaryStorageMonVO_.monAddr, CephPrimaryStorageMonVO_.monPort, CephPrimaryStorageMonVO_.status);
         q.add(CephPrimaryStorageMonVO_.primaryStorageUuid, Op.EQ, vol.getPrimaryStorageUuid());
-        q.add(CephPrimaryStorageMonVO_.status, Op.EQ, MonStatus.Connected);
         List<Tuple> ts = q.listTuple();
 
-        if (ts.isEmpty()) {
+        if (ts.isEmpty() || ts.stream().noneMatch(t -> t.get(2, MonStatus.class) == MonStatus.Connected)) {
             throw new OperationFailureException(operr(
                     "cannot find any Connected ceph mon for the primary storage[uuid:%s]", vol.getPrimaryStorageUuid())
             );
