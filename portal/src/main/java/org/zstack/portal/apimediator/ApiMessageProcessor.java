@@ -3,6 +3,8 @@ package org.zstack.portal.apimediator;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.message.APIMessage;
 
+import java.util.List;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -13,4 +15,6 @@ public interface ApiMessageProcessor {
     APIMessage process(APIMessage msg) throws ApiMessageInterceptionException;
 
     ApiMessageDescriptor getApiMessageDescriptor(APIMessage msg);
+
+    List<String> getSupportApis();
 }

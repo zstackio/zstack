@@ -11,7 +11,6 @@ import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.*;
-import org.zstack.header.cluster.APIUpdateClusterOSMsg;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.managementnode.*;
@@ -126,6 +125,8 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
                     handle((APIIsReadyToGoMsg) msg);
                 } else if (msg instanceof APIGetVersionMsg) {
                     handle((APIGetVersionMsg) msg);
+                }else if (msg instanceof APIGetSupportAPIsMsg) {
+                    handle((APIGetSupportAPIsMsg) msg);
                 } else if (msg instanceof APIGetCurrentTimeMsg) {
                     handle((APIGetCurrentTimeMsg) msg);
                 } else if (msg instanceof APIGetPlatformTimeZoneMsg) {
@@ -147,6 +148,12 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
                 return null;
             }
         });
+    }
+
+    private void handle(APIGetSupportAPIsMsg msg) {
+        APIGetSupportAPIsReply reply = new APIGetSupportAPIsReply();
+        reply.setSupportApis(processor.getSupportApis());
+        bus.reply(msg, reply);
     }
 
     private void handle(APIGetPlatformTimeZoneMsg msg) {
