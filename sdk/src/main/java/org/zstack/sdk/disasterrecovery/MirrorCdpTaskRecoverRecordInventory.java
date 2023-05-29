@@ -36,11 +36,11 @@ public class MirrorCdpTaskRecoverRecordInventory  {
         return this.resourceType;
     }
 
-    public long groupId;
-    public void setGroupId(long groupId) {
+    public java.lang.Long groupId;
+    public void setGroupId(java.lang.Long groupId) {
         this.groupId = groupId;
     }
-    public long getGroupId() {
+    public java.lang.Long getGroupId() {
         return this.groupId;
     }
 

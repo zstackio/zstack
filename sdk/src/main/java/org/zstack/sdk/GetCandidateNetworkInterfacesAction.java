@@ -35,6 +35,9 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
     public java.lang.Integer start = 0;
 
     @Param(required = false)
+    public java.lang.String order = "asc";
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)

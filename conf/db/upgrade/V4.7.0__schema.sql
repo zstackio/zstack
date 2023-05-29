@@ -429,6 +429,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ExternalManagementNodeVO` (
     `hostName` varchar(255) NOT NULL,
     `port` int unsigned NOT NULL,
     `status` varchar(32) NOT NULL,
+    `direction` varchar(32) NOT NULL,
     `accessKeyID` VARCHAR(128) NOT NULL,
     `accessKeySecret` VARCHAR(128) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
@@ -547,3 +548,4 @@ CREATE TABLE IF NOT EXISTS `zstack`.`TwinManagementNodeResourceMapVO` (
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

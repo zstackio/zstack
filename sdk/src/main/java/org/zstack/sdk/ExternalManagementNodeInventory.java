@@ -1,6 +1,7 @@
 package org.zstack.sdk;
 
 import org.zstack.sdk.ExternalManagementNodeStatus;
+import org.zstack.sdk.ExternalManagementNodeDirection;
 
 public class ExternalManagementNodeInventory  {
 
@@ -66,6 +67,14 @@ public class ExternalManagementNodeInventory  {
     }
     public ExternalManagementNodeStatus getStatus() {
         return this.status;
+    }
+
+    public ExternalManagementNodeDirection direction;
+    public void setDirection(ExternalManagementNodeDirection direction) {
+        this.direction = direction;
+    }
+    public ExternalManagementNodeDirection getDirection() {
+        return this.direction;
     }
 
     public java.sql.Timestamp createDate;

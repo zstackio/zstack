@@ -211,6 +211,7 @@ public class SourceClassMap {
 			put("org.zstack.header.disasterrecovery.ScheduleJobStatus", "org.zstack.sdk.disasterrecovery.ScheduleJobStatus");
 			put("org.zstack.header.errorcode.ErrorCode", "org.zstack.sdk.ErrorCode");
 			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
+			put("org.zstack.header.externalmanagement.ExternalManagementNodeDirection", "org.zstack.sdk.ExternalManagementNodeDirection");
 			put("org.zstack.header.externalmanagement.ExternalManagementNodeInventory", "org.zstack.sdk.ExternalManagementNodeInventory");
 			put("org.zstack.header.externalmanagement.ExternalManagementNodeStatus", "org.zstack.sdk.ExternalManagementNodeStatus");
 			put("org.zstack.header.externalmanagement.TwinManagementNodeResourceMapInventory", "org.zstack.sdk.TwinManagementNodeResourceMapInventory");
@@ -856,11 +857,12 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EventLogInventory", "org.zstack.core.eventlog.EventLogInventory");
 			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
 			put("org.zstack.sdk.ExternalBackupState", "org.zstack.externalbackup.ExternalBackupState");
+			put("org.zstack.sdk.ExternalManagementNodeDirection", "org.zstack.header.externalmanagement.ExternalManagementNodeDirection");
+			put("org.zstack.sdk.ExternalManagementNodeInventory", "org.zstack.header.externalmanagement.ExternalManagementNodeInventory");
+			put("org.zstack.sdk.ExternalManagementNodeStatus", "org.zstack.header.externalmanagement.ExternalManagementNodeStatus");
 			put("org.zstack.sdk.ExternalServiceCapabilities", "org.zstack.header.core.external.service.ExternalServiceCapabilities");
 			put("org.zstack.sdk.ExternalServiceCapabilitiesBuilder", "org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder");
 			put("org.zstack.sdk.ExternalServiceInventory", "org.zstack.header.core.external.service.ExternalServiceInventory");
-			put("org.zstack.sdk.ExternalManagementNodeInventory", "org.zstack.header.externalmanagement.ExternalManagementNodeInventory");
-			put("org.zstack.sdk.ExternalManagementNodeStatus", "org.zstack.header.externalmanagement.ExternalManagementNodeStatus");
 			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
