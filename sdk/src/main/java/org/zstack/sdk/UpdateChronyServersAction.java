@@ -25,10 +25,10 @@ public class UpdateChronyServersAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List internalHostnames;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List externalHostnames;
 
     @Param(required = false)
