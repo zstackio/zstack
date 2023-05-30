@@ -280,7 +280,7 @@ DELIMITER ;
 call addHostHaStatus();
 DROP PROCEDURE IF EXISTS addHostHaStatus;
 
-CREATE TABLE `VolumeSnapshotReferenceTreeVO` (
+CREATE TABLE IF NOT EXISTS `VolumeSnapshotReferenceTreeVO` (
     `uuid`                       varchar(32) NOT NULL,
     `rootImageUuid`              varchar(32)   DEFAULT NULL,
     `rootVolumeUuid`             VARCHAR(32)   DEFAULT NULL,
@@ -294,7 +294,7 @@ CREATE TABLE `VolumeSnapshotReferenceTreeVO` (
     PRIMARY KEY (`uuid`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
-CREATE TABLE `VolumeSnapshotReferenceVO` (
+CREATE TABLE IF NOT EXISTS `VolumeSnapshotReferenceVO` (
     `id`                       bigint(20) NOT NULL AUTO_INCREMENT,
     `parentId`                 bigint(20)    DEFAULT NULL,
     `volumeUuid`               varchar(32)   DEFAULT NULL,

@@ -400,6 +400,22 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(LocalStorageKvmBackend.ESTIMATE_TEMPLATE_SIZE_PATH) {
+                def rsp = new LocalStorageKvmBackend.EstimateTemplateSizeRsp()
+                rsp.size = 0
+                rsp.actualSize = 0
+                return rsp
+            }
+
+            VFS.vfsHook(LocalStorageKvmBackend.ESTIMATE_TEMPLATE_SIZE_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.EstimateTemplateSizeCmd.class)
+                VFS srcVFS = vfs(e, cmd, spec)
+                Qcow2 qcow2 = srcVFS.getFile(cmd.volumePath)
+                rsp.size = qcow2.virtualSize
+                rsp.actualSize = qcow2.actualSize
+                return rsp
+            }
+
             simulator(LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH) { HttpEntity<String> e ->
                 def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.RevertVolumeFromSnapshotCmd.class)
                 def rsp = new LocalStorageKvmBackend.RevertVolumeFromSnapshotRsp()

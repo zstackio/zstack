@@ -3041,14 +3041,56 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(SyncVolumeSizeOnPrimaryStorageMsg msg) {
-        inQueue().name(String.format("sync-volume-size-on-primarystorage-%s", self.getUuid()))
-                .asyncBackup(msg)
-                .run(chain -> syncVolumeSizeOnPrimaryStorage(msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
-                }));
+        SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
+        syncVolumeSize(msg.getVolumeUuid(), msg.getInstallPath(), new ReturnValueCompletion<GetVolumeSizeRsp>(msg) {
+            @Override
+            public void success(GetVolumeSizeRsp rsp) {
+                markVolumeActualSize(msg.getVolumeUuid(), rsp.actualSize);
+
+                // some ceph version has no way to get actual size
+                long asize = rsp.actualSize != null ? rsp.actualSize : Q.New(VolumeVO.class)
+                        .select(VolumeVO_.actualSize)
+                        .eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                        .findValue();
+                reply.setActualSize(asize);
+                reply.setSize(rsp.size);
+                reply.setWithInternalSnapshot(true);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(EstimateVolumeTemplateSizeOnPrimaryStorageMsg msg) {
+        EstimateVolumeTemplateSizeOnPrimaryStorageReply reply = new EstimateVolumeTemplateSizeOnPrimaryStorageReply();
+        // TODO: estimate template size
+        syncVolumeSize(msg.getVolumeUuid(), msg.getInstallPath(), new ReturnValueCompletion<GetVolumeSizeRsp>(msg) {
+            @Override
+            public void success(GetVolumeSizeRsp rsp) {
+                markVolumeActualSize(msg.getVolumeUuid(), rsp.actualSize);
+
+                // some ceph version has no way to get actual size
+                long asize = rsp.actualSize != null ? rsp.actualSize : Q.New(VolumeVO.class)
+                        .select(VolumeVO_.actualSize)
+                        .eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                        .findValue();
+                reply.setActualSize(asize);
+                reply.setWithInternalSnapshot(true);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override
@@ -3063,38 +3105,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 }));
     }
 
-    protected void syncVolumeSizeOnPrimaryStorage(final SyncVolumeSizeOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
+    protected void syncVolumeSize(String volumeUuid, String installPath, final ReturnValueCompletion<GetVolumeSizeRsp> completion) {
         final SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
-        final VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
-
-        String installPath = vol.getInstallPath();
         GetVolumeSizeCmd cmd = new GetVolumeSizeCmd();
         cmd.fsId = getSelf().getFsid();
         cmd.uuid = self.getUuid();
-        cmd.volumeUuid = msg.getVolumeUuid();
+        cmd.volumeUuid = volumeUuid;
         cmd.installPath = installPath;
 
-        httpCall(GET_VOLUME_SIZE_PATH, cmd, GetVolumeSizeRsp.class, new ReturnValueCompletion<GetVolumeSizeRsp>(msg) {
-            @Override
-            public void success(GetVolumeSizeRsp rsp) {
-                markVolumeActualSize(vol.getUuid(), rsp.actualSize);
-
-                // current ceph has no way to get actual size
-                long asize = rsp.actualSize == null ? vol.getActualSize() : rsp.actualSize;
-                reply.setActualSize(asize);
-                reply.setSize(rsp.size);
-                reply.setWithInternalSnapshot(true);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-                completion.done();
-            }
-        });
+        httpCall(GET_VOLUME_SIZE_PATH, cmd, GetVolumeSizeRsp.class, completion);
     }
 
     private void BatchSyncVolumeSizeOnPrimaryStorage(BatchSyncVolumeSizeOnPrimaryStorageMsg msg, NoErrorCompletion completion) {

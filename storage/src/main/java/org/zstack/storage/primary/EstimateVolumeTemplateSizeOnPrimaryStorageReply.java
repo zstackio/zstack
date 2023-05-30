@@ -1,8 +1,8 @@
-package org.zstack.header.volume;
+package org.zstack.storage.primary;
 
 import org.zstack.header.message.MessageReply;
 
-public class EstimateVolumeTemplateSizeReply extends MessageReply {
+public class EstimateVolumeTemplateSizeOnPrimaryStorageReply extends MessageReply {
     private long actualSize;
     private long size;
     private boolean withInternalSnapshot;

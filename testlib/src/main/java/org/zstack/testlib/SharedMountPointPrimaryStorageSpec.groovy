@@ -10,7 +10,6 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.smp.KvmBackend
 import org.zstack.testlib.vfs.Qcow2
 import org.zstack.testlib.vfs.VFS
@@ -19,7 +18,6 @@ import org.zstack.testlib.vfs.Volume
 import org.zstack.utils.gson.JSONObjectUtil
 
 import java.nio.file.Path
-
 /**
  * Created by xing5 on 2017/2/20.
  */
@@ -116,6 +114,22 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
                 Qcow2 template = vfs.createQcow2(cmd.installPath, volume.actualSize, volume.virtualSize)
                 rsp.actualSize = template.actualSize
                 rsp.size = template.virtualSize
+                return rsp
+            }
+
+            simulator(KvmBackend.ESTIMATE_TEMPLATE_SIZE_PATH) {
+                def rsp = new KvmBackend.EstimateTemplateSizeRsp()
+                rsp.size = 0
+                rsp.actualSize = 0
+                return rsp
+            }
+
+            VFS.vfsHook(KvmBackend.ESTIMATE_TEMPLATE_SIZE_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.EstimateTemplateSizeCmd.class)
+                VFS srcVFS = SharedMountPointPrimaryStorageSpec.vfs(cmd, spec)
+                Qcow2 qcow2 = srcVFS.getFile(cmd.volumePath)
+                rsp.size = qcow2.virtualSize
+                rsp.actualSize = qcow2.actualSize
                 return rsp
             }
 
