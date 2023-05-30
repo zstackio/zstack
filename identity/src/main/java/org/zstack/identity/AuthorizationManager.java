@@ -38,6 +38,7 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
     private DefaultAuthorizationBackend defaultAuthorizationBackend;
 
     private List<AuthorizationBackend> authorizationBackends;
+    private List<RenewSessionPreAuthExtensionPoint> renewSessionPreAuthExtensionPoints;
 
     private Cache<String, AuthorizationBackend> authorizationBackendsCache = CacheBuilder.newBuilder()
             .maximumSize(IdentityGlobalProperty.AUTHORIZATION_SESSION_CACHE_SIZE)
@@ -70,7 +71,7 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
                     "session uuid is null"));
         }
 
-        for (RenewSessionPreAuthExtensionPoint ext : pluginRegistry.getExtensionList(RenewSessionPreAuthExtensionPoint.class)) {
+        for (RenewSessionPreAuthExtensionPoint ext : renewSessionPreAuthExtensionPoints) {
             ErrorCode errorCode= ext.checkAuth(msg.getSession());
             if (errorCode != null) {
                 throw new OperationFailureException(errorCode);
@@ -125,6 +126,7 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
     public boolean start() {
         authorizationBackends = pluginRegistry.getExtensionList(AuthorizationBackend.class);
         authorizationBackends.remove(defaultAuthorizationBackend);
+        renewSessionPreAuthExtensionPoints = pluginRegistry.getExtensionList(RenewSessionPreAuthExtensionPoint.class);
         return true;
     }
 

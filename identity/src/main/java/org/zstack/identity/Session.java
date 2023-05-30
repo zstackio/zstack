@@ -99,12 +99,6 @@ public class Session implements Component {
     }
 
     public static SessionInventory renewSession(String uuid, Long extendPeriod) {
-        synchronized (sessionLock.intern(uuid)) {
-            return doRenewSession(uuid, extendPeriod);
-        }
-    }
-
-    public static SessionInventory doRenewSession(String uuid, Long extendPeriod) {
         errorOnTimeout(uuid);
 
         if (extendPeriod == null) {
