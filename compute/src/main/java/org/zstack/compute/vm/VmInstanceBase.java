@@ -18,6 +18,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.jsonlabel.JsonLabel;
+import org.zstack.core.progress.ParallelTaskStage;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.RunInQueue;
 import org.zstack.core.thread.SyncTaskChain;
@@ -33,6 +34,7 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
 import org.zstack.header.core.*;
+import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -92,7 +94,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
+import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.*;
 
 
@@ -8555,10 +8557,16 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        TaskProgressRange parentStage = getTaskStage();
+
         List<VolumeInventory> vols = new ArrayList<>();
-        new While<>(self.getAllDiskVolumes()).each((vol, compl) ->{
+        List<Long> weights = self.getAllDiskVolumes().stream().map(it -> 1L).collect(Collectors.toList());
+        List<TaskProgressRange> stages = splitTaskStage(parentStage, weights);
+        new While<>(self.getAllDiskVolumes()).each((vol, compl) -> {
+            TaskProgressRange stage = markTaskStage(stages.remove(0));
             if (vol.isShareable()) {
                 vols.add(vol.toInventory());
+                reportProgress(stage.getEnd().toString());
                 compl.done();
                 return;
             }
@@ -8577,6 +8585,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
 
                     vols.add(((FlattenVolumeReply) reply).getInventory());
+                    reportProgress(stage.getEnd().toString());
                     compl.done();
                 }
             });
