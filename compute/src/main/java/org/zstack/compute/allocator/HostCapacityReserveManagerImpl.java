@@ -12,13 +12,12 @@ import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -69,13 +68,13 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
             hq.add(HostVO_.status,Op.EQ, HostStatus.Connected);
             List<Tuple> tuples = hq.listTuple();
 
-            for (Tuple t : tuples) {
+            tuples.parallelStream().forEach(t -> {
                 String huuid = t.get(0, String.class);
                 String hvType = t.get(1, String.class);
 
                 HostReservedCapacityExtensionPoint ext = exts.get(hvType);
                 if (ext == null) {
-                    continue;
+                    return;
                 }
 
                 ReservedHostCapacity hc = result.get(huuid);
@@ -86,7 +85,7 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
                 if (hc.getReservedCpuCapacity() == -1) {
                     hc.setReservedCpuCapacity(extHc.getReservedCpuCapacity());
                 }
-            }
+            });
         }
 
         private void squeeze() {
@@ -128,38 +127,32 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
     @Override
     public List<HostVO> filterOutHostsByReservedCapacity(List<HostVO> candidates, long requiredCpu, long requiredMemory) {
         ReservedCapacityFinder finder = new ReservedCapacityFinder();
-        finder.hostUuids = CollectionUtils.transformToList(candidates, new Function<String, HostVO>() {
-            @Override
-            public String call(HostVO arg) {
-                return arg.getUuid();
-            }
-        });
+        finder.hostUuids = candidates.stream().map(HostVO::getUuid).collect(Collectors.toList());
 
         Map<String, ReservedHostCapacity> reserves = finder.find();
-        List<HostVO> ret = new ArrayList<>(candidates.size());
-        for (HostVO hvo : candidates) {
-            ReservedHostCapacity hc = reserves.get(hvo.getUuid());
-            if (requiredMemory == 0 || hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() >= ratioMgr.calculateMemoryByRatio(hvo.getUuid(), requiredMemory)) {
-                ret.add(hvo);
-            } else {
-                if (logger.isTraceEnabled()) {
-                    if (hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() < requiredMemory) {
-                        logger.trace(String.format("remove host[uuid:%s] from candidates;because after subtracting reserved memory[%s bytes]," +
-                                        " it cannot provide required memory[%s bytes]",
-                                hvo.getUuid(), hc.getReservedMemoryCapacity(), requiredMemory));
+        return candidates.parallelStream()
+                .filter(hvo -> {
+                    ReservedHostCapacity hc = reserves.get(hvo.getUuid());
+                    if (requiredMemory == 0 || hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() >= ratioMgr.calculateMemoryByRatio(hvo.getUuid(), requiredMemory)) {
+                        return true;
+                    } else {
+                        if (logger.isTraceEnabled()) {
+                            if (hvo.getCapacity().getAvailableMemory() - hc.getReservedMemoryCapacity() < requiredMemory) {
+                                logger.trace(String.format("remove host[uuid:%s] from candidates;because after subtracting reserved memory[%s bytes]," +
+                                                " it cannot provide required memory[%s bytes]",
+                                        hvo.getUuid(), hc.getReservedMemoryCapacity(), requiredMemory));
+                            }
+
+                            if (hvo.getCapacity().getAvailableCpu() - hc.getReservedCpuCapacity() < requiredCpu) {
+                                logger.trace(String.format("remove host[uuid:%s] from candidates;because after subtracting reserved cpu[%s]," +
+                                                " it cannot provide required cpu[%s]",
+                                        hvo.getUuid(), hc.getReservedCpuCapacity(), requiredCpu));
+                            }
+                        }
+                        return false;
                     }
-
-                    if (hvo.getCapacity().getAvailableCpu() - hc.getReservedCpuCapacity() < requiredCpu) {
-                        logger.trace(String.format("remove host[uuid:%s] from candidates;because after subtracting reserved cpu[%s]," +
-                                        " it cannot provide required cpu[%s]",
-                                hvo.getUuid(), hc.getReservedCpuCapacity(), requiredCpu));
-                    }
-                }
-            }
-
-        }
-
-        return ret;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
