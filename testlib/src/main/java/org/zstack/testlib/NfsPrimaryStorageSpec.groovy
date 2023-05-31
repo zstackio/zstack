@@ -14,7 +14,6 @@ import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
 import org.zstack.storage.primary.nfs.NfsPrimaryToSftpBackupKVMBackend
@@ -22,7 +21,9 @@ import org.zstack.testlib.vfs.Qcow2
 import org.zstack.testlib.vfs.VFS
 import org.zstack.testlib.vfs.VFSFile
 import org.zstack.testlib.vfs.Volume
+import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.utils.logging.CLogger
 
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -30,6 +31,7 @@ import java.nio.file.Paths
  * Created by xing5 on 2017/2/13.
  */
 class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
+    private static final CLogger logger = Utils.getLogger(NfsPrimaryStorageSpec.class);
 
     NfsPrimaryStorageSpec(EnvSpec envSpec) {
         super(envSpec)
@@ -47,6 +49,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
     }
 
     static VFS vfs(String uuid, EnvSpec spec) {
+        assert uuid != null
         return spec.getVirtualFileSystem("nfs-${uuid}")
     }
 
@@ -62,7 +65,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(NfsPrimaryStorageKVMBackend.GET_VOLUME_BASE_IMAGE_PATH) {
-                def rsp = new LocalStorageKvmBackend.GetVolumeBaseImagePathRsp()
+                def rsp = new NfsPrimaryStorageKVMBackendCommands.GetVolumeBaseImagePathRsp()
                 rsp.path = "/some/fake/path"
                 return rsp
             }
@@ -84,6 +87,30 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.path = backingFiles[0]
                 return rsp
             }
+
+            simulator(NfsPrimaryStorageKVMBackend.GET_BACKING_CHAIN_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                return new NfsPrimaryStorageKVMBackendCommands.GetBackingChainRsp()
+            }
+
+            VFS.vfsHook(NfsPrimaryStorageKVMBackend.GET_BACKING_CHAIN_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.GetBackingChainCmd.class)
+
+                List<String> chain = []
+                VFS vfs = NfsPrimaryStorageSpec.vfs(cmd, spec)
+                Qcow2 file = vfs.getFile(cmd.installPath)
+                if (file == null) {
+                    logger.debug("Dump of whole VFS:\\n${vfs.dumpAsString()}")
+                }
+                assert file != null : "cannot find file[${cmd.installPath}]"
+                while (file.backingQcow2() != null) {
+                    chain.add(file.backingQcow2().pathString())
+                    file = file.backingQcow2()
+                }
+
+                rsp.backingChain = chain
+                return rsp
+            }
+
 
             simulator(NfsPrimaryStorageKVMBackend.UNMOUNT_PRIMARY_STORAGE_PATH) { HttpEntity<String> e ->
                 Spec.checkHttpCallType(e, true)
@@ -237,6 +264,22 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(NfsPrimaryStorageKVMBackend.ESTIMATE_TEMPLATE_SIZE_PATH) {
+                def rsp = new NfsPrimaryStorageKVMBackendCommands.EstimateTemplateSizeRsp()
+                rsp.size = 0
+                rsp.actualSize = 0
+                return rsp
+            }
+
+            VFS.vfsHook(NfsPrimaryStorageKVMBackend.ESTIMATE_TEMPLATE_SIZE_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.EstimateTemplateSizeCmd.class)
+                VFS srcVFS = vfs(cmd, spec)
+                Qcow2 qcow2 = srcVFS.getFile(cmd.volumePath)
+                rsp.size = qcow2.virtualSize
+                rsp.actualSize = qcow2.actualSize
+                return rsp
+            }
+
             simulator(NfsPrimaryStorageKVMBackend.REINIT_IMAGE_PATH) {
                 def rsp = new NfsPrimaryStorageKVMBackendCommands.ReInitImageRsp()
                 rsp.newVolumeInstallPath = "/new/volume/install/path"
@@ -274,10 +317,6 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.size = 0
                 rsp.actualSize = 0
                 return rsp
-            }
-
-            simulator(NfsPrimaryStorageKVMBackend.CREATE_VOLUME_WITH_BACKING_PATH) {
-                return new NfsPrimaryStorageKVMBackendCommands.CreateVolumeWithBackingRsp()
             }
 
             simulator(NfsPrimaryStorageKVMBackend.GET_VOLUME_SIZE_PATH) { HttpEntity<String> e, EnvSpec spec ->
@@ -382,7 +421,21 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(NfsPrimaryStorageKVMBackend.NFS_TO_NFS_MIGRATE_BITS_PATH) {
+            simulator(NfsPrimaryStorageKVMBackend.CREATE_VOLUME_WITH_BACKING_PATH) {
+                return new NfsPrimaryStorageKVMBackendCommands.CreateVolumeWithBackingRsp()
+            }
+
+            VFS.vfsHook(NfsPrimaryStorageKVMBackend.CREATE_VOLUME_WITH_BACKING_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.CreateVolumeWithBackingCmd.class)
+                VFS vfs = vfs(cmd, xspec)
+                Volume image = vfs.getFile(cmd.templatePathInCache, true)
+                vfs.createQcow2(cmd.installUrl, image.actualSize, image.virtualSize, cmd.templatePathInCache)
+                return rsp
+            }
+
+            simulator(NfsPrimaryStorageKVMBackend.NFS_TO_NFS_MIGRATE_BITS_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.NfsToNfsMigrateBitsCmd.class)
+                assert cmd.independentPath == null
                 return new NfsPrimaryStorageKVMBackendCommands.NfsToNfsMigrateBitsRsp()
             }
 

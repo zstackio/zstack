@@ -14,6 +14,8 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KvmHostIpmiPowerExecutor
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.KVMHostInventory
+import org.zstack.sdk.PowerResetHostAction
+import org.zstack.sdk.ShutdownHostAction
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -39,6 +41,8 @@ class KvmHostPowerCase extends SubCase {
     @Override
     void clean() {
         env.delete()
+        executor.mockedPowerStatus = null
+        executor.mockFail = false
     }
 
     @Override
@@ -64,6 +68,8 @@ class KvmHostPowerCase extends SubCase {
             testKvmHostPowerOn()
             testKvmHostPowerStatus()
             testKvmHostPowerStatusIntervalRefresh()
+            testShutdownReturnEarly()
+            testRebootReturnEarly()
         }
     }
 
@@ -159,7 +165,7 @@ class KvmHostPowerCase extends SubCase {
             }
         })
         t1.start()
-        //wait ipiPowerStatus change
+        //wait ipmiPowerStatus change
         TimeUnit.SECONDS.sleep(3)
         assert Q.New(HostIpmiVO)
                 .eq(HostIpmiVO_.uuid, host2.uuid)
@@ -269,5 +275,25 @@ class KvmHostPowerCase extends SubCase {
         assert ipmis.find {
             it.ipmiPowerStatus != HostPowerStatus.POWER_ON
         } == null
+    }
+
+    void testShutdownReturnEarly() {
+        executor.mockFail = true
+        def action = new ShutdownHostAction()
+        action.uuid = host5.uuid
+        action.sessionId = adminSession()
+        action.returnEarly = true
+        ShutdownHostAction.Result res = action.call()
+        assert res.error == null
+    }
+
+    void testRebootReturnEarly() {
+        executor.mockFail = true
+        def action = new PowerResetHostAction()
+        action.uuid = host5.uuid
+        action.sessionId = adminSession()
+        action.returnEarly = true
+        PowerResetHostAction.Result res = action.call()
+        assert res.error == null
     }
 }

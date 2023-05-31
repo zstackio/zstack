@@ -25,6 +25,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.storage.primary.ImageCacheUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -43,6 +44,9 @@ public class NfsDownloadImageToCacheJob implements Job {
     private PrimaryStorageInventory primaryStorage;
     @JobContext
     private String volumeResourceInstallPath;
+    @JobContext
+    private boolean incremental;
+
 
     @Autowired
     private NfsPrimaryStorageFactory nfsFactory;
@@ -155,7 +159,7 @@ public class NfsDownloadImageToCacheJob implements Job {
 
                     private void downloadFromVolume(FlowTrigger trigger) {
                         NfsPrimaryStorageBackend bkd = nfsFactory.getHypervisorBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getInventory().getFormat(), primaryStorage.getUuid()));
-                        bkd.createImageCacheFromVolumeResource(primaryStorage, volumeResourceInstallPath, image.getInventory(), new ReturnValueCompletion<NfsPrimaryStorageBackend.BitsInfo>(trigger) {
+                        ReturnValueCompletion compl = new ReturnValueCompletion<NfsPrimaryStorageBackend.BitsInfo>(trigger) {
                             @Override
                             public void success(NfsPrimaryStorageBackend.BitsInfo info) {
                                 cacheInstallPath = info.getInstallPath();
@@ -167,7 +171,13 @@ public class NfsDownloadImageToCacheJob implements Job {
                             public void fail(ErrorCode errorCode) {
                                 trigger.fail(errorCode);
                             }
-                        });
+                        };
+
+                        if (incremental) {
+                            bkd.createIncrementalImageCacheFromVolumeResource(primaryStorage, volumeResourceInstallPath, image.getInventory(), compl);
+                        } else {
+                            bkd.createImageCacheFromVolumeResource(primaryStorage, volumeResourceInstallPath, image.getInventory(), compl);
+                        }
                     }
 
                     private void downloadFromBackupStorage(FlowTrigger trigger) {
@@ -225,7 +235,7 @@ public class NfsDownloadImageToCacheJob implements Job {
 
     private void useExistingCache(final ImageCacheVO cvo, final ReturnValueCompletion<Object> completion) {
         NfsPrimaryStorageBackend bkd = nfsFactory.getHypervisorBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getInventory().getFormat(), primaryStorage.getUuid()));
-        bkd.checkIsBitsExisting(primaryStorage, cvo.getInstallUrl(), new ReturnValueCompletion<Boolean>(completion) {
+        bkd.checkIsBitsExisting(primaryStorage, ImageCacheUtil.getImageCachePath(cvo.toInventory()), new ReturnValueCompletion<Boolean>(completion) {
             @Override
             public void success(Boolean returnValue) {
                 if (returnValue) {
@@ -271,5 +281,13 @@ public class NfsDownloadImageToCacheJob implements Job {
 
     public void setVolumeResourceInstallPath(String volumeResourceInstallPath) {
         this.volumeResourceInstallPath = volumeResourceInstallPath;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
     }
 }

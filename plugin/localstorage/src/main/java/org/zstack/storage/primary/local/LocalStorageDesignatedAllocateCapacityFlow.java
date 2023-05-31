@@ -121,8 +121,8 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
         }.start();
     }
 
-    private ErrorCode checkIfSpecifyPrimaryStorage(VmInstanceSpec spec){
-        if(spec.getRequiredPrimaryStorageUuidForRootVolume() == null){
+    private ErrorCode checkIfSpecifyPrimaryStorage(VmInstanceSpec spec) {
+        if (spec.getRequiredPrimaryStorageUuidForRootVolume() == null) {
             ErrorCode errorCode = operr("The cluster[uuid=%s] mounts multiple primary storage[LocalStorage, other non-LocalStorage primary storage], You must specify the primary storage where the root disk is located",
                     spec.getDestHost().getClusterUuid());
             return errorCode;

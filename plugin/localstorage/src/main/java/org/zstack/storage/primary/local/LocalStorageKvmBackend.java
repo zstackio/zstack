@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -23,10 +24,12 @@ import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
@@ -50,14 +53,11 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
-import org.zstack.storage.primary.PrimaryStoragePathMaker;
-import org.zstack.storage.primary.PrimaryStorageSystemTags;
+import org.zstack.storage.primary.*;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
-import org.zstack.storage.snapshot.VolumeSnapshotSystemTags;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
-import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -447,6 +447,39 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
+    public static class EstimateTemplateSizeCmd extends AgentCommand {
+        private String volumePath;
+
+        public String getVolumePath() {
+            return volumePath;
+        }
+
+        public void setVolumePath(String rootVolumePath) {
+            this.volumePath = rootVolumePath;
+        }
+    }
+
+    public static class EstimateTemplateSizeRsp extends AgentResponse {
+        private long size;
+        private long actualSize;
+
+        public long getActualSize() {
+            return actualSize;
+        }
+
+        public void setActualSize(long actualSize) {
+            this.actualSize = actualSize;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+    }
+
     public static class RevertVolumeFromSnapshotCmd extends AgentCommand {
         private String snapshotInstallPath;
 
@@ -717,6 +750,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public Long size;
     }
 
+    public static class GetBackingChainCmd extends AgentCommand {
+        public String volumeUuid;
+        public String installPath;
+    }
+
+    public static class GetBackingChainRsp extends AgentResponse {
+        public List<String> backingChain;
+        public long totalSize;
+    }
+
     public static class GetVolumeSizeCmd extends AgentCommand {
         public String volumeUuid;
         public String installPath;
@@ -841,6 +884,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CHECK_BITS_PATH = "/localstorage/checkbits";
     public static final String UNLINK_BITS_PATH = "/localstorage/unlink";
     public static final String CREATE_TEMPLATE_FROM_VOLUME = "/localstorage/volume/createtemplate";
+    public static final String ESTIMATE_TEMPLATE_SIZE_PATH = "/localstorage/volume/estimatetemplatesize";
     public static final String REVERT_SNAPSHOT_PATH = "/localstorage/snapshot/revert";
     public static final String REINIT_IMAGE_PATH = "/localstorage/reinit/image";
     public static final String MERGE_SNAPSHOT_PATH = "/localstorage/snapshot/merge";
@@ -852,6 +896,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String BATCH_GET_VOLUME_SIZE = "/localstorage/volume/batchgetsize";
     public static final String HARD_LINK_VOLUME = "/localstorage/volume/hardlink";
     public static final String GET_BASE_IMAGE_PATH = "/localstorage/volume/getbaseimagepath";
+    public static final String GET_BACKING_CHAIN_PATH = "/localstorage/volume/getbackingchain";
     public static final String GET_QCOW2_REFERENCE = "/localstorage/getqcow2reference";
     public static final String CHECK_INITIALIZED_FILE = "/localstorage/check/initializedfile";
     public static final String CREATE_INITIALIZED_FILE = "/localstorage/create/initializedfile";
@@ -896,7 +941,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public String makeCachedImageInstallUrl(ImageInventory iminv) {
-        return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv));
+        return ImageCacheUtil.getImageCachePath(iminv, it -> PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv)));
     }
 
     public String makeCachedImageInstallUrlFromImageUuidForTemplate(String imageUuid) {
@@ -1250,6 +1295,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         ImageInventory image;
         BackupStorageInventory backupStorage;
         String volumeResourceInstallPath;
+        boolean incremental;
         String hostUuid;
         String primaryStorageInstallPath;
         String backupStorageInstallPath;
@@ -1335,10 +1381,35 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 @Override
                                 public void run(final FlowTrigger trigger, Map data) {
                                     if (volumeResourceInstallPath != null) {
-                                        downloadFromVolume(trigger);
+                                        if (incremental) {
+                                            incrementalDownloadFromVolume(trigger);
+                                        } else {
+                                            downloadFromVolume(trigger);
+                                        }
                                     } else {
                                         downloadFromBackupStorage(trigger);
                                     }
+                                }
+
+                                private void incrementalDownloadFromVolume(FlowTrigger trigger) {
+                                    CreateVolumeWithBackingCmd cmd = new CreateVolumeWithBackingCmd();
+                                    cmd.installPath = primaryStorageInstallPath;
+                                    cmd.templatePathInCache = volumeResourceInstallPath;
+
+                                    httpCall(CREATE_VOLUME_WITH_BACKING_PATH, hostUuid, cmd, false,
+                                            CreateVolumeWithBackingRsp.class,
+                                            new ReturnValueCompletion<CreateVolumeWithBackingRsp>(trigger) {
+                                                @Override
+                                                public void success(CreateVolumeWithBackingRsp rsp) {
+                                                    actualSize = rsp.actualSize;
+                                                    trigger.next();
+                                                }
+
+                                                @Override
+                                                public void fail(ErrorCode errorCode) {
+                                                    trigger.fail(errorCode);
+                                                }
+                                            });
                                 }
 
                                 private void downloadFromVolume(FlowTrigger trigger) {
@@ -2088,14 +2159,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.volumeUuid = volumeUuid;
         cmd.installPath = installPath;
         cmd.templatePathInCache = sp.getPrimaryStorageInstallPath();
-
         httpCall(CREATE_VOLUME_WITH_BACKING_PATH, hostUuid, cmd, CreateVolumeWithBackingRsp.class, new ReturnValueCompletion<CreateVolumeWithBackingRsp>(completion) {
             @Override
             public void success(CreateVolumeWithBackingRsp rsp) {
                 reply.setActualSize(rsp.actualSize);
                 reply.setSize(rsp.size);
                 reply.setInstallPath(installPath);
-                createProtectTag();
+                reply.setIncremental(true);
                 completion.success(reply);
             }
 
@@ -2103,26 +2173,21 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
             }
-
-            private void createProtectTag() {
-                SystemTagCreator creator = VolumeSnapshotSystemTags.BACKING_TO_VOLUME.newSystemTagCreator(sp.getUuid());
-                creator.unique = false;
-                creator.setTagByTokens(Collections.singletonMap(VolumeSnapshotSystemTags.BACKING_VOLUME_TOKEN, volumeUuid));
-                creator.create();
-            }
         });
     }
 
     @Override
-    void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply> completion) {
+    void stream(VolumeSnapshotInventory from, VolumeInventory to, boolean fullRebase, String hostUuid, final Completion completion) {
         boolean offline = true;
-        VolumeInventory volume = msg.getTo();
+        VolumeInventory volume = to;
+        VolumeSnapshotInventory sp = from != null ? from : new VolumeSnapshotInventory();
+        fullRebase |= from == null;
+
         if (volume.getType().equals(VolumeType.Memory.toString())) {
-            completion.success(new MergeVolumeSnapshotOnPrimaryStorageReply());
+            completion.success();
             return;
         }
 
-        VolumeSnapshotInventory sp = msg.getFrom();
         if (volume.getVmInstanceUuid() != null) {
             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
             q.select(VmInstanceVO_.state);
@@ -2138,18 +2203,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             offline = (state == VmInstanceState.Stopped || state == VmInstanceState.Destroyed);
         }
 
-        final MergeVolumeSnapshotOnPrimaryStorageReply ret = new MergeVolumeSnapshotOnPrimaryStorageReply();
-
         if (offline) {
             OfflineMergeSnapshotCmd cmd = new OfflineMergeSnapshotCmd();
-            cmd.setFullRebase(msg.isFullRebase());
+            cmd.setFullRebase(fullRebase);
             cmd.setSrcPath(sp.getPrimaryStorageInstallPath());
             cmd.setDestPath(volume.getInstallPath());
 
             httpCall(OFFLINE_MERGE_PATH, hostUuid, cmd, OfflineMergeSnapshotRsp.class, new ReturnValueCompletion<OfflineMergeSnapshotRsp>(completion) {
                 @Override
                 public void success(OfflineMergeSnapshotRsp returnValue) {
-                    completion.success(ret);
+                    completion.success();
                 }
 
                 @Override
@@ -2159,7 +2222,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             });
         } else {
             MergeVolumeSnapshotOnKvmMsg kmsg = new MergeVolumeSnapshotOnKvmMsg();
-            kmsg.setFullRebase(msg.isFullRebase());
+            kmsg.setFullRebase(fullRebase);
             kmsg.setHostUuid(hostUuid);
             kmsg.setFrom(sp);
             kmsg.setTo(volume);
@@ -2168,7 +2231,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 @Override
                 public void run(MessageReply reply) {
                     if (reply.isSuccess()) {
-                        completion.success(ret);
+                        completion.success();
                     } else {
                         completion.fail(reply.getError());
                     }
@@ -2243,10 +2306,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         GetVolumeSizeCmd cmd = new GetVolumeSizeCmd();
         cmd.installPath = msg.getInstallPath();
         cmd.volumeUuid = msg.getVolumeUuid();
-        cmd.storagePath = Q.New(PrimaryStorageVO.class)
-                .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
-                .select(PrimaryStorageVO_.url)
-                .findValue();
+        cmd.storagePath = self.getUrl();
 
         KvmCommandSender sender = new KvmCommandSender(hostUuid);
         sender.send(cmd, GET_VOLUME_SIZE, new KvmCommandFailureChecker() {
@@ -2261,6 +2321,27 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 GetVolumeSizeRsp rsp = returnValue.getResponse(GetVolumeSizeRsp.class);
                 reply.setActualSize(rsp.actualSize);
                 reply.setSize(rsp.size);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(EstimateVolumeTemplateSizeOnPrimaryStorageMsg msg, String huuid, ReturnValueCompletion<EstimateVolumeTemplateSizeOnPrimaryStorageReply> completion) {
+        final EstimateVolumeTemplateSizeOnPrimaryStorageReply reply = new EstimateVolumeTemplateSizeOnPrimaryStorageReply();
+        EstimateTemplateSizeCmd cmd = new EstimateTemplateSizeCmd();
+        cmd.volumePath = msg.getInstallPath();
+
+        httpCall(ESTIMATE_TEMPLATE_SIZE_PATH, huuid, cmd, EstimateTemplateSizeRsp.class, new ReturnValueCompletion<EstimateTemplateSizeRsp>(completion) {
+            @Override
+            public void success(EstimateTemplateSizeRsp rsp) {
+                reply.setSize(rsp.size);
+                reply.setActualSize(rsp.actualSize);
                 completion.success(reply);
             }
 
@@ -2348,6 +2429,44 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(GetVolumeBackingChainFromPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeBackingChainFromPrimaryStorageReply> completion) {
+        GetVolumeBackingChainFromPrimaryStorageReply reply = new GetVolumeBackingChainFromPrimaryStorageReply();
+        new While<>(msg.getRootInstallPaths()).each((installPath, compl) -> {
+            GetBackingChainCmd cmd = new GetBackingChainCmd();
+            cmd.installPath = installPath;
+            cmd.volumeUuid = msg.getVolumeUuid();
+            httpCall(GET_BACKING_CHAIN_PATH, msg.getHostUuid(), cmd, GetBackingChainRsp.class, new ReturnValueCompletion<GetBackingChainRsp>(compl) {
+                @Override
+                public void success(GetBackingChainRsp rsp) {
+                    if (CollectionUtils.isEmpty(rsp.backingChain)) {
+                        reply.putBackingChainInstallPath(installPath, Collections.emptyList());
+                        reply.putBackingChainSize(installPath, 0L);
+                    } else {
+                        reply.putBackingChainInstallPath(installPath, rsp.backingChain);
+                        reply.putBackingChainSize(installPath, rsp.totalSize);
+                    }
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList err) {
+                if (!err.getCauses().isEmpty()) {
+                    completion.fail(err.getCauses().get(0));
+                } else {
+                    completion.success(reply);
+                }
             }
         });
     }
@@ -3166,15 +3285,33 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getVolumeSnapshot().getUuid())
                 .find();
 
+        boolean incremental = msg.hasSystemTag(VolumeSystemTags.FAST_CREATE.getTagFormat());
+        if (incremental && PrimaryStorageGlobalProperty.USE_SNAPSHOT_AS_INCREMENTAL_CACHE) {
+            ImageCacheVO cache = createTemporaryImageCacheFromVolumeSnapshot(msg.getImageInventory(), msg.getVolumeSnapshot());
+            LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
+            path.volumeSnapshotUuid = msg.getVolumeSnapshot().getUuid();
+            path.hostUuid = ref.getHostUuid();
+            cache.setInstallUrl(path.makeFullPath());
+            dbf.persist(cache);
+            reply.setLocateHostUuid(ref.getHostUuid());
+            reply.setInventory(cache.toInventory());
+            reply.setIncremental(true);
+            completion.success(reply);
+            return;
+        }
+
         ImageCache cache = new ImageCache();
         cache.primaryStorageInstallPath = makeCachedImageInstallUrl(msg.getImageInventory());
         cache.hostUuid = ref.getHostUuid();
         cache.image = msg.getImageInventory();
         cache.volumeResourceInstallPath = msg.getVolumeSnapshot().getPrimaryStorageInstallPath();
+        cache.incremental =incremental;
         cache.download(new ReturnValueCompletion<ImageCacheInventory>(completion) {
             @Override
-            public void success(ImageCacheInventory cache) {
+            public void success(ImageCacheInventory inv) {
                 reply.setLocateHostUuid(ref.getHostUuid());
+                reply.setInventory(inv);
+                reply.setIncremental(cache.incremental);
                 completion.success(reply);
             }
 
@@ -3517,7 +3654,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
+                completion.fail(operr("cannot find flag file [%s] on host [%s], because: %s", makeInitializedFilePath(), hostUuid, errorCode.getCause().getDetails()));
             }
         });
     }
@@ -3538,7 +3675,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
+                completion.fail(operr("cannot create flag file [%s] on host [%s], because: %s", makeInitializedFilePath(), hostUuid, errorCode.getCause().getDetails()));
             }
         });
     }

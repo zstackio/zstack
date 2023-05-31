@@ -48,6 +48,7 @@ import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityChecker;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -58,6 +59,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
@@ -342,6 +344,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         }, ResizeVolumeOnHypervisorReply.class);
 
+        VolumeSnapshotReferenceUtils.setGetResourceLocateHostUuidGetter(resourceUuid -> Q.New(LocalStorageResourceRefVO.class)
+                .select(LocalStorageResourceRefVO_.hostUuid)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, resourceUuid)
+                .findValue());
         return true;
     }
 
@@ -375,6 +381,35 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public Flow marshalVmOperationFlow(String previousFlowName, String nextFlowName, FlowChain chain, VmInstanceSpec spec) {
+        if (VmAllocateHostFlow.class.getName().equals(nextFlowName) || VmAllocateHostAndPrimaryStorageFlow.class.getName().equals(nextFlowName)) {
+            if (spec.getCurrentVmOperation() != VmOperation.NewCreate || !spec.getImageSpec().relyOnImageCache()) {
+                return null;
+            }
+
+            String imageUuid = spec.getImageSpec().getInventory().getUuid();
+            String requirdHostUuid = spec.getRequiredHostUuid();
+            List<String> cacheUrls = Q.New(ImageCacheVO.class).select(ImageCacheVO_.installUrl)
+                    .eq(ImageCacheVO_.imageUuid, imageUuid)
+                    .listValues();
+
+            if (!cacheUrls.stream().allMatch(it -> it.contains("hostUuid://"))) {
+                return null;
+            }
+
+            List<String> cachedHostUuids = cacheUrls.stream().map(it -> LocalStorageUtils.getHostUuidFromInstallUrl(it)).collect(Collectors.toList());
+            if (requirdHostUuid != null && !cachedHostUuids.contains(requirdHostUuid)) {
+                return new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        trigger.fail(operr("creation rely on image cache[uuid:%s, locate host uuids: [%s]], cannot create other places.", imageUuid, cachedHostUuids));
+
+                    }
+                };
+            } else if (requirdHostUuid == null) {
+                spec.setRequiredHostUuid(cachedHostUuids.get(0));
+            }
+        }
+
         if (VmAllocatePrimaryStorageFlow.class.getName().equals(nextFlowName)) {
             if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
                 List<String> localStorageUuids = getAvailableLocalStorageInCluster(spec.getDestHost().getClusterUuid());

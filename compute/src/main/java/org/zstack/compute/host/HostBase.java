@@ -198,6 +198,7 @@ public abstract class HostBase extends AbstractHost {
         final APIPowerResetHostEvent event = new APIPowerResetHostEvent(msg.getId());
         RebootHostMsg rebootHostMsg = new RebootHostMsg();
         rebootHostMsg.setUuid(msg.getHostUuid());
+        rebootHostMsg.setReturnEarly(msg.isReturnEarly());
         rebootHostMsg.setMethod(HostPowerManagementMethod.valueOf(msg.getMethod()));
         bus.makeTargetServiceIdByResourceUuid(rebootHostMsg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(rebootHostMsg, new CloudBusCallBack(msg) {

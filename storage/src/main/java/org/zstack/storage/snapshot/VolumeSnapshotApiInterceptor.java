@@ -15,9 +15,7 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
-import org.zstack.header.storage.snapshot.group.MemorySnapshotValidatorExtensionPoint;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -33,6 +31,7 @@ import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourc
 import javax.persistence.Tuple;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 /**
@@ -88,6 +87,20 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIRevertVmFromSnapshotGroupMsg msg) {
         VolumeSnapshotGroupVO group = dbf.findByUuid(msg.getUuid(), VolumeSnapshotGroupVO.class);
+
+        List<String> snapshotUuids = group.getVolumeSnapshotRefs().stream()
+                .map(VolumeSnapshotGroupRefVO::getVolumeSnapshotUuid)
+                .collect(Collectors.toList());
+        List<String> disabledSnapshotUuids = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid)
+                .eq(VolumeSnapshotVO_.state, VolumeSnapshotState.Disabled)
+                .in(VolumeSnapshotVO_.uuid, snapshotUuids)
+                .listValues();
+
+        if (!disabledSnapshotUuids.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr(
+                    "volume snapshot[uuids:%s] is in state Disabled, cannot revert volume to it", disabledSnapshotUuids)
+            );
+        }
 
         for (MemorySnapshotValidatorExtensionPoint ext : pluginRgty.getExtensionList(MemorySnapshotValidatorExtensionPoint.class)) {
             if (!isWithMemoryForSnapshotGroup(group)) {

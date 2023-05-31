@@ -41,11 +41,9 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
 
 
     private List<HostVO> allocate(List<HostVO> vos, long cpu, long memory, long oldMemory) {
-        List<HostVO> ret = vos.stream()
+        return vos.parallelStream()
                 .filter(hvo -> (cpu == 0 || hvo.getCapacity().getAvailableCpu() >= cpu)
                         && (memory == 0 || memoryCheck(memory, oldMemory, hvo))).collect(Collectors.toList());
-
-        return ret;
     }
 
     private boolean isNoCpu(int cpu) {

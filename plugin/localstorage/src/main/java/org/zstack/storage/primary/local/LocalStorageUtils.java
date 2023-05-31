@@ -11,7 +11,10 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -230,21 +233,42 @@ public class LocalStorageUtils {
         public String fullPath;
         public String hostUuid;
         public String installPath;
+        public String volumeSnapshotUuid;
 
         public InstallPath disassemble() {
             DebugUtils.Assert(fullPath != null, "fullPath cannot be null");
             String[] pair = fullPath.split(";");
             DebugUtils.Assert(pair.length == 2, String.format("invalid cache path %s", fullPath));
-            installPath = pair[0].replaceFirst("file://", "");
             hostUuid = pair[1].replaceFirst("hostUuid://", "");
+
+            if (pair[0].startsWith(ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA)) {
+                String snapshotUuid = pair[0].replaceFirst(ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA, "");
+                installPath = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snapshotUuid)
+                        .select(VolumeSnapshotVO_.primaryStorageInstallPath)
+                        .findValue();
+                volumeSnapshotUuid = snapshotUuid;
+            } else {
+                installPath = pair[0].replaceFirst("file://", "");
+            }
             return this;
         }
 
         public String makeFullPath() {
-            DebugUtils.Assert(installPath != null, "installPath cannot be null");
+            DebugUtils.Assert(installPath != null || volumeSnapshotUuid != null, "installPath cannot be null");
             DebugUtils.Assert(hostUuid != null, "hostUuid cannot be null");
-            fullPath = String.format("file://%s;hostUuid://%s", installPath, hostUuid);
+            if (volumeSnapshotUuid == null) {
+                fullPath = String.format("file://%s;hostUuid://%s", installPath, hostUuid);
+            } else {
+                fullPath = String.format("%s%s;hostUuid://%s", ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA, volumeSnapshotUuid, hostUuid);
+            }
             return fullPath;
         }
+    }
+
+    public static String getHostUuidFromInstallUrl(String installUrl) {
+        InstallPath p = new InstallPath();
+        p.fullPath = installUrl;
+        p.disassemble();
+        return p.hostUuid;
     }
 }

@@ -100,7 +100,6 @@ ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `bondingType` varchar(32)
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `gateway` varchar(128) DEFAULT NULL;
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `callBackIp` varchar(128) DEFAULT NULL;
 ALTER TABLE `zstack`.`HostNetworkBondingVO` ADD COLUMN `description` varchar(2048) DEFAULT NULL;
-ALTER TABLE `zstack`.`VolumeBackupVO` ADD COLUMN `vmInstanceUuid` varchar(32) DEFAULT NULL;
 
 CREATE TABLE IF NOT EXISTS `HostIpmiVO`
 (
@@ -173,18 +172,252 @@ CREATE PROCEDURE UpdateVolumeBackupVmInstanceUuid()
         DECLARE cur CURSOR FOR SELECT metadata, uuid FROM `zstack`.`VolumeBackupVO`;
         DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
-        OPEN cur;
+        IF NOT EXISTS( SELECT 1
+                       FROM INFORMATION_SCHEMA.COLUMNS
+                       WHERE table_name = 'VolumeBackupVO'
+                             AND table_schema = 'zstack'
+                             AND column_name = 'vmInstanceUuid') THEN
 
-        read_loop: LOOP
-            FETCH cur INTO backup_data, backup_uuid;
-            IF done THEN
-                LEAVE read_loop;
-            END IF;
-            UPDATE `zstack`.`VolumeBackupVO` SET `vmInstanceUuid`= Json_simpleGetKeyValue(backup_data, "vmInstanceUuid") WHERE `uuid`= backup_uuid;
+           ALTER TABLE `zstack`.`VolumeBackupVO` ADD COLUMN `vmInstanceUuid` varchar(32) DEFAULT NULL;
 
-        END LOOP;
-        CLOSE cur;
+           OPEN cur;
+           read_loop: LOOP
+               FETCH cur INTO backup_data, backup_uuid;
+               IF done THEN
+                   LEAVE read_loop;
+               END IF;
+
+               UPDATE `zstack`.`VolumeBackupVO` SET `vmInstanceUuid`= Json_simpleGetKeyValue(backup_data, "vmInstanceUuid") WHERE `uuid`= backup_uuid;
+           END LOOP;
+           CLOSE cur;
+        END IF;
     END $$
 DELIMITER ;
 CALL UpdateVolumeBackupVmInstanceUuid();
 DROP PROCEDURE IF EXISTS UpdateVolumeBackupVmInstanceUuid;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`HaStrategyConditionVO` (
+    `uuid` varchar(32) NOT NULL,
+    `name` varchar(256),
+    `fencerName` varchar(256) NOT NULL,
+    `state` varchar(64) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+INSERT INTO HaStrategyConditionVO(`uuid`, `name`, `fencerName`, `state`, `lastOpDate`, `createDate`)
+values ((REPLACE(UUID(), '-', '')), 'ha strategy condition', 'hostBusinessNic', 'Disable', current_timestamp(), current_timestamp());
+
+DELIMITER $$
+CREATE PROCEDURE addHaStrategyConditionOnVmHaLevel()
+    BEGIN
+        DECLARE isHaEnable VARCHAR(32);
+        DECLARE fencerStrategy VARCHAR(32);
+        DECLARE resourceUuid VARCHAR(32);
+        DECLARE current_time_stamp timestamp;
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE haCursor CURSOR FOR select value from GlobalConfigVO where category = 'ha' and name = 'enable';
+        DECLARE fencerCursor CURSOR for select value from GlobalConfigVO where category = 'ha' and name = 'self.fencer.strategy';
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN haCursor;
+        OPEN fencerCursor;
+        read_loop: LOOP
+            FETCH haCursor INTO isHaEnable;
+            FETCH fencerCursor INTO fencerStrategy;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SET resourceUuid = (REPLACE(UUID(), '-', ''));
+            SET current_time_stamp = current_timestamp();
+            IF (LOWER(isHaEnable) = 'false' OR fencerStrategy = 'Permissive') THEN
+                INSERT INTO HaStrategyConditionVO(`uuid`, `name`, `fencerName`, `state`, `lastOpDate`, `createDate`) values (resourceUuid, 'ha strategy condition', 'hostStorageState', 'Disable', current_time_stamp, current_time_stamp);
+            ELSE
+                INSERT INTO HaStrategyConditionVO(`uuid`, `name`, `fencerName`, `state`, `lastOpDate`, `createDate`) values (resourceUuid, 'ha strategy condition', 'hostStorageState', 'Enable', current_time_stamp, current_time_stamp);
+            END IF;
+        END LOOP;
+        CLOSE haCursor;
+        CLOSE fencerCursor;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+call addHaStrategyConditionOnVmHaLevel();
+DROP PROCEDURE IF EXISTS addHaStrategyConditionOnVmHaLevel;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`HostHaStateVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'host uuid',
+    `state` varchar(32),
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELIMITER $$
+CREATE PROCEDURE addHostHaStatus()
+    BEGIN
+        DECLARE isHaEnable VARCHAR(32);
+        DECLARE hostUuid VARCHAR(32);
+        DECLARE current_time_stamp timestamp;
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE haCursor CURSOR FOR select uuid from HostVO;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN haCursor;
+        read_loop: LOOP
+            FETCH haCursor INTO hostUuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SET current_time_stamp = current_timestamp();
+            insert into HostHaStateVO(`uuid`, `state`,`lastOpDate`, `createDate`)values (hostUuid, 'None', current_time_stamp, current_time_stamp);
+        END LOOP;
+        CLOSE haCursor;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+call addHostHaStatus();
+DROP PROCEDURE IF EXISTS addHostHaStatus;
+
+CREATE TABLE IF NOT EXISTS `VolumeSnapshotReferenceTreeVO` (
+    `uuid`                       varchar(32) NOT NULL,
+    `rootImageUuid`              varchar(32)   DEFAULT NULL,
+    `rootVolumeUuid`             VARCHAR(32)   DEFAULT NULL,
+    `rootInstallUrl`             VARCHAR(1024) DEFAULT NULL,
+    `rootVolumeSnapshotUuid`     VARCHAR(32)   DEFAULT NULL,
+    `rootVolumeSnapshotTreeUuid` VARCHAR(32)   DEFAULT NULL,
+    `primaryStorageUuid`         VARCHAR(32)   DEFAULT NULL,
+    `hostUuid`                   VARCHAR(32)   DEFAULT NULL,
+    `lastOpDate`                 timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`                 timestamp,
+    PRIMARY KEY (`uuid`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+CREATE TABLE IF NOT EXISTS `VolumeSnapshotReferenceVO` (
+    `id`                       bigint(20) NOT NULL AUTO_INCREMENT,
+    `parentId`                 bigint(20)    DEFAULT NULL,
+    `volumeUuid`               varchar(32)   DEFAULT NULL,
+    `volumeSnapshotUuid`       varchar(32)   DEFAULT NULL,
+    `directSnapshotUuid`       VARCHAR(32)   DEFAULT NULL,
+    `volumeSnapshotInstallUrl` varchar(1024) DEFAULT NULL,
+    `directSnapshotInstallUrl` VARCHAR(1024) DEFAULT NULL,
+    `treeUuid`                 VARCHAR(32)   DEFAULT NULL,
+    `referenceUuid`            varchar(32)   DEFAULT NULL,
+    `referenceType`            varchar(32)   DEFAULT NULL,
+    `referenceInstallUrl`      varchar(1024) DEFAULT NULL,
+    `referenceVolumeUuid`      varchar(32)   DEFAULT NULL,
+    `lastOpDate`               timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`               timestamp,
+    PRIMARY KEY (`id`),
+
+    INDEX `idxVolumeSnapshotReferenceVOVolumeUuid` (`volumeUuid`),
+    INDEX `idxVolumeSnapshotReferenceVOVolumeSnapshotUuid` (`volumeSnapshotUuid`),
+    INDEX `idxVolumeSnapshotReferenceVOReferenceUuid` (`referenceUuid`),
+    CONSTRAINT `fkVolumeSnapshotReferenceReferenceVolumeUuid` FOREIGN KEY (`referenceVolumeUuid`) REFERENCES `VolumeEO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkVolumeSnapshotReferenceReferenceParentId` FOREIGN KEY (`parentId`) REFERENCES `VolumeSnapshotReferenceVO` (`id`) ON DELETE SET NULL,
+    CONSTRAINT `fkVolumeSnapshotReferenceReferenceTreeUuid` FOREIGN KEY (`treeUuid`) REFERENCES `VolumeSnapshotReferenceTreeVO` (`uuid`) ON DELETE SET NULL
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+DROP PROCEDURE IF EXISTS `Alter_Volume_Snapshot_Tree_Table`;
+DELIMITER $$
+CREATE PROCEDURE Alter_Volume_Snapshot_Tree_Table()
+    BEGIN
+        IF NOT EXISTS( SELECT NULL
+                       FROM INFORMATION_SCHEMA.COLUMNS
+                       WHERE table_name = 'VolumeSnapshotTreeEO'
+                             AND table_schema = 'zstack'
+                             AND column_name = 'rootImageUuid')  THEN
+
+            ALTER TABLE `VolumeSnapshotTreeEO` ADD `rootImageUuid` VARCHAR(32) DEFAULT NULL;
+        END IF;
+    END $$
+DELIMITER ;
+
+CALL Alter_Volume_Snapshot_Tree_Table();
+DROP PROCEDURE Alter_Volume_Snapshot_Tree_Table;
+
+DROP VIEW IF EXISTS `zstack`.`VolumeSnapshotTreeVO`;
+CREATE VIEW `zstack`.`VolumeSnapshotTreeVO` AS SELECT uuid, volumeUuid, rootImageUuid, current, status, createDate, lastOpDate FROM `zstack`.`VolumeSnapshotTreeEO` WHERE deleted IS NULL;
+
+DROP PROCEDURE IF EXISTS upgradeVolumeSnapshotRefSystemTags;
+DELIMITER $$
+CREATE PROCEDURE upgradeVolumeSnapshotRefSystemTags()
+BEGIN
+    DECLARE refTag VARCHAR(51);
+    DECLARE snapshotUuid VARCHAR(32);
+    DECLARE snapshotInstallUrl VARCHAR(1024);
+    DECLARE volUuid VARCHAR(32);
+    DECLARE refVolumeUuid VARCHAR(32);
+    DECLARE refVolumeInstallUrl VARCHAR(32);
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT systemTag.tag, systemTag.resourceUuid FROM `zstack`.`SystemTagVO` systemTag where systemTag.tag like 'backingTo::%';
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO refTag, snapshotUuid;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SET refVolumeUuid = SUBSTRING_INDEX(refTag, '::', 2);
+        SELECT `volumeUuid`, `primaryStorageInstallPath` INTO volUuid, snapshotInstallUrl FROM `VolumeSnapshotVO` WHERE `uuid` = snapshotUuid;
+        SELECT `installPath` INTO refVolumeInstallUrl FROM `VolumeVO` WHERE `uuid` = refVolumeUuid;
+        INSERT INTO `VolumeSnapshotReferenceVO` (`volumeUuid`, `volumeSnapshotUuid`, `volumeSnapshotInstallUrl`, `referenceUuid`, `referenceType`, `referenceInstallUrl`, `referenceVolumeUuid`, `lastOpDate`, `createDate`)
+        VALUES (volUuid, snapshotUuid, snapshotInstallUrl, refVolumeUuid, 'VolumeVO', refVolumeInstallUrl, refVolumeUuid, NOW(), NOW());
+
+    END LOOP;
+    CLOSE cur;
+    SELECT CURTIME();
+END $$
+DELIMITER ;
+CALL upgradeVolumeSnapshotRefSystemTags();
+
+DELIMITER $$
+CREATE PROCEDURE UpdateHygonClusterVmCpuModeConfig()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE tag_uuid VARCHAR(32);
+        DECLARE resource_uuid VARCHAR(32);
+        DECLARE resource_type varchar(64);
+        DECLARE config_name varchar(255);
+        DECLARE config_description varchar(255);
+        DECLARE config_category varchar(64);
+        DECLARE config_value varchar(64);
+        DECLARE cur CURSOR FOR SELECT uuid FROM zstack.ClusterVO;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        SET config_name = 'vm.cpuMode';
+        SET config_description = 'the default configuration after the management node is upgraded (only for hygon cluster)';
+        SET config_category = 'kvm';
+        SET resource_type = 'ClusterVO';
+        SET config_value = 'Hygon_Customized';
+        SET tag_uuid = REPLACE(UUID(), '-', '');
+
+        OPEN cur;
+
+        read_loop: LOOP
+            FETCH cur INTO resource_uuid;
+
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SELECT COUNT(DISTINCT tag) INTO @hygon_tag_count FROM SystemTagVO WHERE tag LIKE 'hostCpuModelName::Hygon%' AND resourceUuid IN (SELECT uuid FROM HostVO WHERE clusterUuid = resource_uuid);
+
+            SELECT COUNT(*) INTO @config_exist FROM ResourceConfigVO WHERE name = config_name AND category = config_category AND resourceUuid = resource_uuid AND resourceType = resource_type;
+
+            IF @hygon_tag_count = 1 THEN
+                IF @config_exist = 1 THEN
+                    UPDATE ResourceConfigVO SET value = config_value WHERE name = config_name AND category = config_category AND resourceUuid = resource_uuid AND resourceType = resource_type;
+                ELSE
+                    INSERT INTO ResourceConfigVO (uuid, name, description, category, value, resourceUuid, resourceType, lastOpDate, createDate)
+                            VALUES (tag_uuid, config_name, config_description, config_category, config_value, resource_uuid, resource_type, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+                END IF;
+            END IF;
+        END LOOP;
+
+        CLOSE cur;
+    END $$
+DELIMITER ;
+CALL UpdateHygonClusterVmCpuModeConfig();
+DROP PROCEDURE IF EXISTS UpdateHygonClusterVmCpuModeConfig;

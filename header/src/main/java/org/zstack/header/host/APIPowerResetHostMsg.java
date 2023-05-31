@@ -19,6 +19,9 @@ public class APIPowerResetHostMsg extends APIMessage implements HostMessage {
     @APIParam(nonempty = true, resourceType = HostVO.class)
     private String uuid;
 
+    @APIParam(required = false)
+    private boolean returnEarly = false;
+
     @APIParam(required = false, validValues = {"AUTO","AGENT","IPMI"})
     private String method = HostPowerManagementMethod.AUTO.toString();
 
@@ -38,6 +41,14 @@ public class APIPowerResetHostMsg extends APIMessage implements HostMessage {
         this.method = method;
     }
 
+    public boolean isReturnEarly() {
+        return returnEarly;
+    }
+
+    public void setReturnEarly(boolean returnEarly) {
+        this.returnEarly = returnEarly;
+    }
+
     @Override
     public String getHostUuid() {
         return uuid;
@@ -47,6 +58,7 @@ public class APIPowerResetHostMsg extends APIMessage implements HostMessage {
         APIPowerResetHostMsg msg = new APIPowerResetHostMsg();
         msg.setUuid(uuid());
         msg.setMethod(HostPowerManagementMethod.AUTO.name());
+        msg.setReturnEarly(false);
         return msg;
     }
 }

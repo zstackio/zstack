@@ -1,6 +1,7 @@
 package org.zstack.core.trash;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -202,7 +203,8 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         return null;
     }
 
-    private String makeSureInstallPathNotUsedByVolume(String installPath) {
+    @Transactional(readOnly = true)
+    protected String makeSureInstallPathNotUsedByVolume(String installPath) {
         String details = checkVolume(installPath);
         if (details != null) {
             return details;
@@ -218,7 +220,8 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         return null;
     }
 
-    private String makeSureInstallPathNotUsedByImage(String installPath) {
+    @Transactional(readOnly = true)
+    protected String makeSureInstallPathNotUsedByImage(String installPath) {
         String details = checkImage(installPath);
         if (details != null) {
             return details;
@@ -226,7 +229,8 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         return null;
     }
 
-    private String makeSureInstallPathNotUsedBySnapshot(String installPath) {
+    @Transactional(readOnly = true)
+    protected String makeSureInstallPathNotUsedBySnapshot(String installPath) {
         String details = checkVolumeSnapshot(installPath);
         if (details != null) {
             return details;
@@ -240,17 +244,11 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
 
     @Override
     public String makeSureInstallPathNotUsed(InstallPathRecycleInventory inv) {
-        if (inv.getResourceType().equals(VolumeVO.class.getSimpleName())) {
-            return makeSureInstallPathNotUsedByVolume(inv.getInstallPath());
-        } else if (inv.getResourceType().equals(ImageVO.class.getSimpleName())) {
-            return makeSureInstallPathNotUsedByImage(inv.getInstallPath());
-        } else if (inv.getResourceType().equals(VolumeSnapshotVO.class.getSimpleName())) {
-            return makeSureInstallPathNotUsedBySnapshot(inv.getInstallPath());
-        }
-        return null;
+        return makeSureInstallPathNotUsed(inv.getInstallPath(), inv.getResourceType());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public String makeSureInstallPathNotUsed(String installPath, String resourceType) {
         if (VolumeVO.class.getSimpleName().equals(resourceType)) {
             return makeSureInstallPathNotUsedByVolume(installPath);

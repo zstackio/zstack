@@ -39,4 +39,7 @@ public class VolumeSystemTags {
 
     @NonCloneable
     public static EphemeralSystemTag FAST_CREATE = new EphemeralSystemTag("volume::fastCreate");
+
+    @NonCloneable
+    public static EphemeralSystemTag FLATTEN = new EphemeralSystemTag("volume::flatten");
 }

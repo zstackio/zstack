@@ -20,14 +20,6 @@ public class NfsVolumeSnapshotProtector implements VolumeSnapshotDeletionProtect
 
     @Override
     public void protect(VolumeSnapshotInventory snapshot, Completion completion) {
-        String backingToVolumeUuid = VolumeSnapshotSystemTags.BACKING_TO_VOLUME.getTokenByResourceUuid(
-                snapshot.getUuid(), VolumeSnapshotSystemTags.BACKING_VOLUME_TOKEN);
-        if (backingToVolumeUuid != null) {
-            completion.fail(operr("snapshot[uuid:%s] is backing file of volume[uuid:%s], cannot delete.",
-                    snapshot.getUuid(), backingToVolumeUuid));
-            return;
-        }
-
         Path path = Paths.get(snapshot.getPrimaryStorageInstallPath());
         if (!path.getParent().toString().contains(snapshot.getVolumeUuid())) {
             completion.fail(inerr("the snapshot[name:%s, uuid:%s, path: %s] seems not belong to the volume[uuid:%s]",

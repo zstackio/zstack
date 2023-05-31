@@ -115,6 +115,8 @@
         <class>org.zstack.header.storage.snapshot.VolumeSnapshotTreeEO</class>
         <class>org.zstack.header.storage.snapshot.VolumeSnapshotEO</class>
         <class>org.zstack.header.storage.snapshot.VolumeSnapshotVO</class>
+        <class>org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO</class>
+        <class>org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceTreeVO</class>
         <class>org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefVO</class>
         <class>org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO</class>
         <class>org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO</class>

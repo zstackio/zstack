@@ -18,6 +18,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.jsonlabel.JsonLabel;
+import org.zstack.core.progress.ParallelTaskStage;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.RunInQueue;
 import org.zstack.core.thread.SyncTaskChain;
@@ -33,6 +34,7 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
 import org.zstack.header.core.*;
+import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -92,7 +94,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
+import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.*;
 
 
@@ -460,8 +462,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((RecoverVmInstanceMsg) msg);
         } else if (msg instanceof AttachNicToVmMsg) {
             handle((AttachNicToVmMsg) msg);
-        } else if (msg instanceof CreateTemplateFromVmRootVolumeMsg) {
-            handle((CreateTemplateFromVmRootVolumeMsg) msg);
+        } else if (msg instanceof CreateTemplateFromRootVolumeVmMsg) {
+            handle((CreateTemplateFromRootVolumeVmMsg) msg);
         } else if (msg instanceof VmInstanceDeletionMsg) {
             handle((VmInstanceDeletionMsg) msg);
         } else if (msg instanceof VmAttachNicMsg) {
@@ -520,6 +522,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((ChangeVmNicNetworkMsg) msg);
         } else if (msg instanceof UpdateVmInstanceMsg) {
             handle((UpdateVmInstanceMsg) msg);
+        } else if (msg instanceof FlattenVmInstanceMsg) {
+            handle((FlattenVmInstanceMsg) msg);
+        } else if (msg instanceof CancelFlattenVmInstanceMsg) {
+            handle((CancelFlattenVmInstanceMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -2755,7 +2761,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void createTemplateFromRootVolume(final CreateTemplateFromVmRootVolumeMsg msg, final SyncTaskChain chain) {
+    private void createTemplateFromRootVolume(final CreateTemplateFromRootVolumeVmMsg msg, final SyncTaskChain chain) {
         boolean callNext = true;
         try {
             refreshVO();
@@ -2765,13 +2771,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                 return;
             }
 
-            final CreateTemplateFromVmRootVolumeReply reply = new CreateTemplateFromVmRootVolumeReply();
+            final CreateTemplateFromRootVolumeVmReply reply = new CreateTemplateFromRootVolumeVmReply();
 
             CreateTemplateFromVolumeOnPrimaryStorageMsg cmsg = new CreateTemplateFromVolumeOnPrimaryStorageMsg();
-            if (msg instanceof CreateTemplateFromVmRootVolumeSnapShotMsg) {
+            if (msg instanceof CreateTemplateFromRootVolumeSnapShotVmMsg) {
                 cmsg = new CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg();
                 ((CreateTemplateFromVolumeSnapshotOnPrimaryStorageMsg) cmsg).setSnapshotUuid(
-                        ((CreateTemplateFromVmRootVolumeSnapShotMsg) msg).getSnapshotUuid());
+                        ((CreateTemplateFromRootVolumeSnapShotVmMsg) msg).getSnapshotUuid());
             }
 
             cmsg.setVolumeInventory(msg.getRootVolumeInventory());
@@ -2809,7 +2815,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
     }
 
-    private void handle(final CreateTemplateFromVmRootVolumeMsg msg) {
+    private void handle(final CreateTemplateFromRootVolumeVmMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getName() {
@@ -3259,6 +3265,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmInstanceDefaultCdRomMsg) msg);
         } else if (msg instanceof APIUpdateVmNicDriverMsg) {
             handle((APIUpdateVmNicDriverMsg) msg);
+        } else if (msg instanceof APIFlattenVmInstanceMsg) {
+            handle((APIFlattenVmInstanceMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -8453,6 +8461,201 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(APIFlattenVmInstanceMsg msg) {
+        FlattenVmInstanceMsg fmsg = new FlattenVmInstanceMsg();
+        fmsg.setFull(msg.isFull());
+        fmsg.setDryRun(msg.isDryRun());
+        fmsg.setUuid(msg.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(fmsg, VmInstanceConstant.SERVICE_ID, fmsg.getUuid());
+        bus.send(fmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                APIFlattenVmInstanceEvent evt = new APIFlattenVmInstanceEvent(msg.getId());
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                } else {
+                    evt.setInventory(((FlattenVmInstanceReply) reply).getInventory());
+                }
+
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(FlattenVmInstanceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                FlattenVmInstanceReply reply = new FlattenVmInstanceReply();
+                flattenVm(msg, new ReturnValueCompletion<VmInstanceInventory>(msg, chain) {
+                    @Override
+                    public void success(VmInstanceInventory inv) {
+                        reply.setInventory(inv);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "faltten-vm-" + self.getUuid();
+            }
+        });
+    }
+
+    private void handle(CancelFlattenVmInstanceMsg msg) {
+        CancelFlattenVmInstanceReply reply = new CancelFlattenVmInstanceReply();
+        ErrorCode err = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (err != null) {
+            reply.setError(err);
+            bus.reply(msg, reply);
+            return;
+        }
+
+        Completion completion = new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        };
+
+        if (self.getState() == VmInstanceState.Stopped) {
+            cancelFlattenOffline(msg.getCancellationApiId(), completion);
+        } else {
+            cancelFlattenOnline(msg.getCancellationApiId(), completion);
+        }
+    }
+
+    private void flattenVm(FlattenVmInstanceMsg msg, ReturnValueCompletion<VmInstanceInventory> completion) {
+        refreshVO();
+        ErrorCode err = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (err != null) {
+            completion.fail(err);
+            return;
+        }
+
+        TaskProgressRange parentStage = getTaskStage();
+
+        List<VolumeInventory> vols = new ArrayList<>();
+        List<Long> weights = self.getAllDiskVolumes().stream().map(it -> 1L).collect(Collectors.toList());
+        List<TaskProgressRange> stages = splitTaskStage(parentStage, weights);
+        new While<>(self.getAllDiskVolumes()).each((vol, compl) -> {
+            TaskProgressRange stage = markTaskStage(stages.remove(0));
+            if (vol.isShareable()) {
+                vols.add(vol.toInventory());
+                reportProgress(stage.getEnd().toString());
+                compl.done();
+                return;
+            }
+
+            FlattenVolumeMsg fmsg = new FlattenVolumeMsg();
+            fmsg.setUuid(vol.getUuid());
+            fmsg.setDryRun(msg.isDryRun());
+            bus.makeTargetServiceIdByResourceUuid(fmsg, VolumeConstant.SERVICE_ID, fmsg.getVolumeUuid());
+            bus.send(fmsg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        compl.addError(reply.getError());
+                        compl.allDone();
+                        return;
+                    }
+
+                    vols.add(((FlattenVolumeReply) reply).getInventory());
+                    reportProgress(stage.getEnd().toString());
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+
+                if (!msg.isDryRun()) {
+                    refreshVO();
+                    completion.success(getSelfInventory());
+                    return;
+                }
+
+                VmInstanceInventory inv = getSelfInventory();
+                inv.setAllVolumes(vols);
+                completion.success(inv);
+            }
+        });
+    }
+
+    private void cancelFlattenOnline(String apiId, Completion completion) {
+        CancelHostTaskMsg cmsg = new CancelHostTaskMsg();
+        cmsg.setHostUuid(self.getHostUuid());
+        cmsg.setCancellationApiId(apiId);
+        bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, self.getUuid());
+        bus.send(cmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                completion.success();
+            }
+        });
+    }
+
+    private void cancelFlattenOffline(String apiId, Completion completion) {
+        Set<String> volPsUuids = self.getAllDiskVolumes().stream().map(VolumeVO::getPrimaryStorageUuid).collect(Collectors.toSet());
+        new While<>(volPsUuids).all((psUuid, compl) ->{
+            CancelJobOnPrimaryStorageMsg cmsg = new CancelJobOnPrimaryStorageMsg();
+            cmsg.setPrimaryStorageUuid(psUuid);
+            cmsg.setCancellationApiId(apiId);
+            bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, psUuid);
+            bus.send(cmsg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        compl.addError(reply.getError());
+                        compl.done();
+                        return;
+                    }
+
+                    compl.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+
+                completion.success();
             }
         });
     }

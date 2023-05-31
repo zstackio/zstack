@@ -723,7 +723,7 @@ public class KVMHost extends HostBase implements Host {
 
     private void handleRebootHostByIpmi(RebootHostMsg msg, NoErrorCompletion completion) {
         RebootHostReply reply = new RebootHostReply();
-        kvmHostIpmiPowerExecutor.powerReset(self, new Completion(msg) {
+        kvmHostIpmiPowerExecutor.powerReset(self, new Completion(msg, completion) {
             @Override
             public void success() {
                 changeConnectionState(HostStatusEvent.disconnected);
@@ -733,12 +733,15 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                if (msg.isReturnEarly()) {
+                    return;
+                }
                 reply.setSuccess(false);
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
                 completion.done();
             }
-        });
+        }, msg.isReturnEarly());
     }
 
     private void handle(PowerOnHostMsg msg) {
@@ -754,7 +757,7 @@ public class KVMHost extends HostBase implements Host {
 
     private void handlePowerOnHost(PowerOnHostMsg msg, NoErrorCompletion completion) {
         PowerOnHostReply reply = new PowerOnHostReply();
-        Completion newCompletion = new Completion(completion) {
+        Completion c = new Completion(msg, completion) {
             @Override
             public void success() {
                 if (msg.isReturnEarly()) {
@@ -820,12 +823,12 @@ public class KVMHost extends HostBase implements Host {
             }
         };
 
-        kvmHostIpmiPowerExecutor.powerOn(self, newCompletion);
+        kvmHostIpmiPowerExecutor.powerOn(self, c);
     }
 
     private void handleShutdownHostByIpmi(ShutdownHostMsg msg, NoErrorCompletion completion) {
         ShutdownHostReply reply = new ShutdownHostReply();
-        Completion newCompletion = new Completion(completion) {
+        Completion c = new Completion(msg, completion) {
             @Override
             public void success() {
                 changeConnectionState(HostStatusEvent.disconnected);
@@ -839,6 +842,9 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                if (msg.isReturnEarly()) {
+                    return;
+                }
                 reply.setSuccess(false);
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
@@ -846,13 +852,14 @@ public class KVMHost extends HostBase implements Host {
             }
 
             private void submitTaskWaitHostShutdownByIpmi() {
-                HostVO host = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
                 long timeoutInSec = KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Integer.class).longValue();
                 long ctimeout = TimeUnit.SECONDS.toMillis(timeoutInSec);
                 Long deadline = timeHelper.getCurrentTimeMillis() + ctimeout;
                 thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
                     @Override
                     public boolean run() {
+                        HostVO host = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
+
                         if (timeHelper.getCurrentTimeMillis() > deadline) {
                             reply.setError(operr(String.format("Host[%s] has not been shut down within %d seconds for an unknown reason. Please check host status in BMC[%s]", msg.getHostUuid(), timeoutInSec, host.getIpmi().getIpmiAddress())));
                             reply.setSuccess(false);
@@ -891,7 +898,7 @@ public class KVMHost extends HostBase implements Host {
                 });
             }
         };
-        kvmHostIpmiPowerExecutor.powerOff(self, msg.isForce(), newCompletion);
+        kvmHostIpmiPowerExecutor.powerOff(self, msg.isForce(), c, msg.isReturnEarly());
     }
 
     private void handle(RebootHostMsg msg) {
@@ -2112,14 +2119,12 @@ public class KVMHost extends HostBase implements Host {
             }
         }
 
-        VolumeSnapshotInventory snapshot = msg.getFrom();
         MergeSnapshotCmd cmd = new MergeSnapshotCmd();
         cmd.setFullRebase(msg.isFullRebase());
         cmd.setDestPath(volume.getInstallPath());
-        cmd.setSrcPath(snapshot.getPrimaryStorageInstallPath());
+        cmd.setSrcPath(msg.getFrom() != null ? msg.getFrom().getPrimaryStorageInstallPath() : null);
         cmd.setVmUuid(volume.getVmInstanceUuid());
         cmd.setVolume(VolumeTO.valueOf(volume, (KVMHostInventory) getSelfInventory()));
-        cmd.setTimeout(timeoutManager.getTimeoutSeconds());
 
         extEmitter.beforeMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
         new Http<>(mergeSnapshotPath, cmd, MergeSnapshotRsp.class)
@@ -3345,6 +3350,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         if (cmd.isUseNuma()) {
+            cmd.setMaxVcpuNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, spec.getVmInventory().getUuid(), Integer.class));
             return;
         }
 

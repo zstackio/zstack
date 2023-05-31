@@ -5,6 +5,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostIpmiVO;
@@ -27,17 +28,24 @@ import static org.zstack.core.Platform.operr;
 public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     @Autowired
     DatabaseFacade dbf;
+
     protected static HostPowerStatus mockedPowerStatus;
     protected static boolean mockFail = false;
 
     private static final CLogger logger = Utils.getLogger(HostIpmiPowerExecutor.class);
 
     @Override
-    public void powerOff(HostVO host, Boolean force, Completion completion) {
+    public void powerOff(HostVO host, Boolean force, Completion completion, boolean returnEarly) {
         if (HostPowerStatus.POWER_OFF.equals(refreshHostPowerStatus(host).getIpmiPowerStatus())) {
             logger.debug(String.format("host[%s:%d] is already powered off",
                     host.getIpmi().getIpmiAddress(), host.getIpmi().getIpmiPort()));
             completion.success();
+            return;
+        }
+
+        if (returnEarly) {
+            completion.success();
+            powerOff(host, force);
             return;
         }
 
@@ -79,6 +87,9 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
 
     public HostIpmiVO refreshHostPowerStatus(HostIpmiVO ipmi) {
         HostPowerStatus status = getPowerStatus(ipmi);
+        if (status == ipmi.getIpmiPowerStatus()) {
+            return ipmi;
+        }
         return updateIpmiPowerStatusInDB(ipmi, status);
     }
 
@@ -122,11 +133,17 @@ public abstract class HostIpmiPowerExecutor implements HostPowerExecutor {
     }
 
     @Override
-    public void powerReset(HostVO host, Completion completion) {
+    public void powerReset(HostVO host, Completion completion, boolean returnEarly) {
         if (HostPowerStatus.POWER_OFF.equals(refreshHostPowerStatus(host).getIpmiPowerStatus())) {
             ErrorCode err = operr(String.format("reboot host[%s:%d] failed. because host is already powered off",
                     host.getIpmi().getIpmiAddress(), host.getIpmi().getIpmiPort()));
             completion.fail(err);
+            return;
+        }
+
+        if (returnEarly) {
+            completion.success();
+            powerReset(host);
             return;
         }
 

@@ -22,10 +22,12 @@ import org.zstack.header.message.MulitpleOverlayReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.header.volume.VolumeDeletionStruct;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -81,11 +83,11 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
         }
     }
 
-    private VolumeSnapshotDeletionMsg makeMsg(final String suuid, boolean volumeDeletion) {
-        SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
-        sq.select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid);
-        sq.add(VolumeSnapshotVO_.uuid, Op.EQ, suuid);
-        Tuple t = sq.findTuple();
+    private static VolumeSnapshotDeletionMsg buildMsg(final String suuid, boolean volumeDeletion) {
+        Tuple t = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, suuid)
+                .select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid)
+                .findTuple();
+
         String volumeUuid = t.get(0, String.class);
         String treeUuid = t.get(1, String.class);
 
@@ -94,10 +96,18 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
         msg.setTreeUuid(treeUuid);
         msg.setVolumeUuid(volumeUuid);
         msg.setVolumeDeletion(volumeDeletion);
-        String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
-        bus.makeTargetServiceIdByResourceUuid(msg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
-
         return msg;
+    }
+
+    private VolumeSnapshotDeletionMsg makeMsg(final String suuid, boolean volumeDeletion) {
+        VolumeSnapshotDeletionMsg msg = buildMsg(suuid, volumeDeletion);
+        setTargetServiceId(msg);
+        return msg;
+    }
+
+    private void setTargetServiceId(VolumeSnapshotDeletionMsg msg) {
+        String resourceUuid = msg.getVolumeUuid() != null ? msg.getVolumeUuid() : msg.getTreeUuid();
+        bus.makeTargetServiceIdByResourceUuid(msg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
     }
 
     private void handleDeletion(final CascadeAction action, final Completion completion) {
@@ -185,32 +195,63 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
     }
 
     private List<VolumeSnapshotDeletionMsg> handleVolumeDeletion(VolumeDeletionStruct vol) {
-        if (!VolumeDeletionPolicy.Direct.toString().equals(vol.getDeletionPolicy())) {
-            return new ArrayList<>();
+        if (VolumeDeletionPolicy.Direct.toString().equals(vol.getDeletionPolicy())) {
+            List<VolumeSnapshotDeletionMsg> msgs = handleVolumeExpunge(vol.getInventory().getUuid());
+            msgs.forEach(this::setTargetServiceId);
+            return msgs;
         }
 
-        List<VolumeSnapshotDeletionMsg> ret = new ArrayList<>();
-        SimpleQuery<VolumeSnapshotTreeVO> cq = dbf.createQuery(VolumeSnapshotTreeVO.class);
-        cq.select(VolumeSnapshotTreeVO_.uuid);
-        cq.add(VolumeSnapshotTreeVO_.volumeUuid, Op.EQ, vol.getInventory().getUuid());
-        List<String> cuuids = cq.listValue();
-        for (String cuuid : cuuids) {
+        return Collections.emptyList();
+    }
+
+    static List<VolumeSnapshotDeletionMsg> handleVolumeExpunge(String volumeUuid) {
+        List<String> cuuids = Q.New(VolumeSnapshotTreeVO.class).select(VolumeSnapshotTreeVO_.uuid)
+                .eq(VolumeSnapshotTreeVO_.volumeUuid, volumeUuid)
+                .listValues();
+
+        Map<String, List<String>> referenceSnapshotTrees = VolumeSnapshotReferenceUtils
+                .getDirectReferencedSnapshotUuidsGroupByTree(volumeUuid);
+
+        return cuuids.stream().flatMap(it ->
+                        getDeletableSnapshotUuidOnVolumeExpunge(it,  referenceSnapshotTrees.get(it)).stream())
+                .map(it -> buildMsg(it, true))
+                .collect(Collectors.toList());
+    }
+
+    private static Set<String> getDeletableSnapshotUuidOnVolumeExpunge(String treeUuid, List<String> protectedSnapshotUuids) {
+        if (CollectionUtils.isEmpty(protectedSnapshotUuids)) {
             // deleting full snapshot of chain will cause whole chain to be deleted
-            SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-            q.select(VolumeSnapshotVO_.uuid);
-            q.add(VolumeSnapshotVO_.treeUuid, Op.EQ, cuuid);
-            q.add(VolumeSnapshotVO_.parentUuid, Op.NULL);
-            String suuid = q.findValue();
+            String suuid = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid)
+                    .eq(VolumeSnapshotVO_.treeUuid, treeUuid)
+                    .isNull(VolumeSnapshotVO_.parentUuid)
+                    .findValue();
 
             if (suuid == null) {
                 // this is a storage snapshot, don't delete it on primary storage
-                continue;
+                return Collections.emptySet();
+            } else {
+                return Collections.singleton(suuid);
             }
-
-            ret.add(makeMsg(suuid, true));
         }
 
-        return ret;
+        List<VolumeSnapshotVO> vos = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.treeUuid, treeUuid).list();
+        VolumeSnapshotTree tree = VolumeSnapshotTree.fromVOs(vos);
+
+        Set<String> deletableSnapshotUuids = vos.stream().map(ResourceVO::getUuid).collect(Collectors.toSet());
+        deletableSnapshotUuids.removeAll(protectedSnapshotUuids);
+        tree.getRoot().walkDownAll(leaf -> {
+            if (protectedSnapshotUuids.contains(leaf.getUuid())) {
+                deletableSnapshotUuids.retainAll(leaf.getDescendants().stream().map(VolumeSnapshotInventory::getUuid).collect(Collectors.toSet()));
+            }
+        });
+
+        tree.getRoot().walkDownAll(leaf -> {
+            if (leaf.getParent() != null && deletableSnapshotUuids.contains(leaf.getParent().getUuid())) {
+                deletableSnapshotUuids.remove(leaf.getUuid());
+            }
+        });
+
+        return deletableSnapshotUuids;
     }
 
     private void handleDeletionCheck(CascadeAction action, Completion completion) {

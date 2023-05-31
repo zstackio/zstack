@@ -146,10 +146,10 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         List<DetachNicFromVmMsg> dmsgs  = new ArrayList<>();
 
         for (L2NetworkDetachStruct s : structs) {
-            String sql = "select vm.uuid, nic.uuid from VmInstanceVO vm, VmNicVO nic, L3NetworkVO l3, UsedIpVO ip"
+            String sql = "select vm.uuid, nic.uuid from VmInstanceVO vm, VmNicVO nic, L3NetworkVO l3"
                     + " where vm.clusterUuid = :clusterUuid"
                     + " and l3.l2NetworkUuid = :l2NetworkUuid"
-                    + " and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid "
+                    + " and nic.l3NetworkUuid = l3.uuid"
                     + " and nic.vmInstanceUuid = vm.uuid";
             TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
             q.setParameter("clusterUuid", s.getClusterUuid());
@@ -654,11 +654,11 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 @Override
                 @Transactional(readOnly = true)
                 public List<VmInstanceVO> call() {
-                    String sql = "select vm from VmInstanceVO vm, L3NetworkVO l3, VmNicVO nic, UsedIpVO ip" +
+                    String sql = "select vm from VmInstanceVO vm, L3NetworkVO l3, VmNicVO nic" +
                             " where vm.type = :vmType" +
                             " and vm.uuid = nic.vmInstanceUuid" +
                             " and vm.state in (:vmStates)" +
-                            " and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
+                            " and nic.l3NetworkUuid = l3.uuid" +
                             " and l3.uuid in (:uuids)" +
                             " group by vm.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);

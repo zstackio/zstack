@@ -12,6 +12,7 @@ import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMs
 import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageMsg;
 import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageReply;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -167,6 +168,13 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(EstimateVolumeTemplateSizeOnPrimaryStorageMsg msg) {
+        SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
+        reply.setActualSize(0);
+        bus.reply(msg, reply);
+    }
+
+    @Override
     protected void handle(BatchSyncVolumeSizeOnPrimaryStorageMsg msg) {
         BatchSyncVolumeSizeOnPrimaryStorageReply reply = new BatchSyncVolumeSizeOnPrimaryStorageReply();
         Map<String, Long> actualSize = msg.getVolumeUuidInstallPaths()
@@ -179,6 +187,12 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     protected void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg) {
         MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
         reply.setSuccess(true);
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(FlattenVolumeOnPrimaryStorageMsg msg) {
+        FlattenVolumeOnPrimaryStorageReply reply = new FlattenVolumeOnPrimaryStorageReply();
         bus.reply(msg, reply);
     }
 
