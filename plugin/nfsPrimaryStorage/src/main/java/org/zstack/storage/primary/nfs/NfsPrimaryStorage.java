@@ -47,6 +47,7 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.*;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
@@ -63,6 +64,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -1769,8 +1771,38 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
+    private ErrorCode checkChangeVolumeType(String volumeUuid) {
+        List<VolumeInventory> refVols = VolumeSnapshotReferenceUtils.getReferenceVolume(volumeUuid);
+        if (refVols.isEmpty()) {
+            return null;
+        }
+
+        List<String> infos = refVols.stream().map(v -> String.format("uuid:%s, name:%s", v.getUuid(), v.getName())).collect(Collectors.toList());
+        return operr("volume[uuid:%s] has reference volume[%s], can not change volume type before flatten " +
+                "them and their descendants", volumeUuid, infos.toString());
+    }
+
+    @Override
+    protected void handle(CheckChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        CheckChangeVolumeTypeOnPrimaryStorageReply reply = new CheckChangeVolumeTypeOnPrimaryStorageReply();
+        ErrorCode errorCode = checkChangeVolumeType(msg.getVolume().getUuid());
+        if (errorCode != null) {
+            reply.setError(errorCode);;
+        }
+
+        bus.reply(msg, reply);
+    }
+
     @Override
     protected void handle(ChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        ErrorCode errorCode = checkChangeVolumeType(msg.getVolume().getUuid());
+        if (errorCode != null) {
+            ChangeVolumeTypeOnPrimaryStorageReply reply = new ChangeVolumeTypeOnPrimaryStorageReply();
+            reply.setError(errorCode);
+            bus.reply(msg, reply);
+            return;
+        }
+
         NfsPrimaryStorageBackend backend = getUsableBackend();
         if (backend == null) {
             throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",

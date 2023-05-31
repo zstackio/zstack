@@ -1653,8 +1653,55 @@ public class VolumeBase implements Volume {
             VolumeInventory oldRootVol;
             final Map<VolumeInventory, String> installPathsToGc = new HashMap<>();
 
+            final VolumeVO originVol = Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Root)
+                    .eq(VolumeVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                    .find();
+
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "check-operation-allowed";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<VolumeInventory> vols = new ArrayList<>();
+                        vols.add(getSelfInventory());
+                        vols.add(originVol.toInventory());
+                        new While<>(vols).each((vol, compl) -> {
+                            CheckChangeVolumeTypeOnPrimaryStorageMsg cmsg = new CheckChangeVolumeTypeOnPrimaryStorageMsg();
+                            cmsg.setVolume(vol);
+                            if (vol.getUuid().equals(self.getUuid())) {
+                                cmsg.setTargetType(VolumeType.Root);
+                            } else {
+                                cmsg.setTargetType(VolumeType.Data);
+                            }
+                            bus.makeLocalServiceId(cmsg, PrimaryStorageConstant.SERVICE_ID);
+                            bus.send(cmsg, new CloudBusCallBack(compl) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        compl.addError(reply.getError());
+                                        compl.allDone();
+                                        return;
+                                    }
+
+                                    compl.done();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (!errorCodeList.getCauses().isEmpty()) {
+                                    trigger.fail(errorCodeList.getCauses().get(0));
+                                    return;
+                                }
+
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "change-new-root-volume-type";
 
@@ -1690,10 +1737,6 @@ public class VolumeBase implements Volume {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        VolumeVO originVol = Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Root)
-                                .eq(VolumeVO_.vmInstanceUuid, msg.getVmInstanceUuid())
-                                .find();
-
                         ChangeVolumeTypeOnPrimaryStorageMsg cmsg = new ChangeVolumeTypeOnPrimaryStorageMsg();
                         cmsg.setTargetType(VolumeType.Data);
                         cmsg.setVolume(VolumeInventory.valueOf(originVol));

@@ -83,6 +83,14 @@ public class VolumeSnapshotReferenceUtils {
                 .collect(Collectors.toList());
     }
 
+    public static List<VolumeInventory> getReferenceVolume(String volumeUuid) {
+        return SQL.New("select vol from VolumeVO vol, VolumeSnapshotReferenceVO ref" +
+                " where ref.volumeUuid = :volumeUuid" +
+                " and ref.referenceVolumeUuid = vol.uuid", VolumeVO.class)
+                .param("volumeUuid", volumeUuid)
+                .list().stream().map(it -> VolumeInventory.valueOf((VolumeVO)it)).collect(Collectors.toList());
+    }
+
     public static void handleChainVolumeSnapshotReferenceAfterFlatten(VolumeInventory volume) {
         VolumeSnapshotReferenceVO ref = getVolumeBackingRef(volume.getUuid());
         if (ref == null) {

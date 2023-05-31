@@ -42,6 +42,7 @@ import org.zstack.header.volume.*;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
+import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionDSL;
@@ -3124,8 +3125,38 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bus.reply(msg, r);
     }
 
+    private ErrorCode checkChangeVolumeType(String volumeUuid) {
+        List<VolumeInventory> refVols = VolumeSnapshotReferenceUtils.getReferenceVolume(volumeUuid);
+        if (refVols.isEmpty()) {
+            return null;
+        }
+
+        List<String> infos = refVols.stream().map(v -> String.format("uuid:%s, name:%s", v.getUuid(), v.getName())).collect(Collectors.toList());
+        return operr("volume[uuid:%s] has reference volume[%s], can not change volume type before flatten " +
+                "them and their descendants", volumeUuid, infos.toString());
+    }
+
+    @Override
+    protected void handle(CheckChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        CheckChangeVolumeTypeOnPrimaryStorageReply reply = new CheckChangeVolumeTypeOnPrimaryStorageReply();
+        ErrorCode errorCode = checkChangeVolumeType(msg.getVolume().getUuid());
+        if (errorCode != null) {
+            reply.setError(errorCode);;
+        }
+
+        bus.reply(msg, reply);
+    }
+
     @Override
     protected void handle(ChangeVolumeTypeOnPrimaryStorageMsg msg) {
+        ErrorCode errorCode = checkChangeVolumeType(msg.getVolume().getUuid());
+        if (errorCode != null) {
+            ChangeVolumeTypeOnPrimaryStorageReply reply = new ChangeVolumeTypeOnPrimaryStorageReply();
+            reply.setError(errorCode);
+            bus.reply(msg, reply);
+            return;
+        }
+
         LocalStorageHypervisorFactory factory = getHypervisorBackendFactoryByResourceUuid(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName());
         factory.getHypervisorBackend(self).handle(msg, new ReturnValueCompletion<ChangeVolumeTypeOnPrimaryStorageReply>(msg) {
             @Override
