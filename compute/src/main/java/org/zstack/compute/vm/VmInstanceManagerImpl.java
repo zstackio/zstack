@@ -713,12 +713,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     if (!re.getHosts().isEmpty()) {
                         areply.setHosts(re.getHosts());
 
-                        List<String> clusterUuids = re.getHosts().stream().
-                                map(HostInventory::getClusterUuid).collect(Collectors.toList());
-                        areply.setClusters(ClusterInventory.valueOf(dbf.listByPrimaryKeys(clusterUuids, ClusterVO.class)));
+                        Set<String> clusterUuids = re.getHosts().stream().
+                                map(HostInventory::getClusterUuid).collect(Collectors.toSet());
+                        List<ClusterInventory> clusters = ClusterInventory.valueOf(dbf.listByPrimaryKeys(clusterUuids, ClusterVO.class));
+                        areply.setClusters(clusters);
 
-                        List<String> zoneUuids = re.getHosts().stream().
-                                map(HostInventory::getZoneUuid).collect(Collectors.toList());
+                        Set<String> zoneUuids = clusters.stream().
+                                map(ClusterInventory::getZoneUuid).collect(Collectors.toSet());
                         areply.setZones(ZoneInventory.valueOf(dbf.listByPrimaryKeys(zoneUuids, ZoneVO.class)));
                     } else {
                         areply.setHosts(new ArrayList<>());
