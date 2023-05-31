@@ -179,8 +179,10 @@ class TestUserDataBatchApllyCase extends SubCase {
         deleteL3Network {
             uuid = l31.uuid
         }
-        assert ccmd.l3NetworkUuid == l31.uuid
 
+        retryInSecs {
+            assert ccmd.l3NetworkUuid == l31.uuid
+        }
     }
 }
 
