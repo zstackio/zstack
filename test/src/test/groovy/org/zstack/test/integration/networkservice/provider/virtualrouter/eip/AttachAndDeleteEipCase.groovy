@@ -302,9 +302,10 @@ class AttachAndDeleteEipCase extends SubCase{
         process = false
 
         env.simulator(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH) {
-            retryInSecs{
-                assert process
+            while (!process) {
+                Thread.sleep(100)
             }
+
             return new LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsRsp()
         }
 
@@ -324,6 +325,11 @@ class AttachAndDeleteEipCase extends SubCase{
         testAttachEipToVmAndDeleteEip(VmInstanceState.VolumeMigrating)
         process = true
         thread.join()
+
+        retryInSecs(5, 1){
+            assert !Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
+                    .eq(VmInstanceVO_.state, VmInstanceState.VolumeMigrating).exists
+        }
         env.cleanSimulatorHandlers()
     }
 
