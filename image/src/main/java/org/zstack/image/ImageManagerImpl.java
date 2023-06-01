@@ -1199,78 +1199,76 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
             @Override
             protected AsyncBatchRunner forEach(DownloadImageMsg dmsg) {
-                return new AsyncBatchRunner() {
-                    @Override
-                    public void run(NoErrorCompletion completion) {
-                        ImageBackupStorageRefVO ref = Q.New(ImageBackupStorageRefVO.class)
-                                .eq(ImageBackupStorageRefVO_.imageUuid, ivo.getUuid())
-                                .eq(ImageBackupStorageRefVO_.backupStorageUuid, dmsg.getBackupStorageUuid())
-                                .find();
-                        bus.send(dmsg, new CloudBusCallBack(completion) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    errors.add(reply.getError());
-                                    dbf.remove(ref);
-                                } else {
-                                    DownloadImageReply re = reply.castReply();
-                                    ref.setInstallPath(re.getInstallPath());
+                return (completion) -> {
+                    ImageBackupStorageRefVO ref = Q.New(ImageBackupStorageRefVO.class)
+                            .eq(ImageBackupStorageRefVO_.imageUuid, ivo.getUuid())
+                            .eq(ImageBackupStorageRefVO_.backupStorageUuid, dmsg.getBackupStorageUuid())
+                            .find();
+                    bus.send(dmsg, new CloudBusCallBack(completion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                errors.add(reply.getError());
+                                dbf.remove(ref);
+                                completion.done();
+                                return;
+                            }
 
-                                    if (isUpload(msgData.getUrl())) {
-                                        tracker.addTrackTask(ivo, ref);
-                                    } else {
-                                        ref.setStatus(ImageStatus.Ready);
-                                    }
+                            DownloadImageReply re = reply.castReply();
+                            ref.setInstallPath(re.getInstallPath());
 
-                                    if (dbf.reload(ref) == null) {
-                                        logger.debug(String.format("image[uuid: %s] has been deleted", ref.getImageUuid()));
-                                        completion.done();
-                                        return;
-                                    }
+                            if (isUpload(msgData.getUrl())) {
+                                tracker.addTrackTask(ivo, ref);
+                            } else {
+                                ref.setStatus(ImageStatus.Ready);
+                            }
 
-                                    dbf.update(ref);
+                            if (dbf.reload(ref) == null) {
+                                logger.debug(String.format("image[uuid: %s] has been deleted", ref.getImageUuid()));
+                                completion.done();
+                                return;
+                            }
 
-                                    if (resultMap.get(ref.getBackupStorageUuid()).compareAndSet(false, true)) {
-                                        // In case 'Platform' etc. is changed.
-                                        ImageVO vo = dbf.reload(ivo);
-                                        vo.setMd5Sum(re.getMd5sum());
-                                        vo.setSize(re.getSize());
-                                        vo.setActualSize(re.getActualSize());
-                                        vo.setUrl(URLBuilder.hideUrlPassword(vo.getUrl()));
-                                        if (StringUtils.isNotEmpty(re.getFormat())) {
-                                            vo.setFormat(re.getFormat());
-                                        }
-                                        if (vo.getFormat().equals(ImageConstant.ISO_FORMAT_STRING)
-                                                && ImageMediaType.RootVolumeTemplate.equals(vo.getMediaType())) {
-                                            vo.setMediaType(ImageMediaType.ISO);
-                                        }
-                                        if (ImageConstant.QCOW2_FORMAT_STRING.equals(vo.getFormat())
-                                                && ImageMediaType.ISO.equals(vo.getMediaType())) {
-                                            vo.setMediaType(ImageMediaType.RootVolumeTemplate);
-                                        }
+                            dbf.update(ref);
 
-                                        if (resultMap.entrySet().stream().allMatch(entry -> entry.getValue().get())) {
-                                            vo.setStatus(ref.getStatus());
-                                        }
-
-                                        dbf.update(vo);
-                                    }
-
-                                    if (isUpload(msgData.getUrl())) {
-                                        logger.debug(String.format("created upload request, image[uuid:%s, name:%s] to backup storage[uuid:%s]",
-                                                inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
-                                    } else {
-                                        logger.debug(String.format("successfully downloaded image[uuid:%s, name:%s] to backup storage[uuid:%s]",
-                                                inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
-                                    }
-                                    pluginRgty.getExtensionList(AfterAddImageExtensionPoint.class).forEach(exp -> exp.saveEncryptAfterAddImage(vo.getUuid()));
-
+                            if (resultMap.get(ref.getBackupStorageUuid()).compareAndSet(false, true)) {
+                                // In case 'Platform' etc. is changed.
+                                ImageVO vo1 = dbf.reload(ivo);
+                                vo1.setMd5Sum(re.getMd5sum());
+                                vo1.setSize(re.getSize());
+                                vo1.setActualSize(re.getActualSize());
+                                vo1.setUrl(URLBuilder.hideUrlPassword(vo1.getUrl()));
+                                if (StringUtils.isNotEmpty(re.getFormat())) {
+                                    vo1.setFormat(re.getFormat());
+                                }
+                                if (vo1.getFormat().equals(ImageConstant.ISO_FORMAT_STRING)
+                                        && ImageMediaType.RootVolumeTemplate.equals(vo1.getMediaType())) {
+                                    vo1.setMediaType(ImageMediaType.ISO);
+                                }
+                                if (ImageConstant.QCOW2_FORMAT_STRING.equals(vo1.getFormat())
+                                        && ImageMediaType.ISO.equals(vo1.getMediaType())) {
+                                    vo1.setMediaType(ImageMediaType.RootVolumeTemplate);
                                 }
 
-                                completion.done();
+                                if (resultMap.entrySet().stream().allMatch(entry -> entry.getValue().get())) {
+                                    vo1.setStatus(ref.getStatus());
+                                }
+
+                                dbf.update(vo1);
                             }
-                        });
-                    }
+
+                            if (isUpload(msgData.getUrl())) {
+                                logger.debug(String.format("created upload request, image[uuid:%s, name:%s] to backup storage[uuid:%s]",
+                                        inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
+                            } else {
+                                logger.debug(String.format("successfully downloaded image[uuid:%s, name:%s] to backup storage[uuid:%s]",
+                                        inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
+                            }
+                            pluginRgty.getExtensionList(AfterAddImageExtensionPoint.class).forEach(exp -> exp.saveEncryptAfterAddImage(vo.getUuid()));
+
+                            completion.done();
+                        }
+                    });
                 };
             }
 
