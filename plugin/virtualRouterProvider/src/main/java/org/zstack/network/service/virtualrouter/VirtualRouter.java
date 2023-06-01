@@ -1008,6 +1008,8 @@ public class VirtualRouter extends ApplianceVmBase {
         chain.insert(new Flow() {
             String __name__ = "change-appliancevm-status-to-connecting";
 
+            ApplianceVmStatus originStatus = getSelf().getStatus();
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 changeApplianceVmStatus(ApplianceVmStatus.Connecting);
@@ -1017,8 +1019,6 @@ public class VirtualRouter extends ApplianceVmBase {
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
-                fireDisconnectedCanonicalEvent(operr("appliance vm %s reconnect failed",
-                        getSelf().getUuid()));
                 trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
