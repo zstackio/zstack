@@ -28,6 +28,9 @@ public class ReloadLicenseAction extends AbstractAction {
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List managementNodeUuids;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String additionSession;
+
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -53,9 +56,9 @@ public class ReloadLicenseAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-        
+
         org.zstack.sdk.ReloadLicenseResult value = res.getResult(org.zstack.sdk.ReloadLicenseResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ReloadLicenseResult() : value; 
+        ret.value = value == null ? new org.zstack.sdk.ReloadLicenseResult() : value;
 
         return ret;
     }
