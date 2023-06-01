@@ -75,7 +75,7 @@
 		<name>upload.failure.tolerance.count</name>
 		<description>number of errors can be tolerated when uploading images</description>
 		<category>image</category>
-		<defaultValue>3</defaultValue>
+		<defaultValue>1</defaultValue>
 		<type>java.lang.Long</type>
 	</config>
 
@@ -83,7 +83,7 @@
 		<name>upload.max.idle.duration.in.seconds</name>
 		<description>the max duration can be tolerated when uploading images, in seconds</description>
 		<category>image</category>
-		<defaultValue>30</defaultValue>
+		<defaultValue>1</defaultValue>
 		<type>java.lang.Long</type>
 	</config>
 </globalConfig>
