@@ -261,6 +261,23 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
     }
 
     @Override
+    public String makeSurePrimaryStorageInstallPathNotUsed(String installPath) {
+        String details = checkVolume(installPath);
+        if (details != null) {
+            return details;
+        }
+        details = checkImageCache(installPath);
+        if (details != null) {
+            return details;
+        }
+        details = checkVolumeSnapshot(installPath);
+        if (details != null) {
+            return details;
+        }
+        return null;
+    }
+
+    @Override
     public Long getTrashId(String storageUuid, String installPath) {
         DebugUtils.Assert(installPath != null, "installPath is not allowed null here");
         List<InstallPathRecycleVO> vos = Q.New(InstallPathRecycleVO.class).eq(InstallPathRecycleVO_.storageUuid, storageUuid).like(InstallPathRecycleVO_.installPath, String.format("%%%s%%", installPath)).list();
