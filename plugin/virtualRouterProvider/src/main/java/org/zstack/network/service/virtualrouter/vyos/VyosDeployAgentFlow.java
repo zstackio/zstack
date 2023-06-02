@@ -49,13 +49,13 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
     private ThreadFacade thdf;
 
 
-    private static String REMOTE_USER;
-    private static String REMOTE_PASS = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
-    private static int    REMOTE_PORT = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
+    private String REMOTE_USER;
+    private String REMOTE_PASS = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
+    private int    REMOTE_PORT = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
 
-    private static String REMOTE_ZVR_DIR;
-    private static String REMOTE_ZVR_BIN_PATH;
-    private static String REMOTE_ZVRBOOT_BIN_PATH;
+    private String REMOTE_ZVR_DIR;
+    private String REMOTE_ZVR_BIN_PATH;
+    private String REMOTE_ZVRBOOT_BIN_PATH;
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
