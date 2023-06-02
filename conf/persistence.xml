@@ -174,5 +174,6 @@
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO</class>
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO</class>
+        <class>org.zstack.storage.ceph.primary.CephOsdGroupVO</class>
     </persistence-unit>
 </persistence>

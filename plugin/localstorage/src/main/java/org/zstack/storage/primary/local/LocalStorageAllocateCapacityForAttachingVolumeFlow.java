@@ -94,7 +94,7 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
         amsg.setRequiredHostUuid(hostUuid);
         amsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         amsg.setSize(volume.getSize());
-        amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
+        amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
         bus.send(amsg, new CloudBusCallBack(trigger) {
             @Override
@@ -105,10 +105,10 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
                 }
 
                 spec.setDestHost(HostInventory.valueOf(dbf.findByUuid(hostUuid, HostVO.class)));
-
                 AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                 allocatedInstallUrl = ar.getAllocatedInstallUrl();
                 data.put(VmInstanceConstant.Params.DestPrimaryStorageInventoryForAttachingVolume.toString(), ar.getPrimaryStorageInventory());
+                data.put(VmInstanceConstant.Params.AllocatedUrlForAttachingVolume.toString(),allocatedInstallUrl);
                 data.put(LocalStorageAllocateCapacityForAttachingVolumeFlow.class, ar.getSize());
                 trigger.next();
             }

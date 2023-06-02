@@ -134,7 +134,8 @@ class CephBackupStorageSpec extends BackupStorageSpec {
                                 totalCapacity: bspec.totalCapacity,
                                 replicatedSize: 3,
                                 diskUtilization: 0.67,
-                                securityPolicy: DataSecurityPolicy.ErasureCode.toString()
+                                securityPolicy: DataSecurityPolicy.ErasureCode.toString(),
+                                relatedOsds: "osd.1"
                         )
                 ]
                 rsp.poolCapacities = poolCapacities

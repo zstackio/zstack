@@ -65,6 +65,7 @@ class CephOpenSourcePoolCapacityCase extends SubCase {
                             usedCapacity: SizeUnit.GIGABYTE.toByte(10),
                             availableCapacity : SizeUnit.GIGABYTE.toByte(90),
                             totalCapacity: SizeUnit.GIGABYTE.toByte(100),
+                            relatedOsds: "osd.1",
                             relatedOsdCapacity : osdMap,
                             diskUtilization: 0.33
                     ),
@@ -73,6 +74,7 @@ class CephOpenSourcePoolCapacityCase extends SubCase {
                             usedCapacity: SizeUnit.GIGABYTE.toByte(10),
                             availableCapacity : SizeUnit.GIGABYTE.toByte(90),
                             totalCapacity: SizeUnit.GIGABYTE.toByte(100),
+                            relatedOsds: "osd.2",
                             relatedOsdCapacity: osdMap,
                             diskUtilization: 0.33
                     ),
@@ -81,6 +83,7 @@ class CephOpenSourcePoolCapacityCase extends SubCase {
                             usedCapacity: SizeUnit.GIGABYTE.toByte(10),
                             availableCapacity : SizeUnit.GIGABYTE.toByte(90),
                             totalCapacity: SizeUnit.GIGABYTE.toByte(100),
+                            relatedOsds: "osd.3",
                             relatedOsdCapacity: osdMap,
                             diskUtilization: 0.33
                     ),
@@ -88,7 +91,8 @@ class CephOpenSourcePoolCapacityCase extends SubCase {
                             name : bs.poolName,
                             usedCapacity: SizeUnit.GIGABYTE.toByte(10),
                             availableCapacity : SizeUnit.GIGABYTE.toByte(90),
-                            totalCapacity: SizeUnit.GIGABYTE.toByte(100)
+                            totalCapacity: SizeUnit.GIGABYTE.toByte(100),
+                            relatedOsds: "osd.1",
                     )
             ]
             rsp.type = CephConstants.CEPH_MANUFACTURER_OPENSOURCE

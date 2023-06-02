@@ -255,6 +255,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             String primaryStorageInstallPath;
             String prePSInstallPath;
             String volumeFormat;
+            String allocatedInstallUrl;
 
             @Override
             public void setup() {
@@ -310,13 +311,12 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
                 flow(new Flow() {
                     String __name__ = "allocate-primary-storage";
-                    String allocatedInstallUrl;
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
                         amsg.setSize(template.getSize());
-                        amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
+                        amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
                         amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                         amsg.setRequiredHostUuid(msg.getHostUuid());
                         if (msg.getApiMsg() != null) {
@@ -372,6 +372,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         gmsg.setBackupStorageRef(ImageBackupStorageRefInventory.valueOf(targetBackupStorageRef));
                         gmsg.setImage(ImageInventory.valueOf(template));
                         gmsg.setHostUuid(msg.getHostUuid());
+                        gmsg.setAllocatedInstallUrl(allocatedInstallUrl);
                         bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
                         bus.send(gmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -401,6 +402,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         dmsg.setBackupStorageRef(ImageBackupStorageRefInventory.valueOf(targetBackupStorageRef));
                         dmsg.setImage(ImageInventory.valueOf(template));
                         dmsg.setHostUuid(msg.getHostUuid());
+                        dmsg.setAllocatedInstallUrl(allocatedInstallUrl);
                         bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
                         bus.send(dmsg, new CloudBusCallBack(trigger) {
                             @Override

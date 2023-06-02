@@ -34,6 +34,7 @@ public class CephDeleteVolumeGC extends TimeBasedGarbageCollector {
         DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
         msg.setPrimaryStorageUuid(primaryStorageUuid);
         msg.setInstallPath(volume.getInstallPath());
+        msg.setSize(volume.getSize());
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

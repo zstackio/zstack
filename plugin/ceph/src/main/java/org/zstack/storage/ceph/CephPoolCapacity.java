@@ -14,6 +14,7 @@ public class CephPoolCapacity {
     Long usedCapacity;
     Long totalCapacity;
     Map<String, OsdCapacity> relatedOsdCapacity;
+    String relatedOsds;
 
     public static class OsdCapacity {
         Long availableCapacity;
@@ -58,6 +59,14 @@ public class CephPoolCapacity {
 
     public void setRelatedOsdCapacity(Map<String, OsdCapacity> relatedOsdCapacity) {
         this.relatedOsdCapacity = relatedOsdCapacity;
+    }
+
+    public String getRelatedOsds() {
+        return relatedOsds;
+    }
+
+    public void setRelatedOsds(String relatedOsds) {
+        this.relatedOsds = relatedOsds;
     }
 
     public String getName() {

@@ -11,6 +11,15 @@ public class DownloadDataVolumeToPrimaryStorageMsg extends NeedReplyMessage impl
     private ImageInventory image;
     private String volumeUuid;
     private String hostUuid;
+    private String allocatedInstallUrl;
+
+    public String getAllocatedInstallUrl() {
+        return allocatedInstallUrl;
+    }
+
+    public void setAllocatedInstallUrl(String allocatedInstallUrl) {
+        this.allocatedInstallUrl = allocatedInstallUrl;
+    }
 
     public String getHostUuid() {
         return hostUuid;
