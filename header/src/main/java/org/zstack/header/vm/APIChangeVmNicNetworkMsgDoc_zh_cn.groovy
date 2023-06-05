@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "POST /v1/vm-instances/nics/{vmNicUuid}/l3-networks/{l3NetworkUuid}"
+			url "POST /v1/vm-instances/nics/{vmNicUuid}/l3-networks/{destL3NetworkUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -35,7 +35,7 @@ doc {
 					name "destL3NetworkUuid"
 					enclosedIn "params"
 					desc ""
-					location "body"
+					location "url"
 					type "String"
 					optional false
 					since "4.1.0"
@@ -59,6 +59,16 @@ doc {
 					type "List"
 					optional true
 					since "4.1.0"
+					
+				}
+				column {
+					name "staticIp"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
 					
 				}
 			}

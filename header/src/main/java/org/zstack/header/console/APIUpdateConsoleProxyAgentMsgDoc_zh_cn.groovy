@@ -61,6 +61,16 @@ doc {
 					since "2.3"
 					
 				}
+				column {
+					name "consoleProxyPort"
+					enclosedIn "updateConsoleProxyAgent"
+					desc ""
+					location "body"
+					type "int"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 

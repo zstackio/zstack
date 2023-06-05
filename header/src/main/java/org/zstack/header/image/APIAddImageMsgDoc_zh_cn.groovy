@@ -171,6 +171,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "virtio"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "boolean"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 

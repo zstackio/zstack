@@ -131,6 +131,16 @@ doc {
 					since "4.0"
 					values ("x86_64","aarch64","mips64el","loongarch64")
 				}
+				column {
+					name "virtio"
+					enclosedIn "updateImage"
+					desc ""
+					location "body"
+					type "Boolean"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 

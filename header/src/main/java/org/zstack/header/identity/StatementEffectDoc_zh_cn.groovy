@@ -7,15 +7,15 @@ doc {
 	title "在这里输入结构的名称"
 
 	field {
-		name "name"
-		desc "资源名称"
-		type "String"
+		name "Allow"
+		desc ""
+		type "StatementEffect"
 		since "0.6"
 	}
 	field {
-		name "ordinal"
+		name "Deny"
 		desc ""
-		type "int"
+		type "StatementEffect"
 		since "0.6"
 	}
 }
