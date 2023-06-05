@@ -31,7 +31,7 @@ public class GetVpcVRouterNetworkServiceStateAction extends AbstractAction {
     @Param(required = true, validValues = {"SNAT"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String networkService;
 
-    @Param(required = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String l3NetworkUuid;
 
     @Param(required = false)
