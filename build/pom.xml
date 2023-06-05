@@ -588,6 +588,11 @@
                     <artifactId>security-plugin</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>storage-encrypt-gateway</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
         <profile>
