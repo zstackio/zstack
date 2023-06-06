@@ -744,10 +744,10 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                     if (vfsPath.contains("@")) {
                         vfs.delete(vfsPath)
                         String volPath = vfsPath.split("@")[0]
-                        //assert getSnapshotPaths(vfs, volPath).isEmpty() : "the volume[%s] has snapshots, cannot delete it".format(volPath)
+                        assert getSnapshotPaths(vfs, volPath).isEmpty() : "the volume[%s] has snapshots, cannot delete it".format(volPath)
                         vfs.delete(volPath)
                     } else {
-                        //assert getSnapshotPaths(vfs, vfsPath).isEmpty() : "the volume[%s] has snapshots, cannot delete it".format(vfsPath)
+                        assert getSnapshotPaths(vfs, vfsPath).isEmpty() : "the volume[%s] has snapshots, cannot delete it".format(vfsPath)
                         vfs.delete(vfsPath)
                     }
                 }

@@ -20,7 +20,6 @@ import org.zstack.header.storage.primary.DeleteVolumeChainOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageMsg;
 import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageReply;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.reference.DeleteVolumeSnapshotReferenceLeafMsg;
 import org.zstack.header.storage.snapshot.reference.DeleteVolumeSnapshotReferenceLeafReply;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceInventory;
@@ -103,7 +102,7 @@ public class VolumeSnapshotReferenceTreeBase {
         Set<String> otherLeafDirectBackingInstallUrls = msg.getOtherLeafs().stream()
                 .map(VolumeSnapshotReferenceInventory::getDirectSnapshotInstallUrl)
                 .collect(Collectors.toSet());
-        if (hasSameVolumeResource(msg.getLeaf().getDirectSnapshotInstallUrl(), otherLeafDirectBackingInstallUrls)) {
+        if (otherLeafDirectBackingInstallUrls.contains(msg.getLeaf().getDirectSnapshotInstallUrl())) {
             logger.debug(String.format("other leafs has the same direct backing, skip delete leaf: [%d]", msg.getLeaf().getId()));
             completion.success();
             return;
@@ -191,7 +190,7 @@ public class VolumeSnapshotReferenceTreeBase {
                         .filter(e -> !e.getKey().equals(startPath))
                         .flatMap(e -> e.getValue().stream()).collect(Collectors.toSet());
 
-                filterDeletePaths(toDeletePaths, usedByOthersPaths);
+                toDeletePaths.removeAll(usedByOthersPaths);
                 logger.debug("delete snapshot reference leafs: " + toDeletePaths);
                 trigger.next();
             }

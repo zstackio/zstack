@@ -44,6 +44,7 @@ class CephRaw extends Raw {
         }
 
         parent = null
+        update()
         return this
     }
 }
