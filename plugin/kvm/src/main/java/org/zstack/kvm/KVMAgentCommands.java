@@ -1393,6 +1393,149 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class PreconfigureOvsDpdkCmd extends AgentCommand{
+        public long reserveSize;
+        public long pageSize;
+
+        public long getReserveSize() {
+            return reserveSize;
+        }
+
+        public void setReserveSize(long reserveSize) {
+            this.reserveSize = reserveSize;
+        }
+
+        public long getPageSize() {
+            return pageSize;
+        }
+
+        public void setPageSize(long pageSize) {
+            this.pageSize = pageSize;
+        }
+    }
+
+    public static class PreconfigureOvsDpdkCmdRsp extends KVMAgentCommands.AgentResponse {
+    }
+
+    public static class SyncVdpaCmd extends AgentCommand {
+        public List<OvsDpdkBridgeTO> ovsBridgeInfo;
+
+        public List<OvsDpdkBridgeTO> getOvsBridgeInfo() {
+            return ovsBridgeInfo;
+        }
+
+        public void setOvsBridgeInfo(List<OvsDpdkBridgeTO> ovsBridgeInfo) {
+            this.ovsBridgeInfo = ovsBridgeInfo;
+        }
+    }
+
+    public static class SyncVdpaRsp extends AgentResponse {
+    }
+
+    public static class OvsDpdkBridgeTO {
+        public String name;
+        public String physicalInterface;
+        public String phyType;
+        public List<OvsDpdkPortTO> ports;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getPhysicalInterface() {
+            return physicalInterface;
+        }
+
+        public void setPhysicalInterface(String physicalInterface) {
+            this.physicalInterface = physicalInterface;
+        }
+
+        public String getPhyType() {
+            return phyType;
+        }
+
+        public void setPhyType(String phyType) {
+            this.phyType = phyType;
+        }
+
+        public List<OvsDpdkPortTO> getPorts() {
+            return ports;
+        }
+
+        public void setPorts(List<OvsDpdkPortTO> ports) {
+            this.ports = ports;
+        }
+    }
+    public static class OvsDpdkPortTO {
+        public String type;
+        public String nicInternalName;
+        public String physicalInterface;
+        public String vmUuid;
+        public Integer vlanId;
+        public String pciDeviceAddress;
+        public String bridgeName;
+
+        public String getBridgeName() {
+            return bridgeName;
+        }
+
+        public void setBridgeName(String bridgeName) {
+            this.bridgeName = bridgeName;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getNicInternalName() {
+            return nicInternalName;
+        }
+
+        public void setNicInternalName(String nicInternalName) {
+            this.nicInternalName = nicInternalName;
+        }
+
+        public String getPhysicalInterface() {
+            return physicalInterface;
+        }
+
+        public void setPhysicalInterface(String physicalInterface) {
+            this.physicalInterface = physicalInterface;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public Integer getVlanId() {
+            return vlanId;
+        }
+
+        public void setVlanId(Integer vlanId) {
+            this.vlanId = vlanId;
+        }
+
+        public String getPciDeviceAddress() {
+            return pciDeviceAddress;
+        }
+
+        public void setPciDeviceAddress(String pciDeviceAddress) {
+            this.pciDeviceAddress = pciDeviceAddress;
+        }
+    }
+
     public static class DeleteVdpaCmd extends AgentCommand {
         public String vmUuid;
         public String nicInternalName;

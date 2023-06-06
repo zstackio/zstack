@@ -6362,6 +6362,33 @@ abstract class ApiHelper {
     }
 
 
+    def configurePhysicalNic(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ConfigurePhysicalNicAction.class) Closure c) {
+        def a = new org.zstack.sdk.ConfigurePhysicalNicAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def convertVmFromForeignHypervisor(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ConvertVmFromForeignHypervisorAction.class) Closure c) {
         def a = new org.zstack.sdk.ConvertVmFromForeignHypervisorAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -31611,6 +31638,33 @@ abstract class ApiHelper {
 
     def recoverImage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RecoverImageAction.class) Closure c) {
         def a = new org.zstack.sdk.RecoverImageAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def recoverPhysicalNic(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RecoverPhysicalNicAction.class) Closure c) {
+        def a = new org.zstack.sdk.RecoverPhysicalNicAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

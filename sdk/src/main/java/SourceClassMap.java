@@ -322,7 +322,6 @@ public class SourceClassMap {
 			put("org.zstack.header.tag.TagPatternInventory", "org.zstack.sdk.TagPatternInventory");
 			put("org.zstack.header.tag.TagPatternType", "org.zstack.sdk.TagPatternType");
 			put("org.zstack.header.tag.UserTagInventory", "org.zstack.sdk.UserTagInventory");
-			put("org.zstack.header.vdpa.VmVdpaNicInventory", "org.zstack.sdk.VmVdpaNicInventory");
 			put("org.zstack.header.vipQos.VipQosInventory", "org.zstack.sdk.VipQosInventory");
 			put("org.zstack.header.vm.CloneVmInstanceInventory", "org.zstack.sdk.CloneVmInstanceInventory");
 			put("org.zstack.header.vm.CloneVmInstanceResults", "org.zstack.sdk.CloneVmInstanceResults");
@@ -596,6 +595,7 @@ public class SourceClassMap {
 			put("org.zstack.usbDevice.UsbDeviceInventory", "org.zstack.sdk.UsbDeviceInventory");
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
 			put("org.zstack.v2v.V2VConversionHostInventory", "org.zstack.sdk.V2VConversionHostInventory");
+			put("org.zstack.vdpa.header.VmVdpaNicInventory", "org.zstack.sdk.VmVdpaNicInventory");
 			put("org.zstack.vmware.ESXHostInventory", "org.zstack.sdk.ESXHostInventory");
 			put("org.zstack.vmware.SkippedResources", "org.zstack.sdk.SkippedResources");
 			put("org.zstack.vmware.VCenterBackupStorageInventory", "org.zstack.sdk.VCenterBackupStorageInventory");
@@ -1203,7 +1203,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmSchedulingRuleInventory", "org.zstack.header.vmscheduling.VmSchedulingRuleInventory");
 			put("org.zstack.sdk.VmSpending", "org.zstack.billing.spendingcalculator.vm.VmSpending");
 			put("org.zstack.sdk.VmSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmSpendingDetails");
-			put("org.zstack.sdk.VmVdpaNicInventory", "org.zstack.header.vdpa.VmVdpaNicInventory");
+			put("org.zstack.sdk.VmVdpaNicInventory", "org.zstack.vdpa.header.VmVdpaNicInventory");
 			put("org.zstack.sdk.VmVfNicInventory", "org.zstack.header.sriov.VmVfNicInventory");
 			put("org.zstack.sdk.VniRangeInventory", "org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory");
 			put("org.zstack.sdk.VolumeBackupInventory", "org.zstack.header.storage.backup.VolumeBackupInventory");
