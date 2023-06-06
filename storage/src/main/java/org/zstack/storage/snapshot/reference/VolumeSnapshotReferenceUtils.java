@@ -97,29 +97,28 @@ public class VolumeSnapshotReferenceUtils {
             return;
         }
 
-        String currentSnapshotTreeUuid = Q.New(VolumeSnapshotTreeVO.class).select(VolumeSnapshotTreeVO_.uuid)
-                .eq(VolumeSnapshotTreeVO_.volumeUuid, volume.getUuid())
-                .eq(VolumeSnapshotTreeVO_.current, true)
+        if (ref.getReferenceType().equals(VolumeVO.class.getSimpleName())) {
+            // it means volume has no snapshot, so the reference is leaf node, just delete it.
+            deleteSnapshotRefLeafInTree(null, ref);
+            return;
+        }
+
+        // it means volume has snapshot, reference type will be snapshot.
+        String hasBackingSnapshotTreeUuid = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.treeUuid)
+                .eq(VolumeSnapshotTreeVO_.uuid, ref.getReferenceUuid())
                 .findValue();
-        if (currentSnapshotTreeUuid == null) {
-            deleteSnapshotRef(ref);
-            return;
-        }
 
-        boolean volumeReferToOtherVols = !getVolumeReferenceSnapshotCurrently(volume.getUuid(), currentSnapshotTreeUuid).isEmpty();
-        if (volumeReferToOtherVols) {
-            return;
-        }
-
-        if (!isVolumeCurrentBaseSnapshotReference(volume, ref, currentSnapshotTreeUuid)) {
+        if (isVolumeSnapshotTreeReferOtherVolumes(volume.getUuid(), hasBackingSnapshotTreeUuid)) {
             return;
         }
 
         SQL.New(VolumeSnapshotVO.class).set(VolumeSnapshotVO_.state, VolumeSnapshotState.Disabled)
-                .eq(VolumeSnapshotVO_.treeUuid, currentSnapshotTreeUuid)
+                .eq(VolumeSnapshotVO_.treeUuid, hasBackingSnapshotTreeUuid)
                 .update();
-        logger.warn(String.format("disable current snapshot tree[volumeUuid: %s] because of volume flatten.", volume.getUuid()));
+        logger.warn(String.format("disable snapshot tree[volumeUuid: %s, uuid:%s] which is backing other volume[uuid:%s] " +
+                        "because of volume flatten.", volume.getUuid(), hasBackingSnapshotTreeUuid, ref.getVolumeUuid()));
 
+        // FIXME: mark reference deleted and delete ps backing bits after volume expunge
         deleteSnapshotRef(ref);
     }
 
@@ -129,7 +128,7 @@ public class VolumeSnapshotReferenceUtils {
                 .eq(VolumeSnapshotReferenceVO_.referenceInstallUrl, volume.getInstallPath())
                 .find();
         if (ref != null) {
-            deleteSnapshotRef(ref);
+            deleteSnapshotRefLeafInTree(null, ref);
         }
     }
 
@@ -319,7 +318,7 @@ public class VolumeSnapshotReferenceUtils {
                 .eq(VolumeSnapshotReferenceVO_.referenceUuid, snapshot.getUuid())
                 .find();
         if (ref != null) {
-            deleteSnapshotRef(ref);
+            deleteSnapshotRefLeafInTree(null, ref);
         }
     }
 
@@ -347,6 +346,7 @@ public class VolumeSnapshotReferenceUtils {
                         .listValues();
 
                 if (!childrenRefIds.isEmpty()) {
+                    // redirect children refs to parent
                     sql(VolumeSnapshotReferenceVO.class).in(VolumeSnapshotReferenceVO_.id, childrenRefIds)
                             .set(VolumeSnapshotReferenceVO_.parentId, finalRef.getParentId())
                             .set(VolumeSnapshotReferenceVO_.volumeUuid, finalRef.getVolumeUuid())
@@ -357,18 +357,13 @@ public class VolumeSnapshotReferenceUtils {
                             childrenRefIds, finalRef.getReferenceVolumeUuid(), finalRef.getVolumeUuid(), finalRef.getParentId()));
                     deleteSnapshotRef(finalRef);
                 } else {
-                    if (!finalRef.getDirectSnapshotUuid().equals(finalRef.getVolumeSnapshotUuid()) ||
-                            findByUuid(ref.getVolumeUuid(), VolumeVO.class) == null) {
-                        deleteBitsOnPs(tree, finalRef);
-                    }
-                    deleteSnapshotRef(finalRef);
+                    deleteSnapshotRefLeafInTree(tree, finalRef);
                 }
 
             }
         }.execute();
     }
 
-    //TODO
     private static void deleteBitsOnPs(VolumeSnapshotReferenceTreeVO treeVO, VolumeSnapshotReferenceVO ref) {
         List<VolumeSnapshotReferenceVO> treeRefs = Q.New(VolumeSnapshotReferenceVO.class).eq(VolumeSnapshotReferenceVO_.treeUuid, treeVO.getUuid()).list();
 
@@ -403,37 +398,33 @@ public class VolumeSnapshotReferenceUtils {
         }
     }
 
+    private static void deleteSnapshotRefLeafInTree(VolumeSnapshotReferenceTreeVO tree, VolumeSnapshotReferenceVO ref) {
+        boolean referenceRedirected = !ref.getDirectSnapshotUuid().equals(ref.getVolumeSnapshotUuid());
+        if (referenceRedirected || !Q.New(VolumeVO.class).eq(VolumeVO_.uuid, ref.getVolumeUuid()).isExists()) {
+            if (tree == null) {
+                tree = Q.New(VolumeSnapshotReferenceTreeVO.class).eq(VolumeSnapshotReferenceTreeVO_.uuid, ref.getTreeUuid()).find();
+            }
+
+            deleteBitsOnPs(tree, ref);
+        }
+
+        deleteSnapshotRef(ref);
+    }
+
     // for chain snapshot
-    private static List<String> getVolumeReferenceSnapshotCurrently(String volumeUuid, String currentTreeUuid) {
+    private static boolean isVolumeSnapshotTreeReferOtherVolumes(String volumeUuid, String snapshotTreeUuid) {
         List<String> refSnapshotUuids = Q.New(VolumeSnapshotReferenceVO.class).select(VolumeSnapshotReferenceVO_.volumeSnapshotUuid)
                 .eq(VolumeSnapshotReferenceVO_.volumeUuid, volumeUuid)
                 .listValues();
 
         if (refSnapshotUuids.isEmpty()) {
-            return Collections.emptyList();
+            return false;
         }
 
-        return Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid)
-                .eq(VolumeSnapshotVO_.treeUuid, currentTreeUuid)
+        return Q.New(VolumeSnapshotVO.class)
+                .eq(VolumeSnapshotVO_.treeUuid, snapshotTreeUuid)
                 .in(VolumeSnapshotVO_.uuid, refSnapshotUuids)
-                .listValues();
-    }
-
-    // for chain snapshot
-    private static boolean isVolumeCurrentBaseSnapshotReference(VolumeInventory volume, VolumeSnapshotReferenceVO ref, String currentTreeUuid) {
-        if (ref.getReferenceType().equals(VolumeVO.class.getSimpleName()) ||
-                volume.getInstallPath().equals(ref.getReferenceInstallUrl())) {
-            return true;
-        }
-
-        List<String> currentSnapshotUuids = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid)
-                .eq(VolumeSnapshotVO_.treeUuid, currentTreeUuid)
-                .listValues();
-        if (currentSnapshotUuids.stream().anyMatch(it -> it.equals(ref.getReferenceUuid()))) {
-            return true;
-        }
-
-        return false;
+                .isExists();
     }
 
     private static VolumeSnapshotReferenceVO getVolumeBackingRef(String volumeUuid) {

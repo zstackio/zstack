@@ -16,6 +16,7 @@ public interface StorageTrash {
 
     String makeSureInstallPathNotUsed(InstallPathRecycleInventory inventory);
     String makeSureInstallPathNotUsed(String installPath, String resourceType);
+    String makeSurePrimaryStorageInstallPathNotUsed(String installPath);
     List<String> findTrashInstallPath(String installPath, String storageUuid);
     Long getTrashId(String storageUuid, String installPath);
 

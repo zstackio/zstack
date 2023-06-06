@@ -9,6 +9,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
@@ -19,6 +20,7 @@ import org.zstack.header.storage.primary.DeleteVolumeChainOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageMsg;
 import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageReply;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.reference.DeleteVolumeSnapshotReferenceLeafMsg;
 import org.zstack.header.storage.snapshot.reference.DeleteVolumeSnapshotReferenceLeafReply;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceInventory;
@@ -43,6 +45,9 @@ public class VolumeSnapshotReferenceTreeBase {
 
     @Autowired
     private DatabaseFacade dbf;
+
+    @Autowired
+    private StorageTrash trash;
 
     private VolumeSnapshotReferenceTreeInventory self;
 
@@ -98,7 +103,7 @@ public class VolumeSnapshotReferenceTreeBase {
         Set<String> otherLeafDirectBackingInstallUrls = msg.getOtherLeafs().stream()
                 .map(VolumeSnapshotReferenceInventory::getDirectSnapshotInstallUrl)
                 .collect(Collectors.toSet());
-        if (otherLeafDirectBackingInstallUrls.contains(msg.getLeaf().getDirectSnapshotInstallUrl())) {
+        if (hasSameVolumeResource(msg.getLeaf().getDirectSnapshotInstallUrl(), otherLeafDirectBackingInstallUrls)) {
             logger.debug(String.format("other leafs has the same direct backing, skip delete leaf: [%d]", msg.getLeaf().getId()));
             completion.success();
             return;
@@ -111,9 +116,12 @@ public class VolumeSnapshotReferenceTreeBase {
             logger.debug(String.format("no volume between leaf: [%d] and its parent, skip delete leaf", msg.getLeaf().getId()));
             completion.success();
             return;
+        } else {
+            logger.debug(String.format("it is going to delete untracked volume resource preliminarily: " +
+                    "startPath: [%s], endPath: [%s], contains end: %s", startPath, endPath, rootDeleted));
         }
 
-        Set<String> directBackingInstallUrls = new HashSet<>(otherLeafDirectBackingInstallUrls);
+        List<String> directBackingInstallUrls = new ArrayList<>(otherLeafDirectBackingInstallUrls);
         directBackingInstallUrls.add(msg.getLeaf().getDirectSnapshotInstallUrl());
         final Map<String, List<String>> backingChains = new HashMap<>();
         final List<String> toDeletePaths = new ArrayList<>();
@@ -127,7 +135,7 @@ public class VolumeSnapshotReferenceTreeBase {
             public void run(FlowTrigger trigger, Map data) {
                 GetVolumeBackingChainFromPrimaryStorageMsg gmsg = new GetVolumeBackingChainFromPrimaryStorageMsg();
                 gmsg.setVolumeUuid(msg.getDeletedVolume().getUuid());
-                gmsg.setRootInstallPaths(new ArrayList<>(directBackingInstallUrls));
+                gmsg.setRootInstallPaths(directBackingInstallUrls);
                 gmsg.setPrimaryStorageUuid(msg.getTree().getPrimaryStorageUuid());
                 gmsg.setHostUuid(msg.getTree().getHostUuid());
                 gmsg.setVolumeFormat(msg.getDeletedVolume().getFormat());
@@ -141,7 +149,12 @@ public class VolumeSnapshotReferenceTreeBase {
                         }
 
                         GetVolumeBackingChainFromPrimaryStorageReply gr = reply.castReply();
-                        backingChains.putAll(gr.getBackingChainInstallPath());
+                        for (Map.Entry<String, List<String>> e : gr.getBackingChainInstallPath().entrySet()) {
+                            backingChains.put(e.getKey(), new ArrayList<>(e.getValue()));
+                            if (!e.getValue().contains(e.getKey())) {
+                                backingChains.get(e.getKey()).add(0, e.getKey());
+                            }
+                        }
                         trigger.next();
                     }
                 });
@@ -156,12 +169,14 @@ public class VolumeSnapshotReferenceTreeBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                List<String> backingChain = backingChains.get(startPath);
-                if (!backingChain.contains(startPath)) {
-                    toDeletePaths.add(startPath);
-                }
+                for (String path : backingChains.get(startPath)) {
+                    String usedDetails = trash.makeSurePrimaryStorageInstallPathNotUsed(path);
+                    if (usedDetails != null) {
+                        logger.error("[THIS IS A BUG NEEDED TO BE FIXED RIGHT NOW, PLEASE REPORT TO US ASAP]" +
+                                " install path[" + path + "] is still used, details: " + usedDetails);
+                        break;
+                    }
 
-                for (String path : backingChain) {
                     if (path.contains(endPath)) {
                         if (rootDeleted) {
                             toDeletePaths.add(path);
@@ -172,12 +187,11 @@ public class VolumeSnapshotReferenceTreeBase {
                     toDeletePaths.add(path);
                 }
 
-                for (Map.Entry<String, List<String>> e : backingChains.entrySet()) {
-                    if (!e.getKey().equals(startPath)) {
-                        toDeletePaths.removeAll(e.getValue());
-                    }
-                }
+                Set<String> usedByOthersPaths = backingChains.entrySet().stream()
+                        .filter(e -> !e.getKey().equals(startPath))
+                        .flatMap(e -> e.getValue().stream()).collect(Collectors.toSet());
 
+                filterDeletePaths(toDeletePaths, usedByOthersPaths);
                 logger.debug("delete snapshot reference leafs: " + toDeletePaths);
                 trigger.next();
             }
@@ -214,5 +228,40 @@ public class VolumeSnapshotReferenceTreeBase {
                 completion.success();
             }
         }).start();
+    }
+
+    private boolean hasSameVolumeResource(String snapshotInstallUrl, Set<String> snapshotInstallUrls) {
+        if (!snapshotInstallUrl.contains("@")) {
+            return snapshotInstallUrls.contains(snapshotInstallUrl);
+        }
+
+        String volumeInstallUrl = getVolumeInstallUrl(snapshotInstallUrl);
+        for (String url : snapshotInstallUrls) {
+            if (getVolumeInstallUrl(url).equals(volumeInstallUrl)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void filterDeletePaths(List<String> toDeletePaths, Set<String> protectedPaths) {
+        Iterator<String> it = toDeletePaths.iterator();
+        Set<String> protectedVolumePaths = protectedPaths.stream().map(this::getVolumeInstallUrl).collect(Collectors.toSet());
+        while (it.hasNext()) {
+            String path = getVolumeInstallUrl(it.next());
+            if (protectedVolumePaths.contains(path)) {
+                it.remove();
+            }
+        }
+    }
+
+    // TODO hard code for internal snapshot, need to be refactored
+    private String getVolumeInstallUrl(String snapshotInstallUrl) {
+        if (!snapshotInstallUrl.contains("@")) {
+            return snapshotInstallUrl;
+        }
+
+        return snapshotInstallUrl.split("@")[0];
     }
 }
