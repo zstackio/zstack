@@ -85,8 +85,8 @@ public class VolumeSnapshotReferenceUtils {
 
     public static List<VolumeInventory> getReferenceVolume(String volumeUuid) {
         return SQL.New("select vol from VolumeVO vol, VolumeSnapshotReferenceVO ref" +
-                " where ref.volumeUuid = :volumeUuid" +
-                " and ref.referenceVolumeUuid = vol.uuid", VolumeVO.class)
+                        " where ref.volumeUuid = :volumeUuid" +
+                        " and ref.referenceVolumeUuid = vol.uuid", VolumeVO.class)
                 .param("volumeUuid", volumeUuid)
                 .list().stream().map(it -> VolumeInventory.valueOf((VolumeVO)it)).collect(Collectors.toList());
     }
@@ -116,7 +116,7 @@ public class VolumeSnapshotReferenceUtils {
                 .eq(VolumeSnapshotVO_.treeUuid, hasBackingSnapshotTreeUuid)
                 .update();
         logger.warn(String.format("disable snapshot tree[volumeUuid: %s, uuid:%s] which is backing other volume[uuid:%s] " +
-                        "because of volume flatten.", volume.getUuid(), hasBackingSnapshotTreeUuid, ref.getVolumeUuid()));
+                "because of volume flatten.", volume.getUuid(), hasBackingSnapshotTreeUuid, ref.getVolumeUuid()));
 
         // FIXME: mark reference deleted and delete ps backing bits after volume expunge
         deleteSnapshotRef(ref);
@@ -302,8 +302,8 @@ public class VolumeSnapshotReferenceUtils {
         }
 
         return SQL.New("select c.id from ImageCacheVO c" +
-                " where c.id in (:ids)" +
-                " and c.imageUuid not in (select tree.rootImageUuid from VolumeSnapshotReferenceTreeVO tree)", Long.class)
+                        " where c.id in (:ids)" +
+                        " and c.imageUuid not in (select tree.rootImageUuid from VolumeSnapshotReferenceTreeVO tree)", Long.class)
                 .param("ids", ids)
                 .list();
     }
@@ -371,7 +371,7 @@ public class VolumeSnapshotReferenceUtils {
         if (ref.getParentId() == null) {
             otherLeafs = treeRefs.stream().filter(it -> it.getParentId() == null).map(VolumeSnapshotReferenceInventory::valueOf).collect(Collectors.toList());
         } else {
-            otherLeafs = treeRefs.stream().filter(it -> it.getParentId().equals(ref.getParentId())).map(VolumeSnapshotReferenceInventory::valueOf).collect(Collectors.toList());
+            otherLeafs = treeRefs.stream().filter(it -> ref.getParentId().equals(it.getParentId())).map(VolumeSnapshotReferenceInventory::valueOf).collect(Collectors.toList());
         }
         otherLeafs.removeIf(it -> it.getId() == ref.getId());
 
