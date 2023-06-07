@@ -91,7 +91,7 @@ import javax.persistence.TypedQuery;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -4240,6 +4240,32 @@ public class KVMHost extends HostBase implements Host {
         creator.create();
     }
 
+    public ErrorCode isRemotePortOpen(String ip, int port, int timeout) {
+        Socket socket = new Socket();
+
+        try {
+            socket.setReuseAddress(true);
+            SocketAddress sa = new InetSocketAddress(ip, port);
+            socket.connect(sa, timeout);
+            if (socket.isConnected()) {
+                return null;
+            }
+            return operr("connect remote port[ip:%s, port:%s] is failed", ip, port);
+        } catch (SocketException e) {
+            logger.debug(String.format("unable to connect remote port[ip:%s, port:%s], %s", ip, port, e.getMessage()));
+            return operr("unable to connect remote port[ip:%s, port:%s], %s", ip, port, e.getMessage());
+        } catch (IOException e) {
+            logger.debug(String.format("unable to connect remote port[ip:%s, port:%s], %s", ip, port, e.getMessage()));
+            return operr("unable to connect remote port[ip:%s, port:%s], %s", ip, port, e.getMessage());
+        } finally {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                logger.warn(e.getMessage(), e);
+            }
+        }
+    }
+
     @Override
     public void connectHook(final ConnectHostInfo info, final Completion complete) {
         if (!info.isNewAdded()) {
@@ -4673,6 +4699,26 @@ public class KVMHost extends HostBase implements Host {
                             throw new OperationFailureException(operr(ex.toString()));
                         }
 
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "test-kvmagent-port-open";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return CoreGlobalProperty.UNIT_TEST_ON;
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        long ctimeout = TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_KVMAGENT_PORT_ON_CONNECT_TIMEOUT.value(Integer.class).longValue());
+                        ErrorCode errorCode = isRemotePortOpen(getSelf().getManagementIp(), KVMGlobalProperty.AGENT_PORT, (int) ctimeout);
+                        if (errorCode != null) {
+                            trigger.fail(errorCode);
+                            return;
+                        }
                         trigger.next();
                     }
                 });

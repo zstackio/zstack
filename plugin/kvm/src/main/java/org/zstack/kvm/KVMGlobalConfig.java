@@ -66,6 +66,8 @@ public class KVMGlobalConfig {
     public static GlobalConfig TEST_SSH_PORT_ON_OPEN_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOpenTimeout");
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 300)
     public static GlobalConfig TEST_SSH_PORT_ON_CONNECT_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOnConnectTimeout");
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 300)
+    public static GlobalConfig TEST_KVMAGENT_PORT_ON_CONNECT_TIMEOUT = new GlobalConfig(CATEGORY, "testKvmagentPortOnConnectTimeout");
     @GlobalConfigValidation
     public static GlobalConfig RESTART_AGENT_IF_FAKE_DEAD = new GlobalConfig(CATEGORY, "restartagentwhenfakedead");
 
