@@ -199,6 +199,20 @@ public abstract class ImageCacheCleaner {
                     }
                 });
             }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                SyncPrimaryStorageCapacityMsg msg = new SyncPrimaryStorageCapacityMsg();
+                msg.setPrimaryStorageUuid(psUuid);
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        trigger.next();
+                    }
+
+                });
+            }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
