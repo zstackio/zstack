@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import okhttp3.*;
 import org.apache.commons.codec.binary.Base64;
+import org.springframework.lang.NonNull;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -53,10 +54,12 @@ public class ZSClient {
 
     public static void configure(ZSConfig c) {
         config = c;
+        http = buildHttpClient(c);
+    }
 
+    private static OkHttpClient buildHttpClient(ZSConfig c) {
         if (c.readTimeout != null || c.writeTimeout != null) {
             OkHttpClient.Builder b = new OkHttpClient.Builder();
-
             if (c.readTimeout != null) {
                 b.readTimeout(c.readTimeout, TimeUnit.MILLISECONDS);
             }
@@ -64,8 +67,9 @@ public class ZSClient {
                 b.writeTimeout(c.writeTimeout, TimeUnit.MILLISECONDS);
             }
 
-            http = b.build();
+            return b.build();
         }
+        return null;
     }
 
     public static void webHookCallback(HttpServletRequest req, HttpServletResponse rsp) {
@@ -138,14 +142,26 @@ public class ZSClient {
         RestInfo info;
         InternalCompletion completion;
         String jobUuid = UUID.randomUUID().toString().replaceAll("-", "");
+        ZSConfig config;
+        OkHttpClient http;
 
         private ApiResult resultFromWebHook;
 
         Api(AbstractAction action) {
+            this(action, ZSClient.config);
+        }
+
+        Api(AbstractAction action, ZSConfig config) {
             this.action = action;
             info = action.getRestInfo();
             if (action.apiId != null) {
                 jobUuid = action.apiId;
+            }
+            this.config = config;
+            if (this.config == ZSClient.config) {
+                this.http = ZSClient.http;
+            } else {
+                this.http = buildHttpClient(this.config);
             }
         }
 
@@ -242,9 +258,9 @@ public class ZSClient {
                     }
 
                     if (response.code() == 200 || response.code() == 204) {
+                        waittingApis.remove(jobUuid);
                         return writeApiResult(response);
                     } else if (response.code() == 202) {
-
                         if (config.webHook != null) {
                             return webHookResult();
                         } else {
@@ -524,6 +540,9 @@ public class ZSClient {
             final long i = this.getInterval();
 
             final Object sessionId = action.getParameterValue(Constants.SESSION_ID);
+            final Object accessKeyId = action.getParameterValue(Constants.ACCESS_KEY_KEYID);
+            final Object accessKeySecret = action.getParameterValue(Constants.ACCESS_KEY_KEY_SECRET);
+
             final Object requestIp = action.getParameterValue(Constants.REQUEST_IP);
             final Timer timer = new Timer();
 
@@ -705,6 +724,14 @@ public class ZSClient {
     public static void call(AbstractAction action, InternalCompletion completion) {
         errorIfNotConfigured();
         new Api(action).call(completion);
+    }
+
+    public static void callWithConfig(AbstractAction action, @NonNull ZSConfig config, InternalCompletion completion) {
+        new Api(action, config).call(completion);
+    }
+
+    public static ApiResult callWithConfig(AbstractAction action, @NonNull ZSConfig config) {
+        return new Api(action, config).call();
     }
 
     public static ApiResult call(AbstractAction action) {

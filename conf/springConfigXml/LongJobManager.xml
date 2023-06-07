@@ -36,4 +36,11 @@
             <zstack:extension interface="org.zstack.header.Component" />
         </zstack:plugin>
     </bean>
+
+    <bean id="LongJobTracker" class="org.zstack.longjob.LongJobTrackerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.longjob.LongJobTracker" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>

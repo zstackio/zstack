@@ -65,9 +65,18 @@ public abstract class AbstractAction {
         return fs;
     }
 
-    Set<String> getAllParameterNames() {
+    public Set<String> getAllParameterNames() {
         initializeParametersIfNot();
         return getParameterMap().keySet();
+    }
+
+    public void setParameterValue(String name, Object value) {
+        initializeParametersIfNot();
+        try {
+            getParameterMap().get(name).field.set(this, value);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     Object getParameterValue(String name){
