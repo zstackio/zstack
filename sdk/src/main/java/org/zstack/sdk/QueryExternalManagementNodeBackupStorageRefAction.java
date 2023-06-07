@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteTwinManagementNodeResourceMapAction extends AbstractAction {
+public class QueryExternalManagementNodeBackupStorageRefAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteTwinManagementNodeResourceMapAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteTwinManagementNodeResourceMapResult value;
+        public org.zstack.sdk.QueryExternalManagementNodeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class DeleteTwinManagementNodeResourceMapAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String groupUuid;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class DeleteTwinManagementNodeResourceMapAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteTwinManagementNodeResourceMapResult value = res.getResult(org.zstack.sdk.DeleteTwinManagementNodeResourceMapResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteTwinManagementNodeResourceMapResult() : value; 
+        org.zstack.sdk.QueryExternalManagementNodeResult value = res.getResult(org.zstack.sdk.QueryExternalManagementNodeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryExternalManagementNodeResult() : value; 
 
         return ret;
     }
@@ -96,10 +64,10 @@ public class DeleteTwinManagementNodeResourceMapAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/externalmanagement/deletetwinsresourcemap";
+        info.httpMethod = "GET";
+        info.path = "/externalmanagementbackupstorageref";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

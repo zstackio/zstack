@@ -36,6 +36,14 @@ public class MirrorCdpTaskScheduleJobInventory  {
         return this.status;
     }
 
+    public java.lang.String externalManagementNodeUuid;
+    public void setExternalManagementNodeUuid(java.lang.String externalManagementNodeUuid) {
+        this.externalManagementNodeUuid = externalManagementNodeUuid;
+    }
+    public java.lang.String getExternalManagementNodeUuid() {
+        return this.externalManagementNodeUuid;
+    }
+
     public java.util.List taskRefs;
     public void setTaskRefs(java.util.List taskRefs) {
         this.taskRefs = taskRefs;

@@ -52,6 +52,9 @@ public class CreateCdpTaskAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public long maxLatency = 600000L;
 
+    @Param(required = false, validValues = {"Normal","DisasterRecovery"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String scene = "Normal";
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
