@@ -203,3 +203,14 @@ CREATE TABLE IF NOT EXISTS `zstack`.`StorageEncryptGatewayVO` (
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`StorageEncryptGatewayScsiLunBlockScsiLunRefVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `storageEncryptGatewayUuid` varchar(32) NOT NULL,
+    `volumeUuid` varchar(32) NOT NULL,
+    `segLunId` smallint unsigned DEFAULT NULL,
+    `segLunWwn` VARCHAR(256) DEFAULT NULL,
+    `segLunSize` bigint unsigned DEFAULT NULL,
+    `segLunMapId` smallint unsigned DEFAULT 0,
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
