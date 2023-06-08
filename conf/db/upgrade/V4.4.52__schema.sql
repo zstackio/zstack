@@ -95,22 +95,7 @@ DELIMITER ;
 call addColumnsToSNSTextTemplateVO();
 DROP PROCEDURE IF EXISTS addColumnsToSNSTextTemplateVO;
 
-DELIMITER $$
-CREATE PROCEDURE addColumnToSNSTopicVO()
-BEGIN
-        IF NOT EXISTS( SELECT 1
-                       FROM INFORMATION_SCHEMA.COLUMNS
-                       WHERE table_name = 'SNSTopicVO'
-                             AND table_schema = 'zstack'
-                             AND column_name = 'locale') THEN
-
-ALTER TABLE `zstack`.`SNSTopicVO` ADD COLUMN `locale` VARCHAR(32);
-END IF;
-END $$
-DELIMITER ;
-
-call addColumnToSNSTopicVO();
-DROP PROCEDURE IF EXISTS addColumnToSNSTopicVO;
+ALTER TABLE `zstack`.`SNSTopicVO` ADD COLUMN `locale` varchar(32);
 
 DELIMITER $$
 CREATE PROCEDURE UpdateHygonClusterVmCpuModeConfig()
