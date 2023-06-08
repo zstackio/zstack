@@ -214,3 +214,14 @@ CREATE TABLE IF NOT EXISTS `zstack`.`StorageEncryptGatewayScsiLunBlockScsiLunRef
     `segLunMapId` smallint unsigned DEFAULT 0,
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`StorageEncryptGatewayPrimaryStorageRefVO` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `storageEncryptGatewayUuid` varchar(32) NOT NULL,
+    `primaryStorageUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fkSEGPrimaryStorageRefVOSEGVO` FOREIGN KEY (storageEncryptGatewayUuid) REFERENCES StorageEncryptGatewayVO (uuid) ON DELETE CASCADE,
+    CONSTRAINT `fkSEGPrimaryStorageRefVOPrimaryStorageEO` FOREIGN KEY (`primaryStorageUuid`) REFERENCES `zstack`.`PrimaryStorageEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
