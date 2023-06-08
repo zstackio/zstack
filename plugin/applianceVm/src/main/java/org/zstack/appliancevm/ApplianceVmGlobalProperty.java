@@ -11,7 +11,7 @@ public class ApplianceVmGlobalProperty {
     public static boolean NO_ROLLBACK_ON_POST_FAILURE;
     @GlobalProperty(name = "ApplianceVm.connectVerbose", defaultValue = "false")
     public static boolean CONNECT_VERBOSE;
-    @GlobalProperty(name="ApplianceVm.agentPackageName", defaultValue = "appliancevm-4.6.0.tar.gz")
+    @GlobalProperty(name="ApplianceVm.agentPackageName", defaultValue = "appliancevm-4.7.0.tar.gz")
     public static String AGENT_PACKAGE_NAME;
     @GlobalProperty(name="ApplianceVm.agentPort", defaultValue = "7759")
     public static int AGENT_PORT;
