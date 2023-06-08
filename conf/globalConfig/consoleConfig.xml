@@ -39,4 +39,12 @@
         <defaultValue>4900,4901</defaultValue>
         <type>java.lang.String</type>
     </config>
+
+    <config>
+        <category>console</category>
+        <name>delete.consoleproxy.gc.delay</name>
+        <description>the delay delete does the next try for a console proxy if the previous delete operation failed, in seconds</description>
+        <type>java.lang.Integer</type>
+        <defaultValue>60</defaultValue>
+    </config>
 </globalConfig>

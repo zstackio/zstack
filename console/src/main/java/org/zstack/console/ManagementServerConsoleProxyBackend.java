@@ -107,6 +107,11 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         return new ConsoleProxyBase(inv, getAgentPort());
     }
 
+    @Override
+    protected ConsoleProxy getConsoleProxy(ConsoleProxyInventory proxy) {
+        return new ConsoleProxyBase(proxy, getAgentPort());
+    }
+
     private void setupPublicKey() {
         File pubKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PUBLIC_KEY);
         String script = PathUtil.findFileOnClassPath(AnsibleConstant.IMPORT_PUBLIC_KEY_SCRIPT_PATH, true).getAbsolutePath();
@@ -152,6 +157,17 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                         dbf.update(finalVo);
                     }
                 });
+
+                if (CoreGlobalProperty.UNIT_TEST_ON) {
+                    finalVo.setStatus(ConsoleProxyAgentStatus.Connected);
+                    dbf.update(finalVo);
+
+                    connected = true;
+                    logger.debug("successfully deploy console proxy agent by ansible");
+                    completion.success();
+                    chain.next();
+                    return;
+                }
 
                 try {
                     ShellUtils.run("rm -rf /var/lib/zstack/consoleProxy/ && mkdir -p /var/lib/zstack/consoleProxy/");
@@ -272,6 +288,12 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     @Override
     public String getConsoleBackendType() {
         return ConsoleConstants.MANAGEMENT_SERVER_CONSOLE_PROXY_BACKEND;
+    }
+
+    @Override
+    public void deleteConsoleSession(ConsoleProxyInventory consoleProxy, Completion completion) {
+        ConsoleProxy proxy = getConsoleProxy(consoleProxy);
+        proxy.deleteProxy(consoleProxy, completion);
     }
 
     @Override

@@ -16,6 +16,8 @@ import org.zstack.header.vm.VmInstanceInventory;
 public interface ConsoleBackend {
     String getConsoleBackendType();
 
+    void deleteConsoleSession(ConsoleProxyInventory consoleProxy, Completion completion);
+
     void grantConsoleAccess(SessionInventory session, VmInstanceInventory vm, ReturnValueCompletion<ConsoleInventory> complete);
 
     void deleteConsoleSession(VmInstanceInventory vm, Completion completion);

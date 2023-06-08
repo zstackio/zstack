@@ -14,12 +14,23 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Component;
-import org.zstack.header.console.*;
+import org.zstack.header.console.ConsoleBackend;
+import org.zstack.header.console.ConsoleConstants;
+import org.zstack.header.console.ConsoleInventory;
+import org.zstack.header.console.ConsoleProxy;
+import org.zstack.header.console.ConsoleProxyInventory;
+import org.zstack.header.console.ConsoleProxyStatus;
+import org.zstack.header.console.ConsoleProxyVO;
+import org.zstack.header.console.ConsoleProxyVO_;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.SessionInventory;
@@ -33,6 +44,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 
@@ -61,6 +73,8 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     protected abstract ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo);
 
     protected abstract ConsoleProxy getConsoleProxy(SessionInventory session, VmInstanceInventory vm);
+
+    protected abstract ConsoleProxy getConsoleProxy(ConsoleProxyInventory proxy);
 
     protected abstract void connectAgent();
 
@@ -290,6 +304,11 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
                 @Override
                 public void fail(ErrorCode errorCode) {
+                    DeleteConsoleProxyGcJob gc = new DeleteConsoleProxyGcJob();
+                    gc.NAME = String.format("delete-console-proxy-%s", vo.getUuid());
+                    gc.consoleProxy = ConsoleProxyInventory.valueOf(vo);
+                    gc.submit(ConsoleGlobalConfig.DELETE_CONSOLE_PROXY_RETRY_DELAY.value(Long.class), TimeUnit.SECONDS);
+                    dbf.remove(vo);
                     completion.fail(errorCode);
                 }
             });
@@ -321,10 +340,6 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     @Override
     @AsyncThread
     public void managementNodeReady() {
-        if (CoreGlobalProperty.UNIT_TEST_ON) {
-            return;
-        }
-
         connectAgent();
     }
 }
