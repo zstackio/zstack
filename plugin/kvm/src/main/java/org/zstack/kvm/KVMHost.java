@@ -4673,16 +4673,18 @@ public class KVMHost extends HostBase implements Host {
                     public void run(FlowTrigger trigger, Map data) {
                         StringBuilder builder = new StringBuilder();
                         if (!KVMGlobalProperty.MN_NETWORKS.isEmpty()) {
-                            builder.append(String.format("sudo bash %s -m %s -p %s -c %s",
+                            builder.append(String.format("sudo bash %s -m %s -p %s -s %s -c %s",
                                     "/var/lib/zstack/kvm/kvmagent-iptables",
                                     KVMConstant.IPTABLES_COMMENTS,
                                     KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class),
+                                    KVMGlobalProperty.AGENT_PORT,
                                     String.join(",", KVMGlobalProperty.MN_NETWORKS)));
                         } else {
-                            builder.append(String.format("sudo bash %s -m %s -p %s",
+                            builder.append(String.format("sudo bash %s -m %s -p %s -s %s",
                                     "/var/lib/zstack/kvm/kvmagent-iptables",
                                     KVMConstant.IPTABLES_COMMENTS,
-                                    KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class)));
+                                    KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class),
+                                    KVMGlobalProperty.AGENT_PORT));
                         }
 
                         try {
