@@ -334,6 +334,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         Map<String, Tuple> vrInfos = getApplianceVmInfo(vmUuids);
 
+        List<IpStatisticData> copiedElements = new ArrayList<>();
         for (IpStatisticData element : ipStatistics) {
             if (element.getVmInstanceUuid() != null) {
                 Tuple vrInfo = vrInfos.get(element.getVmInstanceUuid());
@@ -355,9 +356,36 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
             L3NetworkGetIpStatisticExtensionPoint exp = getExtensionPointFactory(element.getVmInstanceType());
             if (exp != null) {
-                element.setApplianceVmOwnerUuid(exp.getParentUuid(element.getVmInstanceUuid()));
+                List<String> ownerUuids = exp.getParentUuid(element.getVmInstanceUuid(), element.getVipUuid());
+                if (ownerUuids.size() == 0) {
+                    element.setApplianceVmOwnerUuid(element.getVmInstanceUuid());
+                } else if (ownerUuids.size() == 1) {
+                    element.setApplianceVmOwnerUuid(ownerUuids.get(0));
+                } else {
+                    element.setApplianceVmOwnerUuid(ownerUuids.get(0));
+                    int cn = 1;
+                    while(cn < ownerUuids.size()) {
+                        IpStatisticData copy = new IpStatisticData();
+                        copy.setIp(element.getIp());
+                        copy.setVipUuid(element.getVipUuid());
+                        copy.setVipName(element.getVipName());
+                        copy.setVmInstanceUuid(element.getVmInstanceUuid());
+                        copy.setVmInstanceName(element.getVmInstanceName());
+                        copy.setVmInstanceType(element.getVmInstanceType());
+                        copy.setResourceTypes(element.getResourceTypes());
+                        copy.setState(element.getState());
+                        copy.setUseFor(element.getUseFor());
+                        copy.setCreateDate(element.getCreateDate());
+                        copy.setOwnerName(element.getOwnerName());
+                        copy.setVmDefaultIp(element.getVmDefaultIp());
+                        copy.setApplianceVmOwnerUuid(ownerUuids.get(cn));
+                        copiedElements.add(copy);
+                        cn = cn + 1;
+                    }
+                }
             }
         }
+        ipStatistics.addAll(copiedElements);
 
         return ipStatistics;
     }
@@ -543,6 +571,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         Map<String, List<String>> vmToDefaultIpMap = new HashMap<>();
         Map<String, Tuple> vrInfos = getApplianceVmInfo(vmUuids);
 
+        List<IpStatisticData> copiedElements = new ArrayList<>();
         for (IpStatisticData element : ipStatistics) {
             VmInstanceVO vmvo = vmvos.get(element.getVmInstanceUuid());
             if (vmvo == null) {
@@ -577,12 +606,38 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     String vmInstanceType = vrInfo.get(1, String.class);
                     L3NetworkGetIpStatisticExtensionPoint exp = getExtensionPointFactory(vmInstanceType);
                     if (exp != null) {
-                        element.setApplianceVmOwnerUuid(exp.getParentUuid(element.getVmInstanceUuid()));
+                        List<String> ownerUuids = exp.getParentUuid(element.getVmInstanceUuid(), element.getVipUuid());
+                        if (ownerUuids.size() == 0) {
+                            element.setApplianceVmOwnerUuid(element.getApplianceVmOwnerUuid());
+                        } else if (ownerUuids.size() == 1) {
+                            element.setApplianceVmOwnerUuid(ownerUuids.get(0));
+                        } else {
+                            element.setApplianceVmOwnerUuid(ownerUuids.get(0));
+                            int cn = 1;
+                            while(cn < ownerUuids.size()) {
+                                IpStatisticData copy = new IpStatisticData();
+                                copy.setIp(element.getIp());
+                                copy.setVipUuid(element.getVipUuid());
+                                copy.setVipName(element.getVipName());
+                                copy.setVmInstanceUuid(element.getVmInstanceUuid());
+                                copy.setVmInstanceName(element.getVmInstanceName());
+                                copy.setVmInstanceType(element.getVmInstanceType());
+                                copy.setResourceTypes(element.getResourceTypes());
+                                copy.setState(element.getState());
+                                copy.setUseFor(element.getUseFor());
+                                copy.setCreateDate(element.getCreateDate());
+                                copy.setOwnerName(element.getOwnerName());
+                                copy.setVmDefaultIp(element.getVmDefaultIp());
+                                copy.setApplianceVmOwnerUuid(ownerUuids.get(cn));
+                                copiedElements.add(copy);
+                                cn = cn + 1;
+                            }
+                        }
                     }
                 }
             }
-
         }
+        ipStatistics.addAll(copiedElements);
 
         return ipStatistics;
     }
