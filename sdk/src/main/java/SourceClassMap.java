@@ -31,6 +31,8 @@ public class SourceClassMap {
 			put("org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleTriggerInventory", "org.zstack.sdk.AutoScalingRuleTriggerInventory");
 			put("org.zstack.autoscaling.template.AutoScalingTemplateInventory", "org.zstack.sdk.AutoScalingTemplateInventory");
 			put("org.zstack.autoscaling.template.AutoScalingVmTemplateInventory", "org.zstack.sdk.AutoScalingVmTemplateInventory");
+			put("org.zstack.baremetal2.chassis.BareMetal2BondingInventory", "org.zstack.sdk.BareMetal2BondingInventory");
+			put("org.zstack.baremetal2.chassis.BareMetal2BondingNicRefInventory", "org.zstack.sdk.BareMetal2BondingNicRefInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisDiskInventory", "org.zstack.sdk.BareMetal2ChassisDiskInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisInventory", "org.zstack.sdk.BareMetal2ChassisInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisNicInventory", "org.zstack.sdk.BareMetal2ChassisNicInventory");
@@ -509,6 +511,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory", "org.zstack.sdk.RaidPhysicalDriveInventory");
 			put("org.zstack.storage.device.localRaid.RunningState", "org.zstack.sdk.RunningState");
 			put("org.zstack.storage.device.localRaid.SmartDataStruct", "org.zstack.sdk.SmartDataStruct");
+			put("org.zstack.storage.primary.block.BlockPrimaryStorageInventory", "org.zstack.sdk.BlockPrimaryStorageInventory");
 			put("org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity", "org.zstack.sdk.HostDiskCapacity");
 			put("org.zstack.storage.primary.local.LocalStorageResourceRefInventory", "org.zstack.sdk.LocalStorageResourceRefInventory");
 			put("org.zstack.storage.primary.ministorage.MiniStorageHostRefInventory", "org.zstack.sdk.MiniStorageHostRefInventory");
@@ -721,6 +724,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BaremetalVlanNicInventory", "org.zstack.header.baremetal.network.BaremetalVlanNicInventory");
 			put("org.zstack.sdk.BatchDeleteVolumeSnapshotStruct", "org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct");
 			put("org.zstack.sdk.BillingInventory", "org.zstack.billing.generator.BillingInventory");
+			put("org.zstack.sdk.BlockPrimaryStorageInventory", "org.zstack.storage.primary.block.BlockPrimaryStorageInventory");
 			put("org.zstack.sdk.BuildAppExportHistoryInventory", "org.zstack.header.buildapp.BuildAppExportHistoryInventory");
 			put("org.zstack.sdk.BuildApplicationInventory", "org.zstack.header.buildapp.BuildApplicationInventory");
 			put("org.zstack.sdk.CCSCertificateInventory", "org.zstack.crypto.ccs.CCSCertificateInventory");

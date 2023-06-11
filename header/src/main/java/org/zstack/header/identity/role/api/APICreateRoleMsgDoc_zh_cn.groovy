@@ -91,6 +91,26 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "identity"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 

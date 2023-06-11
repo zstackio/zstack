@@ -25,7 +25,7 @@ doc {
 					name "vmInstanceUuid"
 					enclosedIn "updateVirtualRouter"
 					desc "资源的UUID，唯一标示该资源"
-					location "body"
+					location "url"
 					type "String"
 					optional false
 					since "3.8"

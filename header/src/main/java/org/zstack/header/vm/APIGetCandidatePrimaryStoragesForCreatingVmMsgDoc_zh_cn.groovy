@@ -59,7 +59,7 @@ doc {
 					type "Long"
 					optional true
 					since "4.1.2"
-
+					
 				}
 				column {
 					name "dataDiskOfferingUuids"
@@ -79,7 +79,7 @@ doc {
 					type "List"
 					optional true
 					since "4.3.9"
-
+					
 				}
 				column {
 					name "zoneUuid"

@@ -101,6 +101,26 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "networkServiceProvider"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "attachedToVm"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "boolean"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 
