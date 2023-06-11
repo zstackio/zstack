@@ -31,6 +31,8 @@ public class SourceClassMap {
 			put("org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleTriggerInventory", "org.zstack.sdk.AutoScalingRuleTriggerInventory");
 			put("org.zstack.autoscaling.template.AutoScalingTemplateInventory", "org.zstack.sdk.AutoScalingTemplateInventory");
 			put("org.zstack.autoscaling.template.AutoScalingVmTemplateInventory", "org.zstack.sdk.AutoScalingVmTemplateInventory");
+			put("org.zstack.baremetal2.chassis.BareMetal2BondingInventory", "org.zstack.sdk.BareMetal2BondingInventory");
+			put("org.zstack.baremetal2.chassis.BareMetal2BondingNicRefInventory", "org.zstack.sdk.BareMetal2BondingNicRefInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisDiskInventory", "org.zstack.sdk.BareMetal2ChassisDiskInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisInventory", "org.zstack.sdk.BareMetal2ChassisInventory");
 			put("org.zstack.baremetal2.chassis.BareMetal2ChassisNicInventory", "org.zstack.sdk.BareMetal2ChassisNicInventory");

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateVmInstanceFromOvfAction extends AbstractAction {
+public class GetVirtualRouterSoftwareVersionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateVmInstanceFromOvfAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateVmInstanceFromOvfResult value;
+        public org.zstack.sdk.GetVirtualRouterSoftwareVersionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,28 +26,10 @@ public class CreateVmInstanceFromOvfAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String xmlBase64;
+    public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String jsonImageInfos;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String jsonCreateVmParam;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean deleteImageAfterSuccess = true;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean deleteImageOnFail = false;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = true, validValues = {"IPsec"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String softwareName;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -67,12 +49,6 @@ public class CreateVmInstanceFromOvfAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -81,8 +57,8 @@ public class CreateVmInstanceFromOvfAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateVmInstanceFromOvfResult value = res.getResult(org.zstack.sdk.CreateVmInstanceFromOvfResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateVmInstanceFromOvfResult() : value; 
+        org.zstack.sdk.GetVirtualRouterSoftwareVersionResult value = res.getResult(org.zstack.sdk.GetVirtualRouterSoftwareVersionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVirtualRouterSoftwareVersionResult() : value; 
 
         return ret;
     }
@@ -111,11 +87,11 @@ public class CreateVmInstanceFromOvfAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/ovf/create-vm-instance";
+        info.httpMethod = "GET";
+        info.path = "/vpc/virtual-routers/{uuid}/softwareversion";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
