@@ -20,36 +20,4 @@ public class BlockPrimaryStorageInventory extends org.zstack.sdk.PrimaryStorageI
         return this.metadata;
     }
 
-    public java.lang.String encryptGatewayIp;
-    public void setEncryptGatewayIp(java.lang.String encryptGatewayIp) {
-        this.encryptGatewayIp = encryptGatewayIp;
-    }
-    public java.lang.String getEncryptGatewayIp() {
-        return this.encryptGatewayIp;
-    }
-
-    public java.lang.Integer encryptGatewayPort;
-    public void setEncryptGatewayPort(java.lang.Integer encryptGatewayPort) {
-        this.encryptGatewayPort = encryptGatewayPort;
-    }
-    public java.lang.Integer getEncryptGatewayPort() {
-        return this.encryptGatewayPort;
-    }
-
-    public java.lang.String encryptGatewayUsername;
-    public void setEncryptGatewayUsername(java.lang.String encryptGatewayUsername) {
-        this.encryptGatewayUsername = encryptGatewayUsername;
-    }
-    public java.lang.String getEncryptGatewayUsername() {
-        return this.encryptGatewayUsername;
-    }
-
-    public java.lang.String encryptGatewayPassword;
-    public void setEncryptGatewayPassword(java.lang.String encryptGatewayPassword) {
-        this.encryptGatewayPassword = encryptGatewayPassword;
-    }
-    public java.lang.String getEncryptGatewayPassword() {
-        return this.encryptGatewayPassword;
-    }
-
 }
