@@ -91,6 +91,16 @@ doc {
 					since "3.6.0"
 					
 				}
+				column {
+					name "withMemory"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "boolean"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 
