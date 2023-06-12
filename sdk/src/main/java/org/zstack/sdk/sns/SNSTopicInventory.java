@@ -36,14 +36,6 @@ public class SNSTopicInventory  {
         return this.state;
     }
 
-    public java.lang.String locale;
-    public void setLocale(java.lang.String locale) {
-        this.locale = locale;
-    }
-    public java.lang.String getLocale() {
-        return this.locale;
-    }
-
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
