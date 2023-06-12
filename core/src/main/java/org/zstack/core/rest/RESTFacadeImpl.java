@@ -70,6 +70,8 @@ public class RESTFacadeImpl implements RESTFacade {
     private String sendCommandUrl;
     private String callbackHostName;
 
+    private final int notifiedFailureHttpTasksSize = 128;
+
     final private Map<String, HttpCallStatistic> statistics = new ConcurrentHashMap<String, HttpCallStatistic>();
     final private Map<String, HttpCallHandlerWrapper> httpCallhandlers = new ConcurrentHashMap<String, HttpCallHandlerWrapper>();
     private final List<BeforeAsyncJsonPostInterceptor> interceptors = new ArrayList<BeforeAsyncJsonPostInterceptor>();
@@ -87,6 +89,12 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     final private Map<String, AsyncHttpWrapper> wrappers = new ConcurrentHashMap<String, AsyncHttpWrapper>();
+    final private Map<String, String> notifiedFailureHttpTasks = Collections.synchronizedMap(new LinkedHashMap<String, String>(notifiedFailureHttpTasksSize, 0.9f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry eldest) {
+            return this.size() > notifiedFailureHttpTasksSize;
+        }
+    });
 
     void init() {
         DebugManager.registerDebugSignalHandler("DumpRestStats", () -> {
@@ -103,6 +111,16 @@ public class RESTFacadeImpl implements RESTFacade {
                 }
             }
             sb.append("================ END: REST CALL Statistics =====================\n");
+            logger.debug(sb.toString());
+        });
+
+        DebugManager.registerDebugSignalHandler("DumpFailedRestTasks", () -> {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n================ BEGIN: FAILED REST CALL TASKS ===================\n");
+            synchronized (notifiedFailureHttpTasks) {
+                notifiedFailureHttpTasks.forEach((k, v) -> sb.append(String.format("task[%s] failed because no 'callback found for taskUuid'. request body: %s\n", k, v)));
+            }
+            sb.append("================ END: FAILED REST CALL TASKS =====================\n");
             logger.debug(sb.toString());
         });
 
@@ -183,6 +201,7 @@ public class RESTFacadeImpl implements RESTFacade {
             if (wrapper == null) {
                 rsp.sendError(HttpStatus.SC_NOT_FOUND, String.format("No callback found for taskUuid[%s]", taskUuid));
                 logger.warn(String.format("Received a callback request, but no 'callback found for taskUuid[%s]. request body: %s", taskUuid, entity.getBody()));
+                notifiedFailureHttpTasks.put(taskUuid, entity.getBody());
                 return;
             }
 
