@@ -78,7 +78,6 @@ elif [ $tool = 'zstack-ctl' ]; then
     . $CTL_VIRENV_PATH/bin/activate
     cd $cwd
     pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackctl-*.tar.gz || exit 1
-    pip install -i $pypi_path --trusted-host localhost --ignore-installed pycrypto==2.6.1 || exit 1
     chmod +x /usr/bin/zstack-ctl
     python $CTL_VIRENV_PATH/lib/python2.7/site-packages/zstackctl/generate_zstackctl_bash_completion.py
 
