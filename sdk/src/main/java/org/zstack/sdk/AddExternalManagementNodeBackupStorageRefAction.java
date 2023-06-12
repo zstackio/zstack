@@ -1,10 +1,10 @@
-package org.zstack.sdk.disasterrecovery;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateMirrorCdpTaskScheduleJobAction extends AbstractAction {
+public class AddExternalManagementNodeBackupStorageRefAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateMirrorCdpTaskScheduleJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.disasterrecovery.CreateMirrorCdpTaskScheduleJobResult value;
+        public org.zstack.sdk.AddExternalManagementNodeBackupStorageRefResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,11 @@ public class CreateMirrorCdpTaskScheduleJobAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List mirrorCdpTaskUuids;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String externalManagementNodeUuid;
 
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String backupStorageUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -75,8 +63,8 @@ public class CreateMirrorCdpTaskScheduleJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.disasterrecovery.CreateMirrorCdpTaskScheduleJobResult value = res.getResult(org.zstack.sdk.disasterrecovery.CreateMirrorCdpTaskScheduleJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.disasterrecovery.CreateMirrorCdpTaskScheduleJobResult() : value; 
+        org.zstack.sdk.AddExternalManagementNodeBackupStorageRefResult value = res.getResult(org.zstack.sdk.AddExternalManagementNodeBackupStorageRefResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddExternalManagementNodeBackupStorageRefResult() : value; 
 
         return ret;
     }
@@ -106,7 +94,7 @@ public class CreateMirrorCdpTaskScheduleJobAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/mirror/cdptask/schedulejob/create";
+        info.path = "/externalmanagementbackupstorageref/add/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

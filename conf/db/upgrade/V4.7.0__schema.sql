@@ -516,6 +516,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MirrorCdpTaskScheduleJobVO` (
     `uuid` varchar(32) NOT NULL,
     `name` varchar(256) NOT NULL,
     `description` varchar(256) DEFAULT NULL,
+    `externalManagementNodeUuid` varchar(32) NOT NULL,
     `status` varchar(32) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -548,4 +549,15 @@ CREATE TABLE IF NOT EXISTS `zstack`.`TwinManagementNodeResourceMapVO` (
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`ExternalManagementNodeBackupStorageRefVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `externalManagementNodeUuid` varchar(32) NOT NULL,
+    `backupStorageUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`CdpTaskVO` ADD COLUMN `scene` varchar(2048) DEFAULT 'Normal';
 
