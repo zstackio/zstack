@@ -235,7 +235,22 @@ CREATE TABLE IF NOT EXISTS `zstack`.`RegisterLicenseApplicationVO` (
     PRIMARY KEY (`appId`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
-ALTER TABLE LicenseHistoryVO ADD COLUMN capacity int(10) NOT NULL;
+DELIMITER $$
+CREATE PROCEDURE UpdateLicenseHistoryVOSchema()
+    BEGIN
+        IF NOT EXISTS( SELECT 1
+                       FROM INFORMATION_SCHEMA.COLUMNS
+                       WHERE table_name = 'LicenseHistoryVO'
+                             AND table_schema = 'zstack'
+                             AND column_name = 'ltsCapacity') THEN
+
+            ALTER TABLE `zstack`.`LicenseHistoryVO` ADD COLUMN ltsCapacity int(10) DEFAULT 0;
+
+        END IF;
+    END $$
+DELIMITER ;
+CALL UpdateLicenseHistoryVOSchema();
+DROP PROCEDURE IF EXISTS UpdateLicenseHistoryVOSchema;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`CephOsdGroupVO` (
     `uuid` varchar(32) NOT NULL,
