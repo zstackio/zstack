@@ -15,6 +15,8 @@ public abstract class NeedReplyMessage extends Message {
      */
     @APINoSee
     protected long timeout = -1;
+    @APINoSee
+    protected long messageDeadline = -1;
     protected List<String> systemTags;
     protected List<String> userTags;
 
@@ -75,5 +77,13 @@ public abstract class NeedReplyMessage extends Message {
 
     public void setTimeout(long timeout) {
         this.timeout = timeout;
+    }
+
+    public long getMessageDeadline() {
+        return messageDeadline;
+    }
+
+    public void setMessageDeadline(long messageDeadline) {
+        this.messageDeadline = messageDeadline;
     }
 }

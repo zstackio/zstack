@@ -2,7 +2,6 @@ package org.zstack.core.thread;
 
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
