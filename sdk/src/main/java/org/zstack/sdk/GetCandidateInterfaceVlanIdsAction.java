@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetCandidateNetworkInterfacesAction extends AbstractAction {
+public class GetCandidateInterfaceVlanIdsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCandidateNetworkInterfacesResult value;
+        public org.zstack.sdk.GetCandidateInterfaceVlanIdsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,7 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List hostUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean slaveOnly = true;
+    public java.util.List interfaceUuids;
 
     @Param(required = false)
     public java.lang.Integer limit = 1000;
@@ -63,8 +60,8 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetCandidateNetworkInterfacesResult value = res.getResult(org.zstack.sdk.GetCandidateNetworkInterfacesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCandidateNetworkInterfacesResult() : value; 
+        org.zstack.sdk.GetCandidateInterfaceVlanIdsResult value = res.getResult(org.zstack.sdk.GetCandidateInterfaceVlanIdsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCandidateInterfaceVlanIdsResult() : value; 
 
         return ret;
     }
@@ -94,7 +91,7 @@ public class GetCandidateNetworkInterfacesAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/cluster/hosts-network-interfaces";
+        info.path = "/host/network-interface-vlan-ids";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
