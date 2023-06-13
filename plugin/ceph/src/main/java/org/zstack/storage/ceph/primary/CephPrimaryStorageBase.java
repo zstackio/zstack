@@ -65,6 +65,7 @@ import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
 import org.zstack.storage.ceph.primary.capacity.CephOsdGroupCapacityHelper;
+import org.zstack.storage.ceph.primary.capacity.XSKYCephPrimaryCapacityBaseUpdater;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
@@ -1616,7 +1617,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.skipIfExisting = msg.isSkipIfExisting();
 
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
-
+        
         httpCall(CREATE_VOLUME_PATH, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<CreateEmptyVolumeRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
@@ -2489,6 +2490,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     protected void deleteVolumeOnPrimaryStorage(final DeleteVolumeOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
+        msg.getVolume().getUuid();
         DeleteCmd cmd = new DeleteCmd();
         cmd.installPath = msg.getVolume().getInstallPath();
 
@@ -3168,7 +3170,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
+    public <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
         httpCall(path, cmd, retClass, callback, null, 0);
     }
 
