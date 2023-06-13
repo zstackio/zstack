@@ -32,6 +32,7 @@ public class VolumeSnapshotGroupChecker {
 
         Map<String, String> groupVmRef = groups.stream().collect(Collectors.toMap(ResourceVO::getUuid, VolumeSnapshotGroupVO::getVmInstanceUuid));
         Map<String, Map<String, String>> vmAttachedVols = Q.New(VolumeVO.class)
+                .notEq(VolumeVO_.type, VolumeType.Memory)
                 .in(VolumeVO_.vmInstanceUuid, groupVmRef.values().stream().distinct().collect(Collectors.toList()))
                 .select(VolumeVO_.vmInstanceUuid, VolumeVO_.uuid, VolumeVO_.name).listTuple().stream()
                 .collect(Collectors.groupingBy(t -> t.get(0, String.class),
