@@ -31,7 +31,7 @@ public class UpdateVirtualRouterSoftwareVersionAction extends AbstractAction {
     @Param(required = true, validValues = {"IPsec"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String softwareName;
 
-    @Param(required = true, validValues = {"4.5.2","5.9.4"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"4.5.2","5.9.4","5.8.4"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String targetVersion;
 
     @Param(required = false)
