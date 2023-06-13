@@ -29,6 +29,7 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.security.acl.LastOwnerException;
 import java.util.List;
 
 import static org.zstack.core.Platform.operr;
@@ -260,7 +261,9 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            completion.fail(errorCode);
+                            logger.debug(String.format("failed to delete l2[uuid:%s] in host, because %s", l2Network.getUuid(), errorCode));
+                            //reply success it will delete vo in db
+                            completion.success();
                             chain.next();
                         }
                     }, KVMConstant.KVM_DELETE_OVSDPDK_NETWORK_PATH);
@@ -290,7 +293,9 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        completion.fail(errorCode);
+                        logger.debug(String.format("failed to delete l2[uuid:%s] in host, because %s", l2Network.getUuid(), errorCode));
+                        //reply success it will delete vo in db
+                        completion.success();
                         chain.next();
                     }
                 }, KVMConstant.KVM_DELETE_OVSDPDK_NETWORK_PATH);
