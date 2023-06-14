@@ -12,3 +12,5 @@ ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `vendorId` VARCHAR(64) 
 ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `deviceId` VARCHAR(64) DEFAULT NULL;
 ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `subvendorId` VARCHAR(64)  DEFAULT NULL;
 ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `subdeviceId` VARCHAR(64)  DEFAULT NULL;
+ALTER TABLE `zstack`.`MonitorGroupTemplateRefVO`
+    ADD COLUMN `isApplied` boolean not null DEFAULT TRUE;
