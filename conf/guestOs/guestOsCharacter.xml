@@ -135,6 +135,11 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
+        <osRelease>WindowsServer 2003</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
         <osRelease>WindowsServer 2008</osRelease>
     </osInfo>
     <osInfo>
@@ -155,6 +160,11 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
+        <osRelease>WindowsServer 2022</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
         <osRelease>Windows 7</osRelease>
     </osInfo>
     <osInfo>
@@ -166,6 +176,11 @@
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
         <osRelease>Windows 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
+        <osRelease>Windows 11</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
