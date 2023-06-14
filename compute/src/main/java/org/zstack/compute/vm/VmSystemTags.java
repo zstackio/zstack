@@ -148,9 +148,7 @@ public class VmSystemTags {
     public static String CD_ROM_UUID_TOKEN = "cdromUuid";
     public static PatternedSystemTag CD_ROM = new PatternedSystemTag(String.format("cdromUuid::{%s}", CD_ROM_UUID_TOKEN), VmInstanceVO.class);
 
-    @Deprecated
     public static final String V2V_VM_CDROMS_TOKEN = "v2vVmCdroms";
-    @Deprecated
     public static PatternedSystemTag V2V_VM_CDROMS = new PatternedSystemTag(
             String.format("v2vVmCdroms::{%s}", V2V_VM_CDROMS_TOKEN),
             VmInstanceVO.class
