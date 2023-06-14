@@ -30,6 +30,7 @@
         <module>acl</module>
         <module>sdnController</module>
         <module>directory</module>
+        <module>hostNetworkInterface</module>
     </modules>
     <dependencies>
         <dependency>

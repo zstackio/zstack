@@ -2,15 +2,16 @@ ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `vendorId` VARCHAR(64) 
 ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `deviceId` VARCHAR(64) DEFAULT NULL;
 ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `subvendorId` VARCHAR(64) DEFAULT NULL;
 ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `subdeviceId` VARCHAR(64) DEFAULT NULL;
-ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `maxPartNum` INT DEFAULT NULL;
+ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `maxPartNum` INT DEFAULT 0;
 ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `virtStatus` VARCHAR(32) DEFAULT NULL;
 
-CREATE TABLE `HostVirtualNetworkInterfaceVO`
+CREATE TABLE `HostVirtualNetworkInterfaceVO` IF NOT EXISTS `zstack`.`HostVirtualNetworkInterfaceVO`
 (
     `uuid`                     varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
     `description`              varchar(2048)        DEFAULT NULL,
     `hostUuid`                 varchar(32) NOT NULL,
     `vmInstanceUuid`           varchar(32)          DEFAULT NULL,
+    `vmNicUuid`                varchar(32)          DEFAULT NULL,
     `hostNetworkInterfaceUuid` varchar(32)          DEFAULT NULL,
     `status`                   varchar(32) NOT NULL,
     `pciDeviceAddress`         varchar(32) NOT NULL,
@@ -39,8 +40,6 @@ ALTER TABLE `zstack`.`VmVdpaNicVO`
 ALTER TABLE VmVfNicVO DROP FOREIGN KEY fkVmVfNicVOPciDeviceVO;
 ALTER TABLE VmVfNicVO DROP COLUMN `pciDeviceUuid`;
 ALTER TABLE VmVfNicVO
-    ADD COLUMN `virtualPhysicalNicUuid` VARCHAR(32) DEFAULT NULL;
+    ADD COLUMN `virtualInterfaceUuid` VARCHAR(32) DEFAULT NULL;
 ALTER TABLE `zstack`.`VmVfNicVO`
-    ADD CONSTRAINT fkVmVfNicVOHostVirtualNetworkInterfaceVO FOREIGN KEY (`virtualPhysicalNicUuid`) REFERENCES `zstack`.`HostVirtualNetworkInterfaceVO` (`uuid`) ON DELETE SET NULL;
-
-# todo: upgrade
+    ADD CONSTRAINT fkVmVfNicVOHostVirtualNetworkInterfaceVO FOREIGN KEY (`virtualInterfaceUuid`) REFERENCES `zstack`.`HostVirtualNetworkInterfaceVO` (`uuid`) ON DELETE SET NULL;

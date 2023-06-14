@@ -247,7 +247,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
             public void run(SyncTaskChain chain) {
                 // vlan bridges and novlan bridge use the same bridge name
                 // in ovs, so before delete l2 network we should check if
-                // the PhysicalInterface is using by another l2 network.
+                // the PhysicalInterface is used by another l2 network.
                 List<L2NetworkVO> l2NetworkVOs = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.physicalInterface, l2Network.getPhysicalInterface())
                         .notEq(L2NetworkVO_.uuid, l2Network.getUuid()).list();
 

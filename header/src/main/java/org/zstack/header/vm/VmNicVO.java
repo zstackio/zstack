@@ -107,6 +107,27 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
         lastOpDate = null;
     }
 
+    public VmNicVO() {
+    }
+
+    public VmNicVO(VmNicVO nic) {
+        this.setUuid(nic.getUuid());
+        this.setIp(nic.getIp());
+        this.setL3NetworkUuid(nic.getL3NetworkUuid());
+        this.setUsedIpUuid(nic.getUsedIpUuid());
+        this.setVmInstanceUuid(nic.getVmInstanceUuid());
+        this.setDeviceId(nic.getDeviceId());
+        this.setMac(nic.getMac());
+        this.setHypervisorType(nic.getHypervisorType());
+        this.setNetmask(nic.getNetmask());
+        this.setGateway(nic.getGateway());
+        this.setIpVersion(nic.getIpVersion());
+        this.setInternalName(nic.getInternalName());
+        this.setAccountUuid(nic.getAccountUuid());
+        this.setMetaData(nic.getMetaData());
+    }
+
+
     public static VmNicVO findTheEarliestOne(List<VmNicVO> nics) {
         VmNicVO nic = null;
         for (VmNicVO n : nics) {
