@@ -75,10 +75,10 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         ShellUtils.run(String.format("yes | cp %s %s", pip.getAbsolutePath(), filesDir));
     }
 
-    private void placeAnsible196() {
-        File ansible = PathUtil.findFileOnClassPath("tools/ansible-1.9.6.tar.gz");
+    private void placeAnsible4100() {
+        File ansible = PathUtil.findFileOnClassPath("tools/ansible-4.10.0-py2.py3-none-any.whl");
         if (ansible == null) {
-            throw new CloudRuntimeException("cannot find tools/ansible-1.9.6.tar.gz on classpath");
+            throw new CloudRuntimeException("cannot find tools/ansible-4.10.0-py2.py3-none-any.whl on classpath");
         }
 
         File root = new File(filesDir);
@@ -129,17 +129,19 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             }
 
             placePip703();
-            placeAnsible196();
+            placeAnsible4100();
 
-            ShellUtils.run(String.format("if ! sudo ansible --version | grep -q 1.9.6; then " +
-                    "if grep -i -s centos /etc/system-release; then " +
+            ShellUtils.run(String.format("if ! sudo ansible --version | grep -q 'core 2.11.12'; then " +
+                    "if grep -i -s -E 'centos|rocky' /etc/system-release; then " +
                     "sudo yum remove -y ansible; " +
                     "elif grep -i -s ubuntu /etc/issue; then " +
                     "sudo apt-get --assume-yes remove ansible; " +
                     "else echo \"Warning: can't remove ansible from unknown platform\"; " +
                     "fi; " +
-                    "sudo pip install -i file://%s --trusted-host localhost -I ansible==1.9.6; " +
-                    "fi", AnsibleConstant.PYPI_REPO), false);
+                    "sudo pip uninstall -y ansible; " +
+                    "sudo pip install -i file://%s --trusted-host localhost -I setuptools==39.2.0; " +
+                    "sudo pip install -i file://%s --trusted-host localhost -I ansible==4.10.0; " +
+                    "fi", AnsibleConstant.PYPI_REPO, AnsibleConstant.PYPI_REPO), false);
 
             deployModule("ansible/zstacklib", "zstacklib.py");
         } catch (IOException e) {
