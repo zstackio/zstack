@@ -82,6 +82,60 @@ elif [ $tool = 'zstack-ctl' ]; then
     chmod +x /usr/bin/zstack-ctl
     python $CTL_VIRENV_PATH/lib/python2.7/site-packages/zstackctl/generate_zstackctl_bash_completion.py
 
+elif [ $tool = 'zstack-sys' ]; then
+    SYS_VIRENV_PATH=/var/lib/zstack/virtualenv/zstacksys
+    NEED_INSTALL=false
+    if [ -d $SYS_VIRENV_PATH ]; then
+        . $SYS_VIRENV_PATH/bin/activate
+        if ! ansible --version | grep -q 'core 2.11.12.3'; then
+          deactivate
+          NEED_INSTALL=true
+        fi
+    else
+        NEED_INSTALL=true
+    fi
+    if $NEED_INSTALL; then
+        rm -rf $SYS_VIRENV_PATH && virtualenv $SYS_VIRENV_PATH --python=python2.7 || exit 1
+        . $SYS_VIRENV_PATH/bin/activate
+        cd $cwd
+        pip install -i $pypi_path --trusted-host localhost --ignore-installed setuptools==39.2.0 || exit 1
+        pip install -i $pypi_path --trusted-host localhost --ignore-installed ansible==4.10.0 || exit 1
+
+        cat > /usr/bin/ansible << EOF
+#! /bin/sh
+VIRTUAL_ENV=/var/lib/zstack/virtualenv/zstacksys
+if [ ! -d $VIRTUAL_ENV ]; then
+    echo "Need to install zstacksys before using it"
+    exit 1
+fi
+
+LANG=en_US.UTF-8
+LC_ALL=en_US.utf8
+export LANG LC_ALL
+. ${VIRTUAL_ENV}/bin/activate
+
+ansible \$@
+EOF
+        chmod +x /usr/bin/ansible
+
+        cat > /usr/bin/ansible-playbook << EOF
+#! /bin/sh
+VIRTUAL_ENV=/var/lib/zstack/virtualenv/zstacksys
+if [ ! -d $VIRTUAL_ENV ]; then
+    echo "Need to install zstacksys before using it"
+    exit 1
+fi
+
+LANG=en_US.UTF-8
+LC_ALL=en_US.utf8
+export LANG LC_ALL
+. ${VIRTUAL_ENV}/bin/activate
+
+ansible-playbook \$@
+EOF
+        chmod +x /usr/bin/ansible-playbook
+    fi
+
 elif [ $tool = 'zstack-dashboard' ]; then
     UI_VIRENV_PATH=/var/lib/zstack/virtualenv/zstack-dashboard
     [ ! -z $force ] && rm -rf $UI_VIRENV_PATH
