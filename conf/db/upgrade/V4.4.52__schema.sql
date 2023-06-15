@@ -300,7 +300,7 @@ CREATE PROCEDURE UpdateESXHostVOSchema()
                              AND table_schema = 'zstack'
                              AND column_name = 'ltsEsxiVersion') THEN
 
-            ALTER TABLE `zstack`.`ESXHostVO` ADD COLUMN `esxiVersion` varchar(32) DEFAULT '';
+            ALTER TABLE `zstack`.`ESXHostVO` ADD COLUMN `ltsEsxiVersion` varchar(32) DEFAULT '';
 
         END IF;
     END $$
