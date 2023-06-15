@@ -1391,9 +1391,28 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmStoppedFromIntermediateState;
         }
 
+        if (VmInstanceState.intermediateStates.contains(originalState) && currentState == VmInstanceState.NoState) {
+            return VmAbnormalLifeCycleOperation.VmNoStateFromIntermediateState;
+        }
+
         if (originalState == VmInstanceState.Running && currentState == VmInstanceState.Paused &&
                 currentHostUuid.equals(originalHostUuid)) {
             return VmAbnormalLifeCycleOperation.VmPausedFromRunningStateHostNotChanged;
+        }
+
+        if (originalState == VmInstanceState.Running && currentState == VmInstanceState.NoState &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmNoStateFromRunningStateHostNotChanged;
+        }
+
+        if (originalState == VmInstanceState.Crashed && currentState == VmInstanceState.NoState &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmNoStateFromCrashedStateHostNotChanged;
+        }
+
+        if (originalState == VmInstanceState.NoState && currentState == VmInstanceState.Stopped &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmNoStateFromStoppedStateHostNotChanged;
         }
 
         if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Paused &&
@@ -1536,6 +1555,15 @@ public class VmInstanceBase extends AbstractVmInstance {
             // the vm is detected on the host again. It's largely because the host disconnected before
             // and now reconnected
             changeVmStateInDb(VmInstanceStateEvent.running, () -> self.setHostUuid(msg.getHostUuid()));
+            fireEvent.run();
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        } else if (operation == VmAbnormalLifeCycleOperation.VmNoStateFromRunningStateHostNotChanged
+                || operation == VmAbnormalLifeCycleOperation.VmNoStateFromCrashedStateHostNotChanged) {
+            // the vm is detected on the host again. It's largely because the host disconnected before
+            // and now reconnected
+            changeVmStateInDb(VmInstanceStateEvent.noState, () -> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();

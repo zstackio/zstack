@@ -15,6 +15,9 @@ import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -40,13 +43,22 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
         return msg;
     }
 
+    private List<VmInstanceState> consoleAvailableStates = Arrays.asList(
+            VmInstanceState.Running,
+            VmInstanceState.Crashed,
+            VmInstanceState.VolumeRecovering,
+            VmInstanceState.Paused,
+            VmInstanceState.NoState
+    );
+
     private void validate(APIRequestConsoleAccessMsg msg) {
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
         q.select(VmInstanceVO_.state);
         q.add(VmInstanceVO_.uuid, Op.EQ, msg.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
-        if (VmInstanceState.Running != state && VmInstanceState.Crashed != state && VmInstanceState.VolumeRecovering != state) {
-            throw new ApiMessageInterceptionException(operr("Console is only available when the VM[uuid:%s] is Running or Crashed, but the current state is %s", msg.getVmInstanceUuid(), state));
+        if (!consoleAvailableStates.contains(state)) {
+            throw new ApiMessageInterceptionException(operr("vm[uuid:%s] is not in state of %s, current state is %s",
+                    msg.getVmInstanceUuid(), consoleAvailableStates, state));
         }
         bus.makeTargetServiceIdByResourceUuid(msg, ConsoleConstants.SERVICE_ID, msg.getVmInstanceUuid());
     }

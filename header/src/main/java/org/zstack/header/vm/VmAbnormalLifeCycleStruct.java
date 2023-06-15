@@ -23,6 +23,10 @@ public class VmAbnormalLifeCycleStruct {
         VmCrashedFromRunningStateHostNotChanged,
         VmRunningFromCrashedStateHostNotChanged,
         VmStoppedFromCrashedStateHostNotChanged,
+        VmNoStateFromRunningStateHostNotChanged,
+        VmNoStateFromCrashedStateHostNotChanged,
+        VmNoStateFromIntermediateState,
+        VmNoStateFromStoppedStateHostNotChanged,
     }
 
     private VmAbnormalLifeCycleOperation operation;

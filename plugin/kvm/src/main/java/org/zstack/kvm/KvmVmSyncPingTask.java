@@ -240,8 +240,12 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                         }
 
                         VmInstanceState state = KvmVmState.valueOf(e.getValue()).toVmInstanceState();
-                        if (state == VmInstanceState.Running || state == VmInstanceState.Paused
-                                || state == VmInstanceState.Unknown || state == VmInstanceState.Stopped || state == VmInstanceState.Crashed) {
+                        if (state == VmInstanceState.Running
+                                || state == VmInstanceState.Paused
+                                || state == VmInstanceState.Unknown
+                                || state == VmInstanceState.Stopped
+                                || state == VmInstanceState.Crashed
+                                || state == VmInstanceState.NoState) {
                             states.put(e.getKey(), state);
                         }
 
