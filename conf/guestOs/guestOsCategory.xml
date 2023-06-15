@@ -136,6 +136,12 @@
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
+        <version>2003</version>
+        <osRelease>WindowsServer 2003</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Windows</platform>
+        <name>Windows</name>
         <version>2008</version>
         <osRelease>WindowsServer 2008</osRelease>
     </osInfo>
@@ -160,6 +166,12 @@
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
+        <version>2022</version>
+        <osRelease>WindowsServer 2022</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Windows</platform>
+        <name>Windows</name>
         <version>7</version>
         <osRelease>Windows 7</osRelease>
     </osInfo>
@@ -174,6 +186,12 @@
         <name>Windows</name>
         <version>10</version>
         <osRelease>Windows 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Windows</platform>
+        <name>Windows</name>
+        <version>11</version>
+        <osRelease>Windows 11</osRelease>
     </osInfo>
     <osInfo>
         <platform>Windows</platform>
