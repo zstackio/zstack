@@ -291,3 +291,19 @@ DELIMITER ;
 CALL UpdateCephPrimaryStoragePoolVOSchema();
 DROP PROCEDURE IF EXISTS UpdateCephPrimaryStoragePoolVOSchema;
 
+DELIMITER $$
+CREATE PROCEDURE UpdateESXHostVOSchema()
+    BEGIN
+        IF NOT EXISTS( SELECT 1
+                       FROM INFORMATION_SCHEMA.COLUMNS
+                       WHERE table_name = 'ESXHostVO'
+                             AND table_schema = 'zstack'
+                             AND column_name = 'ltsEsxiVersion') THEN
+
+            ALTER TABLE `zstack`.`ESXHostVO` ADD COLUMN `esxiVersion` varchar(32) DEFAULT '';
+
+        END IF;
+    END $$
+DELIMITER ;
+CALL UpdateESXHostVOSchema();
+DROP PROCEDURE IF EXISTS UpdateESXHostVOSchema;
