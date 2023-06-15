@@ -27,6 +27,9 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     @SerializedName("isInstallHostShutdownHook")
     private String isInstallHostShutdownHook;
 
+    @SerializedName("extra_packages")
+    private String extraPackages;
+
     public String getInit() {
         return init;
     }
@@ -110,5 +113,13 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     @Override
     public String getPackageName() {
         return packageName;
+    }
+
+    public String getExtraPackages() {
+        return extraPackages;
+    }
+
+    public void setExtraPackages(String extraPackages) {
+        this.extraPackages = extraPackages;
     }
 }
