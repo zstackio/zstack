@@ -112,7 +112,7 @@ public class While<T> {
             }
             break;
             default:
-                DebugUtils.Assert(false, "should be here");
+                DebugUtils.Assert(false, "should not be here");
                 break;
         }
     }
