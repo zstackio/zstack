@@ -227,6 +227,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                     vmMigrateToAnotherHost(trigger);
                 } else if (operation == VmAbnormalLifeCycleOperation.VmRunningFromIntermediateState) {
                     vmRunningFromIntermediateState(trigger);
+                } else if (operation == VmAbnormalLifeCycleOperation.VmNoStateFromIntermediateState) {
+                    vmRunningFromIntermediateState(trigger);
                 } else {
                     trigger.next();
                 }
