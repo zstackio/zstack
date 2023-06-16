@@ -13,6 +13,15 @@ public abstract class WhileCompletion extends NoErrorCompletion {
     public WhileCompletion(AsyncBackup... completion) {
         super(completion);
     }
+
+    /**
+     * The allDone method will IMMEDIATELY stop the executing loop and return,
+     * without waiting for other handler finished
+     * 
+     * The executing handler will keep running;
+     * 
+     * The handler that has not yet been executed will be aborted.
+     */
     public abstract void allDone();
 
     public abstract void addError(ErrorCode error);
