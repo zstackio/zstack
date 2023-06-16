@@ -647,15 +647,33 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             @Override
             protected void run(Map tokens, Object data) {
                 VmCanonicalEvents.VmStateChangedData d = (VmCanonicalEvents.VmStateChangedData) data;
-                if (VmInstanceState.Paused.toString().equals(d.getNewState())) {
+                if (VmInstanceState.Paused.toString().equals(d.getNewState())
+                        || VmInstanceState.NoState.toString().equals(d.getNewState())) {
                     ApplianceVmVO applianceVmVO = Q.New(ApplianceVmVO.class).eq(ApplianceVmVO_.uuid, d.getInventory().getUuid()).find();
-                    if (applianceVmVO != null) {
+                    if (applianceVmVO == null) {
+                        return;
+                    }
+
+                    if (VmInstanceState.Paused.toString().equals(d.getNewState())) {
                         ApplianceVmCanonicalEvents.ApplianceVmStateChangeData applianceVmStateChangeData = new ApplianceVmCanonicalEvents.ApplianceVmStateChangeData();
                         applianceVmStateChangeData.setOldState(d.getOldState());
                         applianceVmStateChangeData.setNewState(d.getNewState());
                         applianceVmStateChangeData.setApplianceVmUuid(d.getVmUuid());
                         applianceVmStateChangeData.setInv(ApplianceVmInventory.valueOf(applianceVmVO));
                         evf.fire(ApplianceVmCanonicalEvents.APPLIANCEVM_STATE_CHANGED_PATH, applianceVmStateChangeData);
+                    }
+
+                    if (VmInstanceState.NoState.toString().equals(d.getNewState())) {
+                        logger.debug(String.format("the virtual router vm[uuid: %s] is in NoState, stop it anyway", d.getInventory().getUuid()));
+                        // NoState means we lost control of the vm, stop the vm and wait vm ha to start it
+                        // Do not use reboot to make sure vm could be ha to another host.
+                        // Only tries to stop vm once, if it failed, let ha to handle it.
+                        StopVmInstanceMsg msg = new StopVmInstanceMsg();
+                        msg.setVmInstanceUuid(d.getInventory().getUuid());
+                        msg.setGcOnFailure(true);
+                        msg.setType(StopVmType.force.toString());
+                        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, d.getInventory().getUuid());
+                        bus.send(msg);
                     }
                 }
             }
