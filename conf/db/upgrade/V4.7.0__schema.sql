@@ -421,3 +421,5 @@ CREATE PROCEDURE UpdateHygonClusterVmCpuModeConfig()
 DELIMITER ;
 CALL UpdateHygonClusterVmCpuModeConfig();
 DROP PROCEDURE IF EXISTS UpdateHygonClusterVmCpuModeConfig;
+
+UPDATE GlobalConfigVO set `value` = 'InfoSec' where `value` = 'infoSec' and category ='encrypt' and name = 'encrypt.driver';
