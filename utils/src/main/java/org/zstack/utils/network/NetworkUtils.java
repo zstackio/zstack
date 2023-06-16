@@ -916,10 +916,14 @@ public class NetworkUtils {
     public static final String NETWORK_CFG_EMPTY = "none";
 
     public static final String DEFAULT_IPV4_PREFIX = "32";
+    public static final String DEFAULT_IPV6_PREFIX = "128";
     public static final String DEFAULT_IPV4_PREFIX_SPLIT = "/";
+    public static final String DEFAULT_IPV6_PREFIX_SPLIT = "/";
 
     public static String ipv4PrefixToNetmask(String prefix) {
-        int prefixLength = Integer.parseInt(prefix);
+        return ipv4PrefixToNetmask(Integer.parseInt(prefix));
+    }
+    public static String ipv4PrefixToNetmask(Integer prefixLength) {
         if (prefixLength < 1 || prefixLength > 32) {
             return String.format("255.255.255.255");
         }
