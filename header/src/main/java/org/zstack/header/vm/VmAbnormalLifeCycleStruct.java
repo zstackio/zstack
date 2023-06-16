@@ -14,6 +14,7 @@ public class VmAbnormalLifeCycleStruct {
             boolean match(VmAbnormalLifeCycleStruct struct) {
                 return (struct.getOriginalState() == VmInstanceState.Running
                         || struct.getOriginalState() == VmInstanceState.Starting
+                        || struct.getOriginalState() == VmInstanceState.NoState
                         || struct.getOriginalState() == VmInstanceState.Unknown)
                         && struct.getCurrentState() == VmInstanceState.Stopped
                         && struct.getCurrentHostUuid().equals(struct.getOriginalHostUuid());
