@@ -8,6 +8,8 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
+import org.zstack.header.agent.versioncontrol.AgentVersionVO;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.identity.IdentityErrors;
@@ -76,6 +78,8 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateVirtualRouterOfferingMsg) msg);
         } else if (msg instanceof APIUpdateVirtualRouterMsg) {
             validate((APIUpdateVirtualRouterMsg) msg);
+        } else if (msg instanceof APIReconnectVirtualRouterMsg) {
+            validate((APIReconnectVirtualRouterMsg) msg);
         }
 
         setServiceId(msg);
@@ -283,6 +287,19 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
 
         if (!found) {
             msg.addQueryCondition("type", QueryOp.EQ, VirtualRouterConstant.VIRTUAL_ROUTER_OFFERING_TYPE);
+        }
+    }
+
+    private void validate(APIReconnectVirtualRouterMsg msg) {
+        String vmInstanceUuid = msg.getVmInstanceUuid();
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            AgentVersionVO agentVersionVO = dbf.findByUuid(msg.getVmInstanceUuid(), AgentVersionVO.class);
+            if (agentVersionVO == null) {
+                agentVersionVO = new AgentVersionVO();
+                agentVersionVO.setUuid(vmInstanceUuid);
+                agentVersionVO.setAgentType("zvr-agent");
+                dbf.persist(agentVersionVO);
+            }
         }
     }
 }
