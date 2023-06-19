@@ -644,7 +644,8 @@ public class VolumeBase implements Volume {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadId;
+                return msg instanceof VolumeTemplateOverlayMsg ?
+                        String.format("create-volume-template-%s", self.getUuid()) : syncThreadId;
             }
 
             @Override
