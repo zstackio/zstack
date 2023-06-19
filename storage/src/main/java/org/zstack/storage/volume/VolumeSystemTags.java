@@ -39,4 +39,7 @@ public class VolumeSystemTags {
 
     @NonCloneable
     public static EphemeralSystemTag FAST_CREATE = new EphemeralSystemTag("volume::fastCreate");
+
+    public static String VOLUME_ENCRYPT_TOKEN = "volumeEncrypt";
+    public static PatternedSystemTag VOLUME_ENCRYPT = new PatternedSystemTag(String.format("volumeEncrypt::{%s}", VOLUME_ENCRYPT_TOKEN), VolumeVO.class);
 }
