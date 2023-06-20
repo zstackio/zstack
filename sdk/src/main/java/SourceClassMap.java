@@ -308,6 +308,7 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.cdp.CdpPolicyState", "org.zstack.sdk.CdpPolicyState");
 			put("org.zstack.header.storage.cdp.CdpTaskInventory", "org.zstack.sdk.CdpTaskInventory");
 			put("org.zstack.header.storage.cdp.CdpTaskResourceRefInventory", "org.zstack.sdk.CdpTaskResourceRefInventory");
+			put("org.zstack.header.storage.cdp.CdpTaskScene", "org.zstack.sdk.CdpTaskScene");
 			put("org.zstack.header.storage.cdp.CdpTaskState", "org.zstack.sdk.CdpTaskState");
 			put("org.zstack.header.storage.cdp.CdpTaskStatus", "org.zstack.sdk.CdpTaskStatus");
 			put("org.zstack.header.storage.cdp.CdpTaskType", "org.zstack.sdk.CdpTaskType");
@@ -803,6 +804,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CdpPolicyState", "org.zstack.header.storage.cdp.CdpPolicyState");
 			put("org.zstack.sdk.CdpTaskInventory", "org.zstack.header.storage.cdp.CdpTaskInventory");
 			put("org.zstack.sdk.CdpTaskResourceRefInventory", "org.zstack.header.storage.cdp.CdpTaskResourceRefInventory");
+			put("org.zstack.sdk.CdpTaskScene", "org.zstack.header.storage.cdp.CdpTaskScene");
 			put("org.zstack.sdk.CdpTaskState", "org.zstack.header.storage.cdp.CdpTaskState");
 			put("org.zstack.sdk.CdpTaskStatus", "org.zstack.header.storage.cdp.CdpTaskStatus");
 			put("org.zstack.sdk.CdpTaskType", "org.zstack.header.storage.cdp.CdpTaskType");

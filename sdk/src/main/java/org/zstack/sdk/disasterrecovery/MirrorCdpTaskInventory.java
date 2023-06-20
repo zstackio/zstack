@@ -103,6 +103,14 @@ public class MirrorCdpTaskInventory  {
         return this.cdpTask;
     }
 
+    public java.lang.Long bandwidth;
+    public void setBandwidth(java.lang.Long bandwidth) {
+        this.bandwidth = bandwidth;
+    }
+    public java.lang.Long getBandwidth() {
+        return this.bandwidth;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
