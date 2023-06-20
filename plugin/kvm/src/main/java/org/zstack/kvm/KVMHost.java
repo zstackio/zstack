@@ -2093,6 +2093,36 @@ public class KVMHost extends HostBase implements Host {
                         });
                     }
                 });
+                flow(new NoRollbackFlow() {
+                    String __name__ = "clean-firmware-flash-before-migrate";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        CleanVmFirmwareFlashCmd cmd = new CleanVmFirmwareFlashCmd();
+                        cmd.vmUuid = vmUuid;
+
+                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+                        ub.host(dstHostMnIp);
+                        ub.path(KVMConstant.CLEAN_FIRMWARE_FLASH);
+                        String url = ub.build().toString();
+                        new Http<>(url, cmd, AgentResponse.class).call(dstHostUuid, new ReturnValueCompletion<AgentResponse>(trigger) {
+                            @Override
+                            public void success(AgentResponse ret) {
+                                if (!ret.isSuccess()) {
+                                    logger.warn(String.format("failed to clean VM[uuid:%s]'s firmware flash, %s", vmUuid, ret.getError()));
+                                }
+
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(String.format("failed to clean VM[uuid:%s]'s firmware flash, %s", vmUuid, errorCode));
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "migrate-vm";
