@@ -1277,6 +1277,10 @@ public class KVMAgentCommands {
     public static class DeleteVdpaRsp extends AgentResponse {
     }
 
+    public static class CleanVmFirmwareFlashCmd extends AgentCommand {
+        public String vmUuid;
+    }
+
     public static class HardenVmConsoleCmd extends AgentCommand {
         public String vmUuid;
         public Long vmInternalId;
