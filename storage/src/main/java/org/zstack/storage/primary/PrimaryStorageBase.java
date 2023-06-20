@@ -1108,6 +1108,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             Long snapshotUsage;
             Long totalPhysicalSize;
             Long availablePhysicalSize;
+            Long imageCacheUsage;
 
             @Override
             public void setup() {
@@ -1184,6 +1185,20 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "sync-capacity-used-by-image-cache";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        List<Long> imageCacheSize = Q.New(ImageCacheVO.class)
+                                .eq(ImageCacheVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
+                                .select(ImageCacheVO_.size).listValues();
+                        imageCacheUsage = imageCacheSize.size() == 0 ? 0 :
+                                imageCacheSize.stream().mapToLong(Long::longValue).sum();
+                        trigger.next();
+                    }
+                });
+
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -1198,7 +1213,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
                             @Override
                             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                                long avail = cap.getTotalCapacity() - volumeUsage - snapshotUsage;
+                                long avail = cap.getTotalCapacity() - volumeUsage - snapshotUsage - imageCacheUsage;
                                 cap.setAvailableCapacity(avail);
                                 cap.setAvailablePhysicalCapacity(availablePhysicalSize);
                                 cap.setTotalPhysicalCapacity(totalPhysicalSize);
