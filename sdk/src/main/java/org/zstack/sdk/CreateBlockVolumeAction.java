@@ -124,7 +124,7 @@ public class CreateBlockVolumeAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/block-volumes/create/blockVolume";
+        info.path = "/block-volumes";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
