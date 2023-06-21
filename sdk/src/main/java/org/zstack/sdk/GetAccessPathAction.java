@@ -91,7 +91,7 @@ public class GetAccessPathAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/block-volumes/get/access/path";
+        info.path = "/block-volumes/access/path";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

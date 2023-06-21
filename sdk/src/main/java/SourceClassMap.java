@@ -347,7 +347,6 @@ public class SourceClassMap {
 			put("org.zstack.header.volume.VolumeInventory", "org.zstack.sdk.VolumeInventory");
 			put("org.zstack.header.volume.block.AccessPathInfo", "org.zstack.sdk.AccessPathInfo");
 			put("org.zstack.header.volume.block.BlockVolumeInventory", "org.zstack.sdk.BlockVolumeInventory");
-			put("org.zstack.header.volume.block.BlockVolumeXskyRefInventory", "org.zstack.sdk.BlockVolumeXskyRefInventory");
 			put("org.zstack.header.vpc.VpcRouterDnsInventory", "org.zstack.sdk.VpcRouterDnsInventory");
 			put("org.zstack.header.vpc.VpcRouterVmInventory", "org.zstack.sdk.VpcRouterVmInventory");
 			put("org.zstack.header.vpc.VpcSnatStateInventory", "org.zstack.sdk.VpcSnatStateInventory");
@@ -777,7 +776,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BillingInventory", "org.zstack.billing.generator.BillingInventory");
 			put("org.zstack.sdk.BlockPrimaryStorageInventory", "org.zstack.storage.primary.block.BlockPrimaryStorageInventory");
 			put("org.zstack.sdk.BlockVolumeInventory", "org.zstack.header.volume.block.BlockVolumeInventory");
-			put("org.zstack.sdk.BlockVolumeXskyRefInventory", "org.zstack.header.volume.block.BlockVolumeXskyRefInventory");
 			put("org.zstack.sdk.BuildAppExportHistoryInventory", "org.zstack.header.buildapp.BuildAppExportHistoryInventory");
 			put("org.zstack.sdk.BuildApplicationInventory", "org.zstack.header.buildapp.BuildApplicationInventory");
 			put("org.zstack.sdk.CCSCertificateInventory", "org.zstack.crypto.ccs.CCSCertificateInventory");

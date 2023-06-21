@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.BlockVolumeXskyRefInventory;
+
 
 public class BlockVolumeInventory extends org.zstack.sdk.VolumeInventory {
 
@@ -12,12 +12,12 @@ public class BlockVolumeInventory extends org.zstack.sdk.VolumeInventory {
         return this.iscsiPath;
     }
 
-    public BlockVolumeXskyRefInventory refInventory;
-    public void setRefInventory(BlockVolumeXskyRefInventory refInventory) {
-        this.refInventory = refInventory;
+    public java.lang.String vendor;
+    public void setVendor(java.lang.String vendor) {
+        this.vendor = vendor;
     }
-    public BlockVolumeXskyRefInventory getRefInventory() {
-        return this.refInventory;
+    public java.lang.String getVendor() {
+        return this.vendor;
     }
 
 }
