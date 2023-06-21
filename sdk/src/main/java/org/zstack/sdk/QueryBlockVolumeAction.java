@@ -65,7 +65,7 @@ public class QueryBlockVolumeAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/block-volumes/query/blockVolume";
+        info.path = "/block-volumes";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
