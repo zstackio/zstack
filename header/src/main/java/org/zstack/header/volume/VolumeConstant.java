@@ -9,6 +9,8 @@ public interface VolumeConstant {
     String VOLUME_FORMAT_QCOW2 = "qcow2";
     String VOLUME_FORMAT_VMTX = "vmtx";
     String VOLUME_FORMAT_VMDK = "vmdk";
+    
+    String BLOCK_VOLUME_TYPE = "blockVolume";
 
     enum Capability {
         MigrationInCurrentPrimaryStorage,

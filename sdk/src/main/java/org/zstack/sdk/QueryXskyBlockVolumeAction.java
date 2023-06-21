@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetAccessPathAction extends AbstractAction {
+public class QueryXskyBlockVolumeAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetAccessPathAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetAccessPathResult value;
+        public org.zstack.sdk.QueryXskyBlockVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,6 @@ public class GetAccessPathAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -54,8 +34,8 @@ public class GetAccessPathAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetAccessPathResult value = res.getResult(org.zstack.sdk.GetAccessPathResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetAccessPathResult() : value; 
+        org.zstack.sdk.QueryXskyBlockVolumeResult value = res.getResult(org.zstack.sdk.QueryXskyBlockVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryXskyBlockVolumeResult() : value; 
 
         return ret;
     }
@@ -85,7 +65,7 @@ public class GetAccessPathAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/block-volumes/access/path";
+        info.path = "/xksy/block-volumes";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
