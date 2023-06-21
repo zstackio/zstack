@@ -1,12 +1,13 @@
 CREATE TABLE IF NOT EXISTS `zstack`.`BlockVolumeVO` (
-    `uuid` varchar(32) NOT NULL,
+    `uuid` varchar(32) NOT NULL UNIQUE,
     `iscsiPath` varchar(1024) NOT NULL,
     `vendor` varchar(32) NOT NULL,
-    PRIMARY KEY (`uuid`)
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT fkBlockVolumeVOVolumeVO FOREIGN KEY (uuid) REFERENCES VolumeEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`XskyBlockVolumeVO` (
-    `uuid` varchar(32) NOT NULL,
+    `uuid` varchar(32) NOT NULL UNIQUE,
     `accessPathId` int NOT NULL,
     `accessPathIqn` varchar(128) NOT NULL,
     `xskyStatus` varchar(32) NULL,
@@ -15,14 +16,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`XskyBlockVolumeVO` (
     `burstTotalIops` bigint NULL,
     `maxTotalBw` bigint NULL,
     `maxTotalIops` bigint NULL,
-    PRIMARY KEY (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS `zstack`.`XskyVolumeSnapshotVO` (
-    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `volumeSnapshotUuid` varchar(32) NOT NULL,
-    `xskyBlockVolumeId` int NOT NULL,
-    `xskyBlockSnapshotId` int NOT NULL,
-    PRIMARY KEY (`id`),
-    CONSTRAINT `fkVolumeSnapshotVO` FOREIGN KEY (`volumeSnapshotUuid`) REFERENCES VolumeSnapshotEO(`uuid`) ON DELETE CASCADE
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT fkXskyBlockVolumeVOBlockVolumeVO FOREIGN KEY (uuid) REFERENCES BlockVolumeVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
