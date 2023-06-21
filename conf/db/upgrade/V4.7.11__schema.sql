@@ -6,8 +6,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BlockVolumeVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`XskyBlockVolumeVO` (
-    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `blockVolumeUuid` varchar(32) NOT NULL,
+    `uuid` varchar(32) NOT NULL,
     `accessPathId` int NOT NULL,
     `accessPathIqn` varchar(128) NOT NULL,
     `xskyStatus` varchar(32) NULL,
@@ -16,8 +15,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`XskyBlockVolumeVO` (
     `burstTotalIops` bigint NULL,
     `maxTotalBw` bigint NULL,
     `maxTotalIops` bigint NULL,
-    PRIMARY KEY (`id`),
-    CONSTRAINT `fkBlockVolumeVO` FOREIGN KEY (`blockVolumeUuid`) REFERENCES BlockVolumeVO(`uuid`) ON DELETE CASCADE
+    PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`XskyVolumeSnapshotVO` (
