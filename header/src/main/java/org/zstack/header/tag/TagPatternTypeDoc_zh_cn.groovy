@@ -4,18 +4,18 @@ package org.zstack.header.tag
 
 doc {
 
-	title "标签模版的类型"
+	title "在这里输入结构的名称"
 
 	field {
-		name "name"
-		desc "资源名称"
-		type "String"
-		since "3.2.0"
+		name "simple"
+		desc ""
+		type "TagPatternType"
+		since "0.6"
 	}
 	field {
-		name "ordinal"
+		name "withToken"
 		desc ""
-		type "int"
-		since "3.2.0"
+		type "TagPatternType"
+		since "0.6"
 	}
 }

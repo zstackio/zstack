@@ -38,10 +38,10 @@ public class CreateVmInstanceFromOvfAction extends AbstractAction {
     public java.lang.String jsonCreateVmParam;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean deleteImageAfterSuccess = false;
+    public boolean deleteImageAfterSuccess = true;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean deleteImageOnFail = true;
+    public boolean deleteImageOnFail = false;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

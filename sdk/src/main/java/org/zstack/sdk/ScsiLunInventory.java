@@ -68,6 +68,14 @@ public class ScsiLunInventory  {
         return this.type;
     }
 
+    public java.lang.String hctl;
+    public void setHctl(java.lang.String hctl) {
+        this.hctl = hctl;
+    }
+    public java.lang.String getHctl() {
+        return this.hctl;
+    }
+
     public java.lang.String path;
     public void setPath(java.lang.String path) {
         this.path = path;

@@ -53,13 +53,13 @@ doc {
 				}
 				column {
 					name "force"
-					enclosedIn ""
+					enclosedIn "cleanUpImageCacheOnPrimaryStorage"
 					desc "是否强制删除"
-					location "url"
+					location "body"
 					type "boolean"
-					optional false
+					optional true
 					since "4.0.0"
-
+					
 				}
 			}
         }
