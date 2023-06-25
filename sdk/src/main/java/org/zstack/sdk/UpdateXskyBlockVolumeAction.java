@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetAccessPathAction extends AbstractAction {
+public class UpdateXskyBlockVolumeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetAccessPathAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetAccessPathResult value;
+        public org.zstack.sdk.UpdateXskyBlockVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,8 +25,26 @@ public class GetAccessPathAction extends AbstractAction {
         }
     }
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Long burstTotalBw;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Long burstTotalIops;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Long maxTotalBw;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Long maxTotalIops;
+
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuid;
+    public java.lang.String uuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -46,6 +64,12 @@ public class GetAccessPathAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -54,8 +78,8 @@ public class GetAccessPathAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetAccessPathResult value = res.getResult(org.zstack.sdk.GetAccessPathResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetAccessPathResult() : value; 
+        org.zstack.sdk.UpdateXskyBlockVolumeResult value = res.getResult(org.zstack.sdk.UpdateXskyBlockVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateXskyBlockVolumeResult() : value; 
 
         return ret;
     }
@@ -84,11 +108,11 @@ public class GetAccessPathAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/block-volumes/access/path";
+        info.httpMethod = "PUT";
+        info.path = "/xsky/block-volumes/{uuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "updateXskyBlockVolume";
         return info;
     }
 
