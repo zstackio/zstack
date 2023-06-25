@@ -8,6 +8,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
@@ -209,5 +210,9 @@ public class TimeUtils {
 
     public static String instantToString(Instant instant, String format) {
         return DateTimeFormatter.ofPattern(format).withZone(ZoneId.systemDefault()).format(instant);
+    }
+
+    public static OffsetDateTime offsetDateTimeOf(long timestampInMilli) {
+        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(timestampInMilli), ZoneId.systemDefault());
     }
 }
