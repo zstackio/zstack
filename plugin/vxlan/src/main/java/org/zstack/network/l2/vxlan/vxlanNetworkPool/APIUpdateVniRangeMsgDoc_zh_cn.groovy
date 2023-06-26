@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIUpdateVniRangeMsg.class
 
             desc """"""
@@ -24,24 +23,24 @@ doc {
 
 				column {
 					name "uuid"
-					enclosedIn ""
+					enclosedIn "updateVniRange"
 					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
 					optional false
 					since "3.3.0"
+					
 				}
-
 				column {
 					name "name"
-					enclosedIn ""
+					enclosedIn "updateVniRange"
 					desc ""
 					location "body"
 					type "String"
-					optional true
+					optional false
 					since "3.3.0"
+					
 				}
-
 				column {
 					name "systemTags"
 					enclosedIn ""
@@ -50,8 +49,8 @@ doc {
 					type "List"
 					optional true
 					since "3.3.0"
+					
 				}
-
 				column {
 					name "userTags"
 					enclosedIn ""
@@ -60,6 +59,7 @@ doc {
 					type "List"
 					optional true
 					since "3.3.0"
+					
 				}
 			}
         }

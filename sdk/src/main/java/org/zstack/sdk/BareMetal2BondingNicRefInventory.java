@@ -1,6 +1,7 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.VmNicInventory;
+import org.zstack.sdk.BareMetal2BondingInventory;
 
 public class BareMetal2BondingNicRefInventory  {
 
@@ -50,6 +51,22 @@ public class BareMetal2BondingNicRefInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
+    }
+
+    public VmNicInventory vmNic;
+    public void setVmNic(VmNicInventory vmNic) {
+        this.vmNic = vmNic;
+    }
+    public VmNicInventory getVmNic() {
+        return this.vmNic;
+    }
+
+    public BareMetal2BondingInventory bareMetal2Bonding;
+    public void setBareMetal2Bonding(BareMetal2BondingInventory bareMetal2Bonding) {
+        this.bareMetal2Bonding = bareMetal2Bonding;
+    }
+    public BareMetal2BondingInventory getBareMetal2Bonding() {
+        return this.bareMetal2Bonding;
     }
 
 }

@@ -6,54 +6,60 @@ import java.sql.Timestamp
 
 doc {
 
-	title "虚拟机调度历史清单"
+	title "在这里输入结构的名称"
 
 	field {
 		name "vmInstanceUuid"
 		desc "云主机UUID"
 		type "String"
-		since "4.4.24"
+		since "0.6"
 	}
 	field {
 		name "accountUuid"
 		desc "账户UUID"
 		type "String"
-		since "4.4.24"
+		since "0.6"
 	}
 	field {
 		name "schedType"
-		desc "调度原因"
+		desc ""
 		type "String"
-		since "4.4.24"
+		since "0.6"
 	}
 	field {
 		name "success"
-		desc "是否成功"
+		desc ""
 		type "Boolean"
-		since "4.4.24"
+		since "0.6"
 	}
 	field {
 		name "lastHostUuid"
 		desc ""
-		type "上次所在物理机UUID"
-		since "4.4.24"
+		type "String"
+		since "0.6"
 	}
 	field {
 		name "destHostUuid"
-		desc "目标物理机UUID"
+		desc ""
 		type "String"
-		since "4.4.24"
+		since "0.6"
 	}
 	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"
-		since "4.4.24"
+		since "0.6"
 	}
 	field {
 		name "lastOpDate"
 		desc "最后一次修改时间"
 		type "Timestamp"
-		since "4.4.24"
+		since "0.6"
+	}
+	field {
+		name "zoneUuid"
+		desc "区域UUID"
+		type "String"
+		since "0.6"
 	}
 }

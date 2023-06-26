@@ -2,6 +2,7 @@ package org.zstack.header.vm
 
 import org.zstack.header.vm.APIQueryVmPriorityConfigReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryVmPriorityConfig"
