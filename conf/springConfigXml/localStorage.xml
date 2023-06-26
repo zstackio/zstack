@@ -101,6 +101,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="LocalStorageVmMigrationMetric" class="org.zstack.storage.primary.local.LocalStorageVmMigrationMetric">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.compute.vm.VmMigrationMetric"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="LocalStorageVmMigrationHostAllocatorFactory"
           class="org.zstack.storage.primary.local.LocalStorageVmMigrationHostAllocatorFactory">
         <zstack:plugin>
