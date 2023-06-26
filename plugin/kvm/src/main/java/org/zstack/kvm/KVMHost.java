@@ -60,7 +60,6 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.DeviceAddress;
@@ -4605,6 +4604,15 @@ public class KVMHost extends HostBase implements Host {
 
                             deployArguments.setIsMini("true");
                         }
+
+                        for (KvmHostGetExtraPackagesExtensionPoint ext : pluginRegistry.getExtensionList(KvmHostGetExtraPackagesExtensionPoint.class)) {
+                            String extraPackagesFromExt = ext.getExtraPackages(getSelfInventory());
+                            if (extraPackagesFromExt != null) {
+                                String extraPackages = extraPackagesFromExt + " " + StringUtils.trimToEmpty(deployArguments.getExtraPackages());
+                                deployArguments.setExtraPackages(extraPackages);
+                            }
+                        }
+
                         if ("baremetal2".equals(self.getHypervisorType())) {
                             deployArguments.setIsBareMetal2Gateway("true");
                         }
