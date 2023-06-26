@@ -96,28 +96,6 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         return msg;
     }
 
-    private boolean isDataVolumeHasMemorySnapshotGroup(String volumeUuid) {
-        return (Long) SQL.New("select count(*) from VolumeSnapshotGroupRefVO ref where ref.volumeType = :mVolumeType and ref.volumeSnapshotGroupUuid in (select vRef.volumeSnapshotGroupUuid from VolumeSnapshotGroupRefVO vRef where vRef.volumeType = :dVolumeType and vRef.volumeUuid = :volumeUuid)", Long.class)
-                .param("mVolumeType", VolumeType.Memory.toString())
-                .param("dVolumeType", VolumeType.Data.toString())
-                .param("volumeUuid", volumeUuid)
-                .find() > 0L;
-    }
-
-    private boolean isVmHasMemorySnapshotGroup(String vmUuid) {
-        List<String> snapShotGroupUuids = Q.New(VmInstanceDeviceAddressGroupVO.class)
-                .select(VmInstanceDeviceAddressGroupVO_.resourceUuid)
-                .eq(VmInstanceDeviceAddressGroupVO_.vmInstanceUuid, vmUuid)
-                .listValues();
-        if (snapShotGroupUuids.isEmpty()) {
-            return false;
-        }
-        return Q.New(VolumeSnapshotGroupVO.class)
-                .eq(VolumeSnapshotGroupVO_.vmInstanceUuid, vmUuid)
-                .in(VolumeSnapshotGroupVO_.uuid, snapShotGroupUuids)
-                .isExists();
-    }
-
     private void validate(APICreateVolumeSnapshotMsg msg) {
         SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
         q.select(VolumeVO_.status, VolumeVO_.type);
@@ -250,19 +228,9 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             throw new ApiMessageInterceptionException(operr("the volume[uuid:%s, name:%s, type:%s] can't detach it",
                             vol.getUuid(), vol.getName(), vol.getType()));
         }
-
-        if (isDataVolumeHasMemorySnapshotGroup(msg.getVolumeUuid())) {
-            throw new ApiMessageInterceptionException(operr("the vm where the data volume [%s] is located has a memory snapshot, can't detach",
-                    msg.getVolumeUuid()));
-        }
     }
 
     private void validate(APIAttachDataVolumeToVmMsg msg) {
-        if (isVmHasMemorySnapshotGroup(msg.getVmInstanceUuid())) {
-            throw new ApiMessageInterceptionException(operr("unable to attach volume %s to vmInstance %s with memory snapshot group",
-                    msg.getVolumeUuid(), msg.getVmInstanceUuid()));
-        }
-
         new SQLBatch(){
             @Override
             protected void scripts() {
@@ -424,11 +392,6 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         VolumeStatus status = t.get(1, VolumeStatus.class);
         if (status == VolumeStatus.Deleted) {
             throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is already in status of deleted", msg.getVolumeUuid()));
-        }
-
-        if (isDataVolumeHasMemorySnapshotGroup(msg.getVolumeUuid())) {
-            throw new ApiMessageInterceptionException(operr("the vm where the data volume [%s] is located has a memory snapshot, can't delete",
-                    msg.getVolumeUuid()));
         }
     }
 

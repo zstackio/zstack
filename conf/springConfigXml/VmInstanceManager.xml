@@ -238,6 +238,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="MemorySnapshotGroupValidator" class="org.zstack.storage.memorySnapshot.MemorySnapshotGroupValidator">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="VmPriorityOperator" class="org.zstack.compute.vm.VmPriorityOperator">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
