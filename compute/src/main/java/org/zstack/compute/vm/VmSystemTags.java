@@ -24,6 +24,9 @@ public class VmSystemTags {
     public static String SYNC_PORTS_TOKEN = "syncPorts";
     public static PatternedSystemTag SYNC_PORTS = new PatternedSystemTag(String.format("syncPorts::{%s}", SYNC_PORTS_TOKEN), VmInstanceVO.class);
 
+    public static String SYNC_HOSTNAME_TOKEN = "syncHostname";
+    public static PatternedSystemTag SYNC_HOSTNAME = new PatternedSystemTag(String.format("syncHostname::{%s}", SYNC_HOSTNAME_TOKEN), VmInstanceVO.class);
+
     public static String STATIC_IP_L3_UUID_TOKEN = "l3NetworkUuid";
     public static String STATIC_IP_TOKEN = "staticIp";
     public static PatternedSystemTag STATIC_IP = new PatternedSystemTag(String.format("staticIp::{%s}::{%s}", STATIC_IP_L3_UUID_TOKEN, STATIC_IP_TOKEN), VmInstanceVO.class);
