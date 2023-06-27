@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -104,6 +105,7 @@ public class VmAllocateNicFlow implements Flow {
                 customMac = NetworkUtils.generateMacWithDeviceId((short) deviceId);
             }
             final String mac = customMac;
+            final String customNicUuid = getCustomNicId(spec.getVmInventory().getUuid(), nw.getUuid());
 
             // choose vnic factory based on enableSRIOV system tag
             VmInstanceNicFactory vnicFactory;
@@ -116,9 +118,13 @@ public class VmAllocateNicFlow implements Flow {
                     enableSriov ? "vf nic" : "vnic", nw.getUuid()));
 
             L2NetworkVO l2nw =  dbf.findByUuid(nw.getL2NetworkUuid(), L2NetworkVO.class);
-            VSwitchType vSwitchType = new VSwitchType(l2nw.getvSwitchType());
-
-            VmNicType type = VmNicType.valueOf(vSwitchType, enableSriov);
+            VmNicType type;
+            if (l2nw.getType().equals(L2NetworkConstant.L2_TF_NETWORK_TYPE)) {
+                type = VmNicType.valueOf(VmInstanceConstant.TF_VIRTUAL_NIC_TYPE);
+            } else {
+                VSwitchType vSwitchType = VSwitchType.valueOf(l2nw.getvSwitchType());
+                type = VmNicType.valueOf(vSwitchType, enableSriov);
+            }
             vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 
             List<Integer> ipVersions = nw.getIpVersions();
@@ -168,7 +174,11 @@ public class VmAllocateNicFlow implements Flow {
                         wcomp.allDone();
                     } else {
                         VmNicInventory nic = new VmNicInventory();
-                        nic.setUuid(Platform.getUuid());
+                        if (customNicUuid != null) {
+                            nic.setUuid(customNicUuid);
+                        }else{
+                            nic.setUuid(Platform.getUuid());
+                        }
                         /* the first ip is ipv4 address for dual stack nic */
                         UsedIpInventory ip = nicIps.get(0);
                         nic.setIp(ip.getIp());
@@ -254,5 +264,15 @@ public class VmAllocateNicFlow implements Flow {
                 chain.rollback();
             }
         });
+    }
+
+    private String getCustomNicId(String vmUuid, String l3Uuid) {
+        List<Map<String, String>> tokenList = VmSystemTags.CUSTOM_NIC_UUID.getTokensOfTagsByResourceUuid(vmUuid);
+        for (Map<String, String> tokens : tokenList) {
+            if (StringUtils.equals(tokens.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN), l3Uuid)) {
+                return tokens.get(VmSystemTags.NIC_UUID_TOKEN);
+            }
+        }
+        return null;
     }
 }
