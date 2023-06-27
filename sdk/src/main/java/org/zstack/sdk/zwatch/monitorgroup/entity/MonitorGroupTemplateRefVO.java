@@ -2,7 +2,7 @@ package org.zstack.sdk.zwatch.monitorgroup.entity;
 
 
 
-public class MonitorGroupTemplateRefInventory  {
+public class MonitorGroupTemplateRefVO  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
