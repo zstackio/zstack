@@ -620,6 +620,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         boolean skipOnExisting;
         String snapshotPath;
         String volumeUuid;
+        String name;
+        String description;
 
         public String getVolumeUuid() {
             return volumeUuid;
@@ -643,6 +645,22 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setSnapshotPath(String snapshotPath) {
             this.snapshotPath = snapshotPath;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
         }
     }
 
@@ -674,6 +692,39 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public void setSize(long size) {
             this.size = size;
         }
+    }
+
+    public static class UpdateSnapshotCmd extends AgentCommand {
+        String snapshotPath;
+        String name;
+        String description;
+
+        public String getSnapshotPath() {
+            return snapshotPath;
+        }
+
+        public void setSnapshotPath(String snapshotPath) {
+            this.snapshotPath = snapshotPath;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+    }
+
+    public static class UpdateSnapshotRsp extends AgentResponse {
     }
 
     public static class DeleteSnapshotCmd extends AgentCommand {
@@ -5135,6 +5186,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         CreateSnapshotCmd cmd = new CreateSnapshotCmd();
         cmd.volumeUuid = sp.getVolumeUuid();
         cmd.snapshotPath = spPath;
+        cmd.name = msg.getName();
+        cmd.description = msg.getName();
         httpCall(CREATE_SNAPSHOT_PATH, cmd, CreateSnapshotRsp.class, new ReturnValueCompletion<CreateSnapshotRsp>(msg) {
             @Override
             public void success(CreateSnapshotRsp rsp) {
