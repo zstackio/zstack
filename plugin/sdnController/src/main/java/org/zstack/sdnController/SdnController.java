@@ -1,9 +1,6 @@
 package org.zstack.sdnController;
 
 import org.zstack.header.core.Completion;
-import org.zstack.header.identity.AccountInventory;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l3.*;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.sdnController.header.*;
 

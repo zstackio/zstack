@@ -66,7 +66,6 @@ import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
-import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
@@ -129,8 +128,7 @@ public class KVMHost extends HostBase implements Host {
     private ClusterResourceConfigInitializer crci;
     @Autowired
     private VmInstanceDeviceManager vidm;
-    @Autowired
-    private AccountManager accountMgr;
+
     private KVMHostContext context;
 
     // ///////////////////// REST URL //////////////////////////
@@ -3070,8 +3068,6 @@ public class KVMHost extends HostBase implements Host {
         extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
 
         extEmitter.addOn(khinv, spec, cmd);
-        //Set account uuid for kvm agent call vrouter agent api
-        cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmInstanceUuid()));
 
         new Http<>(startVmPath, cmd, StartVmResponse.class).call(new ReturnValueCompletion<StartVmResponse>(msg, completion) {
             @Override

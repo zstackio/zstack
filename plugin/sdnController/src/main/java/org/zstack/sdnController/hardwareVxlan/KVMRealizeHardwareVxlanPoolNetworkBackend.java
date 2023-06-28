@@ -14,7 +14,6 @@ import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
 import org.zstack.kvm.KVMCompleteNicInformationExtensionPoint;
 import org.zstack.kvm.KVMConstant;
@@ -98,8 +97,12 @@ public class KVMRealizeHardwareVxlanPoolNetworkBackend implements L2NetworkReali
 
     @Override
     public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-        NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
+        NicTO to = new NicTO();
+        to.setMac(nic.getMac());
+        to.setUuid(nic.getUuid());
         to.setBridgeName(makeBridgeName(l2Network.getUuid()));
+        to.setDeviceId(nic.getDeviceId());
+        to.setNicInternalName(nic.getInternalName());
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         return to;
     }

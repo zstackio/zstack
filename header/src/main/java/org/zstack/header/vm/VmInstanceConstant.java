@@ -17,8 +17,6 @@ public interface VmInstanceConstant {
 
     String VIRTUAL_NIC_TYPE = "VNIC";
 
-    String TF_VIRTUAL_NIC_TYPE = "ethernet";
-
     enum Params {
         VmInstanceSpec,
         AttachingVolumeInventory,

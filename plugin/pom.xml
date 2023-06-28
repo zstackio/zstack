@@ -28,8 +28,7 @@
         <module>ldap</module>
         <module>vxlan</module>
         <module>acl</module>
-	<module>sdnController</module>
-	<module>sugonSdnController</module>
+        <module>sdnController</module>
     </modules>
     <dependencies>
         <dependency>

@@ -156,17 +156,4 @@ public class StringDSL {
     public static boolean stringCompareInLineOrderIndpendent(String str1, String str2) {
         return hashOXR(Arrays.asList(str1.split("\n"))) == hashOXR(Arrays.asList(str2.split("\n")));
     }
-
-    public static String transToTfUuid(String zUuid){
-        StringBuilder buffer = new StringBuilder(zUuid);
-        buffer.insert(20, '-');
-        buffer.insert(16, '-');
-        buffer.insert(12, '-');
-        buffer.insert(8, '-');
-        return buffer.toString();
-    }
-
-    public static String transToZstackUuid(String tfUuid){
-        return tfUuid.replaceAll("-","");
-    }
 }
