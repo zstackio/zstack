@@ -219,6 +219,26 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(L3NetworkDeletionMsg msg) {
+        L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
+        boolean isExistSystemL3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.system, true)
+                .eq(L3NetworkVO_.l2NetworkUuid, l2NetworkVO.getUuid()).isExists();
+        List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.clusterUuid)
+                .eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2NetworkVO.getUuid()).listValues();
+        if (isExistSystemL3) {
+            if (clusterUuids != null && !clusterUuids.isEmpty()) {
+                for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
+                    List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid).in(HostVO_.clusterUuid, clusterUuids).listValues();
+                    if (l2NetworkVO.getType().equals(L2NetworkConstant.VXLAN_NETWORK_TYPE) || l2NetworkVO.getType().equals(L2NetworkConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
+                        ext.syncManagementServiceTypeExtensionPoint(hostUuids, "vxlan" + l2NetworkVO.getVirtualNetworkId(), null, true);
+                    }
+                    if (l2NetworkVO.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE) || l2NetworkVO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
+                        ext.syncManagementServiceTypeExtensionPoint(hostUuids, l2NetworkVO.getPhysicalInterface(), l2NetworkVO.getVirtualNetworkId(), true);
+                    }
+                }
+            }
+        }
+
         L3NetworkInventory inv = L3NetworkInventory.valueOf(self);
         extpEmitter.beforeDelete(inv);
         deleteHook();
@@ -1011,11 +1031,10 @@ public class L3BasicNetwork implements L3Network {
                         .eq(L3NetworkVO_.l2NetworkUuid, l2NetworkVO.getUuid()).isExists();
                 List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.clusterUuid)
                         .eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2NetworkVO.getUuid()).listValues();
-                if (clusterUuids != null && !clusterUuids.isEmpty()) {
-                    List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
-                            .in(HostVO_.clusterUuid, clusterUuids).listValues();
-                    if (!isExistSystemL3) {
+                if (!isExistSystemL3) {
+                    if (clusterUuids != null && !clusterUuids.isEmpty()) {
                         for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
+                            List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid).in(HostVO_.clusterUuid, clusterUuids).listValues();
                             if (l2NetworkVO.getType().equals(L2NetworkConstant.VXLAN_NETWORK_TYPE) || l2NetworkVO.getType().equals(L2NetworkConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
                                 ext.syncManagementServiceTypeExtensionPoint(hostUuids, "vxlan" + l2NetworkVO.getVirtualNetworkId(), null, true);
                             }
