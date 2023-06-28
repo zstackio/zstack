@@ -1212,24 +1212,96 @@ public class VolumeSnapshotTreeBase {
     }
 
     private void handle(APIUpdateVolumeSnapshotMsg msg) {
-        VolumeSnapshotVO self = dbf.findByUuid(msg.getUuid(), VolumeSnapshotVO.class);
-
-        boolean update = false;
-        if (msg.getName() != null) {
-            self.setName(msg.getName());
-            update = true;
-        }
-        if (msg.getDescription() != null) {
-            self.setDescription(msg.getDescription());
-            update = true;
-        }
-        if (update) {
-            self = dbf.updateAndRefresh(self);
-        }
-
         APIUpdateVolumeSnapshotEvent evt = new APIUpdateVolumeSnapshotEvent(msg.getId());
-        evt.setInventory(VolumeSnapshotInventory.valueOf(self));
-        bus.publish(evt);
+        final FlowChain flowChain = FlowChainBuilder.newShareFlowChain();
+        flowChain.setName(String.format("update-volume-Snapshot-%s", msg.getUuid()));
+        flowChain.allowWatch();
+        flowChain.then(new ShareFlow() {
+            VolumeSnapshotVO self = dbf.findByUuid(msg.getUuid(), VolumeSnapshotVO.class);
+            boolean update = false;
+            VolumeSnapshotVO updateVolumeSnapshotVO;
+
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "update-volume-snapshot-vo";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        if (msg.getName() != null) {
+                            self.setName(msg.getName());
+                            update = true;
+                        }
+                        if (msg.getDescription() != null) {
+                            self.setDescription(msg.getDescription());
+                            update = true;
+                        }
+                        if (update) {
+                            dbf.update(self);
+                        }
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(final FlowRollback trigger, Map data) {
+                        dbf.update(self);
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "call-pre-update-volume-snapshot-extensions";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return pluginRgty.getExtensionList(AfterUpdateVolumeSnapshotExtensionPoint.class).isEmpty();
+                    }
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        updateVolumeSnapshotVO = dbf.findByUuid(msg.getUuid(), VolumeSnapshotVO.class);
+                        new While<>(pluginRgty.getExtensionList(AfterUpdateVolumeSnapshotExtensionPoint.class)).each((ext, whileCompletion) -> {
+                            ext.afterUpdateVolumeSnapshot(updateVolumeSnapshotVO, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    whileCompletion.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    whileCompletion.addError(errorCode);
+                                    whileCompletion.allDone();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (errorCodeList.getCauses().isEmpty()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(errorCodeList.getCauses().get(0));
+                                }
+                            }
+                        });
+                    }
+                });
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        evt.setInventory(VolumeSnapshotInventory.valueOf(updateVolumeSnapshotVO));
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setError(errCode);
+                        bus.publish(evt);
+                    }
+                });
+            }
+        }).start();
     }
 
     private void shrinkSnapshot(APIShrinkVolumeSnapshotMsg msg, final ReturnValueCompletion<ShrinkResult> completion) {

@@ -849,6 +849,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         final TakeSnapshotMsg tmsg = new TakeSnapshotMsg();
                         tmsg.setPrimaryStorageUuid(primaryStorageUuid);
                         tmsg.setStruct(struct);
+                        tmsg.setName(msg.getName());
+                        tmsg.setDescription(msg.getDescription());
                         bus.makeTargetServiceIdByResourceUuid(tmsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
                         bus.send(tmsg, new CloudBusCallBack(trigger) {
                             @Override
