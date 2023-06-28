@@ -15,6 +15,7 @@ public abstract class SystemTagCreator {
      * delete existing tags and recreate
      */
     public boolean recreate;
+    public boolean quickRecreate = true;
     /**
      * return null if there has been a same tag
      */
