@@ -311,7 +311,11 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
 
     @Override
     public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-        KVMAgentCommands.NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
+        KVMAgentCommands.NicTO to = new KVMAgentCommands.NicTO();
+        to.setMac(nic.getMac());
+        to.setUuid(nic.getUuid());
+        to.setDeviceId(nic.getDeviceId());
+        to.setNicInternalName(nic.getInternalName());
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         return to;
     }

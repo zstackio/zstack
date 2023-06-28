@@ -20,8 +20,6 @@ public class SdnControllerConstant {
     public static final String H3C_VCFC_DEFAULT_TENANT_NAME = "default";
     public static final String H3C_VCFC_DEFAULT_TENANT_TYPE = "default";
 
-    public static final String TF_CONTROLLER = "TF";
-
     public enum Processes{
         Pre,
         Post
