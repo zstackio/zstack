@@ -1688,7 +1688,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private String buildEmptyVolumeInstallPath(String targetCephPoolName,String canonicalPath, String installPath) {
+    protected String buildEmptyVolumeInstallPath(String targetCephPoolName,String canonicalPath, String installPath) {
         if (StringUtils.isEmpty(installPath)) {
             return canonicalPath;
         }
@@ -5628,7 +5628,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }).call();
     }
 
-    private String makeVolumeInstallPathByTargetPool(String volUuid, String targetPoolName) {
+    protected String makeVolumeInstallPathByTargetPool(String volUuid, String targetPoolName) {
         return String.format("ceph://%s/%s", targetPoolName, volUuid);
     }
 
@@ -5640,7 +5640,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         return String.format("ceph://%s", originPath);
     }
 
-    private String getTargetPoolNameFromAllocatedUrl(String allocatedUrl) {
+    protected String getTargetPoolNameFromAllocatedUrl(String allocatedUrl) {
         if (allocatedUrl == null) {
             throw new OperationFailureException(operr("allocated url not found"));
         }
