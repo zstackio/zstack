@@ -7,4 +7,5 @@ public enum CdpTaskStatus {
 	Stopped,
 	Unknown,
 	Failed,
+	DataMerging,
 }
