@@ -31,6 +31,9 @@ public class GetAccessKeyAccountTypeAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String AccessKeyID;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String AccessKeySecret;
+
     @Param(required = false)
     public java.util.List systemTags;
 

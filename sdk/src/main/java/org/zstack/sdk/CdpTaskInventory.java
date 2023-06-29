@@ -3,6 +3,7 @@ package org.zstack.sdk;
 import org.zstack.sdk.CdpTaskStatus;
 import org.zstack.sdk.CdpTaskState;
 import org.zstack.sdk.CdpTaskType;
+import org.zstack.sdk.CdpTaskScene;
 
 public class CdpTaskInventory  {
 
@@ -108,6 +109,14 @@ public class CdpTaskInventory  {
     }
     public long getLastLatency() {
         return this.lastLatency;
+    }
+
+    public CdpTaskScene scene;
+    public void setScene(CdpTaskScene scene) {
+        this.scene = scene;
+    }
+    public CdpTaskScene getScene() {
+        return this.scene;
     }
 
     public java.sql.Timestamp createDate;

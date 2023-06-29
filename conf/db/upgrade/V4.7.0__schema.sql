@@ -449,6 +449,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MirrorCdpTaskVO` (
     `mirrorResourceType` varchar(255) DEFAULT NULL,
     `status` varchar(128) DEFAULT NULL,
     `state` varchar(255) DEFAULT NULL,
+    `bandwidth` bigint(20) unsigned NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`)

@@ -37,6 +37,9 @@ public class UpdateMirrorCdpTaskAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public long backupBandwidth = 0L;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean bidirectional = true;
+
     @Param(required = false)
     public java.util.List systemTags;
 
