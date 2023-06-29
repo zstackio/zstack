@@ -162,9 +162,15 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
 
     @Override
     public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-        NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
+        NicTO to = new NicTO();
+        to.setMac(nic.getMac());
+        to.setUuid(nic.getUuid());
         to.setBridgeName(makeBridgeName(l2Network.getUuid()));
         to.setPhysicalInterface(l2Network.getPhysicalInterface());
+        to.setDeviceId(nic.getDeviceId());
+        to.setNicInternalName(nic.getInternalName());
+        to.setType(nic.getType());
+
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
 
         return to;

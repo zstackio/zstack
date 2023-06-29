@@ -15,8 +15,4 @@ public class L3NetworkSystemTags {
 
     public static String PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN = "dhcpServerUuid";
     public static PatternedSystemTag PUBLIC_NETWORK_DHCP_SERVER_UUID = new PatternedSystemTag(String.format("dhcpServerUuid::{%s}", PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN), L3NetworkVO.class);
-
-    public static String ENABLE_DHCP_TOKEN = "enableDHCP";
-
-    public static PatternedSystemTag ENABLE_DHCP = new PatternedSystemTag(String.format("enableDHCP::{%s}",ENABLE_DHCP_TOKEN), L3NetworkVO.class);
 }

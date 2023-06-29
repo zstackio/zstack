@@ -1,6 +1,5 @@
 package org.zstack.compute.vm;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -105,8 +104,6 @@ public class VmAllocateNicFlow implements Flow {
                 customMac = NetworkUtils.generateMacWithDeviceId((short) deviceId);
             }
             final String mac = customMac;
-            CustomNicOperator nicOperator = new CustomNicOperator(spec.getVmInventory().getUuid(),nw.getUuid());
-            final String customNicUuid = nicOperator.getCustomNicId();
 
             // choose vnic factory based on enableSRIOV system tag
             VmInstanceNicFactory vnicFactory;
@@ -119,13 +116,9 @@ public class VmAllocateNicFlow implements Flow {
                     enableSriov ? "vf nic" : "vnic", nw.getUuid()));
 
             L2NetworkVO l2nw =  dbf.findByUuid(nw.getL2NetworkUuid(), L2NetworkVO.class);
-            VmNicType type;
-            if (l2nw.getType().equals(L2NetworkConstant.L2_TF_NETWORK_TYPE)) {
-                type = VmNicType.valueOf(VmInstanceConstant.TF_VIRTUAL_NIC_TYPE);
-            } else {
-                VSwitchType vSwitchType = new VSwitchType(l2nw.getvSwitchType());
-                type = VmNicType.valueOf(vSwitchType, enableSriov);
-            }
+            VSwitchType vSwitchType = new VSwitchType(l2nw.getvSwitchType());
+
+            VmNicType type = VmNicType.valueOf(vSwitchType, enableSriov);
             vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 
             List<Integer> ipVersions = nw.getIpVersions();
@@ -175,11 +168,7 @@ public class VmAllocateNicFlow implements Flow {
                         wcomp.allDone();
                     } else {
                         VmNicInventory nic = new VmNicInventory();
-                        if (customNicUuid != null) {
-                            nic.setUuid(customNicUuid);
-                        }else{
-                            nic.setUuid(Platform.getUuid());
-                        }
+                        nic.setUuid(Platform.getUuid());
                         /* the first ip is ipv4 address for dual stack nic */
                         UsedIpInventory ip = nicIps.get(0);
                         nic.setIp(ip.getIp());

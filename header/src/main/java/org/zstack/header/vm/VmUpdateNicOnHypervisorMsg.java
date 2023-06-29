@@ -10,7 +10,6 @@ public class VmUpdateNicOnHypervisorMsg extends NeedReplyMessage implements Host
     private String hostUuid;
     private String vmInstanceUuid;
     private List<String> nicsUuid = new ArrayList<>();
-    private boolean notifySugonSdn;
 
     @Override
     public String getHostUuid() {
@@ -32,16 +31,7 @@ public class VmUpdateNicOnHypervisorMsg extends NeedReplyMessage implements Host
     public void setNicsUuid(List<String> nicsUuid) {
         this.nicsUuid = nicsUuid;
     }
-
     public List<String> getNicsUuid() {
         return nicsUuid;
-    }
-
-    public boolean isNotifySugonSdn() {
-        return notifySugonSdn;
-    }
-
-    public void setNotifySugonSdn(boolean notifySugonSdn) {
-        this.notifySugonSdn = notifySugonSdn;
     }
 }

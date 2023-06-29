@@ -51,7 +51,6 @@ class CreateVmWithSameHostnameCase extends SubCase{
             systemTags = ["hostname::testhost"]
         }
 
-        /* remove the vm hostname restriction
         expect(AssertionError.class){
             createVmInstance {
                 name = "test-1"
@@ -60,7 +59,7 @@ class CreateVmWithSameHostnameCase extends SubCase{
                 l3NetworkUuids = [l3.uuid]
                 systemTags = ["hostname::testhost"]
             }
-        }*/
+        }
 
         List<VmInstanceInventory> vms =  queryVmInstance {
             conditions = ["type=UserVm"]
