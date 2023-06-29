@@ -2577,28 +2577,6 @@ public class VolumeBase implements Volume {
                     });
                 }
             });
-            chain.then(new NoRollbackFlow() {
-                @Override
-                public void run(FlowTrigger trigger, Map data) {
-                    // delete data volume point
-                    List<DeleteDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(DeleteDataVolumeExtensionPoint.class);
-                    if (exts != null) {
-                        for (DeleteDataVolumeExtensionPoint ext : exts) {
-                            ext.afterDeleteDataVolume(struct.getInventory(), new ReturnValueCompletion<VolumeInventory>(trigger) {
-                                @Override
-                                public void success(VolumeInventory ret) {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode error) {
-                                    trigger.fail(error);
-                                }
-                            });
-                        }
-                    }
-                }
-            });
         }
 
         chain.done(new FlowDoneHandler(completion) {
