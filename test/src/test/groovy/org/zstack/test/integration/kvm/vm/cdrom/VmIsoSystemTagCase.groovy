@@ -9,12 +9,15 @@ import org.zstack.header.configuration.InstanceOfferingVO
 import org.zstack.header.configuration.InstanceOfferingVO_
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.message.MessageReply
+import org.zstack.header.network.l3.L3NetworkVO
+import org.zstack.header.network.l3.L3NetworkVO_
 import org.zstack.header.vm.CreateVmInstanceMsg
 import org.zstack.header.vm.VmCreationStrategy
 import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.header.vm.VmNicSpec
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
@@ -149,7 +152,8 @@ class VmIsoSystemTagCase extends SubCase {
             instanceOfferingInventory = env.inventoryByName("instanceOffering")
 
             testVmIsoSystemTag()
-            testCreateTagError()
+            /* hostname 不能相同的检擦去掉了
+            testCreateTagError() */
         }
     }
 
@@ -181,9 +185,13 @@ class VmIsoSystemTagCase extends SubCase {
         cmsg.setCpuSpeed(iovo.getCpuSpeed())
         cmsg.setMemorySize(iovo.getMemorySize())
         cmsg.setAllocatorStrategy(iovo.getAllocatorStrategy())
+        L3NetworkVO l3VO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3.uuid).find()
+        VmNicSpec nicSpec = new VmNicSpec(org.zstack.header.network.l3.L3NetworkInventory.valueOf(Arrays.asList(l3VO)))
+        cmsg.setL3NetworkSpecs(Arrays.asList(nicSpec))
         cmsg.setDefaultL3NetworkUuid(hostNameVm.getDefaultL3NetworkUuid())
         cmsg.setStrategy(VmCreationStrategy.InstantStart.toString())
         cmsg.setAccountUuid(currentEnvSpec.session.getAccountUuid())
+        cmsg.setRootDiskOfferingUuid(diskOffering.uuid)
         bus.makeLocalServiceId(cmsg, VmInstanceConstant.SERVICE_ID)
         bus.send(cmsg, new CloudBusCallBack(null) {
             @Override
