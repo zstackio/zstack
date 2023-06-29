@@ -173,6 +173,34 @@ public class RestServer implements Component, CloudBusEventListener {
         rg.generateGlobalConfigMarkDown(resultDir, mode);
     }
 
+    public static void generateGoSDK(String resultDir) {
+        Class clz = GroovyUtils.getClass("scripts/GoApiTemplate.groovy", RestServer.class.getClassLoader());
+        Set<Class<?>> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class)
+                .stream().filter(it -> it.isAnnotationPresent(RestRequest.class)).collect(Collectors.toSet());
+        List<SdkFile> allFiles = new ArrayList<>();
+        SdkTemplate instance = GroovyUtils.newInstance("scripts/GoInventory.groovy", RestServer.class.getClassLoader());
+        try {
+            for (Class apiClz : apiClasses) {
+                if (Modifier.isAbstract(apiClz.getModifiers())) {
+                    continue;
+                }
+                SdkTemplate tmp = (SdkTemplate) clz.getConstructor(Class.class, SdkTemplate.class).newInstance(apiClz,instance);
+                allFiles.addAll(tmp.generate());
+            }
+
+            allFiles.addAll(instance.generate());
+
+            for (SdkFile f : allFiles) {
+                String fpath = PathUtil.join(resultDir, f.getSubPath() == null ? "" : f.getSubPath(), f.getFileName());
+                FileUtils.writeStringToFile(new File(fpath), f.getContent());
+            }
+
+        } catch (Exception e) {
+            logger.warn(e.getMessage(), e);
+            throw new CloudRuntimeException(e);
+        }
+    }
+
 
     public static void generateJavaSdk() {
         String path = PathUtil.join(System.getProperty("user.home"), "zstack-sdk/java");
