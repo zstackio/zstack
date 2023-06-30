@@ -66,6 +66,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
@@ -526,7 +527,36 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         bus.reply(msg, reply);
     }
 
+    public static void preCheckPrimaryStorage(VolumeCreateMessage msg) {
+        String diskOffering = msg.getDiskOfferingUuid();
+        if (diskOffering == null || msg.getPrimaryStorageUuid() == null ||
+                !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
+            return;
+        }
+
+        DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+        if (config.getAllocate() == null) {
+            return;
+        }
+
+        if (config.getAllocate().getPrimaryStorage() != null) {
+            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
+            if (!msg.getPrimaryStorageUuid().equals(psUuid)) {
+                throw new OperationFailureException(argerr("primary storage uuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
+                        psUuid, msg.getPrimaryStorageUuid()));
+            }
+        } else if (!org.apache.commons.collections4.CollectionUtils.isEmpty(config.getAllocate().getPrimaryStorages())) {
+            List<String> requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+                    .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
+            if (!requiredPrimaryStorageUuids.contains(msg.getPrimaryStorageUuid())) {
+                throw new OperationFailureException(operr("primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+                        requiredPrimaryStorageUuids, msg.getPrimaryStorageUuid()));
+            }
+        }
+    }
+
     private VolumeInventory createVolume(CreateVolumeMsg msg) {
+        preCheckPrimaryStorage(msg);
         VolumeVO vo = new VolumeVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());

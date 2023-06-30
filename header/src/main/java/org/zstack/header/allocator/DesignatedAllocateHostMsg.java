@@ -2,10 +2,25 @@ package org.zstack.header.allocator;
 
 import org.zstack.header.vm.VmInstanceMessage;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class DesignatedAllocateHostMsg extends AllocateHostMsg implements VmInstanceMessage {
     private String zoneUuid;
-    private String clusterUuid;
+    private List<String> clusterUuids;
     private String hostUuid;
+
+    public List<String> getClusterUuids() {
+        return clusterUuids == null ? Collections.emptyList() : clusterUuids;
+    }
+
+    public void setClusterUuids(List<String> clusterUuids) {
+        if (clusterUuids != null) {
+            this.clusterUuids = new ArrayList<>(clusterUuids.size());
+            this.clusterUuids.addAll(clusterUuids);
+        }
+    }
 
     public String getZoneUuid() {
         return zoneUuid;
@@ -15,12 +30,10 @@ public class DesignatedAllocateHostMsg extends AllocateHostMsg implements VmInst
         this.zoneUuid = zoneUuid;
     }
 
-    public String getClusterUuid() {
-        return clusterUuid;
-    }
-
     public void setClusterUuid(String clusterUuid) {
-        this.clusterUuid = clusterUuid;
+        if (clusterUuid != null) {
+            this.clusterUuids = Collections.singletonList(clusterUuid);
+        }
     }
 
     public String getHostUuid() {
