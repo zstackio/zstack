@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -79,6 +80,33 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             ret.errStr = i18n("required local primary storage[uuid:%s] cannot satisfy conditions[state: %s, status: %s]," +
                             " or hosts providing the primary storage don't satisfy conditions[state: %s, status: %s, size > %s bytes]",
                     spec.getRequiredPrimaryStorageUuid(),
+                    PrimaryStorageState.Enabled,
+                    PrimaryStorageStatus.Connected,
+                    HostState.Enabled,
+                    HostStatus.Connected,
+                    spec.getSize());
+        } else if (!CollectionUtils.isEmpty(spec.getRequiredPrimaryStorageUuids())) {
+            String sql = "select ref" +
+                    " from PrimaryStorageVO pri, LocalStorageHostRefVO ref, HostVO host" +
+                    " where ref.primaryStorageUuid = pri.uuid" +
+                    " and pri.state = :state" +
+                    " and pri.status = :status" +
+                    " and pri.uuid in (:uuids)" +
+                    " and host.uuid = ref.hostUuid" +
+                    " and host.state = :hstate" +
+                    " and host.status = :hstatus" +
+                    " and pri.type = :ptype";
+            query = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
+            query.setParameter("state", PrimaryStorageState.Enabled);
+            query.setParameter("status", PrimaryStorageStatus.Connected);
+            query.setParameter("uuids", spec.getRequiredPrimaryStorageUuids());
+            query.setParameter("hstate", HostState.Enabled);
+            query.setParameter("hstatus", HostStatus.Connected);
+            query.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
+
+            ret.errStr = i18n("required primary storage%s cannot satisfy conditions[state: %s, status: %s]," +
+                            " or hosts providing the primary storage don't satisfy conditions[state: %s, status: %s, size > %s bytes]",
+                    spec.getRequiredPrimaryStorageUuids(),
                     PrimaryStorageState.Enabled,
                     PrimaryStorageStatus.Connected,
                     HostState.Enabled,
