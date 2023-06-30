@@ -2875,7 +2875,6 @@ public class KVMAgentCommands {
         private boolean autoConverge;
         private boolean xbzrle;
         private List<String> vdpaPaths;
-        private Long timeout; // in seconds
         private Map<String, VolumeTO> disks;  // A map from old install path to new volume
 
         public boolean isUseNuma() {
@@ -2950,14 +2949,6 @@ public class KVMAgentCommands {
             this.vdpaPaths = vdpaPaths;
         }
 
-        public Long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(Long timeout) {
-            this.timeout = timeout;
-        }
-
         public Map<String, VolumeTO> getDisks() {
             return disks;
         }
@@ -3020,14 +3011,12 @@ public class KVMAgentCommands {
     public static class MergeSnapshotRsp extends AgentResponse {
     }
 
-    public static class MergeSnapshotCmd extends AgentCommand {
+    public static class MergeSnapshotCmd extends AgentCommand implements HasThreadContext {
         private String vmUuid;
         private VolumeTO volume;
         private String srcPath;
         private String destPath;
         private boolean fullRebase;
-        // timeout seconds
-        private long timeout;
 
         public boolean isFullRebase() {
             return fullRebase;
@@ -3067,14 +3056,6 @@ public class KVMAgentCommands {
 
         public void setVolume(VolumeTO volume) {
             this.volume = volume;
-        }
-
-        public long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(long timeout) {
-            this.timeout = timeout;
         }
     }
 
@@ -3126,7 +3107,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class TakeSnapshotCmd extends AgentCommand {
+    public static class TakeSnapshotCmd extends AgentCommand implements HasThreadContext {
         private String vmUuid;
         private String volumeUuid;
         private VolumeTO volume;
@@ -3139,8 +3120,6 @@ public class KVMAgentCommands {
 
         // for baremetal2 instance
         private boolean isBaremetal2InstanceOnlineSnapshot;
-
-        private long timeout;
 
         public boolean isOnline() {
             return online;
@@ -3220,14 +3199,6 @@ public class KVMAgentCommands {
 
         public void setBaremetal2InstanceOnlineSnapshot(boolean baremetal2InstanceOnlineSnapshot) {
             isBaremetal2InstanceOnlineSnapshot = baremetal2InstanceOnlineSnapshot;
-        }
-
-        public long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(long timeout) {
-            this.timeout = timeout;
         }
     }
 
