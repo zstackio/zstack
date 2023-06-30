@@ -167,7 +167,7 @@ CREATE PROCEDURE migrateBlockPrimaryHostRef()
             END IF;
             IF (select count(*) from BlockPrimaryStorageHostRefVO bpshref where id = psId) = 0 THEN
                 BEGIN
-                    INSERT INTO zstack.BlockPrimaryStorageHostRefVO(id, initiatorName, metadata, lastOpDate, createDate) values(psId, initiatorName, metadata, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+                    INSERT INTO zstack.BlockPrimaryStorageHostRefVO(id, initiatorName, metadata) values(psId, initiatorName, metadata);
                 END;
             END IF;
         END LOOP;
