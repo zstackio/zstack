@@ -180,16 +180,11 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 	@Override
 	public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         final Integer vlanId = getVlanId(l2Network.getUuid());
-		NicTO to = new NicTO();
-		to.setMac(nic.getMac());
-        to.setUuid(nic.getUuid());
+		NicTO to = KVMAgentCommands.NicTO.fromVmNicInventory(nic);
 		to.setBridgeName(makeBridgeName(l2Network.getUuid(), vlanId));
         to.setPhysicalInterface(l2Network.getPhysicalInterface());
-		to.setDeviceId(nic.getDeviceId());
-		to.setNicInternalName(nic.getInternalName());
 		to.setMetaData(String.valueOf(vlanId));
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
-        to.setType(nic.getType());
         to.setVlanId(String.valueOf(vlanId));
 
 		return to;
