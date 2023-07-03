@@ -4,8 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.StaticIpOperator;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -20,6 +19,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.CollectionUtils;
@@ -31,6 +31,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -43,6 +44,8 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
     private PluginRegistry pluginRgty;
     @Autowired
     L3NetworkManager l3Mgr;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
 
     private static final String SUCCESS = EipExtension.class.getName();
 
@@ -79,18 +82,13 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
         return struct;
     }
 
-    private EipStruct workOutEipStruct(VmNicInventory vmNic) {
-        EipVO eipVO = SQL.New("select eip from EipVO eip, VmNicVO nic, UsedIpVO ip" +
-                " where nic.uuid = ip.vmNicUuid " +
-                " and ip.l3NetworkUuid = :l3uuid " +
-                " and nic.uuid = eip.vmNicUuid and nic.uuid = :nicUuid")
-                .param("l3uuid", vmNic.getL3NetworkUuid())
-                .param("nicUuid", vmNic.getUuid())
-                .find();
-        if (eipVO == null) {
+    private List<EipStruct> workOutEipStruct(VmNicInventory vmNic) {
+        List<EipVO> vos = Q.New(EipVO.class).eq(EipVO_.vmNicUuid, vmNic.getUuid()).list();
+        if (vos == null || vos.isEmpty()) {
             return null;
         }
-        return eipVOtoEipStruct(eipVO);
+
+        return vos.stream().map(eipVO -> eipVOtoEipStruct(eipVO)).collect(Collectors.toList());
     }
 
     private boolean isEipShouldBeAttachedToBackend(String vmUuid, String l3Uuid, VmOperation operation) {
@@ -315,20 +313,18 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
     }
 
     @Override
-    public void releaseNetworkServiceOnDeletingNic(VmNicInventory nic, Completion completion) {
-        String networkServiceProviderType = SQL.New("select provider.type from NetworkServiceProviderVO provider, NetworkServiceL3NetworkRefVO ref" +
-                " where ref.l3NetworkUuid = :l3Uuid" +
-                " and ref.networkServiceProviderUuid = provider.uuid" +
-                " and ref.networkServiceType = :networkServiceType")
-                .param("l3Uuid", nic.getL3NetworkUuid())
-                .param("networkServiceType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
-                .find();
-        EipStruct struct = workOutEipStruct(nic);
-        if (struct == null) {
-            logger.debug(String.format("vmNic[%s] dont need release eip",nic.getUuid()));
-            completion.success();
+    public void releaseNetworkServiceOnDeletingNic(VmNicInventory nic, NoErrorCompletion completion) {
+        List<EipStruct> structs = workOutEipStruct(nic);
+        if (structs == null) {
+            logger.debug(String.format("vmNic[%s] does not need release eip",nic.getUuid()));
+            completion.done();
             return;
         }
-        eipMgr.detachEipAndUpdateDb(struct, networkServiceProviderType, DetachEipOperation.FORCE_DB_UPDATE, completion);
+        final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(nic.getL3NetworkUuid(),
+                EipConstant.EIP_TYPE);
+        Map<String, List<EipStruct>> map = new HashMap<String, List<EipStruct>>();
+
+        map.put(providerType.toString(), structs);
+        releaseNetworkService(map.entrySet().iterator(), true, completion);
     }
 }
