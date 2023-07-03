@@ -8,4 +8,6 @@ public interface PortForwardingManager {
     void attachPortForwardingRule(PortForwardingStruct struct, String providerType, Completion completion);
 
     void detachPortForwardingRule(PortForwardingStruct struct, String providerType, Completion completion);
+
+    PortForwardingStruct makePortForwardingStruct(PortForwardingRuleInventory rule);
 }

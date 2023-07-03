@@ -34,10 +34,7 @@ import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.*;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NopeWhileDoneCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -1342,26 +1339,20 @@ public class VmInstanceManagerImpl extends AbstractService implements
             public void run(SyncTaskChain chain) {
                 if (nic.getVmInstanceUuid() == null) {
                     FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
-                    fchain.setName(String.format("detach-eip-from-vmnic-%s", nic.getUuid()));
-                    fchain.then(new NoRollbackFlow() {
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            for (ReleaseNetworkServiceOnDeletingNicExtensionPoint extp : pluginRgty.getExtensionList(ReleaseNetworkServiceOnDeletingNicExtensionPoint.class)) {
-                                extp.releaseNetworkServiceOnDeletingNic(nic, new Completion(trigger) {
+                    fchain.setName(String.format("detach-network-service-from-vmnic-%s", nic.getUuid()));
+                    for (ReleaseNetworkServiceOnDeletingNicExtensionPoint ext : pluginRgty.getExtensionList(ReleaseNetworkServiceOnDeletingNicExtensionPoint.class)) {
+                        fchain.then(new NoRollbackFlow() {
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                ext.releaseNetworkServiceOnDeletingNic(nic, new NoErrorCompletion(trigger) {
                                     @Override
-                                    public void success() {
-                                        logger.debug(String.format("release eip from vmnic[%s]",nic.getUuid()));
+                                    public void done() {
                                         trigger.next();
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        trigger.fail(errorCode);
                                     }
                                 });
                             }
-                        }
-                    });
+                        });
+                    }
                     fchain.then(new NoRollbackFlow() {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
