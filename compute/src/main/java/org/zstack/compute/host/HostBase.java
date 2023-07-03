@@ -634,6 +634,8 @@ public abstract class HostBase extends AbstractHost {
             handle((ScanVmPortMsg) msg);
         } else if (msg instanceof UpdateHostOSMsg) {
             handle((UpdateHostOSMsg) msg);
+        } else if (msg instanceof ChangeHostStatusMsg) {
+            handle((ChangeHostStatusMsg) msg);
         } else {
             HostBaseExtensionFactory ext = hostMgr.getHostBaseExtensionFactory(msg);
             if (ext != null) {
@@ -646,6 +648,28 @@ public abstract class HostBase extends AbstractHost {
 
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(ChangeHostStatusMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                ChangeHostStatusReply reply = new ChangeHostStatusReply();
+                changeConnectionState(HostStatusEvent.valueOf(msg.getStatusEvent()));
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return String.format("change-host-%s-status", self.getUuid());
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
     }
 
     private void handle(UpdateHostOSMsg msg) {

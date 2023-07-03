@@ -4318,6 +4318,12 @@ public class KVMHost extends HostBase implements Host {
                             if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
                                 runner.putArgument("bridgeDisableIptables", "true");
                             }
+
+                            if (KVMGlobalConfig.INSTALL_HOST_SHUTDOWN_HOOK.value(Boolean.class)) {
+                                runner.putArgument("isInstallHostShutdownHook", "true");
+                                runner.setForceRun(true);
+                            }
+
                             runner.putArgument("pkg_kvmagent", agentPackageName);
                             runner.putArgument("hostname", String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
                             if (CoreGlobalProperty.SYNC_NODE_TIME) {
