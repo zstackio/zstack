@@ -3696,6 +3696,10 @@ public class KVMAgentCommands {
         public String vmUuid;
     }
 
+    public static class ReportHostStopEventCmd {
+        public String hostIp;
+    }
+
     public static class ShutdownHostCmd extends AgentCommand {
     }
 

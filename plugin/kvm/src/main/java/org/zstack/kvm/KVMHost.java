@@ -4626,6 +4626,11 @@ public class KVMHost extends HostBase implements Host {
                         if ("baremetal2".equals(self.getHypervisorType())) {
                             deployArguments.setIsBareMetal2Gateway("true");
                         }
+                        if (KVMGlobalConfig.INSTALL_HOST_SHUTDOWN_HOOK.value(Boolean.class)) {
+                            deployArguments.setInstallHostShutdownHook(true);
+                            runner.setForceRun(true);
+                        }
+
                         if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
                             deployArguments.setBridgeDisableIptables("true");
                         }
