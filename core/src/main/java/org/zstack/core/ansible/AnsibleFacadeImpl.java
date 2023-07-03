@@ -201,6 +201,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         }
 
         arguments.put("host", msg.getTargetIp());
+        arguments.put("mn_ip", Platform.getCanonicalServerIp());
         if (AnsibleGlobalConfig.ENABLE_ANSIBLE_CACHE_SYSTEM_INFO.value(Boolean.class)) {
             arguments.put("host_uuid", msg.getTargetUuid());
         }
@@ -249,7 +250,6 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 String playBookPath = msg.getPlayBookPath();
                 Map<String, Object> arguments = collectArguments(msg);
                 logger.debug(String.format("start running ansible for playbook[%s]", msg.getPlayBookPath()));
-
                 String executable = msg.getAnsibleExecutable() == null ? AnsibleGlobalProperty.EXECUTABLE : msg.getAnsibleExecutable();
                 long timeout = TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout());
                 try {

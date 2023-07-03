@@ -463,6 +463,21 @@ public class KVMHostFactory extends AbstractHypervisorFactory implements Compone
             return null;
         });
 
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_HOST_STOP_EVENT, KVMAgentCommands.ReportHostStopEventCmd.class, cmd -> {
+            ChangeHostStatusMsg cmsg = new ChangeHostStatusMsg();
+            HostVO hostVO = Q.New(HostVO.class).eq(HostVO_.managementIp, cmd.hostIp).find();
+
+            if (hostVO == null) {
+                return null;
+            }
+            cmsg.setUuid(hostVO.getUuid());
+            cmsg.setStatusEvent(HostStatusEvent.disconnected.toString());
+            bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, cmsg.getHostUuid());
+            bus.send(cmsg);
+            return null;
+        });
+
+
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_HOST_PHYSICAL_NIC_ALARM_EVENT, KVMAgentCommands.PhysicalNicAlarmEventCmd.class, cmd -> {
             HostCanonicalEvents.HostPhysicalNicStatusData cData = new HostCanonicalEvents.HostPhysicalNicStatusData();
             cData.setHostUuid(cmd.host);
