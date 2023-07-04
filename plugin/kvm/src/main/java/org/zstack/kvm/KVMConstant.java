@@ -142,6 +142,8 @@ public interface KVMConstant {
                 return null;
             } else if (state == VmInstanceState.Paused) {
                 return Paused;
+            } else if (state == VmInstanceState.Migrating) {
+                return Running;
             } else {
                 return null;
             }
