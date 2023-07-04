@@ -1219,7 +1219,7 @@ public class VolumeSnapshotTreeBase {
         flowChain.then(new ShareFlow() {
             VolumeSnapshotVO self = dbf.findByUuid(msg.getUuid(), VolumeSnapshotVO.class);
             boolean update = false;
-            VolumeSnapshotVO updateVolumeSnapshotVO;
+            final VolumeSnapshotVO beforeUpdateVolumeSnapshotVO = self;
 
             @Override
             public void setup() {
@@ -1244,7 +1244,7 @@ public class VolumeSnapshotTreeBase {
 
                     @Override
                     public void rollback(final FlowRollback trigger, Map data) {
-                        dbf.update(self);
+                        dbf.update(beforeUpdateVolumeSnapshotVO);
                         trigger.rollback();
                     }
                 });
@@ -1259,9 +1259,8 @@ public class VolumeSnapshotTreeBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        updateVolumeSnapshotVO = dbf.findByUuid(msg.getUuid(), VolumeSnapshotVO.class);
                         new While<>(pluginRgty.getExtensionList(AfterUpdateVolumeSnapshotExtensionPoint.class)).each((ext, whileCompletion) -> {
-                            ext.afterUpdateVolumeSnapshot(updateVolumeSnapshotVO, new Completion(trigger) {
+                            ext.afterUpdateVolumeSnapshot(self, new Completion(trigger) {
                                 @Override
                                 public void success() {
                                     whileCompletion.done();
@@ -1288,7 +1287,8 @@ public class VolumeSnapshotTreeBase {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        evt.setInventory(VolumeSnapshotInventory.valueOf(updateVolumeSnapshotVO));
+                        refreshVO();
+                        evt.setInventory(VolumeSnapshotInventory.valueOf(self));
                         bus.publish(evt);
                     }
                 });

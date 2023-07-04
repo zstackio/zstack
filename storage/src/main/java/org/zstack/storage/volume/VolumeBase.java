@@ -607,6 +607,7 @@ public class VolumeBase implements Volume {
                                     return;
                                 }
 
+                                refreshVO();
                                 success = true;
                                 InstantiateVolumeOnPrimaryStorageReply ir = reply.castReply();
                                 installPath = ir.getVolume().getInstallPath();
