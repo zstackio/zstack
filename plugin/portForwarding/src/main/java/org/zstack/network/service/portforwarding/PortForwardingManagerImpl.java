@@ -411,12 +411,10 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         });
     }
 
-    @Transactional
     private VmInstanceState getVmStateFromVmNicUuid(String vmNicUuid) {
-        String sql = "select vm.state from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :nicuuid";
-        TypedQuery<VmInstanceState> q = dbf.getEntityManager().createQuery(sql, VmInstanceState.class);
-        q.setParameter("nicuuid", vmNicUuid);
-        return q.getSingleResult();
+        return SQL.New( "select vm.state from VmInstanceVO vm, VmNicVO nic " +
+                        "where vm.uuid = nic.vmInstanceUuid and nic.uuid = :nicUuid",
+                VmInstanceState.class).param("nicUuid", vmNicUuid).find();
     }
 
     private void handle(final APIAttachPortForwardingRuleMsg msg) {
@@ -446,7 +444,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 public void success() {
                     evt.setInventory(inv);
                     bus.publish(evt);
-                    return;
                 }
 
                 @Override
@@ -455,6 +452,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                     bus.publish(evt);
                 }
             });
+            return;
         }
 
         final PortForwardingStruct struct = makePortForwardingStruct(inv);
@@ -982,7 +980,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         releaseServicesOnVip(rules.iterator(), complete);
     }
 
-    private PortForwardingStruct makePortForwardingStruct(PortForwardingRuleInventory rule) {
+    @Override
+    public PortForwardingStruct makePortForwardingStruct(PortForwardingRuleInventory rule) {
         VipVO vipvo = dbf.findByUuid(rule.getVipUuid(), VipVO.class);
 
         L3NetworkVO vipL3vo = dbf.findByUuid(vipvo.getL3NetworkUuid(), L3NetworkVO.class);

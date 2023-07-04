@@ -2,6 +2,7 @@ package org.zstack.network.service.portforwarding;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.StaticIpOperator;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -14,12 +15,14 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,13 +30,15 @@ import java.util.*;
  * Time: 7:53 PM
  * To change this template use File | Settings | File Templates.
  */
-public class PortForwardingExtension extends AbstractNetworkServiceExtension {
+public class PortForwardingExtension extends AbstractNetworkServiceExtension implements ReleaseNetworkServiceOnDeletingNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(PortForwardingExtension.class);
 
     @Autowired
     private PortForwardingManager pfMgr;
     @Autowired
     private L3NetworkManager l3Mgr;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
 
     private final String SUCCESS = PortForwardingExtension.class.getName();
 
@@ -231,5 +236,35 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
         }
 
         return map;
+    }
+
+    private List<PortForwardingStruct> workoutPortForwarding(VmNicInventory vmNic) {
+        List<PortForwardingRuleVO> vos = Q.New(PortForwardingRuleVO.class).
+                eq(PortForwardingRuleVO_.vmNicUuid, vmNic.getUuid()).list();
+        if (vos == null || vos.isEmpty()) {
+            return null;
+        }
+
+        return vos.stream().map(rule -> {
+            PortForwardingStruct struct = pfMgr.makePortForwardingStruct(PortForwardingRuleInventory.valueOf(rule));
+            struct.setReleaseVmNicInfoWhenDetaching(true);
+            return struct;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public void releaseNetworkServiceOnDeletingNic(VmNicInventory nic, NoErrorCompletion completion) {
+        List<PortForwardingStruct> structs = workoutPortForwarding(nic);
+        if (structs == null) {
+            logger.debug(String.format("vmNic[%s] does not need release port forwarding",nic.getUuid()));
+            completion.done();
+            return;
+        }
+        final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(nic.getL3NetworkUuid(),
+                NetworkServiceType.PortForwarding);
+        Map<String, List<PortForwardingStruct>> map = new HashMap<String, List<PortForwardingStruct>>();
+
+        map.put(providerType.toString(), structs);
+        releaseNetworkService(map.entrySet().iterator(), completion);
     }
 }

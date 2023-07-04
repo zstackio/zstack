@@ -1,5 +1,6 @@
 package org.zstack.network.service.portforwarding;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
@@ -15,6 +16,7 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.vip.*;
@@ -24,6 +26,7 @@ import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -248,26 +251,32 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
 
     @Transactional(readOnly = true)
     private void checkIfAnotherVip(String vipUuid, String vmNicUuid) {
-        String sql = "select nic.uuid from VmNicVO nic where nic.vmInstanceUuid = (select n.vmInstanceUuid from VmNicVO n where" +
-                " n.uuid = :nicUuid)";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("nicUuid", vmNicUuid);
-        List<String> nicUuids = q.getResultList();
+        final String vmUuid = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid).eq(VmNicVO_.uuid, vmNicUuid).findValue();
 
-        sql = "select count(*) from VmNicVO nic, PortForwardingRuleVO pf where nic.uuid = pf.vmNicUuid and pf.vipUuid != :vipUuid and nic.uuid in (:nicUuids)";
-        TypedQuery<Long> lq = dbf.getEntityManager().createQuery(sql, Long.class);
-        lq.setParameter("vipUuid", vipUuid);
-        lq.setParameter("nicUuids", nicUuids);
-        long count = lq.getSingleResult();
+        List<String> nicUuids = new ArrayList<>();
+        if (StringUtils.isNotEmpty(vmUuid)) {
+            nicUuids = Q.New(VmNicVO.class).select(VmNicVO_.uuid).eq(VmNicVO_.vmInstanceUuid, vmUuid).listValues();
+        } else {
+            nicUuids.add(vmNicUuid);
+        }
 
-        if (count > 0) {
-            sql = "select vm from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :nicUuid";
-            TypedQuery<VmInstanceVO> vq = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
-            vq.setParameter("nicUuid", vmNicUuid);
-            VmInstanceVO vm = vq.getSingleResult();
+        boolean isAnotherVipExist = Q.New(PortForwardingRuleVO.class).notEq(PortForwardingRuleVO_.vipUuid, vipUuid)
+                .in(PortForwardingRuleVO_.vmNicUuid, nicUuids).isExists();
+
+        if (!isAnotherVipExist) {
+            return;
+        }
+
+        if (StringUtils.isNotEmpty(vmUuid)) {
+            VmInstanceVO vm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).find();
 
             throw new ApiMessageInterceptionException(operr("the VM[name:%s uuid:%s] already has port forwarding rules that have different VIPs than the one[uuid:%s]",
-                            vm.getName(), vm.getUuid(), vipUuid));
+                    vm.getName(), vm.getUuid(), vipUuid));
+        } else {
+            VmNicVO vmNic = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, vmNicUuid).find();
+
+            throw new ApiMessageInterceptionException(operr("the VmNic[uuid:%s] already has port forwarding rules that have different VIPs than the one[uuid:%s]",
+                    vmNic.getUuid(), vipUuid));
         }
     }
 
