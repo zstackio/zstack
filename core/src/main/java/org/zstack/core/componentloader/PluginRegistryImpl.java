@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class PluginRegistryImpl implements PluginRegistryIN {
+public class PluginRegistryImpl implements PluginRegistryIN, BannedModule {
     private static final CLogger logger = CLoggerImpl.getLogger(PluginRegistryImpl.class);
     private Map<String, List<PluginExtension>> extensions = new HashMap<>();
     private Map<String, List<PluginExtension>> extensionsByInterfaceName = new HashMap<>();
@@ -52,9 +52,14 @@ public class PluginRegistryImpl implements PluginRegistryIN {
                     }
                     ext.setInstance(instance);
 
+                    String extModuleName = ext.getInstance().getClass().getCanonicalName();
+                    if (isBannedModule(extModuleName)) {
+                        continue;
+                    }
+
                     if (!interfaceClass.isInstance(ext.getInstance())) {
                         throw new IllegalArgumentException(String.format("%s is not an instance of the interface %s",
-                                ext.getInstance().getClass().getCanonicalName(), interfaceClass.getName()));
+                                extModuleName, interfaceClass.getName()));
                     }
 
                     List<PluginExtension> exts = extensionsByInterfaceName.get(ext.getReferenceInterface());
