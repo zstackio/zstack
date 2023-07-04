@@ -6746,17 +6746,31 @@ public class VmInstanceBase extends AbstractVmInstance {
         String lastHostUuid = self.getHostUuid();
         chain.setName(String.format("do-migrate-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.then(new NoRollbackFlow() {
+            final String __name__ = String.format("sync-vm-%s-stat-after-migrate", self.getUuid());
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                HostInventory host = spec.getDestHost();
+                checkState(host.getUuid(), new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid())
+                                .set(VmInstanceVO_.zoneUuid, host.getZoneUuid())
+                                .set(VmInstanceVO_.clusterUuid, host.getClusterUuid())
+                                .set(VmInstanceVO_.lastHostUuid, lastHostUuid)
+                                .set(VmInstanceVO_.hostUuid, host.getUuid())
+                                .update();
+                        self = dbf.reload(self);
+                        trigger.next();
+                    }
+                });
+            }
+        });
 
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(final Map data) {
-                HostInventory host = spec.getDestHost();
-                self = changeVmStateInDb(VmInstanceStateEvent.running, () -> {
-                    self.setZoneUuid(host.getZoneUuid());
-                    self.setClusterUuid(host.getClusterUuid());
-                    self.setLastHostUuid(lastHostUuid);
-                    self.setHostUuid(host.getUuid());
-                });
                 VmInstanceInventory vm = VmInstanceInventory.valueOf(self);
                 extEmitter.afterMigrateVm(vm, vm.getLastHostUuid());
                 completion.success();
