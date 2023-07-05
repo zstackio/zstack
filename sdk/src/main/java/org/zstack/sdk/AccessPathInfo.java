@@ -36,4 +36,12 @@ public class AccessPathInfo  {
         return this.targetCount;
     }
 
+    public java.util.List gatewayIps;
+    public void setGatewayIps(java.util.List gatewayIps) {
+        this.gatewayIps = gatewayIps;
+    }
+    public java.util.List getGatewayIps() {
+        return this.gatewayIps;
+    }
+
 }
