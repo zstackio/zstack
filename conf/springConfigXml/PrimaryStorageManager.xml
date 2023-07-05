@@ -96,4 +96,10 @@
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="PrimaryStorageUsageForecaster" class="org.zstack.storage.primary.PrimaryStorageUsageReport">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" order="-2"/>
+        </zstack:plugin>
+    </bean>
 </beans>
