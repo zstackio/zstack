@@ -306,6 +306,7 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.primary.ImageCacheInventory", "org.zstack.sdk.ImageCacheInventory");
 			put("org.zstack.header.storage.primary.PrimaryStorageHostStatus", "org.zstack.sdk.PrimaryStorageHostStatus");
 			put("org.zstack.header.storage.primary.PrimaryStorageInventory", "org.zstack.sdk.PrimaryStorageInventory");
+			put("org.zstack.header.storage.primary.UsageReport", "org.zstack.sdk.UsageReport");
 			put("org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct", "org.zstack.sdk.BatchDeleteVolumeSnapshotStruct");
 			put("org.zstack.header.storage.snapshot.ShrinkResult", "org.zstack.sdk.ShrinkResult");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefInventory", "org.zstack.sdk.VolumeSnapshotBackupStorageRefInventory");
@@ -1187,6 +1188,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretStatus", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus");
 			put("org.zstack.sdk.UKeyInventory", "org.zstack.license.UKeyInventory");
 			put("org.zstack.sdk.UKeyStatus", "org.zstack.license.UKeyStatus");
+			put("org.zstack.sdk.UsageReport", "org.zstack.header.storage.primary.UsageReport");
 			put("org.zstack.sdk.UsbDeviceInventory", "org.zstack.usbDevice.UsbDeviceInventory");
 			put("org.zstack.sdk.UsbDeviceState", "org.zstack.usbDevice.UsbDeviceState");
 			put("org.zstack.sdk.UsedIpInventory", "org.zstack.header.network.l3.UsedIpInventory");

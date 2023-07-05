@@ -110,6 +110,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private PluginRegistry pluginRgty;
     @Autowired
     private StorageTrash trash;
+    @Autowired
+    private PoolUsageReport poolUsageCollector;
+
 
     public CephPrimaryStorageBase() {
     }
@@ -4204,6 +4207,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteVolumeChainOnPrimaryStorageMsg) {
             handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof GetPrimaryStorageUsageReportMsg) {
+            handle((GetPrimaryStorageUsageReportMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -5621,6 +5626,25 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         }).call();
+    }
+
+    private void handle(GetPrimaryStorageUsageReportMsg msg) {
+        GetPrimaryStorageUsedPhysicalCapacityForecastReply reply = new GetPrimaryStorageUsedPhysicalCapacityForecastReply();
+        List<CephPrimaryStoragePoolVO> poolVOs = Q.New(CephPrimaryStoragePoolVO.class)
+                .in(CephPrimaryStoragePoolVO_.uuid, getPoolUuidsFromPoolUris(msg.getUris())).list();
+
+        Map<String, UsageReport> osdUsageReport = poolUsageCollector
+                .getUsageReportByResourceUuids(poolVOs.stream().map(vo -> vo.getOsdGroup().getUuid()).collect(Collectors.toList()));
+
+        Map<String, UsageReport> poolUsageReport = new HashMap<>();
+        poolVOs.forEach(poolVO -> poolUsageReport.put(poolVO.getUuid(), osdUsageReport.get(poolVO.getOsdGroup().getUuid())));
+
+        reply.setUsageReportMap(poolUsageReport);
+        bus.reply(msg, reply);
+    }
+
+    private List<String> getPoolUuidsFromPoolUris(List<String> poolUris) {
+        return poolUris.stream().map(uri -> uri.replace("ceph://", "")).collect(Collectors.toList());
     }
 
     protected String makeVolumeInstallPathByTargetPool(String volUuid, String targetPoolName) {

@@ -35,4 +35,10 @@ public class PrimaryStorageGlobalConfig {
     @GlobalConfigValidation(inNumberRange = {1, 255})
     @GlobalConfigDef(defaultValue = "10", type = Integer.class,  description = "allocator concurrency level, if enabled.")
     public static GlobalConfig ALLOCATE_PRIMARYSTORAGE_CONCURRENCY = new GlobalConfig(CATEGORY, "allocate.primaryStore.Concurrency");
+    @GlobalConfigValidation()
+    @BindResourceConfig(value = {PrimaryStorageVO.class})
+    @GlobalConfigDef(defaultValue = "0.9", type = Double.class, description = "The threshold for predicting primary storage's used physical capacity. " +
+            "If the predicted value exceeds this threshold, it indicates that the primary storage is expected to be full in the future.")
+    public static GlobalConfig PRIMARY_STORAGE_USED_PHYSICAL_CAPACITY_FORECAST_THRESHOLD =
+            new GlobalConfig(CATEGORY, "primaryStorage.used.physicalCapacity.forecast.threshold");
 }
