@@ -134,4 +134,10 @@
             </list>
         </property>
     </bean>
+
+    <bean id="LocalHostUsageCollector" class="org.zstack.storage.primary.local.LocalStorageHostUsageReport">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" order="-2"/>
+        </zstack:plugin>
+    </bean>
 </beans>

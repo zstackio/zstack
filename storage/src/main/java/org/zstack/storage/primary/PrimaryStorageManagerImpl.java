@@ -86,6 +86,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private PrimaryStorageOverProvisioningManager ratioMgr;
     @Autowired
     private PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
+    @Autowired
+    protected PrimaryStorageUsageReport primaryStorageUsageForecaster;
 
     private final Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections.synchronizedMap(new HashMap<>());
@@ -128,6 +130,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             handle((APIGetPrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof APIGetPrimaryStorageLicenseInfoMsg) {
             handle((APIGetPrimaryStorageLicenseInfoMsg) msg);
+        } else if (msg instanceof APIGetPrimaryStorageUsageReportMsg) {
+            handle((APIGetPrimaryStorageUsageReportMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -238,6 +242,35 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         List<String> ret = new ArrayList<>(PrimaryStorageType.getAllTypeNames());
         reply.setPrimaryStorageTypes(ret);
         bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetPrimaryStorageUsageReportMsg msg) {
+        APIGetPrimaryStorageUsageReportReply reply = new APIGetPrimaryStorageUsageReportReply();
+
+        if (CollectionUtils.isEmpty(msg.getUris())) {
+            reply.setUsageReport(primaryStorageUsageForecaster.getUsageReportByResourceUuids(
+                    Collections.singletonList(msg.getPrimaryStorageUuid())).get(msg.getPrimaryStorageUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        GetPrimaryStorageUsageReportMsg gmsg = new GetPrimaryStorageUsageReportMsg();
+        gmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        gmsg.setUris(msg.getUris());
+
+        bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, gmsg.getPrimaryStorageUuid());
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                } else {
+                    GetPrimaryStorageUsedPhysicalCapacityForecastReply re = r.castReply();
+                    reply.setUriUsageForecast(re.getUsageReportMap());
+                }
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void passThrough(PrimaryStorageMessage pmsg) {
