@@ -567,9 +567,8 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
 
     private List<Tuple> findEipTuplesOnVmNic(VmNicInventory nic) {
         List<Tuple> eips = SQL.New("select eip.vipIp, eip.guestIp, nic.l3NetworkUuid, nic.mac, vip.l3NetworkUuid, eip.uuid " +
-                "from EipVO eip, VmNicVO nic, VmInstanceVO vm, VipVO vip " +
+                "from EipVO eip, VmNicVO nic, VipVO vip " +
                 "where eip.vmNicUuid = nic.uuid " +
-                "and nic.vmInstanceUuid = vm.uuid " +
                 "and nic.l3NetworkUuid = :l3Uuid " +
                 "and eip.vipUuid = vip.uuid " +
                 "and eip.state = :enabledState", Tuple.class)

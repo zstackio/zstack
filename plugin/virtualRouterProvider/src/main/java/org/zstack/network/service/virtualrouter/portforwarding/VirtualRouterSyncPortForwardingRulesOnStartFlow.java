@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.workflow.Flow;
@@ -15,7 +16,6 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.portforwarding.*;
 import org.zstack.network.service.virtualrouter.*;
@@ -57,13 +57,8 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
                 return new ArrayList<>();
             }
 
-            String sql = "select rule from PortForwardingRuleVO rule, VmNicVO nic, VmInstanceVO vm where" +
-                    " nic.vmInstanceUuid = vm.uuid and rule.vmNicUuid = nic.uuid and rule.uuid in (:pfUuids)";
-            TypedQuery<PortForwardingRuleVO> q = dbf.getEntityManager().createQuery(sql, PortForwardingRuleVO.class);
-            q.setParameter("pfUuids", pfUuids);
-            return q.getResultList();
+            return Q.New(PortForwardingRuleVO.class).in(PortForwardingRuleVO_.uuid, pfUuids).list();
         } else {
-            VmNicInventory publicNic = vr.getPublicNic();
             List<VmNicInventory> guestNics = vr.getGuestNics();
             if (guestNics == null || guestNics.isEmpty()) {
                 return new ArrayList<PortForwardingRuleVO>(0);
@@ -77,7 +72,7 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
                 pubL3Uuids.add(vr.getManagementNetworkUuid());
             }
 
-            String sql = "select rule from PortForwardingRuleVO rule, VipVO vip, VmNicVO nic, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and " +
+            String sql = "select rule from PortForwardingRuleVO rule, VipVO vip, VmNicVO nic where " +
                     " rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid and vip.l3NetworkUuid in (:vipL3Uuids) and nic.l3NetworkUuid in (:guestL3Uuid)";
             TypedQuery<PortForwardingRuleVO> q = dbf.getEntityManager().createQuery(sql, PortForwardingRuleVO.class);
             q.setParameter("vipL3Uuids", pubL3Uuids);
