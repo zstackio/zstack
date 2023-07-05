@@ -13,6 +13,9 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.storage.primary.smp.KvmBackend.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import static org.zstack.storage.primary.smp.SftpBackupStorageKvmDownloader.DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH;
+import static org.zstack.storage.primary.smp.SftpBackupStorageKvmUploader.UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH;
+
 /**
  * Created by xing5 on 2016/3/27.
  */
@@ -73,7 +76,7 @@ public class SMPPrimaryStorageSimulator {
         return null;
     }
 
-    @RequestMapping(value=KvmBackend.UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH, method= RequestMethod.POST)
+    @RequestMapping(value=UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String uploadBitsToSftp(HttpEntity<String> entity) {
         SftpUploadBitsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), SftpUploadBitsCmd.class);
@@ -82,7 +85,7 @@ public class SMPPrimaryStorageSimulator {
         return null;
     }
 
-    @RequestMapping(value=KvmBackend.DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH, method= RequestMethod.POST)
+    @RequestMapping(value=DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String downloadBitsFromSftp(HttpEntity<String> entity) {
         SftpDownloadBitsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), SftpDownloadBitsCmd.class);

@@ -46,9 +46,6 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.*;
-import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
-import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
-import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
@@ -101,6 +98,48 @@ public class KvmBackend extends HypervisorBackend {
                 return null;
             }
             return operr("operation error, because:%s", error);
+        }
+    }
+
+    public static class ResizeVolumeCmd extends AgentCmd {
+        private String installPath;
+        private long size;
+        private boolean force;
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public boolean isForce() {
+            return force;
+        }
+
+        public void setForce(boolean force) {
+            this.force = force;
+        }
+    }
+
+    public static class ResizeVolumeRsp extends AgentRsp {
+        private long size;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
         }
     }
 
@@ -353,8 +392,6 @@ public class KvmBackend extends HypervisorBackend {
     public static final String UNLINK_BITS_PATH = "/sharedmountpointprimarystorage/bits/unlink";
     public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/sharedmountpointprimarystorage/createtemplatefromvolume";
     public static final String ESTIMATE_TEMPLATE_SIZE_PATH = "/sharedmountpointprimarystorage/estimatetemplatesize";
-    public static final String UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/upload";
-    public static final String DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/download";
     public static final String REVERT_VOLUME_FROM_SNAPSHOT_PATH = "/sharedmountpointprimarystorage/volume/revertfromsnapshot";
     public static final String REINIT_IMAGE_PATH = "/sharedmountpointprimarystorage/volume/reinitimage";
     public static final String MERGE_SNAPSHOT_PATH = "/sharedmountpointprimarystorage/snapshot/merge";
@@ -369,6 +406,7 @@ public class KvmBackend extends HypervisorBackend {
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/sharedmountpointprimarystorage/kvmhost/download/progress";
     public static final String GET_QCOW2_HASH_VALUE_PATH = "/sharedmountpointprimarystorage/getqcow2hash";
     public static final String GET_BACKING_CHAIN_PATH = "/sharedmountpointprimarystorage/volume/getbackingchain";
+    public static final String RESIZE_VOLUME_PATH = "/sharedmountpointprimarystorage/volume/resize";
 
     public KvmBackend(PrimaryStorageVO self) {
         super(self);
@@ -1931,8 +1969,8 @@ public class KvmBackend extends HypervisorBackend {
 
     @Override
     public void handle(UploadBitsToBackupStorageMsg msg, final ReturnValueCompletion<UploadBitsToBackupStorageReply> completion) {
-        SftpBackupStorageKvmUploader uploader = new SftpBackupStorageKvmUploader(msg.getBackupStorageUuid());
-        uploader.uploadBits(null, msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
+        BackupStorageKvmUploader uploader = getBackupStorageKvmUploader(msg.getBackupStorageUuid());
+        uploader.uploadBits(msg.getImageUuid(), msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
             @Override
             public void success(String bsPath) {
                 UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();
@@ -1947,113 +1985,18 @@ public class KvmBackend extends HypervisorBackend {
         });
     }
 
-    class SftpBackupStorageKvmDownloader extends BackupStorageKvmDownloader {
-        private final String bsUuid;
-
-        public SftpBackupStorageKvmDownloader(String backupStorageUuid) {
-            bsUuid = backupStorageUuid;
-        }
-
-        @Override
-        public void downloadBits(final String bsPath, final String psPath, boolean isData, final Completion completion) {
-            GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
-            gmsg.setBackupStorageUuid(bsUuid);
-            bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
-
-            bus.send(gmsg, new CloudBusCallBack(completion) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        completion.fail(reply.getError());
-                        return;
-                    }
-
-                    final GetSftpBackupStorageDownloadCredentialReply greply = reply.castReply();
-                    SftpDownloadBitsCmd cmd = new SftpDownloadBitsCmd();
-                    cmd.hostname = greply.getHostname();
-                    cmd.username = greply.getUsername();
-                    cmd.sshKey = greply.getSshKey();
-                    cmd.sshPort = greply.getSshPort();
-                    cmd.backupStorageInstallPath = bsPath;
-                    cmd.primaryStorageInstallPath = psPath;
-
-                    new Do().go(DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
-                        @Override
-                        public void success(AgentRsp returnValue) {
-                            completion.success();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            completion.fail(errorCode);
-                        }
-                    });
-                }
-            });
-        }
-    }
-
-    class SftpBackupStorageKvmUploader extends BackupStorageKvmUploader {
-        private final String bsUuid;
-
-        public SftpBackupStorageKvmUploader(String backupStorageUuid) {
-            bsUuid = backupStorageUuid;
-        }
-
-        @Override
-        public void uploadBits(final String imageUuid, final String bsPath, final String psPath, final ReturnValueCompletion<String> completion) {
-            GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
-            gmsg.setBackupStorageUuid(bsUuid);
-            bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
-            bus.send(gmsg, new CloudBusCallBack(completion) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        completion.fail(reply.getError());
-                        return;
-                    }
-
-                    final GetSftpBackupStorageDownloadCredentialReply r = reply.castReply();
-                    SftpUploadBitsCmd cmd = new SftpUploadBitsCmd();
-                    cmd.primaryStorageInstallPath = psPath;
-                    cmd.backupStorageInstallPath = bsPath;
-                    cmd.hostname = r.getHostname();
-                    cmd.username = r.getUsername();
-                    cmd.sshKey = r.getSshKey();
-                    cmd.sshPort = r.getSshPort();
-
-                    new Do().go(UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
-                        @Override
-                        public void success(AgentRsp returnValue) {
-                            completion.success(bsPath);
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            completion.fail(errorCode);
-                        }
-                    });
-                }
-            });
-        }
-    }
-
     private BackupStorageKvmDownloader getBackupStorageKvmDownloader(String backupStorageUuid) {
         SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
         q.select(BackupStorageVO_.type);
         q.add(BackupStorageVO_.uuid, Op.EQ, backupStorageUuid);
         String bsType = q.findValue();
 
-        if (SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE.equals(bsType)) {
-            return new SftpBackupStorageKvmDownloader(backupStorageUuid);
-        } else {
-            for (BackupStorageKvmFactory f : pluginRgty.getExtensionList(BackupStorageKvmFactory.class)) {
-                if (bsType.equals(f.getBackupStorageType())) {
-                    return f.createDownloader(getSelfInventory(), backupStorageUuid);
-                }
+        for (BackupStorageKvmFactory f : pluginRgty.getExtensionList(BackupStorageKvmFactory.class)) {
+            if (bsType.equals(f.getBackupStorageType())) {
+                return f.createDownloader(getSelfInventory(), backupStorageUuid);
             }
-            throw new CloudRuntimeException(String.format("cannot find any BackupStorageKvmFactory for the type[%s]", bsType));
         }
+        throw new CloudRuntimeException(String.format("cannot find any BackupStorageKvmFactory for the type[%s]", bsType));
     }
 
 
@@ -2067,17 +2010,14 @@ public class KvmBackend extends HypervisorBackend {
             throw new OperationFailureException(operr("cannot find backup storage[uuid:%s]", backupStorageUuid));
         }
 
-        if (SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE.equals(bsType)) {
-            return new SftpBackupStorageKvmUploader(backupStorageUuid);
-        } else {
-            for (BackupStorageKvmFactory f : pluginRgty.getExtensionList(BackupStorageKvmFactory.class)) {
-                if (bsType.equals(f.getBackupStorageType())) {
-                    return f.createUploader(getSelfInventory(), backupStorageUuid);
-                }
-            }
 
-            throw new CloudRuntimeException(String.format("cannot find any BackupStorageKvmFactory for the type[%s]", bsType));
+        for (BackupStorageKvmFactory f : pluginRgty.getExtensionList(BackupStorageKvmFactory.class)) {
+            if (bsType.equals(f.getBackupStorageType())) {
+                return f.createUploader(getSelfInventory(), backupStorageUuid);
+            }
         }
+
+        throw new CloudRuntimeException(String.format("cannot find any BackupStorageKvmFactory for the type[%s]", bsType));
     }
 
 
@@ -2398,6 +2338,32 @@ public class KvmBackend extends HypervisorBackend {
             @Override
             public void success(AgentRsp rsp) {
                 completion.success(new UnlinkBitsOnPrimaryStorageReply());
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(ResizeVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<ResizeVolumeOnPrimaryStorageReply> completion) {
+        VolumeInventory volume = msg.getVolume();
+        final ResizeVolumeOnPrimaryStorageReply reply = new ResizeVolumeOnPrimaryStorageReply();
+
+        String hostUuid = primaryStorageFactory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
+
+        ResizeVolumeCmd cmd = new ResizeVolumeCmd();
+        cmd.setInstallPath(volume.getInstallPath());
+        cmd.setSize(msg.getSize());
+        cmd.setForce(msg.isForce());
+        httpCall(RESIZE_VOLUME_PATH, hostUuid, cmd, ResizeVolumeRsp.class, new ReturnValueCompletion<ResizeVolumeRsp>(msg) {
+            @Override
+            public void success(ResizeVolumeRsp rsp) {
+                volume.setSize(rsp.getSize());
+                reply.setVolume(volume);
+                completion.success(reply);
             }
 
             @Override
