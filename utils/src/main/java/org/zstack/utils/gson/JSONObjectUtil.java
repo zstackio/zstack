@@ -1,7 +1,6 @@
 package org.zstack.utils.gson;
 
 import com.google.gson.*;
-import com.google.gson.reflect.TypeToken;
 import org.json.JSONArray;
 
 import java.lang.reflect.Type;
@@ -58,6 +57,7 @@ public class JSONObjectUtil {
         return gson.fromJson(content, clazz);
     }
 
+    // Only supports converting content to List, for example: new TypeToken<List<T>>() {}.getType()
     public static <T> List<T> toList(String content, Type type){
         return gson.fromJson(content, type);
     }
