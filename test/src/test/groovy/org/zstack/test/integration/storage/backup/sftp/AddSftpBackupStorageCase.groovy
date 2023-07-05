@@ -8,11 +8,20 @@ import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.AddSftpBackupStorageAction
+import org.zstack.sdk.BackupStorageInventory
+import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VolumeSnapshotInventory
+import org.zstack.sdk.ZoneInventory
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
+import org.zstack.storage.primary.smp.KvmBackend
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
+import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
@@ -31,7 +40,7 @@ class AddSftpBackupStorageCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(NetworkServiceProviderTest.springSpec)
+        useSpring(StorageTest.springSpec)
     }
 
     @Override
@@ -154,6 +163,53 @@ class AddSftpBackupStorageCase extends SubCase {
             addDevicePathBSFailure()
             testCreateTemplateWillRecordMetadate()
             testImportImageFlagWhenAddBS()
+            testSmpPSWithSftpBS()
+        }
+    }
+
+    void testSmpPSWithSftpBS() {
+        def zone = env.inventoryByName("zone") as ZoneInventory
+        def image = env.inventoryByName("image1") as ImageInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+        def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        def clusterInv = env.inventoryByName("cluster") as ClusterInventory
+        def sftp = env.inventoryByName("sftp") as BackupStorageInventory
+
+        env.simulator(KvmBackend.CONNECT_PATH) {
+            def rsp = new KvmBackend.ConnectRsp()
+            rsp.totalCapacity = SizeUnit.TERABYTE.toByte(100)
+            rsp.availableCapacity = SizeUnit.TERABYTE.toByte(100)
+            return rsp
+        }
+
+        def ps = addSharedMountPointPrimaryStorage {
+            name = "test-smp"
+            url = "/mount_point"
+            zoneUuid = zone.uuid
+        } as PrimaryStorageInventory
+
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = clusterInv.uuid
+        }
+
+        def vm = createVmInstance {
+            name = "test_vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            l3NetworkUuids = [l3.uuid]
+            imageUuid = image.uuid
+            primaryStorageUuidForRootVolume = ps.uuid
+        } as VmInstanceInventory
+
+        def rootSnap = createVolumeSnapshot {
+            name = "test-root-snap"
+            volumeUuid = vm.rootVolumeUuid
+        } as VolumeSnapshotInventory
+
+        createRootVolumeTemplateFromVolumeSnapshot {
+            name = "test-root-volume-template"
+            snapshotUuid = rootSnap.uuid
+            backupStorageUuids = [sftp.uuid]
         }
     }
 
