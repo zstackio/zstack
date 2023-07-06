@@ -48,6 +48,15 @@ doc {
 					optional true
 					since "4.7.0"
 				}
+				column {
+					name "https"
+					enclosedIn "params"
+					desc "是否是HTTPS"
+					location "body"
+					type "Boolean"
+					optional true
+					since "4.7.11"
+				}
 			}
         }
 
