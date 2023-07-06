@@ -12,7 +12,7 @@ public class UpdateXskyBlockVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateXskyBlockVolumeResult value;
+        public org.zstack.sdk.UpdateBlockVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -78,8 +78,8 @@ public class UpdateXskyBlockVolumeAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateXskyBlockVolumeResult value = res.getResult(org.zstack.sdk.UpdateXskyBlockVolumeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateXskyBlockVolumeResult() : value; 
+        org.zstack.sdk.UpdateBlockVolumeResult value = res.getResult(org.zstack.sdk.UpdateBlockVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateBlockVolumeResult() : value; 
 
         return ret;
     }
