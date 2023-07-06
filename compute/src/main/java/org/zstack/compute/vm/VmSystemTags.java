@@ -2,6 +2,7 @@ package org.zstack.compute.vm;
 
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.zstack.header.tag.AdminOnlyTag;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.PatternedSystemTag;
@@ -67,6 +68,7 @@ public class VmSystemTags {
     public static PatternedSystemTag ISO = new PatternedSystemTag(String.format("iso::{%s}::{%s}", ISO_TOKEN, ISO_DEVICEID_TOKEN), VmInstanceVO.class);
 
     public static String BOOT_ORDER_TOKEN = "bootOrder";
+    @AdminOnlyTag
     public static PatternedSystemTag BOOT_ORDER = new PatternedSystemTag(String.format("bootOrder::{%s}", BOOT_ORDER_TOKEN), VmInstanceVO.class);
 
     //this tag is deprecated.
@@ -164,8 +166,7 @@ public class VmSystemTags {
 
     public static PatternedSystemTag PACKER_BUILD = new PatternedSystemTag("packer", VmInstanceVO.class);
     public static final String VM_PRIORITY_TOKEN = "vmPriority";
-    public static PatternedSystemTag VM_PRIORITY = new PatternedSystemTag(String.format("vmPriority::{%s}", VM_PRIORITY_TOKEN), VmInstanceVO.class
-    );
+    public static PatternedSystemTag VM_PRIORITY = new PatternedSystemTag(String.format("vmPriority::{%s}", VM_PRIORITY_TOKEN), VmInstanceVO.class);
 
     public static String SOUND_TYPE_TOKEN = "soundType";
     public static PatternedSystemTag SOUND_TYPE = new PatternedSystemTag(String.format("soundType::{%s}", SOUND_TYPE_TOKEN), VmInstanceVO.class);
@@ -205,6 +206,8 @@ public class VmSystemTags {
     public static String DIRECTORY_UUID_TOKEN = "directoryUuid";
     public static PatternedSystemTag DIRECTORY_UUID = new PatternedSystemTag(String.format("directoryUuid::{%s}", DIRECTORY_UUID_TOKEN), VmInstanceVO.class);
 
+    public static String GUEST_OS_TYPE_TOKEN = "guestOsType";
+    public static PatternedSystemTag GUEST_OS_TYPE = new PatternedSystemTag(String.format("directoryUuid::{%s}", DIRECTORY_UUID_TOKEN), VmInstanceVO.class);
     public static class UserdataTagOutputHandler implements SensitiveTagOutputHandler {
         private final String chpasswd = "chpasswd";
         private final String list = "list";

@@ -32,22 +32,27 @@ public class VmGlobalConfig {
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_SOUND_TYPE = new GlobalConfig(CATEGORY, "soundType");
     @GlobalConfigValidation(validValues = {"off","all", "filter"})
+    @BindResourceConfig(value = {VmInstanceVO.class})
     public static GlobalConfig VM_SPICE_STREAMING_MODE= new GlobalConfig(CATEGORY, "spiceStreamingMode");
     @GlobalConfigValidation
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig NUMA = new GlobalConfig(CATEGORY, "numa");
     @GlobalConfigValidation
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    public static GlobalConfig HOT_PLUG_MEMORY = new GlobalConfig(CATEGORY, "hotPlugMemory");
+    @GlobalConfigValidation
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_MAX_VCPU = new GlobalConfig(CATEGORY, "vm.max.vcpu");
     @GlobalConfigValidation
     public static GlobalConfig VM_BOOT_MENU = new GlobalConfig(CATEGORY, "bootMenu");
-    @GlobalConfigValidation(numberGreaterThan = 3000, numberLessThan = 65535)
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 65535)
     @BindResourceConfig(value = {VmInstanceVO.class})
     public static GlobalConfig VM_BOOT_MENU_SPLASH_TIMEOUT = new GlobalConfig(CATEGORY, "bootMenuSplashTimeout");
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig KVM_HIDDEN_STATE = new GlobalConfig(CATEGORY, "kvmHiddenState");
     @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig(value = {VmInstanceVO.class})
     public static GlobalConfig VM_PORT_OFF = new GlobalConfig(CATEGORY, "vmPortOff");
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
@@ -115,4 +120,7 @@ public class VmGlobalConfig {
 
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ENABLE_VM_DEVICE_ADDRESS_RECORDING = new GlobalConfig(CATEGORY, "enable.vm.address.recording");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig UNIQUE_VM_NAME = new GlobalConfig(CATEGORY, "uniqueVmName");
 }

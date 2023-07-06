@@ -176,6 +176,15 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false, validValues = {"InstantStart", "JustCreate", "CreateStopped"})
     private String strategy = VmCreationStrategy.InstantStart.toString();
 
+    @APIParam(required = false, maxLength = 255)
+    private String guestOsType;
+
+    @APIParam(required = false)
+    private List<String> dataVolumeTemplateUuids;
+
+    @APIParam(required = false)
+    private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
+
     @APIParam(required = false)
     private List<String> rootVolumeSystemTags;
 
@@ -351,6 +360,30 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setDataVolumeSystemTagsOnIndex(Map<String, List<String>> dataVolumeSystemTagsOnIndex) {
         this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
+    }
+
+    public String getGuestOsType() {
+        return guestOsType;
+    }
+
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
+    }
+
+    public List<String> getDataVolumeTemplateUuids() {
+        return dataVolumeTemplateUuids;
+    }
+
+    public void setDataVolumeTemplateUuids(List<String> dataVolumeTemplateUuids) {
+        this.dataVolumeTemplateUuids = dataVolumeTemplateUuids;
+    }
+
+    public Map<String, List<String>> getDataVolumeFromTemplateSystemTags() {
+        return dataVolumeFromTemplateSystemTags;
+    }
+
+    public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
+        this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
     }
 
     public static APICreateVmInstanceMsg __example__() {

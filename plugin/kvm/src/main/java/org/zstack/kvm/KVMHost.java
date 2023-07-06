@@ -2460,7 +2460,7 @@ public class KVMHost extends HostBase implements Host {
                     public void run(final FlowTrigger trigger, Map data) {
                         TaskProgressRange stage = markTaskStage(parentStage, MIGRATE_VM_STAGE);
 
-                        boolean autoConverage = KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.value(Boolean.class);
+                        boolean autoConverage = rcf.getResourceConfigValue(KVMGlobalConfig.MIGRATE_AUTO_CONVERGE, vmUuid, Boolean.class);
                         if (!autoConverage) {
                             autoConverage = s.strategy != null && s.strategy.equals("auto-converge");
                         }
@@ -3416,7 +3416,7 @@ public class KVMHost extends HostBase implements Host {
         }
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
         cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getUuid(), Boolean.class));
-        cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
+        cmd.setSpiceStreamingMode(rcf.getResourceConfigValue(VmGlobalConfig.VM_SPICE_STREAMING_MODE, spec.getVmInventory().getUuid(), String.class));
 
         boolean emulateHyperV = false;
         if (ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio)
@@ -3471,7 +3471,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setUseVirtio(VmSystemTags.VIRTIO.hasTag(spec.getVmInventory().getUuid()));
         rootVolume.setUseVirtioSCSI(ImagePlatform.Other.toString().equals(platform) ? false : KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));
         rootVolume.setWwn(computeWwnIfAbsent(spec.getDestRootVolume().getUuid()));
-        rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
+        rootVolume.setCacheMode(rcf.getResourceConfigValue(KVMGlobalConfig.LIBVIRT_CACHE_MODE, spec.getDestRootVolume().getUuid(), String.class));
 
         String vmCpuMode = rcf.getResourceConfigValue(KVMGlobalConfig.NESTED_VIRTUALIZATION, spec.getVmInventory().getUuid(), String.class);
         if (vmCpuMode.equals(KVMConstant.CPU_MODE_NONE) || vmCpuMode.equals(KVMConstant.CPU_MODE_HOST_MODEL) || vmCpuMode.equals(KVMConstant.CPU_MODE_HOST_PASSTHROUGH)) {
@@ -3546,7 +3546,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setUsbRedirect(spec.isUsbRedirect());
         cmd.setEnableSecurityElement(spec.isEnableSecurityElement());
         cmd.setVDIMonitorNumber(Integer.valueOf(spec.getVDIMonitorNumber()));
-        cmd.setVmPortOff(VmGlobalConfig.VM_PORT_OFF.value(Boolean.class));
+        cmd.setVmPortOff(rcf.getResourceConfigValue(VmGlobalConfig.VM_PORT_OFF, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setConsoleMode("vnc");
         cmd.setTimeout(TimeUnit.MINUTES.toSeconds(5));
         cmd.setConsoleLogToFile(rcf.getResourceConfigValue(KVMGlobalConfig.REDIRECT_CONSOLE_LOG_TO_FILE, spec.getVmInventory().getUuid(), Boolean.class));
