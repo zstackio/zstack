@@ -10,12 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.cluster.ClusterGlobalConfig;
+import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
-import org.zstack.core.timeout.TimeHelper;
-import org.zstack.header.core.*;
-import org.zstack.header.vm.devices.VirtualDeviceInfo;
-import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
@@ -25,12 +22,13 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.core.timeout.TimeHelper;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
@@ -38,6 +36,10 @@ import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
+import org.zstack.header.core.AsyncLatch;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -60,17 +62,17 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.DeviceAddress;
+import org.zstack.header.vm.devices.VirtualDeviceInfo;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.kvm.hypervisor.KvmHypervisorInfoHelper;
 import org.zstack.kvm.hypervisor.KvmHypervisorInfoManager;
 import org.zstack.network.l3.NetworkGlobalProperty;
-import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTag;
@@ -99,10 +101,10 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
+import static org.zstack.header.host.GetVirtualizerInfoReply.VmVirtualizerInfo;
 import static org.zstack.kvm.KVMHostFactory.allGuestOsCharacter;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
-import static org.zstack.header.host.GetVirtualizerInfoReply.VmVirtualizerInfo;
 
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
@@ -660,9 +662,17 @@ public class KVMHost extends HostBase implements Host {
 
     private void handle(GetHostWebSshUrlMsg msg) {
         GetHostWebSshUrlReply reply = new GetHostWebSshUrlReply();
+        String port;
+        String schema;
+        if (msg.getHttps()) {
+            port = KVMGlobalConfig.HOST_WEBSSH_HTTPS_PORT.value();
+            schema = "wss";
+        } else {
+            port = KVMGlobalConfig.HOST_WEBSSH_PORT.value();
+            schema = "ws";
+        }
         if (CoreGlobalProperty.UNIT_TEST_ON) {
-            String port = KVMGlobalConfig.HOST_WEBSSH_PORT.value();
-            reply.setUrl(String.format("ws://{{ip}}:%s/ws?id=%s", port, "mockId"));
+            reply.setUrl(String.format("%s://{{ip}}:%s/ws?id=%s", schema, port, "mockId"));
             bus.reply(msg, reply);
             return;
         }
@@ -707,8 +717,7 @@ public class KVMHost extends HostBase implements Host {
                 return;
             }
 
-            String port = KVMGlobalConfig.HOST_WEBSSH_PORT.value();
-            reply.setUrl(String.format("ws://{{ip}}:%s/ws?id=%s", port, webSsh.id));
+            reply.setUrl(String.format("%s://{{ip}}:%s/ws?id=%s", schema, port, webSsh.id));
             bus.reply(msg, reply);
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException(
