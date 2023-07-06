@@ -179,6 +179,7 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
     void test() {
         env.create {
             VmGlobalConfig.NUMA.updateValue(true)
+            VmGlobalConfig.HOT_PLUG_MEMORY.updateValue(true)
             vm = env.inventoryByName("vm") as VmInstanceInventory
 
             dbf = bean(DatabaseFacade.class)

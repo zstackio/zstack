@@ -1079,7 +1079,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
 
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
-        final String architecture = dbf.findByUuid(msg.getImageUuid(), ImageVO.class).getArchitecture();
         VmInstanceVO vo = new VmInstanceVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -1095,19 +1094,24 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo.setZoneUuid(msg.getZoneUuid());
         vo.setInternalId(dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class));
         vo.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
-        vo.setArchitecture(architecture);
+        vo.setGuestOsType(msg.getGuestOsType());
+        vo.setPlatform(ImagePlatform.Other.toString());
+        vo.setArchitecture(ImageArchitecture.defaultArch());
 
-        SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
-        imgq.select(ImageVO_.platform);
-        imgq.add(ImageVO_.uuid, Op.EQ, msg.getImageUuid());
-        ImagePlatform platform = imgq.findValue();
-        vo.setPlatform(platform.toString());
+        if (msg.getGuestOsType() == null) {
+            SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
+            imgq.select(ImageVO_.platform);
+            imgq.add(ImageVO_.uuid, Op.EQ, msg.getImageUuid());
+            ImagePlatform platform = imgq.findValue();
+            vo.setPlatform(platform.toString());
+            vo.setArchitecture(dbf.findByUuid(msg.getImageUuid(), ImageVO.class).getArchitecture());
+            vo.setGuestOsType(Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.guestOsType).findValue());
+        }
 
         vo.setCpuNum(msg.getCpuNum());
         vo.setCpuSpeed(msg.getCpuSpeed());
         vo.setMemorySize(msg.getMemorySize());
         vo.setAllocatorStrategy(msg.getAllocatorStrategy());
-        vo.setGuestOsType(Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.guestOsType).findValue());
         String vmType = msg.getType() == null ? VmInstanceConstant.USER_VM_TYPE : msg.getType();
         VmInstanceType type = VmInstanceType.valueOf(vmType);
         VmInstanceFactory factory = getVmInstanceFactory(type);
@@ -1130,6 +1134,27 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
             @Override
             public void setup() {
+                if (VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class)) {
+                    flow(new Flow() {
+                        String __name__ = String.format("check-unique-name-for-vm-%s", finalVo.getUuid());
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            boolean exists = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, finalVo.getName()).notEq(VmInstanceVO_.uuid, finalVo.getUuid()).isExists();
+                            if (exists) {
+                                trigger.fail(operr("could not create vm, a vm with the name [%s] already exists", msg.getName()));
+                                return;
+                            }
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void rollback(FlowRollback trigger, Map data) {
+                            trigger.rollback();
+                        }
+                    });
+                }
+
                 flow(new Flow() {
                     List<ErrorCode> errorCodes = Collections.emptyList();
                     String __name__ = String.format("instantiate-systemTag-for-vm-%s", finalVo.getUuid());
