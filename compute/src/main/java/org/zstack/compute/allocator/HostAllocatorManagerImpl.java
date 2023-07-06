@@ -872,6 +872,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     vmMigrateToAnotherHost(trigger);
                 } else if (operation == VmAbnormalLifeCycleOperation.VmRunningFromIntermediateState) {
                     vmRunningFromIntermediateState(trigger);
+                } else if (operation == VmAbnormalLifeCycleOperation.VmNoStateFromIntermediateState) {
+                    vmRunningFromIntermediateState(trigger);
                 } else if (operation == VmAbnormalLifeCycleOperation.VmStoppedOnTheSameHost) {
                     vmStoppedOnTheSameHost(trigger);
                 } else if (operation == VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostChanged) {
