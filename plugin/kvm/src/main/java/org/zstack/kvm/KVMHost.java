@@ -2348,7 +2348,6 @@ public class KVMHost extends HostBase implements Host {
         cmd.setInstallPath(msg.getInstallPath());
         cmd.setFullSnapshot(msg.isFullSnapshot());
         cmd.setVolumeUuid(msg.getVolume().getUuid());
-        cmd.setTimeout(timeoutManager.getTimeout());
 
         completeTakeSnapshotCmd(msg, cmd);
 
@@ -2479,7 +2478,6 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setVdpaPaths((List<String>) data.get("vDPA_paths"));
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setReload(s.reload);
-                        cmd.setTimeout(timeoutManager.getTimeout());
                         cmd.setDownTime(s.downTime);
 
                         if (s.diskMigrationMap != null) {

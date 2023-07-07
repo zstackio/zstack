@@ -3137,7 +3137,6 @@ public class KVMAgentCommands {
         private Integer downTime;
         private boolean xbzrle;
         private List<String> vdpaPaths;
-        private Long timeout; // in seconds
         private Map<String, VolumeTO> disks;  // A map from old install path to new volume
         private boolean reload;
 
@@ -3227,14 +3226,6 @@ public class KVMAgentCommands {
 
         public void setVdpaPaths(List<String> vdpaPaths) {
             this.vdpaPaths = vdpaPaths;
-        }
-
-        public Long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(Long timeout) {
-            this.timeout = timeout;
         }
 
         public Map<String, VolumeTO> getDisks() {
@@ -3395,7 +3386,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class TakeSnapshotCmd extends AgentCommand {
+    public static class TakeSnapshotCmd extends AgentCommand implements HasThreadContext {
         private String vmUuid;
         private String volumeUuid;
         private VolumeTO volume;
@@ -3408,8 +3399,6 @@ public class KVMAgentCommands {
 
         // for baremetal2 instance
         private boolean isBaremetal2InstanceOnlineSnapshot;
-
-        private long timeout;
 
         public boolean isOnline() {
             return online;
@@ -3489,14 +3478,6 @@ public class KVMAgentCommands {
 
         public void setBaremetal2InstanceOnlineSnapshot(boolean baremetal2InstanceOnlineSnapshot) {
             isBaremetal2InstanceOnlineSnapshot = baremetal2InstanceOnlineSnapshot;
-        }
-
-        public long getTimeout() {
-            return timeout;
-        }
-
-        public void setTimeout(long timeout) {
-            this.timeout = timeout;
         }
     }
 
