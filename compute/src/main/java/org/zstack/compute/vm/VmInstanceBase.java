@@ -6489,6 +6489,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
+                if (Objects.equals(inv.getState(), VmInstanceState.Paused.toString())) {
+                    tagMgr.createNonInherentSystemTag(inv.getUuid(), VmSystemTags.VM_STATE_PAUSED_AFTER_MIGRATE.getTagFormat(), VmInstanceVO.class.getSimpleName());
+                }
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {

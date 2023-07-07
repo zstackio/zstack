@@ -169,4 +169,6 @@ public class VmSystemTags {
     public static PatternedSystemTag L3_NETWORK_SECURITY_GROUP_UUIDS_REF =
             new PatternedSystemTag(String.format("l3::{%s}::SecurityGroupUuids::{%s}", L3_UUID_TOKEN, SECURITY_GROUP_UUIDS_TOKEN),
                     VmInstanceVO.class);
+
+    public static PatternedSystemTag VM_STATE_PAUSED_AFTER_MIGRATE = new PatternedSystemTag(("vmPausedAfterMigrate"), VmInstanceVO.class);
 }
