@@ -131,6 +131,19 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     }
 
     @Override
+    public ErrorCode deleteVmDeviceAddress(String resourceUuid) {
+        if (resourceUuid == null) {
+            return operr("missing parameter, resourceUuid is requested");
+        }
+
+        SQL.New(VmInstanceDeviceAddressVO.class)
+                .eq(VmInstanceDeviceAddressVO_.resourceUuid, resourceUuid)
+                .delete();
+
+        return null;
+    }
+
+    @Override
     public ErrorCode deleteAllDeviceAddressesByVm(String vmInstanceUuid) {
         if (vmInstanceUuid == null) {
             return operr("missing parameter, vmInstanceUuid: %s is requested", vmInstanceUuid);
