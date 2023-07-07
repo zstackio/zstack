@@ -3221,7 +3221,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    public <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
+    protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
         httpCall(path, cmd, retClass, callback, null, 0);
     }
 
@@ -3282,11 +3282,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         private void prepareCmd() {
             cmd.setUuid(self.getUuid());
             cmd.setFsId(getSelf().getFsid());
-            if (CephSystemTags.THIRDPARTY_PLATFORM.hasTag(self.getUuid())) {
-                cmd.setToken(CephSystemTags.THIRDPARTY_PLATFORM.getTokenByResourceUuid(self.getUuid(),
-                        CephSystemTags.THIRDPARTY_PLATFORM_TOKEN));
-                cmd.setTpTimeout(CephGlobalConfig.THIRD_PARTY_SDK_TIMEOUT.value(String.class));
-            }
         }
 
         private List<CephPrimaryStorageMonBase> prepareMons() {
@@ -5079,7 +5074,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 }));
     }
 
-    protected void deleteSnapshotOnPrimaryStorage(final DeleteSnapshotOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
+    private void deleteSnapshotOnPrimaryStorage(final DeleteSnapshotOnPrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final DeleteSnapshotOnPrimaryStorageReply reply = new DeleteSnapshotOnPrimaryStorageReply();
         DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
         cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
@@ -5162,7 +5157,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         bus.reply(msg, reply);
     }
 
-    private void handle(TakeSnapshotMsg msg) {
+    protected void handle(TakeSnapshotMsg msg) {
         inQueue().name(String.format("take-snapshot-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> takeSnapshot(msg, new NoErrorCompletion(chain) {
