@@ -34,8 +34,8 @@ public class GetInterfaceServiceTypeStatisticAction extends AbstractAction {
     @Param(required = false, validValues = {"All","Interface","Bonding"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String interfaceType = "All";
 
-    @Param(required = false, validValues = {"All","ManagementNetwork","TenantNetwork","StorageNetwork","MigrationNetwork","BackupNetwork"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serviceType = "All";
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List serviceType;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String zoneUuid;
