@@ -275,4 +275,6 @@ public class VmSystemTags {
             return patternedSystemTag.instantiateTag(tokens);
         }
     }
+
+    public static PatternedSystemTag VM_STATE_PAUSED_AFTER_MIGRATE = new PatternedSystemTag(("vmPausedAfterMigrate"), VmInstanceVO.class);
 }

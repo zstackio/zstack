@@ -9,10 +9,7 @@ import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.compute.vm.quota.*;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigBeforeUpdateExtensionPoint;
@@ -173,6 +170,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private ResourceConfigFacade rcf;
     @Autowired
     private VmFactoryManager vmFactoryManager;
+    @Autowired
+    protected EventFacade evtf;
 
     private List<VmInstanceExtensionManager> vmExtensionManagers = new ArrayList<>();
 
@@ -1488,6 +1487,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     }
                 }
             }, StartVmInstanceMsg.class);
+            deleteMigrateSystemTagWhenVmStateChangedToRunning();
             return true;
         } catch (Exception e) {
             throw new CloudConfigureFailException(VmInstanceManagerImpl.class, e.getMessage(), e);
@@ -2579,5 +2579,17 @@ public class VmInstanceManagerImpl extends AbstractService implements
         refVO.setCreateDate(new Timestamp(new Date().getTime()));
         dbf.persist(refVO);
         return null;
+    }
+
+    public void deleteMigrateSystemTagWhenVmStateChangedToRunning() {
+        evtf.onLocal(VmCanonicalEvents.VM_FULL_STATE_CHANGED_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                VmCanonicalEvents.VmStateChangedData d = (VmCanonicalEvents.VmStateChangedData) data;
+                if (!Objects.equals(d.getOldState(), VmInstanceState.Migrating.toString()) && Objects.equals(d.getNewState(), VmInstanceState.Running.toString())) {
+                    VmSystemTags.VM_STATE_PAUSED_AFTER_MIGRATE.delete(d.getVmUuid());
+                }
+            }
+        });
     }
 }
