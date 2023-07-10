@@ -114,6 +114,10 @@ public abstract class HostBase extends AbstractHost {
 
     protected abstract void changeStateHook(HostState current, HostStateEvent stateEvent, HostState next);
 
+    protected void checkConnectConditions(ConnectHostInfo info, Completion complete) {
+        complete.success();
+    }
+
     protected abstract void connectHook(ConnectHostInfo info, Completion complete);
 
     protected abstract void updateOsHook(UpdateHostOSMsg msg, Completion completion);
@@ -1242,6 +1246,25 @@ public abstract class HostBase extends AbstractHost {
                 flowChain.then(new ShareFlow() {
                     @Override
                     public void setup() {
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "check-conditions-of-connection";
+
+                            @Override
+                            public void run(final FlowTrigger trigger, Map data) {
+                                checkConnectConditions(ConnectHostInfo.fromConnectHostMsg(msg), new Completion(trigger) {
+                                    @Override
+                                    public void success() {
+                                        trigger.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
+                            }
+                        });
+
                         flow(new NoRollbackFlow() {
                             String __name__ = "connect-host";
 
