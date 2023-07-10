@@ -14,3 +14,5 @@ ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `subvendorId` VARCHAR(6
 ALTER TABLE `zstack`.`HostNetworkInterfaceVO` ADD COLUMN `subdeviceId` VARCHAR(64)  DEFAULT NULL;
 ALTER TABLE `zstack`.`MonitorGroupTemplateRefVO`
     ADD COLUMN `isApplied` boolean not null DEFAULT TRUE;
+
+ALTER TABLE VmNicVO DROP INDEX `ukVmNicVO`;
