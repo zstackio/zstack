@@ -3338,6 +3338,10 @@ public class KVMHost extends HostBase implements Host {
     private void setStartVmCpuTopology(final VmInstanceSpec spec, final StartVmCmd cmd, String platform) {
         int cpuNum = cmd.getCpuNum();
 
+        if (cmd.isUseNuma()) {
+            cmd.setMaxVcpuNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, spec.getVmInventory().getUuid(), Integer.class));
+        }
+
         if (VmHardwareSystemTags.CPU_SOCKETS.hasTag(spec.getVmInventory().getUuid())) {
             String sockets = VmHardwareSystemTags.CPU_SOCKETS.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_SOCKETS_TOKEN);
             String cores = VmHardwareSystemTags.CPU_CORES.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_CORES_TOKEN);
@@ -3346,11 +3350,6 @@ public class KVMHost extends HostBase implements Host {
             cmd.setSocketNum(Integer.parseInt(sockets));
             cmd.setCpuOnSocket(Integer.parseInt(cores));
             cmd.setThreadsPerCore(Integer.parseInt(threads));
-            return;
-        }
-
-        if (cmd.isUseNuma()) {
-            cmd.setMaxVcpuNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, spec.getVmInventory().getUuid(), Integer.class));
             return;
         }
 

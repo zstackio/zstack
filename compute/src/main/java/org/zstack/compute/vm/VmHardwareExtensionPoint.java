@@ -35,7 +35,7 @@ public class VmHardwareExtensionPoint implements VmInstanceStartExtensionPoint, 
         }
 
         if (sockets == null) {
-            return "cpuSockets must be specified";
+            return "cpuSockets must be specified by system tag: cpuSockets::number";
         }
 
         Integer cpuNum = inv.getCpuNum();
