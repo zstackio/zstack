@@ -108,4 +108,7 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = 0)
     @GlobalConfigDef(defaultValue = "8888", type = Long.class, description = "the default port used by web-based SSH server")
     public static GlobalConfig HOST_WEBSSH_PORT = new GlobalConfig(CATEGORY, "host.webssh.port");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigDef(defaultValue = "8889", type = Long.class, description = "the default https port used by web-based SSH server")
+    public static GlobalConfig HOST_WEBSSH_HTTPS_PORT = new GlobalConfig(CATEGORY, "host.webssh.https.port");
 }
