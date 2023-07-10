@@ -7,10 +7,12 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.utils.DebugUtils;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * Created by xing5 on 2017/3/5.
@@ -35,6 +37,14 @@ public class While<T> {
     public While(Collection<T> items) {
         this.items = items;
         doneCount.set(items.size());
+    }
+
+    public static While<Integer> makeRetryWhile(int retryCount) {
+        int[] array = new int[retryCount];
+        for(int i = 0; i < array.length; i++) {
+            array[i] = i + 1;
+        }
+        return new While<>(Arrays.stream(array).mapToObj(Integer::valueOf).collect(Collectors.toList()));
     }
 
     public While each(Do<T> consumer) {
