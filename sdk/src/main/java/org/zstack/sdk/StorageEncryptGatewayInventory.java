@@ -44,12 +44,12 @@ public class StorageEncryptGatewayInventory  {
         return this.username;
     }
 
-    public java.lang.String password;
-    public void setPassword(java.lang.String password) {
-        this.password = password;
+    public java.lang.String secretKey;
+    public void setSecretKey(java.lang.String secretKey) {
+        this.secretKey = secretKey;
     }
-    public java.lang.String getPassword() {
-        return this.password;
+    public java.lang.String getSecretKey() {
+        return this.secretKey;
     }
 
     public java.sql.Timestamp createDate;

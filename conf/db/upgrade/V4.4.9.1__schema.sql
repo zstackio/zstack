@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`StorageEncryptGatewayVO` (
     `ip` varchar(64) DEFAULT NULL,
     `port` smallint unsigned DEFAULT 8443,
     `username` varchar(256) DEFAULT NULL,
-    `password` varchar(256) DEFAULT NULL,
+    `secretKey` varchar(256) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`)
