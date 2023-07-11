@@ -3391,6 +3391,18 @@ public class KVMHost extends HostBase implements Host {
             cmd.setSocketNum(Integer.parseInt(sockets));
             cmd.setCpuOnSocket(Integer.parseInt(cores));
             cmd.setThreadsPerCore(Integer.parseInt(threads));
+
+            if (cmd.isUseNuma()) {
+                cmd.setMaxVcpuNum(cmd.getSocketNum() * cmd.getCpuOnSocket() * cmd.getThreadsPerCore());
+            }
+            return;
+        }
+
+        // keep back-compatible
+        // cpu topology is hard-coded in agent, so we only set max vcpu num here
+        // topology will be set in agent
+        if (cmd.isUseNuma()) {
+            cmd.setMaxVcpuNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, spec.getVmInventory().getUuid(), Integer.class));
             return;
         }
 
