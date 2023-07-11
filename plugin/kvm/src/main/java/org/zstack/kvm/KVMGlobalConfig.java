@@ -1,6 +1,8 @@
 package org.zstack.kvm;
 
+import org.zstack.core.GlobalProperty;
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.vm.VmInstanceVO;
@@ -93,4 +95,8 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig SUSPEND_TO_DISK = new GlobalConfig(CATEGORY, "vm.suspend.to.disk");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable install host shutdown hook")
+    public static GlobalConfig INSTALL_HOST_SHUTDOWN_HOOK = new GlobalConfig(CATEGORY, "install.host.shutdown.hook");
 }

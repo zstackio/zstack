@@ -212,6 +212,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     arguments.put("remote_pass", msg.getRemotePass());
                 }
                 arguments.put("host", msg.getTargetIp());
+                arguments.put("mn_ip", Platform.getCanonicalServerIp());
                 if (AnsibleGlobalConfig.ENABLE_ANSIBLE_CACHE_SYSTEM_INFO.value(Boolean.class)) {
                     arguments.put("host_uuid", msg.getTargetUuid());
                 }
