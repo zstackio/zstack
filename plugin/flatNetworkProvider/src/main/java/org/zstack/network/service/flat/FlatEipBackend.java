@@ -2,6 +2,7 @@ package org.zstack.network.service.flat;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.allocator.GetL3NetworkForVmNetworkService;
 import org.zstack.compute.vm.VmInstanceManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -28,8 +29,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.network.service.AfterApplyFlatEipExtensionPoint;
-import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
@@ -43,6 +43,7 @@ import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentRsp;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -66,7 +67,9 @@ import static org.zstack.utils.CollectionDSL.list;
  * Created by xing5 on 2016/4/4.
  */
 public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
-        VmAbnormalLifeCycleExtensionPoint, VmInstanceMigrateExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint, GetEipAttachableL3UuidsForVmNicExtensionPoint {
+        VmAbnormalLifeCycleExtensionPoint, VmInstanceMigrateExtensionPoint,
+        FilterVmNicsForEipInVirtualRouterExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint,
+        GetEipAttachableL3UuidsForVmNicExtensionPoint, GetL3NetworkForVmNetworkService {
     private static final CLogger logger = Utils.getLogger(FlatEipBackend.class);
 
     @Autowired
@@ -873,5 +876,45 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                     .list();
         }
         return new ArrayList<>();
+    }
+
+    @Override
+    public List<L3NetworkInventory> getL3NetworkForVmNetworkService(VmInstanceInventory vm) {
+        List<L3NetworkInventory> ret = new ArrayList<>();
+
+        if (vm == null || vm.getVmNics() == null || vm.getVmNics().isEmpty()) {
+            return ret;
+        }
+
+        String flatProvideUuid = Q.New(NetworkServiceProviderVO.class)
+                .select(NetworkServiceProviderVO_.uuid)
+                .eq(NetworkServiceProviderVO_.type, FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)
+                .findValue();
+
+        for (VmNicInventory nic : vm.getVmNics()) {
+            L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+            for (NetworkServiceL3NetworkRefVO ref : l3Vo.getNetworkServices()) {
+                if (!ref.getNetworkServiceProviderUuid().equals(flatProvideUuid)) {
+                    continue;
+                }
+
+                if (!ref.getNetworkServiceType().equals(EipConstant.EIP_NETWORK_SERVICE_TYPE)) {
+                    continue;
+                }
+
+                List<EipVO> eipVOs = Q.New(EipVO.class).eq(EipVO_.vmNicUuid, nic.getUuid()).list();
+                if (eipVOs == null || eipVOs.isEmpty()) {
+                    continue;
+                }
+
+                for (EipVO vo : eipVOs) {
+                    String pubL3Uuid = Q.New(VipVO.class).select(VipVO_.l3NetworkUuid)
+                            .eq(VipVO_.uuid, vo.getVipUuid()).findValue();
+                    ret.add(L3NetworkInventory.valueOf(dbf.findByUuid(pubL3Uuid, L3NetworkVO.class)));
+                }
+            }
+        }
+
+        return ret;
     }
 }
