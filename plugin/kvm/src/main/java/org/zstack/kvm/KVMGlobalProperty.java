@@ -31,5 +31,7 @@ public class KVMGlobalProperty {
     public static List<String> MN_NETWORKS;
     @GlobalProperty(name = "host.skip.packages", defaultValue = "qemu, qemu-kvm, qemu-kvm-ev, qemu-img, qemu-img-ev")
     public static String SKIP_PACKAGES;
+    @GlobalProperty(name = "host.stop.shutdown.vm", defaultValue = "false")
+    public static boolean HOST_STOP_SHUTDOWN_VM;
 
 }
