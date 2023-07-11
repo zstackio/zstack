@@ -9,6 +9,7 @@ public interface VolumeConstant {
     String VOLUME_FORMAT_QCOW2 = "qcow2";
     String VOLUME_FORMAT_VMTX = "vmtx";
     String VOLUME_FORMAT_VMDK = "vmdk";
+    int DEFAULT_MAX_DATA_VOLUME_NUMBER = 24;
 
     enum Capability {
         MigrationInCurrentPrimaryStorage,

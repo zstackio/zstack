@@ -1059,6 +1059,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             }
         });
 
+        pluginRgty.saveExtensionAsMap(MaxDataVolumeNumberExtensionPoint.class, MaxDataVolumeNumberExtensionPoint::getHypervisorTypeForMaxDataVolumeNumberExtension);
+
         {
             List<VolumeFactory> exts = pluginRgty.getExtensionList(
                     VolumeFactory.class);
