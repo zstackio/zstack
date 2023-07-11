@@ -16,3 +16,6 @@ ALTER TABLE `zstack`.`MonitorGroupTemplateRefVO`
     ADD COLUMN `isApplied` boolean not null DEFAULT TRUE;
 
 ALTER TABLE VmNicVO DROP INDEX `ukVmNicVO`;
+
+CALL DELETE_INDEX('QuotaVO', 'idxIdentityUuid');
+ALTER TABLE `QuotaVO` ADD INDEX `idxIdentityUuid` (`identityUuid`);
