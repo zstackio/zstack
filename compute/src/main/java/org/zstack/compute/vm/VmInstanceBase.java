@@ -6599,14 +6599,15 @@ public class VmInstanceBase extends AbstractVmInstance {
         Map data = new HashMap();
 
         final VolumeInventory volume = msg.getVolume();
+        final VmInstanceInventory vmInv = VmInstanceInventory.valueOf(self);
 
-        new VmAttachVolumeValidator().validate(msg.getVmInstanceUuid(), volume.getUuid());
+        new VmAttachVolumeValidator().validate(vmInv, volume.getUuid());
         extEmitter.preAttachVolume(getSelfInventory(), volume);
         extEmitter.beforeAttachVolume(getSelfInventory(), volume, data);
 
         VmInstanceSpec spec = new VmInstanceSpec();
         spec.setMessage(msg);
-        spec.setVmInventory(VmInstanceInventory.valueOf(self));
+        spec.setVmInventory(vmInv);
         spec.setCurrentVmOperation(VmOperation.AttachVolume);
         spec.setDestDataVolumes(list(volume));
         FlowChain chain;

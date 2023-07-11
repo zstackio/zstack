@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -52,6 +53,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -3243,6 +3245,25 @@ public class VolumeBase implements Volume {
             cancelVolumeTaskOffline(msg.getCancellationApiId(), completion);
         } else {
             cancelVolumeTaskOnline(hostUuid, msg.getCancellationApiId(), completion);
+        }
+    }
+
+    @VmAttachVolumeValidatorMethod
+    static void vmAttachVolumeValidator(VmInstanceInventory vmInv, String volumeUuid) {
+        String vmUuid = vmInv.getUuid();
+        String hypervisorType = vmInv.getHypervisorType();
+
+        PluginRegistry pluginRgty = Platform.getComponentLoader().getComponent(PluginRegistry.class);
+        MaxDataVolumeNumberExtensionPoint ext = pluginRgty.getExtensionFromMap(hypervisorType, MaxDataVolumeNumberExtensionPoint.class);
+        int maxDataVolumeNum = ext == null ? VolumeConstant.DEFAULT_MAX_DATA_VOLUME_NUMBER : ext.getMaxDataVolumeNumber();
+
+        long vmDataVolumeUsage = Q.New(VolumeVO.class)
+                .eq(VolumeVO_.type, VolumeType.Data)
+                .eq(VolumeVO_.vmInstanceUuid, vmUuid)
+                .count();
+        if (vmDataVolumeUsage + 1 > maxDataVolumeNum) {
+            throw new OperationFailureException(operr("hypervisor[%s] only allows max %s data volumes to be attached to a single vm; there have been %s data volumes attached to vm[uuid:%s]",
+                    hypervisorType, maxDataVolumeNum, vmDataVolumeUsage, vmUuid));
         }
     }
 
