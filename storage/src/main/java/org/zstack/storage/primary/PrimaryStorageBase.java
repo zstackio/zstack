@@ -44,10 +44,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.StopVmInstanceMsg;
-import org.zstack.header.vm.VmAttachVolumeValidatorMethod;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.storage.volume.VolumeUtils;
 import org.zstack.utils.CollectionDSL;
@@ -1738,7 +1735,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     }
 
     @VmAttachVolumeValidatorMethod
-    static void vmAttachVolumeValidator(String vmUuid, String volumeUuid) {
+    static void vmAttachVolumeValidator(VmInstanceInventory vmInv, String volumeUuid) {
         PrimaryStorageState state = SQL.New("select pri.state from PrimaryStorageVO pri " +
                 "where pri.uuid = (select vol.primaryStorageUuid from VolumeVO vol where vol.uuid = :volUuid)", PrimaryStorageState.class)
                 .param("volUuid", volumeUuid)

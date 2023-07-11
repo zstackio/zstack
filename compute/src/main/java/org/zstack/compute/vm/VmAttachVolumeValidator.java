@@ -2,6 +2,7 @@ package org.zstack.compute.vm;
 
 import org.zstack.core.ScatteredValidator;
 import org.zstack.header.vm.VmAttachVolumeValidatorMethod;
+import org.zstack.header.vm.VmInstanceInventory;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -14,10 +15,10 @@ public class VmAttachVolumeValidator extends ScatteredValidator {
     
     static {
         // method signature: static void xxx(String vmUuid, String volumeUuid)
-        methods = collectValidatorMethods(VmAttachVolumeValidatorMethod.class, String.class, String.class);
+        methods = collectValidatorMethods(VmAttachVolumeValidatorMethod.class, VmInstanceInventory.class, String.class);
     }
 
-    public void validate(String vmUuid, String volumeUuid) {
-        invokeValidatorMethods(methods, vmUuid, volumeUuid);
+    public void validate(VmInstanceInventory vmInv, String volumeUuid) {
+        invokeValidatorMethods(methods, vmInv, volumeUuid);
     }
 }
