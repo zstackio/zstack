@@ -31,6 +31,9 @@ public class DeleteVmBackupAction extends AbstractAction {
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List backupStorageUuids;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean handleDependency = false;
+
     @Param(required = false)
     public java.lang.String deleteMode = "Permissive";
 
