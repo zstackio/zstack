@@ -3032,10 +3032,6 @@ public class KVMHost extends HostBase implements Host {
     private void setStartVmCpuTopology(final VmInstanceSpec spec, final StartVmCmd cmd, String platform) {
         int cpuNum = cmd.getCpuNum();
 
-        if (cmd.isUseNuma()) {
-            cmd.setMaxVcpuNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, spec.getVmInventory().getUuid(), Integer.class));
-        }
-
         if (VmHardwareSystemTags.CPU_SOCKETS.hasTag(spec.getVmInventory().getUuid())) {
             String sockets = VmHardwareSystemTags.CPU_SOCKETS.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_SOCKETS_TOKEN);
             String cores = VmHardwareSystemTags.CPU_CORES.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_CORES_TOKEN);
@@ -3044,6 +3040,18 @@ public class KVMHost extends HostBase implements Host {
             cmd.setSocketNum(Integer.parseInt(sockets));
             cmd.setCpuOnSocket(Integer.parseInt(cores));
             cmd.setThreadsPerCore(Integer.parseInt(threads));
+
+            if (cmd.isUseNuma()) {
+                cmd.setMaxVcpuNum(cmd.getSocketNum() * cmd.getCpuOnSocket() * cmd.getThreadsPerCore());
+            }
+            return;
+        }
+
+        // keep back-compatible
+        // cpu topology is hard-coded in agent, so we only set max vcpu num here
+        // topology will be set in agent
+        if (cmd.isUseNuma()) {
+            cmd.setMaxVcpuNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, spec.getVmInventory().getUuid(), Integer.class));
             return;
         }
 
