@@ -3584,7 +3584,9 @@ public class KVMHost extends HostBase implements Host {
             cmd.setMaxVcpuNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_MAX_VCPU, spec.getVmInventory().getUuid(), Integer.class));
         }
 
-        if (VmHardwareSystemTags.CPU_SOCKETS.hasTag(spec.getVmInventory().getUuid())) {
+        if (VmHardwareSystemTags.CPU_SOCKETS.hasTag(spec.getVmInventory().getUuid())
+                || VmHardwareSystemTags.CPU_CORES.hasTag(spec.getVmInventory().getUuid())
+                || VmHardwareSystemTags.CPU_THREADS.hasTag(spec.getVmInventory().getUuid())) {
             String sockets = VmHardwareSystemTags.CPU_SOCKETS.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_SOCKETS_TOKEN);
             String cores = VmHardwareSystemTags.CPU_CORES.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_CORES_TOKEN);
             String threads = VmHardwareSystemTags.CPU_THREADS.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmHardwareSystemTags.CPU_THREADS_TOKEN);
@@ -3595,8 +3597,17 @@ public class KVMHost extends HostBase implements Host {
             cmd.setCpuOnSocket(cpuTopology.getCpuCores());
             cmd.setThreadsPerCore(cpuTopology.getCpuThreads());
 
-            if(cmd.getMaxVcpuNum() != 0 && cpuTopology.getCpuSockets() != null)
-                cmd.setMaxVcpuNum(cpuTopology.getCpuSockets() * cpuTopology.getCpuCores() * cpuTopology.getCpuThreads());
+            // change max vcpu num to the real vcpu num
+            if (cmd.isUseNuma()) {
+                cmd.setMaxVcpuNum(cmd.getSocketNum() * cmd.getCpuOnSocket() * cmd.getThreadsPerCore());
+            }
+            return;
+        }
+
+        // keep back-compatible
+        // cpu topology is hard-coded in agent, so we only set max vcpu num here
+        // topology will be set in agent
+        if (cmd.isUseNuma()) {
             return;
         }
 
