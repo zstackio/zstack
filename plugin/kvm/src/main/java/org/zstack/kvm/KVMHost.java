@@ -4626,7 +4626,7 @@ public class KVMHost extends HostBase implements Host {
                             deployArguments.setIsBareMetal2Gateway("true");
                         }
                         if (KVMGlobalConfig.INSTALL_HOST_SHUTDOWN_HOOK.value(Boolean.class)) {
-                            deployArguments.setInstallHostShutdownHook(true);
+                            deployArguments.setIsInstallHostShutdownHook("true");
                             runner.setForceRun(true);
                         }
 
