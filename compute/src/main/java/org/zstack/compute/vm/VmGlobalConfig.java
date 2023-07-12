@@ -39,9 +39,6 @@ public class VmGlobalConfig {
     public static GlobalConfig NUMA = new GlobalConfig(CATEGORY, "numa");
     @GlobalConfigValidation
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
-    public static GlobalConfig HOT_PLUG_MEMORY = new GlobalConfig(CATEGORY, "hotPlugMemory");
-    @GlobalConfigValidation
-    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_MAX_VCPU = new GlobalConfig(CATEGORY, "vm.max.vcpu");
     @GlobalConfigValidation
     public static GlobalConfig VM_BOOT_MENU = new GlobalConfig(CATEGORY, "bootMenu");
