@@ -60,5 +60,10 @@
         <id>1011</id>
         <description>Unable to perform an operation on the host, however, the failure is eligible for garbage collector</description>
     </code>
+
+    <code>
+        <id>1012</id>
+        <description>The host password has been changed</description>
+    </code>
 </error>
 
