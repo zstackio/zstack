@@ -268,12 +268,22 @@ public class VxlanKvmAgentCommands {
     public static class CheckVxlanCidrResponse extends AgentResponse {
         private String vtepIp;
 
+        private String physicalInterfaceName;
+
         public String getVtepIp() {
             return vtepIp;
         }
 
         public void setVtepIp(String vtepIp) {
             this.vtepIp = vtepIp;
+        }
+
+        public String getPhysicalInterfaceName() {
+            return physicalInterfaceName;
+        }
+
+        public void setPhysicalInterfaceName(String physicalInterfaceName) {
+            this.physicalInterfaceName = physicalInterfaceName;
         }
     }
 

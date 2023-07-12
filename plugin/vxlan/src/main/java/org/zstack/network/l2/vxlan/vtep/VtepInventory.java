@@ -34,6 +34,8 @@ public class VtepInventory {
 
     private String type;
 
+    private String physicalInterface;
+
     private Timestamp createDate;
 
     private Timestamp lastOpDate;
@@ -50,6 +52,7 @@ public class VtepInventory {
         this.setPort(vo.getPort());
         this.setPoolUuid(vo.getPoolUuid());
         this.setType(vo.getType());
+        this.setPhysicalInterface(vo.getPhysicalInterface());
         this.setCreateDate(vo.getCreateDate());
         this.setLastOpDate(vo.getLastOpDate());
     }
@@ -112,6 +115,14 @@ public class VtepInventory {
 
     public void setPoolUuid(String poolUuid) {
         this.poolUuid = poolUuid;
+    }
+
+    public String getPhysicalInterface() {
+        return physicalInterface;
+    }
+
+    public void setPhysicalInterface(String physicalInterface) {
+        this.physicalInterface = physicalInterface;
     }
 
     public Timestamp getCreateDate() {

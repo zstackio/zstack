@@ -58,6 +58,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     private CloudBus bus;
 
     private static String VTEP_IP = "vtepIp";
+    private static String PHYSICAL_INTERFACE = "physicalInterface";
     private static String NEED_POPULATE = "needPopulate";
 
     public static String makeBridgeName(int vxlan) {
@@ -204,6 +205,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                                 cmd.getCidr(), l2vxlan.getUuid(), l2vxlan.getName(), hostUuid);
                         logger.debug(info);
                         data.put(VTEP_IP, rsp.getVtepIp());
+                        data.put(PHYSICAL_INTERFACE, rsp.getPhysicalInterfaceName());
 
                         trigger.next();
                     }
@@ -225,6 +227,11 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                             vtepVOS.stream().map(v -> v.getVtepIp()).collect(Collectors.toSet()), hostUuid));
                 } else if (vtepVOS.get(0).getVtepIp().equals(data.get(VTEP_IP))) {
                     /* vtep is already created */
+                    if (data.get(PHYSICAL_INTERFACE) != null &&
+                            !data.get(PHYSICAL_INTERFACE).equals(vtepVOS.get(0).getPhysicalInterface())) {
+                        vtepVOS.get(0).setPhysicalInterface((String) data.get(PHYSICAL_INTERFACE));
+                        dbf.update(vtepVOS.get(0));
+                    }
                     logger.debug(String.format(
                             "vtep[ip:%s] from host[uuid:%s] for l2 vxlan network pool[uuid:%s] checks successfully",
                             vtepVOS.get(0).getVtepIp(), hostUuid, l2Network.getUuid()));
@@ -246,6 +253,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 cmsg.setHostUuid(hostUuid);
                 cmsg.setPort(VXLAN_PORT);
                 cmsg.setVtepIp((String) data.get(VTEP_IP));
+                cmsg.setPhysicalInterface((String) data.get(PHYSICAL_INTERFACE));
                 cmsg.setType(KVM_VXLAN_TYPE);
 
                 bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, l2vxlan.getPoolUuid());

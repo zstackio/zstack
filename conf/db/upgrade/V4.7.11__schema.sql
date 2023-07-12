@@ -41,3 +41,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkBondingServiceRefVO` (
     PRIMARY KEY  (`id`),
     CONSTRAINT `fkHostNetworkBodnuingServiceRefVOHostNetworkBondingVO` FOREIGN KEY (`bondingUuid`) REFERENCES HostNetworkBondingVO (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`VtepVO` ADD COLUMN `physicalInterface` VARCHAR(32) DEFAULT NULL AFTER `poolUuid`;
