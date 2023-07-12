@@ -41,7 +41,7 @@ public class UpdateStorageEncryptGatewayAction extends AbstractAction {
     public java.lang.String username;
 
     @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
+    public java.lang.String secretKey;
 
     @Param(required = false)
     public java.util.List systemTags;
