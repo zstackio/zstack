@@ -6666,6 +6666,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
+        String originState = inv.getState();
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("migrate-vm-%s", self.getUuid()));
@@ -6718,7 +6719,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                if (Objects.equals(inv.getState(), VmInstanceState.Paused.toString())) {
+                if (Objects.equals(VmInstanceState.Paused.toString(), originState)) {
                     tagMgr.createNonInherentSystemTag(inv.getUuid(), VmSystemTags.VM_STATE_PAUSED_AFTER_MIGRATE.getTagFormat(), VmInstanceVO.class.getSimpleName());
                 }
                 completion.success();
