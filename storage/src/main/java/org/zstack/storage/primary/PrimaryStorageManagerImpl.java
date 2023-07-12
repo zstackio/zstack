@@ -1,5 +1,6 @@
 package org.zstack.storage.primary;
 
+import com.google.common.collect.Maps;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,6 +91,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private final Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections.synchronizedMap(new HashMap<>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
     private final Map<String, AutoDeleteTrashTask> autoDeleteTrashTask = new HashMap<>();
+    private static final Map<String, List<PrimaryStorageExtensionFactory>> extensionFactories = Maps.newConcurrentMap();
     private AutoDeleteTrashTask globalTrashTask;
 
     static {
@@ -251,8 +253,18 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             return;
         }
 
-        PrimaryStorageFactory factory = getPrimaryStorageFactory(PrimaryStorageType.valueOf(vo.getType()));
         PrimaryStorageVO finalVo = vo;
+
+        PrimaryStorageFactory factory = getPrimaryStorageFactory(PrimaryStorageType.valueOf(vo.getType()));
+        if (extensionFactories.containsKey(factory.getPrimaryStorageType().toString())) {
+            PrimaryStorageExtensionFactory extFactory = extensionFactories.get(factory.getPrimaryStorageType().toString()).stream().filter(it -> it.getMessageClasses()
+                    .stream().anyMatch(clz -> clz.isAssignableFrom(msg.getClass()))).findFirst().orElse(null);
+            if (extFactory != null) {
+                PrimaryStorage ps = Platform.New(()-> extFactory.getPrimaryStorage(finalVo));
+                ps.handleMessage(msg);
+                return;
+            }
+        }
         PrimaryStorage ps = Platform.New(()-> factory.getPrimaryStorage(finalVo));
         ps.handleMessage(msg);
     }
@@ -1035,6 +1047,11 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                         f.getClass().getName(), old.getClass().getName(), old.getPrimaryStorageType()));
             }
             primaryStorageFactories.put(f.getPrimaryStorageType().toString(), f);
+        }
+
+        for (PrimaryStorageExtensionFactory f : pluginRgty.getExtensionList(PrimaryStorageExtensionFactory.class)) {
+            List<PrimaryStorageExtensionFactory> factories = extensionFactories.computeIfAbsent(f.getPrimaryStorageType(), k->new ArrayList<>());
+            factories.add(f);
         }
     }
 

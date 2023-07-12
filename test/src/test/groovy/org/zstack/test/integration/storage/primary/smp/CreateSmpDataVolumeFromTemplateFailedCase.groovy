@@ -9,6 +9,7 @@ import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.PrimaryStorageDeleteBitGC
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig
 import org.zstack.storage.primary.smp.KvmBackend
+import org.zstack.storage.primary.smp.SftpBackupStorageKvmDownloader
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.test.integration.storage.volume.VolumeEnv
 import org.zstack.testlib.EnvSpec
@@ -52,7 +53,7 @@ class CreateSmpDataVolumeFromTemplateFailedCase extends SubCase {
         kvm = env.inventoryByName("kvm") as KVMHostInventory
         image = env.inventoryByName("image-data-volume") as ImageInventory
 
-        env.simulator(KvmBackend.DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH) {
+        env.simulator(SftpBackupStorageKvmDownloader.DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH) {
             def rsp = new  KvmBackend.AgentRsp()
             rsp.success = false
             return rsp

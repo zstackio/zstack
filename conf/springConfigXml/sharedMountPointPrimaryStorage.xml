@@ -31,6 +31,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="SftpBackupStorageKvmFactory" class="org.zstack.storage.primary.smp.SftpBackupStorageKvmFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.primary.smp.BackupStorageKvmFactory" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="SMPSnapshotDeletionProtector" class="org.zstack.storage.primary.smp.SMPSnapshotDeletionProtector">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotDeletionProtector"/>

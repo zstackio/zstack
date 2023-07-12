@@ -16,11 +16,9 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.kvm.*;
-import org.zstack.storage.primary.ChangePrimaryStorageStatusMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
 
