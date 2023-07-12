@@ -53,6 +53,9 @@ public class VtepVO extends ResourceVO {
     private String type;
 
     @Column
+    private String physicalInterface;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -120,5 +123,13 @@ public class VtepVO extends ResourceVO {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getPhysicalInterface() {
+        return physicalInterface;
+    }
+
+    public void setPhysicalInterface(String physicalInterface) {
+        this.physicalInterface = physicalInterface;
     }
 }

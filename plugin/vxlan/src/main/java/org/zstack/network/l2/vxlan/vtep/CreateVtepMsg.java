@@ -13,6 +13,7 @@ public class CreateVtepMsg extends NeedReplyMessage implements L2NetworkMessage 
     private Integer port;
     private String type;
     private String poolUuid;
+    private String physicalInterface;
 
     public String getPoolUuid() {
         return poolUuid;
@@ -60,6 +61,14 @@ public class CreateVtepMsg extends NeedReplyMessage implements L2NetworkMessage 
 
     public void setPort(Integer port) {
         this.port = port;
+    }
+
+    public String getPhysicalInterface() {
+        return physicalInterface;
+    }
+
+    public void setPhysicalInterface(String physicalInterface) {
+        this.physicalInterface = physicalInterface;
     }
 
     @Override

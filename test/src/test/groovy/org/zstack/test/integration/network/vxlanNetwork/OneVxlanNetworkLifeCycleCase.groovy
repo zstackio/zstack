@@ -1,7 +1,10 @@
 package org.zstack.test.integration.network.vxlanNetwork
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.network.l2.vxlan.vtep.VtepVO
+import org.zstack.network.l2.vxlan.vtep.VtepVO_
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.network.securitygroup.SecurityGroupConstant
@@ -166,6 +169,7 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             } else {
                 resp.vtepIp = "192.168.100.11"
             }
+            resp.physicalInterfaceName = "eth0"
             resp.setSuccess(true)
             return resp
         }
@@ -175,6 +179,11 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
             delegate.clusterUuid = cuuid1
             delegate.systemTags = ["l2NetworkUuid::${poolinv.getUuid()}::clusterUuid::${cuuid1}::cidr::{192.168.100.0/24}".toString()]
         }
+
+        List<VtepVO> vteps = Q.New(VtepVO.class)
+                .eq(VtepVO_.poolUuid, poolinv.getUuid())
+                .list();
+        assert vteps[0].physicalInterface == "eth0"
 
         L2NetworkInventory netinv = createL2VxlanNetwork {
             delegate.poolUuid = poolinv.getUuid()
