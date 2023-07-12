@@ -46,6 +46,9 @@ public class PrimaryStorageMigrateVmAction extends AbstractAction {
     @Param(required = false, validValues = {"auto-converge"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String strategy;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public long bandwidth = 0L;
+
     @Param(required = false)
     public java.util.List systemTags;
 

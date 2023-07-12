@@ -2488,6 +2488,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setReload(s.reload);
                         cmd.setDownTime(s.downTime);
+                        cmd.setBandwidth(s.bandwidth);
 
                         if (s.diskMigrationMap != null) {
                             Map<String, VolumeTO> diskMigrationMap = new HashMap<>();
@@ -2653,6 +2654,7 @@ public class KVMHost extends HostBase implements Host {
         String srcHostUuid;
         Map<String, String> diskMigrationMap;
         boolean reload;
+        long bandwidth;
     }
 
     private MigrateStruct buildMigrateStuct(final MigrateVmOnHypervisorMsg msg){
@@ -2666,6 +2668,7 @@ public class KVMHost extends HostBase implements Host {
         s.downTime = msg.getDownTime();
         s.diskMigrationMap = msg.getDiskMigrationMap();
         s.reload = msg.isReload();
+        s.bandwidth = msg.getBandwidth();
 
         MigrateNetworkExtensionPoint.MigrateInfo migrateIpInfo = null;
         for (MigrateNetworkExtensionPoint ext: pluginRgty.getExtensionList(MigrateNetworkExtensionPoint.class)) {
