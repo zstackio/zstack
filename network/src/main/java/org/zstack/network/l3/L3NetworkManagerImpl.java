@@ -468,10 +468,12 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             L2NetworkVO l2NetworkVO = dbf.findByUuid(msg.getL2NetworkUuid(), L2NetworkVO.class);
             List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.clusterUuid)
                     .eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2NetworkVO.getUuid()).listValues();
-            List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
-                    .in(HostVO_.clusterUuid, clusterUuids).listValues();
-            for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
-                syncManagementServiceTypeWhileCreate(ext, l2NetworkVO, hostUuids);
+            if (clusterUuids != null && !clusterUuids.isEmpty()) {
+                List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
+                        .in(HostVO_.clusterUuid, clusterUuids).listValues();
+                for (ServiceTypeExtensionPoint ext : pluginRgty.getExtensionList(ServiceTypeExtensionPoint.class)) {
+                    syncManagementServiceTypeWhileCreate(ext, l2NetworkVO, hostUuids);
+                }
             }
         }
 
