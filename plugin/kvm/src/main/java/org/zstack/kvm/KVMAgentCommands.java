@@ -3139,6 +3139,7 @@ public class KVMAgentCommands {
         private List<String> vdpaPaths;
         private Map<String, VolumeTO> disks;  // A map from old install path to new volume
         private boolean reload;
+        private long bandwidth;
 
         public Integer getDownTime() {
             return downTime;
@@ -3242,6 +3243,14 @@ public class KVMAgentCommands {
 
         public void setDestHostManagementIp(String destHostManagementIp) {
             this.destHostManagementIp = destHostManagementIp;
+        }
+
+        public long getBandwidth() {
+            return bandwidth;
+        }
+
+        public void setBandwidth(long bandwidth) {
+            this.bandwidth = bandwidth;
         }
     }
 
