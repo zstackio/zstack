@@ -4,6 +4,8 @@ import org.zstack.compute.host.HostReconnectTask;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.host.HostErrors;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
@@ -30,5 +32,17 @@ public class KVMReconnectHostTask extends HostReconnectTask {
 
         return NetworkUtils.isRemotePortOpen(ip, port, (int) TimeUnit.SECONDS.toMillis(2)) ?
                 CanDoAnswer.Ready : CanDoAnswer.NotReady;
+    }
+
+    @Override
+    protected void whenConnectFail(ErrorCode errorCode) {
+        if (errorCode.getRootCause().isError(HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED)) {
+            logger.warn(String.format(
+                    "stop reconnecting to the host[uuid:%s] until its password is updated correctly", uuid));
+            completion.done();
+            return;
+        }
+
+        super.whenConnectFail(errorCode);
     }
 }

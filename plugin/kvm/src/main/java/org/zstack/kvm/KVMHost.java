@@ -3955,6 +3955,17 @@ public class KVMHost extends HostBase implements Host {
         return !self.getUuid().equals(rsp.getHostUuid()) || !dbf.getDbVersion().equals(rsp.getVersion());
     }
 
+    @Override
+    protected void connectHostFailHook(ErrorCode errorCode) {
+        if (errorCode.getRootCause().isError(HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED)) {
+            logger.warn(String.format("fail to connect host[uuid:%s] due to wrong SSH password", self.getUuid()));
+            new HostDisconnectedCanonicalEvent(self.getUuid(), errorCode).fire();
+            // stop tracking host by tracker.trackHost within the current tracking cycle
+            return;
+        }
+        super.connectHostFailHook(errorCode);
+    }
+
     boolean needUpdateHostConfiguration(PingResponse rsp) {
         // host uuid or send command url or version changed
         return !restf.getSendCommandUrl().equals(rsp.getSendCommandUrl());
@@ -4353,6 +4364,63 @@ public class KVMHost extends HostBase implements Host {
                         return "test-ssh-port-open-for-kvm-host";
                     }
                 });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "check-if-host-password-has-been-modified";
+            @Override
+            public boolean skip(Map data) {
+                return CoreGlobalProperty.UNIT_TEST_ON || info.isNewAdded();
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                final ErrorCode errorCode = connectWithSSHPassword();
+                if (errorCode == null) {
+                    trigger.next();
+                    return;
+                }
+
+                final ErrorCode privateKeyError = connectWithPrivateKey();
+                if (privateKeyError == null) {
+                    trigger.fail(err(HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED,
+                            "host password has been changed. " +
+                            "Please update host password in management node by UpdateKVMHostAction with host UUID[%s]",
+                                    self.getUuid()));
+                    return;
+                }
+                trigger.fail(errorCode);
+            }
+
+            ErrorCode connectWithSSHPassword() {
+                SshShell sshShell = new SshShell();
+                sshShell.setHostname(getSelf().getManagementIp());
+                sshShell.setUsername(getSelf().getUsername());
+                sshShell.setPassword(getSelf().getPassword());
+                sshShell.setPort(getSelf().getPort());
+                sshShell.setWithSudo(false);
+                final String cmd = "echo hello";
+                SshResult ret = sshShell.runCommand(cmd);
+                if (ret.isSshFailure()) {
+                    return err(HostErrors.UNABLE_TO_RECONNECT_HOST,
+                            "failed to connect host[UUID=%s] with SSH password", self.getUuid());
+                }
+                return null;
+            }
+
+            ErrorCode connectWithPrivateKey() {
+                SshShell sshShell = new SshShell();
+                sshShell.setHostname(getSelf().getManagementIp());
+                sshShell.setUsername(getSelf().getUsername());
+                sshShell.setPrivateKey(asf.getPrivateKey());
+                sshShell.setPort(getSelf().getPort());
+                sshShell.setWithSudo(false);
+                final String cmd = "echo hello";
+                SshResult ret = sshShell.runCommand(cmd);
+                if (ret.isSshFailure()) {
+                    return err(HostErrors.UNABLE_TO_RECONNECT_HOST,
+                            "failed to connect host[UUID=%s] with private key", self.getUuid());
+                }
+                return null;
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "ping-DNS-check-list";
