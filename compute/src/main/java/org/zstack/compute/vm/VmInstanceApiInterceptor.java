@@ -431,9 +431,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 InstanceOfferingVO instanceOfferingVO = Q.New(InstanceOfferingVO.class).eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid()).find();
 
                 boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getVmInstanceUuid(), Boolean.class);
-                boolean hotPlugMemory = rcf.getResourceConfigValue(VmGlobalConfig.HOT_PLUG_MEMORY, msg.getVmInstanceUuid(), Boolean.class);
-                boolean hotPlugCpuAndMemory = numa && hotPlugMemory;
-                if (!hotPlugCpuAndMemory && !VmInstanceState.Stopped.equals(vo.getState())) {
+                if (!numa && !VmInstanceState.Stopped.equals(vo.getState())) {
                     throw new ApiMessageInterceptionException(argerr(
                             "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again"
                     ));
@@ -478,16 +476,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
                 VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
                 boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getUuid(), Boolean.class);
-                boolean hotPlugMemory = rcf.getResourceConfigValue(VmGlobalConfig.HOT_PLUG_MEMORY, msg.getVmInstanceUuid(), Boolean.class);
-                if (cpuSum != null && !numa && !VmInstanceState.Stopped.equals(vmState)) {
+                if (!numa && !VmInstanceState.Stopped.equals(vmState)) {
                     throw new ApiMessageInterceptionException(argerr(
-                            "the VM cannot do online cpu update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu update again"
-                    ));
-                }
-
-                if (memorySize != null && !hotPlugMemory && !VmInstanceState.Stopped.equals(vmState)) {
-                    throw new ApiMessageInterceptionException(argerr(
-                            "the VM cannot do online memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the memory update again"
+                            "the VM cannot do online cpu/memory update because of disabling Instance Offering Online Modification. Please stop the VM then do the cpu/memory update again"
                     ));
                 }
 
