@@ -277,12 +277,22 @@ public class PathUtil {
         }
     }
 
+    /**
+     * @see #setFilePosixPermissions(File, String)
+     */
     public static void setFilePosixPermissions(String path, String perms) {
+        setFilePosixPermissions(new File(path), perms);
+    }
+
+    /**
+     * @param perms permission like: "rwxr-xr-x" "rw-------"
+     */
+    public static void setFilePosixPermissions(File file, String perms) {
         try {
             Set<PosixFilePermission> s = PosixFilePermissions.fromString(perms);
-            Files.setPosixFilePermissions(new File(path).toPath(), s);
+            Files.setPosixFilePermissions(file.toPath(), s);
         } catch (IOException ex) {
-            logger.warn(String.format("set %s permission to %s: %s", path, perms, ex.getMessage()));
+            logger.warn(String.format("set %s permission to %s: %s", file, perms, ex.getMessage()));
         }
     }
 
@@ -303,11 +313,19 @@ public class PathUtil {
     }
 
     public static void writeFile(String fpath, String content) throws IOException {
-        writeFile(fpath, content.getBytes(StandardCharsets.UTF_8));
+        writeFile(new File(fpath), content.getBytes(StandardCharsets.UTF_8));
     }
 
     public static void writeFile(String fpath, byte[] data) throws IOException {
-        try (FileOutputStream outputStream = new FileOutputStream(new File(fpath))) {
+        writeFile(new File(fpath), data);
+    }
+
+    public static void writeFile(File file, String content) throws IOException {
+        writeFile(file, content.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static void writeFile(File file, byte[] data) throws IOException {
+        try (FileOutputStream outputStream = new FileOutputStream(file)) {
             outputStream.write(data);
             outputStream.flush();
         }
