@@ -859,10 +859,12 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String url;
         public String options;
         public String mountPath;
+        public String volumeInstallPath;
+        public String srcPrimaryStorageUuid;
     }
 
     public static class NfsToNfsMigrateBitsRsp extends NfsPrimaryStorageAgentResponse {
-
+        public Map<String, Long> dstFilesActualSize;
     }
 
     public static class NfsRebaseVolumeBackingFileCmd extends NfsPrimaryStorageAgentCommand {

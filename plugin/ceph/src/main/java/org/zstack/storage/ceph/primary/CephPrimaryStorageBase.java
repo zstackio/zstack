@@ -1789,7 +1789,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        List<TrashCleanupResult> results = new ArrayList<>();
+        List<TrashCleanupResult> results = Collections.synchronizedList(new ArrayList<>());
         List<InstallPathRecycleInventory> trashs = trash.getTrashList(self.getUuid(), trashLists);
         if (trashs.isEmpty()) {
             completion.success(results);
@@ -3134,6 +3134,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         .eq(VolumeVO_.uuid, msg.getVolumeUuid())
                         .findValue();
                 reply.setActualSize(asize);
+                reply.setSize(rsp.size);
                 reply.setWithInternalSnapshot(true);
                 bus.reply(msg, reply);
             }
