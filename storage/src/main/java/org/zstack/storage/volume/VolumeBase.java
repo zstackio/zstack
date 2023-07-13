@@ -61,7 +61,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.storage.volume.VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY;
+import static org.zstack.storage.volume.VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY_TOKEN;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -1379,6 +1381,18 @@ public class VolumeBase implements Volume {
                                 .set(VolumeVO_.primaryStorageUuid, transientVolume.getPrimaryStorageUuid())
                                 .set(VolumeVO_.actualSize, transientVolume.getActualSize())
                                 .update();
+
+                        String transientVolumeProvisioning = VOLUME_PROVISIONING_STRATEGY.getTokenByResourceUuid(transientVolume.getUuid(),
+                                VolumeVO.class, VOLUME_PROVISIONING_STRATEGY_TOKEN);
+                        if (transientVolumeProvisioning != null) {
+                            SystemTagCreator tagCreator = VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.newSystemTagCreator(volume.getUuid());
+                            tagCreator.setTagByTokens(
+                                    map(e(VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY_TOKEN, transientVolumeProvisioning))
+                            );
+                            tagCreator.inherent = false;
+                            tagCreator.recreate = true;
+                            tagCreator.create();
+                        }
                         flush();
                     }
                 }.execute();
