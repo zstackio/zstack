@@ -1466,6 +1466,9 @@ public class KVMAgentCommands {
     public static class DeleteVHostUserClientRsp extends AgentResponse {
 
     }
+    public static class CleanVmFirmwareFlashCmd extends AgentCommand {
+        public String vmUuid;
+    }
 
     public static class HardenVmConsoleCmd extends AgentCommand {
         public String vmUuid;
