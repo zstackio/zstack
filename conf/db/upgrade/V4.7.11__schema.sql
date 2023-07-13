@@ -45,5 +45,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkBondingServiceRefVO` (
 ALTER TABLE `zstack`.`VtepVO` ADD COLUMN `physicalInterface` VARCHAR(32) DEFAULT NULL AFTER `poolUuid`;
 UPDATE AlarmVO
 SET NAME = 'Host Memory Used Capacity Per Host alarm'
-WHERE
-        uuid = 'ue0x30t7wfyuba87nwk6ywu3ub5svtwk';
+WHERE uuid = 'ue0x30t7wfyuba87nwk6ywu3ub5svtwk';
+
+CALL CREATE_INDEX('SchedulerJobHistoryVO', 'idxSchedulerJobHistoryVOExecuteTime', 'executeTime');
+
