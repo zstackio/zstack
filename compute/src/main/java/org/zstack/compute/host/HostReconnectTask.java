@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class HostReconnectTask extends AsyncTimer {
     protected String uuid;
-    private NoErrorCompletion completion;
+    protected NoErrorCompletion completion;
 
     @Autowired
     protected CloudBus bus;
@@ -69,8 +69,7 @@ public abstract class HostReconnectTask extends AsyncTimer {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    // still fail to reconnect the host, continue this reconnect task
-                    continueToRunThisTimer();
+                    whenConnectFail(errorCode);
                 }
             });
         } else if (answer == CanDoAnswer.NotReady) {
@@ -81,5 +80,10 @@ public abstract class HostReconnectTask extends AsyncTimer {
         } else {
             throw new CloudRuntimeException(String.format("should not be here[%s]", answer));
         }
+    }
+
+    protected void whenConnectFail(ErrorCode errorCode) {
+        // still fail to reconnect the host, continue this reconnect task
+        continueToRunThisTimer();
     }
 }

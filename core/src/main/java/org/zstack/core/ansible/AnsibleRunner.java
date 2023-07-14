@@ -1,14 +1,11 @@
 package org.zstack.core.ansible;
 
-import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.defer.Defer;
-import org.zstack.core.defer.Deferred;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -51,7 +48,7 @@ public class AnsibleRunner {
     private RESTFacade restf;
 
     private static String privKeyFile;
-    private List<AnsibleChecker> checkers = new ArrayList<AnsibleChecker>();
+    private List<AnsibleChecker> checkers = new ArrayList<>();
 
     static {
         privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY).getAbsolutePath();
@@ -168,6 +165,10 @@ public class AnsibleRunner {
         this.privateKey = privateKey;
     }
 
+    public void useDefaultPrivateKey() {
+        setPrivateKey(asf.getPrivateKey());
+    }
+
     public int getSshPort() {
         return sshPort;
     }
@@ -234,7 +235,6 @@ public class AnsibleRunner {
         }
     }
 
-    @Deferred
     private void setupPublicKeyOnRemote() {
         String script = ln(
                 "#!/bin/sh",
@@ -266,23 +266,7 @@ public class AnsibleRunner {
         ssh.setUsername(username);
 
         if (privateKey != null) {
-            try {
-                final File tempKeyFile = File.createTempFile("zstack", "tmp");
-                FileUtils.writeStringToFile(tempKeyFile, privateKey);
-
-                Defer.defer(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (!tempKeyFile.delete()) {
-                            logger.warn(String.format("failed to delete file[%s]", tempKeyFile));
-                        }
-                    }
-                });
-
-                ssh.setPrivateKeyFile(tempKeyFile.getAbsolutePath());
-            } catch (IOException e) {
-                throw new CloudRuntimeException(e);
-            }
+            ssh.setPrivateKey(privateKey);
         }
 
         SshResult res = ssh.runScript(script);

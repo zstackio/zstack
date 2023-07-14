@@ -1403,8 +1403,7 @@ public abstract class HostBase extends AbstractHost {
                             public void handle(ErrorCode errCode, Map data) {
                                 changeConnectionState(HostStatusEvent.disconnected);
                                 if (!msg.isNewAdd()) {
-                                    tracker.trackHost(self.getUuid());
-                                    new HostDisconnectedCanonicalEvent(self.getUuid(), errCode).fire();
+                                    connectHostFailHook(errCode);
                                 }
                                 completion.fail(errCode);
                             }
@@ -1430,6 +1429,11 @@ public abstract class HostBase extends AbstractHost {
                 return String.format("connect-host-%s", self.getUuid());
             }
         });
+    }
+
+    protected void connectHostFailHook(ErrorCode errorCode) {
+        tracker.trackHost(self.getUuid());
+        new HostDisconnectedCanonicalEvent(self.getUuid(), errorCode).fire();
     }
 
     private void handle(final ChangeHostStateMsg msg) {
