@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateOAuthClientAction extends AbstractAction {
+public class UpdateSSORedirectTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateOAuthClientAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateOAuthClientResult value;
+        public org.zstack.sdk.UpdateSSORedirectTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,46 +26,10 @@ public class CreateOAuthClientAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    public java.lang.String uuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clientId;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clientSecret;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String authorizationUrl;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String tokenUrl;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String userinfoUrl;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String redirectUrl;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String loginType;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String grantType;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String urlTemplate;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clientType;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String redirectTemplate;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -99,8 +63,8 @@ public class CreateOAuthClientAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateOAuthClientResult value = res.getResult(org.zstack.sdk.CreateOAuthClientResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateOAuthClientResult() : value; 
+        org.zstack.sdk.UpdateSSORedirectTemplateResult value = res.getResult(org.zstack.sdk.UpdateSSORedirectTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateSSORedirectTemplateResult() : value; 
 
         return ret;
     }
@@ -130,7 +94,7 @@ public class CreateOAuthClientAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/create/oauth2/client";
+        info.path = "/update/sso/redirectTemplate";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

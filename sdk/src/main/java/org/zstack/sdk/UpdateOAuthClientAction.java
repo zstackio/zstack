@@ -47,6 +47,12 @@ public class UpdateOAuthClientAction extends AbstractAction {
     public java.lang.String tokenUrl;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String redirectUrl;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String userinfoUrl;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String loginType;
 
     @Param(required = false)
