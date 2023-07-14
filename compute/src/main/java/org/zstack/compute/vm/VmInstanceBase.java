@@ -1483,8 +1483,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             bus.reply(msg, reply);
             completion.done();
             return;
-        } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged
-                || operation == VmAbnormalLifeCycleOperation.VmPausedFromStoppedStateHostNotChanged) {
+        } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged) {
             //some reason led vm to unknown state and the paused vm are detected on the host again
             changeVmStateInDb(VmInstanceStateEvent.paused, () -> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
@@ -1546,6 +1545,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void handle(Map data) {
                 if (currentState == VmInstanceState.Running) {
                     changeVmStateInDb(VmInstanceStateEvent.running, () -> self.setHostUuid(currentHostUuid));
+                } else if (currentState == VmInstanceState.Paused) {
+                    changeVmStateInDb(VmInstanceStateEvent.paused, () -> self.setHostUuid(currentHostUuid));
                 } else if (currentState == VmInstanceState.Stopped) {
                     changeVmStateInDb(VmInstanceStateEvent.stopped);
                 }
