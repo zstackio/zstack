@@ -143,4 +143,16 @@ public class CollectionUtils {
     public static boolean isEmpty(Collection coll) {
         return coll == null || coll.isEmpty();
     }
+
+    @SafeVarargs
+    public static <T> boolean contains(T[] array, T... items) {
+        for (T a: array) {
+            for (T b: items) {
+                if (Objects.equals(a, b)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
