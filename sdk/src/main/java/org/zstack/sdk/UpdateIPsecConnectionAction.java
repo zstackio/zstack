@@ -49,9 +49,6 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String idType;
 
-    @Param(required = false, validValues = {"ip","name","fqdn"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String idType = "ip";
-
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String localId;
 
