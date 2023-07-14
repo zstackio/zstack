@@ -1849,12 +1849,21 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize - c.localStorageUsedSize);
                             dbf.persist(ref);
 
-                            increaseCapacity(
-                                    c.totalPhysicalSize,
-                                    c.availablePhysicalSize,
-                                    c.totalPhysicalSize,
-                                    c.availablePhysicalSize,
-                                    ref.getSystemUsedCapacity());
+                            if (msg.isNewAddedHost()) {
+                                increaseCapacity(
+                                        c.totalPhysicalSize,
+                                        c.availablePhysicalSize,
+                                        c.totalPhysicalSize,
+                                        c.availablePhysicalSize,
+                                        ref.getSystemUsedCapacity());
+                            } else {
+                                // this happened when manually delete LocalStorageHostRefVO
+                                LocalStorageRecalculateCapacityMsg rmsg = new LocalStorageRecalculateCapacityMsg();
+                                rmsg.setPrimaryStorageUuid(self.getUuid());
+                                rmsg.setNeedRecalculateRef(true);
+                                bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                                bus.send(rmsg);
+                            }
                         } else {
                             ref = refs.get(0);
                             long originSystemUsed = ref.getSystemUsedCapacity();
