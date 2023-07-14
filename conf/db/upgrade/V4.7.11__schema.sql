@@ -49,3 +49,5 @@ WHERE uuid = 'ue0x30t7wfyuba87nwk6ywu3ub5svtwk';
 
 CALL CREATE_INDEX('SchedulerJobHistoryVO', 'idxSchedulerJobHistoryVOExecuteTime', 'executeTime');
 
+ALTER TABLE `zstack`.`AlarmRecordsVO`
+    MODIFY COLUMN `resourceUuid` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL AFTER `resourceType`;
