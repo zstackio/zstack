@@ -95,6 +95,7 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
         InitPrimaryStorageOnHostConnectedMsg msg = new InitPrimaryStorageOnHostConnectedMsg();
         msg.setPrimaryStorageUuid(priUuid);
         msg.setHostUuid(context.getInventory().getUuid());
+        msg.setNewAddedHost(context.isNewAddedHost());
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, priUuid);
         bus.send(msg, new CloudBusCallBack(trigger) {
             @Override

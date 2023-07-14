@@ -9,6 +9,7 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
 public class InitPrimaryStorageOnHostConnectedMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private String hostUuid;
+    private boolean isNewAddedHost;
 
     @Override
     public String getPrimaryStorageUuid() {
@@ -25,5 +26,13 @@ public class InitPrimaryStorageOnHostConnectedMsg extends NeedReplyMessage imple
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
+    }
+
+    public boolean isNewAddedHost() {
+        return isNewAddedHost;
+    }
+
+    public void setNewAddedHost(boolean isNewAddedHost) {
+        this.isNewAddedHost = isNewAddedHost;
     }
 }
