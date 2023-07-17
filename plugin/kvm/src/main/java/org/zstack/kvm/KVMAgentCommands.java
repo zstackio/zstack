@@ -20,6 +20,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class KVMAgentCommands {
     public enum BootDev {
@@ -1737,6 +1738,7 @@ public class KVMAgentCommands {
         private boolean consoleLogToFile;
         private boolean acpi;
         private boolean x2apic = true;
+        private List<String> oemStrings = new ArrayList<>();
 
         // TODO: only for test
         private boolean useColoBinary;
@@ -1747,6 +1749,14 @@ public class KVMAgentCommands {
 
         public void setAccountUuid(String accountUuid) {
             this.accountUuid = accountUuid;
+        }
+
+        public List<String> getOemStrings() {
+            return oemStrings;
+        }
+
+        public void setOemStrings(List<String> oemStrings) {
+            this.oemStrings = oemStrings.stream().distinct().collect(Collectors.toList());;
         }
 
         public String getChassisAssetTag() {
