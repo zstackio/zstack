@@ -623,9 +623,9 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     if (msg.getHostUuids() != null) {
                         rc = reserveMgr.getReservedHostCapacityByHosts(list(eUuid));
                     } else if (msg.getClusterUuids() != null) {
-                        rc = reserveMgr.getReservedHostCapacityByClusters(list(eUuid));
+                        rc = reserveMgr.getReservedHostCapacityByClusters(list(eUuid), msg.getHypervisorType());
                     } else if (msg.getZoneUuids() != null) {
-                        rc = reserveMgr.getReservedHostCapacityByZones(list(eUuid));
+                        rc = reserveMgr.getReservedHostCapacityByZones(list(eUuid), msg.getHypervisorType());
                     } else {
                         throw new CloudRuntimeException("should not be here");
                     }
