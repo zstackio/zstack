@@ -216,6 +216,10 @@ class EnvSpec extends ApiHelper implements Node  {
 
                 dclasses.each {
                     def action = it.getConstructor().newInstance()
+                    if (delegate.value.inventory == null) {
+                        return
+                    }
+
                     logger.debug("auto-deleting resource by ${it} uuid:${delegate.value.inventory.uuid}")
                     action.uuid = delegate.value.inventory.uuid
                     action.sessionId = session.uuid
