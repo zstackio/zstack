@@ -7,4 +7,5 @@ public class MediatorUploadParam implements MediatorParam {
     public String primaryStorageUuid;
     public String primaryStorageInstallPath;
     public String backupStorageInstallPath;
+    public String backupStorageUuid;
 }
