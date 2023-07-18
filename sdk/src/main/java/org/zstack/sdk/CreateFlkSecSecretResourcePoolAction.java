@@ -37,6 +37,9 @@ public class CreateFlkSecSecretResourcePoolAction extends AbstractAction {
     @Param(required = false)
     public java.lang.String hmacToken;
 
+    @Param(required = false)
+    public java.lang.String ukeyType;
+
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
