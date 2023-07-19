@@ -405,6 +405,8 @@ public class Ssh {
             session = jSch.getSession(username, hostname, port);
             session.setConfig("StrictHostKeyChecking", "no");
             session.setPassword(password);
+            session.setConfig("server_host_key", session.getConfig("server_host_key") + ",ssh-rsa,ssh-dss");
+            session.setConfig("PubkeyAcceptedKeyTypes", session.getConfig("PubkeyAcceptedKeyTypes") + ",ssh-rsa,ssh-dss");
             if (privateKey == null) {
                 session.setConfig("PreferredAuthentications", "password");
             }
