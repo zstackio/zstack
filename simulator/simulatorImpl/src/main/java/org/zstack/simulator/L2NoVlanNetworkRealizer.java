@@ -2,10 +2,7 @@ package org.zstack.simulator;
 
 import org.zstack.header.core.Completion;
 import org.zstack.header.host.HypervisorType;
-import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
-import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.simulator.SimulatorConstant;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -32,6 +29,11 @@ public class L2NoVlanNetworkRealizer implements L2NetworkRealizationExtensionPoi
     @Override
     public HypervisorType getSupportedHypervisorType() {
         return HypervisorType.valueOf(SimulatorConstant.SIMULATOR_HYPERVISOR_TYPE);
+    }
+
+    @Override
+    public VSwitchType getSupportedVSwitchType() {
+        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
     }
 
 

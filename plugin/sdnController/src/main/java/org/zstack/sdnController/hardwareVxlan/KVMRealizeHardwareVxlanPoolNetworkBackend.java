@@ -91,10 +91,14 @@ public class KVMRealizeHardwareVxlanPoolNetworkBackend implements L2NetworkReali
     }
 
     @Override
+    public VSwitchType getSupportedVSwitchType() {
+        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
+    }
+
+    @Override
     public L2NetworkType getL2NetworkTypeVmNicOn() {
         return L2NetworkType.valueOf(SdnControllerConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE);
     }
-
     @Override
     public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         NicTO to = new NicTO();

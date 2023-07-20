@@ -73,7 +73,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
             if (Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
                     .in(L2NetworkClusterRefVO_.l2NetworkUuid, otherL2s).isExists()) {
                 throw new ApiMessageInterceptionException(argerr("could not attach l2 network, because there "+
-                                "is another network [uuid:%] on physical interface [%s] with different vswitch type",
+                                "is another network [uuid:%s] on physical interface [%s] with different vswitch type",
                         otherL2s.get(0), l2.getPhysicalInterface()));
             }
         }

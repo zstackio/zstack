@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import org.apache.commons.collections.map.MultiKeyMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -160,10 +161,14 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     }
 
     @Override
+    public VSwitchType getSupportedVSwitchType() {
+        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
+    }
+
+    @Override
     public L2NetworkType getL2NetworkTypeVmNicOn() {
         return L2NetworkType.valueOf(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE);
     }
-
     @Override
     public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         NicTO to = new NicTO();
