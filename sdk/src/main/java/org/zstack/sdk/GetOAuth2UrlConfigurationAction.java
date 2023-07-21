@@ -2,8 +2,9 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
-public class GetOAuth2UrlConfigureAction extends AbstractAction {
+public class GetOAuth2UrlConfigurationAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +12,7 @@ public class GetOAuth2UrlConfigureAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetOAuth2UrlConfigureResult value;
+        public org.zstack.sdk.GetOAuth2UrlConfigureResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class GetOAuth2UrlConfigureAction extends AbstractAction {
             return ret;
         }
         
-        GetOAuth2UrlConfigureResult value = res.getResult(GetOAuth2UrlConfigureResult.class);
-        ret.value = value == null ? new GetOAuth2UrlConfigureResult() : value;
+        org.zstack.sdk.GetOAuth2UrlConfigureResult value = res.getResult(org.zstack.sdk.GetOAuth2UrlConfigureResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetOAuth2UrlConfigureResult() : value; 
 
         return ret;
     }
