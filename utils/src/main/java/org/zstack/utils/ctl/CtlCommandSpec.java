@@ -24,8 +24,9 @@ public abstract class CtlCommandSpec {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("zstack-ctl %s", getCtlName()));
         for (CtlCommandParam param : params) {
-            if (param.arguments == null) {
-                sb.append(String.format(" %s", param.option));
+            if (param.arguments == null || param.option == null) {
+                String args = param.arguments != null ? param.arguments : param.option;
+                sb.append(String.format(" %s", args));
                 continue;
             }
             sb.append(String.format(" %s %s", param.option, param.arguments));
