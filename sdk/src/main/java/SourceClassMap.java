@@ -396,6 +396,8 @@ public class SourceClassMap {
 			put("org.zstack.kvm.hypervisor.datatype.HypervisorVersionState", "org.zstack.sdk.HypervisorVersionState");
 			put("org.zstack.kvm.hypervisor.datatype.KvmHostHypervisorMetadataInventory", "org.zstack.sdk.KvmHostHypervisorMetadataInventory");
 			put("org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoInventory", "org.zstack.sdk.KvmHypervisorInfoInventory");
+			put("org.zstack.kvm.xmlhook.XmlHookInventory", "org.zstack.sdk.XmlHookInventory");
+			put("org.zstack.kvm.xmlhook.XmlHookType", "org.zstack.sdk.XmlHookType");
 			put("org.zstack.ldap.LdapAccountRefInventory", "org.zstack.sdk.LdapAccountRefInventory");
 			put("org.zstack.ldap.LdapServerInventory", "org.zstack.sdk.LdapServerInventory");
 			put("org.zstack.license.AdditionalLicenseInfo", "org.zstack.sdk.AdditionalLicenseInfo");
@@ -1254,6 +1256,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VtepInventory", "org.zstack.network.l2.vxlan.vtep.VtepInventory");
 			put("org.zstack.sdk.WebhookInventory", "org.zstack.header.core.webhooks.WebhookInventory");
 			put("org.zstack.sdk.XDragonHostInventory", "org.zstack.xdragon.XDragonHostInventory");
+			put("org.zstack.sdk.XmlHookInventory", "org.zstack.kvm.xmlhook.XmlHookInventory");
+			put("org.zstack.sdk.XmlHookType", "org.zstack.kvm.xmlhook.XmlHookType");
 			put("org.zstack.sdk.ZBoxBackupInventory", "org.zstack.externalbackup.zbox.ZBoxBackupInventory");
 			put("org.zstack.sdk.ZBoxBackupStorageBackupInfo", "org.zstack.externalbackup.zbox.ZBoxBackupStorageBackupInfo");
 			put("org.zstack.sdk.ZBoxInventory", "org.zstack.zbox.ZBoxInventory");

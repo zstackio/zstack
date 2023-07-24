@@ -190,5 +190,7 @@
         <class>org.zstack.directory.ResourceDirectoryRefVO</class>
         <class>org.zstack.header.agent.versioncontrol.AgentVersionVO</class>
         <class>org.zstack.header.host.HostIpmiVO</class>
+        <class>org.zstack.kvm.xmlhook.XmlHookVO</class>
+        <class>org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO</class>
     </persistence-unit>
 </persistence>

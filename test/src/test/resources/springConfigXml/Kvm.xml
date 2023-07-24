@@ -220,4 +220,12 @@
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="XmlHookManager" class="org.zstack.kvm.xmlhook.XmlHookManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Service"/>
+            <zstack:extension interface="org.zstack.kvm.xmlhook.XmlHookManager"/>
+        </zstack:plugin>
+    </bean>
 </beans>

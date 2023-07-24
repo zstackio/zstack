@@ -7,10 +7,15 @@ import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.vm.CrashStrategy;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.kvm.xmlhook.APICreateVmUserDefinedXmlHookScriptMsg;
+import org.zstack.kvm.xmlhook.XmlHookBase;
+import org.zstack.kvm.xmlhook.XmlHookMessage;
+import org.zstack.kvm.xmlhook.XmlHookVO;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.CoreGlobalProperty;
@@ -84,8 +89,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
 
 public class KVMHostFactory extends AbstractHypervisorFactory implements Component,
