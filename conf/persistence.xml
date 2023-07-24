@@ -207,5 +207,7 @@
         <class>org.zstack.network.hostNetworkInterface.lldp.entity.HostNetworkInterfaceLldpRefVO</class>
         <class>org.zstack.header.volume.block.BlockVolumeVO</class>
         <class>org.zstack.header.host.HostHwMonitorStatusVO</class>
+        <class>org.zstack.kvm.xmlhook.XmlHookVO</class>
+        <class>org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO</class>
     </persistence-unit>
 </persistence>

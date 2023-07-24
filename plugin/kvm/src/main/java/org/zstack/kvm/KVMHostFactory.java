@@ -17,6 +17,10 @@ import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.network.l3.ServiceTypeExtensionPoint;
+import org.zstack.kvm.xmlhook.APICreateVmUserDefinedXmlHookScriptMsg;
+import org.zstack.kvm.xmlhook.XmlHookBase;
+import org.zstack.kvm.xmlhook.XmlHookMessage;
+import org.zstack.kvm.xmlhook.XmlHookVO;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.CoreGlobalProperty;
@@ -83,6 +87,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.kvm.KVMAgentCommands.*;
+import static org.zstack.core.Platform.*;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
 
 public class KVMHostFactory extends AbstractService implements HypervisorFactory,

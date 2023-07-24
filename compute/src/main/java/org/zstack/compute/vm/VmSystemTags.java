@@ -231,6 +231,8 @@ public class VmSystemTags {
     public static String usbDevice_attach_type_token = "attachType";
     public static PatternedSystemTag VM_ATTACH_USB = new PatternedSystemTag(String.format("usbDeviceUuid::{%s}::attachType::{%s}",
             USBDEVICE_UUID_TOKEN, usbDevice_attach_type_token), VmInstanceVO.class);
+    public static final String XML_HOOK_TOKEN = "xmlHook";
+    public static PatternedSystemTag XML_HOOK = new PatternedSystemTag(String.format("xmlHook::{%s}", XML_HOOK_TOKEN), VmInstanceVO.class);
 
     public static class UserdataTagOutputHandler implements SensitiveTagOutputHandler {
         private final String chpasswd = "chpasswd";
