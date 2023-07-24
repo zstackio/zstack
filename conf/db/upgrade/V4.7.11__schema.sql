@@ -51,3 +51,5 @@ CALL CREATE_INDEX('SchedulerJobHistoryVO', 'idxSchedulerJobHistoryVOExecuteTime'
 
 ALTER TABLE `zstack`.`AlarmRecordsVO`
     MODIFY COLUMN `resourceUuid` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL AFTER `resourceType`;
+
+ALTER TABLE `zstack`.`FlkSecSecretResourcePoolVO` ADD COLUMN `ukeyType` VARCHAR(32)  DEFAULT NULL;
