@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetVmUserDefinedXmlHookScriptAction extends AbstractAction {
+public class QueryVmUserDefinedXmlHookScriptAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetVmUserDefinedXmlHookScriptAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetVmUserDefinedXmlHookScriptResult value;
+        public org.zstack.sdk.QueryVmUserDefinedXmlHookScriptResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,41 +25,6 @@ public class SetVmUserDefinedXmlHookScriptAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String xmlHookUuid;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -69,8 +34,8 @@ public class SetVmUserDefinedXmlHookScriptAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetVmUserDefinedXmlHookScriptResult value = res.getResult(org.zstack.sdk.SetVmUserDefinedXmlHookScriptResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVmUserDefinedXmlHookScriptResult() : value; 
+        org.zstack.sdk.QueryVmUserDefinedXmlHookScriptResult value = res.getResult(org.zstack.sdk.QueryVmUserDefinedXmlHookScriptResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVmUserDefinedXmlHookScriptResult() : value; 
 
         return ret;
     }
@@ -99,11 +64,11 @@ public class SetVmUserDefinedXmlHookScriptAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{vmInstanceUuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/vm-instances/xml-hook-script";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "setVmUserDefinedXmlHookScript";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
