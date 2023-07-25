@@ -52,6 +52,14 @@ public class InstanceOfferingInventory  {
         return this.memorySize;
     }
 
+    public java.lang.Long reservedMemorySize;
+    public void setReservedMemorySize(java.lang.Long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
+    }
+    public java.lang.Long getReservedMemorySize() {
+        return this.reservedMemorySize;
+    }
+
     public java.lang.String type;
     public void setType(java.lang.String type) {
         this.type = type;

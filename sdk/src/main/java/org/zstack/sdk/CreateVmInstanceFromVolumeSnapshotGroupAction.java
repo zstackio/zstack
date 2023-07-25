@@ -40,6 +40,9 @@ public class CreateVmInstanceFromVolumeSnapshotGroupAction extends AbstractActio
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Long memorySize;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long reservedMemorySize;
+
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List l3NetworkUuids;
 
