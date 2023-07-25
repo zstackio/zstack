@@ -72,6 +72,15 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(validRegexValues = LoadBalancerConstants.COOKIE_NAME_REGEX, maxLength = LoadBalancerConstants.COOKIE_NAME_MAX, required = false)
     private String cookieName;
 
+    @APIParam(validValues = {"disable", "enable"}, required = false)
+    private String httpRedirectHttps;
+
+    @APIParam(numberRange = {1, 65535}, required = false)
+    private Integer redirectPort;
+
+    @APIParam(validValues = {"301", "302", "303", "307", "308"}, required = false)
+    private Integer statusCode;
+
     @APINoSee
     private String loadBalancerUuid;
 
@@ -195,6 +204,54 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
         this.securityPolicyType = securityPolicyType;
     }
 
+    public String getSessionPersistence() {
+        return sessionPersistence;
+    }
+
+    public void setSessionPersistence(String sessionPersistence) {
+        this.sessionPersistence = sessionPersistence;
+    }
+
+    public Integer getSessionIdleTimeout() {
+        return sessionIdleTimeout;
+    }
+
+    public void setSessionIdleTimeout(Integer sessionIdleTimeout) {
+        this.sessionIdleTimeout = sessionIdleTimeout;
+    }
+
+    public String getCookieName() {
+        return cookieName;
+    }
+
+    public void setCookieName(String cookieName) {
+        this.cookieName = cookieName;
+    }
+
+    public String getHttpRedirectHttps() {
+        return httpRedirectHttps;
+    }
+
+    public void setHttpRedirectHttps(String httpRedirectHttps) {
+        this.httpRedirectHttps = httpRedirectHttps;
+    }
+
+    public Integer getRedirectPort() {
+        return redirectPort;
+    }
+
+    public void setRedirectPort(Integer redirectPort) {
+        this.redirectPort = redirectPort;
+    }
+
+    public Integer getStatusCode() {
+        return statusCode;
+    }
+
+    public void setStatusCode(Integer statusCode) {
+        this.statusCode = statusCode;
+    }
+
     @Override
     public String getLoadBalancerListenerUuid() {
         return uuid;
@@ -233,29 +290,5 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
         msg.setHttpMode("http-keep-alive");
 
         return msg;
-    }
-
-    public String getSessionPersistence() {
-        return sessionPersistence;
-    }
-
-    public void setSessionPersistence(String sessionPersistence) {
-        this.sessionPersistence = sessionPersistence;
-    }
-
-    public Integer getSessionIdleTimeout() {
-        return sessionIdleTimeout;
-    }
-
-    public void setSessionIdleTimeout(Integer sessionIdleTimeout) {
-        this.sessionIdleTimeout = sessionIdleTimeout;
-    }
-
-    public String getCookieName() {
-        return cookieName;
-    }
-
-    public void setCookieName(String cookieName) {
-        this.cookieName = cookieName;
     }
 }

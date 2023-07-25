@@ -777,7 +777,6 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                             map(e(LoadBalancerSystemTags.HTTP_MODE_TOKEN, LoadBalancerGlobalConfig.HTTP_MODE.value()))
                     )
             );
-
         }
 
         /*can not modify l4's session persistence*/
@@ -789,7 +788,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
-        String algorithm = null, seessionPersistence = null;
+        String algorithm = null, seessionPersistence = null, httpRedirectHttps = null, redirectPort = null, statusCode = null;
         for (String tag : msg.getSystemTags()) {
             if (LoadBalancerSystemTags.BALANCER_ALGORITHM.isMatch(tag)) {
                 algorithm = LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByTag(tag,
@@ -799,6 +798,62 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 seessionPersistence = LoadBalancerSystemTags.SESSION_PERSISTENCE.getTokenByTag(tag,
                         LoadBalancerSystemTags.SESSION_PERSISTENCE_TOKEN);
             }
+            if (LoadBalancerSystemTags.HTTP_REDIRECT_HTTPS.isMatch(tag)) {
+                httpRedirectHttps = LoadBalancerSystemTags.HTTP_REDIRECT_HTTPS.getTokenByTag(tag,
+                        LoadBalancerSystemTags.HTTP_REDIRECT_HTTPS_TOKEN);
+            }
+            if (LoadBalancerSystemTags.REDIRECT_PORT.isMatch(tag)) {
+                redirectPort = LoadBalancerSystemTags.REDIRECT_PORT.getTokenByTag(tag,
+                        LoadBalancerSystemTags.REDIRECT_PORT_TOKEN);
+            }
+            if (LoadBalancerSystemTags.STATUS_CODE.isMatch(tag)) {
+                statusCode = LoadBalancerSystemTags.STATUS_CODE.getTokenByTag(tag,
+                        LoadBalancerSystemTags.STATUS_CODE_TOKEN);
+            }
+        }
+
+        if ((redirectPort != null || statusCode != null) && (httpRedirectHttps == null || HttpRedirectHttps.disable.toString().equals(httpRedirectHttps))) {
+            throw new ApiMessageInterceptionException(argerr("could not assign redirect port or status code without specifying http redirect https"));
+        }
+
+        List<String> validRedirectValues = Arrays.asList("disable", "enable");
+        if (httpRedirectHttps != null && !validRedirectValues.contains(httpRedirectHttps)) {
+            throw new ApiMessageInterceptionException(argerr("invalid redirect status [%s], it only support %s", httpRedirectHttps, validRedirectValues));
+        }
+
+        List<String> validCodeValues = Arrays.asList("301", "302", "303", "307", "308");
+        if (statusCode != null && !validCodeValues.contains(statusCode)) {
+            throw new ApiMessageInterceptionException(argerr("invalid status code [%s], it only support %s", statusCode, validCodeValues));
+        }
+
+        if (HttpRedirectHttps.enable.toString().equals(httpRedirectHttps)) {
+            if (!LB_PROTOCOL_HTTP.equals(msg.getProtocol())) {
+                throw new ApiMessageInterceptionException(argerr("could not support protocols other than HTTP when specifying http redirect https"));
+            }
+            if (redirectPort == null) {
+                insertTagIfNotExisting(
+                        msg, LoadBalancerSystemTags.REDIRECT_PORT,
+                        LoadBalancerSystemTags.REDIRECT_PORT.instantiateTag(
+                                map(e(LoadBalancerSystemTags.REDIRECT_PORT_TOKEN, LoadBalancerConstants.REDIRECT_PORT_DEFAULT))
+                        )
+                );
+            }
+            if (statusCode == null) {
+                insertTagIfNotExisting(
+                        msg, LoadBalancerSystemTags.STATUS_CODE,
+                        LoadBalancerSystemTags.STATUS_CODE.instantiateTag(
+                                map(e(LoadBalancerSystemTags.STATUS_CODE_TOKEN, STATUS_CODE_DEFAULT))
+                        )
+                );
+            }
+            if (seessionPersistence != null && !LoadBalancerSessionPersistence.disable.toString().equals(seessionPersistence)) {
+                throw new ApiMessageInterceptionException(argerr("could not support both HTTP redirect HTTPS and session persistence at the same time"));
+            }
+        }
+
+        List<String> validPersistenceValues = Arrays.asList("disable", "iphash", "insert", "rewrite");
+        if (seessionPersistence != null && !validPersistenceValues.contains(seessionPersistence)) {
+            throw new ApiMessageInterceptionException(argerr("invalid session persistence status [%s], it only support %s", seessionPersistence, validPersistenceValues));
         }
 
         /*can not modify session persistence when the listener algorithm is leastconn except disable*/
@@ -1041,10 +1096,36 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
-        /*can not modify l4's session persistence*/
         LoadBalancerListenerVO listener = Q.New(LoadBalancerListenerVO.class).
                 eq(LoadBalancerListenerVO_.uuid,msg.getUuid())
                 .find();
+
+        if ((msg.getRedirectPort() != null || msg.getStatusCode() != null) && (msg.getHttpRedirectHttps() == null || HttpRedirectHttps.disable.toString().equals(msg.getHttpRedirectHttps()))) {
+            throw new ApiMessageInterceptionException(argerr("could not assign redirect port or status code without specifying http redirect https"));
+        }
+
+        if (HttpRedirectHttps.enable.toString().equals(msg.getHttpRedirectHttps())) {
+            if (!LB_PROTOCOL_HTTP.equals(listener.getProtocol())) {
+                throw new ApiMessageInterceptionException(argerr("could not support protocols other than HTTP when specifying http redirect https"));
+            }
+
+            if (msg.getRedirectPort() == null) {
+               msg.setRedirectPort(REDIRECT_PORT_DEFAULT);
+            }
+
+            if (msg.getStatusCode() == null) {
+                msg.setStatusCode(STATUS_CODE_DEFAULT);
+            }
+
+            Boolean sessionPersistence = Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
+                    .in(SystemTagVO_.tag, Arrays.asList("sessionPersistence::rewrite", "sessionPersistence::insert", "sessionPersistence::iphash"))
+                    .eq(SystemTagVO_.resourceUuid, listener.getUuid()).isExists();
+            if (sessionPersistence || (msg.getSessionPersistence() != null && !LoadBalancerSessionPersistence.disable.toString().equals(msg.getSessionPersistence()))) {
+                throw new ApiMessageInterceptionException(argerr("could not support both HTTP redirect HTTPS and session persistence at the same time"));
+            }
+        }
+
+        /*can not modify l4's session persistence*/
         if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listener.getProtocol()) || LoadBalancerConstants.LB_PROTOCOL_TCP.equals(listener.getProtocol())) {
             if (msg.getSessionPersistence() != null || msg.getSessionIdleTimeout() != null || msg.getCookieName() != null) {
                 throw new ApiMessageInterceptionException(argerr("l4[%s] loadBalancer listener[%s] doesn't support modifying session persistence state", listener.getProtocol(), listener.getName()));
@@ -1053,6 +1134,12 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
         /*must assign session persistence rewrite without http-tunnel*/
         if (LoadBalancerConstants.LB_PROTOCOL_HTTP.equals(listener.getProtocol())) {
+            Boolean httpRedirectHttps = Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
+                    .eq(SystemTagVO_.tag, "httpRedirectHttps::enable")
+                    .eq(SystemTagVO_.resourceUuid, listener.getUuid()).isExists();
+            if (httpRedirectHttps && (msg.getSessionPersistence() != null && !LoadBalancerSessionPersistence.disable.toString().equals(msg.getSessionPersistence()))) {
+                throw new ApiMessageInterceptionException(argerr("could not support both HTTP redirect HTTPS and session persistence at the same time"));
+            }
             if (LoadBalancerSessionPersistence.rewrite.toString().equals(msg.getSessionPersistence()) && LoadBalancerConstants.HTTP_MODE_HTTP_TUNNEL.equals(msg.getHttpMode())) {
                 throw new ApiMessageInterceptionException(argerr("listener[%s] can not modifying session persistence rewrite when the http mode is http-tunnel", msg.getUuid()));
             }
@@ -1487,6 +1574,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APIRemoveServerGroupFromLoadBalancerListenerMsg msg){
+        Boolean httpRedirectHttps = Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
+                .eq(SystemTagVO_.tag, "httpRedirectHttps::enable")
+                .eq(SystemTagVO_.resourceUuid, msg.getListenerUuid()).isExists();
+        if (httpRedirectHttps) {
+            throw new ApiMessageInterceptionException(argerr("could not  remove server groups[uuid:%s} from listener [uuid:%s] because it has enable HTTP redirect HTTPS", msg.getServerGroupUuid(), msg.getListenerUuid()));
+        }
+
         List<LoadBalancerListenerServerGroupRefVO> existingRefs
                 = Q.New(LoadBalancerListenerServerGroupRefVO.class)
                 .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())
