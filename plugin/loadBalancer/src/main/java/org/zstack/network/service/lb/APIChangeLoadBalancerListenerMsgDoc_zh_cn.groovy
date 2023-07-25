@@ -217,6 +217,35 @@ doc {
 					optional true
 					since "3.4"
 				}
+				column {
+					name "httpRedirectHttps"
+					enclosedIn "changeLoadBalancerListener"
+					desc "http重定向https"
+					location "body"
+					type "String"
+					optional true
+					since "4.7.21"
+					values ("disable","enable")
+				}
+				column {
+					name "redirectPort"
+					enclosedIn "changeLoadBalancerListener"
+					desc "重定向端口"
+					location "body"
+					type "Integer"
+					optional true
+					since "4.7.21"
+				}
+				column {
+					name "statusCode"
+					enclosedIn "changeLoadBalancerListener"
+					desc "重定向状态码"
+					location "body"
+					type "Integer"
+					optional true
+					since "4.7.21"
+					values ("301","302","307")
+				}
 			}
         }
 

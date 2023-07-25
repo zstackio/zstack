@@ -53,6 +53,11 @@ public class LoadBalancerConstants {
         http_5xx
     }
 
+    public static enum HttpRedirectHttps {
+        enable,
+        disable
+    }
+
     public static final String HEALTH_CHECK_URI_REGEX = "^/[A-Za-z0-9-/.%?#&]*";
 
     public static final String COOKIE_NAME_REGEX = "[A-Za-z0-9_-]+";
@@ -124,6 +129,9 @@ public class LoadBalancerConstants {
     public static final int SESSION_IDLE_TIMEOUT_DEFAULT = 60;
 
     public static final int COOKIE_NAME_MAX = 20;
+
+    public static final int REDIRECT_PORT_DEFAULT = 443;
+    public static final int STATUS_CODE_DEFAULT = 302;
 
     public static final String HEALTH_CHECK_TARGET_DEFAULT = "default";
 
