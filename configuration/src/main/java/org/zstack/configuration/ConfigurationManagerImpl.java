@@ -920,6 +920,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         vo.setDescription(msg.getDescription());
         vo.setState(InstanceOfferingState.Enabled);
         vo.setMemorySize(msg.getMemorySize());
+        vo.setReservedMemorySize(msg.getReservedMemorySize());
         vo.setDuration(InstanceOfferingDuration.Permanent);
         vo.setType(type);
 

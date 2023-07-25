@@ -51,6 +51,9 @@ public class APICreateVmInstanceFromVolumeSnapshotMsg extends APICreateMessage i
     @APIParam(required = false)
     private Long memorySize;
 
+    @APIParam(required = false, numberRange = {0, Long.MAX_VALUE})
+    private Long reservedMemorySize;
+
     /**
      * @desc a list of L3Network uuid the vm will create nic on. See :ref:`L3NetworkInventory`
      */
@@ -140,12 +143,22 @@ public class APICreateVmInstanceFromVolumeSnapshotMsg extends APICreateMessage i
     }
 
     @Override
+    public Long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    @Override
     public String getZoneUuid() {
         return zoneUuid;
     }
 
     public void setMemorySize(Long memorySize) {
         this.memorySize = memorySize;
+    }
+
+    @Override
+    public void setReservedMemorySize(Long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
     }
 
     public List<String> getL3NetworkUuids() {
