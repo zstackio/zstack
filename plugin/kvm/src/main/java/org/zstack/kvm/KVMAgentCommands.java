@@ -1827,6 +1827,7 @@ public class KVMAgentCommands {
         private String imageArchitecture;
         private long memory;
         private long maxMemory;
+        private long reservedMemory;
         private int cpuNum;
         private int maxVcpuNum;
         private long cpuSpeed;
@@ -2098,6 +2099,14 @@ public class KVMAgentCommands {
 
         public void setMaxMemory(long maxMemory) {
             this.maxMemory = maxMemory;
+        }
+
+        public long getReservedMemory() {
+            return reservedMemory;
+        }
+
+        public void setReservedMemory(long reservedMemory) {
+            this.reservedMemory = reservedMemory;
         }
 
         public String getClock() {

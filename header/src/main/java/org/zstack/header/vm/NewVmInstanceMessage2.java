@@ -6,6 +6,7 @@ package org.zstack.header.vm;
 public interface NewVmInstanceMessage2 extends NewVmInstanceMessage {
     Integer getCpuNum();
     Long getMemorySize();
+    Long getReservedMemorySize();
     String getZoneUuid();
     String getClusterUuid();
     String getHostUuid();
@@ -14,6 +15,7 @@ public interface NewVmInstanceMessage2 extends NewVmInstanceMessage {
 
     void setCpuNum(Integer cpuNum);
     void setMemorySize(Long memorySize);
+    void setReservedMemorySize(Long reservedMemorySize);
     void setZoneUuid(String zoneUuid);
     void setClusterUuid(String clusterUuid);
     void setDefaultL3NetworkUuid(String defaultL3NetworkUuid);

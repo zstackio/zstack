@@ -466,14 +466,21 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         new SQLBatch() {
             @Override
             protected void scripts() {
-                VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
-                Integer cpuSum = msg.getCpuNum();
-                Long memorySize = msg.getMemorySize();
-                if ((cpuSum == null && memorySize == null)) {
+                VmInstanceVO vo = q(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
+                if ((msg.getCpuNum() == null && msg.getMemorySize() == null && msg.getReservedMemorySize() == null)) {
                     return;
                 }
 
-                VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
+                if (msg.getReservedMemorySize() != null) {
+                    Long memorySize = msg.getMemorySize() == null ? vo.getMemorySize() : msg.getMemorySize();
+                    if (msg.getReservedMemorySize() > memorySize) {
+                        throw new ApiMessageInterceptionException(argerr(
+                                "reservedMemorySize[%s] is greater than memorySize[%s]", msg.getReservedMemorySize(), memorySize
+                        ));
+                    }
+                }
+
+                VmInstanceState vmState = q(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
                 boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getUuid(), Boolean.class);
                 if (!numa && !VmInstanceState.Stopped.equals(vmState)) {
                     throw new ApiMessageInterceptionException(argerr(
@@ -486,7 +493,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                             vo.getUuid(), vo.getState(),
                             StringUtils.join(list(VmInstanceState.Running, VmInstanceState.Stopped), ",")));
                 }
-
 
                 if (VmInstanceState.Stopped.equals(vmState)) {
                     return;
@@ -1098,6 +1104,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(operr("Unexpected CPU/memory settings"));
             }
 
+            if (msg.getReservedMemorySize() != null) {
+                if (msg.getReservedMemorySize() > msg.getMemorySize()) {
+                    throw new ApiMessageInterceptionException(operr("reserved memory[%s] is greater than memory size[%s]", msg.getReservedMemorySize(), msg.getMemorySize()));
+                }
+            } else {
+                msg.setReservedMemorySize(0L);
+            }
+
             return;
         }
 
@@ -1113,6 +1127,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         msg.setCpuNum(ivo.getCpuNum());
         msg.setMemorySize(ivo.getMemorySize());
+        msg.setReservedMemorySize(ivo.getReservedMemorySize());
     }
 
     private void validateDataDiskSizes(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {

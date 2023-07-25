@@ -97,6 +97,9 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false)
     private Long memorySize;
 
+    @APIParam(required = false, numberRange = {0, Long.MAX_VALUE})
+    private Long reservedMemorySize;
+
     /**
      * @desc uuid of image. See :ref:`ImageInventory`
      */
@@ -231,6 +234,14 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setMemorySize(Long memorySize) {
         this.memorySize = memorySize;
+    }
+
+    public Long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    public void setReservedMemorySize(Long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
     }
 
     public String getImageUuid() {

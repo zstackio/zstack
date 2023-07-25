@@ -3454,6 +3454,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setCpuSpeed(spec.getVmInventory().getCpuSpeed());
         cmd.setMemory(spec.getVmInventory().getMemorySize());
         cmd.setMaxMemory(self.getCapacity().getTotalPhysicalMemory());
+        cmd.setReservedMemory(spec.getVmInventory().getReservedMemorySize());
         cmd.setClock(ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio) ? "localtime" : "utc");
         VmClockTrack vmClockTrack = VmClockTrack.get(rcf.getResourceConfigValue(VmGlobalConfig.VM_CLOCK_TRACK, spec.getVmInventory().getUuid(), String.class));
         if (vmClockTrack == VmClockTrack.guest) {
