@@ -120,6 +120,15 @@ doc {
 					optional true
 					since "3.4.0"
 				}
+				column {
+					name "reservedMemorySize"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "long"
+					optional false
+					since "4.7.21"
+				}
 			}
         }
 
