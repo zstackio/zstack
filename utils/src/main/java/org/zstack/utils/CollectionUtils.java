@@ -8,6 +8,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -140,7 +141,15 @@ public class CollectionUtils {
         return list;
     }
 
-    public static boolean isEmpty(Collection coll) {
+    public static <T> boolean isEmpty(Collection<T> coll) {
         return coll == null || coll.isEmpty();
+    }
+
+    public static <K, V> boolean isEmpty(Map<K, V> coll) {
+        return coll == null || coll.isEmpty();
+    }
+
+    public static <T> List<T> filter(List<T> list, Predicate<? super T> predicate) {
+        return list.stream().filter(predicate).collect(Collectors.toList());
     }
 }

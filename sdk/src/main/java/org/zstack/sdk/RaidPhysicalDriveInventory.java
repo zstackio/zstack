@@ -36,6 +36,14 @@ public class RaidPhysicalDriveInventory  {
         return this.raidControllerUuid;
     }
 
+    public java.lang.String lunUuid;
+    public void setLunUuid(java.lang.String lunUuid) {
+        this.lunUuid = lunUuid;
+    }
+    public java.lang.String getLunUuid() {
+        return this.lunUuid;
+    }
+
     public java.lang.String description;
     public void setDescription(java.lang.String description) {
         this.description = description;
