@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
 
 import java.util.List;
@@ -34,19 +35,14 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String defaultL3NetworkUuid;
     private String allocatorStrategy;
     private String strategy;
-    private String guestOsType;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private List<String> disableL3Networks;
-
-    public String getGuestOsType() {
-        return guestOsType;
-    }
-
-    public void setGuestOsType(String guestOsType) {
-        this.guestOsType = guestOsType;
-    }
+    private String platform;
+    private String guestOsType;
+    private String architecture;
+    private Boolean virtio;
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -296,5 +292,37 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setDisableL3Networks(List<String> disableL3Networks) {
         this.disableL3Networks = disableL3Networks;
+    }
+
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
+    }
+
+    public String getGuestOsType() {
+        return guestOsType;
+    }
+
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
+    public Boolean getVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(Boolean virtio) {
+        this.virtio = virtio;
     }
 }
