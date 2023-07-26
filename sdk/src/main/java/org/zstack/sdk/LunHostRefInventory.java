@@ -2,14 +2,14 @@ package org.zstack.sdk;
 
 
 
-public class NvmeLunHostRefInventory  {
+public class LunHostRefInventory  {
 
-    public java.lang.String nvmeLunUuid;
-    public void setNvmeLunUuid(java.lang.String nvmeLunUuid) {
-        this.nvmeLunUuid = nvmeLunUuid;
+    public java.lang.String lunUuid;
+    public void setLunUuid(java.lang.String lunUuid) {
+        this.lunUuid = lunUuid;
     }
-    public java.lang.String getNvmeLunUuid() {
-        return this.nvmeLunUuid;
+    public java.lang.String getLunUuid() {
+        return this.lunUuid;
     }
 
     public java.lang.String hostUuid;
@@ -18,6 +18,22 @@ public class NvmeLunHostRefInventory  {
     }
     public java.lang.String getHostUuid() {
         return this.hostUuid;
+    }
+
+    public java.lang.String diskUsage;
+    public void setDiskUsage(java.lang.String diskUsage) {
+        this.diskUsage = diskUsage;
+    }
+    public java.lang.String getDiskUsage() {
+        return this.diskUsage;
+    }
+
+    public java.lang.String locate;
+    public void setLocate(java.lang.String locate) {
+        this.locate = locate;
+    }
+    public java.lang.String getLocate() {
+        return this.locate;
     }
 
     public java.lang.String path;
