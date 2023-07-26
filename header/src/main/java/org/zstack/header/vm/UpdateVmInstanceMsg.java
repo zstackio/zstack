@@ -14,6 +14,7 @@ public class UpdateVmInstanceMsg extends NeedReplyMessage implements VmInstanceM
     private String platform;
     private Integer cpuNum;
     private Long memorySize;
+    private Long reservedMemorySize;
     private String guestOsType;
 
     public String getUuid() {
@@ -78,6 +79,14 @@ public class UpdateVmInstanceMsg extends NeedReplyMessage implements VmInstanceM
 
     public void setMemorySize(Long memorySize) {
         this.memorySize = memorySize;
+    }
+
+    public Long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    public void setReservedMemorySize(Long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
     }
 
     public String getGuestOsType() {

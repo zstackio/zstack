@@ -26,6 +26,7 @@ public class VmInstanceAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VmInstanceAO, String> allocatorStrategy;
     public static volatile SingularAttribute<VmInstanceAO, Long> internalId;
     public static volatile SingularAttribute<VmInstanceAO, Long> memorySize;
+    public static volatile SingularAttribute<VmInstanceAO, Long> reservedMemorySize;
     public static volatile SingularAttribute<VmInstanceAO, Integer> cpuNum;
     public static volatile SingularAttribute<VmInstanceAO, Long> cpuSpeed;
     public static volatile SingularAttribute<VmInstanceAO, Timestamp> createDate;

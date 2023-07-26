@@ -25,6 +25,9 @@ public class InstanceOfferingAO extends ResourceVO {
     private long memorySize;
 
     @Column
+    private long reservedMemorySize;
+
+    @Column
     private String allocatorStrategy;
 
     @Column
@@ -61,6 +64,7 @@ public class InstanceOfferingAO extends ResourceVO {
         this.lastOpDate = other.lastOpDate;
         this.type = other.type;
         this.duration = other.duration;
+        this.reservedMemorySize = other.reservedMemorySize;
     }
 
     public InstanceOfferingAO() {
@@ -165,5 +169,13 @@ public class InstanceOfferingAO extends ResourceVO {
 
     public void setState(InstanceOfferingState state) {
         this.state = state;
+    }
+
+    public long getReservedMemorySize() {
+        return reservedMemorySize;
+    }
+
+    public void setReservedMemorySize(long reservedMemorySize) {
+        this.reservedMemorySize = reservedMemorySize;
     }
 }

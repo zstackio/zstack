@@ -79,6 +79,10 @@ public class ConfigurationApiInterceptor implements ApiMessageInterceptor {
         if (msg.getMemorySize() < SizeUnit.MEGABYTE.toByte(16)) {
             throw new ApiMessageInterceptionException(argerr("memory size[%s bytes] is less than 16M, no modern operating system is likely able to boot with such small memory size", msg.getMemorySize()));
         }
+
+        if (msg.getReservedMemorySize() > msg.getMemorySize()) {
+            throw new ApiMessageInterceptionException(argerr("reserved memory size[%s bytes] is greater than memory size[%s bytes]", msg.getReservedMemorySize(), msg.getMemorySize()));
+        }
     }
 
     private void validate(APIUpdateInstanceOfferingMsg msg) {

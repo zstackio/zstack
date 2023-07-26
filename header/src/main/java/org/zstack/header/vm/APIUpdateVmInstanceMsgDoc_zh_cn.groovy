@@ -122,6 +122,15 @@ doc {
 					optional true
 					since "4.1.2"
 				}
+				column {
+					name "reservedMemorySize"
+					enclosedIn "updateVmInstance"
+					desc ""
+					location "body"
+					type "Long"
+					optional true
+					since "4.7.21"
+				}
 			}
         }
 

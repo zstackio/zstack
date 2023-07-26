@@ -1102,6 +1102,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo.setCpuNum(msg.getCpuNum());
         vo.setCpuSpeed(msg.getCpuSpeed());
         vo.setMemorySize(msg.getMemorySize());
+        vo.setReservedMemorySize(msg.getReservedMemorySize());
         vo.setAllocatorStrategy(msg.getAllocatorStrategy());
         vo.setGuestOsType(Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.guestOsType).findValue());
         String vmType = msg.getType() == null ? VmInstanceConstant.USER_VM_TYPE : msg.getType();
