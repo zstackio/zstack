@@ -132,4 +132,12 @@ public class LunInventory  {
         return this.lastOpDate;
     }
 
+    public java.util.List lunHostRefs;
+    public void setLunHostRefs(java.util.List lunHostRefs) {
+        this.lunHostRefs = lunHostRefs;
+    }
+    public java.util.List getLunHostRefs() {
+        return this.lunHostRefs;
+    }
+
 }
