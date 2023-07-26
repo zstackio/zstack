@@ -21,3 +21,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`XskyBlockVolumeVO` (
     PRIMARY KEY (`uuid`),
     CONSTRAINT fkXskyBlockVolumeVOBlockVolumeVO FOREIGN KEY (uuid) REFERENCES BlockVolumeVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`BareMetal2BondingNicRefVO` modify column nicUuid varchar(32) DEFAULT NULL;
+CALL ADD_COLUMN('BareMetal2BondingNicRefVO', 'provisionNicUuid', 'VARCHAR(32)', 1, NULL);
+CALL ADD_CONSTRAINT('BareMetal2BondingNicRefVO', 'fkBareMetal2BondingNicRefVOProvisionNicVO', 'provisionNicUuid', 'BareMetal2InstanceProvisionNicVO', 'uuid', 'CASCADE');
