@@ -1,9 +1,13 @@
 package org.zstack.compute.vm;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.zstack.header.image.ImageArchitecture;
+import org.zstack.header.image.ImageHelper;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.CreateVmInstanceMsg;
 import org.zstack.tag.SystemTagUtils;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.List;
 
@@ -14,7 +18,6 @@ public class VmInstanceUtils {
     public static CreateVmInstanceMsg fromAPICreateVmInstanceMsg(APICreateVmInstanceMsg msg) {
         CreateVmInstanceMsg cmsg = NewVmInstanceMsgBuilder.fromAPINewVmInstanceMsg(msg);
         cmsg.setImageUuid(msg.getImageUuid());
-        cmsg.setGuestOsType(msg.getGuestOsType());
         cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         if (msg.getRootDiskSize() != null) {
             cmsg.setRootDiskSize(msg.getRootDiskSize());
@@ -27,6 +30,10 @@ public class VmInstanceUtils {
         cmsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         cmsg.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
+        cmsg.setPlatform(msg.getPlatform());
+        cmsg.setGuestOsType(msg.getGuestOsType());
+        cmsg.setArchitecture(msg.getArchitecture());
+        cmsg.setVirtio(msg.getVirtio());
         if (CollectionUtils.isNotEmpty(msg.getDataDiskOfferingUuids()) || CollectionUtils.isNotEmpty(msg.getDataDiskSizes())) {
             cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
         }

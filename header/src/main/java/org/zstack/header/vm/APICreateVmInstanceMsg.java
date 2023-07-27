@@ -176,9 +176,6 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false, validValues = {"InstantStart", "JustCreate", "CreateStopped"})
     private String strategy = VmCreationStrategy.InstantStart.toString();
 
-    @APIParam(required = false, maxLength = 255)
-    private String guestOsType;
-
     @APIParam(required = false)
     private List<String> dataVolumeTemplateUuids;
 
@@ -193,6 +190,18 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     @APIParam(required = false)
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
+
+    @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
+    private String platform;
+
+    @APIParam(required = false, maxLength = 255)
+    private String guestOsType;
+
+    @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64el", "loongarch64"})
+    private String architecture;
+
+    @APIParam(required = false)
+    private Boolean virtio;
 
     public String getStrategy() {
         return strategy;
@@ -362,13 +371,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
     }
 
-    public String getGuestOsType() {
-        return guestOsType;
-    }
 
-    public void setGuestOsType(String guestOsType) {
-        this.guestOsType = guestOsType;
-    }
 
     public List<String> getDataVolumeTemplateUuids() {
         return dataVolumeTemplateUuids;
@@ -384,6 +387,38 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
         this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
+    }
+
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        this.platform = platform;
+    }
+
+    public String getGuestOsType() {
+        return guestOsType;
+    }
+
+    public void setGuestOsType(String guestOsType) {
+        this.guestOsType = guestOsType;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
+    public Boolean getVirtio() {
+        return virtio;
+    }
+
+    public void setVirtio(Boolean virtio) {
+        this.virtio = virtio;
     }
 
     public static APICreateVmInstanceMsg __example__() {

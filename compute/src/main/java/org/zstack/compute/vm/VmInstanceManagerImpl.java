@@ -1024,7 +1024,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
             tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), finalVo.getUuid(), VmInstanceVO.class.getSimpleName());
         }
 
-        if ((boolean) Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.virtio).findValue()) {
+        boolean isVirtio = msg.getVirtio() != null ? msg.getVirtio() : Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.virtio).findValue();
+
+        if (isVirtio) {
             SystemTagCreator creator = VmSystemTags.VIRTIO.newSystemTagCreator(finalVo.getUuid());
             creator.recreate = true;
             creator.inherent = false;
@@ -1079,6 +1081,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
 
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
+        final ImageVO image = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
         VmInstanceVO vo = new VmInstanceVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -1094,24 +1097,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo.setZoneUuid(msg.getZoneUuid());
         vo.setInternalId(dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class));
         vo.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
-        vo.setGuestOsType(msg.getGuestOsType());
-        vo.setPlatform(ImagePlatform.Other.toString());
-        vo.setArchitecture(ImageArchitecture.defaultArch());
-
-        if (msg.getGuestOsType() == null) {
-            SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
-            imgq.select(ImageVO_.platform);
-            imgq.add(ImageVO_.uuid, Op.EQ, msg.getImageUuid());
-            ImagePlatform platform = imgq.findValue();
-            vo.setPlatform(platform.toString());
-            vo.setArchitecture(dbf.findByUuid(msg.getImageUuid(), ImageVO.class).getArchitecture());
-            vo.setGuestOsType(Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.guestOsType).findValue());
-        }
-
         vo.setCpuNum(msg.getCpuNum());
         vo.setCpuSpeed(msg.getCpuSpeed());
         vo.setMemorySize(msg.getMemorySize());
         vo.setAllocatorStrategy(msg.getAllocatorStrategy());
+        vo.setPlatform(msg.getPlatform() != null ? msg.getPlatform() : image.getPlatform().toString());
+        vo.setGuestOsType(msg.getGuestOsType() != null ? msg.getGuestOsType() : image.getGuestOsType());
+        vo.setArchitecture(msg.getArchitecture() != null ? msg.getArchitecture() : image.getArchitecture());
         String vmType = msg.getType() == null ? VmInstanceConstant.USER_VM_TYPE : msg.getType();
         VmInstanceType type = VmInstanceType.valueOf(vmType);
         VmInstanceFactory factory = getVmInstanceFactory(type);
