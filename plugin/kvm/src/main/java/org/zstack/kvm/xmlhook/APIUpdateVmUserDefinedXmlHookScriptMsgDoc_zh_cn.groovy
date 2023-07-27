@@ -29,7 +29,6 @@ doc {
 					type "String"
 					optional false
 					since "4.7.21"
-
 				}
 				column {
 					name "name"
@@ -39,7 +38,6 @@ doc {
 					type "String"
 					optional true
 					since "4.7.21"
-
 				}
 				column {
 					name "description"
@@ -49,7 +47,6 @@ doc {
 					type "String"
 					optional true
 					since "4.7.21"
-
 				}
 				column {
 					name "hookScript"
@@ -59,7 +56,6 @@ doc {
 					type "String"
 					optional true
 					since "4.7.21"
-
 				}
 				column {
 					name "systemTags"
@@ -69,7 +65,6 @@ doc {
 					type "List"
 					optional true
 					since "4.7.21"
-
 				}
 				column {
 					name "userTags"
@@ -79,7 +74,6 @@ doc {
 					type "List"
 					optional true
 					since "4.7.21"
-
 				}
 			}
         }

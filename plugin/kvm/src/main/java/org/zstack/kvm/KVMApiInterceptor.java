@@ -77,7 +77,7 @@ public class KVMApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
     private static void checkSystemHookOrNot(XmlHookMessage msg) {
         XmlHookVO vo = Q.New(XmlHookVO.class).eq(XmlHookVO_.uuid, msg.getXmlHookUuid()).find();
         if (XmlHookType.System.equals(vo.getType())) {
-            throw new ApiMessageInterceptionException(operr("System-type xml hooks are not allowed to be modified"));
+            throw new ApiMessageInterceptionException(operr("System-type xml hooks are not allowed to be operated"));
         }
     }
 

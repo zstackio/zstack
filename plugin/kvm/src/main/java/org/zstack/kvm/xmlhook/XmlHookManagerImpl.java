@@ -1,6 +1,8 @@
 package org.zstack.kvm.xmlhook;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -8,22 +10,30 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.directory.DirectoryMessage;
+import org.zstack.directory.ResourceDirectoryRefVO;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.vm.VmInstanceBeforeStartExtensionPoint;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.kvm.KVMSystemTags;
+import org.zstack.tag.PatternedSystemTag;
+import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.List;
 
 import static org.zstack.core.Platform.err;
 
-public class XmlHookManagerImpl extends AbstractService implements XmlHookManager, Component, PrepareDbInitialValueExtensionPoint {
+public class XmlHookManagerImpl extends AbstractService implements XmlHookManager, Component,
+        PrepareDbInitialValueExtensionPoint, VmInstanceBeforeStartExtensionPoint {
     private static final CLogger logger = Utils.getLogger(XmlHookManagerImpl.class);
 
     @Autowired
@@ -101,7 +111,7 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
         new SQLBatch() {
             @Override
             protected void scripts() {
-                String name = String.format("%s in libvirt %s", XmlHookConstant.SET_GPU_MEMORY, XmlHookConstant.LIBVIT_VERSION_4_9_0);
+                String name = String.format("%s (for libvirt %s)", XmlHookConstant.SET_GPU_MEMORY, XmlHookConstant.LIBVIT_VERSION_4_9_0);
                 if (!q(XmlHookVO.class)
                         .eq(XmlHookVO_.name, name)
                         .eq(XmlHookVO_.type, XmlHookType.System).isExists()) {
@@ -117,7 +127,7 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
                     logger.debug(String.format("Created initial system xml hook[name:%s]", name));
                 }
 
-                name = String.format("%s in libvirt %s", XmlHookConstant.SET_GPU_MEMORY, XmlHookConstant.LIBVIT_VERSION_6_0_0);
+                name = String.format("%s (for libvirt %s)", XmlHookConstant.SET_GPU_MEMORY, XmlHookConstant.LIBVIT_VERSION_6_0_0);
                 if (!q(XmlHookVO.class)
                         .eq(XmlHookVO_.name, name)
                         .eq(XmlHookVO_.type, XmlHookType.System).isExists()) {
@@ -133,7 +143,7 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
                     logger.debug(String.format("Created initial system xml hook[name:%s]", name));
                 }
 
-                name = String.format("%s in libvirt %s", XmlHookConstant.SET_GPU_MEMORY, XmlHookConstant.LIBVIT_VERSION_8_0_0);
+                name = String.format("%s (for libvirt %s)", XmlHookConstant.SET_GPU_MEMORY, XmlHookConstant.LIBVIT_VERSION_8_0_0);
                 if (!q(XmlHookVO.class)
                         .eq(XmlHookVO_.name, name)
                         .eq(XmlHookVO_.type, XmlHookType.System).isExists()) {
@@ -150,5 +160,23 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
                 }
             }
         }.execute();
+    }
+
+    @Override
+    public ErrorCode handleSystemTag(String vmUuid, List<String> tags) {
+        PatternedSystemTag tag = VmSystemTags.XML_HOOK;
+        String token = VmSystemTags.XML_HOOK_TOKEN;
+
+        String xmlhookUuid = SystemTagUtils.findTagValue(tags, tag, token);
+        if (StringUtils.isEmpty(xmlhookUuid)) {
+            return null;
+        }
+        XmlHookVmInstanceRefVO refVO = new XmlHookVmInstanceRefVO();
+        refVO.setXmlHookUuid(xmlhookUuid);
+        refVO.setVmInstanceUuid(vmUuid);
+        refVO.setLastOpDate(new Timestamp(new Date().getTime()));
+        refVO.setCreateDate(new Timestamp(new Date().getTime()));
+        dbf.persist(refVO);
+        return null;
     }
 }
