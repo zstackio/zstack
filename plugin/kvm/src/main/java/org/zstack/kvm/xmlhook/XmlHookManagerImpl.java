@@ -5,11 +5,13 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.directory.DirectoryMessage;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.kvm.KVMSystemTags;
@@ -21,7 +23,7 @@ import java.util.Date;
 
 import static org.zstack.core.Platform.err;
 
-public class XmlHookManagerImpl extends AbstractService implements XmlHookManager, Component {
+public class XmlHookManagerImpl extends AbstractService implements XmlHookManager, Component, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(XmlHookManagerImpl.class);
 
     @Autowired
@@ -92,5 +94,61 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
     @Override
     public String getId() {
         return bus.makeLocalServiceId(SERVICE_ID);
+    }
+
+    @Override
+    public void prepareDbInitialValue() {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                String name = String.format("%s in libvirt %s", XmlHookConstant.SET_GPU_MEMORY, XmlHookConstant.LIBVIT_VERSION_4_9_0);
+                if (!q(XmlHookVO.class)
+                        .eq(XmlHookVO_.name, name)
+                        .eq(XmlHookVO_.type, XmlHookType.System).isExists()) {
+                    XmlHookVO vo = new XmlHookVO();
+                    vo.setUuid(Platform.getUuid());
+                    vo.setName(name);
+                    vo.setType(XmlHookType.System);
+                    vo.setHookScript(XmlHookConstant.SET_GPU_MEMORY_HOOK_IN_LIBVIRT_4_9_0);
+                    vo.setLibvirtVersion(XmlHookConstant.LIBVIT_VERSION_4_9_0);
+                    persist(vo);
+                    flush();
+
+                    logger.debug(String.format("Created initial system xml hook[name:%s]", name));
+                }
+
+                name = String.format("%s in libvirt %s", XmlHookConstant.SET_GPU_MEMORY, XmlHookConstant.LIBVIT_VERSION_6_0_0);
+                if (!q(XmlHookVO.class)
+                        .eq(XmlHookVO_.name, name)
+                        .eq(XmlHookVO_.type, XmlHookType.System).isExists()) {
+                    XmlHookVO vo = new XmlHookVO();
+                    vo.setUuid(Platform.getUuid());
+                    vo.setName(name);
+                    vo.setType(XmlHookType.System);
+                    vo.setHookScript(XmlHookConstant.SET_GPU_MEMORY_HOOK_IN_LIBVIRT_6_0_0);
+                    vo.setLibvirtVersion(XmlHookConstant.LIBVIT_VERSION_6_0_0);
+                    persist(vo);
+                    flush();
+
+                    logger.debug(String.format("Created initial system xml hook[name:%s]", name));
+                }
+
+                name = String.format("%s in libvirt %s", XmlHookConstant.SET_GPU_MEMORY, XmlHookConstant.LIBVIT_VERSION_8_0_0);
+                if (!q(XmlHookVO.class)
+                        .eq(XmlHookVO_.name, name)
+                        .eq(XmlHookVO_.type, XmlHookType.System).isExists()) {
+                    XmlHookVO vo = new XmlHookVO();
+                    vo.setUuid(Platform.getUuid());
+                    vo.setName(name);
+                    vo.setType(XmlHookType.System);
+                    vo.setHookScript(XmlHookConstant.SET_GPU_MEMORY_HOOK_IN_LIBVIRT_8_0_0);
+                    vo.setLibvirtVersion(XmlHookConstant.LIBVIT_VERSION_8_0_0);
+                    persist(vo);
+                    flush();
+
+                    logger.debug(String.format("Created initial system xml hook[name:%s]", name));
+                }
+            }
+        }.execute();
     }
 }
