@@ -12,12 +12,4 @@ public class NvmeLunInventory extends org.zstack.sdk.LunInventory {
         return this.nvmeTargetUuid;
     }
 
-    public java.util.List nvmeLunHostRefs;
-    public void setNvmeLunHostRefs(java.util.List nvmeLunHostRefs) {
-        this.nvmeLunHostRefs = nvmeLunHostRefs;
-    }
-    public java.util.List getNvmeLunHostRefs() {
-        return this.nvmeLunHostRefs;
-    }
-
 }
