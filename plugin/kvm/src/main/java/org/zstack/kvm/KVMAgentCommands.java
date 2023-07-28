@@ -290,15 +290,6 @@ public class KVMAgentCommands {
     public static class ConnectResponse extends AgentResponse {
         private String libvirtVersion;
         private String qemuVersion;
-        private boolean iptablesSucc;
-
-        public boolean isIptablesSucc() {
-            return iptablesSucc;
-        }
-
-        public void setIptablesSucc(boolean iptablesSucc) {
-            this.iptablesSucc = iptablesSucc;
-        }
 
         public String getLibvirtVersion() {
             return libvirtVersion;
