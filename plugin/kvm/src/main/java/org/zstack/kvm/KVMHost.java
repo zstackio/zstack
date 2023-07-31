@@ -4828,6 +4828,9 @@ public class KVMHost extends HostBase implements Host {
                             runner.setForceRun(true);
                         }
 
+                        String enableKsm = rcf.getResourceConfigValue(KVMGlobalConfig.HOST_KSM, self.getUuid(), String.class);
+                        deployArguments.setIsEnableKsm(enableKsm);
+
                         if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
                             deployArguments.setBridgeDisableIptables("true");
                         }
