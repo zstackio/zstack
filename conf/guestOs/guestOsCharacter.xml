@@ -130,6 +130,11 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
+        <osRelease>openEuler 22.03</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
         <osRelease>Oracle Linux 7</osRelease>
     </osInfo>
     <osInfo>
