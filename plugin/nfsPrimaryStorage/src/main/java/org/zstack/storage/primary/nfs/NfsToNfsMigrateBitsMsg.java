@@ -13,6 +13,16 @@ public class NfsToNfsMigrateBitsMsg extends NeedReplyMessage implements PrimaryS
     private String srcPrimaryStorageUuid;
     private String primaryStorageUuid;
     private String independentPath;
+    private String volumeInstallPath;
+
+    public String getVolumeInstallPath() {
+        return volumeInstallPath;
+    }
+
+    public void setVolumeInstallPath(String volumeInstallPath) {
+        this.volumeInstallPath = volumeInstallPath;
+    }
+
     public String getHostUuid() {
         return hostUuid;
     }

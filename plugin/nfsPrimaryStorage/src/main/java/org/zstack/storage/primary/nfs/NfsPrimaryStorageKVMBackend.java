@@ -893,12 +893,14 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         }
 
         NfsToNfsMigrateBitsCmd cmd = new NfsToNfsMigrateBitsCmd();
-        cmd.setUuid(msg.getSrcPrimaryStorageUuid());
+        cmd.setUuid(dstPsInv.getUuid());
+        cmd.srcPrimaryStorageUuid = msg.getSrcPrimaryStorageUuid();
         cmd.srcFolderPath = msg.getSrcFolderPath();
         cmd.dstFolderPath = msg.getDstFolderPath();
         cmd.independentPath = msg.getIndependentPath();
         cmd.filtPaths = trash.findTrashInstallPath(msg.getSrcFolderPath(), msg.getSrcPrimaryStorageUuid());
         cmd.isMounted = mounted;
+        cmd.volumeInstallPath = msg.getVolumeInstallPath();
 
         if (!mounted) {
             cmd.options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(dstPsInv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
@@ -914,6 +916,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             public void success(KvmResponseWrapper w) {
                 logger.info("successfully copyed volume folder to nfs ps " + dstPsInv.getUuid());
                 NfsToNfsMigrateBitsReply reply = new NfsToNfsMigrateBitsReply();
+                reply.setDstFilesActualSize(w.getResponse(NfsToNfsMigrateBitsRsp.class).setDstFilesActualSize);
                 completion.success(reply);
             }
             @Override
