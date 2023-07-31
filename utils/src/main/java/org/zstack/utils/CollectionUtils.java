@@ -152,4 +152,13 @@ public class CollectionUtils {
     public static <T> List<T> filter(List<T> list, Predicate<? super T> predicate) {
         return list.stream().filter(predicate).collect(Collectors.toList());
     }
+
+    /**
+     * null  -> []
+     * []    -> []
+     * ["A"] -> ["A"]
+     */
+    public static <T> List<T> emptyListIfNull(List<T> list) {
+        return list == null ? new ArrayList<>() : list;
+    }
 }

@@ -911,12 +911,13 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
-    public void preCreateVolume(APICreateDataVolumeMsg msg) {
-        String diskOffering = msg.getDiskOfferingUuid();
+    public void preCreateVolume(PreCreateVolumeContext context) {
+        String diskOffering = context.diskOfferingUuid;
         if (diskOffering == null) {
             return;
         }
 
+        APICreateDataVolumeMsg msg = (APICreateDataVolumeMsg) context.message;
         if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
 
@@ -928,6 +929,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 return;
             }
             msg.setPrimaryStorageUuid(config.getAllocate().getPrimaryStorage().getUuid());
+            context.primaryStorageUuid = msg.getPrimaryStorageUuid();
             if (!(config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig)) {
                 return;
             }
