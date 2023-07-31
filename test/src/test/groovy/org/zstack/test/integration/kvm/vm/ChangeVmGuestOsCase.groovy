@@ -151,12 +151,12 @@ class ChangeVmGuestOsCase extends SubCase{
             uuid = vm.uuid
         }
         
-        assert !cmd.getAcpi()
+        assert cmd.getAcpi()
 
         updateVmInstance {
             uuid = vm.uuid
             platform = ImagePlatform.Linux.toString()
-            guestOsType = "Kylin 10"
+            guestOsType = "Kylin 4"
         }
 
         env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
@@ -168,7 +168,7 @@ class ChangeVmGuestOsCase extends SubCase{
             uuid = vm.uuid
         }
 
-        assert cmd.getAcpi()
+        assert !cmd.getAcpi()
     }
 
     void changeGuestOsTypeToDisableX2apic() {
