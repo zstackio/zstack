@@ -191,5 +191,7 @@
         <class>org.zstack.directory.ResourceDirectoryRefVO</class>
         <class>org.zstack.header.agent.versioncontrol.AgentVersionVO</class>
         <class>org.zstack.header.host.HostIpmiVO</class>
+        <class>org.zstack.header.sshkeypair.SshKeyPairVO</class>
+        <class>org.zstack.header.sshkeypair.SshKeyPairRefVO</class>
     </persistence-unit>
 </persistence>

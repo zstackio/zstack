@@ -15,13 +15,21 @@ public class UserdataBuilder {
     @Autowired
     private DatabaseFacade dbf;
 
-    private String sshkeyRootPassword(String sshKey, String rootPassword) {
+    @Autowired
+    protected VmInstanceExtensionPointEmitter extEmitter;
+
+    private String sshkeyRootPassword(List<String> sshKeys, String rootPassword) {
         StringBuilder sb = new StringBuilder();
-        if (sshKey != null) {
+        if (!sshKeys.isEmpty()) {
             sb.append("\nssh_authorized_keys:");
-            sb.append(String.format("\n  - %s", sshKey));
+            sshKeys.forEach(sshKey -> {
+                if (sshKey != null) {
+                    sb.append(String.format("\n  - %s", sshKey));
+                }
+            });
             sb.append("\ndisable_root: false");
         }
+
         if (rootPassword != null) {
             sb.append("\nchpasswd:");
             sb.append("\n  list: |");
@@ -41,10 +49,15 @@ public class UserdataBuilder {
             userdataList.add(userdata);
         }
 
+        List<String> sshKeys = extEmitter.fetchAssociatedSshKeyPairs(vmUuid);
+
         String sshKey = VmSystemTags.SSHKEY.getTokenByResourceUuid(vmUuid, VmSystemTags.SSHKEY_TOKEN);
+        if (sshKey != null) {
+            sshKeys.add(sshKey);
+        }
         String rootPassword = VmSystemTags.ROOT_PASSWORD.getTokenByResourceUuid(vmUuid, VmSystemTags.ROOT_PASSWORD_TOKEN);
-        if (sshKey != null || rootPassword != null) {
-            userdataList.add(String.format("#cloud-config%s", sshkeyRootPassword(sshKey, rootPassword)));
+        if (!sshKeys.isEmpty() || rootPassword != null) {
+            userdataList.add(String.format("#cloud-config%s", sshkeyRootPassword(sshKeys, rootPassword)));
         }
 
         return userdataList;
@@ -55,7 +68,6 @@ public class UserdataBuilder {
         for (String vmUuid : vmUuids) {
             ret.put(vmUuid, buildByVmUuid(vmUuid));
         }
-
         return ret;
     }
 }

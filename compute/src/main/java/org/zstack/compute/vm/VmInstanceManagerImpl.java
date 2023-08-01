@@ -1069,6 +1069,17 @@ public class VmInstanceManagerImpl extends AbstractService implements
         return result;
     }
 
+    private List<ErrorCode> extEmitterHandleSshKeyPair(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, VmInstanceVO finalVo) {
+        List<ErrorCode> result = Collections.emptyList();
+        if (msg == null) {
+            result.add(operr("CreateVmInstanceMsg cannot be null"));
+            return result;
+        } else if (msg.getSshKeyPairUuids() != null && !msg.getSshKeyPairUuids().isEmpty()) {
+            return extEmitter.associateSshKeyPair(finalVo.getUuid(), msg.getSshKeyPairUuids());
+        }
+        return result;
+    }
+
     protected void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<VmInstanceInventory> completion) {
         pluginRgty.getExtensionList(VmInstanceCreateExtensionPoint.class).forEach(extensionPoint -> {
             extensionPoint.preCreateVmInstance(msg);
@@ -1137,6 +1148,31 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         if (!errorCodes.isEmpty()) {
                             trigger.fail(operr("handle system tag fail when creating vm because [%s]",
                                     StringUtils.join(errorCodes.stream().map(ErrorCode::getDescription).collect(Collectors.toList()),
+                                            ", ")));
+                            return;
+                        }
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, finalVo.getUuid()).isExists()) {
+                            dbf.removeByPrimaryKey(finalVo.getUuid(), VmInstanceVO.class);
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new Flow() {
+                    List<ErrorCode> errorCodes = Collections.emptyList();
+                    String __name__ = String.format("instantiate-ssh-key-pair-for-vm-%s", finalVo.getUuid());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        errorCodes = extEmitterHandleSshKeyPair(msg, cmsg, finalVo);
+                        if (!errorCodes.isEmpty()) {
+                            trigger.fail(operr("handle sshkeypair fail when creating vm because [%s]",
+                                    StringUtils.join(errorCodes.stream().map(ErrorCode::getDetails).collect(Collectors.toList()),
                                             ", ")));
                             return;
                         }

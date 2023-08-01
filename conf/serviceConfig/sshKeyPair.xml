@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>sshKeyPair</id>
+    <interceptor>SshKeyPairAPIInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.sshkeypair.APICreateSshKeyPairMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.sshkeypair.APIGenerateSshKeyPairMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.sshkeypair.APIUpdateSshKeyPairMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.sshkeypair.APIDeleteSshKeyPairMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.sshkeypair.APIAttachSshKeyPairToVmInstanceMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.sshkeypair.APIDetachSshKeyPairFromVmInstanceMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.sshkeypair.APIQuerySshKeyPairMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>
