@@ -408,6 +408,8 @@ public class Ssh {
             if (privateKey == null) {
                 session.setConfig("PreferredAuthentications", "password");
             }
+            session.setConfig("server_host_key", session.getConfig("server_host_key") + ",ssh-rsa,ssh-dss");
+            session.setConfig("PubkeyAcceptedKeyTypes", session.getConfig("PubkeyAcceptedKeyTypes") + ",ssh-rsa,ssh-dss");
             session.setTimeout(getTimeoutInMilli(socketTimeout)/2);
             session.connect(getTimeoutInMilli(timeout));
         } catch (JSchException ex) {
