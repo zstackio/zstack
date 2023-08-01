@@ -934,11 +934,11 @@ public class L3BasicNetwork implements L3Network {
         String l2NetworkType = l2NetworkVO.getType();
         switch (l2NetworkType) {
             case L2NetworkConstant.VXLAN_NETWORK_TYPE:
-            case L2NetworkConstant.HARDWARE_VXLAN_NETWORK_TYPE:
                 ext.syncManagementServiceTypeExtensionPoint(hostUuids, "vxlan" + l2NetworkVO.getVirtualNetworkId(), null, true);
                 break;
 
             case L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE:
+            case L2NetworkConstant.HARDWARE_VXLAN_NETWORK_TYPE:
             case L2NetworkConstant.L2_VLAN_NETWORK_TYPE:
                 ext.syncManagementServiceTypeExtensionPoint(hostUuids, l2NetworkVO.getPhysicalInterface(), l2NetworkVO.getVirtualNetworkId(), true);
                 break;
