@@ -1,0 +1,1 @@
+ALTER TABLE `zstack`.`FlkSecSecretResourcePoolVO` ADD COLUMN `ukeyType` VARCHAR(32)  DEFAULT NULL;

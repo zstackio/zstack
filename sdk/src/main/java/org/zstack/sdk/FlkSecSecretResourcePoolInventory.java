@@ -36,4 +36,12 @@ public class FlkSecSecretResourcePoolInventory extends org.zstack.sdk.SecretReso
         return this.hmacToken;
     }
 
+    public java.lang.String ukeyType;
+    public void setUkeyType(java.lang.String ukeyType) {
+        this.ukeyType = ukeyType;
+    }
+    public java.lang.String getUkeyType() {
+        return this.ukeyType;
+    }
+
 }
