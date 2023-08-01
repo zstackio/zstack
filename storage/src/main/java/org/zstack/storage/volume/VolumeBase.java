@@ -3250,6 +3250,14 @@ public class VolumeBase implements Volume {
 
     @VmAttachVolumeValidatorMethod
     static void vmAttachVolumeValidator(VmInstanceInventory vmInv, String volumeUuid) {
+        boolean volumeIsDisk = Q.New(VolumeVO.class)
+                .eq(VolumeVO_.uuid, volumeUuid)
+                .eq(VolumeVO_.format, VolumeConstant.VOLUME_FORMAT_DISK)
+                .isExists();
+        if (volumeIsDisk) {
+            return;
+        }
+
         String vmUuid = vmInv.getUuid();
         String hypervisorType = vmInv.getHypervisorType();
 
@@ -3260,6 +3268,7 @@ public class VolumeBase implements Volume {
         long vmDataVolumeUsage = Q.New(VolumeVO.class)
                 .eq(VolumeVO_.type, VolumeType.Data)
                 .eq(VolumeVO_.vmInstanceUuid, vmUuid)
+                .notEq(VolumeVO_.format, VolumeConstant.VOLUME_FORMAT_DISK)
                 .count();
         if (vmDataVolumeUsage + 1 > maxDataVolumeNum) {
             throw new OperationFailureException(operr("hypervisor[%s] only allows max %s data volumes to be attached to a single vm; there have been %s data volumes attached to vm[uuid:%s]",

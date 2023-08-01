@@ -22,6 +22,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -66,6 +67,7 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
         msg.setVmOperation(spec.getCurrentVmOperation().toString());
         msg.setRequiredPrimaryStorageUuids(spec.getVmInventory().getAllVolumes().stream()
                 .map(VolumeInventory::getPrimaryStorageUuid)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
         msg.setL3NetworkUuids(CollectionUtils.transformToList(
                 VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()), new Function<String, L3NetworkInventory>() {
