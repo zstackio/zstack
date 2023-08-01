@@ -30,6 +30,7 @@
         <module>acl</module>
         <module>sdnController</module>
         <module>directory</module>
+        <module>sshKeyPair</module>
     </modules>
     <dependencies>
         <dependency>

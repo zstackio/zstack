@@ -285,6 +285,8 @@ public class SourceClassMap {
 			put("org.zstack.header.securitymachine.SecurityMachineInventory", "org.zstack.sdk.SecurityMachineInventory");
 			put("org.zstack.header.simulator.SimulatorHostInventory", "org.zstack.sdk.SimulatorHostInventory");
 			put("org.zstack.header.sriov.VmVfNicInventory", "org.zstack.sdk.VmVfNicInventory");
+			put("org.zstack.header.sshkeypair.SshKeyPairInventory", "org.zstack.sdk.SshKeyPairInventory");
+			put("org.zstack.header.sshkeypair.SshPrivateKeyPairInventory", "org.zstack.sdk.SshPrivateKeyPairInventory");
 			put("org.zstack.header.storage.backup.BackupMode", "org.zstack.sdk.BackupMode");
 			put("org.zstack.header.storage.backup.BackupStorageInventory", "org.zstack.sdk.BackupStorageInventory");
 			put("org.zstack.header.storage.backup.SyncBackupResult", "org.zstack.sdk.SyncBackupResult");
@@ -1140,6 +1142,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SnapshotSpending", "org.zstack.billing.spendingcalculator.snapshot.SnapshotSpending");
 			put("org.zstack.sdk.Spending", "org.zstack.billing.Spending");
 			put("org.zstack.sdk.SpendingDetails", "org.zstack.billing.SpendingDetails");
+			put("org.zstack.sdk.SshKeyPairInventory", "org.zstack.header.sshkeypair.SshKeyPairInventory");
+			put("org.zstack.sdk.SshPrivateKeyPairInventory", "org.zstack.header.sshkeypair.SshPrivateKeyPairInventory");
 			put("org.zstack.sdk.StackParameters", "org.zstack.header.cloudformation.StackParameters");
 			put("org.zstack.sdk.StackTemplateInventory", "org.zstack.header.cloudformation.StackTemplateInventory");
 			put("org.zstack.sdk.SupportedResourceStruct", "org.zstack.header.cloudformation.SupportedResourceStruct");

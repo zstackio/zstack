@@ -185,6 +185,9 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false)
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
 
+    @APIParam(required = false)
+    private List<String> sshKeyPairUuids;
+
     public String getStrategy() {
         return strategy;
     }
@@ -353,6 +356,14 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
         this.dataVolumeSystemTagsOnIndex = dataVolumeSystemTagsOnIndex;
     }
 
+    public List<String> getSshKeyPairUuids() {
+        return sshKeyPairUuids;
+    }
+
+    public void setSshKeyPairUuids(List<String> sshKeyPairUuids) {
+        this.sshKeyPairUuids = sshKeyPairUuids;
+    }
+
     public static APICreateVmInstanceMsg __example__() {
         APICreateVmInstanceMsg msg = new APICreateVmInstanceMsg();
         msg.setName("vm1");
@@ -371,4 +382,5 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     public Result audit(APIMessage msg, APIEvent rsp) {
         return new Result(rsp.isSuccess() ? ((APICreateVmInstanceEvent)rsp).getInventory().getUuid() : "", VmInstanceVO.class);
     }
+
 }

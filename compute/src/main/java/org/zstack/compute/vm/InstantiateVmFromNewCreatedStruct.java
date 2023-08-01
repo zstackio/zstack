@@ -25,6 +25,7 @@ public class InstantiateVmFromNewCreatedStruct {
     private List<String> avoidHostUuids;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private List<String> disableL3Networks;
+    private List<String> sshKeyPairUuids;
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -187,5 +188,13 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setDisableL3Networks(List<String> disableL3Networks) {
         this.disableL3Networks = disableL3Networks;
+    }
+
+    public List<String> getSshKeyPairUuids() {
+        return sshKeyPairUuids;
+    }
+
+    public void setSshKeyPairUuids(List<String> sshKeyPairUuids) {
+        this.sshKeyPairUuids = sshKeyPairUuids;
     }
 }
