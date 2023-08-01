@@ -64,6 +64,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.volume.VolumeConstant.VOLUME_FORMAT_DISK;
 import static org.zstack.utils.CollectionDSL.*;
 
 /**
@@ -635,6 +636,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void preAttachVolume(VmInstanceInventory vm, final VolumeInventory volume) {
+        if (VOLUME_FORMAT_DISK.equals(volume.getFormat())) {
+            return;
+        }
+
         SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, list(vm.getRootVolumeUuid(), volume.getUuid()));
         q.groupBy(LocalStorageResourceRefVO_.hostUuid);
@@ -1318,8 +1323,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    public void preCreateVolume(APICreateDataVolumeMsg msg) {
-        String diskOffering = msg.getDiskOfferingUuid();
+    public void preCreateVolume(PreCreateVolumeContext context) {
+        String diskOffering = context.diskOfferingUuid;
         if (diskOffering == null || !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             return;
         }
@@ -1329,7 +1334,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             return;
         }
 
-        String psUuid = msg.getPrimaryStorageUuid();
+        String psUuid = context.primaryStorageUuid;
         String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
                 .eq(PrimaryStorageVO_.uuid,psUuid)
                 .findValue();
@@ -1344,16 +1349,17 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 .limit(100)
                 .paginateCollectionUntil(total, (LocalStorageHostRefVO ref) -> PrimaryStorageCapacityChecker.New(psUuid,
                                 ref.getAvailableCapacity(), ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())
-                                .checkRequiredSize(msg.getDiskSize()), 10);
+                                .checkRequiredSize(context.diskSize), 10);
 
         if (filterRefs.isEmpty()) {
             throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
                     "the local primary storage[uuid:%s] has no hosts with enough disk capacity[%s bytes] required by the disk offering[uuid:%s]",
-                    psUuid, msg.getDiskSize(), diskOffering
+                    psUuid, context.diskSize, diskOffering
             ));
         }
 
-        msg.addSystemTag(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.instantiateTag(
+        final APICreateDataVolumeMsg message = (APICreateDataVolumeMsg) context.message;
+        message.addSystemTag(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.instantiateTag(
                 Collections.singletonMap(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN,
                         filterRefs.get(new Random().nextInt(filterRefs.size())).getHostUuid())
         ));

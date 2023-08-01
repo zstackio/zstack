@@ -1,6 +1,5 @@
 package org.zstack.storage.volume;
 
-import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -948,9 +947,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     private void handle(APICreateDataVolumeMsg msg) {
         APICreateDataVolumeEvent evt = new APICreateDataVolumeEvent(msg.getId());
-        pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class).forEach(extensionPoint -> {
-            extensionPoint.preCreateVolume(msg);
-        });
+        pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class)
+                .forEach(extensionPoint ->
+                        extensionPoint.preCreateVolume(CreateDataVolumeExtensionPoint.PreCreateVolumeContext.valueOf(msg)));
 
         VolumeVO vo = new VolumeVO();
         if (msg.getResourceUuid() != null) {
