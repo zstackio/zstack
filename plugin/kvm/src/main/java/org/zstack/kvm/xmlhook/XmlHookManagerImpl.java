@@ -119,7 +119,7 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
                     vo.setUuid(Platform.getUuid());
                     vo.setName(name);
                     vo.setType(XmlHookType.System);
-                    vo.setHookScript(XmlHookConstant.SET_GPU_MEMORY_HOOK_IN_LIBVIRT_4_9_0);
+                    vo.setHookScript(XmlHookConstant.SET_GPU_MEMORY_HOOK);
                     vo.setLibvirtVersion(XmlHookConstant.LIBVIT_VERSION_4_9_0);
                     persist(vo);
                     flush();
@@ -135,7 +135,7 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
                     vo.setUuid(Platform.getUuid());
                     vo.setName(name);
                     vo.setType(XmlHookType.System);
-                    vo.setHookScript(XmlHookConstant.SET_GPU_MEMORY_HOOK_IN_LIBVIRT_6_0_0);
+                    vo.setHookScript(XmlHookConstant.SET_GPU_MEMORY_HOOK);
                     vo.setLibvirtVersion(XmlHookConstant.LIBVIT_VERSION_6_0_0);
                     persist(vo);
                     flush();
@@ -151,7 +151,7 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
                     vo.setUuid(Platform.getUuid());
                     vo.setName(name);
                     vo.setType(XmlHookType.System);
-                    vo.setHookScript(XmlHookConstant.SET_GPU_MEMORY_HOOK_IN_LIBVIRT_8_0_0);
+                    vo.setHookScript(XmlHookConstant.SET_GPU_MEMORY_HOOK);
                     vo.setLibvirtVersion(XmlHookConstant.LIBVIT_VERSION_8_0_0);
                     persist(vo);
                     flush();

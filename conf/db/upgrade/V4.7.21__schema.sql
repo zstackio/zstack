@@ -62,8 +62,7 @@ BEGIN
         CLOSE cur;
 
         SELECT CURTIME();
-    END $$;
+END $$
 DELIMITER ;
-
 call migrateJsonLabelToXmlHookVO();
 DROP PROCEDURE IF EXISTS migrateJsonLabelToXmlHookVO;
