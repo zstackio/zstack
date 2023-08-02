@@ -50,6 +50,12 @@
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
+        <name>RedHat</name>
+        <version>9</version>
+        <osRelease>RHEL 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
         <name>Ubuntu</name>
         <version>16</version>
         <osRelease>Ubuntu 16</osRelease>
@@ -65,6 +71,12 @@
         <name>Ubuntu</name>
         <version>20</version>
         <osRelease>Ubuntu 20</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Linux</platform>
+        <name>Ubuntu</name>
+        <version>22</version>
+        <osRelease>Ubuntu 22</osRelease>
     </osInfo>
     <osInfo>
         <platform>Linux</platform>
