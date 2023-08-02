@@ -34,6 +34,7 @@ import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
@@ -88,6 +89,7 @@ import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.longjob.LongJobUtils.buildErrIfCanceled;
 import static org.zstack.longjob.LongJobUtils.noncancelableErr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.*;
 
 public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
         ReportQuotaExtensionPoint, ResourceOwnerPreChangeExtensionPoint, HostAllocatorFilterExtensionPoint {
@@ -2029,7 +2031,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
     @Override
     @Transactional(readOnly = true)
-    public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
+    public ErrorableValue<List<HostVO>> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
         // TODO: move to compute module.
 
         String architecture = spec.getArchitecture();
@@ -2042,15 +2044,14 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }
 
         if (architecture == null) {
-            return candidates;
+            return ErrorableValue.of(candidates);
         }
 
         String finalArchitecture = architecture;
-        return candidates.stream().filter(it -> it.getArchitecture().equals(finalArchitecture)).collect(Collectors.toList());
-    }
-
-    @Override
-    public String filterErrorReason() {
-        return null;
+        final List<HostVO> results = filter(candidates, it -> it.getArchitecture().equals(finalArchitecture));
+        if (results.isEmpty()) {
+            return ErrorableValue.ofErrorCode(operr("architecture of host must be %s", finalArchitecture));
+        }
+        return ErrorableValue.of(results);
     }
 }

@@ -3,6 +3,7 @@ package org.zstack.kvm;
 import org.zstack.core.Platform;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.utils.Utils;
@@ -166,13 +167,13 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
     }
 
     @Override
-    public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
+    public ErrorableValue<List<HostVO>> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
         if (spec.getHypervisorType() == null || !spec.getHypervisorType().equals(KVMConstant.KVM_HYPERVISOR_TYPE)) {
-            return candidates;
+            return ErrorableValue.of(candidates);
         }
 
         if (!VmInstanceConstant.VmOperation.Migrate.toString().equals(spec.getVmOperation())) {
-            return candidates;
+            return ErrorableValue.of(candidates);
         }
 
         // note: for control plane use KVMPropertyName to define kvm host related property related to
@@ -193,11 +194,9 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
             }
         }
 
-        return result;
-    }
-
-    @Override
-    public String filterErrorReason() {
-        return Platform.i18n("cannot adapt version for the bellow rpm: libvirt / qemu / cpumodel");
+        if (result.isEmpty()) {
+            return ErrorableValue.ofErrorCode(Platform.operr("cannot adapt version for the bellow rpm: libvirt / qemu / cpumodel"));
+        }
+        return ErrorableValue.of(result);
     }
 }
