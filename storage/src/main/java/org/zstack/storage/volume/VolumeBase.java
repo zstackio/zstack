@@ -516,6 +516,7 @@ public class VolumeBase implements Volume {
                             ext.instantiateDataVolumeOnCreation(msg, getSelfInventory(), new ReturnValueCompletion<VolumeInventory>(trigger) {
                                 @Override
                                 public void success(VolumeInventory ret) {
+                                    refreshVO();
                                     success = true;
                                     installPath = ret.getInstallPath();
                                     format = ret.getFormat();
@@ -608,6 +609,7 @@ public class VolumeBase implements Volume {
                                     return;
                                 }
 
+                                refreshVO();
                                 success = true;
                                 InstantiateVolumeOnPrimaryStorageReply ir = reply.castReply();
                                 installPath = ir.getVolume().getInstallPath();
