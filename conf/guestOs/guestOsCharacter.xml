@@ -65,6 +65,11 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
+        <osRelease>RHEL 9</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
         <osRelease>Ubuntu 16</osRelease>
     </osInfo>
     <osInfo>
@@ -76,6 +81,11 @@
         <architecture>x86_64</architecture>
         <platform>Linux</platform>
         <osRelease>Ubuntu 20</osRelease>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Ubuntu 22</osRelease>
     </osInfo>
     <osInfo>
         <architecture>x86_64</architecture>
