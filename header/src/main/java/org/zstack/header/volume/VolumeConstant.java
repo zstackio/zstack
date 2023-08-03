@@ -14,6 +14,9 @@ public interface VolumeConstant {
      * disk is not a file. it is used for scene of VM Direct Disk
      */
     String VOLUME_FORMAT_DISK = "disk";
+    /**
+     * lun volume is exclude.
+     */
     int DEFAULT_MAX_DATA_VOLUME_NUMBER = 24;
 
     enum Capability {

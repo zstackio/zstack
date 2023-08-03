@@ -52,6 +52,10 @@ public class CollectionUtils {
         return ret;
     }
 
+    public static <FROM, TO> List<TO> transform(Collection<FROM> from, java.util.function.Function<FROM, TO> func) {
+        return from.stream().map(func).collect(Collectors.toList());
+    }
+
     public static <K, V> Set<K> transformToSet(Collection<V> from, Function<K, V> func) {
         Set<K> ret = new HashSet<K>();
         for (V v : from) {

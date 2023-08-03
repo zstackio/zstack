@@ -1736,6 +1736,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     @VmAttachVolumeValidatorMethod
     static void vmAttachVolumeValidator(VmInstanceInventory vmInv, String volumeUuid) {
+        // state is null when volume is made from lun
         PrimaryStorageState state = SQL.New("select pri.state from PrimaryStorageVO pri " +
                 "where pri.uuid = (select vol.primaryStorageUuid from VolumeVO vol where vol.uuid = :volUuid)", PrimaryStorageState.class)
                 .param("volUuid", volumeUuid)

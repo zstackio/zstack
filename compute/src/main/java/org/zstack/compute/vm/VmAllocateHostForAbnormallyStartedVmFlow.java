@@ -24,6 +24,7 @@ import org.zstack.utils.function.Function;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -49,6 +50,7 @@ public class VmAllocateHostForAbnormallyStartedVmFlow implements Flow {
         }
         msg.setRequiredPrimaryStorageUuids(spec.getVmInventory().getAllVolumes().stream()
                 .map(VolumeInventory::getPrimaryStorageUuid)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
         msg.setVmOperation(spec.getCurrentVmOperation().toString());
         msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);

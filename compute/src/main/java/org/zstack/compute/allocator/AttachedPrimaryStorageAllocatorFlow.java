@@ -12,14 +12,15 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Set;
+
+import static org.zstack.utils.CollectionUtils.*;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AttachedPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
     private static final CLogger logger = Utils.getLogger(AttachedPrimaryStorageAllocatorFlow.class);
@@ -66,13 +67,8 @@ public class AttachedPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFl
     @Override
     public void allocate() {
         VmInstanceInventory vm = spec.getVmInstance();
-        Set<String> psuuids = CollectionUtils.transformToSet(vm.getAllVolumes(), new Function<String, VolumeInventory>() {
-            @Override
-            public String call(VolumeInventory arg) {
-                return arg.getPrimaryStorageUuid();
-            }
-        });
-
+        Set<String> psuuids = transformToSet(vm.getAllVolumes(), VolumeInventory::getPrimaryStorageUuid);
+        psuuids.remove(null);
         candidates = allocate(psuuids, vm);
 
         if (candidates.isEmpty()) {

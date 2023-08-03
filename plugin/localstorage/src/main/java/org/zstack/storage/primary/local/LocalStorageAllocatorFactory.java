@@ -15,6 +15,8 @@ import org.zstack.header.allocator.HostAllocatorError;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.allocator.HostAllocatorStrategyExtensionPoint;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -44,6 +46,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
+import static org.zstack.utils.CollectionUtils.*;
 
 /**
  * Created by frank on 7/1/2015.
@@ -104,13 +107,11 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
-        long reservedCapacity = SizeUtils.sizeStringToBytes(PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value());
-
+    public ErrorableValue<List<HostVO>> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
         if (VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
             List<String> huuids = getNeedCheckHostLocalStorageList(candidates, spec);
             if (huuids.isEmpty()) {
-                return candidates;
+                return ErrorableValue.of(candidates);
             }
 
             SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
@@ -143,22 +144,21 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 logger.debug(String.format("local storage filters out hosts%s, because they don't have required disk capacity[%s bytes]",
                         toRemoveHuuids, spec.getDiskSize()));
 
-                candidates = CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
-                    @Override
-                    public HostVO call(HostVO arg) {
-                        return toRemoveHuuids.contains(arg.getUuid()) ? null : arg;
-                    }
-                });
+                candidates = transform(candidates, arg -> toRemoveHuuids.contains(arg.getUuid()) ? null : arg);
+                candidates.removeIf(Objects::isNull);
 
                 if (candidates.isEmpty()) {
-                    throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                    return ErrorableValue.ofErrorCode(err(HostAllocatorError.NO_AVAILABLE_HOST,
                             "the local primary storage has no hosts with enough disk capacity[%s bytes] required by the vm[uuid:%s]",
                             spec.getDiskSize(), spec.getVmInstance().getUuid()
                     ));
                 }
             }
         } else if (VmOperation.Start.toString().equals(spec.getVmOperation())) {
-            checkLocalStorageForVmStart(spec.getVmInstance(), candidates);
+            final ErrorCode errorCode = checkLocalStorageForVmStart(spec.getVmInstance(), candidates);
+            if (errorCode != null) {
+                return ErrorableValue.ofErrorCode(errorCode);
+            }
         }
 
 
@@ -174,16 +174,16 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         }
         */
 
-        return candidates;
+        return ErrorableValue.of(candidates);
     }
 
-    private void checkLocalStorageForVmStart(VmInstanceInventory vm, List<HostVO> candidates) {
+    private ErrorCode checkLocalStorageForVmStart(VmInstanceInventory vm, List<HostVO> candidates) {
         final List<String> localPS = Q.New(PrimaryStorageVO.class)
                 .select(PrimaryStorageVO_.uuid)
                 .eq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
                 .listValues();
         if (localPS.isEmpty()) {
-            return;
+            return null;
         }
 
         for (VolumeInventory volume : vm.getAllVolumes()) {
@@ -198,7 +198,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             if (hostUuid != null) {
                 candidates.removeIf(h -> !hostUuid.equals(h.getUuid()));
                 if (candidates.isEmpty()) {
-                    throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                    return (err(HostAllocatorError.NO_AVAILABLE_HOST,
                             "the vm[uuid: %s] using local primary storage can only be started on the host[uuid: %s], but the host is either not having enough CPU/memory/GPU/VFNIC or in" +
                                     " the state[Enabled] or status[Connected] to start the vm", vm.getUuid(), hostUuid
                     ));
@@ -208,6 +208,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 break;
             }
         }
+        return null;
     }
 
     /**
@@ -329,11 +330,6 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         }
 
         return LocalStorageConstants.LOCAL_STORAGE_MIGRATE_VM_ALLOCATOR_TYPE;
-    }
-
-    @Override
-    public String filterErrorReason() {
-        return Platform.i18n("localstorage allocator failed");
     }
 
     @Override
