@@ -21,6 +21,7 @@ public class HostCanonicalEvents {
     public static final String HOST_PHYSICAL_DISK_STATUS_ABNORMAL = "/host/physicalDisk/status/abnormal";
     public static final String HOST_PHYSICAL_DISK_INSERT_TRIGGERED = "/host/physicalDisk/insert/triggered";
     public static final String HOST_PHYSICAL_DISK_REMOVE_TRIGGERED = "/host/physicalDisk/remove/triggered";
+    public static final String HOST_PHYSICAL_HBA_STATE_ABNORMAL = "/host/physicalHBA/state/abnormal";
 
     @NeedJsonSchema
     public static class HostPhysicalCpuStatusAbnormalData {
@@ -118,9 +119,7 @@ public class HostCanonicalEvents {
     @NeedJsonSchema
     public static class HostPhysicalDiskStatusAbnormalData {
         private String hostUuid;
-        private String serialNumber;
-        private String enclosureId;
-        private String slotNumber;
+        private String wwn;
         private String status;
 
         public String getHostUuid() {
@@ -131,29 +130,14 @@ public class HostCanonicalEvents {
             this.hostUuid = hostUuid;
         }
 
-        public String getSerialNumber() {
-            return serialNumber;
+        public String getWwn() {
+            return wwn;
         }
 
-        public void setSerialNumber(String serialNumber) {
-            this.serialNumber = serialNumber;
+        public void setWwn(String wwn) {
+            this.wwn = wwn;
         }
 
-        public String getEnclosureId() {
-            return enclosureId;
-        }
-
-        public void setEnclosureId(String enclosureId) {
-            this.enclosureId = enclosureId;
-        }
-
-        public String getSlotNumber() {
-            return slotNumber;
-        }
-
-        public void setSlotNumber(String slotNumber) {
-            this.slotNumber = slotNumber;
-        }
 
         public String getStatus() {
             return status;
@@ -167,9 +151,8 @@ public class HostCanonicalEvents {
     @NeedJsonSchema
     public static class HostPhysicalDiskData {
         private String hostUuid;
-        private String serialNumber;
-        private String enclosureId;
-        private String slotNumber;
+
+        private String wwn;
 
         public String getHostUuid() {
             return hostUuid;
@@ -179,28 +162,12 @@ public class HostCanonicalEvents {
             this.hostUuid = hostUuid;
         }
 
-        public String getSerialNumber() {
-            return serialNumber;
+        public String getWwn() {
+            return wwn;
         }
 
-        public void setSerialNumber(String serialNumber) {
-            this.serialNumber = serialNumber;
-        }
-
-        public String getEnclosureId() {
-            return enclosureId;
-        }
-
-        public void setEnclosureId(String enclosureId) {
-            this.enclosureId = enclosureId;
-        }
-
-        public String getSlotNumber() {
-            return slotNumber;
-        }
-
-        public void setSlotNumber(String slotNumber) {
-            this.slotNumber = slotNumber;
+        public void setWwn(String wwn) {
+            this.wwn = wwn;
         }
     }
 
@@ -223,6 +190,39 @@ public class HostCanonicalEvents {
 
         public void setDetail(ErrorCode detail) {
             this.detail = detail;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalHBAPortStateAbnormalData {
+        private String hostUuid;
+
+        private String state;
+
+        private String portName;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getState() {
+            return state;
+        }
+
+        public void setState(String state) {
+            this.state = state;
+        }
+
+        public String getPortName() {
+            return portName;
+        }
+
+        public void setPortName(String portName) {
+            this.portName = portName;
         }
     }
 

@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.RaidTool;
 
 public class RaidControllerInventory  {
 
@@ -74,6 +74,14 @@ public class RaidControllerInventory  {
     }
     public java.lang.Integer getAdapterNumber() {
         return this.adapterNumber;
+    }
+
+    public RaidTool raidTool;
+    public void setRaidTool(RaidTool raidTool) {
+        this.raidTool = raidTool;
+    }
+    public RaidTool getRaidTool() {
+        return this.raidTool;
     }
 
     public java.util.List raidPhysicalDrives;
