@@ -192,7 +192,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     to.vmIp = l.vmIp;
                     to.netmask = l.netmask;
                     to.bridgeName = bridgeNames.get(l.l3Uuid);
-                    to.namespaceName = FlatDhcpBackend.makeNamespaceName(to.bridgeName, l.l3Uuid);
+                    to.namespaceName = NamespaceHelper.makeNamespaceName(to.bridgeName, l.l3Uuid);
                     if (userdata.get(vmuuid) != null) {
                         to.userdataList.addAll(userdata.get(vmuuid));
                     }
@@ -282,7 +282,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         CleanupUserdataCmd cmd = new CleanupUserdataCmd();
         cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
         cmd.l3NetworkUuid = l3.getUuid();
-        cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, cmd.l3NetworkUuid);
+        cmd.namespaceName = NamespaceHelper.makeNamespaceName(cmd.bridgeName, cmd.l3NetworkUuid);
 
         for (String huuid : hostUuids) {
             new KvmCommandSender(huuid).send(cmd, CLEANUP_USER_DATA, new KvmCommandFailureChecker() {
@@ -384,7 +384,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             ReleaseUserdataCmd cmd = new ReleaseUserdataCmd();
             cmd.hostUuid = struct.getHostUuid();
             cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
-            cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
+            cmd.namespaceName = NamespaceHelper.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
             cmd.vmIp = vmIp;
 
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -622,7 +622,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         uto.vmIp = destNic.getIp();
                         uto.netmask = destNic.getNetmask();
                         uto.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
-                        uto.namespaceName = FlatDhcpBackend.makeNamespaceName(uto.bridgeName, struct.getL3NetworkUuid());
+                        uto.namespaceName = NamespaceHelper.makeNamespaceName(uto.bridgeName, struct.getL3NetworkUuid());
                         uto.port = UserdataGlobalProperty.HOST_PORT;
                         uto.l3NetworkUuid = struct.getL3NetworkUuid();
                         uto.agentConfig = new HashMap<>();
@@ -707,7 +707,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         ReleaseUserdataCmd cmd = new ReleaseUserdataCmd();
                         cmd.hostUuid = struct.getHostUuid();
                         cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
-                        cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
+                        cmd.namespaceName = NamespaceHelper.makeNamespaceName(cmd.bridgeName, struct.getL3NetworkUuid());
                         cmd.vmIp = destNic.getIp();
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
