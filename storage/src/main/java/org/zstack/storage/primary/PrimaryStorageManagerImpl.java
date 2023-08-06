@@ -245,12 +245,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void handle(APIGetPrimaryStorageUsageReportMsg msg) {
-        APIGetPrimaryStorageUsageReportEvent event = new APIGetPrimaryStorageUsageReportEvent(msg.getId());
+        APIGetPrimaryStorageUsageReportReply reply = new APIGetPrimaryStorageUsageReportReply();
 
         if (CollectionUtils.isEmpty(msg.getUris())) {
-            event.setUsageReport(primaryStorageUsageForecaster.getUsageReportByResourceUuids(
+            reply.setUsageReport(primaryStorageUsageForecaster.getUsageReportByResourceUuids(
                     Collections.singletonList(msg.getPrimaryStorageUuid())).get(msg.getPrimaryStorageUuid()));
-            bus.publish(event);
+            bus.reply(msg, reply);
             return;
         }
 
@@ -261,14 +261,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, gmsg.getPrimaryStorageUuid());
         bus.send(gmsg, new CloudBusCallBack(msg) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    event.setError(reply.getError());
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
                 } else {
-                    GetPrimaryStorageUsedPhysicalCapacityForecastReply r = reply.castReply();
-                    event.setUriUsageForecast(r.getUsageReportMap());
+                    GetPrimaryStorageUsedPhysicalCapacityForecastReply re = r.castReply();
+                    reply.setUriUsageForecast(re.getUsageReportMap());
                 }
-                bus.publish(event);
+                bus.reply(msg, reply);
             }
         });
     }

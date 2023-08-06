@@ -1,8 +1,8 @@
 package org.zstack.header.storage.primary;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
@@ -10,9 +10,9 @@ import java.util.List;
 @RestRequest(
         path = "/primary-storage/{primaryStorageUuid}/usage/report",
         method = HttpMethod.GET,
-        responseClass = APIGetPrimaryStorageUsageReportEvent.class
+        responseClass = APIGetPrimaryStorageUsageReportReply.class
 )
-public class APIGetPrimaryStorageUsageReportMsg extends APIMessage {
+public class APIGetPrimaryStorageUsageReportMsg extends APISyncCallMessage {
     @APIParam(resourceType = PrimaryStorageVO.class)
     private String primaryStorageUuid;
     @APIParam(required = false)

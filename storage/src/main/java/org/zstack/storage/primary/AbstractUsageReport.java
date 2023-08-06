@@ -13,10 +13,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.header.storage.primary.HistoricalUsageAO;
-import org.zstack.header.storage.primary.HistoricalUsageAO_;
-import org.zstack.header.storage.primary.StorageCapacityAO;
-import org.zstack.header.storage.primary.UsageReport;
+import org.zstack.header.storage.primary.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
@@ -25,6 +22,7 @@ import org.zstack.utils.logging.CLogger;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -187,8 +185,16 @@ public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends
         List<ResourceUsage> resourceUsages = new ArrayList<>();
         capacityVOs.forEach(capacityVO -> {
             String resourceUuid = capacityVO.getResourceUuid();
-            long totalPhysicalCapacity = capacityVO.getTotalPhysicalCapacity() / SizeUnit.GIGABYTE.toByte(1);
-            long usedPhysicalCapacity = (capacityVO.getTotalPhysicalCapacity() - capacityVO.getAvailablePhysicalCapacity()) / SizeUnit.GIGABYTE.toByte(1);
+            long totalPhysicalCapacity;
+            long usedPhysicalCapacity;
+            if (capacityVO.getTotalPhysicalCapacity() == 0) {
+                int usageLength = historicalUsageMap.get(resourceUuid).getTotalPhysicalCapacities().size() - 1;
+                totalPhysicalCapacity = new ArrayList<>(historicalUsageMap.get(resourceUuid).getTotalPhysicalCapacities()).get(usageLength);
+                usedPhysicalCapacity = new ArrayList<>(historicalUsageMap.get(resourceUuid).getHistoricalUsedPhysicalCapacities()).get(usageLength);
+            } else {
+                totalPhysicalCapacity = capacityVO.getTotalPhysicalCapacity() / SizeUnit.GIGABYTE.toByte(1);
+                usedPhysicalCapacity = (capacityVO.getTotalPhysicalCapacity() - capacityVO.getAvailablePhysicalCapacity()) / SizeUnit.GIGABYTE.toByte(1);
+            }
             ResourceUsage resourceUsage = new ResourceUsage(resourceUuid, totalPhysicalCapacity, usedPhysicalCapacity);
             resourceUsages.add(resourceUsage);
         });
@@ -237,30 +243,123 @@ public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends
         historicalUsageMap.keySet().removeIf(resourceUuid -> !resourceUuids.contains(resourceUuid));
     }
 
-    private Map<String, List<T>> getHistoricalUsagesFromDatabase() {
-        Map<String, List<T>> usageMap = new HashMap<>();
+    private class HistoricalUsageLoader {
+        List<T> usages = new ArrayList<>();
+        List<T> usagesToPersist = new ArrayList<>();
+        List<T> usagesToUpdate = new ArrayList<>();
 
-        List<T> allUsageVOs = Q.New(usageClass)
-                .gt(HistoricalUsageAO_.totalPhysicalCapacity, 0)
-                .orderBy(HistoricalUsageAO_.recordDate, SimpleQuery.Od.ASC).list();
+        public List<T> getUsages() {
+            return usages;
+        }
+
+        public void setUsages(List<T> usages) {
+            this.usages = usages;
+        }
+
+        public List<T> getUsagesToPersist() {
+            return usagesToPersist;
+        }
+
+        public void setUsagesToPersist(List<T> usagesToPersist) {
+            this.usagesToPersist = usagesToPersist;
+        }
+
+        public List<T> getUsagesToUpdate() {
+            return usagesToUpdate;
+        }
+
+        public void setUsagesToUpdate(List<T> usagesToUpdate) {
+            this.usagesToUpdate = usagesToUpdate;
+        }
+    }
+
+    private Map<String, HistoricalUsageLoader> getHistoricalUsagesFromDatabase() {
+        Map<String, HistoricalUsageLoader> usageMap = new HashMap<>();
+
+        List<T> allUsageVOs = Q.New(usageClass).orderBy(HistoricalUsageAO_.recordDate, SimpleQuery.Od.ASC).list();
 
         List<String> resourceUuids = allUsageVOs.stream().map(HistoricalUsageAO::getResourceUuid)
                 .distinct().collect(Collectors.toList());
 
         resourceUuids.forEach(resourceUuid -> {
             List<T> usageVOs = allUsageVOs.stream()
-                    .filter(vo -> Objects.equals(vo.getResourceUuid(), resourceUuid)).collect(Collectors.toList());
-            usageMap.put(resourceUuid, new ArrayList<>(usageVOs));
+                    .filter(vo -> Objects.equals(vo.getResourceUuid(), resourceUuid) && vo.getTotalPhysicalCapacity() > 0)
+                    .collect(Collectors.toList());
+
+            List<T> cacheUsageVOs = allUsageVOs.stream()
+                    .filter(vo -> Objects.equals(vo.getResourceUuid(), resourceUuid) && vo.getTotalPhysicalCapacity() == 0)
+                    .collect(Collectors.toList());
+
+            HistoricalUsageLoader historicalUsageLoader = new HistoricalUsageLoader();
+            historicalUsageLoader.setUsages(usageVOs);
+            addMissingDataIfNeeded(historicalUsageLoader, cacheUsageVOs);
+
+            usageMap.put(resourceUuid, historicalUsageLoader);
         });
         return usageMap;
     }
 
-    protected void loadHistoricalUsageFromDatabase() {
-        Map<String, List<T>> HistoricalUsageVOsMap = getHistoricalUsagesFromDatabase();
+    private void addMissingDataIfNeeded(HistoricalUsageLoader historicalUsageLoader, List<T> cacheUsageVOs) {
+        T usage = historicalUsageLoader.getUsages().get(historicalUsageLoader.getUsages().size() - 1);
 
-        HistoricalUsageVOsMap.forEach((resourceUuid, usageAOs) -> {
+        long nowTime = Timestamp.valueOf(LocalDate.now().atStartOfDay()).getTime();
+        long usageTime = usage.getRecordDate().getTime();
+        long days = (nowTime - usageTime) / (TimeUnit.DAYS.toMillis(1));
+
+        if (days == 0) {
+            return;
+        }
+
+        if (!cacheUsageVOs.isEmpty()) {
+            List<T> usagesToUpdate = new ArrayList<>();
+            IntStream.range(0, days < cacheUsageVOs.size() ? (int) days : cacheUsageVOs.size()).forEach(i -> {
+                cacheUsageVOs.get(i).setTotalPhysicalCapacity(usage.getTotalPhysicalCapacity());
+                cacheUsageVOs.get(i).setUsedPhysicalCapacity(usage.getUsedPhysicalCapacity());
+                usagesToUpdate.add(cacheUsageVOs.get(i));
+            });
+
+            historicalUsageLoader.getUsages().addAll(usagesToUpdate);
+            historicalUsageLoader.setUsagesToUpdate(usagesToUpdate);
+        }
+
+        if (days - cacheUsageVOs.size() <= 0) {
+            return;
+        }
+
+        List<T> usagesToPersist = new ArrayList<>();
+        IntStream.range(1, (int) days - cacheUsageVOs.size()).forEach(i -> {
+            T vo;
+            try {
+                vo = usageClass.newInstance();
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+
+            T usageVO = historicalUsageLoader.getUsages().get(historicalUsageLoader.getUsages().size() - 1);
+            vo.setResourceUuid(usageVO.getResourceUuid());
+            vo.setTotalPhysicalCapacity(usageVO.getTotalPhysicalCapacity());
+            vo.setUsedPhysicalCapacity(usageVO.getUsedPhysicalCapacity());
+            vo.setUsedPhysicalCapacity(usageVO.getUsedPhysicalCapacity());
+            vo.setHistoricalForecast(usageVO.getHistoricalForecast());
+            vo.setRecordDate(Timestamp.from(usageVO.getRecordDate().toInstant().plusMillis(TimeUnit.DAYS.toMillis(i))));
+
+            usagesToPersist.add(vo);
+        });
+        historicalUsageLoader.setUsagesToPersist(usagesToPersist);
+        historicalUsageLoader.getUsages().addAll(usagesToPersist);
+    }
+
+    protected void loadHistoricalUsageFromDatabase() {
+        List<T> usagesToPersist = new ArrayList<>();
+        List<T> usagesToUpdate = new ArrayList<>();
+
+        Map<String, HistoricalUsageLoader> historicalUsageVOsMap = getHistoricalUsagesFromDatabase();
+
+        historicalUsageVOsMap.forEach((resourceUuid, historicalUsageLoader) -> {
             HistoricalUsage usage = new HistoricalUsage();
             usage.setResourceUuid(resourceUuid);
+
+            List<T> usageAOs = historicalUsageLoader.getUsages();
 
             EvictingQueue<Long> queue = EvictingQueue.create(MAX_CACHE_LENGTHS_BY_DAY);
             queue.addAll(usageAOs.stream().map(HistoricalUsageAO::getUsedPhysicalCapacity).collect(Collectors.toList()));
@@ -279,7 +378,16 @@ public abstract class AbstractUsageReport<T extends HistoricalUsageAO, K extends
             usage.setRecordDates(queue);
 
             historicalUsageMap.put(resourceUuid, usage);
+            usagesToPersist.addAll(historicalUsageLoader.getUsagesToPersist());
+            usagesToUpdate.addAll(historicalUsageLoader.getUsagesToUpdate());
         });
+
+        if (!usagesToPersist.isEmpty()) {
+            dbf.persistCollection(usagesToPersist);
+        }
+        if (!usagesToUpdate.isEmpty()) {
+            dbf.updateCollection(usagesToUpdate);
+        }
     }
 
     public Map<String, UsageReport> getUsageReportByResourceUuids(List<String> resourceUuids) {

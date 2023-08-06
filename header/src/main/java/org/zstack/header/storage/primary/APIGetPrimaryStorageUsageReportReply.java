@@ -1,12 +1,12 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
 import java.util.Map;
 
 @RestResponse(fieldsTo = {"all"})
-public class APIGetPrimaryStorageUsageReportEvent extends APIEvent {
+public class APIGetPrimaryStorageUsageReportReply extends APIReply {
     private Map<String, UsageReport> uriUsageForecast;
     private UsageReport usageReport;
 
@@ -26,20 +26,12 @@ public class APIGetPrimaryStorageUsageReportEvent extends APIEvent {
         this.usageReport = usageReport;
     }
 
-    public APIGetPrimaryStorageUsageReportEvent() {
-        super(null);
-    }
+    public static APIGetPrimaryStorageUsageReportReply __example__() {
+        APIGetPrimaryStorageUsageReportReply reply = new APIGetPrimaryStorageUsageReportReply();
 
-    public APIGetPrimaryStorageUsageReportEvent(String apiId) {
-        super(apiId);
-    }
+        reply.setUsageReport(new UsageReport());
+        reply.setUriUsageForecast(new java.util.HashMap<String, UsageReport>());
 
-    public static APIGetPrimaryStorageUsageReportEvent __example__() {
-        APIGetPrimaryStorageUsageReportEvent event = new APIGetPrimaryStorageUsageReportEvent();
-
-        event.setUsageReport(new UsageReport());
-        event.setUriUsageForecast(new java.util.HashMap<String, UsageReport>());
-
-        return event;
+        return reply;
     }
 }
