@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary
 
-import org.zstack.header.storage.primary.APIGetPrimaryStorageUsageReportEvent
+import org.zstack.header.storage.primary.APIGetPrimaryStorageUsageReportReply
 
 doc {
     title "GetPrimaryStorageUsageReport"
@@ -61,7 +61,7 @@ doc {
         }
 
         response {
-            clz APIGetPrimaryStorageUsageReportEvent.class
+            clz APIGetPrimaryStorageUsageReportReply.class
         }
     }
 }

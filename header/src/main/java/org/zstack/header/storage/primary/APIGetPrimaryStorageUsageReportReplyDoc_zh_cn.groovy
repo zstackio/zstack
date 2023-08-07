@@ -9,7 +9,7 @@ doc {
 
 	ref {
 		name "uriUsageForecast"
-		path "org.zstack.header.storage.primary.APIGetPrimaryStorageUsageReportEvent.uriUsageForecast"
+		path "org.zstack.header.storage.primary.APIGetPrimaryStorageUsageReportReply.uriUsageForecast"
 		desc "null"
 		type "Map"
 		since "4.7.21"
@@ -17,7 +17,7 @@ doc {
 	}
 	ref {
 		name "usageReport"
-		path "org.zstack.header.storage.primary.APIGetPrimaryStorageUsageReportEvent.usageReport"
+		path "org.zstack.header.storage.primary.APIGetPrimaryStorageUsageReportReply.usageReport"
 		desc "null"
 		type "UsageReport"
 		since "4.7.21"
@@ -31,7 +31,7 @@ doc {
 	}
 	ref {
 		name "error"
-		path "org.zstack.header.storage.primary.APIGetPrimaryStorageUsageReportEvent.error"
+		path "org.zstack.header.storage.primary.APIGetPrimaryStorageUsageReportReply.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
 		type "ErrorCode"
 		since "4.7.21"
