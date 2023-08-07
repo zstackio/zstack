@@ -6,6 +6,7 @@ import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
+import org.zstack.network.l2.vxlan.vtep.RemoteVtepVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 
 import javax.persistence.*;
@@ -27,6 +28,11 @@ public class VxlanNetworkPoolVO extends L2NetworkVO {
     private Set<VtepVO> attachedVtepRefs = new HashSet<VtepVO>();
 
     @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "poolUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<RemoteVtepVO> remoteVteps = new HashSet<RemoteVtepVO>();
+
+    @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "l2NetworkUuid", insertable = false, updatable = false)
     @NoView
     private Set<VniRangeVO> attachedVniRanges = new HashSet<>();
@@ -36,6 +42,14 @@ public class VxlanNetworkPoolVO extends L2NetworkVO {
 
     public VxlanNetworkPoolVO(L2NetworkVO vo) {
         super(vo);
+    }
+
+    public Set<RemoteVtepVO> getRemoteVteps() {
+        return remoteVteps;
+    }
+
+    public void setRemoteVteps(Set<RemoteVtepVO> remoteVteps) {
+        this.remoteVteps = remoteVteps;
     }
 
     public Set<VtepVO> getAttachedVtepRefs() {

@@ -12,6 +12,14 @@
     </message>
 
     <message>
+        <name>org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVxlanPoolRemoteVtepMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.l2.vxlan.vxlanNetworkPool.APIDeleteVxlanPoolRemoteVtepMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg</name>
     </message>
 

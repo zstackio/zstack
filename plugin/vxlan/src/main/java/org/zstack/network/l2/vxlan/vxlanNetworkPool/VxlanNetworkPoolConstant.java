@@ -23,5 +23,6 @@ public class VxlanNetworkPoolConstant {
     public static final String VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH = "/network/l2vxlan/createbridges";
     public static final String VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORK_PATH = "/network/l2vxlan/populatefdb";
     public static final String VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH = "/network/l2vxlan/populatefdbs";
+    public static final String VXLAN_KVM_DELETE_FDB_L2VXLAN_NETWORKS_PATH = "/network/l2vxlan/deletefdbs";
     public static final String VXLAN_KVM_DELETE_L2VXLAN_NETWORK_PATH = "/network/l2vxlan/deletebridge";
 }

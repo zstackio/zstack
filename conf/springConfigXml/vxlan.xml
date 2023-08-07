@@ -95,4 +95,11 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="RemoteVtepCascadeExtension" class="org.zstack.network.l2.vxlan.vtep.RemoteVtepCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+
 </beans>
