@@ -8,13 +8,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`RaidLunVO` (
     CONSTRAINT fkRaidLunVOLunVO FOREIGN KEY (uuid) REFERENCES LunVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `zstack`.`LocalLunVO` (
-    `uuid` char(32) NOT NULL UNIQUE,
-    `slotNumber` smallint(6) NOT NULL UNIQUE,
-    PRIMARY KEY (`uuid`),
-    CONSTRAINT fkLocalLunVOLunVO FOREIGN KEY (uuid) REFERENCES LunVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 RENAME TABLE `NvmeLunHostRefVO` to `LunHostRefVO`;
 ALTER TABLE `LunHostRefVO` DROP FOREIGN KEY `fkNvmeLunHostRefVONvmeLunVO`;
 ALTER TABLE `LunHostRefVO` CHANGE `nvmeLunUuid` `lunUuid` char(32) NOT NULL;
@@ -112,4 +105,12 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HBADeviceVO` (
     `lastOpDate` timestamp not null default '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fkHBADeviceVOHostVO FOREIGN KEY (hostUuid) REFERENCES HostEO (uuid) ON DELETE CASCADE,
     PRIMARY KEY (`uuid`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`LocalLunVO` (
+    `uuid` char(32) NOT NULL UNIQUE,
+    `physicalDriveUuid` char(32) DEFAULT NULL,
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT fkLocalLunVOLunVO FOREIGN KEY (uuid) REFERENCES LunVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
+    CONSTRAINT fkLocalLunVOPhysicalDriveVO FOREIGN KEY (physicalDriveUuid) REFERENCES PhysicalDriveVO (uuid) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
