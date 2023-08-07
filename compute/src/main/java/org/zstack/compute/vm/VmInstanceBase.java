@@ -18,7 +18,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.jsonlabel.JsonLabel;
-import org.zstack.core.progress.ParallelTaskStage;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.RunInQueue;
 import org.zstack.core.thread.SyncTaskChain;
@@ -3277,6 +3276,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIUpdateVmNicDriverMsg) msg);
         } else if (msg instanceof APIFlattenVmInstanceMsg) {
             handle((APIFlattenVmInstanceMsg) msg);
+        } else if (msg instanceof APIFstrimVmMsg) {
+            handle((APIFstrimVmMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -8176,6 +8177,41 @@ public class VmInstanceBase extends AbstractVmInstance {
         cdRomVO = dbf.persistAndRefresh(cdRomVO);
 
         completion.success(VmCdRomInventory.valueOf(cdRomVO));
+    }
+
+    private void handle(APIFstrimVmMsg msg) {
+        APIFstrimVmEvent event = new APIFstrimVmEvent(msg.getId());
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                FstrimVmMsg fmsg = new FstrimVmMsg();
+                fmsg.setVmUuid(msg.getVmInstanceUuid());
+                fmsg.setHostUuid(msg.getHostUuid());
+
+                bus.makeTargetServiceIdByResourceUuid(fmsg, HostConstant.SERVICE_ID, fmsg.getHostUuid());
+                bus.send(fmsg, new CloudBusCallBack(msg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            event.setError(reply.getError());
+                        }
+                        bus.publish(event);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("fstrim-vm-%s", msg.getUuid());
+            }
+        });
     }
 
     protected void handle(final APICreateVmCdRomMsg msg) {

@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import org.zstack.sdk.FstrimVmAction
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.core.Platform
 
@@ -47674,5 +47675,29 @@ abstract class ApiHelper {
             return errorOut(a.call())
         }
     }
+    def fstrimVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = FstrimVmAction.class) Closure c) {
+        def a = new FstrimVmAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
 
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
 }
