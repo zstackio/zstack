@@ -467,10 +467,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             @Override
             protected void scripts() {
                 VmInstanceVO vo = q(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
-                if ((msg.getCpuNum() == null && msg.getMemorySize() == null && msg.getReservedMemorySize() == null)) {
-                    return;
-                }
-
                 if (msg.getReservedMemorySize() != null) {
                     Long memorySize = msg.getMemorySize() == null ? vo.getMemorySize() : msg.getMemorySize();
                     if (msg.getReservedMemorySize() > memorySize) {
@@ -478,6 +474,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                                 "reservedMemorySize[%s] is greater than memorySize[%s]", msg.getReservedMemorySize(), memorySize
                         ));
                     }
+                }
+
+                if (msg.getCpuNum() == null && msg.getMemorySize() == null) {
+                    return;
                 }
 
                 VmInstanceState vmState = q(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
@@ -1127,7 +1127,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         msg.setCpuNum(ivo.getCpuNum());
         msg.setMemorySize(ivo.getMemorySize());
-        msg.setReservedMemorySize(ivo.getReservedMemorySize());
+        // reserved memory should support customize
+        if (msg.getReservedMemorySize() == null) {
+            msg.setReservedMemorySize(ivo.getReservedMemorySize());
+        }
     }
 
     private void validateDataDiskSizes(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
