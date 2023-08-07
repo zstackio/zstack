@@ -1,5 +1,7 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
+import org.zstack.network.l2.vxlan.vtep.RemoteVtepVO;
+import org.zstack.network.l2.vxlan.vtep.RemoteVtepVO_;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -92,6 +94,15 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         p.remove(vtepIp);
         peers.clear();
         peers.addAll(p);
+
+        //add remote vtep ip
+        String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, hostUuid).findValue();
+
+        List<String> gwpeers = Q.New(RemoteVtepVO.class).select(RemoteVtepVO_.vtepIp).eq(RemoteVtepVO_.poolUuid, l2vxlan.getPoolUuid()).eq(RemoteVtepVO_.clusterUuid, clusterUuid).listValues();
+        if (gwpeers.size() > 0) {
+            Set<String> gwp = new HashSet<String>(gwpeers);
+            peers.addAll(gwp);
+        }
 
         String info = String.format(
                 "get vtep peers [%s] and vtep ip [%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s]", peers,

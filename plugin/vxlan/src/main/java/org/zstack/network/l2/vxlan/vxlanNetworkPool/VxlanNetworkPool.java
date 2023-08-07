@@ -1,5 +1,11 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
+import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.*;
+import org.zstack.header.errorcode.SysErrors;
+import org.zstack.network.l2.vxlan.vxlanNetwork.*;
+import org.zstack.utils.network.NetworkUtils;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -129,11 +135,77 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             handle((DeleteVtepMsg) msg);
         } else if (msg instanceof PopulateVtepPeersMsg){
             handle((PopulateVtepPeersMsg) msg);
+        } else if (msg instanceof PopulateRemoteVtepPeersMsg){
+            handle((PopulateRemoteVtepPeersMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
         }  else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    protected void handle(final PopulateRemoteVtepPeersMsg msg) {
+        final PopulateRemoteVtepPeersReply reply = new PopulateRemoteVtepPeersReply();
+
+        List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, msg.getPoolUuid()).list();
+        if (vteps == null || vteps.size() < 1) {
+            logger.debug("no need to populate fdb since there are only one vtep or less");
+            bus.reply(msg, reply);
+            return;
+        }
+
+        List<HostInventory> targets = msg.getHosts();
+        if (targets.isEmpty()) {
+            List<String> hostUuids = vteps.stream().map(VtepVO::getHostUuid).collect(Collectors.toList());
+            Set<String> clusterUuids = vteps.stream().map(VtepVO::getClusterUuid).collect(Collectors.toSet());
+            targets = HostInventory.valueOf(Q.New(HostVO.class)
+                    .in(HostVO_.uuid, hostUuids).in(HostVO_.clusterUuid, clusterUuids).list());
+        }
+
+        List<String> vxlanNetworkUuids = Q.New(VxlanNetworkVO.class)
+                .select(VxlanNetworkVO_.uuid)
+                .eq(VxlanNetworkVO_.poolUuid, msg.getPoolUuid())
+                .listValues();
+        if(vxlanNetworkUuids.isEmpty()){
+            logger.debug("no need to populate fdb because there is no vxlannetwork");
+            bus.reply(msg, reply);
+            return;
+        }
+
+        ErrorCodeList errList = new ErrorCodeList();
+        new While<>(targets).step((host, completion1) -> {
+            List<String> peers = new ArrayList<>();
+            peers.add(msg.getVtepIp());
+
+            VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd();
+            cmd.setPeers(peers);
+            cmd.setNetworkUuids(vxlanNetworkUuids);
+
+            KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+            kmsg.setHostUuid(host.getUuid());
+            kmsg.setCommand(cmd);
+            kmsg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH);
+            kmsg.setNoStatusCheck(true);
+            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, host.getUuid());
+            bus.send(kmsg, new CloudBusCallBack(completion1) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(reply.getError().toString());
+                        errList.getCauses().add(reply.getError());
+                    }
+                    completion1.done();
+                }
+            });
+        }, 5).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errList.getCauses().isEmpty()) {
+                    reply.setError(errList.getCauses().get(0));
+                }
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     protected void handle(final PopulateVtepPeersMsg msg) {
@@ -175,6 +247,14 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     host.getManagementIp(), msg.getPoolUuid(), vxlanNetworkUuids, host.getUuid()));
 
             VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd();
+            // if remote vtep ip exist ,add it
+            String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, host.getUuid()).findValue();
+            List<String> gwpeers = Q.New(RemoteVtepVO.class).select(RemoteVtepVO_.vtepIp).eq(RemoteVtepVO_.poolUuid, msg.getPoolUuid()).eq(RemoteVtepVO_.clusterUuid, clusterUuid).listValues();
+            if (gwpeers.size() > 0) {
+                Set<String> gwp = new HashSet<String>(gwpeers);
+                peers.addAll(gwp);
+            }
+
             cmd.setPeers(new ArrayList<>(peers));
             cmd.setNetworkUuids(vxlanNetworkUuids);
 
@@ -336,12 +416,266 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             handle((APIUpdateVniRangeMsg) msg);
         } else if (msg instanceof APICreateVxlanVtepMsg) {
             handle((APICreateVxlanVtepMsg) msg);
+        } else if (msg instanceof APICreateVxlanPoolRemoteVtepMsg) {
+            handle((APICreateVxlanPoolRemoteVtepMsg) msg);
+        } else if (msg instanceof APIDeleteVxlanPoolRemoteVtepMsg) {
+            handle((APIDeleteVxlanPoolRemoteVtepMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
+
+
+    private void handle(final APIDeleteVxlanPoolRemoteVtepMsg msg) {
+        APIDeleteVxlanPoolRemoteVtepEvent evt = new APIDeleteVxlanPoolRemoteVtepEvent(msg.getId());
+
+        SimpleQuery<L2NetworkClusterRefVO> rq = dbf.createQuery(L2NetworkClusterRefVO.class);
+        rq.add(L2NetworkClusterRefVO_.clusterUuid, SimpleQuery.Op.EQ, msg.getClusterUuid());
+        rq.add(L2NetworkClusterRefVO_.l2NetworkUuid, SimpleQuery.Op.EQ, msg.getL2NetworkUuid());
+        long count = rq.count();
+        if (count == 0) {
+            bus.publish(evt);
+            return;
+        }
+
+
+        List<String> ips = Q.New(RemoteVtepVO.class)
+                .select(RemoteVtepVO_.vtepIp).eq(RemoteVtepVO_.poolUuid, msg.getL2NetworkUuid())
+                .eq(RemoteVtepVO_.clusterUuid, msg.getClusterUuid())
+                .eq(RemoteVtepVO_.vtepIp, msg.getRemoteVtepIp()).listValues();
+
+        if (ips.isEmpty()) {
+            logger.info(String.format("there are no remote vtep ip for vxlanpool:[%s]", msg.getL2NetworkUuid()));
+            bus.publish(evt);
+            return;
+        }
+        logger.info(String.format("delete remote vtep ip for vxlanpool:[%s]", msg.getL2NetworkUuid()));
+        RemoteVtepVO vo = Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, msg.getL2NetworkUuid())
+                    .eq(RemoteVtepVO_.clusterUuid, msg.getClusterUuid())
+                    .eq(RemoteVtepVO_.vtepIp, msg.getRemoteVtepIp()).find();
+
+        List<String> vxlanNetworkUuids = Q.New(VxlanNetworkVO.class)
+                .select(VxlanNetworkVO_.uuid)
+                .eq(VxlanNetworkVO_.poolUuid, msg.getL2NetworkUuid())
+                .listValues();
+        // no br based vxlan, delete db only
+        if (vxlanNetworkUuids.size() == 0) {
+            dbf.remove(vo);
+            bus.publish(evt);
+            return;
+        }
+        // delete based vxlan bridge remote vtep ip info
+        SimpleQuery<HostVO> query = dbf.createQuery(HostVO.class);
+        query.add(HostVO_.clusterUuid, SimpleQuery.Op.EQ, msg.getClusterUuid());
+        query.add(HostVO_.state, SimpleQuery.Op.NOT_IN, HostState.PreMaintenance, HostState.Maintenance);
+        query.add(HostVO_.status, SimpleQuery.Op.EQ, HostStatus.Connected);
+        final List<HostVO> hosts = query.list();
+        List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
+        // cluster no hosts, only remove db
+        if (hvinvs == null || hvinvs.isEmpty()) {
+            dbf.remove(vo);
+            bus.publish(evt);
+            logger.debug(String.format("clusterUuid:[%s] no host", msg.getClusterUuid()));
+            return;
+        }
+
+        ErrorCodeList errList = new ErrorCodeList();
+        new While<>(hvinvs).step((host, completion1) -> {
+
+            VxlanKvmAgentCommands.DeleteVxlanNetworksFdbCmd cmd = new VxlanKvmAgentCommands.DeleteVxlanNetworksFdbCmd();
+            List<String> peers = new ArrayList<>();
+            peers.add(msg.getRemoteVtepIp());
+
+            cmd.setPeers(peers);
+            cmd.setNetworkUuids(vxlanNetworkUuids);
+
+            KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+            kmsg.setHostUuid(host.getUuid());
+            kmsg.setCommand(cmd);
+            kmsg.setPath(VXLAN_KVM_DELETE_FDB_L2VXLAN_NETWORKS_PATH);
+            kmsg.setNoStatusCheck(true);
+            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, host.getUuid());
+            bus.send(kmsg, new CloudBusCallBack(completion1) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(reply.getError().toString());
+                        errList.getCauses().add(reply.getError());
+                    }
+                    completion1.done();
+                }
+            });
+       }, 5).run(new WhileDoneCompletion(msg) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errList.getCauses().isEmpty()) {
+                    evt.setError(errList.getCauses().get(0));
+                } else {
+                    dbf.remove(vo);
+                }
+            }
+        });
+
+        bus.publish(evt);
+    }
+
+    private void syncVxlanPoolRemoteVtepDataBase(final APICreateVxlanPoolRemoteVtepMsg msg, APICreateVxlanPoolRemoteVtepEvent evt) {
+        String uuid;
+        if (msg.getResourceUuid() != null) {
+            uuid = msg.getResourceUuid();
+        } else {
+            uuid = Platform.getUuid();
+        }
+
+        RemoteVtepInventory inv;
+        RemoteVtepVO vvo = new RemoteVtepVO();
+
+        vvo.setUuid(uuid);;
+        vvo.setVtepIp(msg.getRemoteVtepIp());
+        vvo.setClusterUuid(msg.getClusterUuid());
+        vvo.setPoolUuid(msg.getL2NetworkUuid());
+        vvo.setPort(VXLAN_PORT);
+        vvo.setType(KVM_VXLAN_TYPE);
+        vvo = dbf.persistAndRefresh(vvo);
+
+        inv = RemoteVtepInventory.valueOf(vvo);
+        evt.setInventory(inv);
+        bus.publish(evt);
+        return;
+    }
+
+    private void handle(final APICreateVxlanPoolRemoteVtepMsg msg) {
+        APICreateVxlanPoolRemoteVtepEvent evt = new APICreateVxlanPoolRemoteVtepEvent(msg.getId());
+
+        SimpleQuery<L2NetworkClusterRefVO> rq = dbf.createQuery(L2NetworkClusterRefVO.class);
+        rq.add(L2NetworkClusterRefVO_.clusterUuid, SimpleQuery.Op.EQ, msg.getClusterUuid());
+        rq.add(L2NetworkClusterRefVO_.l2NetworkUuid, SimpleQuery.Op.EQ, msg.getL2NetworkUuid());
+        long count = rq.count();
+        if (count == 0) {
+            evt.setError(err(SysErrors.RESOURCE_NOT_FOUND, "Cannot find L2NetworkClusterRefVO item for l2NetworkUuid[%s] clusterUuid[%s]", msg.getL2NetworkUuid(), msg.getClusterUuid()));
+            bus.publish(evt);
+            return;
+        }
+
+        SimpleQuery<RemoteVtepVO> rqVtep = dbf.createQuery(RemoteVtepVO.class);
+        rqVtep.add(RemoteVtepVO_.clusterUuid, SimpleQuery.Op.EQ, msg.getClusterUuid());
+        rqVtep.add(RemoteVtepVO_.poolUuid, SimpleQuery.Op.EQ, msg.getL2NetworkUuid());
+        rqVtep.add(RemoteVtepVO_.vtepIp, SimpleQuery.Op.EQ, msg.getRemoteVtepIp());
+        count = rqVtep.count();
+        if (count > 0) {
+            evt.setError(err(SysErrors.OPERATION_ERROR, "ip[%s] l2NetworkUuid[%s] clusterUuid[%s] exist", msg.getRemoteVtepIp(), msg.getL2NetworkUuid(), msg.getClusterUuid()));
+            bus.publish(evt);
+            return;
+        }
+
+        List<VxlanNetworkVO> vxlanNetworkVOS;
+        vxlanNetworkVOS = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.poolUuid, msg.getL2NetworkUuid()).list();
+        // no br based vxlan, add db only
+        // when add br based vxlan, will add gw ip to bridge fdb
+        if (vxlanNetworkVOS == null || vxlanNetworkVOS.isEmpty()) {
+            syncVxlanPoolRemoteVtepDataBase(msg, evt);
+            return;
+        }
+        //based vxlan br already exist, add gw ip to bridge fdb
+        SimpleQuery<HostVO> query = dbf.createQuery(HostVO.class);
+        query.add(HostVO_.clusterUuid, SimpleQuery.Op.EQ, msg.getClusterUuid());
+        query.add(HostVO_.state, SimpleQuery.Op.NOT_IN, HostState.PreMaintenance, HostState.Maintenance);
+        query.add(HostVO_.status, SimpleQuery.Op.EQ, HostStatus.Connected);
+        final List<HostVO> hosts = query.list();
+        List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
+        // cluster no hosts, only add db
+        if (hvinvs == null || hvinvs.isEmpty()) {
+            logger.debug(String.format("clusterUuid:[%s] no host", msg.getClusterUuid()));
+            syncVxlanPoolRemoteVtepDataBase(msg, evt);
+            return;
+        }
+
+        prepareL2NetworkVxlanRemoteVtepOnHosts(msg, hvinvs, new Completion(msg) {
+            @Override
+            public void success() {
+                syncVxlanPoolRemoteVtepDataBase(msg, evt);
+                logger.debug(String.format("successfully attached L2VxlanNetworkPool[uuid:%s] to cluster [uuid:%s]", msg.getL2NetworkUuid(), msg.getClusterUuid()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(err(L2Errors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
+                bus.publish(evt);
+            }
+        });
+    }
+
+
+    private void prepareL2NetworkVxlanRemoteVtepOnHosts(final APICreateVxlanPoolRemoteVtepMsg msg, final List<HostInventory> hosts, final Completion completion) {
+        final String l2NetworkUuid = msg.getL2NetworkUuid();
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("prepare-l2-vxlan-gateway-%s-on-hosts", l2NetworkUuid));
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                ErrorCodeList errList = new ErrorCodeList();
+
+                new While<>(hosts).step((h, completion1) -> {
+                    CheckL2NetworkOnHostMsg cmsg = new CheckL2NetworkOnHostMsg();
+                    cmsg.setHostUuid(h.getUuid());
+                    cmsg.setL2NetworkUuid(l2NetworkUuid);
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, l2NetworkUuid);
+                    bus.send(cmsg, new CloudBusCallBack(completion1) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                errList.getCauses().add(reply.getError());
+                            }
+                            completion1.done();
+                        }
+                    });
+                }, 5).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (errList.getCauses().isEmpty()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(errList.getCauses().get(0));
+                        }
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = String.format("populate-remote-vtep-for-l2-vxlan-pool-%s", l2NetworkUuid);
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                PopulateRemoteVtepPeersMsg pmsg = new PopulateRemoteVtepPeersMsg();
+                pmsg.setHosts(hosts);
+                pmsg.setVtepIp(msg.getRemoteVtepIp());
+                pmsg.setPoolUuid(l2NetworkUuid);
+                bus.makeTargetServiceIdByResourceUuid(pmsg, L2NetworkConstant.SERVICE_ID, l2NetworkUuid);
+                bus.send(pmsg, new CloudBusCallBack(pmsg){
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.debug(String.format("fail to populate remote vtep for l2 vxlan pool %s", l2NetworkUuid));
+                            trigger.fail(reply.getError());
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
 
     protected void handle(final APICreateVxlanVtepMsg msg) {
         APICreateVxlanVtepEvent evt = new APICreateVxlanVtepEvent(msg.getId());

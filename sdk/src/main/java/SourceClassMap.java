@@ -430,6 +430,7 @@ public class SourceClassMap {
 			put("org.zstack.nas.NasFileSystemInventory", "org.zstack.sdk.NasFileSystemInventory");
 			put("org.zstack.nas.NasMountTargetInventory", "org.zstack.sdk.NasMountTargetInventory");
 			put("org.zstack.nas.NasProtocolType", "org.zstack.sdk.NasProtocolType");
+			put("org.zstack.network.l2.vxlan.vtep.RemoteVtepInventory", "org.zstack.sdk.RemoteVtepInventory");
 			put("org.zstack.network.l2.vxlan.vtep.VtepInventory", "org.zstack.sdk.VtepInventory");
 			put("org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory", "org.zstack.sdk.L2VxlanNetworkInventory");
 			put("org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory", "org.zstack.sdk.L2VxlanNetworkPoolInventory");
@@ -1082,6 +1083,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RaidControllerInventory", "org.zstack.storage.device.localRaid.RaidControllerInventory");
 			put("org.zstack.sdk.RaidPhysicalDriveInventory", "org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory");
 			put("org.zstack.sdk.RedirectUrlTemplate", "org.zstack.sso.header.RedirectUrlTemplate");
+			put("org.zstack.sdk.RemoteVtepInventory", "org.zstack.network.l2.vxlan.vtep.RemoteVtepInventory");
 			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
 			put("org.zstack.sdk.ReplicationDiskStatus", "org.zstack.storage.primary.ministorage.ReplicationDiskStatus");
 			put("org.zstack.sdk.ReplicationGroupState", "org.zstack.imagereplicator.ReplicationGroupState");
