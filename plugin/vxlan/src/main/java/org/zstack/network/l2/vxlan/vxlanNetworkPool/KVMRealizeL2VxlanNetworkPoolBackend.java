@@ -306,6 +306,11 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
     }
 
     @Override
+    public VSwitchType getSupportedVSwitchType() {
+        return VSwitchType.valueOf(L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE);
+    }
+
+    @Override
     public L2NetworkType getL2NetworkTypeVmNicOn() {
         return getSupportedL2NetworkType();
     }

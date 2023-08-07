@@ -111,7 +111,8 @@ public class VmAllocateNicFlow implements Flow {
             VSwitchType vSwitchType = VSwitchType.valueOf(l2nw.getvSwitchType());
             VmNicType type = vSwitchType.getVmNicTypeWithCondition(enableSriov, enableVhostUser);
             if (type == null) {
-                throw new OperationFailureException(Platform.operr("there is no available nicType on L2 network [%s]", l2nw.getUuid()));
+                errs.add(Platform.operr("there is no available nicType on L2 network [%s]", l2nw.getUuid()));
+                wcomp.allDone();
             }
             vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 

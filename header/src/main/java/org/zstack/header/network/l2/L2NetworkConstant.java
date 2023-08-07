@@ -28,6 +28,8 @@ public interface L2NetworkConstant {
     @PythonClass
     public static final String VSWITCH_TYPE_OVS_DPDK = "OvsDpdk";
     @PythonClass
+    public static final String VSWITCH_TYPE_MACVLAN = "MacVlan";
+    @PythonClass
     public static final String VSWITCH_TYPE_OVS_KERNEL = "OvsKernel";
 
     public static final String DETACH_L2NETWORK_CODE = "l2Network.detach";

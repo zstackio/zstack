@@ -143,7 +143,7 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
             public void run(FlowTrigger trigger, Map data) {
                 List<L2NetworkInventory> novlanNetworks = l2Networks.stream().filter(l2 -> l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)).collect(Collectors.toList());
                 new While<>(novlanNetworks).step((l2, c) -> {
-                    L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(L2NetworkType.valueOf(l2.getType()), HypervisorType.valueOf(hostVO.getHypervisorType()));
+                    L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(L2NetworkType.valueOf(l2.getType()), VSwitchType.valueOf(l2.getvSwitchType()), HypervisorType.valueOf(hostVO.getHypervisorType()));
                     ext.realize(l2, hostUuid, true, new Completion(c) {
                         @Override
                         public void success() {
@@ -177,7 +177,7 @@ public abstract class AbstractKVMConnectExtensionForL2Network {
             public void run(FlowTrigger trigger, Map data) {
                 List<L2NetworkInventory> vlanNetworks = l2Networks.stream().filter(l2 -> l2.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)).collect(Collectors.toList());
                 new While<>(vlanNetworks).step((l2, c) -> {
-                    L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(L2NetworkType.valueOf(l2.getType()), HypervisorType.valueOf(hostVO.getHypervisorType()));
+                    L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(L2NetworkType.valueOf(l2.getType()), VSwitchType.valueOf(l2.getvSwitchType()), HypervisorType.valueOf(hostVO.getHypervisorType()));
                     ext.realize(l2, hostUuid, true, new Completion(c) {
                         @Override
                         public void success() {

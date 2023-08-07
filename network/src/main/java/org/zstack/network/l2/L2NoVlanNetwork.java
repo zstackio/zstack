@@ -295,9 +295,10 @@ public class L2NoVlanNetwork implements L2Network {
         String htype = q.findValue();
         final HypervisorType hvType = HypervisorType.valueOf(htype);
         final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
+        final VSwitchType vSwitchType = VSwitchType.valueOf(self.getvSwitchType());
 
         final CheckL2NetworkOnHostReply reply = new CheckL2NetworkOnHostReply();
-        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
+        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
         ext.check(getSelfInventory(), msg.getHostUuid(), new Completion(msg) {
             @Override
             public void success() {
@@ -393,8 +394,8 @@ public class L2NoVlanNetwork implements L2Network {
     protected void realizeNetwork(String hostUuid, String htype, Completion completion) {
         final HypervisorType hvType = HypervisorType.valueOf(htype);
         final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
-
-        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
+        final VSwitchType vSwitchType = VSwitchType.valueOf(self.getvSwitchType());
+        L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
         ext.realize(getSelfInventory(), hostUuid, completion);
     }
 
@@ -738,8 +739,9 @@ public class L2NoVlanNetwork implements L2Network {
         new While<>(hosts).step((host,compl) -> {
             HypervisorType hvType = HypervisorType.valueOf(host.getHypervisorType());
             L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
+            VSwitchType vSwitchType = VSwitchType.valueOf(self.getvSwitchType());
 
-            L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, hvType);
+            L2NetworkRealizationExtensionPoint ext = l2Mgr.getRealizationExtension(l2Type, vSwitchType, hvType);
             ext.delete(getSelfInventory(), host.getUuid(), new Completion(compl){
                 @Override
                 public void success() {
