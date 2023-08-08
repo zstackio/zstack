@@ -46,8 +46,28 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateVniRangeMsg) msg);
         } else if (msg instanceof APICreateVxlanVtepMsg) {
             validate((APICreateVxlanVtepMsg) msg);
+        } else if (msg instanceof APICreateVxlanPoolRemoteVtepMsg) {
+            validate((APICreateVxlanPoolRemoteVtepMsg) msg);
+        } else if (msg instanceof APIDeleteVxlanPoolRemoteVtepMsg) {
+            validate((APIDeleteVxlanPoolRemoteVtepMsg) msg);
         }
         return msg;
+    }
+
+    private void validate(APICreateVxlanPoolRemoteVtepMsg msg) {
+        boolean isIpv4 = NetworkUtils.isIpv4Address(msg.getRemoteVtepIp());
+        if (!isIpv4) {
+            throw new ApiMessageInterceptionException(argerr("%s:is not ipv4", msg.getRemoteVtepIp()));
+        }
+
+    }
+
+    private void validate(APIDeleteVxlanPoolRemoteVtepMsg msg) {
+        boolean isIpv4 = NetworkUtils.isIpv4Address(msg.getRemoteVtepIp());
+        if (!isIpv4) {
+            throw new ApiMessageInterceptionException(argerr("%s:is not ipv4", msg.getRemoteVtepIp()));
+        }
+
     }
 
     private void validate(APICreateVxlanVtepMsg msg) {
