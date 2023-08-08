@@ -56,6 +56,10 @@ public class CollectionUtils {
         return from.stream().map(func).collect(Collectors.toList());
     }
 
+    public static <FROM, TO> List<TO> flatten(Collection<FROM> from, java.util.function.Function<FROM, Collection<TO>> func) {
+        return from.stream().map(func).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList());
+    }
+
     public static <K, V> Set<K> transformToSet(Collection<V> from, Function<K, V> func) {
         Set<K> ret = new HashSet<K>();
         for (V v : from) {
@@ -64,19 +68,6 @@ public class CollectionUtils {
                 continue;
             }
             ret.add(k);
-        }
-
-        return ret;
-    }
-
-    public static <K, V> Set<K> transformToSet(Collection<V> from, ListFunction<K, V> func) {
-        Set<K> ret = new HashSet<K>();
-        for (V v : from) {
-            List<K> k = func.call(v);
-            if (k == null) {
-                continue;
-            }
-            ret.addAll(k);
         }
 
         return ret;
@@ -155,6 +146,10 @@ public class CollectionUtils {
 
     public static <T> List<T> filter(List<T> list, Predicate<? super T> predicate) {
         return list.stream().filter(predicate).collect(Collectors.toList());
+    }
+
+    public static <T> T findOrNull(List<T> list, Predicate<? super T> predicate) {
+        return list.stream().filter(predicate).findFirst().orElse(null);
     }
 
     /**
