@@ -51,7 +51,7 @@ public class KVMApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
     }
 
     private void validate(APIExpungeVmUserDefinedXmlHookScriptMsg msg) {
-        checkSystemHookOrNot(msg);
+        failIfChangeSystemDefinedHook(msg);
         List<XmlHookVmInstanceRefVO> refVOs = Q.New(XmlHookVmInstanceRefVO.class)
                 .eq(XmlHookVmInstanceRefVO_.xmlHookUuid, msg.getUuid()).list();
         if (refVOs != null && refVOs.size() > 0) {
@@ -64,7 +64,7 @@ public class KVMApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
     }
 
     private void validate(APIUpdateVmUserDefinedXmlHookScriptMsg msg) {
-        checkSystemHookOrNot(msg);
+        failIfChangeSystemDefinedHook(msg);
         String name = Q.New(XmlHookVO.class).select(XmlHookVO_.name)
                 .eq(XmlHookVO_.name, msg.getName())
                 .notEq(XmlHookVO_.uuid, msg.getUuid())
@@ -74,7 +74,7 @@ public class KVMApiInterceptor implements ApiMessageInterceptor, GlobalApiMessag
         }
     }
 
-    private static void checkSystemHookOrNot(XmlHookMessage msg) {
+    private static void failIfChangeSystemDefinedHook(XmlHookMessage msg) {
         XmlHookVO vo = Q.New(XmlHookVO.class).eq(XmlHookVO_.uuid, msg.getXmlHookUuid()).find();
         if (XmlHookType.System.equals(vo.getType())) {
             throw new ApiMessageInterceptionException(operr("System-type xml hooks are not allowed to be operated"));

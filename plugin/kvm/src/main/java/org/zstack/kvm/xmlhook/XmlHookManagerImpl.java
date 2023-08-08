@@ -106,12 +106,16 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
         return bus.makeLocalServiceId(SERVICE_ID);
     }
 
+    String getGpuXmlHoolName(String version) {
+        return String.format("%s (for libvirt %s)", XmlHookConstant.SET_GPU_MEMORY, version);
+    }
+
     @Override
     public void prepareDbInitialValue() {
         new SQLBatch() {
             @Override
             protected void scripts() {
-                String name = String.format("%s (for libvirt %s)", XmlHookConstant.SET_GPU_MEMORY, XmlHookConstant.LIBVIT_VERSION_4_9_0);
+                String name = getGpuXmlHoolName(XmlHookConstant.LIBVIT_VERSION_4_9_0);
                 if (!q(XmlHookVO.class)
                         .eq(XmlHookVO_.name, name)
                         .eq(XmlHookVO_.type, XmlHookType.System).isExists()) {
@@ -127,7 +131,7 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
                     logger.debug(String.format("Created initial system xml hook[name:%s]", name));
                 }
 
-                name = String.format("%s (for libvirt %s)", XmlHookConstant.SET_GPU_MEMORY, XmlHookConstant.LIBVIT_VERSION_6_0_0);
+                name = getGpuXmlHoolName(XmlHookConstant.LIBVIT_VERSION_6_0_0);
                 if (!q(XmlHookVO.class)
                         .eq(XmlHookVO_.name, name)
                         .eq(XmlHookVO_.type, XmlHookType.System).isExists()) {
@@ -143,7 +147,7 @@ public class XmlHookManagerImpl extends AbstractService implements XmlHookManage
                     logger.debug(String.format("Created initial system xml hook[name:%s]", name));
                 }
 
-                name = String.format("%s (for libvirt %s)", XmlHookConstant.SET_GPU_MEMORY, XmlHookConstant.LIBVIT_VERSION_8_0_0);
+                name = getGpuXmlHoolName(XmlHookConstant.LIBVIT_VERSION_8_0_0);
                 if (!q(XmlHookVO.class)
                         .eq(XmlHookVO_.name, name)
                         .eq(XmlHookVO_.type, XmlHookType.System).isExists()) {
