@@ -7,6 +7,7 @@ import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.kvm.xmlhook.XmlHookVO;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTag;
 

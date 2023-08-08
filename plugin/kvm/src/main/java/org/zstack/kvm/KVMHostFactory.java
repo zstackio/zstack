@@ -84,8 +84,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.kvm.KVMConstant.CPU_MODE_NONE;
 
 public class KVMHostFactory extends AbstractHypervisorFactory implements Component,

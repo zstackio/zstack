@@ -206,6 +206,10 @@ public class VmSystemTags {
     public static String DIRECTORY_UUID_TOKEN = "directoryUuid";
     public static PatternedSystemTag DIRECTORY_UUID = new PatternedSystemTag(String.format("directoryUuid::{%s}", DIRECTORY_UUID_TOKEN), VmInstanceVO.class);
 
+    public static final String XML_HOOK_TOKEN = "xmlHook";
+    public static PatternedSystemTag XML_HOOK = new PatternedSystemTag(String.format("xmlHook::{%s}", XML_HOOK_TOKEN), VmInstanceVO.class);
+
+
     public static class UserdataTagOutputHandler implements SensitiveTagOutputHandler {
         private final String chpasswd = "chpasswd";
         private final String list = "list";
