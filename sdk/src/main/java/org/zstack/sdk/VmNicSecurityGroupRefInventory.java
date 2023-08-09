@@ -4,6 +4,14 @@ package org.zstack.sdk;
 
 public class VmNicSecurityGroupRefInventory  {
 
+    public java.lang.Integer priority;
+    public void setPriority(java.lang.Integer priority) {
+        this.priority = priority;
+    }
+    public java.lang.Integer getPriority() {
+        return this.priority;
+    }
+
     public java.lang.String vmNicUuid;
     public void setVmNicUuid(java.lang.String vmNicUuid) {
         this.vmNicUuid = vmNicUuid;

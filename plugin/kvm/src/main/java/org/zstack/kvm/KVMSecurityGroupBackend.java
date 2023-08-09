@@ -47,11 +47,10 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
 
     private void incrementallyApplyRules(final HostRuleTO hto, final Completion complete) {
         ApplySecurityGroupRuleCmd cmd = new ApplySecurityGroupRuleCmd();
-        if (!hto.getRules().isEmpty()) {
+        if (!hto.getVmNics().isEmpty()) {
+            cmd.setVmNicTOs(hto.getVmNics());
             cmd.setRuleTOs(hto.getRules());
-        }
-        if (!hto.getIpv6Rules().isEmpty()) {
-            cmd.setIpv6RuleTOs(hto.getIpv6Rules());
+            cmd.setIp6RuleTOs(hto.getIp6Rules());
         }
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -84,11 +83,10 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
     
     private void reApplyAllRulesOnHost(final HostRuleTO hto, final Completion complete) {
         RefreshAllRulesOnHostCmd cmd = new RefreshAllRulesOnHostCmd();
-        if (!hto.getRules().isEmpty()) {
+        if (!hto.getVmNics().isEmpty()) {
+            cmd.setVmNicTOs(hto.getVmNics());
             cmd.setRuleTOs(hto.getRules());
-        }
-        if (!hto.getIpv6Rules().isEmpty()) {
-            cmd.setIpv6RuleTOs(hto.getIpv6Rules());
+            cmd.setIp6RuleTOs(hto.getIp6Rules());
         }
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();

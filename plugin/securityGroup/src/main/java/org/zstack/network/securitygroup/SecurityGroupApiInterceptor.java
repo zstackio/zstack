@@ -19,20 +19,36 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
-import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
+import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
+import org.zstack.utils.logging.CLogger;
+
+import org.apache.commons.lang.StringUtils;
 
 import javax.persistence.TypedQuery;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import static java.util.Arrays.asList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.zstack.core.Platform.*;
 
 /**
  */
 public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
+    private static CLogger logger = Utils.getLogger(SecurityGroupApiInterceptor.class);
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -58,9 +74,371 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             validate((APIDetachSecurityGroupFromL3NetworkMsg) msg);
         } if (msg instanceof APICreateSecurityGroupMsg) {
             validate((APICreateSecurityGroupMsg) msg);
+        } else if (msg instanceof APIChangeSecurityGroupRuleMsg) {
+            validate((APIChangeSecurityGroupRuleMsg) msg);
+        } else if (msg instanceof APIUpdateSecurityGroupRulePriorityMsg) {
+            validate((APIUpdateSecurityGroupRulePriorityMsg) msg);
+        } else if (msg instanceof APIChangeVmNicSecurityPolicyMsg) {
+            validate((APIChangeVmNicSecurityPolicyMsg) msg);
+        } else if (msg instanceof APIChangeSecurityGroupRuleStateMsg) {
+            validate((APIChangeSecurityGroupRuleStateMsg) msg);
+        } else if (msg instanceof APISetVmNicSecurityGroupMsg) {
+            validate((APISetVmNicSecurityGroupMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APISetVmNicSecurityGroupMsg msg) {
+        if (StringUtils.isEmpty(msg.getVmNicUuid())) {
+            throw new ApiMessageInterceptionException(argerr("vm nic uuid or cannot be null or empty"));
+        }
+
+        if (msg.getRefs() == null) {
+            throw new ApiMessageInterceptionException(argerr("security group ref cannot be null"));
+        }
+
+        if (!Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("vm nic[uuid:%s] not found", msg.getVmNicUuid()));
+        }
+
+        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, msg.getVmNicUuid()).list();
+
+        if (msg.getRefs().isEmpty() && refs.isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("the vm nic[uuid:%s] not attached to any security group", msg.getVmNicUuid()));
+        }
+
+        Map<Integer, String> aoMap = new HashMap<Integer, String>();
+        for (APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO ao : msg.getRefs()) {
+            if (StringUtils.isEmpty(ao.getSecurityGroupUuid())) {
+                throw new ApiMessageInterceptionException(argerr("security group uuid cannot be null or empty"));
+            }
+
+            if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, ao.getSecurityGroupUuid()).isExists()) {
+                throw new ApiMessageInterceptionException(argerr("security group[uuid:%s] not found", ao.getSecurityGroupUuid()));
+            }
+
+            Integer priority = ao.getPriority();
+            if (priority == null || priority < 1) {
+                throw new ApiMessageInterceptionException(argerr("invalid priority, priority[%d] cannot be null or less than 1", priority));
+            }
+            
+            if (aoMap.containsKey(priority)) {
+                throw new ApiMessageInterceptionException(argerr("duplicate priority, both security group %s and %s have priority[%d]", aoMap.get(priority), ao.getSecurityGroupUuid(), priority));
+            }
+            if (aoMap.containsValue(ao.getSecurityGroupUuid())) {
+                throw new ApiMessageInterceptionException(argerr("duplicate security group[uuid:%s]", ao.getSecurityGroupUuid()));
+            }
+            aoMap.put(priority, ao.getSecurityGroupUuid());
+
+            if (!refs.stream().anyMatch(r -> r.getSecurityGroupUuid().equals(ao.getSecurityGroupUuid()))) {
+                checkIfVmNicFromAttachedL3Networks(ao.getSecurityGroupUuid(), asList(msg.getVmNicUuid()));
+            }
+        }
+        if (!aoMap.isEmpty()) {
+            Integer[] priorities = aoMap.keySet().toArray(new Integer[aoMap.size()]);
+            Arrays.sort(priorities);
+            if (priorities[0] != 1) {
+                throw new ApiMessageInterceptionException(argerr("invalid priority, priority expects to start at 1, but [%d]", priorities[0]));
+            }
+            for (int i = 0; i < priorities.length - 1; i++) {
+                if (priorities[i] + 1 != priorities[i + 1]) {
+                    throw new ApiMessageInterceptionException(argerr("invalid priority, priority[%d] and priority[%d] expected to be consecutive", priorities[i], priorities[i + 1]));
+                }
+            }
+        }
+    }
+
+    private void validate(APIChangeSecurityGroupRuleStateMsg msg) {
+        if (StringUtils.isEmpty(msg.getSecurityGroupUuid())) {
+            throw new ApiMessageInterceptionException(argerr("security group uuid cannot be null or empty"));
+        }
+
+        if (msg.getRuleUuids() == null || msg.getRuleUuids().isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("ruleUuids cannot be null or empty"));
+        }
+
+        if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, msg.getSecurityGroupUuid()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("security group[uuid:%s] not found", msg.getSecurityGroupUuid()));
+        }
+
+        List<String> toChange = new ArrayList<>();
+        List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid()).in(SecurityGroupRuleVO_.uuid, msg.getRuleUuids()).list();
+        msg.getRuleUuids().stream().forEach(r -> {
+            SecurityGroupRuleVO vo = rvos.stream().filter(rvo -> rvo.getUuid().equals(r)).findAny().get();
+            if (vo == null) {
+                throw new ApiMessageInterceptionException(argerr("security group rule[uuid:%s] not found", r));
+            }
+
+            if (!vo.getState().toString().equals(msg.getState())) {
+                toChange.add(r);
+            }
+        });
+
+        if (toChange.isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("no security group rule state need to change"));
+        } else {
+            msg.setRuleUuids(toChange);
+        }
+    }
+
+    private void validate(APIChangeVmNicSecurityPolicyMsg msg) {
+        if (msg.getIngressPolicy() == null && msg.getEgressPolicy() == null) {
+            throw new ApiMessageInterceptionException(argerr("ingress policy and egress policy cannot be both null"));
+        }
+        if (msg.getIngressPolicy() != null && !VmNicSecurityPolicy.isValid(msg.getIngressPolicy())) {
+            throw new ApiMessageInterceptionException(argerr("invalid ingress policy[%s]", msg.getIngressPolicy()));
+        }
+
+        if (msg.getEgressPolicy() != null && !VmNicSecurityPolicy.isValid(msg.getEgressPolicy())) {
+            throw new ApiMessageInterceptionException(argerr("invalid egress policy[%s]", msg.getEgressPolicy()));
+        }
+
+        if (!Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("vm nic[uuid:%s] not found", msg.getVmNicUuid()));
+        }
+
+        VmNicSecurityPolicyVO policy = Q.New(VmNicSecurityPolicyVO.class).eq(VmNicSecurityPolicyVO_.vmNicUuid, msg.getVmNicUuid()).find();
+        if (policy == null) {
+            throw new ApiMessageInterceptionException(argerr("vm nic[uuid:%s] has no security policy", msg.getVmNicUuid()));
+        }
+
+        if (policy.getIngressPolicy().equals(msg.getIngressPolicy()) && policy.getEgressPolicy().equals(msg.getEgressPolicy())) {
+            throw new ApiMessageInterceptionException(argerr("the security policy of vm nic[uuid:%s] has not changed, ingressPolicy[%s], egressPolicy[%s]", msg.getVmNicUuid(), msg.getIngressPolicy(), msg.getEgressPolicy()));
+        }
+        
+        if (policy.getIngressPolicy().equals(msg.getIngressPolicy())) {
+            msg.setIngressPolicy(null);
+        }
+        
+        if (policy.getEgressPolicy().equals(msg.getEgressPolicy())) {
+            msg.setEgressPolicy(null);
+        }
+    }
+
+    private void validate(APIUpdateSecurityGroupRulePriorityMsg msg) {
+        if (!SecurityGroupRuleType.isValid(msg.getType())) {
+            throw new ApiMessageInterceptionException(argerr("invalid type[%s]", msg.getType()));
+        }
+
+        SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+        if (sgvo == null) {
+            throw new ApiMessageInterceptionException(argerr("security group[uuid:%s] not exist", msg.getSecurityGroupUuid()));
+        }
+
+        if (msg.getRules() == null || msg.getRules().isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("rules cannot be null or empty"));
+        }
+
+        HashMap<Integer, String> map = new HashMap<Integer, String>();
+        List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid())
+                .eq(SecurityGroupRuleVO_.type, msg.getType())
+                .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
+                .list();
+        if (rvos.size() != msg.getRules().size()) {
+            throw new ApiMessageInterceptionException(argerr("security group[uuid:%s] rules size not match", msg.getSecurityGroupUuid()));
+        }
+
+        for (APIUpdateSecurityGroupRulePriorityMsg.SecurityGroupRulePriorityAO ao : msg.getRules()) {
+            if (StringUtils.isEmpty(ao.getRuleUuid())) {
+                throw new ApiMessageInterceptionException(argerr("rule uuid cannot be null or empty"));
+            }
+            if (ao.getPriority() == SecurityGroupConstant.DEFAULT_RULE_PRIORITY) {
+                throw new ApiMessageInterceptionException(argerr("rule priority[%d] is invalid", ao.getPriority()));
+            }
+            if (map.containsKey(ao.getPriority())) {
+                throw new ApiMessageInterceptionException(argerr("priority[%d] has duplicate", ao.getPriority()));
+            } else {
+                map.put(ao.getPriority(), ao.getRuleUuid());
+            }
+
+            rvos.stream().filter(rvo -> rvo.getUuid().equals(ao.getRuleUuid())).findFirst().orElseThrow(() ->
+                    new ApiMessageInterceptionException(argerr("rule[uuid:%s] not in security group[uuid:%s]", ao.getRuleUuid(), msg.getSecurityGroupUuid())));
+
+            rvos.stream().filter(rvo -> rvo.getPriority() == ao.getPriority()).findFirst().orElseThrow(() ->
+                    new ApiMessageInterceptionException(argerr("priority[%d] not in security group[uuid:%s]", ao.getPriority(), msg.getSecurityGroupUuid())));
+        }
+    }
+
+    private void validate(APIChangeSecurityGroupRuleMsg msg) {
+        if (msg.getState() != null && !SecurityGroupRuleState.isValid(msg.getState())) {
+            throw new ApiMessageInterceptionException(argerr("invalid state[%s]", msg.getState()));
+        }
+
+        if (msg.getAction() != null && !SecurityGroupRuleAction.isValid(msg.getAction())) {
+            throw new ApiMessageInterceptionException(argerr("invalid action[%s]", msg.getAction()));
+        }
+
+        if (msg.getProtocol() != null && !SecurityGroupRuleProtocolType.isValid(msg.getProtocol())) {
+            throw new ApiMessageInterceptionException(argerr("invalid protocol[%s]", msg.getProtocol()));
+        }
+
+        SecurityGroupRuleVO vo = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.uuid, msg.getUuid()).find();
+        if (vo == null) {
+            throw new ApiMessageInterceptionException(argerr("security group rule uuid[%s] not exist", msg.getUuid()));
+        }
+
+        if (SecurityGroupRuleType.Ingress.equals(vo.getType()) && !StringUtils.isEmpty(msg.getDstIpRange())) {
+            throw new ApiMessageInterceptionException(argerr("security group rule[%s] type is Ingress, dstIpRange cannot be set", msg.getUuid()));
+        }
+
+        if (SecurityGroupRuleType.Egress.equals(vo.getType()) && !StringUtils.isEmpty(msg.getSrcIpRange())) {
+            throw new ApiMessageInterceptionException(argerr("security group rule[%s] type is Egress, srcIpRange cannot be set", msg.getUuid()));
+        }
+
+        Integer priority = msg.getPriority();
+        if (priority != null) {
+            if (priority == SecurityGroupConstant.DEFAULT_RULE_PRIORITY) {
+                throw new ApiMessageInterceptionException(argerr("security group rule[%s] priority cannot be set to default value[%d]", msg.getUuid(), SecurityGroupConstant.DEFAULT_RULE_PRIORITY));
+            }
+
+            Long count = Q.New(SecurityGroupRuleVO.class)
+                    .eq(SecurityGroupRuleVO_.securityGroupUuid, vo.getSecurityGroupUuid())
+                    .eq(SecurityGroupRuleVO_.type, vo.getType())
+                    .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
+                    .count();
+            if (count.intValue() > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
+                throw new ApiMessageInterceptionException(argerr("security group %s rules number[%d] is out of max limit[%d]", vo.getType(), count.intValue(), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
+            }
+
+            if (priority > count.intValue() || priority < 0) {
+                msg.setPriority(SecurityGroupConstant.LOWEST_RULE_PRIORITY);
+            }
+        }
+
+        if (msg.getRemoteSecurityGroupUuid() != null) {
+            if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, msg.getRemoteSecurityGroupUuid()).isExists()) {
+                throw new ApiMessageInterceptionException(argerr("remote security group[uuid:%s] not exist", msg.getRemoteSecurityGroupUuid()));
+            }
+            if (msg.getSrcIpRange() != null || msg.getDstIpRange() != null) {
+                throw new ApiMessageInterceptionException(argerr("remote security group[uuid:%s] is set, srcIpRange and dstIpRange cannot be set", msg.getRemoteSecurityGroupUuid()));
+            }
+        }
+
+        if (msg.getSrcIpRange() != null && msg.getDstIpRange() != null) {
+            throw new ApiMessageInterceptionException(argerr("srcIpRange and dstIpRange cannot be set at the same time"));
+        } else if (msg.getSrcIpRange() != null) {
+            validateIps(msg.getSrcIpRange(), vo.getIpVersion());
+        } else if (msg.getDstIpRange() != null) {
+            validateIps(msg.getDstIpRange(), vo.getIpVersion());
+        }
+
+        if (msg.getDstPortRange() != null) {
+            if (msg.getProtocol() != null) {
+                if (msg.getProtocol().equals(SecurityGroupRuleProtocolType.ICMP.toString()) || msg.getProtocol().equals(SecurityGroupRuleProtocolType.ALL.toString())) {
+                    throw new ApiMessageInterceptionException(argerr("security group rule[%s] protocol is [%s], dstPortRange cannot be set", msg.getUuid(), msg.getProtocol()));
+                } else {
+                    validatePorts(msg.getDstPortRange());
+                }
+            } else {
+                if (vo.getProtocol().equals(SecurityGroupRuleProtocolType.ICMP) || vo.getProtocol().equals(SecurityGroupRuleProtocolType.ALL)) {
+                    throw new ApiMessageInterceptionException(argerr("security group rule[%s] protocol is ICMP or ALL, dstPortRange cannot be set", msg.getUuid()));
+                } else {
+                    validatePorts(msg.getDstPortRange());
+                }
+            }
+        } else {
+            if (msg.getProtocol() != null) {
+                if (msg.getProtocol().equals(SecurityGroupRuleProtocolType.TCP.toString()) || msg.getProtocol().equals(SecurityGroupRuleProtocolType.UDP.toString())) {
+                    if (vo.getProtocol().equals(SecurityGroupRuleProtocolType.ICMP) || vo.getProtocol().equals(SecurityGroupRuleProtocolType.ALL)) {
+                        throw new ApiMessageInterceptionException(argerr("security group rule[%s] protocol is [%s], cannot be set to [%s]", msg.getUuid(), vo.getProtocol(), msg.getProtocol()));
+                    }
+                }
+            }
+        }
+    }
+
+    private void validatePorts(String ports) {
+        String portArray[];
+        if (ports.contains(SecurityGroupConstant.IP_SPLIT)) {
+            String[] tmpPorts = ports.split(String.format("%s|%s", SecurityGroupConstant.IP_SPLIT, SecurityGroupConstant.RANGE_SPLIT));
+            if (tmpPorts.length > SecurityGroupConstant.PORT_GROUP_NUMBER_LIMIT) {
+                throw new ApiMessageInterceptionException(argerr("invalid ports[%s], port range[%s] number[%d] is out of max limit[%d]", ports, Arrays.toString(tmpPorts), tmpPorts.length, SecurityGroupConstant.PORT_GROUP_NUMBER_LIMIT));
+            }
+
+            portArray = ports.split(SecurityGroupConstant.IP_SPLIT);
+            Stream<String> stream = Stream.of(portArray).distinct();
+            if (portArray.length != stream.count()) {
+                throw new ApiMessageInterceptionException(argerr("invalid ports[%s], port duplicate", ports));
+            }
+        } else {
+            portArray = new String[]{ports};
+        }
+
+        for (String port : portArray) {
+            if (port.contains(SecurityGroupConstant.RANGE_SPLIT)) {
+                String portRange[] = port.split(SecurityGroupConstant.RANGE_SPLIT);
+                if (portRange.length != 2) {
+                    throw new ApiMessageInterceptionException(argerr("invalid port range[%s]", port));
+                }
+
+                try {
+                    Integer startPort = Integer.valueOf(portRange[0]);
+                    Integer endPort = Integer.valueOf(portRange[1]);
+                    if (startPort > endPort || startPort < SecurityGroupConstant.PORT_NUMBER_MIN
+                        || endPort > SecurityGroupConstant.PORT_NUMBER_MAX) {
+                        throw new ApiMessageInterceptionException(argerr("invalid port range[%s]", port));
+                    }
+                } catch (NumberFormatException e) {
+                    throw new ApiMessageInterceptionException(argerr("invalid port range[%s]", port));
+                }
+            } else {
+                try {
+                    Integer.valueOf(port);
+                    if (Integer.valueOf(port) < SecurityGroupConstant.PORT_NUMBER_MIN
+                        || Integer.valueOf(port) > SecurityGroupConstant.PORT_NUMBER_MAX) {
+                        throw new ApiMessageInterceptionException(argerr("invalid port[%s]", port));
+                    }
+                } catch (NumberFormatException e) {
+                    throw new ApiMessageInterceptionException(argerr("invalid port[%s]", port));
+                }
+            }
+        }
+    }
+
+    private void validateIps(String ips, Integer ipVersion) {
+        String ipArray[];
+        if (ips.contains(SecurityGroupConstant.IP_SPLIT)) {
+            ipArray = ips.split(SecurityGroupConstant.IP_SPLIT);
+            if (ipArray.length > SecurityGroupConstant.IP_GROUP_NUMBER_LIMIT) {
+                throw new ApiMessageInterceptionException(argerr("invalid ips[%s], ip number[%d] is out of max limit[%d]", ips, ipArray.length, SecurityGroupConstant.IP_GROUP_NUMBER_LIMIT));
+            }
+            Stream<String> stream = Stream.of(ipArray).distinct();
+            if (ipArray.length != stream.count()) {
+                throw new ApiMessageInterceptionException(argerr("invalid ips[%s], ip duplicate", ips));
+            }
+        } else {
+            ipArray = new String[]{ips};
+        }
+
+        for (String ip : ipArray) {
+            if (ip.contains(SecurityGroupConstant.CIDR_SPLIT)) {
+                if (!NetworkUtils.isCidr(ip)) {
+                    throw new ApiMessageInterceptionException(argerr("invalid cidr[%s]", ip));
+                }
+                continue;
+            }
+            if (ip.contains(SecurityGroupConstant.RANGE_SPLIT)) {
+                String[] ipRangeArray = ip.split(SecurityGroupConstant.RANGE_SPLIT);
+                if (ipRangeArray.length != 2) {
+                    throw new ApiMessageInterceptionException(argerr("invalid ip range[%s]", ip));
+                }
+                String startIp = ipRangeArray[0];
+                String endIp = ipRangeArray[1];
+                if (ipVersion == IPv6Constants.IPv4) {
+                    NetworkUtils.validateIpRange(startIp, endIp);
+                } else {
+                    if (!IPv6NetworkUtils.isIpv6Address(startIp) || !IPv6NetworkUtils.isIpv6Address(endIp) || startIp.compareTo(endIp) > 0) {
+                        throw new ApiMessageInterceptionException(argerr("invalid ip range[%s]", ip));
+                    }
+                }
+                continue;
+            }
+            if (!NetworkUtils.isIpAddress(ip)) {
+                throw new ApiMessageInterceptionException(argerr("invalid ip[%s]", ip));
+            }
+        }
     }
 
     private void validate(APIDetachSecurityGroupFromL3NetworkMsg msg) {
@@ -99,6 +477,17 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             bus.publish(evt);
             throw new StopRoutingException();
         }
+
+        List<SecurityGroupRuleVO> vos = Q.New(SecurityGroupRuleVO.class).in(SecurityGroupRuleVO_.uuid, uuids).list();
+        String sguuid = vos.get(0).getSecurityGroupUuid();
+        vos.stream().forEach(vo -> {
+            if (!sguuid.equals(vo.getSecurityGroupUuid())) {
+                throw new ApiMessageInterceptionException(argerr("can't delete rules of different security group"));
+            }
+            if (vo.getPriority() == SecurityGroupConstant.DEFAULT_RULE_PRIORITY) {
+                throw new ApiMessageInterceptionException(argerr("can't delete default rule[uuid:%s]", vo.getUuid()));
+            }
+        });
 
         msg.setRuleUuids(uuids);
     }
@@ -140,6 +529,11 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
+        // List<String> exists = Q.New(VmNicSecurityGroupRefVO.class).select(VmNicSecurityGroupRefVO_.vmNicUuid).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, msg.getSecurityGroupUuid()).in(VmNicSecurityGroupRefVO_.vmNicUuid, msg.getVmNicUuids()).listValues();
+        // if (!exists.isEmpty()) {
+        //     throw new ApiMessageInterceptionException(argerr("vm nic uuids: %s have already attached to security group[uuid:%s]", exists, msg.getSecurityGroupUuid()));
+        // }
+
         checkIfVmNicFromAttachedL3Networks(msg.getSecurityGroupUuid(), uuids);
 
         msg.setVmNicUuids(uuids);
@@ -167,168 +561,226 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private boolean checkSecurityGroupRuleEqual(SecurityGroupRuleAO rule1, SecurityGroupRuleAO rule2) {
-        if (rule1 == rule2) {
-            return true;
+    private boolean checkAllowedCidrValid(String cidr) {
+        if (StringUtils.isEmpty(cidr)) {
+            return false;
         }
 
-        if (rule1.getStartPort().equals(rule2.getStartPort()) &&
-                rule1.getEndPort().equals(rule2.getEndPort()) &&
-                rule1.getProtocol().equals(rule2.getProtocol()) &&
-                rule1.getType().equals(rule2.getType()) &&
-                rule1.getIpVersion().equals(rule2.getIpVersion())) {
-            //
-            if (rule1.getAllowedCidr() == null) {
-                if (rule2.getAllowedCidr() == null ||
-                        rule2.getAllowedCidr().equals("") ||
-                        rule2.getAllowedCidr().equals(SecurityGroupConstant.WORLD_OPEN_CIDR) ||
-                        rule2.getAllowedCidr().equals(SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6)) {
-                    return true;
-                }
-            }
-            if (rule2.getAllowedCidr() == null) {
-                if (rule1.getAllowedCidr() == null ||
-                        rule1.getAllowedCidr().equals("") ||
-                        rule1.getAllowedCidr().equals(SecurityGroupConstant.WORLD_OPEN_CIDR) ||
-                        rule1.getAllowedCidr().equals(SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6)) {
-                    return true;
-                }
-            }
-            if (rule1.getAllowedCidr().equals(rule2.getAllowedCidr())) {
-                return true;
-            }
+        if (SecurityGroupConstant.WORLD_OPEN_CIDR.equals(cidr) || SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6.equals(cidr)) {
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     private void validate(APIAddSecurityGroupRuleMsg msg) {
-        if (msg.getRules().size() > SecurityGroupConstant.ONE_API_RULES_MAX_NUM) {
-            throw new ApiMessageInterceptionException(argerr("the amount of rules exceeds limit, maximum %s rules are allowed in one request", SecurityGroupConstant.ONE_API_RULES_MAX_NUM));
+        String sgUuid = msg.getSecurityGroupUuid();
+        List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> rules = msg.getRules();
+
+        if (StringUtils.isEmpty(sgUuid)) {
+            throw new ApiMessageInterceptionException(argerr("security group uuid cannot be null or empty"));
+        }
+        if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, sgUuid).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("security group[uuid:%s] not found", sgUuid));
+        }
+        if (rules.isEmpty() || rules.size() > SecurityGroupConstant.ONE_API_RULES_MAX_NUM) {
+            throw new ApiMessageInterceptionException(argerr("the rules cannot be empty or exceed the max number %d",  SecurityGroupConstant.ONE_API_RULES_MAX_NUM));
         }
 
+        if (msg.getRemoteSecurityGroupUuids() != null && !msg.getRemoteSecurityGroupUuids().isEmpty()) {
+            if (msg.getRemoteSecurityGroupUuids().stream().distinct().count() != msg.getRemoteSecurityGroupUuids().size()) {
+                throw new ApiMessageInterceptionException(argerr("duplicate security group uuid in remoteSecurityGroupUuids[%s]", msg.getRemoteSecurityGroupUuids()));
+            }
+            
+            List<String> sgUuids = Q.New(SecurityGroupVO.class).select(SecurityGroupVO_.uuid).in(SecurityGroupVO_.uuid, msg.getRemoteSecurityGroupUuids()).listValues();
+            msg.getRemoteSecurityGroupUuids().stream().forEach(uuid -> {
+                sgUuids.stream().filter(s -> s.equals(uuid)).findFirst().orElseThrow(() -> 
+                        new ApiMessageInterceptionException(argerr("security group uuid[%s] not found", uuid)));
+            });
+
+            rules.stream().forEach(r -> {
+                if (r.getRemoteSecurityGroupUuid() != null) {
+                    throw new ApiMessageInterceptionException(argerr("the remote security group uuid is conflict, it can be set in the API parameter or in the rule parameter"));
+                }
+            });
+            
+            List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> aos = new ArrayList<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO>();
+
+            msg.getRemoteSecurityGroupUuids().stream().forEach(uuid -> {
+                rules.stream().forEach(r -> {
+                    APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO ao = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
+                    ao.setType(r.getType());
+                    ao.setState(r.getState());
+                    ao.setDescription(r.getDescription());
+                    ao.setRemoteSecurityGroupUuid(uuid);
+                    ao.setIpVersion(r.getIpVersion());
+                    ao.setProtocol(r.getProtocol());
+                    ao.setSrcIpRange(r.getSrcIpRange());
+                    ao.setDstIpRange(r.getDstIpRange());
+                    ao.setDstPortRange(r.getDstPortRange());
+                    ao.setAction(r.getAction());
+                    ao.setAllowedCidr(r.getAllowedCidr());
+                    ao.setStartPort(r.getStartPort());
+                    ao.setEndPort(r.getEndPort());
+                    aos.add(ao);
+                });
+            });
+
+            if (!aos.isEmpty()) {
+                msg.setRules(aos);
+            }
+        }
+
+        if (msg.getPriority() == null || msg.getPriority() < 0) {
+            msg.setPriority(SecurityGroupConstant.LOWEST_RULE_PRIORITY);
+        }
+
+        if (msg.getPriority() == SecurityGroupConstant.DEFAULT_RULE_PRIORITY) {
+            throw new ApiMessageInterceptionException(argerr("invalid priority, user defined rules priority must greater than %d or equals %d", SecurityGroupConstant.DEFAULT_RULE_PRIORITY, SecurityGroupConstant.LOWEST_RULE_PRIORITY));
+        }
+
+        List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> newRules = msg.getRules();
+
         // Basic check
-        for (SecurityGroupRuleAO ao : msg.getRules()) {
-            if (ao.getType() == null) {
-                throw new ApiMessageInterceptionException(argerr("rule type can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao)));
+        for (APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO ao : newRules) {
+            if (!SecurityGroupRuleType.isValid(ao.getType())) {
+                throw new ApiMessageInterceptionException(argerr("invalid rule type[%s], valid types are %s", ao.getType(), SecurityGroupRuleType.getAllType()));
             }
 
-            if (!ao.getType().equals(SecurityGroupRuleType.Egress.toString()) &&
-                    !ao.getType().equals(SecurityGroupRuleType.Ingress.toString())) {
-                throw new ApiMessageInterceptionException(argerr("unknown rule type[%s], rule can only be Ingress/Egress. rule dump: %s",
-                                ao.getType(), JSONObjectUtil.toJsonString(ao)));
-            }
-
-
-            if (ao.getProtocol() == null) {
-                throw new ApiMessageInterceptionException(argerr("protocol can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao)));
-            }
-
-            try {
-                SecurityGroupRuleProtocolType.valueOf(ao.getProtocol());
-            } catch (Exception e) {
-                throw new ApiMessageInterceptionException(argerr("invalid protocol[%s]. Valid protocols are [TCP, UDP, ICMP, ALL]. rule dump: %s",
-                                ao.getProtocol(), JSONObjectUtil.toJsonString(ao)));
-            }
-
-            if (ao.getStartPort() == null && !SecurityGroupRuleProtocolType.ALL.toString().equals(ao.getProtocol())) {
-                throw new ApiMessageInterceptionException(argerr("startPort can not be null. rule dump: %s", JSONObjectUtil.toJsonString(ao)));
-            } else if (ao.getStartPort() != null && SecurityGroupRuleProtocolType.ALL.toString().equals(ao.getProtocol())){
-                throw new ApiMessageInterceptionException(argerr("can not set port for protocol [type:ALL]. rule dump: %s", JSONObjectUtil.toJsonString(ao)));
-            }
-
-            if (SecurityGroupRuleProtocolType.ICMP.toString().equals(ao.getProtocol())) {
-                if (ao.getStartPort() < -1 || ao.getStartPort() > 255) {
-                    throw new ApiMessageInterceptionException(argerr("invalid ICMP type[%s]. Valid type is [-1, 255]. rule dump: %s",
-                                    ao.getStartPort(), JSONObjectUtil.toJsonString(ao)));
-                }
-            } else if(SecurityGroupRuleProtocolType.ALL.toString().equals(ao.getProtocol())){
-                ao.setStartPort(-1);
-            } else{
-                if (ao.getStartPort() < 0 || ao.getStartPort() > 65535) {
-                    throw new ApiMessageInterceptionException(argerr("invalid startPort[%s]. Valid range is [0, 65535]. rule dump: %s",
-                                    ao.getStartPort(), JSONObjectUtil.toJsonString(ao)));
-                }
-            }
-
-
-            if (ao.getEndPort() == null) {
-                ao.setEndPort(ao.getStartPort());
-            }
-
-            if (SecurityGroupRuleProtocolType.ICMP.toString().equals(ao.getProtocol())) {
-                if (ao.getEndPort() < -1 || ao.getEndPort() > 3) {
-                    throw new ApiMessageInterceptionException(argerr("invalid ICMP code[%s]. Valid range is [-1, 3]. rule dump: %s",
-                                    ao.getEndPort(), JSONObjectUtil.toJsonString(ao)));
-                }
-            } else if(SecurityGroupRuleProtocolType.ALL.toString().equals(ao.getProtocol())){
-                ao.setEndPort(-1);
+            if (ao.getState() == null) {
+                ao.setState(SecurityGroupRuleState.Enabled.toString());
             } else {
-                if (ao.getEndPort() < 0 || ao.getEndPort() > 65535) {
-                    throw new ApiMessageInterceptionException(argerr("invalid endPort[%s]. Valid range is [0, 65535]. rule dump: %s",
-                                    ao.getEndPort(), JSONObjectUtil.toJsonString(ao)));
+                if (!SecurityGroupRuleState.isValid(ao.getState())) {
+                    throw new ApiMessageInterceptionException(argerr("invalid rule state[%s], valid states are %s", ao.getState(), SecurityGroupRuleState.getAllState()));
+                }
+            }
+
+            if (!SecurityGroupRuleProtocolType.isValid(ao.getProtocol())) {
+                throw new ApiMessageInterceptionException(argerr("invalid rule protocol[%s], valid protocols are %s", ao.getProtocol(), SecurityGroupRuleProtocolType.getAllProtocol()));
+            }
+
+            if (ao.getAction() == null) {
+                ao.setAction(SecurityGroupRuleAction.ACCEPT.toString());
+            } else {
+                if (!SecurityGroupRuleAction.isValid(ao.getAction())) {
+                    throw new ApiMessageInterceptionException(argerr("invalid rule action[%s], valid actions are %s", ao.getAction(), SecurityGroupRuleAction.getAllAction()));
                 }
             }
 
             if (ao.getIpVersion() == null) {
                 ao.setIpVersion(IPv6Constants.IPv4);
+            } else {
+                if (ao.getIpVersion() != IPv6Constants.IPv4 && ao.getIpVersion() != IPv6Constants.IPv6) {
+                    throw new ApiMessageInterceptionException(argerr("invalid rule ipVersion[%d], valid ipVersions are %d/%d", ao.getIpVersion(), IPv6Constants.IPv4, IPv6Constants.IPv6));
+                }
             }
 
-            if (ao.getAllowedCidr() != null && !NetworkUtils.isCidr(ao.getAllowedCidr(), ao.getIpVersion())) {
-                throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s]. rule dump: %s", ao.getAllowedCidr(), JSONObjectUtil.toJsonString(ao)));
+            if (StringUtils.isEmpty(ao.getAllowedCidr())) {
+                ao.setAllowedCidr(ao.getIpVersion() == IPv6Constants.IPv4 ? SecurityGroupConstant.WORLD_OPEN_CIDR : SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6);
+            }
+
+            if (SecurityGroupRuleType.Egress.toString().equals(ao.getType())) {
+                if (ao.getSrcIpRange() != null) {
+                    throw new ApiMessageInterceptionException(argerr("the srcIpRange[%s] is not allowed to set for egress rule", ao.getSrcIpRange()));
+                }
+
+                if (checkAllowedCidrValid(ao.getAllowedCidr())) {
+                    if (ao.getDstIpRange() != null) {
+                        throw new ApiMessageInterceptionException(argerr("conflicting parameters, the allowedCidr[%s] and dstIpRange[%s] cannot be set as the same time", ao.getAllowedCidr(), ao.getDstIpRange()));
+                    }
+                    ao.setDstIpRange(ao.getAllowedCidr());
+                }
+
+                if (ao.getDstIpRange() != null) {
+                    if (ao.getRemoteSecurityGroupUuid() != null) {
+                        throw new ApiMessageInterceptionException(argerr("conflicting parameters, the ipRange[%s] and remoteSecurityGroupUuid[%s] cannot be set as the same time", ao.getDstIpRange(), ao.getRemoteSecurityGroupUuid()));
+                    }
+                    validateIps(ao.getDstIpRange(), ao.getIpVersion());
+                }
+            } else {
+                if (ao.getDstIpRange() != null) {
+                    throw new ApiMessageInterceptionException(argerr("the dstIpRange[%s] is not allowed to set for ingress rule", ao.getDstIpRange()));
+                }
+
+                if (checkAllowedCidrValid(ao.getAllowedCidr())) {
+                    if (ao.getSrcIpRange() != null) {
+                        throw new ApiMessageInterceptionException(argerr("conflicting parameters, the allowedCidr[%s] and srcIpRange[%s] cannot be set as the same time", ao.getAllowedCidr(), ao.getSrcIpRange()));
+                    }
+                    ao.setSrcIpRange(ao.getAllowedCidr());
+                }
+
+                if (ao.getSrcIpRange() != null) {
+                    if (ao.getRemoteSecurityGroupUuid() != null) {
+                        throw new ApiMessageInterceptionException(argerr("conflicting parameters, the ipRange[%s] and remoteSecurityGroupUuid[%s] cannot be set as the same time", ao.getSrcIpRange(), ao.getRemoteSecurityGroupUuid()));
+                    }
+                    validateIps(ao.getSrcIpRange(), ao.getIpVersion());
+                }
+            }
+
+            if (ao.getStartPort() == null) {
+                ao.setStartPort(-1);
+            }
+
+            if (ao.getEndPort() == null) {
+                ao.setEndPort(-1);
+            }
+
+            if (SecurityGroupRuleProtocolType.ALL.toString().equals(ao.getProtocol()) || SecurityGroupRuleProtocolType.ICMP.toString().equals(ao.getProtocol())) {
+                if (ao.getDstPortRange() != null) {
+                    throw new ApiMessageInterceptionException(argerr("the protocol type ALL or ICMP cant not set dstPortRange, rule dump: %s", JSONObjectUtil.toJsonString(ao)));
+                }
+            } else {
+                if (ao.getStartPort() >= 0 && ao.getEndPort() < 65535) {
+                    if (ao.getStartPort() > ao.getEndPort()) {
+                        throw new ApiMessageInterceptionException(argerr("invalid rule endPort[%d], endPort must be greater than or equal to startPort[%d]", ao.getEndPort(), ao.getStartPort()));
+                    }
+                    if (ao.getDstPortRange() != null) {
+                        throw new ApiMessageInterceptionException(argerr("cant not set dstPortRange and starPort as the same time, rule dump: %s", JSONObjectUtil.toJsonString(ao)));
+                    }
+
+                    if (ao.getStartPort().equals(ao.getEndPort())) {
+                        ao.setDstPortRange(String.valueOf(ao.getStartPort()));
+                    } else {
+                        ao.setDstPortRange(String.format("%s-%s", ao.getStartPort(), ao.getEndPort()));
+                    }
+                }
+
+                if (ao.getDstPortRange() == null) {
+                    throw new ApiMessageInterceptionException(argerr("the protocol type TCP/UDP must set dstPortRange, rule dump: %s", JSONObjectUtil.toJsonString(ao)));
+                }
+                validatePorts(ao.getDstPortRange());
             }
         }
 
-        // Deduplicate in msg
-        for (int i = 0; i < msg.getRules().size() - 1; i++) {
-            for (int j = msg.getRules().size() - 1; j > i; j--) {
-                if (checkSecurityGroupRuleEqual(msg.getRules().get(j), msg.getRules().get(i))) {
-                    throw new ApiMessageInterceptionException(argerr("rule should not be duplicated. rule dump: %s",
-                                    JSONObjectUtil.toJsonString(msg.getRules().get(j))));
+        // Deduplicate in API
+        for (int i = 0; i < newRules.size() - 1; i++) {
+            for (int j = newRules.size() - 1; j > i; j--) {
+                if (newRules.get(i).equals(newRules.get(j))) {
+                    throw new ApiMessageInterceptionException(argerr("rule[%s] and rule[%s] are dupilicated",
+                                    JSONObjectUtil.toJsonString(newRules.get(i)), JSONObjectUtil.toJsonString(newRules.get(j))));
                 }
             }
         }
 
-        // Deduplicate in database
-        SimpleQuery<SecurityGroupRuleVO> lsquery = dbf.createQuery(SecurityGroupRuleVO.class);
-        lsquery.add(SecurityGroupRuleVO_.securityGroupUuid, Op.EQ, msg.getSecurityGroupUuid());
-        List<SecurityGroupRuleVO> vos = lsquery.list();
-        boolean hasRemoteGroups = msg.getRemoteSecurityGroupUuids() != null && !msg.getRemoteSecurityGroupUuids().isEmpty();
+        // Deduplicate in DB
+        List<SecurityGroupRuleVO> vos = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid).list();
 
-        for (SecurityGroupRuleVO svo : vos) {
-            SecurityGroupRuleAO ao = new SecurityGroupRuleAO();
-            ao.setType(svo.getType().toString());
-            ao.setAllowedCidr(svo.getAllowedCidr());
-            ao.setProtocol(svo.getProtocol().toString());
-            ao.setStartPort(svo.getStartPort());
-            ao.setEndPort(svo.getEndPort());
-            ao.setIpVersion(svo.getIpVersion());
-            String existRuleRemoteGroupUuid = svo.getRemoteSecurityGroupUuid();
-            for (SecurityGroupRuleAO sao : msg.getRules()) {
-                if (checkSecurityGroupRuleEqual(ao, sao) && (
-                        !hasRemoteGroups && existRuleRemoteGroupUuid == null ||
-                        hasRemoteGroups && existRuleRemoteGroupUuid != null &&
-                                msg.getRemoteSecurityGroupUuids().contains(existRuleRemoteGroupUuid)
-                )) {
-                    throw new ApiMessageInterceptionException(argerr("rule exist. rule dump: %s, remoteSecurityGroupUuid:[%s]",
-                                    JSONObjectUtil.toJsonString(sao), svo.getRemoteSecurityGroupUuid()));
-                }
-            }
-
-        }
-
-        // fin
-        for (SecurityGroupRuleAO ao : msg.getRules()) {
-            int start = Math.min(ao.getStartPort(), ao.getEndPort());
-            int end = Math.max(ao.getStartPort(), ao.getEndPort());
-            ao.setStartPort(start);
-            ao.setEndPort(end);
-
-            if (ao.getAllowedCidr() == null) {
-                if (ao.getIpVersion() == IPv6Constants.IPv4) {
-                    ao.setAllowedCidr(SecurityGroupConstant.WORLD_OPEN_CIDR);
-                } else {
-                    ao.setAllowedCidr(SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6);
+        for (SecurityGroupRuleVO vo : vos) {
+            APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO ao = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
+            ao.setType(vo.getType().toString());
+            ao.setAllowedCidr(vo.getAllowedCidr());
+            ao.setProtocol(vo.getProtocol().toString());
+            ao.setStartPort(vo.getStartPort());
+            ao.setEndPort(vo.getEndPort());
+            ao.setIpVersion(vo.getIpVersion());
+            ao.setRemoteSecurityGroupUuid(vo.getRemoteSecurityGroupUuid());
+            ao.setAction(vo.getAction());
+            ao.setSrcIpRange(vo.getSrcIpRange());
+            ao.setDstIpRange(vo.getDstIpRange());
+            ao.setDstPortRange(vo.getDstPortRange());
+            for (APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO sao : newRules) {
+                if (ao.equals(sao)) {
+                    throw new ApiMessageInterceptionException(argerr("rule[%s] is duplicated to rule[uuid:%s] in datebase", JSONObjectUtil.toJsonString(sao), vo.getUuid()));
                 }
             }
         }
