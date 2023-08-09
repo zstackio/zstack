@@ -546,7 +546,6 @@ public class SourceClassMap {
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageInventory", "org.zstack.sdk.CephPrimaryStorageInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageMonInventory", "org.zstack.sdk.CephPrimaryStorageMonInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStoragePoolInventory", "org.zstack.sdk.CephPrimaryStoragePoolInventory");
-			put("org.zstack.storage.device.commons.LocalLunInventory", "org.zstack.sdk.LocalLunInventory");
 			put("org.zstack.storage.device.commons.PhysicalDriveInventory", "org.zstack.sdk.PhysicalDriveInventory");
 			put("org.zstack.storage.device.commons.StorageDeviceTransferProtocol", "org.zstack.sdk.StorageDeviceTransferProtocol");
 			put("org.zstack.storage.device.fibreChannel.FiberChannelLunInventory", "org.zstack.sdk.FiberChannelLunInventory");
@@ -950,7 +949,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LoadBalancerServerGroupInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupInventory");
 			put("org.zstack.sdk.LoadBalancerServerGroupServerIpInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupServerIpInventory");
 			put("org.zstack.sdk.LoadBalancerServerGroupVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefInventory");
-			put("org.zstack.sdk.LocalLunInventory", "org.zstack.storage.device.commons.LocalLunInventory");
 			put("org.zstack.sdk.LocalStorageResourceRefInventory", "org.zstack.storage.primary.local.LocalStorageResourceRefInventory");
 			put("org.zstack.sdk.LocateStatus", "org.zstack.storage.device.localRaid.LocateStatus");
 			put("org.zstack.sdk.LoginAuthenticationProcedureDesc", "org.zstack.header.identity.login.LoginAuthenticationProcedureDesc");

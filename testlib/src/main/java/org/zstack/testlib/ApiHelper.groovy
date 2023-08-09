@@ -27799,8 +27799,8 @@ abstract class ApiHelper {
     }
 
 
-    def queryLocalLun(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryLocalLunAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryLocalLunAction()
+    def queryLun(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryLunAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryLunAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
