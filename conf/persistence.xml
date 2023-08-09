@@ -107,6 +107,7 @@
         <class>org.zstack.network.securitygroup.SecurityGroupVO</class>
         <class>org.zstack.network.securitygroup.SecurityGroupFailureHostVO</class>
         <class>org.zstack.network.securitygroup.VmNicSecurityGroupRefVO</class>
+        <class>org.zstack.network.securitygroup.VmNicSecurityPolicyVO</class>
         <class>org.zstack.network.securitygroup.SecurityGroupSequenceNumberVO</class>
         <class>org.zstack.network.service.portforwarding.PortForwardingRuleVO</class>
         <class>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefVO</class>

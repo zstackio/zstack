@@ -45,7 +45,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.DELETE,
         responseClass = APIDetachSecurityGroupFromL3NetworkEvent.class
 )
-public class APIDetachSecurityGroupFromL3NetworkMsg extends APIMessage {
+public class APIDetachSecurityGroupFromL3NetworkMsg extends APIMessage implements SecurityGroupMessage {
     /**
      * @desc security group uuid
      */
@@ -57,6 +57,7 @@ public class APIDetachSecurityGroupFromL3NetworkMsg extends APIMessage {
     @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
     private String l3NetworkUuid;
 
+    @Override
     public String getSecurityGroupUuid() {
         return securityGroupUuid;
     }

@@ -1,12 +1,18 @@
 package org.zstack.network.securitygroup
 
-import java.sql.Timestamp
+import java.lang.Integer
 import java.sql.Timestamp
 
 doc {
 
 	title "安全组下的网卡清单"
 
+	field {
+		name "priority"
+		desc "安全组优先级"
+		type "Integer"
+		since "4.7.21"
+	}
 	field {
 		name "vmNicUuid"
 		desc "云主机网卡UUID"

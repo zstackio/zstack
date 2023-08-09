@@ -12,8 +12,10 @@ import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.vm.VmPriorityConfigVO;
 import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
+import org.zstack.network.securitygroup.RuleTO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
+import org.zstack.network.securitygroup.VmNicSecurityTO;
 
 import java.io.Serializable;
 import java.util.*;
@@ -3047,23 +3049,38 @@ public class KVMAgentCommands {
     }
 
     public static class RefreshAllRulesOnHostCmd extends AgentCommand {
-        private List<SecurityGroupRuleTO> ruleTOs;
-        private List<SecurityGroupRuleTO> ipv6RuleTOs;
+        private List<VmNicSecurityTO> vmNicTOs;
+        private Map<String, List<RuleTO>> ruleTOs;
+        private Map<String, List<RuleTO>> ip6RuleTOs;
 
-        public List<SecurityGroupRuleTO> getRuleTOs() {
+        public RefreshAllRulesOnHostCmd() {
+            vmNicTOs = new ArrayList<VmNicSecurityTO>();
+            ruleTOs = new HashMap<String, List<RuleTO>>();
+            ip6RuleTOs = new HashMap<String, List<RuleTO>>();
+        }
+
+        public List<VmNicSecurityTO> getVmNicTOs() {
+            return vmNicTOs;
+        }
+
+        public void setVmNicTOs(List<VmNicSecurityTO> vmNicTOs) {
+            this.vmNicTOs = vmNicTOs;
+        }
+
+        public Map<String, List<RuleTO>> getRuleTOs() {
             return ruleTOs;
         }
 
-        public void setRuleTOs(List<SecurityGroupRuleTO> ruleTOs) {
+        public void setRuleTOs(Map<String, List<RuleTO>> ruleTOs) {
             this.ruleTOs = ruleTOs;
         }
 
-        public List<SecurityGroupRuleTO> getIpv6RuleTOs() {
-            return ipv6RuleTOs;
+        public Map<String, List<RuleTO>> getIp6RuleTOs() {
+            return ip6RuleTOs;
         }
 
-        public void setIpv6RuleTOs(List<SecurityGroupRuleTO> ipv6RuleTOs) {
-            this.ipv6RuleTOs = ipv6RuleTOs;
+        public void setIp6RuleTOs(Map<String, List<RuleTO>> ip6RuleTOs) {
+            this.ip6RuleTOs = ip6RuleTOs;
         }
     }
 
@@ -3102,23 +3119,38 @@ public class KVMAgentCommands {
 
 
     public static class ApplySecurityGroupRuleCmd extends AgentCommand {
-        private List<SecurityGroupRuleTO> ruleTOs;
-        private List<SecurityGroupRuleTO> ipv6RuleTOs;
+        private List<VmNicSecurityTO> vmNicTOs;
+        private Map<String, List<RuleTO>> ruleTOs;
+        private Map<String, List<RuleTO>> ip6RuleTOs;
 
-        public List<SecurityGroupRuleTO> getRuleTOs() {
+        public ApplySecurityGroupRuleCmd() {
+            vmNicTOs = new ArrayList<VmNicSecurityTO>();
+            ruleTOs = new HashMap<String, List<RuleTO>>();
+            ip6RuleTOs = new HashMap<String, List<RuleTO>>();
+        }
+
+        public List<VmNicSecurityTO> getVmNicTOs() {
+            return vmNicTOs;
+        }
+
+        public void setVmNicTOs(List<VmNicSecurityTO> vmNicTOs) {
+            this.vmNicTOs = vmNicTOs;
+        }
+
+        public Map<String, List<RuleTO>> getRuleTOs() {
             return ruleTOs;
         }
 
-        public void setRuleTOs(List<SecurityGroupRuleTO> ruleTOs) {
+        public void setRuleTOs(Map<String, List<RuleTO>> ruleTOs) {
             this.ruleTOs = ruleTOs;
         }
 
-        public List<SecurityGroupRuleTO> getIpv6RuleTOs() {
-            return ipv6RuleTOs;
+        public Map<String, List<RuleTO>> getIp6RuleTOs() {
+            return ip6RuleTOs;
         }
 
-        public void setIpv6RuleTOs(List<SecurityGroupRuleTO> ipv6RuleTOs) {
-            this.ipv6RuleTOs = ipv6RuleTOs;
+        public void setIp6RuleTOs(Map<String, List<RuleTO>> ip6RuleTOs) {
+            this.ip6RuleTOs = ip6RuleTOs;
         }
     }
 
