@@ -107,10 +107,13 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HBADeviceVO` (
     PRIMARY KEY (`uuid`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `zstack`.`LocalLunVO` (
-    `uuid` char(32) NOT NULL UNIQUE,
-    `physicalDriveUuid` char(32) DEFAULT NULL,
-    PRIMARY KEY (`uuid`),
-    CONSTRAINT fkLocalLunVOLunVO FOREIGN KEY (uuid) REFERENCES LunVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
-    CONSTRAINT fkLocalLunVOPhysicalDriveVO FOREIGN KEY (physicalDriveUuid) REFERENCES PhysicalDriveVO (uuid) ON DELETE SET NULL
+CREATE TABLE IF NOT EXISTS `zstack`.`LunPhysicalDriveRefVO` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `lunUuid` char(32) NOT NULL,
+    `physicalDriveUuid` char(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`id`),
+    CONSTRAINT fkLunPhysicalDriveRefVOLunVO FOREIGN KEY (lunUuid) REFERENCES LunVO (uuid) ON DELETE CASCADE,
+    CONSTRAINT fkLunPhysicalDriveRefVOPhysicalDriveVO FOREIGN KEY (physicalDriveUuid) REFERENCES PhysicalDriveVO (uuid) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

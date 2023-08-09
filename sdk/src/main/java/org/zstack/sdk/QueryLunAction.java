@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryLocalLunAction extends QueryAction {
+public class QueryLunAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryLocalLunAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryLocalLunResult value;
+        public org.zstack.sdk.QueryLunResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryLocalLunAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryLocalLunResult value = res.getResult(org.zstack.sdk.QueryLocalLunResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryLocalLunResult() : value; 
+        org.zstack.sdk.QueryLunResult value = res.getResult(org.zstack.sdk.QueryLunResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryLunResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QueryLocalLunAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/storage-devices/local/lun";
+        info.path = "/storage-devices/lun";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
