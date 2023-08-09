@@ -10,5 +10,5 @@ public interface AddSecurityGroupRuleMessage {
 
     List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> getRules();
 
-    List<String> getRemoteSecurityGroupUuids();
+    Integer getPriority();
 }
