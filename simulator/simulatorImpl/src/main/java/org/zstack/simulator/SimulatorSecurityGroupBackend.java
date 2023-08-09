@@ -40,26 +40,13 @@ public class SimulatorSecurityGroupBackend implements
 
 	@Override
 	public void applyRules(HostRuleTO hto, Completion complete) {
-		logger.debug(String.format("apply security rules to simulator host[uuid:%s]:\n%s", hto.getHostUuid(), JSONObjectUtil.toJsonString(hto.getRules())));
+		logger.debug(String.format("apply security rules to simulator host[uuid:%s], ipv4:\n%s\nipv6:\n%s", hto.getHostUuid(), JSONObjectUtil.toJsonString(hto.getRules()), JSONObjectUtil.toJsonString(hto.getIp6Rules())));
 		if (!securityGroupSuccess) {
 		    ErrorCode errorCode = operr("on purpose");
 		    complete.fail(errorCode);
 		    return;
 		}
 		
-		if (hto.isRefreshHost()) {
-		    rules.remove(hto.getHostUuid());
-		}
-		
-		Set<SecurityGroupRuleTO> oldTos = rules.get(hto.getHostUuid());
-		if (oldTos == null) {
-		    Set<SecurityGroupRuleTO> tos = new HashSet<SecurityGroupRuleTO>();
-		    tos.addAll(hto.getRules());
-		    rules.put(hto.getHostUuid(), tos);
-		} else {
-		    oldTos.removeAll(hto.getRules());
-		    oldTos.addAll(hto.getRules());
-		}
 		complete.success();
 	}
 
@@ -92,13 +79,13 @@ public class SimulatorSecurityGroupBackend implements
                 return arg.getInternalName();
             }
         });
-        Set<SecurityGroupRuleTO> tos = rules.get(hostUuid);
+        // Set<SecurityGroupRuleTO> tos = rules.get(hostUuid);
         Set<SecurityGroupRuleTO> ntos = new HashSet<SecurityGroupRuleTO>();
-        for (SecurityGroupRuleTO to : tos) {
-            if (nicNames.contains(to.getVmNicInternalName())) {
-                ntos.add(to);
-            }
-        }
+        // for (SecurityGroupRuleTO to : tos) {
+        //     if (nicNames.contains(to.getVmNicInternalName())) {
+        //         ntos.add(to);
+        //     }
+        // }
         rules.put(hostUuid, ntos);
         completion.success();
     }
@@ -113,23 +100,23 @@ public class SimulatorSecurityGroupBackend implements
             return null;
         }
 
-	    for (SecurityGroupRuleTO to : tos) {
-	        if (to.getVmNicInternalName().equals(vmNicName)) {
-	            return to;
-	        }
-	    }
+	    // for (SecurityGroupRuleTO to : tos) {
+	    //     if (to.getVmNicInternalName().equals(vmNicName)) {
+	    //         return to;
+	    //     }
+	    // }
 	    
 	    return null;
 	}
 	
 	public List<RuleTO> getRulesByNicName(String nicName) {
-		for (Set<SecurityGroupRuleTO> rs : rules.values()) {
-			for (SecurityGroupRuleTO sto : rs) {
-				if (sto.getVmNicInternalName().equals(nicName)) {
-					return sto.getRules();
-				}
-			}
-		}
+		// for (Set<SecurityGroupRuleTO> rs : rules.values()) {
+		// 	for (SecurityGroupRuleTO sto : rs) {
+		// 		if (sto.getVmNicInternalName().equals(nicName)) {
+		// 			return sto.getRules();
+		// 		}
+		// 	}
+		// }
 		
 		return null;
 	}

@@ -28,10 +28,15 @@ import java.sql.Timestamp;
 "uuid": "4248355e4a534a2c8b0e9986ab0d00bc",
 "securityGroupUuid": "bb0538d800e54497b50710f449056a9f",
 "type": "Ingress",
-"startPort": 22,
-"endPort": 100,
+"priority": 1,
 "protocol": "TCP",
-"allowedCidr": "0.0.0.0/0",
+"srcIpRange": "10.10.10.1,10.10.10.2",
+"dstIpRange": "20.20.20.1,20.20.20.1",
+"srcPortRange": "10,20",
+"dstPortRange": "30,40",
+"defaultTarget": "RETURN",
+"state": "Enabled",
+"remoteSecurityGroupUuid": "7c224d3f5ad74520ac4dd6c81def0d8e",
 "createDate": "May 14, 2014 10:36:48 PM",
 "lastOpDate": "May 14, 2014 10:36:48 PM"
 }

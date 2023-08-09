@@ -1,9 +1,6 @@
 package org.zstack.network.securitygroup
 
 import java.lang.Integer
-import java.lang.Integer
-import java.lang.Integer
-import java.sql.Timestamp
 import java.sql.Timestamp
 
 doc {
@@ -35,26 +32,62 @@ doc {
 		since "3.1"
 	}
 	field {
-		name "startPort"
-		desc "如果协议是TCP/UDP, 它是端口范围（port range）的起始端口号; 如果协议是ICMP, 它是ICMP类型（type）"
-		type "Integer"
-		since "0.6"
-	}
+        name "protocol"
+        desc "流量协议类型"
+        type "String"
+        since "0.6"
+    }
 	field {
-		name "endPort"
-		desc "如果协议是TCP/UDP, 它是端口范围（port range）的起始端口号; 如果协议是ICMP, 它是ICMP类型（type）"
-		type "Integer"
-		since "0.6"
-	}
+        name "state"
+        desc "规则的可用状态"
+        type "String"
+        since "0.6"
+    }
 	field {
-		name "protocol"
-		desc "流量协议类型"
+        name "priority"
+        desc "规则优先级"
+        type "Integer"
+        since "4.7.21"
+    }
+	field {
+        name "description"
+        desc "规则描述"
+        type "String"
+        since "4.7.21"
+    }
+	field {
+		name "srcIpRange"
+		desc "源IP范围"
 		type "String"
-		since "0.6"
+		since "4.7.21"
 	}
 	field {
-		name "state"
-		desc "规则的可用状态, 当前版本未实现"
+		name "dstIpRange"
+		desc "目的IP范围"
+		type "String"
+		since "4.7.21"
+	}
+	field {
+		name "srcPortRange"
+		desc "源端口范围，当前版本未实现"
+		type "String"
+		since "4.7.21"
+	}
+	field {
+		name "dstPortRange"
+		desc "目的端口范围"
+		type "String"
+		since "4.7.21"
+	}
+	field {
+		name "action"
+		desc "规则的默认动作"
+		type "String"
+		since "4.7.21"
+	}
+	field {
+		name "remoteSecurityGroupUuid"
+		desc ""
 		type "String"
 		since "0.6"
 	}
@@ -65,9 +98,15 @@ doc {
 		since "0.6"
 	}
 	field {
-		name "remoteSecurityGroupUuid"
-		desc ""
-		type "String"
+		name "startPort"
+		desc "如果协议是TCP/UDP, 它是端口范围（port range）的起始端口号; 如果协议是ICMP, 它是ICMP类型（type）"
+		type "Integer"
+		since "0.6"
+	}
+	field {
+		name "endPort"
+		desc "如果协议是TCP/UDP, 它是端口范围（port range）的起始端口号; 如果协议是ICMP, 它是ICMP类型（type）"
+		type "Integer"
 		since "0.6"
 	}
 	field {

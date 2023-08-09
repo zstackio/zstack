@@ -28,12 +28,27 @@ public class SecurityGroupRuleVO extends ResourceVO {
 
     @Column
     private Integer ipVersion;
-    
+
     @Column
-    private int startPort;
-    
+    private int priority;
+
     @Column
-    private int endPort;
+    private String description;
+
+    @Column
+    private String action;
+
+    @Column
+    private String srcIpRange;
+
+    @Column
+    private String dstIpRange;
+
+    @Column
+    private String srcPortRange;
+
+    @Column
+    private String dstPortRange;
     
     @Column
     @Enumerated(EnumType.STRING)
@@ -42,9 +57,6 @@ public class SecurityGroupRuleVO extends ResourceVO {
     @Column
     @Enumerated(EnumType.STRING)
     private SecurityGroupRuleState state = SecurityGroupRuleState.Enabled;
-
-    @Column
-    private String allowedCidr;
 
     @Column
     @ForeignKey(parentEntityClass = SecurityGroupVO.class, onDeleteAction = ReferenceOption.CASCADE)
@@ -56,9 +68,73 @@ public class SecurityGroupRuleVO extends ResourceVO {
     @Column
     private Timestamp lastOpDate;
 
+    @Column
+    private int startPort;
+    
+    @Column
+    private int endPort;
+
+    @Column
+    private String allowedCidr;
+
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+   public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
+
+    public String getSrcIpRange() {
+        return srcIpRange;
+    }
+
+    public void setSrcIpRange(String srcIpRange) {
+        this.srcIpRange = srcIpRange;
+    }
+
+    public String getDstIpRange() {
+        return dstIpRange;
+    }
+
+    public void setDstIpRange(String dstIprange) {
+        this.dstIpRange = dstIprange;
+    }
+
+    public String getSrcPortRange() {
+        return srcPortRange;
+    }
+
+    public void setSrcPortRange(String srcPortRange) {
+        this.srcPortRange = srcPortRange;
+    }
+
+    public String getDstPortRange() {
+        return dstPortRange;
+    }
+
+    public void setDstPortRange(String dstPortRange) {
+        this.dstPortRange = dstPortRange;
     }
 
     public SecurityGroupRuleState getState() {

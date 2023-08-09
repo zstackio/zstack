@@ -36,6 +36,9 @@ public class VmNicSecurityGroupRefVO {
     private String securityGroupUuid;
 
     @Column
+    private int priority;
+
+    @Column
     private Timestamp createDate;
     
     @Column
@@ -68,6 +71,14 @@ public class VmNicSecurityGroupRefVO {
 
     public void setSecurityGroupUuid(String securityGroupUuid) {
         this.securityGroupUuid = securityGroupUuid;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     public Timestamp getCreateDate() {

@@ -25,6 +25,7 @@ import static java.util.Arrays.asList;
  * @httpMsg
  * {
 "org.zstack.network.securitygroup.APIDeleteSecurityGroupRuleMsg": {
+"securityGroupUuid": "3904b4837f0c4f539063777ed463b648",
 "ruleUuids": [
 "3f8e32673f2a429dbed7ea3e1041dd43"
 ],
@@ -37,6 +38,7 @@ import static java.util.Arrays.asList;
  * @msg
  * {
 "org.zstack.network.securitygroup.APIDeleteSecurityGroupRuleMsg": {
+"securityGroupUuid": "3904b4837f0c4f539063777ed463b648",
 "ruleUuids": [
 "3f8e32673f2a429dbed7ea3e1041dd43"
 ],
