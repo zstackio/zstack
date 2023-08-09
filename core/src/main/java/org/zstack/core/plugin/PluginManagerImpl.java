@@ -1,10 +1,10 @@
 package org.zstack.core.plugin;
 
-import org.apache.commons.codec.digest.DigestUtils;
-import org.zstack.abstraction.PluginCapabilityState;
-import org.zstack.abstraction.PluginRegister;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.abstraction.PluginDriver;
 import org.zstack.abstraction.PluginValidator;
 import org.zstack.core.Platform;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -12,8 +12,12 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.zstack.core.Platform.operr;
 
@@ -23,15 +27,18 @@ import static org.zstack.core.Platform.operr;
 public class PluginManagerImpl implements PluginManager, Component {
     private static final CLogger logger = Utils.getLogger(PluginManagerImpl.class);
 
-    private final Set<Class<? extends PluginRegister>> pluginMetadata = new HashSet<>();
-    private final Map<String, PluginRegister> pluginInstances = new HashMap<>();
-    private final Map<Class<? extends PluginRegister>, List<PluginRegister>>
-            pluginRegisterMap = new HashMap<>();
-    private final Map<Class<? extends PluginRegister>, PluginValidator>
-            pluginValidatorMap = new HashMap<>();
+    @Autowired
+    private DatabaseFacade dbf;
+
+    private final Set<Class<? extends PluginDriver>> pluginMetadata = new HashSet<>();
+    private final Map<String, PluginDriver> pluginInstances = new HashMap<>();
+    private final Map<Class<? extends PluginDriver>, List<PluginDriver>>
+            pluginRegisters = new HashMap<>();
+    private final Map<Class<? extends PluginDriver>, PluginValidator>
+            pluginValidators = new HashMap<>();
 
     private void collectPluginProtocolMetadata() {
-        Platform.getReflections().getSubTypesOf(PluginRegister.class).forEach(clz -> {
+        Platform.getReflections().getSubTypesOf(PluginDriver.class).forEach(clz -> {
             if (!clz.getCanonicalName().contains("org.zstack.abstraction")
                     || !clz.isInterface()) {
                 return;
@@ -47,48 +54,78 @@ public class PluginManagerImpl implements PluginManager, Component {
     }
 
     private void registerPluginAsSingleton(
-            Class<? extends PluginRegister> pluginRegisterClz) {
+            Class<? extends PluginDriver> pluginRegisterClz,
+            Class<? extends PluginDriver> pluginDriverClz) {
         try {
-            PluginRegister pluginRegister = pluginRegisterClz
+            PluginDriver pluginDriver = pluginRegisterClz
                     .getConstructor()
                     .newInstance();
-            if (pluginInstances.containsKey(pluginRegister.productKey())) {
+            if (pluginInstances.containsKey(pluginDriver.uuid())) {
                 throw new CloudRuntimeException(
                         String.format("duplicate plugin[class: %s]", pluginRegisterClz));
             }
 
-            if (pluginValidatorMap.containsKey(pluginRegisterClz)) {
-                pluginValidatorMap.get(pluginRegisterClz).validate(pluginRegister);
+            if (pluginValidators.containsKey(pluginRegisterClz)) {
+                pluginValidators.get(pluginRegisterClz).validate(pluginDriver);
             }
 
-            logger.debug(
-                    String.format("detect plugin class: %s, name: %s, version: %s," +
-                                    " capabilities: \n %s",
-                            pluginRegisterClz.getCanonicalName(),
-                            pluginRegister.version(),
-                            pluginRegister.productName(),
-                            JSONObjectUtil.toJsonString(pluginRegister.capabilities())));
+            // String format all String methods of plugin from pluginRegister to logger.debug
+            logger.debug(String.format("register plugin[class: %s, productKey: %s, version: %s," +
+                            " capabilities: %s, description: %s, vendor: %s, url: %s," +
+                            " license: %s]",
+                    pluginRegisterClz,
+                    pluginDriver.uuid(),
+                    pluginDriver.version(),
+                    JSONObjectUtil.toJsonString(pluginDriver.features()),
+                    pluginDriver.description(),
+                    pluginDriver.vendor(),
+                    pluginDriver.url(),
+                    pluginDriver.license()));
 
-            verifyPluginProduct(pluginRegister);
-            pluginInstances.put(pluginRegister.productKey(), pluginRegister);
-            pluginRegisterMap.computeIfAbsent(pluginRegisterClz, k -> new ArrayList<>());
-            pluginRegisterMap.get(pluginRegisterClz).add(pluginRegister);
+            verifyPluginProduct(pluginDriver);
+
+            pluginInstances.put(pluginDriver.uuid(), pluginDriver);
+            pluginRegisters.computeIfAbsent(pluginDriverClz, k -> new ArrayList<>());
+            pluginRegisters.get(pluginDriverClz).add(pluginDriver);
+
+            PluginDriverVO vo = dbf.findByUuid(pluginDriver.uuid(), PluginDriverVO.class);
+            if (vo == null) {
+                vo = new PluginDriverVO();
+                vo.setUuid(pluginDriver.uuid());
+                vo.setName(pluginDriver.name());
+                vo.setVendor(pluginDriver.vendor());
+                vo.setFeatures(JSONObjectUtil.toJsonString(pluginDriver.features()));
+                vo.setType(pluginDriver.type());
+                dbf.persist(vo);
+            } else {
+                vo.setName(pluginDriver.name());
+                vo.setVendor(pluginDriver.vendor());
+                vo.setFeatures(JSONObjectUtil.toJsonString(pluginDriver.features()));
+                vo.setType(pluginDriver.type());
+                dbf.update(vo);
+            }
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
     }
 
-    private void getPluginInterfaceSingletons(Class<? extends PluginRegister> clz) {
+    private void getPluginInterfaceSingletons(Class<? extends PluginDriver> abstractPluginClz) {
         Platform.getReflections()
-                .getSubTypesOf(clz)
-                .forEach(this::registerPluginAsSingleton);
+                .getSubTypesOf(abstractPluginClz)
+                .forEach(pluginDriverClz -> {
+                    if (pluginDriverClz.isInterface()) {
+                        return;
+                    }
+
+                    registerPluginAsSingleton(pluginDriverClz, abstractPluginClz);
+                });
     }
 
     private void loadPluginsFromMetadata() {
         pluginMetadata.forEach(this::getPluginInterfaceSingletons);
 
-        pluginRegisterMap.forEach((pluginClazz, instanceList) -> {
-            PluginValidator validator = pluginValidatorMap.get(pluginClazz);
+        pluginRegisters.forEach((pluginClazz, instanceList) -> {
+            PluginValidator validator = pluginValidators.get(pluginClazz);
             if (validator == null) {
                 return;
             }
@@ -97,21 +134,26 @@ public class PluginManagerImpl implements PluginManager, Component {
         });
     }
 
-    private void verifyPluginProduct(PluginRegister pluginRegister) {
+    private void verifyPluginProduct(PluginDriver pluginDriver) {
         if (!PluginGlobalConfig.ALLOW_UNKNOWN_PRODUCT_PLUGIN.value(Boolean.class)
-                && pluginRegister.productKey() == null) {
+                && pluginDriver.uuid() == null) {
             throw new OperationFailureException(operr("unknown product plugin name: %s",
-                    pluginRegister.productName()));
+                    pluginDriver.name()));
         }
 
-        doVerification(pluginRegister.productName(), pluginRegister.productKey());
+        if (pluginDriver.name() == null
+                || pluginDriver.uuid() == null
+                || pluginDriver.vendor() == null) {
+            throw new OperationFailureException(operr("plugin[%s] name," +
+                    " productKey and vendor cannot be null",
+                    pluginDriver.getClass()));
+        }
+
+        doVerification(pluginDriver.name(), pluginDriver.uuid());
     }
 
     private void doVerification(String productName, String productKey) {
-        if (!DigestUtils.md5Hex(productName).equals(productKey)) {
-            throw new OperationFailureException(operr("failed to verify product: %s",
-                    productName));
-        }
+        // TODO: verify plugin driver
     }
 
     private void collectPluginValidators() {
@@ -131,7 +173,7 @@ public class PluginManagerImpl implements PluginManager, Component {
                         .getConstructor()
                         .newInstance();
 
-                pluginValidatorMap.put(pluginValidator.pluginClass(), pluginValidator);
+                pluginValidators.put(pluginValidator.pluginClass(), pluginValidator);
             } catch (Exception e) {
                 throw new CloudRuntimeException(e);
             }
@@ -152,15 +194,28 @@ public class PluginManagerImpl implements PluginManager, Component {
     }
 
     @Override
-    public boolean isCapabilitySupported(String pluginProductKey,
+    public boolean isFeatureSupported(String pluginProductKey,
                                          String capability) {
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("check plugin[%s] capability[%s]",
+                    pluginProductKey, capability));
+            logger.trace(String.format("plugin features %s",
+                    JSONObjectUtil.toJsonString(pluginInstances
+                            .get(pluginProductKey)
+                            .features())));
+            logger.trace(String.format("plugin feature state: %s",
+                    JSONObjectUtil.toJsonString(pluginInstances
+                            .get(pluginProductKey)
+                            .features().get(capability) == Boolean.TRUE)));
+        }
+
         return pluginInstances.get(pluginProductKey)
-                .capabilities()
-                .get(capability) == PluginCapabilityState.SUPPORTED;
+                .features()
+                .get(capability) == Boolean.TRUE;
     }
 
     @Override
-    public <T extends PluginRegister> T getPlugin(String pluginProductKey) {
+    public <T extends PluginDriver> T getPlugin(String pluginProductKey) {
         if (!pluginInstances.containsKey(pluginProductKey)) {
             throw new CloudRuntimeException(String.format("Unsupported plugin %s",
                     pluginProductKey));
@@ -170,7 +225,30 @@ public class PluginManagerImpl implements PluginManager, Component {
     }
 
     @Override
-    public <T extends PluginRegister> List<T> getPluginList(Class<? extends PluginRegister> pluginClass) {
-        return (List<T>) pluginRegisterMap.get(pluginClass);
+    public <T extends PluginDriver> List<T> getPluginList(Class<? extends PluginDriver> pluginClass) {
+        return (List<T>) pluginRegisters.get(pluginClass);
+    }
+
+    @Override
+    public boolean isPluginTypeExist(Class<? extends PluginDriver> pluginClass, String type) {
+        return pluginRegisters.get(pluginClass)
+                .stream()
+                .anyMatch(plugin -> plugin.type().equals(type));
+    }
+
+    @Override
+    public <T extends PluginDriver> T getPlugin(Class<? extends PluginDriver> pluginClass, String type) {
+        if (pluginRegisters.get(pluginClass)
+                .stream()
+                .filter(plugin -> plugin.type().equals(type))
+                .count() > 1) {
+            throw new CloudRuntimeException(String.format("multi plugin with same type %s", type));
+        }
+
+        return (T) pluginRegisters.get(pluginClass)
+                .stream()
+                .filter(plugin -> plugin.type().equals(type))
+                .findFirst()
+                .orElse(null);
     }
 }

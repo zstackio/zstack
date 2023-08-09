@@ -3,9 +3,9 @@ package org.zstack.abstraction;
 import java.util.List;
 
 public interface PluginValidator {
-    Class<? extends PluginRegister> pluginClass();
+    Class<? extends PluginDriver> pluginClass();
 
-    void validate(PluginRegister register);
+    void validate(PluginDriver register);
 
-    void validateAllPlugins(List<PluginRegister> pluginRegisterList);
+    void validateAllPlugins(List<PluginDriver> pluginRegisterList);
 }

@@ -235,7 +235,9 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
     private void initEncryptDriver() {
         String driverType = EncryptGlobalConfig.ENCRYPT_DRIVER.value();
         for (EncryptDriver driver : pluginRegistry.getExtensionList(EncryptDriver.class)) {
-            if (!driverType.equals(driver.getDriverType().toString())) {
+            if (!driverType.equals(driver.getDriverType().toString())
+                    && (driver.getDriverTypes() != null
+                    && !driver.getDriverTypes().contains(driverType))) {
                 continue;
             }
 
@@ -253,7 +255,9 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
                 for (EncryptDriver driver : pluginRegistry.getExtensionList(EncryptDriver.class)) {
-                    if (!newConfig.value().equals(driver.getDriverType().toString())) {
+                    if (!newConfig.value().equals(driver.getDriverType().toString())
+                            && (driver.getDriverTypes() != null
+                            && !driver.getDriverTypes().contains(driver.getDriverType().toString()))) {
                         continue;
                     }
 

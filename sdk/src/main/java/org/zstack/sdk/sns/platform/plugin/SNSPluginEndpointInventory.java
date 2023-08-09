@@ -4,12 +4,12 @@ package org.zstack.sdk.sns.platform.plugin;
 
 public class SNSPluginEndpointInventory extends org.zstack.sdk.sns.SNSApplicationEndpointInventory {
 
-    public java.lang.String endpointType;
-    public void setEndpointType(java.lang.String endpointType) {
-        this.endpointType = endpointType;
+    public java.lang.String pluginDriverUuid;
+    public void setPluginDriverUuid(java.lang.String pluginDriverUuid) {
+        this.pluginDriverUuid = pluginDriverUuid;
     }
-    public java.lang.String getEndpointType() {
-        return this.endpointType;
+    public java.lang.String getPluginDriverUuid() {
+        return this.pluginDriverUuid;
     }
 
     public long timeoutInSeconds;

@@ -26,7 +26,7 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
     }
 
     @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String endpointType;
+    public java.lang.String type;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public long timeoutInSeconds = 0L;
