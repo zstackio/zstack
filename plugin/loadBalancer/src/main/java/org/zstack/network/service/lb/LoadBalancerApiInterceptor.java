@@ -1102,10 +1102,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 msg.setStatusCode(STATUS_CODE_DEFAULT);
             }
 
-            if (msg.getSessionPersistence() != null && !LoadBalancerSessionPersistence.disable.toString().equals(msg.getSessionPersistence())) {
-                msg.setSessionPersistence(LoadBalancerSessionPersistence.disable.toString());
-                msg.setCookieName(null);
-                msg.setConnectionIdleTimeout(null);
+            Boolean sessionPersistence = Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
+                    .in(SystemTagVO_.tag, Arrays.asList("sessionPersistence::rewrite", "sessionPersistence::insert", "sessionPersistence::iphash"))
+                    .eq(SystemTagVO_.resourceUuid, listener.getUuid()).isExists();
+            if (sessionPersistence || (msg.getSessionPersistence() != null && !LoadBalancerSessionPersistence.disable.toString().equals(msg.getSessionPersistence()))) {
+                throw new ApiMessageInterceptionException(argerr("could not support both HTTP redirect HTTPS and session persistence at the same time"));
             }
         }
 
