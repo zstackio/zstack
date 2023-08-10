@@ -28,6 +28,9 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     private String installPath;
     private int deviceId;
     private String deviceType = FILE;
+    /**
+     * if this volume is lun, use lunUuid
+     */
     private String volumeUuid;
     private boolean useVirtio;
     private boolean useVirtioSCSI;

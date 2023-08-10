@@ -1,13 +1,13 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.VolumeInventory;
+import org.zstack.sdk.LunInventory;
 
 public class AttachLunToVmResult {
-    public VolumeInventory inventory;
-    public void setInventory(VolumeInventory inventory) {
+    public LunInventory inventory;
+    public void setInventory(LunInventory inventory) {
         this.inventory = inventory;
     }
-    public VolumeInventory getInventory() {
+    public LunInventory getInventory() {
         return this.inventory;
     }
 
