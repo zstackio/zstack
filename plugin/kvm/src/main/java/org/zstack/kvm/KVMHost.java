@@ -3256,6 +3256,7 @@ public class KVMHost extends HostBase implements Host {
         String vmArchPlatformRelease = String.format("%s_%s_%s", spec.getVmInventory().getArchitecture(), spec.getVmInventory().getPlatform(), spec.getVmInventory().getGuestOsType());
         if (allGuestOsCharacter.containsKey(vmArchPlatformRelease)) {
             cmd.setAcpi(allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi() != null && allGuestOsCharacter.get(vmArchPlatformRelease).getAcpi());
+            cmd.setX2apic(allGuestOsCharacter.get(vmArchPlatformRelease).getX2apic() == null || allGuestOsCharacter.get(vmArchPlatformRelease).getX2apic());
         }
 
         VirtualDeviceInfo memBalloon = new VirtualDeviceInfo();
@@ -4382,6 +4383,9 @@ public class KVMHost extends HostBase implements Host {
                                         "/var/lib/zstack/kvm/kvmagent-iptables",
                                         KVMConstant.IPTABLES_COMMENTS,
                                         KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class)));
+                                
+                                builder.append(String.format("; ipset create ZS-PROMETHEUS-ALLOW hash:net -exist; ipset flush ZS-PROMETHEUS-ALLOW; ipset add ZS-PROMETHEUS-ALLOW 127.0.0.1; ipset add ZS-PROMETHEUS-ALLOW %s; ipset add ZS-PROMETHEUS-ALLOW %s; iptables -t mangle -I INPUT -m set ! --match-set ZS-PROMETHEUS-ALLOW src -p tcp -m comment --comment %s -m tcp --dport 7069 -j DROP",
+                                        getSelf().getManagementIp(), Platform.getManagementServerIp(), KVMConstant.IPTABLES_COMMENTS));
                             }
 
                             try {

@@ -2,7 +2,7 @@ package org.zstack.compute.vm;
 
 import org.apache.commons.collections.CollectionUtils;
 import com.google.common.collect.Maps;
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -819,7 +819,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         }.execute();
                         break;
                     } catch (PersistenceException e) {
-                        if (ExceptionDSL.isCausedBy(e, MySQLIntegrityConstraintViolationException.class, "Duplicate entry")) {
+                        if (ExceptionDSL.isCausedBy(e, SQLIntegrityConstraintViolationException.class, "Duplicate entry")) {
                             logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
                                     "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
                                     "we will try finding another mac", nicVO.getMac()));
