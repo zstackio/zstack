@@ -117,3 +117,11 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LunPhysicalDriveRefVO` (
     CONSTRAINT fkLunPhysicalDriveRefVOLunVO FOREIGN KEY (lunUuid) REFERENCES LunVO (uuid) ON DELETE CASCADE,
     CONSTRAINT fkLunPhysicalDriveRefVOPhysicalDriveVO FOREIGN KEY (physicalDriveUuid) REFERENCES PhysicalDriveVO (uuid) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+RENAME TABLE `ScsiLunVmInstanceRefVO` to `LunVmInstanceRefVO`;
+ALTER TABLE `LunVmInstanceRefVO` DROP FOREIGN KEY `fkScsiLunVmInstanceRefVOScsiLunVO`;
+ALTER TABLE `LunVmInstanceRefVO` DROP FOREIGN KEY `fkScsiLunVmInstanceRefVOVmInstanceVO`;
+ALTER TABLE `LunVmInstanceRefVO` CHANGE `scsiLunUuid` `lunUuid` char(32) NOT NULL;
+ALTER TABLE `LunVmInstanceRefVO` ADD CONSTRAINT `fkLunVmInstanceRefVOLunVO` FOREIGN KEY (lunUuid) REFERENCES LunVO (uuid) ON DELETE CASCADE;
+ALTER TABLE `LunVmInstanceRefVO` ADD CONSTRAINT `fkLunVmInstanceRefVOVmInstanceVO` FOREIGN KEY (vmInstanceUuid) REFERENCES VmInstanceEO (uuid) ON DELETE CASCADE;
+
