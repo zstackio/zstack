@@ -318,10 +318,10 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceTreeInventory", "org.zstack.sdk.VolumeSnapshotReferenceTreeInventory");
 			put("org.zstack.header.storageDevice.LunHostRefInventory", "org.zstack.sdk.LunHostRefInventory");
 			put("org.zstack.header.storageDevice.LunInventory", "org.zstack.sdk.LunInventory");
+			put("org.zstack.header.storageDevice.LunVmInstanceRefInventory", "org.zstack.sdk.LunVmInstanceRefInventory");
 			put("org.zstack.header.storageDevice.ScsiLunClusterStatusInventory", "org.zstack.sdk.ScsiLunClusterStatusInventory");
 			put("org.zstack.header.storageDevice.ScsiLunHostRefInventory", "org.zstack.sdk.ScsiLunHostRefInventory");
 			put("org.zstack.header.storageDevice.ScsiLunInventory", "org.zstack.sdk.ScsiLunInventory");
-			put("org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory", "org.zstack.sdk.ScsiLunVmInstanceRefInventory");
 			put("org.zstack.header.tag.SystemTagInventory", "org.zstack.sdk.SystemTagInventory");
 			put("org.zstack.header.tag.TagInventory", "org.zstack.sdk.TagInventory");
 			put("org.zstack.header.tag.TagPatternInventory", "org.zstack.sdk.TagPatternInventory");
@@ -956,6 +956,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LongJobState", "org.zstack.header.longjob.LongJobState");
 			put("org.zstack.sdk.LunHostRefInventory", "org.zstack.header.storageDevice.LunHostRefInventory");
 			put("org.zstack.sdk.LunInventory", "org.zstack.header.storageDevice.LunInventory");
+			put("org.zstack.sdk.LunVmInstanceRefInventory", "org.zstack.header.storageDevice.LunVmInstanceRefInventory");
 			put("org.zstack.sdk.ManagementNodeInventory", "org.zstack.header.managementnode.ManagementNodeInventory");
 			put("org.zstack.sdk.MdevDeviceChooser", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceChooser");
 			put("org.zstack.sdk.MdevDeviceInventory", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceInventory");
@@ -1111,7 +1112,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ScsiLunClusterStatusInventory", "org.zstack.header.storageDevice.ScsiLunClusterStatusInventory");
 			put("org.zstack.sdk.ScsiLunHostRefInventory", "org.zstack.header.storageDevice.ScsiLunHostRefInventory");
 			put("org.zstack.sdk.ScsiLunInventory", "org.zstack.header.storageDevice.ScsiLunInventory");
-			put("org.zstack.sdk.ScsiLunVmInstanceRefInventory", "org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory");
 			put("org.zstack.sdk.SdnControllerInventory", "org.zstack.sdnController.header.SdnControllerInventory");
 			put("org.zstack.sdk.SdnVniRange", "org.zstack.sdnController.header.SdnVniRange");
 			put("org.zstack.sdk.SecretResourcePoolInventory", "org.zstack.header.securitymachine.SecretResourcePoolInventory");
