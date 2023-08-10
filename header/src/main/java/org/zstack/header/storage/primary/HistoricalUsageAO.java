@@ -17,9 +17,6 @@ public abstract class HistoricalUsageAO {
     private long usedPhysicalCapacity;
 
     @Column
-    private long historicalForecast;
-
-    @Column
     private Timestamp recordDate;
 
     @Column
@@ -58,14 +55,6 @@ public abstract class HistoricalUsageAO {
 
     public void setUsedPhysicalCapacity(long usedPhysicalCapacity) {
         this.usedPhysicalCapacity = usedPhysicalCapacity;
-    }
-
-    public long getHistoricalForecast() {
-        return historicalForecast;
-    }
-
-    public void setHistoricalForecast(long historicalForecast) {
-        this.historicalForecast = historicalForecast;
     }
 
     public Timestamp getRecordDate() {

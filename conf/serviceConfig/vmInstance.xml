@@ -233,4 +233,7 @@
         <name>org.zstack.header.vm.APIGetVmTaskMsg</name>
         <serviceId>core</serviceId>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIFstrimVmMsg</name>
+    </message>
 </service>
