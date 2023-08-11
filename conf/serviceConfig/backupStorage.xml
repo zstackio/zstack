@@ -8,6 +8,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.storage.addon.backup.APIAddExternalBackupStorageMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.storage.backup.APIChangeBackupStorageStateMsg</name>
     </message>
 
