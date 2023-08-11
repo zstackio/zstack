@@ -119,7 +119,7 @@ public class HostCanonicalEvents {
     @NeedJsonSchema
     public static class HostPhysicalDiskStatusAbnormalData {
         private String hostUuid;
-        private String wwn;
+        private String serialNumber;
         private String status;
 
         public String getHostUuid() {
@@ -130,12 +130,12 @@ public class HostCanonicalEvents {
             this.hostUuid = hostUuid;
         }
 
-        public String getWwn() {
-            return wwn;
+        public String getSerialNumber() {
+            return serialNumber;
         }
 
-        public void setWwn(String wwn) {
-            this.wwn = wwn;
+        public void setSerialNumber(String serialNumber) {
+            this.serialNumber = serialNumber;
         }
 
 
@@ -152,7 +152,7 @@ public class HostCanonicalEvents {
     public static class HostPhysicalDiskData {
         private String hostUuid;
 
-        private String wwn;
+        private String serialNumber;
 
         public String getHostUuid() {
             return hostUuid;
@@ -162,12 +162,12 @@ public class HostCanonicalEvents {
             this.hostUuid = hostUuid;
         }
 
-        public String getWwn() {
-            return wwn;
+        public String getSerialNumber() {
+            return serialNumber;
         }
 
-        public void setWwn(String wwn) {
-            this.wwn = wwn;
+        public void setSerialNumber(String serialNumber) {
+            this.serialNumber = serialNumber;
         }
     }
 
@@ -197,7 +197,7 @@ public class HostCanonicalEvents {
     public static class HostPhysicalHBAPortStateAbnormalData {
         private String hostUuid;
 
-        private String state;
+        private String status;
 
         private String portName;
 
@@ -209,12 +209,12 @@ public class HostCanonicalEvents {
             this.hostUuid = hostUuid;
         }
 
-        public String getState() {
-            return state;
+        public String getStatus() {
+            return status;
         }
 
-        public void setState(String state) {
-            this.state = state;
+        public void setStatus(String status) {
+            this.status = status;
         }
 
         public String getPortName() {
