@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryRaidLunAction extends QueryAction {
+public class QueryRaidControllerLunRefAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryRaidLunAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryRaidLunResult value;
+        public org.zstack.sdk.QueryRaidControllerLunRefResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryRaidLunAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryRaidLunResult value = res.getResult(org.zstack.sdk.QueryRaidLunResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryRaidLunResult() : value; 
+        org.zstack.sdk.QueryRaidControllerLunRefResult value = res.getResult(org.zstack.sdk.QueryRaidControllerLunRefResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryRaidControllerLunRefResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QueryRaidLunAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/storage-devices/local-raid/lun";
+        info.path = "/storage-devices/local-raid/lun-ref";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

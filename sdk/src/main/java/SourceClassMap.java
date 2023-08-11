@@ -546,6 +546,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageInventory", "org.zstack.sdk.CephPrimaryStorageInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageMonInventory", "org.zstack.sdk.CephPrimaryStorageMonInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStoragePoolInventory", "org.zstack.sdk.CephPrimaryStoragePoolInventory");
+			put("org.zstack.storage.device.commons.LunPhysicalDriveRefInventory", "org.zstack.sdk.LunPhysicalDriveRefInventory");
 			put("org.zstack.storage.device.commons.PhysicalDriveInventory", "org.zstack.sdk.PhysicalDriveInventory");
 			put("org.zstack.storage.device.commons.StorageDeviceTransferProtocol", "org.zstack.sdk.StorageDeviceTransferProtocol");
 			put("org.zstack.storage.device.fibreChannel.FiberChannelLunInventory", "org.zstack.sdk.FiberChannelLunInventory");
@@ -558,7 +559,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.device.localRaid.LocateStatus", "org.zstack.sdk.LocateStatus");
 			put("org.zstack.storage.device.localRaid.PhysicalDriveSmartSelfTestHistoryInventory", "org.zstack.sdk.PhysicalDriveSmartSelfTestHistoryInventory");
 			put("org.zstack.storage.device.localRaid.RaidControllerInventory", "org.zstack.sdk.RaidControllerInventory");
-			put("org.zstack.storage.device.localRaid.RaidLunInventory", "org.zstack.sdk.RaidLunInventory");
+			put("org.zstack.storage.device.localRaid.RaidControllerLunRefInventory", "org.zstack.sdk.RaidControllerLunRefInventory");
 			put("org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory", "org.zstack.sdk.RaidPhysicalDriveInventory");
 			put("org.zstack.storage.device.localRaid.RaidTool", "org.zstack.sdk.RaidTool");
 			put("org.zstack.storage.device.localRaid.RunningState", "org.zstack.sdk.RunningState");
@@ -956,6 +957,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LongJobState", "org.zstack.header.longjob.LongJobState");
 			put("org.zstack.sdk.LunHostRefInventory", "org.zstack.header.storageDevice.LunHostRefInventory");
 			put("org.zstack.sdk.LunInventory", "org.zstack.header.storageDevice.LunInventory");
+			put("org.zstack.sdk.LunPhysicalDriveRefInventory", "org.zstack.storage.device.commons.LunPhysicalDriveRefInventory");
 			put("org.zstack.sdk.LunVmInstanceRefInventory", "org.zstack.header.storageDevice.LunVmInstanceRefInventory");
 			put("org.zstack.sdk.ManagementNodeInventory", "org.zstack.header.managementnode.ManagementNodeInventory");
 			put("org.zstack.sdk.MdevDeviceChooser", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceChooser");
@@ -1072,7 +1074,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.QuotaInventory", "org.zstack.header.identity.QuotaInventory");
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
 			put("org.zstack.sdk.RaidControllerInventory", "org.zstack.storage.device.localRaid.RaidControllerInventory");
-			put("org.zstack.sdk.RaidLunInventory", "org.zstack.storage.device.localRaid.RaidLunInventory");
+			put("org.zstack.sdk.RaidControllerLunRefInventory", "org.zstack.storage.device.localRaid.RaidControllerLunRefInventory");
 			put("org.zstack.sdk.RaidPhysicalDriveInventory", "org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory");
 			put("org.zstack.sdk.RaidTool", "org.zstack.storage.device.localRaid.RaidTool");
 			put("org.zstack.sdk.RedirectUrlTemplate", "org.zstack.sso.header.RedirectUrlTemplate");

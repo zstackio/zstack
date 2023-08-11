@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class QueryRaidLunResult {
+public class QueryLunPhysicalDriveRefResult {
     public java.util.List inventories;
     public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
