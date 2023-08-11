@@ -29133,8 +29133,8 @@ abstract class ApiHelper {
     }
 
 
-    def queryRaidLun(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryRaidLunAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryRaidLunAction()
+    def queryRaidControllerLunRef(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryRaidControllerLunRefAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryRaidControllerLunRefAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

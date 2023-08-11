@@ -558,7 +558,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.device.localRaid.LocateStatus", "org.zstack.sdk.LocateStatus");
 			put("org.zstack.storage.device.localRaid.PhysicalDriveSmartSelfTestHistoryInventory", "org.zstack.sdk.PhysicalDriveSmartSelfTestHistoryInventory");
 			put("org.zstack.storage.device.localRaid.RaidControllerInventory", "org.zstack.sdk.RaidControllerInventory");
-			put("org.zstack.storage.device.localRaid.RaidLunInventory", "org.zstack.sdk.RaidLunInventory");
+			put("org.zstack.storage.device.localRaid.RaidControllerLunRefInventory", "org.zstack.sdk.RaidControllerLunRefInventory");
 			put("org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory", "org.zstack.sdk.RaidPhysicalDriveInventory");
 			put("org.zstack.storage.device.localRaid.RaidTool", "org.zstack.sdk.RaidTool");
 			put("org.zstack.storage.device.localRaid.RunningState", "org.zstack.sdk.RunningState");
@@ -1072,7 +1072,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.QuotaInventory", "org.zstack.header.identity.QuotaInventory");
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
 			put("org.zstack.sdk.RaidControllerInventory", "org.zstack.storage.device.localRaid.RaidControllerInventory");
-			put("org.zstack.sdk.RaidLunInventory", "org.zstack.storage.device.localRaid.RaidLunInventory");
+			put("org.zstack.sdk.RaidControllerLunRefInventory", "org.zstack.storage.device.localRaid.RaidControllerLunRefInventory");
 			put("org.zstack.sdk.RaidPhysicalDriveInventory", "org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory");
 			put("org.zstack.sdk.RaidTool", "org.zstack.storage.device.localRaid.RaidTool");
 			put("org.zstack.sdk.RedirectUrlTemplate", "org.zstack.sso.header.RedirectUrlTemplate");

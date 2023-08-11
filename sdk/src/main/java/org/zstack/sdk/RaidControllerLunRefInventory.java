@@ -2,7 +2,15 @@ package org.zstack.sdk;
 
 
 
-public class RaidLunInventory extends org.zstack.sdk.LunInventory {
+public class RaidControllerLunRefInventory  {
+
+    public java.lang.String lunUuid;
+    public void setLunUuid(java.lang.String lunUuid) {
+        this.lunUuid = lunUuid;
+    }
+    public java.lang.String getLunUuid() {
+        return this.lunUuid;
+    }
 
     public java.lang.String controllerUuid;
     public void setControllerUuid(java.lang.String controllerUuid) {
@@ -26,14 +34,6 @@ public class RaidLunInventory extends org.zstack.sdk.LunInventory {
     }
     public java.lang.String getHealthState() {
         return this.healthState;
-    }
-
-    public java.util.List raidPhysicalDrives;
-    public void setRaidPhysicalDrives(java.util.List raidPhysicalDrives) {
-        this.raidPhysicalDrives = raidPhysicalDrives;
-    }
-    public java.util.List getRaidPhysicalDrives() {
-        return this.raidPhysicalDrives;
     }
 
 }

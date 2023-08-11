@@ -1,11 +1,12 @@
-CREATE TABLE IF NOT EXISTS `zstack`.`RaidLunVO` (
-    `uuid` char(32) NOT NULL UNIQUE,
+CREATE TABLE IF NOT EXISTS `zstack`.`RaidControllerLunRefVO` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `controllerUuid` char(32) DEFAULT NULL,
+    `lunUuid` char(32) NOT NULL,
     `diskGroup` smallint DEFAULT NULL,
     `healthState` varchar(32) NOT NULL DEFAULT 'Unknown',
-    PRIMARY KEY (`uuid`),
-    CONSTRAINT fkRaidLunVORaidControllerVO FOREIGN KEY (controllerUuid) REFERENCES RaidControllerVO (uuid) ON DELETE SET NULL,
-    CONSTRAINT fkRaidLunVOLunVO FOREIGN KEY (uuid) REFERENCES LunVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+    PRIMARY KEY (`id`),
+    CONSTRAINT fkRaidControllerLunRefVORaidControllerVO FOREIGN KEY (controllerUuid) REFERENCES RaidControllerVO (uuid) ON DELETE CASCADE,
+    CONSTRAINT fkRaidControllerLunRefVOLunVO FOREIGN KEY (lunUuid) REFERENCES LunVO (uuid) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 RENAME TABLE `NvmeLunHostRefVO` to `LunHostRefVO`;
