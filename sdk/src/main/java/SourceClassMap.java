@@ -104,6 +104,7 @@ public class SourceClassMap {
 			put("org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory", "org.zstack.sdk.HaiTaiSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecretResourcePoolInventory", "org.zstack.sdk.InfoSecSecretResourcePoolInventory");
 			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecurityMachineInventory", "org.zstack.sdk.InfoSecSecurityMachineInventory");
+			put("org.zstack.crypto.securitymachine.thirdparty.plugin.PluginSecretResourcePoolInventory", "org.zstack.sdk.PluginSecretResourcePoolInventory");
 			put("org.zstack.directory.DirectoryInventory", "org.zstack.sdk.DirectoryInventory");
 			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
 			put("org.zstack.drs.api.Threshold", "org.zstack.sdk.Threshold");
@@ -527,6 +528,7 @@ public class SourceClassMap {
 			put("org.zstack.sns.platform.email.SNSEmailPlatformInventory", "org.zstack.sdk.sns.platform.email.SNSEmailPlatformInventory");
 			put("org.zstack.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory");
 			put("org.zstack.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory", "org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory");
+			put("org.zstack.sns.platform.plugin.SNSPluginEndpointInventory", "org.zstack.sdk.sns.platform.plugin.SNSPluginEndpointInventory");
 			put("org.zstack.sso.header.CasClientInventory", "org.zstack.sdk.CasClientInventory");
 			put("org.zstack.sso.header.CasState", "org.zstack.sdk.CasState");
 			put("org.zstack.sso.header.OAuth2ClientInventory", "org.zstack.sdk.OAuth2ClientInventory");
@@ -1025,6 +1027,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PciDeviceVirtStatus", "org.zstack.pciDevice.virtual.PciDeviceVirtStatus");
 			put("org.zstack.sdk.PendingTaskInfo", "org.zstack.header.core.progress.PendingTaskInfo");
 			put("org.zstack.sdk.PhysicalDriveSmartSelfTestHistoryInventory", "org.zstack.storage.device.localRaid.PhysicalDriveSmartSelfTestHistoryInventory");
+			put("org.zstack.sdk.PluginSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.plugin.PluginSecretResourcePoolInventory");
 			put("org.zstack.sdk.PolicyInventory", "org.zstack.header.identity.PolicyInventory");
 			put("org.zstack.sdk.PolicyRouteRuleInventory", "org.zstack.policyRoute.PolicyRouteRuleInventory");
 			put("org.zstack.sdk.PolicyRouteRuleProtocol", "org.zstack.policyRoute.PolicyRouteRuleProtocol");
@@ -1311,6 +1314,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.sns.platform.email.SNSEmailPlatformInventory", "org.zstack.sns.platform.email.SNSEmailPlatformInventory");
 			put("org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sns.platform.http.SNSHttpEndpointInventory");
 			put("org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory", "org.zstack.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory");
+			put("org.zstack.sdk.sns.platform.plugin.SNSPluginEndpointInventory", "org.zstack.sns.platform.plugin.SNSPluginEndpointInventory");
 			put("org.zstack.sdk.ticket.entity.ArchiveTicketInventory", "org.zstack.ticket.entity.ArchiveTicketInventory");
 			put("org.zstack.sdk.ticket.entity.ArchiveTicketStatusHistoryInventory", "org.zstack.ticket.entity.ArchiveTicketStatusHistoryInventory");
 			put("org.zstack.sdk.ticket.entity.TicketFlowCollectionInventory", "org.zstack.ticket.entity.TicketFlowCollectionInventory");

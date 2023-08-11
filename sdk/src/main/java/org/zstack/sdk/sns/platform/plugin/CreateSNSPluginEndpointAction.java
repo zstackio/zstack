@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.sns.platform.plugin;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateHaiTaiSecretResourcePoolAction extends AbstractAction {
+public class CreateSNSPluginEndpointAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateHaiTaiSecretResourcePoolAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateSecretResourcePoolResult value;
+        public org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,14 @@ public class CreateHaiTaiSecretResourcePoolAction extends AbstractAction {
         }
     }
 
-    @Param(required = false)
-    public java.lang.String managementIp;
+    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
-    @Param(required = false)
-    public java.lang.Integer port;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public long timeoutInSeconds = 0L;
 
-    @Param(required = false)
-    public java.lang.String realm;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map properties;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
@@ -40,17 +40,8 @@ public class CreateHaiTaiSecretResourcePoolAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String model;
-
-    @Param(required = true, validValues = {"CloudSecurityMachine","OrdinarySecurityMachine","CloudSecurityResourceService","Plugin"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {6L,180L}, noTrim = false)
-    public java.lang.Integer heartbeatInterval;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String platformUuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -90,8 +81,8 @@ public class CreateHaiTaiSecretResourcePoolAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateSecretResourcePoolResult value = res.getResult(org.zstack.sdk.CreateSecretResourcePoolResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateSecretResourcePoolResult() : value; 
+        org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult() : value; 
 
         return ret;
     }
@@ -121,7 +112,7 @@ public class CreateHaiTaiSecretResourcePoolAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/secret-resource-pool/haitai";
+        info.path = "/sns/application-endpoints/plugin";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateHaiTaiSecretResourcePoolAction extends AbstractAction {
+public class CreatePluginSecretResourcePoolAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -25,14 +25,11 @@ public class CreateHaiTaiSecretResourcePoolAction extends AbstractAction {
         }
     }
 
-    @Param(required = false)
-    public java.lang.String managementIp;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String resourcePoolType;
 
-    @Param(required = false)
-    public java.lang.Integer port;
-
-    @Param(required = false)
-    public java.lang.String realm;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map properties;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
@@ -121,7 +118,7 @@ public class CreateHaiTaiSecretResourcePoolAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/secret-resource-pool/haitai";
+        info.path = "/secret-resource-pool/plugin";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

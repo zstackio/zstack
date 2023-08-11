@@ -118,7 +118,9 @@
 
         <Logger name="org.zstack.core.db" level="TRACE" />
 
-        <Logger name="org.zstack.identity" level="DEBUG" />
+        <Logger name="org.zstack.core.plugin" level="TRACE" />
+
+        <Logger name="org.zstack.identity" level="TRACE" />
 
         <Logger name="org.zstack.cassandra" level="TRACE" />
 

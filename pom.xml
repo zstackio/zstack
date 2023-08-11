@@ -49,6 +49,7 @@
         <module>externalservice</module>
         <module>longjob</module>
         <module>resourceconfig</module>
+        <module>abstraction</module>
     </modules>
 
     <dependencyManagement>
@@ -478,7 +479,7 @@
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
-                <version>1.16.6</version>
+                <version>1.18.24</version>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
@@ -544,6 +545,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>maven-releases</id>
+            <url>http://172.20.93.29:8081/repository/maven-releases/</url>
+        </repository>
+    </distributionManagement>
 
     <profiles>
         <profile>
