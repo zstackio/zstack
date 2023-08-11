@@ -48,7 +48,7 @@ BEGIN
             VALUES (hookUuid, '自定义hook', 'XmlHookVO', 'org.zstack.header.tag.XmlHookVO');
 
             INSERT zstack.XmlHookVO (uuid, name, description, type, hookScript, lastOpDate, createDate)
-            VALUES(hookUuid, concat('自定义hook-',NOW()), '自定义hook', 'Customization', hookValue, NOW(), NOW());
+            VALUES(hookUuid, concat('自定义hook-', hookUuid), '自定义hook', 'Customization', hookValue, NOW(), NOW());
 
             INSERT zstack.XmlHookVmInstanceRefVO(xmlHookUuid, vmInstanceUuid, lastOpDate, createDate)
             VALUES (hookUuid, vmUuid, NOW(), NOW());
