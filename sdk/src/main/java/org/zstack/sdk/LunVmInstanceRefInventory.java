@@ -2,7 +2,15 @@ package org.zstack.sdk;
 
 
 
-public class ScsiLunVmInstanceRefInventory  {
+public class LunVmInstanceRefInventory  {
+
+    public java.lang.String lunUuid;
+    public void setLunUuid(java.lang.String lunUuid) {
+        this.lunUuid = lunUuid;
+    }
+    public java.lang.String getLunUuid() {
+        return this.lunUuid;
+    }
 
     public java.lang.String scsiLunUuid;
     public void setScsiLunUuid(java.lang.String scsiLunUuid) {
