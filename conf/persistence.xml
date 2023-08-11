@@ -32,6 +32,7 @@
         <class>org.zstack.header.storage.backup.BackupStorageVO</class>
         <class>org.zstack.header.storage.backup.BackupStorageEO</class>
         <class>org.zstack.header.storage.backup.BackupStorageZoneRefVO</class>
+        <class>org.zstack.header.storage.addon.backup.ExternalBackupStorageVO</class>
         <class>org.zstack.header.image.ImageVO</class>
         <class>org.zstack.header.image.ImageEO</class>
         <class>org.zstack.header.image.GuestOsCategoryVO</class>
