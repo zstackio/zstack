@@ -140,4 +140,12 @@ public class LunInventory  {
         return this.lunHostRefs;
     }
 
+    public java.util.List lunVmRefs;
+    public void setLunVmRefs(java.util.List lunVmRefs) {
+        this.lunVmRefs = lunVmRefs;
+    }
+    public java.util.List getLunVmRefs() {
+        return this.lunVmRefs;
+    }
+
 }
