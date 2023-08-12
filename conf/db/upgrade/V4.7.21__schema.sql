@@ -24,12 +24,11 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SNSSnmpTrapReceiverVO` (
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
 CREATE TABLE IF NOT EXISTS `zstack`.`SNSSnmpEndpointVO` (
     `uuid` varchar(32) NOT NULL,
     `trapReceiverUuid` varchar(32) DEFAULT NULL,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT `fkSNSSnmpEndpointUUidSNSSnmpTrapReceiver` FOREIGN KEY (`trapReceiverUuid`) REFERENCES SNSSnmpTrapReceiverVO(`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkSNSSnmpEndpointVOSNSApplicationEndpointVO` FOREIGN KEY (`trapReceiverUuid`) REFERENCES SNSSnmpTrapReceiverVO(`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE,
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
