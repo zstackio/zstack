@@ -559,6 +559,8 @@ public class KVMHost extends HostBase implements Host {
             handle((GetCpuFunctionXmlOnHostMsg) msg);
         } else if (msg instanceof CompareCpuFunctionOnHostMsg) {
             handle((CompareCpuFunctionOnHostMsg) msg);
+        } else if (msg instanceof CreateCpuFeaturesHistoryMsg) {
+            handle((CreateCpuFeaturesHistoryMsg) msg);
         } else if (msg instanceof TakeSnapshotOnHypervisorMsg) {
             handle((TakeSnapshotOnHypervisorMsg) msg);
         } else if (msg instanceof CheckSnapshotOnHypervisorMsg) {
@@ -1101,8 +1103,6 @@ public class KVMHost extends HostBase implements Host {
                 .run((com) -> getCpuFunctionXml(msg, new ReturnValueCompletion<GetCpuFunctionXmlOnHostReply>(msg) {
                     @Override
                     public void success(GetCpuFunctionXmlOnHostReply returnValue) {
-                        reply.setCpuModelName(returnValue.getCpuModelName());
-                        reply.setCpuXml(returnValue.getCpuXml());
                         com.success(returnValue);
                     }
 
@@ -1114,11 +1114,60 @@ public class KVMHost extends HostBase implements Host {
                 .done(((result) -> {
                     if (!result.isSuccess()) {
                         reply.setError(result.getErrorCode());
+                        bus.reply(msg, reply);
+                        return;
                     }
 
+                    reply.setCpuModelName(((GetCpuFunctionXmlOnHostReply) result.getResult()).getCpuModelName());
+                    reply.setCpuXml(((GetCpuFunctionXmlOnHostReply) result.getResult()).getCpuXml());
                     bus.reply(msg, reply);
                 })));
     }
+
+    private void handle(CreateCpuFeaturesHistoryMsg msg) {
+        CreateCpuFeaturesHistoryReply reply = new CreateCpuFeaturesHistoryReply();
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("create-migration-cpu-function-history-from-src-%s-to-dst-%s", msg.getHostUuid(), msg.getDstHostUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                CpuFeaturesHistoryVO vo = Q.New(CpuFeaturesHistoryVO.class)
+                        .eq(CpuFeaturesHistoryVO_.srcHostUuid, msg.getHostUuid())
+                        .eq(CpuFeaturesHistoryVO_.dstHostUuid, msg.getDstHostUuid())
+                        .find();
+
+                if (vo == null) {
+                    CpuFeaturesHistoryVO cfVO = new CpuFeaturesHistoryVO();
+                    cfVO.setSrcHostUuid(msg.getHostUuid());
+                    cfVO.setDstHostUuid(msg.getDstHostUuid());
+                    cfVO.setSupportLiveMigration(msg.isSupportLiveMigration());
+                    cfVO.setSrcCpuModelName(msg.getSrcCpuModelName());
+                    dbf.persist(cfVO);
+                    logger.debug(String.format("successfully persist cpuFeaturesHistory info[src: %s, dst: %s]", msg.getSrcHostUuid(), msg.getDstHostUuid()));
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                vo.setSrcCpuModelName(msg.getSrcCpuModelName());
+                vo.setSupportLiveMigration(msg.isSupportLiveMigration());
+                dbf.update(vo);
+                logger.debug(String.format("successfully update cpuFeaturesHistory info[cpuModelName: %s, support: %s]", msg.getSrcCpuModelName(), msg.isSupportLiveMigration()));
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
 
     private void handle(AllocateHostPortMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
