@@ -64,7 +64,6 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.header.volume.VolumeConstant.VOLUME_FORMAT_DISK;
 import static org.zstack.utils.CollectionDSL.*;
 
 /**
@@ -636,10 +635,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void preAttachVolume(VmInstanceInventory vm, final VolumeInventory volume) {
-        if (VOLUME_FORMAT_DISK.equals(volume.getFormat())) {
-            return;
-        }
-
         SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.IN, list(vm.getRootVolumeUuid(), volume.getUuid()));
         q.groupBy(LocalStorageResourceRefVO_.hostUuid);

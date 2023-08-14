@@ -3354,9 +3354,6 @@ public class KVMHost extends HostBase implements Host {
 
     static String getVolumeTOType(VolumeInventory vol) {
         DebugUtils.Assert(vol.getInstallPath() != null, String.format("volume [%s] installPath is null, it has not been initialized", vol.getUuid()));
-        if (VolumeConstant.VOLUME_FORMAT_DISK.equals(vol.getFormat())) {
-            return VolumeTO.BLOCK;
-        }
         return vol.getInstallPath().startsWith("iscsi") ? VolumeTO.ISCSI : VolumeTO.FILE;
     }
 

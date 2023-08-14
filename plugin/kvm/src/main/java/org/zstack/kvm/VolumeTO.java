@@ -8,7 +8,6 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 
 import java.util.List;
@@ -101,8 +100,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
             platform = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vol.getUuid()).select(VmInstanceVO_.platform).findValue();
         }
 
-        boolean diskVolume = VolumeConstant.VOLUME_FORMAT_DISK.equals(vol.getFormat());
-        to.setUseVirtio(!diskVolume && (platform == null || (ImagePlatform.Windows.toString().equals(platform) ||
+        to.setUseVirtio((platform == null || (ImagePlatform.Windows.toString().equals(platform) ||
                 ImagePlatform.valueOf(platform).isParaVirtualization())));
         to.setUseVirtioSCSI(!ImagePlatform.Other.toString().equals(platform) && KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
         to.setWwn(KVMHost.computeWwnIfAbsent(vol.getUuid()));
