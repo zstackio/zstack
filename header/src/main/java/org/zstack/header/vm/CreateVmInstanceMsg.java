@@ -38,6 +38,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private List<String> dataVolumeSystemTags;
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private List<String> disableL3Networks;
+    private List<String> sshKeyPairUuids;
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -287,5 +288,13 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setDisableL3Networks(List<String> disableL3Networks) {
         this.disableL3Networks = disableL3Networks;
+    }
+
+    public List<String> getSshKeyPairUuids() {
+        return sshKeyPairUuids;
+    }
+
+    public void setSshKeyPairUuids(List<String> sshKeyPairUuids) {
+        this.sshKeyPairUuids = sshKeyPairUuids;
     }
 }
