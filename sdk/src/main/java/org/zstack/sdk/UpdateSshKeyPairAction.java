@@ -97,7 +97,7 @@ public class UpdateSshKeyPairAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/ssh-key-pair/{uuid}";
+        info.path = "/ssh-key-pair/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updateSshKeyPair";

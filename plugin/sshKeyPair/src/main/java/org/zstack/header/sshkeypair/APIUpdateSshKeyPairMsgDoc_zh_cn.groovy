@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "PUT /v1/ssh-key-pair/{uuid}"
+			url "PUT /v1/ssh-key-pair/{uuid}/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
