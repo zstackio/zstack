@@ -1,7 +1,5 @@
 package org.zstack.storage.volume;
 
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeProvisioningStrategy;
 import org.zstack.tag.SystemTagCreator;
 
@@ -19,9 +17,5 @@ public class VolumeUtils {
         tagCreator.inherent = false;
         tagCreator.recreate = true;
         tagCreator.create();
-    }
-
-    public static boolean isDiskVolume(VolumeInventory volume) {
-        return VolumeConstant.VOLUME_FORMAT_DISK.equals(volume.getFormat());
     }
 }
