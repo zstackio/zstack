@@ -9,6 +9,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.Arrays.asList;
 
@@ -26,20 +27,26 @@ import static java.util.Arrays.asList;
  * {
 "org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg": {
 "securityGroupUuid": "3904b4837f0c4f539063777ed463b648",
+"priority": -1,
+"type": "Ingress",
 "rules": [
 {
-"type": "Ingress",
-"startPort": 22,
-"endPort": 100,
 "protocol": "TCP",
-"allowedCidr": "0.0.0.0/0"
+"srcIpRange": "10.0.0.1,10.0.0.2-10.0.0.20,10.1.1.0/24",
+"dstIpRange": "20.0.0.1,20.0.0.2-20.0.0.20,20.1.1.0/24",
+"srcPortRange": "1000,1001,1002-1005,1008",
+"dstPortRange": "2000,2001,2002-2005,2008",
+"remoteSecurityGroupUuid": "7c224d3f5ad74520ac4dd6c81def0d8e",
+"defaultTarget": "RETURN"
 },
 {
-"type": "Ingress",
-"startPort": 10,
-"endPort": 10,
 "protocol": "UDP",
-"allowedCidr": "192.168.0.1/0"
+"srcIpRange": "10.0.0.1,10.0.0.2-10.0.0.20,10.1.1.0/24",
+"dstIpRange": "20.0.0.1,20.0.0.2-20.0.0.20,20.1.1.0/24",
+"srcPortRange": "1000,1001,1002-1005,1008",
+"dstPortRange": "2000,2001,2002-2005,2008",
+"remoteSecurityGroupUuid": "7c224d3f5ad74520ac4dd6c81def0d8e",
+"defaultTarget": "RETURN"
 }
 ],
 "session": {
@@ -52,20 +59,30 @@ import static java.util.Arrays.asList;
  * {
 "org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg": {
 "securityGroupUuid": "3904b4837f0c4f539063777ed463b648",
+"priority": -1,
+"type": "Ingress",
 "rules": [
 {
-"type": "Ingress",
-"startPort": 22,
-"endPort": 100,
+"ipVersion": "4",
 "protocol": "TCP",
-"allowedCidr": "0.0.0.0/0"
+"srcIpRange": "10.0.0.1,10.0.0.2-10.0.0.20,10.1.1.0/24",
+"dstIpRange": "20.0.0.1,20.0.0.2-20.0.0.20,20.1.1.0/24",
+"srcPortRange": "1000,1001,1002-1005,1008",
+"dstPortRange": "2000,2001,2002-2005,2008",
+"remoteSecurityGroupUuid": "7c224d3f5ad74520ac4dd6c81def0d8e",
+"action": "ACCEPT"
 },
 {
-"type": "Ingress",
-"startPort": 10,
-"endPort": 10,
+"ipVersion": "4",
 "protocol": "UDP",
-"allowedCidr": "192.168.0.1/0"
+"srcIpRange": "10.0.0.1,10.0.0.2-10.0.0.20,10.1.1.0/24",
+"dstIpRange": "20.0.0.1,20.0.0.2-20.0.0.20,20.1.1.0/24",
+"srcPortRange": "1000,1001,1002-1005,1008",
+"dstPortRange": "2000,2001,2002-2005,2008",
+"remoteSecurityGroupUuid": "7c224d3f5ad74520ac4dd6c81def0d8e",
+"action": "ACCEPT"
+}
+],
 }
 ],
 "session": {
@@ -98,16 +115,20 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
      * @example
      *
      *{
-    "type": "Ingress",
-    "startPort": 10,
-    "endPort": 10,
+    "ipVersion": "4",
     "protocol": "UDP",
-    "allowedCidr": "192.168.0.1/0"
+    "srcIpRange": "1.1.1.1,1.1.1.2",
+    "dstIpRange": "2.2.2.1,2.2.2.2",
+    "srcPortRange": "1000,1001",
+    "dstPortRange": "2000,2001",
+    "remoteSecurityGroupUuid": "7c224d3f5ad74520ac4dd6c81def0d8e",
+    "defaultTarget": "DROP"
     }
      * @since 0.1.0
      */
     @PythonClassInventory
     public static class SecurityGroupRuleAO {
+
         /**
          * @desc
          * rule type
@@ -118,12 +139,64 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
          * - Ingress
          * - Egress
          */
+        @APIParam(required = true, validValues = {"Ingress", "Egress"})
         private String type;
+
+        @APIParam(required = false, validValues = {"Enabled", "Disabled"})
+        private String state = SecurityGroupRuleState.Enabled.toString();
+
+        @APIParam(required = false)
+        private String description;
+
+        /**
+         * @desc remote security group uuid for rules between groups
+         */
+        @APIParam(resourceType = SecurityGroupVO.class, required = false, nonempty = true)
+        private String remoteSecurityGroupUuid;
 
         @APIParam(required = false, validValues = {"4", "6"})
         private Integer ipVersion;
 
         /**
+         * @desc network protocol type
+         * @choices
+         * - TCP
+         * - UDP
+         * - ICMP
+         * - ALL
+         */
+        private String protocol;
+
+        /**
+         * @desc source ip address range
+         * @choices 10.0.0.1,10.0.0.2-10.0.0.20,10.1.1.0/24
+         */
+        @APIParam(required = false)
+        private String srcIpRange;
+
+        /**
+         * @desc destination ip address range
+         * @choices 10.0.0.1,10.0.0.2-10.0.0.20,10.1.1.0/24
+         */
+        @APIParam(required = false)
+        private String dstIpRange;
+
+        /**
+         * @desc destination ip port range
+         * @choices 1000,1001,1002-1005,1008
+         */
+        @APIParam(required = false)
+        private String dstPortRange;
+
+         /**
+         * @desc rule default target
+         * @choices
+         * - ACCEPT / DROP
+         */
+        @APIParam(required = false, validValues = {"ACCEPT", "DROP"})
+        private String action = SecurityGroupRuleAction.ACCEPT.toString();
+
+         /**
          * @desc
          * start port
          * @choices 0 - 65535
@@ -136,14 +209,7 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
          * @nullable
          */
         private Integer endPort;
-        /**
-         * @desc network protocol type
-         * @choices
-         * - TCP
-         * - UDP
-         * - ICMP
-         */
-        private String protocol;
+
         /**
          * @desc source CIDR the rule applies to. If set, the rule only applies to traffic from this CIDR. If omitted, the rule
          * applies to all traffic
@@ -151,12 +217,60 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
          */
         private String allowedCidr;
 
+        public String getState() {
+            return state;
+        }
+
+        public void setState(String state) {
+            this.state = state;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
         public String getType() {
             return type;
         }
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public String getAction() {
+            return action;
+        }
+
+        public void setAction(String action) {
+            this.action = action;
+        }
+
+        public String getSrcIpRange() {
+            return srcIpRange;
+        }
+
+        public void setSrcIpRange(String srcIpRange) {
+            this.srcIpRange = srcIpRange;
+        }
+
+        public String getDstIpRange() {
+            return dstIpRange;
+        }
+
+        public void setDstIpRange(String dstIpRange) {
+            this.dstIpRange = dstIpRange;
+        }
+
+        public String getDstPortRange() {
+            return dstPortRange;
+        }
+
+        public void setDstPortRange(String dstPortRange) {
+            this.dstPortRange = dstPortRange;
         }
 
         public Integer getStartPort() {
@@ -183,6 +297,14 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
             this.protocol = protocol;
         }
 
+       public String getRemoteSecurityGroupUuid() {
+            return remoteSecurityGroupUuid;
+        }
+
+        public void setRemoteSecurityGroupUuid(String remoteSecurityGroupUuid) {
+            this.remoteSecurityGroupUuid = remoteSecurityGroupUuid;
+        }
+
         public String getAllowedCidr() {
             return allowedCidr;
         }
@@ -198,11 +320,25 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
         public void setIpVersion(Integer ipVersion) {
             this.ipVersion = ipVersion;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof SecurityGroupRuleAO)) {
+                return false;
+            }
+            SecurityGroupRuleAO other = (SecurityGroupRuleAO) o;
+            return Objects.equals(type, other.type) && Objects.equals(remoteSecurityGroupUuid, other.remoteSecurityGroupUuid)
+                    && Objects.equals(ipVersion, other.ipVersion) && Objects.equals(protocol, other.protocol)
+                    && Objects.equals(srcIpRange, other.srcIpRange) && Objects.equals(dstIpRange, other.dstIpRange)
+                    && Objects.equals(dstPortRange, other.dstPortRange) && Objects.equals(action, other.action)
+                    && Objects.equals(startPort, other.startPort) && Objects.equals(endPort, other.endPort)
+                    && Objects.equals(allowedCidr, other.allowedCidr);
+        }
     }
 
-    /**
-     * @desc security group uuid
-     */
     @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true, operationTarget = true)
     private String securityGroupUuid;
 
@@ -212,11 +348,17 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
     @APIParam(nonempty = true)
     private List<SecurityGroupRuleAO> rules;
 
-    /**
-     * @desc remote security group uuids for rules between groups
-     */
     @APIParam(resourceType = SecurityGroupVO.class, required = false, nonempty = true)
     private List<String> remoteSecurityGroupUuids;
+
+    /**
+     * @desc rules priority
+     * @choices
+     * - >1: defined by user
+     * - 1: lowest priority
+     */
+    @APIParam(required = false)
+    private Integer priority = -1;
 
     public String getSecurityGroupUuid() {
         return securityGroupUuid;
@@ -228,6 +370,14 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
 
     public void setRules(List<SecurityGroupRuleAO> rules) {
         this.rules = rules;
+    }
+
+    public Integer getPriority() {
+        return priority;
+    }
+
+    public void setPriority(Integer priority) {
+        this.priority = priority;
     }
 
     public void setSecurityGroupUuid(String securityGroupUuid) {
@@ -245,14 +395,19 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
     public static APIAddSecurityGroupRuleMsg __example__() {
         APIAddSecurityGroupRuleMsg msg = new APIAddSecurityGroupRuleMsg();
         msg.setSecurityGroupUuid(uuid());
-        msg.setRemoteSecurityGroupUuids(asList(uuid()));
         SecurityGroupRuleAO rule = new SecurityGroupRuleAO();
         rule.setType("Ingress");
-        rule.setAllowedCidr("0.0.0.0/0");
-        rule.setStartPort(22);
-        rule.setEndPort(22);
+        rule.setState("Enabled");
+        rule.setDescription("test");
+        rule.setRemoteSecurityGroupUuid(uuid());
+        rule.setIpVersion(4); 
+        rule.setAction("ACCEPT");
+        rule.setSrcIpRange("10.0.0.1,10.0.0.2-10.0.0.200,10.1.1.0/24");
+        rule.setDstIpRange("10.0.0.1,10.0.0.2-10.0.0.200,10.1.1.0/24");
         rule.setProtocol("TCP");
+        rule.setDstPortRange("1000,1001,1002-1005,1008");
         msg.setRules(asList(rule));
+        msg.setPriority(-1);
         return msg;
     }
 }

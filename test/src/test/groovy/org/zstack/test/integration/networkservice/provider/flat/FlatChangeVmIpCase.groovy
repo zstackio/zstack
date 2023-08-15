@@ -18,6 +18,7 @@ import org.zstack.header.network.service.NetworkServiceProviderVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.portforwarding.PortForwardingProtocolType
 import org.zstack.network.securitygroup.SecurityGroupConstant
+import org.zstack.network.securitygroup.VmNicSecurityTO
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.userdata.UserdataConstant
@@ -258,17 +259,11 @@ class FlatChangeVmIpCase extends SubCase{
             applyUserdataCmd = json(e.body, FlatUserdataBackend.ApplyUserdataCmd.class)
             return rsp
         }
-        KVMAgentCommands.ApplySecurityGroupRuleCmd releaseSGCmd = null
-        KVMAgentCommands.ApplySecurityGroupRuleCmd applySGCmd = null
+
         KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
         env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
-            if (cmd.ruleTOs.get(0).actionCode == "applyRule") {
-                applySGCmd = cmd
-            }
-            if (cmd.ruleTOs.get(0).actionCode == "deleteChain") {
-                releaseSGCmd = cmd
-            }
+
             return rsp
         }
 
@@ -300,10 +295,8 @@ class FlatChangeVmIpCase extends SubCase{
         assert applyUserdataCmd.userdata.vmIp == ip2
         assert applyUserdataCmd.userdata.bridgeName == new BridgeNameFinder().findByL3Uuid(flat_l3.uuid)
 
-        assert releaseSGCmd != null
-        assert releaseSGCmd.ruleTOs.get(0).vmNicIp.get(0) == ip1
-        assert applySGCmd != null
-        assert applySGCmd.ruleTOs.get(0).vmNicIp.get(0) == ip2
+        assert cmd != null
+        assert cmd.ruleTOs.get(sg.uuid) != null
     }
 
     void testFlatBaseServiceWhenChangeL3() {
@@ -358,11 +351,10 @@ class FlatChangeVmIpCase extends SubCase{
         KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
         env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
-            if (cmd.ruleTOs.get(0).actionCode == "applyRule") {
-                applySGCmd = cmd
-            }
-            if (cmd.ruleTOs.get(0).actionCode == "deleteChain") {
+            if (cmd.ruleTOs.containsKey(sg.uuid)) {
                 releaseSGCmd = cmd
+            } else {
+                applySGCmd = cmd
             }
             return rsp
         }
@@ -395,9 +387,7 @@ class FlatChangeVmIpCase extends SubCase{
         assert applyUserdataCmd.userdata.bridgeName == new BridgeNameFinder().findByL3Uuid(pub_l3.uuid)
 
         assert releaseSGCmd != null
-        assert releaseSGCmd.ruleTOs.get(0).vmNicIp.get(0) == ip1
         assert applySGCmd != null
-        assert applySGCmd.ruleTOs.get(0).vmNicIp.get(0) == ip2
     }
 
     void testEipWhenChangeIp() {

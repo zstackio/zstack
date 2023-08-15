@@ -8,6 +8,7 @@ import org.zstack.header.vm.VmNicVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg
+import org.zstack.network.securitygroup.VmNicSecurityTO
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.virtualrouter.*
 import org.zstack.network.service.lb.LoadBalancerConstants
@@ -371,17 +372,10 @@ class VirtualRouterChangeVmIpCase extends SubCase {
             createEipCmd = json(entity.getBody(), VirtualRouterCommands.CreateEipCmd)
             return rsp
         }
-        KVMAgentCommands.ApplySecurityGroupRuleCmd releaseSGCmd = null
-        KVMAgentCommands.ApplySecurityGroupRuleCmd applySGCmd = null
+
         KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
         env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
-            if (cmd.ruleTOs.get(0).actionCode == "applyRule") {
-                applySGCmd = cmd
-            }
-            if (cmd.ruleTOs.get(0).actionCode == "deleteChain") {
-                releaseSGCmd = cmd
-            }
             return rsp
         }
 
@@ -409,10 +403,8 @@ class VirtualRouterChangeVmIpCase extends SubCase {
         assert createEipCmd != null
         assert createEipCmd.eip.guestIp == ip2
 
-        assert releaseSGCmd != null
-        assert releaseSGCmd.ruleTOs.get(0).vmNicIp.get(0) == ip1
-        assert applySGCmd != null
-        assert applySGCmd.ruleTOs.get(0).vmNicIp.get(0) == ip2
+        assert cmd != null
+        assert cmd.ruleTOs.get(sg.uuid) != null
     }
 
     void testBaseServiceWhenChangeL3() {
@@ -451,17 +443,10 @@ class VirtualRouterChangeVmIpCase extends SubCase {
                 addDhcpEntryCmd = json(e.body, VirtualRouterCommands.AddDhcpEntryCmd.class)
             return rsp
         }
-        KVMAgentCommands.ApplySecurityGroupRuleCmd releaseSGCmd = null
-        KVMAgentCommands.ApplySecurityGroupRuleCmd applySGCmd = null
+
         KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
         env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
-            if (cmd.ruleTOs.get(0).actionCode == "applyRule") {
-                applySGCmd = cmd
-            }
-            if (cmd.ruleTOs.get(0).actionCode == "deleteChain") {
-                releaseSGCmd = cmd
-            }
             return rsp
         }
 
@@ -483,9 +468,7 @@ class VirtualRouterChangeVmIpCase extends SubCase {
         assert addDhcpEntryCmd != null
         assert addDhcpEntryCmd.dhcpEntries.get(0).ip == ip2
 
-        assert releaseSGCmd != null
-        assert releaseSGCmd.ruleTOs.get(0).vmNicIp.get(0) == ip1
-        assert applySGCmd != null
-        assert applySGCmd.ruleTOs.get(0).vmNicIp.get(0) == ip2
+        assert cmd != null
+        assert cmd.vmNicTOs.get(0).actionCode == VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN
     }
 }

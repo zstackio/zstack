@@ -30,6 +30,7 @@ import java.util.List;
 public class VmNicSecurityGroupRefInventory {
     @APINoSee
     private String uuid;
+    private Integer priority;
     private String vmNicUuid;
     private String securityGroupUuid;
     private String vmInstanceUuid;
@@ -38,6 +39,7 @@ public class VmNicSecurityGroupRefInventory {
     
     protected VmNicSecurityGroupRefInventory(VmNicSecurityGroupRefVO vo) {
         this.setUuid(vo.getUuid());
+        this.setPriority(vo.getPriority());
         this.setVmNicUuid(vo.getVmNicUuid());
         this.setSecurityGroupUuid(vo.getSecurityGroupUuid());
         this.setCreateDate(vo.getCreateDate());
@@ -66,6 +68,14 @@ public class VmNicSecurityGroupRefInventory {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public Integer getPriority() {
+        return priority;
+    }
+
+    public void setPriority(Integer priority) {
+        this.priority = priority;
     }
 
     public String getVmNicUuid() {

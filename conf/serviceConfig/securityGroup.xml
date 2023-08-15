@@ -61,4 +61,29 @@
     <message>
         <name>org.zstack.network.securitygroup.APIUpdateSecurityGroupMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APIChangeSecurityGroupRuleMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APIUpdateSecurityGroupRulePriorityMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APIQueryVmNicSecurityPolicyMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APIChangeVmNicSecurityPolicyMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APIChangeSecurityGroupRuleStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APISetVmNicSecurityGroupMsg</name>
+    </message>
 </service>
