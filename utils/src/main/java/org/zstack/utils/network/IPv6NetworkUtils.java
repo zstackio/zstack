@@ -429,4 +429,14 @@ public class IPv6NetworkUtils {
         return mac.matches(IPv6NetworkUtils.macRegex);
     }
 
+    /**
+     * Check if the IP starts with the Link-Local prefix "fe80".
+     * Read vm ip to usedIp need avoid it
+     */
+    public static Boolean isLinkLocalAddress(String ipv6) {
+        if (ipv6 == null || ipv6.isEmpty()) {
+            return false;
+        }
+        return ipv6.toLowerCase().startsWith("fe80");
+    }
 }

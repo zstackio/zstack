@@ -15,6 +15,8 @@ class L3NetworkSpec extends Spec implements HasSession {
     String type = "L3BasicNetwork"
     @SpecParam
     Integer ipVersion  = 4
+    @SpecParam
+    Boolean enableIPAM  = Boolean.TRUE
 
     L3NetworkInventory inventory
 
@@ -35,6 +37,7 @@ class L3NetworkSpec extends Spec implements HasSession {
             delegate.type = type
             delegate.l2NetworkUuid = (parent as L2NetworkSpec).inventory.uuid
             delegate.ipVersion = ipVersion
+            delegate.enableIPAM = enableIPAM
         }
 
         postCreate {
