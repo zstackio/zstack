@@ -67,4 +67,10 @@
 			</list>
 		</property>
 	</bean>
+
+	<bean id="SecurityGroupUpgradeExtension" class="org.zstack.network.securitygroup.SecurityGroupUpgradeExtension" >
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
 </beans>

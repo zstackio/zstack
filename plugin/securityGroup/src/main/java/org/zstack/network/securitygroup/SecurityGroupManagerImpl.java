@@ -68,6 +68,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.network.securitygroup.SecurityGroupMembersTO.ACTION_CODE_DELETE_GROUP;
@@ -263,6 +264,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             List<RuleTO> ret = new ArrayList<>();
             List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
                     .eq(SecurityGroupRuleVO_.ipVersion, ipVersion)
+                    .eq(SecurityGroupRuleVO_.state, SecurityGroupRuleState.Enabled)
                     .list();
 
             if (rules.isEmpty()) {
@@ -399,10 +401,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 nicTo.setEgressPolicy(policy.getEgressPolicy());
                 if (isDelete) {
                     nicTo.setActionCode(VmNicSecurityTO.ACTION_CODE_DELETE_CHAIN);
-                } else {
-                    nicTo.setActionCode(VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN);
+                    hto.getVmNics().add(nicTo);
+                    continue;
                 }
-
+                nicTo.setActionCode(VmNicSecurityTO.ACTION_CODE_APPLY_CHAIN);
                 hto.getVmNics().add(nicTo);
 
                 List<UsedIpVO> ips = usedIps.stream().filter(i -> i.getVmNicUuid().equals(nicUuid)).collect(Collectors.toList());
@@ -518,8 +520,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         AddSecurityGroupRuleReply reply = new AddSecurityGroupRuleReply();
 
-        SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
-        sgvo = doAddSecurityGroupRule(sgvo, msg.getRules(), msg.getPriority());
+        SecurityGroupVO sgvo = doAddSecurityGroupRule(msg.getSecurityGroupUuid(), msg.getRules(), msg.getPriority());
 
         if (SecurityGroupState.Enabled.equals(sgvo.getState())) {
             RuleCalculator cal = new RuleCalculator();
@@ -643,8 +644,110 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             handle((APIChangeSecurityGroupRuleStateMsg) msg);
         } else if (msg instanceof APISetVmNicSecurityGroupMsg) {
             handle((APISetVmNicSecurityGroupMsg) msg);
+        } else if (msg instanceof APIValidateSecurutyGroupRuleMsg) {
+            handle((APIValidateSecurutyGroupRuleMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(APIValidateSecurutyGroupRuleMsg msg) {
+        APIValidateSecurutyGroupRuleReply reply = new APIValidateSecurutyGroupRuleReply();
+        checkRuleAvailability(msg, reply);
+        bus.reply(msg, reply);
+    }
+
+    private void checkRuleAvailability(APIValidateSecurutyGroupRuleMsg msg, APIValidateSecurutyGroupRuleReply reply) {
+        reply.setAvailable(true);
+
+        if (msg.getRemoteSecurityGroupUuid() != null) {
+            if (msg.getSrcIpRange() != null || msg.getDstIpRange() != null) {
+                reply.setReason(i18n("remoteSecurityGroupUuid[%s] and srcIpRange/dstIpRange cannot be set at the same time", msg.getRemoteSecurityGroupUuid()));
+            }
+            if (!SecurityGroupConstant.WORLD_OPEN_CIDR.equals(msg.getAllowedCidr()) && !SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6.equals(msg.getAllowedCidr())) {
+                reply.setReason(i18n("remoteSecurityGroupUuid[%s] and allowedCidr[%s] cannot be set at the same time", msg.getRemoteSecurityGroupUuid(), msg.getAllowedCidr()));
+            }
+        }
+
+        if (msg.getSrcIpRange() != null) {
+            if (msg.getDstIpRange() != null) {
+                reply.setReason(i18n("srcIpRange[%s] and dstIpRange[%s] cannot be set at the same time", msg.getSrcIpRange(), msg.getDstIpRange()));
+            }
+            if (SecurityGroupRuleType.Egress.toString().equals(msg.getType())) {
+                reply.setReason(i18n("srcIpRange cannot be set in Egress rule"));
+            }
+        }
+
+        if (msg.getDstIpRange() != null) {
+            if (SecurityGroupRuleType.Ingress.toString().equals(msg.getType())) {
+                reply.setReason(i18n("dstIpRange cannot be set in Ingress rule"));
+            }
+        }
+
+        if (msg.getDstPortRange() != null) {
+            if (SecurityGroupRuleProtocolType.ALL.toString().equals(msg.getProtocol()) || SecurityGroupRuleProtocolType.ICMP.toString().equals(msg.getProtocol())) {
+                reply.setReason(i18n("dstPortRange cannot be set when rule protocol is ALL or ICMP"));
+            }
+
+            if (msg.getStartPort() != -1 || msg.getEndPort() != -1) {
+                reply.setReason(i18n("dstPortRange and startPort/endPort cannot be set at the same time"));
+            }
+        } else if (msg.getStartPort() >= 0) {
+            if (msg.getStartPort().equals(msg.getEndPort())) {
+                msg.setDstPortRange(String.valueOf(msg.getStartPort()));
+            } else {
+                msg.setDstPortRange(String.format("%s-%s", msg.getStartPort(), msg.getEndPort()));
+            }
+        }
+
+        if (!SecurityGroupConstant.WORLD_OPEN_CIDR.equals(msg.getAllowedCidr()) && !SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6.equals(msg.getAllowedCidr())) {
+            if (msg.getSrcIpRange() != null || msg.getDstIpRange() != null) {
+                reply.setReason(i18n("allowCidr and srcIpRange/dstIpRange cannot be set at the same time"));
+            }
+
+            if (SecurityGroupRuleType.Ingress.toString().equals(msg.getType())) {
+                msg.setSrcIpRange(msg.getAllowedCidr());
+            } else {
+                msg.setDstIpRange(msg.getAllowedCidr());
+            }
+        }
+
+        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO targetRule = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
+        targetRule.setType(msg.getType());
+        targetRule.setRemoteSecurityGroupUuid(msg.getRemoteSecurityGroupUuid());
+        targetRule.setAction(msg.getAction());
+        targetRule.setProtocol(msg.getProtocol());
+        targetRule.setIpVersion(msg.getIpVersion());
+        targetRule.setDstIpRange(msg.getDstIpRange());
+        targetRule.setSrcIpRange(msg.getSrcIpRange());
+        targetRule.setDstPortRange(msg.getDstPortRange());
+        targetRule.setAllowedCidr(msg.getAllowedCidr());
+        targetRule.setStartPort(msg.getStartPort());
+        targetRule.setEndPort(msg.getEndPort());
+
+        // Deduplicate in DB
+        List<SecurityGroupRuleVO> vos = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid()).eq(SecurityGroupRuleVO_.type, SecurityGroupRuleType.valueOf(msg.getType())).list();
+
+        for (SecurityGroupRuleVO vo : vos) {
+            APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO ao = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO();
+            ao.setType(vo.getType().toString());
+            ao.setAllowedCidr(vo.getAllowedCidr());
+            ao.setProtocol(vo.getProtocol().toString());
+            ao.setStartPort(vo.getStartPort());
+            ao.setEndPort(vo.getEndPort());
+            ao.setIpVersion(vo.getIpVersion());
+            ao.setRemoteSecurityGroupUuid(vo.getRemoteSecurityGroupUuid());
+            ao.setAction(vo.getAction());
+            ao.setSrcIpRange(vo.getSrcIpRange());
+            ao.setDstIpRange(vo.getDstIpRange());
+            ao.setDstPortRange(vo.getDstPortRange());
+            if (ao.equals(targetRule)) {
+                reply.setReason(i18n("duplicated to rule[uuid:%s] in datebase", vo.getUuid()));
+            }
+        }
+
+        if (reply.getReason() != null) {
+            reply.setAvailable(false);
         }
     }
 
@@ -1404,9 +1507,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     private void handle(APIAddSecurityGroupRuleMsg msg) {
         APIAddSecurityGroupRuleEvent evt = new APIAddSecurityGroupRuleEvent(msg.getId());
-        SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
 
-        sgvo = doAddSecurityGroupRule(sgvo, msg.getRules(), msg.getPriority());
+        SecurityGroupVO sgvo = doAddSecurityGroupRule(msg.getSecurityGroupUuid(), msg.getRules(), msg.getPriority());
 
         if (SecurityGroupState.Enabled.equals(sgvo.getState())) {
             RuleCalculator cal = new RuleCalculator();
@@ -1421,9 +1523,11 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     @Transactional
-    private SecurityGroupVO doAddSecurityGroupRule(SecurityGroupVO sgvo, List<SecurityGroupRuleAO> ruleAOs, Integer priority) {
+    private SecurityGroupVO doAddSecurityGroupRule(String sgUuid, List<SecurityGroupRuleAO> ruleAOs, Integer priority) {
+
+        SecurityGroupVO sgvo = dbf.findByUuid(sgUuid, SecurityGroupVO.class);
         List<SecurityGroupRuleVO> ruleVOs = Q.New(SecurityGroupRuleVO.class)
-                .eq(SecurityGroupRuleVO_.securityGroupUuid, sgvo.getUuid())
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
                 .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
                 .list();
         
@@ -1436,7 +1540,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         for (SecurityGroupRuleAO ao : ruleAOs) {
             SecurityGroupRuleVO vo = new SecurityGroupRuleVO();
             vo.setUuid(Platform.getUuid());
-            vo.setSecurityGroupUuid(sgvo.getUuid());
+            vo.setSecurityGroupUuid(sgUuid);
             vo.setDescription(ao.getDescription());
             vo.setType(SecurityGroupRuleType.valueOf(ao.getType()));
             vo.setState(SecurityGroupRuleState.valueOf(ao.getState()));

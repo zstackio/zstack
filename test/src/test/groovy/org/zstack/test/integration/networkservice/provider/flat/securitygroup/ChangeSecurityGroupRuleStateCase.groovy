@@ -96,11 +96,8 @@ class ChangeSecurityGroupRuleStateCase extends SubCase {
             assert cmd != null
             assert cmd.vmNicTOs.get(0).vmNicUuid == vm1.vmNics[0].uuid
             ip4Rules = cmd.ruleTOs.get(sg1.uuid)
-            assert ip4Rules.size() == 12
+            assert ip4Rules.size() == 9
             assert cmd.ip6RuleTOs.isEmpty()
-            assert ip4Rules.find {it.priority == 1 && it.type == "Ingress" && it.state == "Disabled"}
-            assert ip4Rules.find {it.priority == 3 && it.type == "Ingress" && it.state == "Disabled"}
-            assert ip4Rules.find {it.priority == 5 && it.type == "Ingress" && it.state == "Disabled"}
         }
     }
 

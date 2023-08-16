@@ -284,6 +284,90 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
         assert rvos.find { it.uuid == rvo9.uuid && it.priority == 6 } != null
     }
 
+    void testAddRuleExceedLimit() {
+        deleteSecurityGroup {
+            uuid = sg3.uuid
+        }
+
+        sg3 = createSecurityGroup {
+            name = "sg-3"
+            ipVersion = 4
+        }
+
+        List<SecurityGroupRuleAO> egressRules = new ArrayList<>()
+        for (int i = 1; i <= 100; i++) {
+            SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+            r.type = "Egress"
+            r.ipVersion = 4
+            r.dstPortRange = i
+            r.protocol = "TCP"
+            egressRules.add(r)
+        }
+
+        sg3 = addSecurityGroupRule {
+            securityGroupUuid = sg3.uuid
+            rules = egressRules
+        }
+
+        SecurityGroupRuleAO rule_101 = new SecurityGroupRuleAO()
+        rule_101.allowedCidr = "192.167.1.0/24"
+        rule_101.type = "Engress"
+        rule_101.protocol = "ALL"
+        rule_101.startPort = -1
+        rule_101.endPort = -1
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg3.uuid
+                rules = [rule_101]
+            }
+        }
+
+        List<SecurityGroupRuleAO> ingressRules = new ArrayList<>()
+        for (int i = 1; i <= 80; i++) {
+            SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+            r.type = "Ingress"
+            r.ipVersion = 4
+            r.dstPortRange = i
+            r.protocol = "TCP"
+            ingressRules.add(r)
+        }
+        addSecurityGroupRule {
+            securityGroupUuid = sg3.uuid
+            rules =ingressRules
+        }
+
+        List<SecurityGroupRuleAO> rules_exceed = new ArrayList<>()
+        for (int i = 1; i <= 21; i++) {
+            SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+            r.type = "Ingress"
+            r.ipVersion = 4
+            r.dstPortRange = 80 + i
+            r.protocol = "TCP"
+            rules_exceed.add(r)
+        }
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg3.uuid
+                rules = rules_exceed
+            }
+        }
+
+        SecurityGroupRuleAO rule_82 = new SecurityGroupRuleAO()
+        rule_82.type = "Ingress"
+        rule_82.protocol = "TCP"
+        rule_82.dstPortRange = 82
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg3.uuid
+                rules = [rule_82]
+                priority = 82
+            }
+        }
+    }
+
     @Override
     void clean() {
         env.delete()
@@ -326,5 +410,6 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
         testAddSecurityGroupRuleError()
         testAddSecurityGroupRule()
         testDeleteRules()
+        testAddRuleExceedLimit()
     }
 }

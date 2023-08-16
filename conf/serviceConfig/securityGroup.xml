@@ -86,4 +86,8 @@
     <message>
         <name>org.zstack.network.securitygroup.APISetVmNicSecurityGroupMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APIValidateSecurutyGroupRuleMsg</name>
+    </message>
 </service>

@@ -339,13 +339,13 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
         }
     }
 
-    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true, operationTarget = true, nonempty = true, required = true)
     private String securityGroupUuid;
 
     /**
      * @desc a list of :ref:`SecurityGroupRuleAO` that describe rules
      */
-    @APIParam(nonempty = true)
+    @APIParam(nonempty = true, required = true)
     private List<SecurityGroupRuleAO> rules;
 
     @APIParam(resourceType = SecurityGroupVO.class, required = false, nonempty = true)
