@@ -18,7 +18,14 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     public static final String ISCSI = "iscsi";
     public static final String CEPH = "ceph";
     public static final String SHAREDBLOCK = "sharedblock";
+    /**
+     * used for remote scsi (iscsi or rdma) lun
+     */
     public static final String SCSILUN = "scsilun";
+    /**
+     * used for local scsi disk
+     */
+    public static final String SCSI_DISK = "scsi_disk";
     public static final String BLOCK = "block";
     public static final String MINISTORAGE = "mini";
     public static final String QUORUM = "quorum";

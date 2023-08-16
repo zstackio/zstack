@@ -144,11 +144,11 @@ public class CollectionUtils {
         return coll == null || coll.isEmpty();
     }
 
-    public static <T> List<T> filter(List<T> list, Predicate<? super T> predicate) {
+    public static <T> List<T> filter(Collection<T> list, Predicate<? super T> predicate) {
         return list.stream().filter(predicate).collect(Collectors.toList());
     }
 
-    public static <T> T findOrNull(List<T> list, Predicate<? super T> predicate) {
+    public static <T> T findOrNull(Collection<T> list, Predicate<? super T> predicate) {
         return list.stream().filter(predicate).findFirst().orElse(null);
     }
 
