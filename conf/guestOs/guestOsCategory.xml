@@ -226,6 +226,12 @@
     </osInfo>
     <osInfo>
         <platform>Other</platform>
+        <name>Solaris</name>
+        <version>10</version>
+        <osRelease>Solaris 10</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Other</platform>
         <name>Other</name>
         <version></version>
         <osRelease>Other</osRelease>
