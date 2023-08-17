@@ -70,8 +70,8 @@ public class CephOsdGroupCapacityHelper {
         for (CephOsdGroupVO osdg : osdgs) {
             List<CephPrimaryStoragePoolVO> pools = getOsdGroupRelatedPools(osdg.getUuid());
             if (CollectionUtils.isEmpty(pools)) {
-                logger.warn(String.format("it seems that osdgroup[%s] has no related pools", osdg.getUuid()));
-                return;
+                logger.warn(String.format("it seems that osd group[%s] has no related pools", osdg.getUuid()));
+                continue;
             }
             CephPrimaryStoragePoolVO poolVO = pools.get(0);
             osdg.setAvailablePhysicalCapacity(poolVO.getAvailableCapacity());
@@ -208,6 +208,7 @@ public class CephOsdGroupCapacityHelper {
         List<CephPrimaryStoragePoolVO> pools = getOsdGroupRelatedPools(osdGroup.getUuid());
 
         if (pools.isEmpty()) {
+            logger.warn(String.format("ceph osd group[%s] has no related pools, skip it", osdGroup.getUuid()));
             return 0L;
         }
 
