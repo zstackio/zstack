@@ -158,6 +158,21 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
         return rc.getResourceConfigValue(resourceUuid, clz);
     }
 
+    @Override
+    public <T> Map<String, T> getResourceConfigValues(GlobalConfig gc, List<String> resourceUuids, Class<T> clz) {
+        ResourceConfig rc = resourceConfigs.get(gc.getIdentity());
+        if (rc == null) {
+            logger.debug(String.format("resource is not bound to global config[category:%s, name:%s], " +
+                    "use global config instead", gc.getCategory(), gc.getName()));
+
+            Map<String, T> result = new HashMap<>();
+            resourceUuids.forEach(resourceUuid -> result.put(resourceUuid, gc.value(clz)));
+            return result;
+        }
+
+        return rc.getResourceConfigValues(resourceUuids, clz);
+    }
+
     protected void buildResourceConfig(Field field) throws Exception {
         BindResourceConfig at = field.getAnnotation(BindResourceConfig.class);
         GlobalConfig gc = (GlobalConfig) field.get(null);
