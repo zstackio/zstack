@@ -15,6 +15,7 @@ ALTER TABLE `LunHostRefVO` CHANGE `nvmeLunUuid` `lunUuid` char(32) NOT NULL;
 ALTER TABLE `LunHostRefVO` ADD CONSTRAINT `fkLunHostRefVOLunVO` FOREIGN KEY (lunUuid) REFERENCES LunVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
 ALTER TABLE `LunHostRefVO` ADD COLUMN `diskUsage` varchar(32) DEFAULT NULL;
 ALTER TABLE `LunHostRefVO` ADD COLUMN `locate` varchar(16) DEFAULT 'Remote';
+ALTER TABLE `LunHostRefVO` ADD COLUMN `transport` varchar(32) DEFAULT '';
 
 ALTER TABLE `RaidPhysicalDriveVO` ADD COLUMN `lunUuid` char(32) DEFAULT NULL;
 ALTER TABLE `RaidPhysicalDriveVO` ADD CONSTRAINT `fkRaidPhysicalDriveVOLunVO` FOREIGN KEY (lunUuid) REFERENCES LunVO (uuid) ON DELETE CASCADE;
