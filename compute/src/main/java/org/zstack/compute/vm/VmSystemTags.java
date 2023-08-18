@@ -150,6 +150,10 @@ public class VmSystemTags {
     public static String CD_ROM_UUID_TOKEN = "cdromUuid";
     public static PatternedSystemTag CD_ROM = new PatternedSystemTag(String.format("cdromUuid::{%s}", CD_ROM_UUID_TOKEN), VmInstanceVO.class);
 
+    public static String VM_NIC_MULTIQUEUE_TOKEN = "nicMultiQueueNum";
+    public static String VM_NIC_MULTIQUEUE_L3_TOKEN = "l3Uuid";
+    public static PatternedSystemTag VM_NIC_MULTIQUEUE = new PatternedSystemTag(String.format("nicMultiQueueNum::{%s}::{%s}", VM_NIC_MULTIQUEUE_L3_TOKEN, VM_NIC_MULTIQUEUE_TOKEN), VmInstanceVO.class);
+
     @Deprecated
     public static final String V2V_VM_CDROMS_TOKEN = "v2vVmCdroms";
     @Deprecated
