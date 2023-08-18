@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ValidateSecurutyGroupRuleAction extends AbstractAction {
+public class ValidateSecurityGroupRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ValidateSecurutyGroupRuleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ValidateSecurutyGroupRuleResult value;
+        public org.zstack.sdk.ValidateSecurityGroupRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -87,8 +87,8 @@ public class ValidateSecurutyGroupRuleAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ValidateSecurutyGroupRuleResult value = res.getResult(org.zstack.sdk.ValidateSecurutyGroupRuleResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ValidateSecurutyGroupRuleResult() : value; 
+        org.zstack.sdk.ValidateSecurityGroupRuleResult value = res.getResult(org.zstack.sdk.ValidateSecurityGroupRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ValidateSecurityGroupRuleResult() : value; 
 
         return ret;
     }

@@ -40737,8 +40737,8 @@ abstract class ApiHelper {
     }
 
 
-    def validateSecurutyGroupRule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ValidateSecurutyGroupRuleAction.class) Closure c) {
-        def a = new org.zstack.sdk.ValidateSecurutyGroupRuleAction()
+    def validateSecurityGroupRule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ValidateSecurityGroupRuleAction.class) Closure c) {
+        def a = new org.zstack.sdk.ValidateSecurityGroupRuleAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

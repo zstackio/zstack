@@ -10,9 +10,9 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
     path = "/security-groups/{securityGroupUuid}/rules/validation",
     method = HttpMethod.GET,
-    responseClass = APIValidateSecurutyGroupRuleReply.class
+    responseClass = APIValidateSecurityGroupRuleReply.class
 )
-public class APIValidateSecurutyGroupRuleMsg extends APISyncCallMessage {
+public class APIValidateSecurityGroupRuleMsg extends APISyncCallMessage {
 
     @APIParam(resourceType = SecurityGroupVO.class, checkAccount = true, operationTarget = true, required = true, nonempty = true)
     private String securityGroupUuid;
@@ -146,8 +146,8 @@ public class APIValidateSecurutyGroupRuleMsg extends APISyncCallMessage {
         this.endPort = endPort;
     }
 
-    public static APIValidateSecurutyGroupRuleMsg __example__() {
-        APIValidateSecurutyGroupRuleMsg msg = new APIValidateSecurutyGroupRuleMsg();
+    public static APIValidateSecurityGroupRuleMsg __example__() {
+        APIValidateSecurityGroupRuleMsg msg = new APIValidateSecurityGroupRuleMsg();
         msg.setSecurityGroupUuid(uuid());
         msg.setType("Ingress");
         msg.setRemoteSecurityGroupUuid(uuid());

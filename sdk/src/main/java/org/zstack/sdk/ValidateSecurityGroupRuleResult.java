@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class ValidateSecurutyGroupRuleResult {
+public class ValidateSecurityGroupRuleResult {
     public boolean available;
     public void setAvailable(boolean available) {
         this.available = available;

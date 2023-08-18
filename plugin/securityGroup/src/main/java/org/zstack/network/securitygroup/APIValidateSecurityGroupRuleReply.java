@@ -4,7 +4,7 @@ import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
 @RestResponse(fieldsTo = {"all"})
-public class APIValidateSecurutyGroupRuleReply extends APIReply {
+public class APIValidateSecurityGroupRuleReply extends APIReply {
     private boolean available;
     private String reason;
 
@@ -24,8 +24,8 @@ public class APIValidateSecurutyGroupRuleReply extends APIReply {
         this.reason = reason;
     }
 
-    public static APIValidateSecurutyGroupRuleReply __example__() {
-        APIValidateSecurutyGroupRuleReply reply = new APIValidateSecurutyGroupRuleReply();
+    public static APIValidateSecurityGroupRuleReply __example__() {
+        APIValidateSecurityGroupRuleReply reply = new APIValidateSecurityGroupRuleReply();
         reply.setAvailable(true);
         return reply;
     }
