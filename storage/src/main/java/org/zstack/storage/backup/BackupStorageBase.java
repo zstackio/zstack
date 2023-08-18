@@ -25,9 +25,9 @@ import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.*;
-import org.zstack.header.core.trash.TrashCleanupResult;
 import org.zstack.header.core.trash.CleanTrashResult;
 import org.zstack.header.core.trash.InstallPathRecycleInventory;
+import org.zstack.header.core.trash.TrashCleanupResult;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -115,6 +115,10 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     abstract protected void connectHook(boolean newAdd, Completion completion);
 
     abstract protected void pingHook(Completion completion);
+
+    protected void handle(GetBackupStorageManagerHostnameMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
 
     public BackupStorageBase(BackupStorageVO self) {
         this.self = self;
@@ -253,6 +257,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             handle((RestoreImagesBackupStorageMetadataToDatabaseMsg) msg);
         } else if (msg instanceof CalculateImageHashOnBackupStorageMsg) {
             handle((CalculateImageHashOnBackupStorageMsg) msg);
+        } else if (msg instanceof GetBackupStorageManagerHostnameMsg) {
+            handle((GetBackupStorageManagerHostnameMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }

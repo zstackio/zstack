@@ -34,6 +34,8 @@
         <module>sshKeyPair</module>
         <module>hostNetworkInterface</module>
         <module>account-import</module>
+        <module>vhost</module>
+        <module>expon</module>
     </modules>
     <dependencies>
         <dependency>

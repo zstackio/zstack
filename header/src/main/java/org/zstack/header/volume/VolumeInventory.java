@@ -154,6 +154,7 @@ public class VolumeInventory implements Serializable {
     private String lastVmInstanceUuid;
 
     private Timestamp lastAttachDate;
+    private String protocol;
 
     public VolumeInventory() {
     }
@@ -181,6 +182,7 @@ public class VolumeInventory implements Serializable {
         this.lastDetachDate = other.lastDetachDate;
         this.lastVmInstanceUuid = other.lastVmInstanceUuid;
         this.lastAttachDate = other.lastAttachDate;
+        this.protocol = other.protocol;
     }
 
 
@@ -210,6 +212,7 @@ public class VolumeInventory implements Serializable {
         inv.setLastDetachDate(vo.getLastDetachDate());
         inv.setLastVmInstanceUuid(vo.getLastVmInstanceUuid());
         inv.setLastAttachDate(vo.getLastAttachDate());
+        inv.setProtocol(vo.getProtocol());
         return inv;
     }
 
@@ -425,5 +428,13 @@ public class VolumeInventory implements Serializable {
 
     public void setLastAttachDate(Timestamp lastAttachDate) {
         this.lastAttachDate = lastAttachDate;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 }

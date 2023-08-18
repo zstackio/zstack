@@ -45,6 +45,12 @@ public class VmCdRomVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String description;
 
+    /*
+    @Column
+    private String protocol;
+
+     */
+
     @Column
     private Timestamp createDate;
 
@@ -132,4 +138,16 @@ public class VmCdRomVO extends ResourceVO implements OwnedByAccount {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    /*
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+     */
 }

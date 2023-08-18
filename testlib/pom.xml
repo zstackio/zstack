@@ -124,6 +124,16 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
+            <artifactId>expon</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>vhost</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
             <artifactId>ceph</artifactId>
             <version>${project.version}</version>
         </dependency>
