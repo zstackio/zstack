@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddSecurityGroupRuleAction extends AbstractAction {
+public class ValidateSecurutyGroupRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddSecurityGroupRuleResult value;
+        public org.zstack.sdk.ValidateSecurutyGroupRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,14 +28,38 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String securityGroupUuid;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List rules;
+    @Param(required = true, validValues = {"Ingress","Egress"}, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
+
+    @Param(required = true, validValues = {"TCP","UDP","ICMP","ALL"}, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String protocol;
 
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List remoteSecurityGroupUuids;
+    public java.lang.String remoteSecurityGroupUuid;
+
+    @Param(required = false, validValues = {"4","6"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer ipVersion;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer priority = -1;
+    public java.lang.String srcIpRange;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dstIpRange;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dstPortRange;
+
+    @Param(required = false, validValues = {"ACCEPT","DROP"}, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String action;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer startPort;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer endPort;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String allowedCidr;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -55,12 +79,6 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -69,8 +87,8 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddSecurityGroupRuleResult value = res.getResult(org.zstack.sdk.AddSecurityGroupRuleResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddSecurityGroupRuleResult() : value; 
+        org.zstack.sdk.ValidateSecurutyGroupRuleResult value = res.getResult(org.zstack.sdk.ValidateSecurutyGroupRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ValidateSecurutyGroupRuleResult() : value; 
 
         return ret;
     }
@@ -99,11 +117,11 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/security-groups/{securityGroupUuid}/rules";
+        info.httpMethod = "GET";
+        info.path = "/security-groups/{securityGroupUuid}/rules/validation";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

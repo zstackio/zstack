@@ -145,6 +145,70 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         assert Q.New(SecurityGroupRuleVO).eq(SecurityGroupRuleVO_.uuid, rule.uuid).find().dstIpRange == null
     }
 
+    void testChangeDefaultRule() {
+        List<SecurityGroupRuleAO> ingressRules = new ArrayList<>()
+        for (int i = 1; i <= 5; i++) {
+            SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+            r.type = "Ingress"
+            r.ipVersion = 4
+            r.dstPortRange = "100" + i
+            r.srcIpRange = "172.17." + i + ".0/24"
+            r.protocol = "TCP"
+            ingressRules.add(r)
+        }
+
+        sg3 = addSecurityGroupRule {
+            securityGroupUuid = sg3.uuid
+            rules = ingressRules
+        }
+
+        SecurityGroupRuleInventory default_rule = sg3.rules.find { it.type == "Ingress" && it.priority == 0 && it.ipVersion == 4 }
+        assert default_rule != null
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = default_rule.uuid
+                priority = 2
+            }
+        }
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = default_rule.uuid
+                srcIpRange = "1.1.1.0/24"
+            }
+        }
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = default_rule.uuid
+                dstPortRange = "1-100"
+            }
+        }
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = default_rule.uuid
+                remoteSecurityGroupUuid = sg1.uuid
+            }
+        }
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = default_rule.uuid
+                protocol = "UDP"
+            }
+        }
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = default_rule.uuid
+                action = "DROP"
+            }
+        }
+
+    }
+
     @Override
     void clean() {
         env.delete()
@@ -187,5 +251,6 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         testChangeRulePriority()
         testChangeRuleIpRange()
         testChangeRuleRemoteGroup()
+        testChangeDefaultRule()
     }
 }
