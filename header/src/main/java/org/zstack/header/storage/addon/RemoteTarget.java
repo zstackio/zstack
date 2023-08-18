@@ -8,5 +8,6 @@ public interface RemoteTarget {
     //  - sftp://host/path/to/file
     //  - nbd://host/export-name
     //  - rbd://pool/image
+    //  - nvme://host-nqn@ip:port/nqn/diskId
     String getResourceURI();
 }

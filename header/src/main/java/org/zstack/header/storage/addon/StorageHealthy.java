@@ -1,5 +1,5 @@
 package org.zstack.header.storage.addon;
 
 public enum StorageHealthy {
-    Ok, Unknown, Failed
+    Ok, Unknown, Warn, Failed
 }

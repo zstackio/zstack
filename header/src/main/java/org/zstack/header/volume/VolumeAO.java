@@ -83,6 +83,9 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
     @Column
     private String volumeQos;
 
+    @Column
+    private String protocol;
+
     @Transient
     private VolumeAO shadow;
 
@@ -286,5 +289,13 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
 
     public void setLastAttachDate(Timestamp lastAttachDate) {
         this.lastAttachDate = lastAttachDate;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 }

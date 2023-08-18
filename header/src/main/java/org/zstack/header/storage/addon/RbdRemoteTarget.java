@@ -7,4 +7,9 @@ public class RbdRemoteTarget implements RemoteTarget {
     public String getInstallPath() {
         return installPath;
     }
+
+    @Override
+    public String getResourceURI() {
+        return null;
+    }
 }

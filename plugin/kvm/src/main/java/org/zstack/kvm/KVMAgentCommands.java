@@ -2073,9 +2073,6 @@ public class KVMAgentCommands {
         private List<VolumeTO> dataVolumes;
         @GrayVersion(value = "5.0.0")
         private List<VolumeTO> cacheVolumes;
-        @GrayVersion(value = "5.0.0")
-        private List<VolumeTO> Volumes;
-        @GrayVersion(value = "5.0.0")
         private List<NicTO> nics;
         @GrayVersion(value = "5.0.0")
         private long timeout;

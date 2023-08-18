@@ -693,6 +693,11 @@ public class SftpBackupStorage extends BackupStorageBase {
     protected void handle(CalculateImageHashOnBackupStorageMsg msg) {
         CalculateImageHashOnBackupStorageReply reply = new CalculateImageHashOnBackupStorageReply();
         reply.setError(operr("sftp backup storage do not support calculate image hash"));
+    }
+
+    protected void handle(GetBackupStorageManagerHostnameMsg msg) {
+        GetBackupStorageManagerHostnameReply reply = new GetBackupStorageManagerHostnameReply();
+        reply.setHostname(getSelf().getHostname());
         bus.reply(msg, reply);
     }
 
