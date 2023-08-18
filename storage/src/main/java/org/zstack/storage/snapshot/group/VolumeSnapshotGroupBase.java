@@ -26,7 +26,9 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -257,12 +259,12 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
         });
     }
 
-    private void
-    handleRevert(APIRevertVmFromSnapshotGroupMsg msg, NoErrorCompletion completion) {
+    private void handleRevert(APIRevertVmFromSnapshotGroupMsg msg, NoErrorCompletion completion) {
         APIRevertVmFromSnapshotGroupEvent event = new APIRevertVmFromSnapshotGroupEvent(msg.getId());
 
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("revert-vm-%s-from-snapshot-group-%s", self.getVmInstanceUuid(), msg.getGroupUuid()));
+        chain.getData().put(VolumeSnapshotGroupConstant.Parmas.SnapshotGroupUuid.toString(), self.getUuid());
         chain.then(new NoRollbackFlow() {
             String __name__ = "revert-vm-devices-info-before-restore-VmInstance";
 
@@ -304,7 +306,14 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     }
                 });
             }
-        }).then(new NoRollbackFlow() {
+        });
+
+        pluginRgty.getExtensionList(RevertVmFromSnapShotGroupExtension.class)
+                .stream()
+                .filter(RevertVmFromSnapShotGroupExtension::needRunExtension)
+                .forEach(v -> chain.then(v.getBeforeRevertFlow()));
+
+        chain.then(new NoRollbackFlow() {
             String __name__ = "revert-volume-snapshots";
 
             @Override
@@ -444,10 +453,12 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
     @Transactional(readOnly = true)
     public List<VolumeSnapshotVO> getEffectiveSnapshots() {
         List<VolumeSnapshotVO> snapshots = getSnapshots();
-        Set<String> attachedVolUuids = new HashSet<>(Q.New(VolumeVO.class)
-                .eq(VolumeVO_.vmInstanceUuid, self.getVmInstanceUuid())
-                .select(VolumeVO_.uuid).listValues());
-        snapshots.removeIf(it -> !attachedVolUuids.contains(it.getVolumeUuid()));
+        if (!VolumeSnapshotGlobalConfig.EFFECTIVE_COUNT_WITH_DETACHED_VOLUMES.value(Boolean.class)) {
+            Set<String> attachedVolUuids = new HashSet<>(Q.New(VolumeVO.class)
+                    .eq(VolumeVO_.vmInstanceUuid, self.getVmInstanceUuid())
+                    .select(VolumeVO_.uuid).listValues());
+            snapshots.removeIf(it -> !attachedVolUuids.contains(it.getVolumeUuid()));
+        }
         return snapshots;
     }
 
