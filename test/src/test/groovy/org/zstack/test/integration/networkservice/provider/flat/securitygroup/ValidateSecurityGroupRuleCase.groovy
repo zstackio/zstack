@@ -13,7 +13,7 @@ import org.zstack.sdk.SecurityGroupInventory
 import org.zstack.sdk.SecurityGroupRuleInventory
 import org.zstack.sdk.VmNicSecurityGroupRefInventory
 import org.zstack.sdk.VmInstanceInventory
-import org.zstack.sdk.ValidateSecurutyGroupRuleResult
+import org.zstack.sdk.ValidateSecurityGroupRuleResult
 import org.zstack.sdk.VmNicSecurityPolicyInventory
 import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -22,7 +22,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
 
-class ValidateSecurutyGroupRuleCase extends SubCase {
+class ValidateSecurityGroupRuleCase extends SubCase {
     EnvSpec env
 
     L3NetworkInventory l3Net
@@ -30,7 +30,7 @@ class ValidateSecurutyGroupRuleCase extends SubCase {
     SecurityGroupInventory sg1, sg2, sg3
 
     void testRuleAvailability() {
-        ValidateSecurutyGroupRuleResult reply = validateSecurutyGroupRule {
+        ValidateSecurityGroupRuleResult reply = validateSecurityGroupRule {
             securityGroupUuid = sg1.uuid
             type = "Ingress"
             protocol = "TCP"
@@ -41,7 +41,7 @@ class ValidateSecurutyGroupRuleCase extends SubCase {
 
         assert reply.available == false
 
-        reply = validateSecurutyGroupRule {
+        reply = validateSecurityGroupRule {
             securityGroupUuid = sg1.uuid
             type = "Ingress"
             protocol = "TCP"
@@ -52,7 +52,7 @@ class ValidateSecurutyGroupRuleCase extends SubCase {
 
         assert reply.available == false
 
-        reply = validateSecurutyGroupRule {
+        reply = validateSecurityGroupRule {
             securityGroupUuid = sg1.uuid
             type = "Egress"
             protocol = "TCP"
@@ -62,7 +62,7 @@ class ValidateSecurutyGroupRuleCase extends SubCase {
 
         assert reply.available == false
 
-        reply = validateSecurutyGroupRule {
+        reply = validateSecurityGroupRule {
             securityGroupUuid = sg1.uuid
             type = "Ingress"
             protocol = "ALL"
@@ -83,7 +83,7 @@ class ValidateSecurutyGroupRuleCase extends SubCase {
             rules = [rule1]
         }
 
-        reply = validateSecurutyGroupRule {
+        reply = validateSecurityGroupRule {
             securityGroupUuid = sg1.uuid
             allowedCidr = "192.168.1.0/24"
             type = "Ingress"

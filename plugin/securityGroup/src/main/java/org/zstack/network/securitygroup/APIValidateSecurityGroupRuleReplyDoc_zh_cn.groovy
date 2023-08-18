@@ -26,7 +26,7 @@ doc {
 	}
 	ref {
 		name "error"
-		path "org.zstack.network.securitygroup.APIValidateSecurutyGroupRuleReply.error"
+		path "org.zstack.network.securitygroup.APIValidateSecurityGroupRuleReply.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
 		type "ErrorCode"
 		since "4.7.21"

@@ -88,6 +88,6 @@
     </message>
 
     <message>
-        <name>org.zstack.network.securitygroup.APIValidateSecurutyGroupRuleMsg</name>
+        <name>org.zstack.network.securitygroup.APIValidateSecurityGroupRuleMsg</name>
     </message>
 </service>

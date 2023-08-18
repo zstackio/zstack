@@ -1,9 +1,9 @@
 package org.zstack.network.securitygroup
 
-import org.zstack.network.securitygroup.APIValidateSecurutyGroupRuleReply
+import org.zstack.network.securitygroup.APIValidateSecurityGroupRuleReply
 
 doc {
-    title "ValidateSecurutyGroupRule"
+    title "ValidateSecurityGroupRule"
 
     category "securityGroup"
 
@@ -15,7 +15,7 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIValidateSecurutyGroupRuleMsg.class
+            clz APIValidateSecurityGroupRuleMsg.class
 
             desc """检查安全组规则是否可用"""
             
@@ -155,7 +155,7 @@ doc {
         }
 
         response {
-            clz APIValidateSecurutyGroupRuleReply.class
+            clz APIValidateSecurityGroupRuleReply.class
         }
     }
 }

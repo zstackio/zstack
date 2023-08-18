@@ -644,20 +644,20 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             handle((APIChangeSecurityGroupRuleStateMsg) msg);
         } else if (msg instanceof APISetVmNicSecurityGroupMsg) {
             handle((APISetVmNicSecurityGroupMsg) msg);
-        } else if (msg instanceof APIValidateSecurutyGroupRuleMsg) {
-            handle((APIValidateSecurutyGroupRuleMsg) msg);
+        } else if (msg instanceof APIValidateSecurityGroupRuleMsg) {
+            handle((APIValidateSecurityGroupRuleMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
-    private void handle(APIValidateSecurutyGroupRuleMsg msg) {
-        APIValidateSecurutyGroupRuleReply reply = new APIValidateSecurutyGroupRuleReply();
+    private void handle(APIValidateSecurityGroupRuleMsg msg) {
+        APIValidateSecurityGroupRuleReply reply = new APIValidateSecurityGroupRuleReply();
         checkRuleAvailability(msg, reply);
         bus.reply(msg, reply);
     }
 
-    private void checkRuleAvailability(APIValidateSecurutyGroupRuleMsg msg, APIValidateSecurutyGroupRuleReply reply) {
+    private void checkRuleAvailability(APIValidateSecurityGroupRuleMsg msg, APIValidateSecurityGroupRuleReply reply) {
         reply.setAvailable(true);
 
         if (msg.getRemoteSecurityGroupUuid() != null) {

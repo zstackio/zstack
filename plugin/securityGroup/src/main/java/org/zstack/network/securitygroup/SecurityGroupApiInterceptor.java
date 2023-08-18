@@ -78,14 +78,14 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             validate((APIChangeSecurityGroupRuleStateMsg) msg);
         } else if (msg instanceof APISetVmNicSecurityGroupMsg) {
             validate((APISetVmNicSecurityGroupMsg) msg);
-        } else if (msg instanceof APIValidateSecurutyGroupRuleMsg) {
-            validate((APIValidateSecurutyGroupRuleMsg) msg);
+        } else if (msg instanceof APIValidateSecurityGroupRuleMsg) {
+            validate((APIValidateSecurityGroupRuleMsg) msg);
         }
 
         return msg;
     }
 
-    private void validate(APIValidateSecurutyGroupRuleMsg msg) {
+    private void validate(APIValidateSecurityGroupRuleMsg msg) {
         if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, msg.getSecurityGroupUuid()).isExists()) {
             throw new ApiMessageInterceptionException(argerr("invalid security group rule, because security group[uuid:%s] not found", msg.getSecurityGroupUuid()));
         }
