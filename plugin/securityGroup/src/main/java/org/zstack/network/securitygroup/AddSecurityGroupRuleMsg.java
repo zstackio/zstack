@@ -10,11 +10,12 @@ import java.util.List;
  */
 public class AddSecurityGroupRuleMsg extends NeedReplyMessage implements AddSecurityGroupRuleMessage {
     private String securityGroupUuid;
+    private String type;
+    private Integer priority = -1;
     /**
      * @desc a list of :ref:`SecurityGroupRuleAO` that describe rules
      */
     private List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> rules;
-    private List<String> remoteSecurityGroupUuids;
 
     public String getSecurityGroupUuid() {
         return securityGroupUuid;
@@ -32,11 +33,19 @@ public class AddSecurityGroupRuleMsg extends NeedReplyMessage implements AddSecu
         this.rules = rules;
     }
 
-    public List<String> getRemoteSecurityGroupUuids() {
-        return remoteSecurityGroupUuids;
+    public Integer getPriority() {
+        return priority;
     }
 
-    public void setRemoteSecurityGroupUuids(List<String> remoteSecurityGroupUuids) {
-        this.remoteSecurityGroupUuids = remoteSecurityGroupUuids;
+    public void setPriority(Integer priority) {
+        this.priority = priority;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

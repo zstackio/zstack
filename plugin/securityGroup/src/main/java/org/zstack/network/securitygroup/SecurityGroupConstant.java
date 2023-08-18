@@ -9,5 +9,16 @@ public interface SecurityGroupConstant {
     public static String SECURITY_GROUP_NETWORK_SERVICE_TYPE = "SecurityGroup";
     public static String WORLD_OPEN_CIDR = "0.0.0.0/0";
     public static String WORLD_OPEN_CIDR_IPV6 = "::/0";
-    int ONE_API_RULES_MAX_NUM = 1000;
+    public static String IP_SPLIT = ",";
+    public static String CIDR_SPLIT = "/";
+    public static String RANGE_SPLIT = "-";
+    public static String DEFAULT_RULE_DESCRIPTION = "default rule";
+    
+    public static int DEFAULT_RULE_PRIORITY = 0;
+    public static int LOWEST_RULE_PRIORITY = -1;
+    public static int IP_GROUP_NUMBER_LIMIT = 10;
+    public static int PORT_GROUP_NUMBER_LIMIT = 10;
+    public static int PORT_NUMBER_MAX = 65535;
+    public static int PORT_NUMBER_MIN = 1;
+    int ONE_API_RULES_MAX_NUM = 100;
 }

@@ -1,29 +1,48 @@
 package org.zstack.network.securitygroup;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 
 public class HostRuleTO {
-    private List<SecurityGroupRuleTO> rules;
-    private List<SecurityGroupRuleTO> ipv6Rules;
+    private List<VmNicSecurityTO> vmNics;
+    private Map<String, List<RuleTO>> rules;
+    private Map<String, List<RuleTO>> ip6Rules;
     private String hostUuid;
     private String hypervisorType;
     private boolean refreshHost;
 
     public HostRuleTO() {
-        rules = new ArrayList<SecurityGroupRuleTO>();
-        ipv6Rules = new ArrayList<SecurityGroupRuleTO>();
+        vmNics = new ArrayList<VmNicSecurityTO>();
+        rules = new HashMap<String, List<RuleTO>>();
+        ip6Rules = new HashMap<String, List<RuleTO>>();
+    }
+    
+    public List<VmNicSecurityTO> getVmNics() {
+        return vmNics;
     }
 
-    public List<SecurityGroupRuleTO> getRules() {
-        if (rules == null) {
-            rules = new ArrayList<SecurityGroupRuleTO>();
-        }
+    public void setVmNics(List<VmNicSecurityTO> vmNics) {
+        this.vmNics = vmNics;
+    }
+
+    public Map<String, List<RuleTO>> getRules() {
         return rules;
     }
-    public void setRules(List<SecurityGroupRuleTO> rules) {
+
+    public void setRules(Map<String, List<RuleTO>> rules) {
         this.rules = rules;
     }
+
+    public Map<String, List<RuleTO>> getIp6Rules() {
+        return ip6Rules;
+    }
+
+    public void setIp6Rules(Map<String, List<RuleTO>> ip6Rules) {
+        this.ip6Rules = ip6Rules;
+    }
+
     public String getHostUuid() {
         return hostUuid;
     }
@@ -41,25 +60,5 @@ public class HostRuleTO {
     }
     public void setRefreshHost(boolean refreshHost) {
         this.refreshHost = refreshHost;
-    }
-
-    public void setActionCodeForAllSecurityGroupRuleTOs(String actionCode) {
-        for (SecurityGroupRuleTO rto : rules) {
-            rto.setActionCode(actionCode);
-        }
-        for (SecurityGroupRuleTO rto : ipv6Rules) {
-            rto.setActionCode(actionCode);
-        }
-    }
-
-    public List<SecurityGroupRuleTO> getIpv6Rules() {
-        if (ipv6Rules == null) {
-            ipv6Rules = new ArrayList<SecurityGroupRuleTO>();
-        }
-        return ipv6Rules;
-    }
-
-    public void setIpv6Rules(List<SecurityGroupRuleTO> ipv6Rules) {
-        this.ipv6Rules = ipv6Rules;
     }
 }

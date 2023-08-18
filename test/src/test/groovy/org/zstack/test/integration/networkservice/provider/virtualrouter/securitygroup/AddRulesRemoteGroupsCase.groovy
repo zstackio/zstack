@@ -16,7 +16,7 @@ import org.zstack.network.securitygroup.SecurityGroupL3NetworkRefVO_
 import org.zstack.network.securitygroup.SecurityGroupMembersTO
 import org.zstack.network.securitygroup.SecurityGroupRuleProtocolType
 import org.zstack.network.securitygroup.SecurityGroupRuleState
-import org.zstack.network.securitygroup.SecurityGroupRuleTO
+import org.zstack.network.securitygroup.RuleTO
 import org.zstack.network.securitygroup.SecurityGroupRuleType
 import org.zstack.network.securitygroup.SecurityGroupRuleVO
 import org.zstack.network.securitygroup.SecurityGroupRuleVO_
@@ -70,8 +70,18 @@ class AddRulesRemoteGroupsCase extends SubCase{
             host1 = env.inventoryByName("kvm1") as HostInventory
             host2 = env.inventoryByName("kvm2") as HostInventory
             host3 = env.inventoryByName("kvm3") as HostInventory
-            testCreateSecurityGroup()
-            testAddRule()
+
+            sg1 = createSecurityGroup(vm1)  //sg1'vm in host1
+            sg2 = createSecurityGroup(vm2)  //sg2'vm in host2
+            sg3 = createSecurityGroup(vm3, vm4) // sg3'vm in host3
+
+            addRule(sg1.uuid, 4, 2)
+            addRule(sg2.uuid, 2, 2)
+            addRule(sg3.uuid, 3, 2)
+            addRule(sg1.uuid, 1, [sg2.uuid], 6)
+            addRule(sg2.uuid, 1, [sg1.uuid, sg3.uuid], 4)
+            addRule(sg3.uuid, 1, [sg2.uuid, sg1.uuid], 5)
+
                 /*
                  sg1's vm in host1, ipset in host1, host2, host3
                  sg2's vm in host2, ipset in host1, host2, host3
@@ -97,7 +107,7 @@ class AddRulesRemoteGroupsCase extends SubCase{
             testAddVmNicToSecurityGroup([vm1.vmNics.get(0).uuid], sg1.uuid, [host1.uuid, host2.uuid, host3.uuid])
             sgVmIp.get(sg1.uuid).add(vm1.vmNics.get(0).ip)
 
-            addRule(sg1.uuid, 1, [sg3.uuid], 4) //[sg3.uuid] is remoteSecurityGroup 4 is existed rule count on sg1
+            addRule(sg1.uuid, 1, [sg3.uuid], 7) //[sg3.uuid] is remoteSecurityGroup 4 is existed rule count on sg1
 
             // after action, sg3's ipset is in host1, host2 and host3, should update its ipset member on host1, host2 and host3
             testRemoveVmNicFromSecurityGroup([vm4.vmNics.get(0).uuid], sg3.uuid, [host1.uuid, host2.uuid, host3.uuid])
@@ -189,12 +199,15 @@ class AddRulesRemoteGroupsCase extends SubCase{
             assert cmd != null
         }
         boolean call = false
-        for (SecurityGroupRuleTO rule : cmd.ruleTOs){
-            assert rule.getRules().isEmpty()
-            assert rule.getSecurityGroupBaseRules().size() == 2
-            assert rule.getSecurityGroupBaseRules().get(0).remoteGroupUuid == sg.uuid
-            assert rule.getSecurityGroupBaseRules().get(0).remoteGroupVmIps.containsAll(vmIps)
-            call = true
+
+        List<RuleTO> rules = cmd.ruleTOs.get(sg.uuid)
+        assert rules != null
+        for (RuleTO rule : cmd.ruleTOs.get(sg.uuid)) {
+            if (rule.remoteGroupUuid == sg.uuid) {
+                assert rule.priority == 0
+                assert rule.remoteGroupVmIps.containsAll(vmIps)
+                call = true
+            }
         }
         assert call
 
@@ -216,13 +229,8 @@ class AddRulesRemoteGroupsCase extends SubCase{
 
         assert a1.call().error != null
 
-        addSecurityGroupRule {
-            rules = [rule1]
-            securityGroupUuid = sgUuid
-            remoteSecurityGroupUuids = [remoteGroupUuid]
-        }
-
         APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule2 = returnRandomRule()
+        rule2.allowedCidr = null
 
         addSecurityGroupRule {
             rules = [rule2]
@@ -256,12 +264,11 @@ class AddRulesRemoteGroupsCase extends SubCase{
         APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rulex = returnRandomRule()
         env.simulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH ){ HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
-            List<SecurityGroupRuleTO> ruleTOs = cmd.getRuleTOs()
-            ruleTOs.each {
-                if (sgUuid == it.getRules().get(0).securityGroupUuid ) {
-                    called = true
-                }
+            boolean isExist = cmd.getRuleTOs().containsKey(sgUuid)
+            if (isExist) {
+                called = true
             }
+
             return new KVMAgentCommands.ApplySecurityGroupRuleResponse()
         }
         addSecurityGroupRule {
@@ -270,7 +277,7 @@ class AddRulesRemoteGroupsCase extends SubCase{
         }
         retryInSecs {
             List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid).list()
-            assert rules.get(0).state == SecurityGroupRuleState.Disabled
+            assert rules.get(0).state == SecurityGroupRuleState.Enabled
             assert !called
         }
         changeSecurityGroupState {
@@ -301,7 +308,11 @@ class AddRulesRemoteGroupsCase extends SubCase{
         // initial
         List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> sgRules = new ArrayList<>()
         for (int i = 0; i < ruleCounts; i++) {
-            sgRules.add(returnRandomRule())
+            APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO sgRule = returnRandomRule()
+            if (remoteSgUuids != null && !remoteSgUuids.isEmpty()) {
+                sgRule.allowedCidr = null
+            }
+            sgRules.add(sgRule)
         }
 
         // action
@@ -322,19 +333,19 @@ class AddRulesRemoteGroupsCase extends SubCase{
         retryInSecs{
             assert cmd != null
         }
-        for (SecurityGroupRuleTO rule : cmd.ruleTOs){
-            if(remoteSgUuids != null && !remoteSgUuids.isEmpty()){
-                assert rule.getSecurityGroupBaseRules().size() == remoteSgUuids.size() * ruleCounts + existedRuleCount
-                rule.getSecurityGroupBaseRules().forEach{ it ->
-                    assert it.remoteGroupVmIps.size() == sgVmIp.get(it.remoteGroupUuid).size()
-                    assert it.remoteGroupVmIps.containsAll(sgVmIp.get(it.remoteGroupUuid))
-                }
-            }else {
-                assert rule.rules.size() == ruleCounts + existedRuleCount
-                rule.rules.forEach{ it ->
-                    assert it.remoteGroupUuid == null
-                    assert it.remoteGroupVmIps == null
-                }
+
+        List<RuleTO> ip4Rules = cmd.ruleTOs.get(sgUuid)
+        if (remoteSgUuids != null && !remoteSgUuids.isEmpty()) {
+            assert ip4Rules.size() == remoteSgUuids.size() * ruleCounts + existedRuleCount
+        } else {
+            assert ip4Rules.size() == ruleCounts + existedRuleCount
+        }
+
+        assert cmd.ip6RuleTOs.isEmpty()
+
+        for (RuleTO rule : ip4Rules) {
+            if (rule.remoteGroupUuid != null) {
+                assert rule.remoteGroupVmIps.containsAll(sgVmIp.get(rule.remoteGroupUuid))
             }
         }
     }
@@ -360,21 +371,6 @@ class AddRulesRemoteGroupsCase extends SubCase{
         ret.add("169.254.169.254")
 
         return ret
-    }
-
-    void testCreateSecurityGroup(){
-        sg1 = createSecurityGroup(vm1)  //sg1'vm in host1
-        sg2 = createSecurityGroup(vm2)  //sg2'vm in host2
-        sg3 = createSecurityGroup(vm3, vm4) // sg3'vm in host3
-    }
-
-    void testAddRule(){ // 2 is default rule count
-        addRule(sg1.uuid, 4, 0)
-        addRule(sg2.uuid, 2, 0)
-        addRule(sg3.uuid, 3, 0)
-        addRule(sg1.uuid, 2, [sg2.uuid], 2)
-        addRule(sg2.uuid, 3, [sg1.uuid, sg3.uuid], 2)
-        addRule(sg3.uuid, 1, [sg2.uuid, sg1.uuid], 2)
     }
 
     void testCreateVmWithSecurityGroup(String sgUuid, List<String> expectHostUuids) {
