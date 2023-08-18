@@ -801,12 +801,16 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 nic.setUuid(Platform.getUuid());
                 nic.setMac(mac);
                 nic.setDeviceId(deviceId);
+                nic.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
+                for (NicManageExtensionPoint ext : pluginRgty.getExtensionList(NicManageExtensionPoint.class)) {
+                    ext.beforeCreateNic(nic, msg);
+                }
 
                 nicVO.setUuid(nic.getUuid());
                 nicVO.setDeviceId(deviceId);
-                nicVO.setMac(mac);
+                nicVO.setMac(nic.getMac());
                 nicVO.setAccountUuid(msg.getSession().getAccountUuid());
-                nicVO.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
+                nicVO.setType(nic.getType());
 
                 int tries = 5;
                 while (tries-- > 0) {
@@ -844,6 +848,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     AllocateIpMsg allocateIpMsg = new AllocateIpMsg();
                     allocateIpMsg.setL3NetworkUuid(msg.getL3NetworkUuid());
                     allocateIpMsg.setRequiredIp(msg.getIp());
+                    if (msg.getIp() == null) {
+                        allocateIpMsg.setRequiredIp(nic.getIp());
+                    }
                     allocateIpMsg.setIpVersion(version);
                     l3nm.updateIpAllocationMsg(allocateIpMsg, nic.getMac());
                     bus.makeTargetServiceIdByResourceUuid(allocateIpMsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
@@ -1314,6 +1321,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             })).run(new WhileDoneCompletion(trigger) {
                                 @Override
                                 public void done(ErrorCodeList errorCodeList) {
+                                    for (NicManageExtensionPoint ext : pluginRgty.getExtensionList(NicManageExtensionPoint.class)) {
+                                        ext.beforeDeleteNic(nic);
+                                    }
                                     dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
                                     trigger.next();
                                 }
@@ -1500,8 +1510,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         String hostname = VmSystemTags.HOSTNAME.getTokenByTag(sysTag, VmSystemTags.HOSTNAME_TOKEN);
 
                         validateHostname(sysTag, hostname);
-                        List<String> l3NetworkUuids = msg.getL3NetworkUuids();
-                        l3NetworkUuids.forEach(it -> validateHostNameOnDefaultL3Network(sysTag, hostname, it));
                     } else if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
                         validateStaticIp(sysTag);
                     } 
@@ -1573,8 +1581,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     q.select(VmInstanceVO_.defaultL3NetworkUuid);
                     q.add(VmInstanceVO_.uuid, Op.EQ, resourceUuid);
                     String defaultL3Uuid = q.findValue();
-
-                    validateHostNameOnDefaultL3Network(systemTag, hostname, defaultL3Uuid);
                 } else if (VmSystemTags.STATIC_IP.isMatch(systemTag)) {
                     validateStaticIp(systemTag);
                 } else if (VmSystemTags.BOOT_ORDER.isMatch(systemTag)) {

@@ -10,6 +10,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.network.l2.vxlan.vtep.APICreateVxlanVtepMsg;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.VtepVO_;
@@ -108,20 +109,24 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
                             .collect(Collectors.toList())).list();
 
             for (VxlanNetworkPoolVO p : pools) {
+                if (!p.getType().equals(L2NetworkConstant.HARDWARE_VXLAN_NETWORK_POOL_TYPE)) {
 
-                boolean sameCidr = false;
-                List<Map<String, String>> list = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensOfTagsByResourceUuid(p.getUuid());
-                for (Map<String, String> tokens : list) {
-                    String clusterUuid = tokens.get(VxlanSystemTags.CLUSTER_UUID_TOKEN);
-                    String cidr = tokens.get(VxlanSystemTags.VTEP_CIDR_TOKEN).split("[{}]")[1];
-                    if (NetworkUtils.isSameCidr(cidr, attachedClusters.get(clusterUuid))) {
-                        sameCidr = true;
-                        break;
+                    boolean sameCidr = false;
+                    List<Map<String, String>> list = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensOfTagsByResourceUuid(p.getUuid());
+                    for (Map<String, String> tokens : list) {
+                        String clusterUuid = tokens.get(VxlanSystemTags.CLUSTER_UUID_TOKEN);
+                        String cidr = tokens.get(VxlanSystemTags.VTEP_CIDR_TOKEN).split("[{}]")[1];
+                        if (attachedClusters.get(clusterUuid) != null) {
+                            if (NetworkUtils.isSameCidr(cidr, attachedClusters.get(clusterUuid))) {
+                                sameCidr = true;
+                                break;
+                            }
+                        }
                     }
-                }
 
-                if (!sameCidr) {
-                    continue;
+                    if (!sameCidr) {
+                        continue;
+                    }
                 }
 
                 for (VniRangeVO e : p.getAttachedVniRanges()) {

@@ -15725,32 +15725,32 @@
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
-    "raw": "hareware vxlan network pool doesn\u0027t support create l3 network",
-    "en_US": "hareware vxlan network pool doesn\u0027t support create l3 network",
+    "raw": "hardware vxlan network pool doesn\u0027t support create l3 network",
+    "en_US": "hardware vxlan network pool doesn\u0027t support create l3 network",
     "zh_CN": "",
     "arguments": [],
     "line": 110,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
-    "raw": "hareware vxlan network pool must configure the physical interface",
-    "en_US": "hareware vxlan network pool must configure the physical interface",
+    "raw": "hardware vxlan network pool must configure the physical interface",
+    "en_US": "hardware vxlan network pool must configure the physical interface",
     "zh_CN": "",
     "arguments": [],
     "line": 116,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
-    "raw": "ONLY hareware vxlan network can be created in hareware vxlan pool",
-    "en_US": "ONLY hareware vxlan network can be created in hareware vxlan pool",
+    "raw": "ONLY hardware vxlan network can be created in hardware vxlan pool",
+    "en_US": "ONLY hardware vxlan network can be created in hardware vxlan pool",
     "zh_CN": "",
     "arguments": [],
     "line": 124,
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/HardwareVxlanNetworkPoolFactory.java"
   },
   {
-    "raw": "hareware vxlan network can ONLY be created in hareware vxlan pool",
-    "en_US": "hareware vxlan network can ONLY be created in hareware vxlan pool",
+    "raw": "hardware vxlan network can ONLY be created in hardware vxlan pool",
+    "en_US": "hardware vxlan network can ONLY be created in hardware vxlan pool",
     "zh_CN": "",
     "arguments": [],
     "line": 129,

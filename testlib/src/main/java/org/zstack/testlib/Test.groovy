@@ -148,6 +148,7 @@ abstract class Test extends ApiHelper implements Retry {
             include("LongJobManager.xml")
             include("log.xml")
             include("HostAllocateExtension.xml")
+            include("sdnController.xml")
         }
     }
 

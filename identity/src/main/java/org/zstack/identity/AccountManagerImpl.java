@@ -604,6 +604,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }.execute();
 
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(BeforeCreateAccountExtensionPoint.class),
+                arg -> arg.beforeCreateAccount(inv));
 
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterCreateAccountExtensionPoint.class),
                 arg -> arg.afterCreateAccount(inv));
