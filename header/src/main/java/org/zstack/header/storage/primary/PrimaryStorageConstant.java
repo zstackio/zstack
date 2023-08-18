@@ -23,6 +23,7 @@ public interface PrimaryStorageConstant {
     String MIGRATE_VOLUME_GET_MD5_STAGE = "0-10";
     String MIGRATE_VOLUME_COPY_STAGE = "10-90";
     String MIGRATE_VOLUME_CHECK_MD5_STAGE = "90-100";
+    String EXTERNAL_PRIMARY_STORAGE_TYPE = "Addon";
 
     enum AllocatorParams {
         SPEC,

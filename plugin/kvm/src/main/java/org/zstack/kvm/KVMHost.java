@@ -3353,6 +3353,9 @@ public class KVMHost extends HostBase implements Host {
     }
 
     static String getVolumeTOType(VolumeInventory vol) {
+        if (vol.getProtocol() != null) {
+            return VolumeTO.deviceTypes.get(VolumeProtocol.valueOf(vol.getProtocol()));
+        }
         DebugUtils.Assert(vol.getInstallPath() != null, String.format("volume [%s] installPath is null, it has not been initialized", vol.getUuid()));
         return vol.getInstallPath().startsWith("iscsi") ? VolumeTO.ISCSI : VolumeTO.FILE;
     }
@@ -3519,6 +3522,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
+        rootVolume.setFormat(spec.getDestRootVolume().getFormat());
         rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
         rootVolume.setUseVirtio(VmSystemTags.VIRTIO.hasTag(spec.getVmInventory().getUuid()));
         rootVolume.setUseVirtioSCSI(ImagePlatform.Other.toString().equals(platform) ? false : KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));

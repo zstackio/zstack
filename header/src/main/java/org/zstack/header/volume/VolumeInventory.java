@@ -152,6 +152,8 @@ public class VolumeInventory implements Serializable {
 
     private String lastVmInstanceUuid;
 
+    private String protocol;
+
     public VolumeInventory() {
     }
 
@@ -177,6 +179,7 @@ public class VolumeInventory implements Serializable {
         this.volumeQos = other.volumeQos;
         this.lastDetachDate = other.lastDetachDate;
         this.lastVmInstanceUuid = other.lastVmInstanceUuid;
+        this.protocol = other.protocol;
     }
 
 
@@ -204,6 +207,7 @@ public class VolumeInventory implements Serializable {
         inv.setVolumeQos(vo.getVolumeQos());
         inv.setLastDetachDate(vo.getLastDetachDate());
         inv.setLastVmInstanceUuid(vo.getLastVmInstanceUuid());
+        inv.setProtocol(vo.getProtocol());
         return inv;
     }
 
@@ -407,5 +411,13 @@ public class VolumeInventory implements Serializable {
 
     public static void setAttachedJudgers(List<VolumeAttachedJudger> attachedJudgers) {
         VolumeInventory.attachedJudgers = attachedJudgers;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 }

@@ -30,6 +30,8 @@
         <module>acl</module>
         <module>sdnController</module>
         <module>directory</module>
+        <module>vhost</module>
+        <module>expon</module>
     </modules>
     <dependencies>
         <dependency>

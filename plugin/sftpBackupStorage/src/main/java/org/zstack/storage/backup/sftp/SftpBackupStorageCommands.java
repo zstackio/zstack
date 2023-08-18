@@ -216,7 +216,7 @@ public class SftpBackupStorageCommands {
         public long size;
     }
 
-        public static class GetImageSizeCmd extends AgentCommand {
+    public static class GetImageSizeCmd extends AgentCommand {
         public String imageUuid;
         public String installPath;
     }

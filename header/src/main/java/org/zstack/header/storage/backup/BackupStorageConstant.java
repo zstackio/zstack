@@ -10,7 +10,7 @@ public interface BackupStorageConstant {
     public static final String SCHEME_SFTP = "sftp";
     public static final String SCHEME_FTP = "ftp";
 
-    String EXTERNAL_BACKUP_STORAGE_TYPE = "addon";
+    String EXTERNAL_BACKUP_STORAGE_TYPE = "Addon";
 
     public static final String DEFAULT_ALLOCATOR_STRATEGY = "defaultAllocatorStrategy";
     public static final BackupStorageAllocatorStrategyType DEFAULT_ALLOCATOR_STRATEGY_TYPE = new BackupStorageAllocatorStrategyType(DEFAULT_ALLOCATOR_STRATEGY);

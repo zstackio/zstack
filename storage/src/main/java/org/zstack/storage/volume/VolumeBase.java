@@ -440,6 +440,7 @@ public class VolumeBase implements Volume {
         chain.then(new ShareFlow() {
             String installPath;
             String format;
+            String protocol;
             Long actualSize;
 
             @Override
@@ -613,6 +614,7 @@ public class VolumeBase implements Volume {
                                 installPath = ir.getVolume().getInstallPath();
                                 format = ir.getVolume().getFormat();
                                 actualSize = ir.getVolume().getActualSize();
+                                protocol = ir.getVolume().getProtocol();
 
                                 List<AfterInstantiateVolumeExtensionPoint> exts = pluginRgty.getExtensionList(AfterInstantiateVolumeExtensionPoint.class);
                                 for (AfterInstantiateVolumeExtensionPoint ext : exts) {
@@ -656,6 +658,9 @@ public class VolumeBase implements Volume {
                         if (actualSize != null) {
                             self.setActualSize(actualSize);
                         }
+                        if (protocol != null) {
+                            self.setProtocol(protocol);
+                        }
                         self = dbf.updateAndRefresh(self);
 
                         VolumeInventory vol = getSelfInventory();
@@ -681,7 +686,6 @@ public class VolumeBase implements Volume {
                     }
                 });
             }
-
         }).start();
     }
 

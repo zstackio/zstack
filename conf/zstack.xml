@@ -42,6 +42,10 @@
     <import resource="springConfigXml/BackupStorageManager.xml"/>
     <import resource="springConfigXml/CascadeFacade.xml"/>
     <import resource="springConfigXml/ceph.xml"/>
+    <import resource="springConfigXml/vhost.xml"/>
+    <import resource="springConfigXml/expon.xml"/>
+    <import resource="springConfigXml/ExternalPrimaryStorage.xml"/>
+    <import resource="springConfigXml/ExternalBackupStorage.xml"/>
     <import resource="springConfigXml/CloudBus.xml"/>
     <import resource="springConfigXml/ClusterManager.xml"/>
     <import resource="springConfigXml/ConfigurationManager.xml"/>
