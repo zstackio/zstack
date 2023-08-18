@@ -31,10 +31,10 @@ public class UpdateSnmpAgentAction extends AbstractAction {
     @Param(required = true, validValues = {"v2c","v3"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String version;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 32, minLength = 1, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String readCommunity;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 32, minLength = 8, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String userName;
 
     @Param(required = false, validValues = {"MD5","SHA","SHA224","SHA256","SHA384","SHA512"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
