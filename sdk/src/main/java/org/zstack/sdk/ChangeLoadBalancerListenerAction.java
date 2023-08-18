@@ -88,7 +88,7 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
     public java.lang.Integer redirectPort;
 
-    @Param(required = false, validValues = {"301","302","307"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"301","302","303","307","308"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer statusCode;
 
     @Param(required = false)
