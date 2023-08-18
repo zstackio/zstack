@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 public class VolumeTO extends BaseVirtualDeviceTO {
     public static final String FILE = "file";
+    public static final String DISK = "disk";
     public static final String ISCSI = "iscsi";
     public static final String CEPH = "ceph";
     public static final String SHAREDBLOCK = "sharedblock";

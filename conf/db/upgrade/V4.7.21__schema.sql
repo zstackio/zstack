@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PhysicalDriveVO` (
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+DROP PROCEDURE IF EXISTS moveRaidPhysicalDriveToPhysicalDriveVO;
 DELIMITER $$
 CREATE PROCEDURE moveRaidPhysicalDriveToPhysicalDriveVO()
     moveRaidPhysicalDriveToPhysicalDriveVO:BEGIN
@@ -115,3 +116,27 @@ ALTER TABLE `LunVmInstanceRefVO` CHANGE `scsiLunUuid` `lunUuid` char(32) NOT NUL
 ALTER TABLE `LunVmInstanceRefVO` ADD CONSTRAINT `fkLunVmInstanceRefVOLunVO` FOREIGN KEY (lunUuid) REFERENCES LunVO (uuid) ON DELETE CASCADE;
 ALTER TABLE `LunVmInstanceRefVO` ADD CONSTRAINT `fkLunVmInstanceRefVOVmInstanceVO` FOREIGN KEY (vmInstanceUuid) REFERENCES VmInstanceEO (uuid) ON DELETE CASCADE;
 
+DROP PROCEDURE IF EXISTS moveScsiLunHostRefToLunHostRef;
+DELIMITER $$
+CREATE PROCEDURE moveScsiLunHostRefToLunHostRef()
+    moveScsiLunHostRefToLunHostRefInner:BEGIN
+        IF NOT EXISTS( SELECT 1
+                       FROM INFORMATION_SCHEMA.COLUMNS
+                       WHERE table_name = 'ScsiLunHostRefVO'
+                             AND table_schema = 'zstack')  THEN
+             LEAVE moveScsiLunHostRefToLunHostRefInner;
+        END IF;
+
+        INSERT INTO LunHostRefVO (`hostUuid`, `lunUuid`, `hctl`, `path`, `lastOpDate`, `createDate`, `diskUsage`, `locate`)
+        SELECT s.hostUuid, s.scsiLunUuid, s.hctl, s.path, s.lastOpDate, s.createDate, 'DataDisk', 'Remote'
+        FROM ScsiLunHostRefVO s;
+
+        DROP TABLE `ScsiLunHostRefVO`;
+    END $$
+DELIMITER ;
+
+call moveScsiLunHostRefToLunHostRef();
+DROP PROCEDURE IF EXISTS moveScsiLunHostRefToLunHostRef;
+
+UPDATE ResourceVO SET resourceType = 'LunVO' WHERE resourceType = 'ScsiLunVO';
+UPDATE ResourceVO SET concreteResourceType = 'LunVO' WHERE concreteResourceType = 'ScsiLunVO';
