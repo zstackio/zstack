@@ -2,7 +2,7 @@ package org.zstack.header.volume;
 
 import org.zstack.header.message.NeedReplyMessage;
 
-public class CreateVolumeMsg extends NeedReplyMessage {
+public class CreateVolumeMsg extends NeedReplyMessage implements VolumeCreateMessage {
     private long size;
     private long actualSize;
     private String primaryStorageUuid;
@@ -46,6 +46,16 @@ public class CreateVolumeMsg extends NeedReplyMessage {
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
+    }
+
+    @Override
+    public long getDiskSize() {
+        return getSize();
+    }
+
+    @Override
+    public void setDiskSize(long diskSize) {
+        setSize(diskSize);
     }
 
     public String getVmInstanceUuid() {

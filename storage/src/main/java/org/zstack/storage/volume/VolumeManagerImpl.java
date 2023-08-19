@@ -3,6 +3,8 @@ package org.zstack.storage.volume;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.configuration.DiskOfferingSystemTags;
+import org.zstack.configuration.OfferingUserConfigUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -19,6 +21,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -63,6 +66,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
@@ -525,7 +529,36 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         bus.reply(msg, reply);
     }
 
+    public static void preCheckPrimaryStorage(VolumeCreateMessage msg) {
+        String diskOffering = msg.getDiskOfferingUuid();
+        if (diskOffering == null || msg.getPrimaryStorageUuid() == null ||
+                !DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
+            return;
+        }
+
+        DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+        if (config.getAllocate() == null) {
+            return;
+        }
+
+        if (config.getAllocate().getPrimaryStorage() != null) {
+            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
+            if (!msg.getPrimaryStorageUuid().equals(psUuid)) {
+                throw new OperationFailureException(argerr("primary storage uuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
+                        psUuid, msg.getPrimaryStorageUuid()));
+            }
+        } else if (!org.apache.commons.collections4.CollectionUtils.isEmpty(config.getAllocate().getPrimaryStorages())) {
+            List<String> requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+                    .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
+            if (!requiredPrimaryStorageUuids.contains(msg.getPrimaryStorageUuid())) {
+                throw new OperationFailureException(operr("primary storage uuid conflict, the primary storage specified by the disk offering are %s, and the primary storage specified in the creation parameter is %s",
+                        requiredPrimaryStorageUuids, msg.getPrimaryStorageUuid()));
+            }
+        }
+    }
+
     private VolumeInventory createVolume(CreateVolumeMsg msg) {
+        preCheckPrimaryStorage(msg);
         VolumeVO vo = new VolumeVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -838,7 +871,16 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }
         dbf.reload(vo);
 
-        if (msg.getPrimaryStorageUuid() == null) {
+        List<String> requiredPrimaryStorageUuids = null;
+        if (msg.getDiskOfferingUuid() != null && DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(msg.getDiskOfferingUuid())) {
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(msg.getDiskOfferingUuid(), DiskOfferingUserConfig.class);
+            if (config.getAllocate() != null && !org.apache.commons.collections.CollectionUtils.isEmpty(config.getAllocate().getPrimaryStorages())) {
+                requiredPrimaryStorageUuids = config.getAllocate().getPrimaryStorages().stream()
+                        .map(PrimaryStorageAllocateConfig::getUuid).collect(Collectors.toList());
+            }
+        }
+
+        if (msg.getPrimaryStorageUuid() == null && requiredPrimaryStorageUuids == null) {
             new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));
 
             VolumeInventory inv = VolumeInventory.valueOf(vo);

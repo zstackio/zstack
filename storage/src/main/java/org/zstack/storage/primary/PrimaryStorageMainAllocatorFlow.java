@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -16,7 +15,6 @@ import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
-import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -129,6 +127,11 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         List<PrimaryStorageVO> vos = query.getResultList()
                 .stream().filter(distinctByKey(PrimaryStorageVO::getUuid)).collect(Collectors.toList());
         logger.debug("select primary storage by sql: " + sql);
+
+        if (spec.getRequiredPrimaryStorageUuids() != null && !spec.getRequiredPrimaryStorageUuids().isEmpty()) {
+            logger.debug(String.format("filter through primary storage uuids: %s", spec.getRequiredPrimaryStorageUuids()));
+            vos = vos.stream().filter(vo -> spec.getRequiredPrimaryStorageUuids().contains(vo.getUuid())).collect(Collectors.toList());
+        }
 
         /**
          * 1. if ps is indicated, then choose it directly

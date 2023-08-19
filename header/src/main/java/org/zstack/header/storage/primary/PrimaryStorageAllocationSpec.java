@@ -11,6 +11,7 @@ public class PrimaryStorageAllocationSpec {
     private List<String> requiredClusterUuids;
     private String requiredHostUuid;
     private String requiredPrimaryStorageUuid;
+    private List<String> requiredPrimaryStorageUuids;
     private List<String> tags;
     private AllocatePrimaryStorageMsg allocationMessage;
     private String vmInstanceUuid;
@@ -22,6 +23,14 @@ public class PrimaryStorageAllocationSpec {
     private List<String> possiblePrimaryStorageTypes;
     private List<String> excludePrimaryStorageTypes;
     private String backupStorageUuid;
+
+    public List<String> getRequiredPrimaryStorageUuids() {
+        return requiredPrimaryStorageUuids;
+    }
+
+    public void setRequiredPrimaryStorageUuids(List<String> requiredPrimaryStorageUuids) {
+        this.requiredPrimaryStorageUuids = requiredPrimaryStorageUuids;
+    }
 
     public List<String> getExcludePrimaryStorageTypes() {
         return excludePrimaryStorageTypes;
