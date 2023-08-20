@@ -740,7 +740,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     private void handleBase(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
         new PrimaryStorageValidater().disable().maintenance()
                 .validate();
-        check(msg);
+        PrimaryStorageVO primaryStorageVO = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid()).find();
+        if (!primaryStorageVO.getType().toString().equals("BlockStorage")) {
+            check(msg);
+        }
         handle(msg);
     }
 

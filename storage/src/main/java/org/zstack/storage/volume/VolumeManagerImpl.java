@@ -708,7 +708,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
 
-        instantiateDataVolumeFromSnapshot(vo, msg.getVolumeSnapshotUuid(), new ReturnValueCompletion<VolumeInventory>(msg) {
+        instantiateDataVolumeFromSnapshot(vo, msg.getVolumeSnapshotUuid(), msg.getSystemTags(), new ReturnValueCompletion<VolumeInventory>(msg) {
             @Override
             public void success(VolumeInventory volume) {
                 reply.setInventory(volume);
