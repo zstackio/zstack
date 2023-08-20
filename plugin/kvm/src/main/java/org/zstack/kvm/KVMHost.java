@@ -207,6 +207,7 @@ public class KVMHost extends HostBase implements Host {
     private String syncVmDeviceInfo;
     private String attachVolumePath;
     private String detachVolumePath;
+    private String blockCommitVolumePath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
@@ -424,6 +425,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_DETACH_VOLUME_PATH);
         detachVolumePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_BLOCK_COMMIT_VOLUME_PATH);
+        blockCommitVolumePath = ub.build().toString();
     }
 
     class Http<T> {
@@ -644,9 +649,167 @@ public class KVMHost extends HostBase implements Host {
             handle((GetHostWebSshUrlMsg) msg);
         } else if (msg instanceof GetHostPowerStatusMsg) {
             handle((GetHostPowerStatusMsg) msg);
+        } else if (msg instanceof BlockCommitVolumeOnHypervisorMsg) {
+            handle((BlockCommitVolumeOnHypervisorMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(BlockCommitVolumeOnHypervisorMsg msg) {
+        inQueue().name(String.format("block-commit-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> {
+                    blockCommitVolume(msg);
+                    chain.next();
+                });
+    }
+
+    private void blockCommitVolume(final BlockCommitVolumeOnHypervisorMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doBlockCommit(msg, new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return KVMGlobalConfig.HOST_SNAPSHOT_SYNC_LEVEL.value(Integer.class);
+            }
+
+            @Override
+            public String getName() {
+                return String.format("block-commit-volume-on-kvm-%s", self.getUuid());
+            }
+        });
+    }
+
+    private void doBlockCommit(final BlockCommitVolumeOnHypervisorMsg msg, final NoErrorCompletion completion) {
+        checkStateAndStatus();
+        final BlockCommitVolumeOnHypervisorReply reply = new BlockCommitVolumeOnHypervisorReply();
+
+        BlockCommitVolumeCmd cmd = new BlockCommitVolumeCmd();
+        if (msg.getVmUuid() != null) {
+            VmInstanceState state = Q.New(VmInstanceVO.class)
+                    .eq(VmInstanceVO_.uuid, msg.getVmUuid())
+                    .select(VmInstanceVO_.state)
+                    .findValue();
+
+            if (state != VmInstanceState.Running && state != VmInstanceState.Stopped && state != VmInstanceState.Paused) {
+                throw new OperationFailureException(operr("vm[uuid:%s] is not Running or Stopped, current state[%s]", msg.getVmUuid(), state));
+            }
+        }
+
+        cmd.setVmUuid(msg.getVmUuid());
+        cmd.setVolume(VolumeTO.valueOf(msg.getVolume(), (KVMHostInventory) getSelfInventory()));
+        cmd.setTop(msg.getSrcPath());
+        cmd.setBase(msg.getDstPath());
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("block-commit-for-volume-%s", msg.getVolume().getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("before-block-commit-for-volume-%s", msg.getVolume().getUuid());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        extEmitter.beforeVolumeCommit((KVMHostInventory) getSelfInventory(), msg, cmd, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("do-block-commit-for-volume-%s", msg.getVolume().getUuid());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new Http<>(blockCommitVolumePath, cmd, BlockCommitVolumeResponse.class).call(new ReturnValueCompletion<BlockCommitVolumeResponse>(msg, trigger) {
+                            @Override
+                            public void success(BlockCommitVolumeResponse ret) {
+                                if (ret.isSuccess()) {
+                                    if (Objects.equals(ret.getNewVolumeInstallPath(), cmd.getTop())) {
+                                        throw new OperationFailureException(operr("after block commit, new volume path still use %s", ret.getNewVolumeInstallPath()));
+                                    }
+                                } else {
+                                    ErrorCode err = operr("operation error, because:%s", ret.getError());
+                                    extEmitter.afterVolumeCommitFailed((KVMHostInventory) getSelfInventory(), msg, cmd, ret, err);
+                                    trigger.fail(err);
+                                    return;
+                                }
+
+                                reply.setNewVolumeInstallPath(ret.getNewVolumeInstallPath());
+                                reply.setSize(ret.getSize());
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                extEmitter.afterVolumeCommitFailed((KVMHostInventory) getSelfInventory(), msg, cmd, null, errorCode);
+                                reply.setError(errorCode);
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("after-block-commit-for-volume-%s", msg.getVolume().getUuid());
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        extEmitter.afterVolumeCommit((KVMHostInventory) getSelfInventory(), msg, cmd, reply, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
+            }
+        }).start();
     }
 
     private void handle(GetHostPowerStatusMsg msg) {
@@ -2357,7 +2520,6 @@ public class KVMHost extends HostBase implements Host {
 
             cmd.setOnline(vmState != VmInstanceState.Stopped);
             cmd.setVmUuid(msg.getVmUuid());
-            cmd.setVolume(VolumeTO.valueOf(msg.getVolume(), (KVMHostInventory) getSelfInventory()));
         }
 
         cmd.setVolumeInstallPath(msg.getVolume().getInstallPath());
@@ -2365,6 +2527,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setFullSnapshot(msg.isFullSnapshot());
         cmd.setVolumeUuid(msg.getVolume().getUuid());
         cmd.setTimeout(timeoutManager.getTimeout());
+        cmd.setVolume(VolumeTO.valueOf(msg.getVolume(), (KVMHostInventory) getSelfInventory()));
 
         completeTakeSnapshotCmd(msg, cmd);
 

@@ -43,6 +43,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.UndoSnapshotCreationOnPrimaryStorageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
@@ -1993,6 +1994,32 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 ret.setInventory(sp);
 
+                completion.success(ret);
+            }
+        });
+    }
+
+    @Override
+    void handle(final UndoSnapshotCreationOnPrimaryStorageMsg msg, final String hostUuid, final ReturnValueCompletion<UndoSnapshotCreationOnPrimaryStorageReply> completion) {
+        BlockCommitVolumeOnHypervisorMsg hmsg = new BlockCommitVolumeOnHypervisorMsg();
+        hmsg.setHostUuid(hostUuid);
+        hmsg.setVmUuid(msg.getVmUuid());
+        hmsg.setVolume(msg.getVolume());
+        hmsg.setSrcPath(msg.getSrcPath());
+        hmsg.setDstPath(msg.getDstPath());
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(hmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                UndoSnapshotCreationOnPrimaryStorageReply ret = new UndoSnapshotCreationOnPrimaryStorageReply();
+                BlockCommitVolumeOnHypervisorReply treply = (BlockCommitVolumeOnHypervisorReply) reply;
+                ret.setSize(treply.getSize());
+                ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 completion.success(ret);
             }
         });

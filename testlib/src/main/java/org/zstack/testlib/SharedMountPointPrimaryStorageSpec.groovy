@@ -81,7 +81,7 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
 
             VFS.vfsHook(KvmBackend.DELETE_BITS_PATH, xspec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.DeleteBitsCmd.class)
-                VFS vfs = vfs(cmd, spec)
+                VFS vfs = SharedMountPointPrimaryStorageSpec.vfs(cmd, spec)
                 VFSFile file = vfs.getFile(cmd.path)
                 assert file != null : "cannot find file[${cmd.path}]"
                 file.delete()

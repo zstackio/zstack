@@ -129,9 +129,67 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else if (msg instanceof GetVolumeBackingChainFromPrimaryStorageMsg) {
             handle((GetVolumeBackingChainFromPrimaryStorageMsg) msg);
+        } else if (msg instanceof UndoSnapshotCreationOnPrimaryStorageMsg) {
+            handle((UndoSnapshotCreationOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final UndoSnapshotCreationOnPrimaryStorageMsg msg) {
+        final TakeSnapshotReply reply = new TakeSnapshotReply();
+
+        String volumeUuid = msg.getVolume().getUuid();
+        VolumeVO vol = dbf.findByUuid(volumeUuid, VolumeVO.class);
+
+        String huuid;
+        String connectedHostUuid = factory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
+        if (vol.getVmInstanceUuid() != null) {
+            Tuple t = Q.New(VmInstanceVO.class)
+                    .select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
+                    .eq(VmInstanceVO_.uuid, vol.getVmInstanceUuid())
+                    .findTuple();
+            VmInstanceState state = t.get(0, VmInstanceState.class);
+            String vmHostUuid = t.get(1, String.class);
+
+            if (state == VmInstanceState.Running || state == VmInstanceState.Paused) {
+                DebugUtils.Assert(vmHostUuid != null,
+                        String.format("vm[uuid:%s] is Running or Paused, but has no hostUuid", vol.getVmInstanceUuid()));
+                huuid = vmHostUuid;
+            } else if (state == VmInstanceState.Stopped) {
+                huuid = connectedHostUuid;
+            } else {
+                reply.setError(operr("vm[uuid:%s] is not Running, Paused or Stopped, current state is %s",
+                        vol.getVmInstanceUuid(), state));
+                bus.reply(msg, reply);
+                return;
+            }
+        } else {
+            huuid = connectedHostUuid;
+        }
+        BlockCommitVolumeOnHypervisorMsg hmsg = new BlockCommitVolumeOnHypervisorMsg();
+        hmsg.setHostUuid(huuid);
+        hmsg.setVmUuid(msg.getVmUuid());
+        hmsg.setVolume(msg.getVolume());
+        hmsg.setSrcPath(msg.getSrcPath());
+        hmsg.setDstPath(msg.getDstPath());
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, huuid);
+        bus.send(hmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                UndoSnapshotCreationOnPrimaryStorageReply ret = new UndoSnapshotCreationOnPrimaryStorageReply();
+                if (!reply.isSuccess()) {
+                    ret.setError(reply.getError());
+                    bus.reply(msg, ret);
+                    return;
+                }
+
+                BlockCommitVolumeOnHypervisorReply treply = (BlockCommitVolumeOnHypervisorReply) reply;
+                ret.setSize(treply.getSize());
+                ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
+                bus.reply(msg, ret);
+            }
+        });
     }
 
     protected void updateMountPoint(String newUrl, Completion completion) {
