@@ -546,6 +546,16 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
+    public <T> T syncJsonPut(String url, String body, Map<String, String> headers, Class<T> returnClass) {
+        return syncJsonPut(url, body, headers, returnClass, null, -1);
+    }
+
+    @Override
+    public <T> T syncJsonPut(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
+        return syncJson(url, body, headers, HttpMethod.PUT, returnClass, unit, timeout);
+    }
+
+    @Override
     public HttpHeaders syncHead(String url) {
         return template.headForHeaders(URI.create(url));
     }
@@ -560,6 +570,23 @@ public class RESTFacadeImpl implements RESTFacade {
         requestHeaders.setContentType(MediaType.APPLICATION_JSON);
         requestHeaders.setContentLength(body.length());
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
+        ResponseEntity<String> rsp = syncRawJson(url, req, method, unit, timeout);
+
+        if (rsp.getBody() != null && returnClass != Void.class) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("[http response(url: %s)] %s", url, rsp.getBody()));
+            }
+
+            return JSONObjectUtil.toObject(rsp.getBody(), returnClass);
+        } else {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("[http response(url: %s)] %s", url, rsp.getBody()));
+            }
+            return null;
+        }
+    }
+
+    public ResponseEntity<String> syncRawJson(String url, HttpEntity<String> req, HttpMethod method, TimeUnit unit, long timeout) {
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("json %s[%s], %s", method.toString().toLowerCase(), url, req));
         }
@@ -606,20 +633,8 @@ public class RESTFacadeImpl implements RESTFacade {
         if (!valid) {
             throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
         }
-        
-        if (rsp.getBody() != null && returnClass != Void.class) {
 
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("[http response(url: %s)] %s", url, rsp.getBody()));
-            }
-
-            return JSONObjectUtil.toObject(rsp.getBody(), returnClass);
-        } else {
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("[http response(url: %s)] %s", url, rsp.getBody()));
-            }
-            return null;
-        }
+        return rsp;
     }
 
     @Override
