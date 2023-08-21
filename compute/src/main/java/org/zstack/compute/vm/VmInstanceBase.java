@@ -2190,7 +2190,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             void rollback() {
                 if (isSet) {
-                    VmSystemTags.CUSTOM_MAC.delete(self.getUuid());
+                    VmSystemTags.VM_NIC_MULTIQUEUE.delete(self.getUuid());
                 }
             }
         }
