@@ -5960,7 +5960,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 @Override
                 public void run(final FlowTrigger chain, Map data) {
                     logger.debug(String.format("VmAfterAttachNicExtensionPoint[%s] starts executing", ns.getClass().getName()));
-                    ns.afterAttachNic(getSelfInventory(), new Completion(chain) {
+                    ns.afterAttachNic(nicInventory.getUuid(), getSelfInventory(), new Completion(chain) {
                         @Override
                         public void success() {
                             chain.next();

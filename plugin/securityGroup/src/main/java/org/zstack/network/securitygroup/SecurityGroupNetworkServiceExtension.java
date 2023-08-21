@@ -151,7 +151,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
     }
 
     @Override
-    public void afterAttachNic(VmInstanceInventory vmInstanceInventory, Completion completion) {
+    public void afterAttachNic(String nicUuid, VmInstanceInventory vmInstanceInventory, Completion completion) {
         List<String> sgUuids = syncSystemTagToVmNicSecurityGroup(vmInstanceInventory.getUuid());
         if (StringUtils.isEmpty(vmInstanceInventory.getHostUuid())) {
             completion.success();
