@@ -206,7 +206,29 @@ class ChangeSecurityGroupRuleCase extends SubCase {
                 action = "DROP"
             }
         }
+    }
 
+    void testChangeRulePriorityError() {
+        sg3 = querySecurityGroup {
+            conditions = ["uuid=${sg3.uuid}"]
+        }[0]
+
+        assert sg3 != null
+        SecurityGroupRuleInventory rule_1 = sg3.rules.find { it.type == "Ingress" && it.priority == 1 && it.ipVersion == 4 }
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = rule_1.uuid
+                priority = 6
+            }
+        }
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = rule_1.uuid
+                priority = 7
+            }
+        }
     }
 
     @Override
@@ -252,5 +274,6 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         testChangeRuleIpRange()
         testChangeRuleRemoteGroup()
         testChangeDefaultRule()
+        testChangeRulePriorityError()
     }
 }
