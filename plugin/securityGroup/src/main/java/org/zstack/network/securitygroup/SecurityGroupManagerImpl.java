@@ -884,23 +884,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     private void handle(APIUpdateSecurityGroupRulePriorityMsg msg) {
-        List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
-                .eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid())
-                .eq(SecurityGroupRuleVO_.type, msg.getType())
-                .list();
-              
-        for (SecurityGroupRulePriorityAO ao : msg.getRules()) {
-            List<SecurityGroupRuleVO> target = new ArrayList<SecurityGroupRuleVO>();
-            SecurityGroupRuleVO vo = rvos.stream().filter(r -> r.getUuid().equals(ao.getRuleUuid())).findFirst().orElse(null);
-            if (vo == null) {
-                throw new OperationFailureException(operr("failed to chenge rule[uuid:%s] priority, beacuse it's not found", ao.getRuleUuid()));
-            }
-            
-            vo.setPriority(ao.getPriority());
-            target.add(vo);
-        }
 
-        dbf.updateCollection(rvos);
+        SecurityGroupVO sgvo = doUpdateSecurityGroupRulePriority(msg.getSecurityGroupUuid(), msg.getType(), msg.getRules());
 
         RuleCalculator cal = new RuleCalculator();
         cal.securityGroupUuids = asList(msg.getSecurityGroupUuid());
@@ -908,10 +893,32 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         List<HostRuleTO> rhtos = cal.calculate();
         applyRules(rhtos);
 
-        SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
         APIUpdateSecurityGroupRulePriorityEvent evt = new APIUpdateSecurityGroupRulePriorityEvent(msg.getId());
         evt.setInventory(SecurityGroupInventory.valueOf(sgvo));
         bus.publish(evt);
+    }
+
+    @Transactional
+    private SecurityGroupVO doUpdateSecurityGroupRulePriority(String sgUuid, String ruleType, List<SecurityGroupRulePriorityAO> aos) {
+        List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
+                .eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
+                .eq(SecurityGroupRuleVO_.type, SecurityGroupRuleType.valueOf(ruleType))
+                .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
+                .list();
+        for (SecurityGroupRulePriorityAO ao : aos) {
+            List<SecurityGroupRuleVO> toUpdate = new ArrayList<SecurityGroupRuleVO>();
+            SecurityGroupRuleVO vo = rvos.stream().filter(r -> r.getUuid().equals(ao.getRuleUuid())).findFirst().orElse(null);
+            if (vo == null) {
+                throw new OperationFailureException(operr("failed to chenge rule[uuid:%s] priority, beacuse it's not found", ao.getRuleUuid()));
+            }
+            
+            vo.setPriority(ao.getPriority());
+            toUpdate.add(vo);
+        }
+
+        dbf.updateCollection(rvos);
+
+        return dbf.findByUuid(sgUuid, SecurityGroupVO.class);
     }
 
     private void handle(APIChangeSecurityGroupRuleMsg msg) {
