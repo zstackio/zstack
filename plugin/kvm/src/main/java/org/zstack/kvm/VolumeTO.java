@@ -23,13 +23,19 @@ public class VolumeTO extends BaseVirtualDeviceTO {
      * used for remote scsi (iscsi or rdma) lun
      */
     public static final String SCSILUN = "scsilun";
-    /**
-     * used for local scsi disk
-     */
-    public static final String SCSI_DISK = "scsi_disk";
     public static final String BLOCK = "block";
     public static final String MINISTORAGE = "mini";
     public static final String QUORUM = "quorum";
+
+    public static final String BUS_DEFAULT = "default";
+    public static final String BUS_IDE = "ide";
+    public static final String BUS_SCSI = "scsi";
+    public static final String BUS_VIRTIO = "virtio";
+    public static final String BUS_XEN = "xen";
+    public static final String BUS_USB = "usb";
+    public static final String BUS_SATA = "sata";
+    public static final String BUS_SD = "sd";
+
     public static List<KVMConvertVolumeExtensionPoint> exts;
 
     private String installPath;
@@ -41,6 +47,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     private String volumeUuid;
     private boolean useVirtio;
     private boolean useVirtioSCSI;
+    private String bus = BUS_DEFAULT;
     private boolean shareable;
     private String cacheMode = "none";
     private String wwn;
@@ -172,6 +179,14 @@ public class VolumeTO extends BaseVirtualDeviceTO {
 
     public void setUseVirtio(boolean useVirtio) {
         this.useVirtio = useVirtio;
+    }
+
+    public String getBus() {
+        return bus;
+    }
+
+    public void setBus(String bus) {
+        this.bus = bus;
     }
 
     public String getVolumeUuid() {
