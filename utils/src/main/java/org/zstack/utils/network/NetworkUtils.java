@@ -937,5 +937,33 @@ public class NetworkUtils {
         return String.format("%d.%d.%d.%d", netmask1, netmask2, netmask3, netmask4);
     }
 
+    /**
+     * Checks if the provided IP address is an Automatic Private IP Address (APIPA).
+     * Read vm ip to usedIp need avoid it
+     */
+    public static Boolean isAutomaticPrivateIpAddr(String ipv4) {
+        if (ipv4 == null || ipv4.isEmpty()) {
+            return false;
+        }
+        String[] parts = ipv4.split("\\.");
+        if (parts.length != 4) {
+            return false;
+        }
+        try {
+            return Integer.parseInt(parts[0]) == 169 && Integer.parseInt(parts[1]) == 254;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    public static Boolean isValidInternalAddress(String ip) {
+        if (isIpv4Address(ip)) {
+            return isAutomaticPrivateIpAddr(ip);
+        } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
+            return IPv6NetworkUtils.isLinkLocalAddress(ip);
+        } else {
+            return Boolean.FALSE;
+        }
+    }
 }
 

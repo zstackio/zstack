@@ -115,4 +115,7 @@ public class VmGlobalConfig {
 
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ENABLE_VM_DEVICE_ADDRESS_RECORDING = new GlobalConfig(CATEGORY, "enable.vm.address.recording");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig ENABLE_VM_INTERNAL_IP_OVERWRITE = new GlobalConfig(CATEGORY, "enable.vm.internal.ip.overwrite");
 }
