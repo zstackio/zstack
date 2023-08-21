@@ -4155,7 +4155,7 @@ public class KVMHost extends HostBase implements Host {
                 cmd.setPageTableExtensionDisabled(true);
             }
             ConnectResponse rsp = restf.syncJsonPost(connectPath, cmd, ConnectResponse.class);
-            if (!rsp.isSuccess() || !rsp.isIptablesSucc()) {
+            if (!rsp.isSuccess()) {
                 errCode = operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
                         self.getUuid(), self.getManagementIp(), connectPath, rsp.getError());
             } else {

@@ -60,7 +60,6 @@ class ReconnectHostCase extends SubCase {
             rsp.success = true
             rsp.libvirtVersion = "1.0.0"
             rsp.qemuVersion = "1.3.0"
-            rsp.iptablesSucc = true
             updateKVMHost {
                 uuid = host.uuid
                 sshPort = 23
