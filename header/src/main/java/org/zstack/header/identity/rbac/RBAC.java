@@ -484,10 +484,14 @@ public class RBAC {
 
     @StaticInit
     public static void staticInit() {
-        BeanUtils.reflections.getSubTypesOf(RBACDescription.class).forEach(dclz-> {
+        for (Class dclz : BeanUtils.reflections.getSubTypesOf(RBACDescription.class)) {
+            if (!BeanUtils.reflections.getSubTypesOf(dclz).isEmpty()) {
+                continue;
+            }
+
             RBACDescription rd;
             try {
-                rd = dclz.getConstructor().newInstance();
+                rd = (RBACDescription) dclz.getConstructor().newInstance();
             } catch (Exception e) {
                 throw new CloudRuntimeException(e);
             }
@@ -508,7 +512,7 @@ public class RBAC {
                     });
                 }
             }
-        });
+        }
 
         roleBuilders.forEach(rb -> {
             rb.permissionsByNames.forEach(pname -> {
