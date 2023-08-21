@@ -139,8 +139,11 @@ public class VmAllocateNicFlow implements Flow {
                     logger.debug(String.format("there is no image spec for vm %s", spec.getVmInventory().getUuid()));
                 }
 
-                nicManager.setNicDriverType(nic, imageHasVirtio,
-                        ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization());
+                nicManager.setNicDriverType(nic,
+                        imageHasVirtio,
+                        ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization(),
+                        spec.getVmInventory()
+                );
             }
 
             nic.setDeviceId(deviceId);

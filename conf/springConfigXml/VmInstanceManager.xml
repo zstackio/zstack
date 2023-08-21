@@ -205,6 +205,7 @@
         <value>virtio</value>
         <value>e1000</value>
         <value>rtl8139</value>
+        <value>pcnet</value>
     </util:list>
 
     <bean id="VmNicManager" class="org.zstack.compute.vm.VmNicManagerImpl">
@@ -219,6 +220,7 @@
         <property name="supportNicDriverTypes" ref="SupportNicDriverTypes"/>
         <property name="defaultPVNicDriver" value="virtio"/>
         <property name="defaultNicDriver" value="e1000"/>
+        <property name="pcNetNicDriver" value="pcnet"/>
     </bean>
 
     <bean id="VmNicFactory" class="org.zstack.compute.vm.VmNicFactory">

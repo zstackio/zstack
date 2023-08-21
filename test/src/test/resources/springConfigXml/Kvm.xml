@@ -224,6 +224,7 @@
     <bean id="KVMGuestOsCharacterExtensionPoint" class="org.zstack.kvm.KVMGuestOsCharacterExtensionPoint">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.VmAfterAttachNicExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.VmNicSetDriverExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
