@@ -269,10 +269,10 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("could not update security group rule priority, because rules is empty"));
         }
 
-        HashMap<Integer, String> map = new HashMap<Integer, String>();
+        HashMap<Integer, String> priorityMap = new HashMap<Integer, String>();
         List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
                 .eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid())
-                .eq(SecurityGroupRuleVO_.type, msg.getType())
+                .eq(SecurityGroupRuleVO_.type, SecurityGroupRuleType.valueOf(msg.getType()))
                 .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
                 .list();
         if (rvos.size() != msg.getRules().size()) {
@@ -283,10 +283,10 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             if (ao.getPriority() == SecurityGroupConstant.DEFAULT_RULE_PRIORITY) {
                 throw new ApiMessageInterceptionException(argerr("could not update security group rule priority, because rule priority[%d] is invalid", ao.getPriority()));
             }
-            if (map.containsKey(ao.getPriority())) {
+            if (priorityMap.containsKey(ao.getPriority())) {
                 throw new ApiMessageInterceptionException(argerr("could not update security group rule priority, because priority[%d] has duplicate", ao.getPriority()));
             } else {
-                map.put(ao.getPriority(), ao.getRuleUuid());
+                priorityMap.put(ao.getPriority(), ao.getRuleUuid());
             }
 
             rvos.stream().filter(rvo -> rvo.getUuid().equals(ao.getRuleUuid())).findFirst().orElseThrow(() ->
@@ -294,6 +294,11 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
             rvos.stream().filter(rvo -> rvo.getPriority() == ao.getPriority()).findFirst().orElseThrow(() ->
                     new ApiMessageInterceptionException(argerr("could not update security group rule priority, because priority[%d] not in security group[uuid:%s]", ao.getPriority(), msg.getSecurityGroupUuid())));
+        }
+
+        List<String> uuidList = new ArrayList<>(priorityMap.values());
+        if ((int)uuidList.stream().distinct().count() != uuidList.size()) {
+            throw new ApiMessageInterceptionException(argerr("could not update security group rule priority, because rule uuid duplicate"));
         }
     }
 
