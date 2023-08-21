@@ -154,6 +154,12 @@
     <osInfo>
         <platform>Windows</platform>
         <name>Windows</name>
+        <version>NT</version>
+        <osRelease>WindowsServer NT</osRelease>
+    </osInfo>
+    <osInfo>
+        <platform>Windows</platform>
+        <name>Windows</name>
         <version>2008</version>
         <osRelease>WindowsServer 2008</osRelease>
     </osInfo>

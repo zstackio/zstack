@@ -6,6 +6,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.vm.CrashStrategy;
 import org.zstack.compute.vm.VmGlobalConfig;
+import org.zstack.compute.vm.VmNicManager;
+import org.zstack.compute.vm.VmNicManagerImpl;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
@@ -61,6 +63,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.form.Form;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.function.ValidateFunction;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -136,6 +139,8 @@ public class KVMHostFactory extends AbstractHypervisorFactory implements Compone
     private ResourceConfigFacade rcf;
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private VmNicManager vmNicManager;
 
     private Future<Void> checkSocketChannelTimeoutThread;
 
@@ -632,7 +637,26 @@ public class KVMHostFactory extends AbstractHypervisorFactory implements Compone
             throw new CloudRuntimeException(e);
         }
         for (GuestOsCharacter.Config config : configs.getOsInfo()) {
+            validateGuestOsCharacter(config);
             allGuestOsCharacter.put(String.format("%s_%s_%s", config.getArchitecture(), config.getPlatform(), config.getOsRelease()), config);
+        }
+    }
+
+    private void validateGuestOsCharacter(GuestOsCharacter.Config config) {
+        if (config.getCpuModel() != null) {
+            try {
+                KVMGlobalConfig.NESTED_VIRTUALIZATION.validate(config.getCpuModel());
+            } catch (GlobalConfigException e) {
+                throw new CloudRuntimeException(String.format("Invalid cpu model of config %s", JSONObjectUtil.toJsonString(config)));
+            }
+        }
+
+        if (config.getNicDriver() == null) {
+            return;
+        }
+
+        if (!vmNicManager.getSupportNicDriverTypes().contains(config.getNicDriver())) {
+            throw new CloudRuntimeException(String.format("Invalid nic driver of config %s, valid values are %s", JSONObjectUtil.toJsonString(config), vmNicManager.getSupportNicDriverTypes()));
         }
     }
 
