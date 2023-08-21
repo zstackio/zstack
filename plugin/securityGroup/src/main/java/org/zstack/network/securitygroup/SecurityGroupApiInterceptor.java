@@ -344,8 +344,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             if (count.intValue() > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
                 throw new ApiMessageInterceptionException(argerr("could not change security group rule, because security group %s rules number[%d] is out of max limit[%d]", vo.getType(), count.intValue(), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
             }
-            if (priority > count.intValue() + 1) {
-                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because priority[%d] must be consecutive, the current maximum is [%d]", count.intValue() + 1, priority));
+            if (priority > count.intValue()) {
+                throw new ApiMessageInterceptionException(argerr("could not change security group rule, because the maximum priority of the current rule is [%d]", count.intValue()));
             }
             if (priority < 0) {
                 msg.setPriority(SecurityGroupConstant.LOWEST_RULE_PRIORITY);
@@ -827,24 +827,27 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         int toCreateIngressRuleCount = newRules.stream().filter(ao -> SecurityGroupRuleType.Ingress.toString().equals(ao.getType())).collect(Collectors.toList()).size();
         int toCreateEgressRuleCount = newRules.stream().filter(ao -> SecurityGroupRuleType.Egress.toString().equals(ao.getType())).collect(Collectors.toList()).size();
 
+        if (ingressRuleCount >= SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class) && toCreateIngressRuleCount > 0) {
+            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules has reached the maximum limit[%d]",
+                    SecurityGroupRuleType.Ingress, SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
+        }
+        if (egressRuleCount >= SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class) && toCreateEgressRuleCount > 0) {
+            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules has reached the maximum limit[%d]",
+                    SecurityGroupRuleType.Egress, SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
+        }
+        if ((ingressRuleCount + toCreateIngressRuleCount) > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
+            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]",
+                    SecurityGroupRuleType.Ingress, (ingressRuleCount + toCreateIngressRuleCount), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
+        }
+        if ((egressRuleCount + toCreateEgressRuleCount) > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
+            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]",
+                    SecurityGroupRuleType.Egress, (egressRuleCount + toCreateEgressRuleCount), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
+        }
         if (msg.getPriority() > (ingressRuleCount + 1)) {
             throw new ApiMessageInterceptionException(argerr("could not add security group rule, because priority[%d] must be consecutive, the ingress rule maximum priority is [%d]", msg.getPriority(), ingressRuleCount));
         }
         if (msg.getPriority() > (egressRuleCount + 1)) {
             throw new ApiMessageInterceptionException(argerr("could not add security group rule, because priority[%d] must be consecutive, the egress rule maximum priority is [%d]", msg.getPriority(), egressRuleCount));
-        }
-
-        if (ingressRuleCount >= SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class) && toCreateIngressRuleCount > 0) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]", SecurityGroupRuleType.Ingress, ingressRuleCount, SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
-        }
-        if (egressRuleCount >= SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class) && toCreateEgressRuleCount > 0) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]", SecurityGroupRuleType.Egress, egressRuleCount, SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
-        }
-        if ((ingressRuleCount + toCreateIngressRuleCount) > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]", SecurityGroupRuleType.Ingress, ingressRuleCount + toCreateIngressRuleCount, SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
-        }
-        if ((egressRuleCount + toCreateEgressRuleCount) > SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)) {
-            throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]", SecurityGroupRuleType.Egress, egressRuleCount + toCreateEgressRuleCount, SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
         }
     }
 
