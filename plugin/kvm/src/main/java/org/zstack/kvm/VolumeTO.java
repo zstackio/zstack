@@ -27,14 +27,14 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     public static final String MINISTORAGE = "mini";
     public static final String QUORUM = "quorum";
 
+    /**
+     * The type of bus can be found in https://libvirt.org/manpages/virsh.html
+     * Keyword: "targetbus"
+     */
     public static final String BUS_DEFAULT = "default";
-    public static final String BUS_IDE = "ide";
     public static final String BUS_SCSI = "scsi";
     public static final String BUS_VIRTIO = "virtio";
-    public static final String BUS_XEN = "xen";
     public static final String BUS_USB = "usb";
-    public static final String BUS_SATA = "sata";
-    public static final String BUS_SD = "sd";
 
     public static List<KVMConvertVolumeExtensionPoint> exts;
 
