@@ -1,10 +1,13 @@
 package org.zstack.compute.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.config.GlobalConfigException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import static org.zstack.core.Platform.operr;
 
 public class InitializeResourceConfigExtensionPoint implements PreVmInstantiateResourceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(InitializeResourceConfigExtensionPoint.class);
@@ -48,7 +51,14 @@ public class InitializeResourceConfigExtensionPoint implements PreVmInstantiateR
             return;
         }
 
-        vicf.createVmConfigurations(spec);
+        try {
+            vicf.createVmConfigurations(spec);
+        } catch (GlobalConfigException e) {
+            logger.warn(String.format("create vm[uuid: %s] configuration failed, %s", spec.getVmInventory().getUuid(), e.getMessage()), e);
+            completion.fail(operr(e.getMessage()));
+            return;
+        }
+
         completion.success();
     }
 
