@@ -76,9 +76,7 @@ create user 'zstack' identified by "$zstack_user_password";
 create user 'zstack_rest' identified by "$zstack_user_password";
 grant all privileges on zstack.* to zstack@'localhost' identified by "$zstack_user_password";
 grant all privileges on zstack.* to zstack@'%' identified by "$zstack_user_password";
-grant all privileges on zstack.* to zstack@"$hostname" identified by "$zstack_user_password";
 grant all privileges on zstack_rest.* to zstack@'localhost' identified by "$zstack_user_password";
-grant all privileges on zstack_rest.* to zstack@"$hostname" identified by "$zstack_user_password";
 grant all privileges on zstack_rest.* to zstack@'%' identified by "$zstack_user_password";
 flush privileges;
 EOF
