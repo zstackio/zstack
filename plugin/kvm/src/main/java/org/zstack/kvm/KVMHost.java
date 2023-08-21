@@ -14,6 +14,9 @@ import org.zstack.compute.host.*;
 import org.zstack.compute.vm.*;
 import org.zstack.core.timeout.TimeHelper;
 import org.zstack.header.core.*;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.header.tag.TagType;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
@@ -73,9 +76,9 @@ import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.compute.cluster.arch.ClusterResourceConfigInitializer;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.tag.SystemTag;
-import org.zstack.tag.SystemTagCreator;
-import org.zstack.tag.TagManager;
+import org.zstack.resourceconfig.ResourceConfigVO;
+import org.zstack.resourceconfig.ResourceConfigVO_;
+import org.zstack.tag.*;
 import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -3266,7 +3269,18 @@ public class KVMHost extends HostBase implements Host {
         VHostAddOn vHostAddOn = new VHostAddOn();
 
         if (to.getDriverType().equals(nicManager.getDefaultPVNicDriver())) {
-            vHostAddOn.setQueueNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM, nic.getVmInstanceUuid(), Integer.class));
+            int nicMultiQueueNum = 1;
+
+            List<String> numInStrings = Q.New(ResourceConfigVO.class).eq(ResourceConfigVO_.name, VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getName())
+                    .eq(ResourceConfigVO_.resourceUuid, nic.getUuid())
+                    .select(ResourceConfigVO_.value).listValues();
+            if (!numInStrings.isEmpty()) {
+                nicMultiQueueNum = TypeUtils.stringToValue(numInStrings.get(0), Integer.class);
+            } else {
+                nicMultiQueueNum =  rcf.getResourceConfigValue(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM, nic.getVmInstanceUuid(), Integer.class);
+            }
+
+            vHostAddOn.setQueueNum(nicMultiQueueNum);
         } else {
             vHostAddOn.setQueueNum(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.defaultValue(Integer.class));
         }

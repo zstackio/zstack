@@ -2156,6 +2156,27 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
+        class SetVmNicMultiQueueTag {
+            private boolean isSet = false;
+
+            void set () {
+                if (msg instanceof APIAttachL3NetworkToVmMsg) {
+                    APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
+
+                    if (amsg.hasSystemTag(VmSystemTags.VM_NIC_MULTIQUEUE::isMatch)) {
+                        tagMgr.createNonInherentSystemTags(amsg.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
+                        isSet = true;
+                    }
+                }
+            }
+
+            void rollback() {
+                if (isSet) {
+                    VmSystemTags.CUSTOM_MAC.delete(self.getUuid());
+                }
+            }
+        }
+
         final SetDefaultL3Network setDefaultL3Network = new SetDefaultL3Network();
         setDefaultL3Network.set();
         Defer.guard(new Runnable() {
@@ -2181,6 +2202,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         final SetCustomMacSystemTag setCustomMacSystemTag = new SetCustomMacSystemTag();
         setCustomMacSystemTag.set();
         Defer.guard(setCustomMacSystemTag::rollback);
+
+        final SetVmNicMultiQueueTag setVmNicMultiQueueTag = new SetVmNicMultiQueueTag();
+        setVmNicMultiQueueTag.set();
+        Defer.guard(setVmNicMultiQueueTag::rollback);
 
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
         final VmInstanceInventory vm = spec.getVmInventory();

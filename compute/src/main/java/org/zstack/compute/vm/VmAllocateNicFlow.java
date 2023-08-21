@@ -26,6 +26,8 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -54,6 +56,9 @@ public class VmAllocateNicFlow implements Flow {
     private VmNicManager nicManager;
     @Autowired
     protected VmInstanceManager vmMgr;
+
+    @Autowired
+    protected ResourceConfigFacade rcf;
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
@@ -191,6 +196,25 @@ public class VmAllocateNicFlow implements Flow {
                     }
                     nics.add(nic);
                     dbf.updateAndRefresh(nicVO);
+
+                    //set nic multi queue config
+                    if(VmSystemTags.VM_NIC_MULTIQUEUE.hasTag(spec.getVmInventory().getUuid())) {
+                        List<String> tags = VmSystemTags.VM_NIC_MULTIQUEUE.getTags(spec.getVmInventory().getUuid());
+                        //every nic has different tag
+                        for (String tag : tags) {
+                            String l3Uuid = VmSystemTags.VM_NIC_MULTIQUEUE.getTokenByTag(tag, VmSystemTags.VM_NIC_MULTIQUEUE_L3_TOKEN);
+                            String tokenValue = VmSystemTags.VM_NIC_MULTIQUEUE.getTokenByTag(tag, VmSystemTags.VM_NIC_MULTIQUEUE_TOKEN);
+                            int nicMultiQueueNum = Integer.valueOf(tokenValue).intValue();
+
+                            if (!nic.getL3NetworkUuid().equals(l3Uuid)) {
+                                continue;
+                            }
+
+                            ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
+                            Integer queues = spec.getVmInventory().getCpuNum() > nicMultiQueueNum ? nicMultiQueueNum : spec.getVmInventory().getCpuNum();
+                            multiQueues.updateValue(nic.getUuid(), queues.toString());
+                        }
+                    }
                 }
             }.execute();
             wcomp.done();
@@ -198,6 +222,8 @@ public class VmAllocateNicFlow implements Flow {
         }).run(new WhileDoneCompletion(trigger) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
+                //delete all nic multi queue systemtag
+                VmSystemTags.VM_NIC_MULTIQUEUE.delete(spec.getVmInventory().getUuid());
                 if (errs.size() > 0) {
                     trigger.fail(errs.get(0));
                 } else {
