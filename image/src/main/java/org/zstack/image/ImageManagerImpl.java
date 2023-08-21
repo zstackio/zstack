@@ -49,10 +49,9 @@ import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagValidator;
-import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg;
-import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.*;
+import org.zstack.header.vo.SecurityLevelResourceRefVO;
+import org.zstack.header.vo.SecurityLevelResourceRefVO_;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -547,7 +546,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     ImageVO imvo = dbf.reload(vo);
                     logger.debug(String.format("successfully created image[uuid:%s, name:%s] from volume snapshot[uuid:%s]",
                             imvo.getUuid(), imvo.getName(), snapshotUuid));
-
+                    copyVmSecurityLevelIfNeeded(volumeUuid, imvo.getUuid());
                     ImageInventory inv = ImageInventory.valueOf(imvo);
                     extEmitter.afterCreateImage(inv);
                     completion.success(inv);
@@ -593,6 +592,22 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     latch.ack();
                 }
             });
+        }
+    }
+
+    private void copyVmSecurityLevelIfNeeded(String rootVolumeUuid, String imageUuid) {
+        VmInstanceVO vmInstanceVO = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.rootVolumeUuid, rootVolumeUuid).find();
+        if (vmInstanceVO != null && Q.New(SecurityLevelResourceRefVO.class).eq(SecurityLevelResourceRefVO_.resourceUuid, vmInstanceVO.getUuid()).isExists()) {
+            String currentImageSecurityLevel = Q.New(SecurityLevelResourceRefVO.class)
+                    .select(SecurityLevelResourceRefVO_.securityLevel)
+                    .eq(SecurityLevelResourceRefVO_.resourceUuid, vmInstanceVO.getUuid()).findValue();
+            logger.debug(String.format("originVm[uuid:%s] security level[%s]", vmInstanceVO.getUuid(), currentImageSecurityLevel));
+
+            SecurityLevelResourceRefVO refVO = new SecurityLevelResourceRefVO();
+            refVO.setResourceUuid(imageUuid);
+            refVO.setSecurityLevel(currentImageSecurityLevel);
+            dbf.persist(refVO);
+            logger.debug(String.format("successfully sync originVm[uuid:%s] security level[%s] to image[uuid:%s]", vmInstanceVO.getUuid(), currentImageSecurityLevel, imageUuid));
         }
     }
 
