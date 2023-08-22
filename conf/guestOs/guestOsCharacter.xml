@@ -155,6 +155,13 @@
     <osInfo>
         <architecture>x86_64</architecture>
         <platform>Windows</platform>
+        <osRelease>Windows NT</osRelease>
+        <cpuModel>pentium</cpuModel>
+        <nicDriver>pcnet</nicDriver>
+    </osInfo>
+    <osInfo>
+        <architecture>x86_64</architecture>
+        <platform>Windows</platform>
         <osRelease>WindowsServer 2016</osRelease>
     </osInfo>
     <osInfo>

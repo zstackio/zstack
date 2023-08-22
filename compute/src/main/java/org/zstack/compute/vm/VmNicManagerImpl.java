@@ -5,6 +5,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
@@ -36,10 +37,13 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
 
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private PluginRegistry pluginRegistry;
 
     private List<String> supportNicDriverTypes;
     private String defaultPVNicDriver;
     private String defaultNicDriver;
+    private String pcNetNicDriver;
 
     @Override
     public void afterAddIpAddress(String vmNicUUid, String usedIpUuid) {
@@ -170,6 +174,19 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
 
     @Override
     public void vmPlatformChange(VmInstanceInventory vm, String previousPlatform, String nowPlatform) {
+        String driver = null;
+        for (VmNicSetDriverExtensionPoint ext : pluginRegistry.getExtensionList(VmNicSetDriverExtensionPoint.class)) {
+            driver = ext.getPreferredVmNicDriver(vm);
+            if (driver != null) {
+                break;
+            }
+        }
+
+        if (driver != null) {
+            resetVmNicDriverType(vm.getUuid(), driver);
+            return;
+        }
+
         if (ImagePlatform.valueOf(nowPlatform).isParaVirtualization()) {
             resetVmNicDriverType(vm.getUuid(), defaultPVNicDriver);
             return;
@@ -220,7 +237,29 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
     }
 
     @Override
-    public void setNicDriverType(VmNicInventory nic, boolean isImageSupportVirtIo, boolean isParaVirtualization) {
+    public String getPcNetNicDriver() {
+        return pcNetNicDriver;
+    }
+
+    public void setPcNetNicDriver(String pcNetNicDriver) {
+        this.pcNetNicDriver = pcNetNicDriver;
+    }
+
+    @Override
+    public void setNicDriverType(VmNicInventory nic, boolean isImageSupportVirtIo, boolean isParaVirtualization, VmInstanceInventory vm) {
+        String driver = null;
+        for (VmNicSetDriverExtensionPoint ext : pluginRegistry.getExtensionList(VmNicSetDriverExtensionPoint.class)) {
+            driver = ext.getPreferredVmNicDriver(vm);
+            if (driver != null) {
+                break;
+            }
+        }
+
+        if (driver != null) {
+            nic.setDriverType(driver);
+            return;
+        }
+
         if (isImageSupportVirtIo || isParaVirtualization || VmSystemTags.VIRTIO.hasTag(nic.getVmInstanceUuid())) {
             nic.setDriverType(getDefaultPVNicDriver());
         } else {

@@ -1,6 +1,7 @@
 package org.zstack.core.config.schema;
 
 import javax.xml.bind.annotation.*;
+import java.io.Serializable;
 import java.util.List;
 
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -25,9 +26,11 @@ public class GuestOsCharacter {
             "platform",
             "osRelease",
             "acpi",
-            "x2apic"
+            "x2apic",
+            "cpuModel",
+            "nicDriver",
     })
-    public static class Config {
+    public static class Config implements Serializable {
         @XmlElement(required = true)
         protected String architecture;
 
@@ -42,6 +45,12 @@ public class GuestOsCharacter {
 
         @XmlElement(required = false)
         protected Boolean x2apic;
+
+        @XmlElement(required = false)
+        protected String cpuModel;
+
+        @XmlElement(required = false)
+        protected String nicDriver;
 
         public String getPlatform() {
             return platform;
@@ -81,6 +90,22 @@ public class GuestOsCharacter {
 
         public void setArchitecture(String architecture) {
             this.architecture = architecture;
+        }
+
+        public String getCpuModel() {
+            return cpuModel;
+        }
+
+        public void setCpuModel(String cpuModel) {
+            this.cpuModel = cpuModel;
+        }
+
+        public String getNicDriver() {
+            return nicDriver;
+        }
+
+        public void setNicDriver(String nicDriver) {
+            this.nicDriver = nicDriver;
         }
     }
 }
