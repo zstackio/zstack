@@ -1,6 +1,7 @@
 package org.zstack.core.config.schema;
 
 import javax.xml.bind.annotation.*;
+import java.io.Serializable;
 import java.util.List;
 
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -29,7 +30,7 @@ public class GuestOsCharacter {
             "cpuModel",
             "nicDriver",
     })
-    public static class Config {
+    public static class Config implements Serializable {
         @XmlElement(required = true)
         protected String architecture;
 
