@@ -28,6 +28,9 @@ public class GetLunDiskPartitionAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String lunUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 
