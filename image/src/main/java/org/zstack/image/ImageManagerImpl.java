@@ -212,6 +212,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         });
 
         createSysTag(msg, vo);
+        copyVmSecurityLevelIfNeeded(volumeUuid, vo.getUuid());
 
         CreateImageCacheFromVolumeSnapshotMsg cmsg = new CreateImageCacheFromVolumeSnapshotMsg();
         cmsg.setSnapshotUuid(msg.getSnapshotUuid());
@@ -241,6 +242,22 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void copyVmSecurityLevelIfNeeded(String rootVolumeUuid, String imageUuid) {
+        VmInstanceVO vmInstanceVO = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.rootVolumeUuid, rootVolumeUuid).find();
+        if (vmInstanceVO != null && Q.New(SecurityLevelResourceRefVO.class).eq(SecurityLevelResourceRefVO_.resourceUuid, vmInstanceVO.getUuid()).isExists()) {
+            String currentImageSecurityLevel = Q.New(SecurityLevelResourceRefVO.class)
+                    .select(SecurityLevelResourceRefVO_.securityLevel)
+                    .eq(SecurityLevelResourceRefVO_.resourceUuid, vmInstanceVO.getUuid()).findValue();
+            logger.debug(String.format("originVm[uuid:%s] security level[%s]", vmInstanceVO.getUuid(), currentImageSecurityLevel));
+
+            SecurityLevelResourceRefVO refVO = new SecurityLevelResourceRefVO();
+            refVO.setResourceUuid(imageUuid);
+            refVO.setSecurityLevel(currentImageSecurityLevel);
+            dbf.persist(refVO);
+            logger.debug(String.format("successfully sync originVm[uuid:%s] security level[%s] to image[uuid:%s]", vmInstanceVO.getUuid(), currentImageSecurityLevel, imageUuid));
+        }
     }
 
     private void handleLocalMessage(Message msg) {
