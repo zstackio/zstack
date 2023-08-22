@@ -18,7 +18,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.jsonlabel.JsonLabel;
-import org.zstack.core.progress.ParallelTaskStage;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.RunInQueue;
 import org.zstack.core.thread.SyncTaskChain;
@@ -2156,27 +2155,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
-        class SetVmNicMultiQueueTag {
-            private boolean isSet = false;
-
-            void set () {
-                if (msg instanceof APIAttachL3NetworkToVmMsg) {
-                    APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
-
-                    if (amsg.hasSystemTag(VmSystemTags.VM_NIC_MULTIQUEUE::isMatch)) {
-                        tagMgr.createNonInherentSystemTags(amsg.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
-                        isSet = true;
-                    }
-                }
-            }
-
-            void rollback() {
-                if (isSet) {
-                    VmSystemTags.VM_NIC_MULTIQUEUE.delete(self.getUuid());
-                }
-            }
-        }
-
         final SetDefaultL3Network setDefaultL3Network = new SetDefaultL3Network();
         setDefaultL3Network.set();
         Defer.guard(new Runnable() {
@@ -2203,10 +2181,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         setCustomMacSystemTag.set();
         Defer.guard(setCustomMacSystemTag::rollback);
 
-        final SetVmNicMultiQueueTag setVmNicMultiQueueTag = new SetVmNicMultiQueueTag();
-        setVmNicMultiQueueTag.set();
-        Defer.guard(setVmNicMultiQueueTag::rollback);
-
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
         final VmInstanceInventory vm = spec.getVmInventory();
         List<L3NetworkInventory> l3s = new ArrayList<>();
@@ -2219,15 +2193,20 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
-        spec.setL3Networks(list(new VmNicSpec(l3s)));
-        spec.setDestNics(new ArrayList<VmNicInventory>());
-
+        VmNicSpec nicSpec = new VmNicSpec(l3s);
         if (msg instanceof APIAttachL3NetworkToVmMsg) {
             APIAttachL3NetworkToVmMsg msg1 = (APIAttachL3NetworkToVmMsg) msg;
-            for (VmNicSpec vmNicSpec : spec.getL3Networks()) {
-                vmNicSpec.setNicDriverType(msg1.getDriverType());
+            nicSpec.setNicDriverType(msg1.getDriverType());
+
+            String vmNicParms = msg1.getVmNicParams();
+            if (vmNicParms != null && !vmNicParms.isEmpty()) {
+                List<VmNicParm> nicParms = JSONObjectUtil.toCollection(vmNicParms, ArrayList.class, VmNicParm.class);
+                nicSpec.setVmNicParms(nicParms);
             }
         }
+
+        spec.setL3Networks(list(nicSpec));
+        spec.setDestNics(new ArrayList<VmNicInventory>());
 
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmBeforeAttachL3NetworkExtensionPoint.class),
                 new ForEachFunction<VmBeforeAttachL3NetworkExtensionPoint>() {
@@ -2343,6 +2322,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 spec.setL3Networks(list(new VmNicSpec(l3)));
+
 
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmBeforeAttachL3NetworkExtensionPoint.class),
                         new ForEachFunction<VmBeforeAttachL3NetworkExtensionPoint>() {
@@ -7051,6 +7031,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (!l3s.isEmpty()) {
                     VmNicSpec nicSpec1 = new VmNicSpec(l3s);
                     nicSpec1.setNicDriverType(nicSpec.getNicDriverType());
+                    nicSpec1.setVmNicParms(nicSpec.getVmNicParms());
                     nicSpecs.add(nicSpec1);
                 }
             }

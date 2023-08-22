@@ -58,6 +58,15 @@ doc {
 					since "0.6"
 				}
 				column {
+					name "vmNicParams"
+					enclosedIn "params"
+					desc "网卡信息"
+					location "body"
+					type "String"
+					optional true
+					since "4.7.0"
+				}
+				column {
 					name "type"
 					enclosedIn "params"
 					desc "云主机类型。保留字段，无需指定。"
