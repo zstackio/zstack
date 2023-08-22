@@ -1,5 +1,16 @@
 package org.zstack.network.service.vip;
 
+import java.util.ArrayList;
+import org.zstack.utils.VipUseForList;
+import org.zstack.header.network.l3.IpRangeVO;
+import org.zstack.header.network.l3.IpRangeVO_;
+import java.util.stream.Stream;
+import org.zstack.utils.network.NetworkUtils;
+import java.util.TreeMap;
+import org.zstack.utils.RangeSet;
+import org.zstack.utils.Utils;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeFacade;
@@ -167,9 +178,128 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateVipMsg) {
             handle((APICreateVipMsg) msg);
+        } else if (msg instanceof APIGetVipFreePortMsg) {
+            handle((APIGetVipFreePortMsg) msg);
+        } else if (msg instanceof APICheckVipFreePortAvailabilityMsg) {
+            handle((APICheckVipFreePortAvailabilityMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private boolean checkVipFreePort(APICheckVipFreePortAvailabilityMsg msg, String protocol) {
+        RangeSet portRangeList = getVipPortRangeList(msg.getVipUuid(), protocol);
+        portRangeList.sort();
+
+        Iterator<RangeSet.Range> it = portRangeList.getRanges().iterator();
+        while (it.hasNext()){
+            RangeSet.Range cur = it.next();
+            if (msg.getPort() >=cur.getStart() && msg.getPort() <= cur.getEnd()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void handle(APICheckVipFreePortAvailabilityMsg msg) {
+        APICheckVipFreePortAvailabilityReply reply = new APICheckVipFreePortAvailabilityReply();
+
+        logger.debug(String.format("msg vipUuid:[%s], check port:[%s]", msg.getVipUuid(), msg.getPort()));
+        VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
+        logger.debug(String.format("vip:[%s], use for:[%s]",vip.getIp(), vip.getUseFor()));
+        
+        //vip used for Eip and Performance Exclusive Slb
+        if (vip.getUseFor() != null) {
+            if (vip.getUseFor().equals(VipUseForList.EIP_NETWORK_SERVICE_TYPE) || 
+                    vip.getUseFor().equals(VipUseForList.SLB_NETWORK_SERVICE_TYPE)) {
+                reply.setAvailable(false);
+                bus.reply(msg, reply);
+                return;
+            }
+        }
+
+        reply.setAvailable(checkVipFreePort(msg, msg.getProtocolType()));
+        bus.reply(msg, reply);
+    }
+
+
+    private void initVipAllFreePort(List<Integer> freeList) {
+        for (int i = 1; i <= VipConstant.MAX_PORT; i++) {
+            freeList.add(i);
+        }
+    }
+
+
+    private RangeSet getVipPortRangeList(String vipUuid, String protocol){
+        List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, vipUuid).listValues();
+        VipUseForList useForList = new VipUseForList(useFor);
+
+        List<RangeSet.Range> portRangeList = new ArrayList<RangeSet.Range>();
+        for (VipGetUsedPortRangeExtensionPoint ext : pluginRgty.getExtensionList(VipGetUsedPortRangeExtensionPoint.class)){
+            RangeSet range = ext.getVipUsePortRange(vipUuid, protocol, useForList);
+            portRangeList.addAll(range.getRanges());
+        }
+
+        RangeSet portRange = new RangeSet();
+        portRange.setRanges(portRangeList);
+        portRange.sort();
+        return portRange;
+    }
+
+    private void getVipFreePortList(List<Integer> freeList, APIGetVipFreePortMsg msg, String protocol) {
+        RangeSet portRangeList = getVipPortRangeList(msg.getVipUuid(), protocol);
+        portRangeList.sort();
+
+        Iterator<RangeSet.Range> it = portRangeList.getRanges().iterator();
+        while (it.hasNext()){
+            RangeSet.Range cur = it.next();
+            for (long i = cur.getStart(); i <= cur.getEnd(); i++) {
+                freeList.remove(Integer.valueOf((int)i));
+            }
+        }
+    }
+
+    private void handle(APIGetVipFreePortMsg msg) {
+        final APIGetVipFreePortReply reply = new APIGetVipFreePortReply();
+        GetVipFreePortInventory inv = new GetVipFreePortInventory();
+        List<Integer> freeList = new ArrayList<Integer>();
+
+        logger.debug(String.format("msg vipUuid:[%s], start:[%s], limit:[%s]", msg.getVipUuid(), msg.getStart(), msg.getLimit()));
+        VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
+        logger.debug(String.format("vip:[%s], use for:[%s]",vip.getIp(), vip.getUseFor()));
+        //vip used for Eip and Performance Exclusive Slb
+        if (vip.getUseFor() != null) {
+            if (vip.getUseFor().equals(VipUseForList.EIP_NETWORK_SERVICE_TYPE) || 
+                    vip.getUseFor().equals(VipUseForList.SLB_NETWORK_SERVICE_TYPE)) {
+                inv.setFreeList(freeList);
+                reply.setInventory(inv);
+                bus.reply(msg, reply);
+                return;
+            }
+        }
+        //vip uesd for others
+        initVipAllFreePort(freeList);
+        getVipFreePortList(freeList, msg, msg.getProtocolType());
+        inv.setFreeList(getFreePortListPage(freeList, msg.getStart(), msg.getLimit()));
+
+        reply.setInventory(inv);
+        bus.reply(msg, reply);
+
+    }
+
+    private List<Integer> getFreePortListPage(List<Integer> freeList, Integer start, Integer limit) {
+        if (freeList.isEmpty()) {
+            return freeList;
+        }
+
+        if (start >= freeList.size()) {
+            freeList.clear();
+            return freeList;
+        }
+        if ((start + limit) > freeList.size()) {
+            return freeList.subList(start, freeList.size());
+        }
+        return freeList.subList(start, start + limit);
     }
 
     private void handle(CreateVipMsg msg) {
