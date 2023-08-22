@@ -59,7 +59,7 @@ public class TestSyncImageSize {
                 comp.run(reply);
                 return null;
             }
-        }).when(mockBus).send(Matchers.any(SyncImageSizeOnBackupStorageMsg.class), Matchers.anyObject());
+        }).when(mockBus).send(Mockito.any(SyncImageSizeOnBackupStorageMsg.class), Mockito.any(CloudBusCallBack.class));
 
         imageBase.handleMessage(msg);
 
