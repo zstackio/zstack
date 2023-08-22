@@ -22,6 +22,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
 
 class AddSecurityGroupRuleOptimizedCase extends SubCase {
+
     EnvSpec env
 
     L3NetworkInventory l3Net
@@ -85,6 +86,14 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
         errorRule.startPort = null
         errorRule.endPort = null
         errorRule.dstPortRange = "1,2,3,4,5,6-7,8-10,11-12"
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg1.uuid
+                rules = [errorRule]
+            }
+        }
+
+        errorRule.dstPortRange = "1,2-2,3-4"
         expect(AssertionError) {
             addSecurityGroupRule {
                 securityGroupUuid = sg1.uuid
@@ -368,6 +377,80 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
         }
     }
 
+    void testAddRuleDiscontinuously() {
+        deleteSecurityGroup {
+            uuid = sg3.uuid
+        }
+
+        sg3 = createSecurityGroup {
+            name = "sg-3"
+            ipVersion = 4
+        }
+
+        List<SecurityGroupRuleAO> egressRules = new ArrayList<>()
+        for (int i = 1; i <= 10; i++) {
+            SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+            r.type = "Egress"
+            r.ipVersion = 4
+            r.dstPortRange = i
+            r.protocol = "TCP"
+            egressRules.add(r)
+        }
+
+        sg3 = addSecurityGroupRule {
+            securityGroupUuid = sg3.uuid
+            rules = egressRules
+        }
+
+        SecurityGroupRuleAO rule_11 = new SecurityGroupRuleAO()
+        rule_11.allowedCidr = "192.167.1.0/24"
+        rule_11.type = "Egress"
+        rule_11.protocol = "ALL"
+        rule_11.startPort = -1
+        rule_11.endPort = -1
+
+        sg3 = addSecurityGroupRule {
+            securityGroupUuid = sg3.uuid
+            rules = [rule_11]
+            priority = 11
+        }
+
+        assert sg3.rules.find { it.allowedCidr == rule_11.allowedCidr && it.type == rule_11.type && it.protocol == rule_11.protocol && it.startPort == rule_11.startPort && it.endPort == rule_11.endPort && it.priority == 11 } != null
+
+        SecurityGroupRuleAO rule_13 = new SecurityGroupRuleAO()
+        rule_13.allowedCidr = "192.167.3.0/24"
+        rule_13.type = "Egress"
+        rule_13.protocol = "ALL"
+        rule_13.startPort = -1
+        rule_13.endPort = -1
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg3.uuid
+                rules = [rule_13]
+                priority = 13
+            }
+        }
+
+        SecurityGroupRuleAO rule_12 = new SecurityGroupRuleAO()
+        rule_12.dstIpRange = "2.2.2.2-2.2.2.10"
+        rule_12.type = "Egress"
+        rule_12.protocol = "ALL"
+
+        SecurityGroupRuleAO ingressRule = new SecurityGroupRuleAO()
+        ingressRule.type = "Ingress"
+        ingressRule.protocol = "TCP"
+        ingressRule.dstPortRange = "12-13"
+
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg3.uuid
+                rules = [rule_12, ingressRule]
+                priority = 12
+            }
+        }
+
+    }
+
     @Override
     void clean() {
         env.delete()
@@ -411,5 +494,6 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
         testAddSecurityGroupRule()
         testDeleteRules()
         testAddRuleExceedLimit()
+        testAddRuleDiscontinuously()
     }
 }
