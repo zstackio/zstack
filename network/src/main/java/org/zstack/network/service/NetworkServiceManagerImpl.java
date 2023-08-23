@@ -19,8 +19,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.NetworkException;
-import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.network.service.NetworkServiceExtensionPoint.NetworkServiceExtensionPosition;
@@ -31,8 +30,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 public class NetworkServiceManagerImpl extends AbstractService implements NetworkServiceManager, PreVmInstantiateResourceExtensionPoint,
         VmReleaseResourceExtensionPoint, PostVmInstantiateResourceExtensionPoint, ReleaseNetworkServiceOnDetachingNicExtensionPoint,
@@ -207,6 +205,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 	public boolean start() {
 		populateExtensions();
 		collectSupportedVmTypes();
+        setupGlobalConfig();
 		return true;
 	}
 
@@ -506,5 +505,23 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
     public boolean isVmNeedNetworkService(String vmType, NetworkServiceType serviceType) {
 	    /* serviceType is not used now, maybe used in future */
         return supportedVmTypes.contains(vmType);
+    }
+
+    private void setupGlobalConfig() {
+        NetworkServiceGlobalConfig.DHCP_MTU_VLAN.installValidateExtension((category, name, oldValue, newValue) -> {
+            float v = Integer.parseInt(newValue);
+
+            if (v > Integer.parseInt(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value())) {
+                throw new OperationFailureException(argerr("the mtu[%s] of the vlan network is greater than no vlan network mtu", newValue ));
+            }
+        });
+
+        NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.installValidateExtension((category, name, oldValue, newValue) -> {
+            float v = Integer.parseInt(newValue);
+
+            if (v > Integer.parseInt(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value())) {
+                throw new OperationFailureException(argerr("the mtu[%s] of the vxlan network is greater than no vlan network mtu[%s]", newValue));
+            }
+        });
     }
 }

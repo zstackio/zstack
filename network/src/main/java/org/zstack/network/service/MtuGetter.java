@@ -6,17 +6,17 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.header.network.l2.*;
-import org.zstack.header.network.l3.L3Network;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.network.l2.L2NetworkDefaultMtu;
-import org.zstack.network.l2.L2NetworkManager;
-import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created by weiwang on 19/05/2017.
@@ -29,34 +29,10 @@ public class MtuGetter {
     private PluginRegistry pluginRgty;
 
     public Integer getMtu(String l3NetworkUuid) {
-        String l2NetworkUuid = Q.New(L3NetworkVO.class).select(L3NetworkVO_.l2NetworkUuid).eq(L3NetworkVO_.uuid, l3NetworkUuid).findValue();
+        /* Existing l3: take the value of l3mtu */
+        Integer mtu = getMtuFromL3MtuSystemTags(l3NetworkUuid);
 
-        Integer mtu = null;
-
-        List<Map<String, String>> tokenList = NetworkServiceSystemTag.L3_MTU.getTokensOfTagsByResourceUuid(l3NetworkUuid);
-        for (Map<String, String> token : tokenList) {
-            mtu = Integer.valueOf(token.get(NetworkServiceSystemTag.MTU_TOKEN));
-        }
-
-        if (mtu != null) {
-            return mtu;
-        }
-
-        L2NetworkVO l2VO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l2NetworkUuid).find();
-        for (L2NetworkDefaultMtu e : pluginRgty.getExtensionList(L2NetworkDefaultMtu.class)) {
-            if (l2VO.getType().equals(e.getL2NetworkType())) {
-                mtu = e.getDefaultMtu(L2NetworkInventory.valueOf(l2VO));
-            }
-        }
-
-        if (mtu != null) {
-            return mtu;
-        } else {
-            mtu = Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_DUMMY.value());
-            logger.warn(String.format("unknown network type [%s], set mtu as default [%s]",
-                    l2VO.getType(), mtu));
-            return mtu;
-        }
+        return mtu;
     }
 
     public Integer getL2Mtu(L2NetworkInventory l2Inv) {
@@ -103,6 +79,37 @@ public class MtuGetter {
         logger.warn(String.format("unknown network type [%s], set mtu as default [%s]",
                 l2Inv.getType(), mtu));
         return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_DUMMY.value());
+    }
+
+    public Integer getDefaultL2MtuFromGlobalConfig(L2NetworkInventory l2Inv) {
+        for (L2NetworkDefaultMtu e : pluginRgty.getExtensionList(L2NetworkDefaultMtu.class)) {
+            if (l2Inv.getType().equals(e.getL2NetworkType())) {
+                return e.getDefaultMtu(l2Inv);
+            }
+        }
+        return null;
+    }
+
+    public Integer getMtuFromL3MtuSystemTags(String l3NetworkUuid) {
+        List<Map<String, String>> tokenList = NetworkServiceSystemTag.L3_MTU.getTokensOfTagsByResourceUuid(l3NetworkUuid);
+        for (Map<String, String> token : tokenList) {
+            return Integer.valueOf(token.get(NetworkServiceSystemTag.MTU_TOKEN));
+        }
+        return null;
+    }
+
+    public void createL3MtuSystemTag(String l3Uuid, int mtu) {
+        SystemTagCreator creator = NetworkServiceSystemTag.L3_MTU.newSystemTagCreator(l3Uuid);
+        creator.ignoreIfExisting = true;
+        creator.inherent = false;
+        creator.setTagByTokens(
+                map(
+                        e(NetworkServiceSystemTag.MTU_TOKEN, mtu),
+                        e(NetworkServiceSystemTag.L3_UUID_TOKEN, l3Uuid)
+                )
+        );
+        creator.recreate = true;
+        creator.create();
     }
 
 }

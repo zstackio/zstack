@@ -268,6 +268,7 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
 
         List<String> record = new ArrayList<>()
 
+        NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.updateValue(9600)
         NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.updateValue(9600)
         VxlanKvmAgentCommands.CreateVxlanBridgeCmd vxlanCmd = null
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->

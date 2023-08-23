@@ -114,50 +114,39 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
 
-        if (!l2VO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
+        if (!l2VO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE) && !l2VO.getType().equals(L2NetworkConstant.VXLAN_NETWORK_TYPE) && !l2VO.getType().equals(L2NetworkConstant.HARDWARE_VXLAN_NETWORK_TYPE)) {
             return;
         }
 
-        /* when set mtu to vlan network, no vlan network mtu must be first */
-        List<L2NetworkVO> novlanL2Vos = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.physicalInterface, l2VO.getPhysicalInterface())
-                .eq(L2NetworkVO_.type, L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE).list();
-        if (novlanL2Vos.isEmpty()) {
+        /* when set mtu to vlan or vxlan network, cannot be greater than the mtu of the novlan network of the same cluster */
+        List<L2NetworkVO> noVlanL2Vos = Q.New(L2NetworkVO.class)
+                .eq(L2NetworkVO_.physicalInterface, l2VO.getPhysicalInterface())
+                .eq(L2NetworkVO_.type, L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)
+                .list();
+
+        if (noVlanL2Vos.isEmpty()) {
             Integer defaultMtu = NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value(Integer.class);
             if (msg.getMtu() > defaultMtu) {
                 throw new ApiMessageInterceptionException(argerr("could not set mtu because l2 network[uuid:%s] of " +
-                        "l3 network [uuid:%s] mtu can not be bigger than the novlan network", l2VO.getUuid(), msg.getL3NetworkUuid()));
+                        "l3 network [uuid:%s] mtu[%s] can not be bigger than the novlan network global config mtu[%s]", l2VO.getUuid(), msg.getL3NetworkUuid(), msg.getMtu(), defaultMtu));
             }
         }
 
-        /* in a cluster, there should only 1 no vlan network of same physical interface */
         Map<String, L2NetworkVO> novlanMap = new HashMap<>();
-        for (L2NetworkVO noVlanNetwork : novlanL2Vos) {
-            for (String cluster : noVlanNetwork.getAttachedClusterRefs().stream().map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList())) {
-                novlanMap.put(cluster, noVlanNetwork);
+        for (L2NetworkVO noVlanL2VO : noVlanL2Vos) {
+            for (String cluster : noVlanL2VO.getAttachedClusterRefs().stream().map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList())) {
+                novlanMap.put(cluster, noVlanL2VO);
             }
         }
 
-        Integer noVlanMax = null;
-        List<String> vlanClusters = l2VO.getAttachedClusterRefs().stream().map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList());
-        for (String vlanCluster : vlanClusters) {
-            L2NetworkVO novlanL2 = novlanMap.get(vlanCluster);
-            Integer mtu;
-            if (novlanL2 == null) {
-                mtu = NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value(Integer.class);
-            } else {
-                mtu = new MtuGetter().getL2Mtu(L2NetworkInventory.valueOf(novlanL2));
+        List<String> clusterUuids = l2VO.getAttachedClusterRefs().stream().map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList());
+        for (String clusterUuid : clusterUuids) {
+            L2NetworkVO noVlanL2VO = novlanMap.get(clusterUuid);
+            Integer mtu = new MtuGetter().getL2Mtu(L2NetworkInventory.valueOf(noVlanL2VO));
+            if (msg.getMtu() > mtu) {
+                    throw new ApiMessageInterceptionException(argerr("could not set mtu because l2 network[uuid:%s] of " +
+                            "l3 network [uuid:%s] mtu[%s] can not be bigger than the novlan network mtu[%s]", l2VO.getUuid(), msg.getL3NetworkUuid(), msg.getMtu(), mtu));
             }
-
-            if (noVlanMax == null) {
-                noVlanMax = mtu;
-            } else if (mtu < noVlanMax) {
-                noVlanMax = mtu;
-            }
-        }
-
-        if (noVlanMax != null && msg.getMtu() > noVlanMax) {
-            throw new ApiMessageInterceptionException(argerr("could not set mtu because l2 network[uuid:%s] of " +
-                    "l3 network [uuid:%s] mtu can not be bigger than the novlan network", l2VO.getUuid(), msg.getL3NetworkUuid()));
         }
     }
 

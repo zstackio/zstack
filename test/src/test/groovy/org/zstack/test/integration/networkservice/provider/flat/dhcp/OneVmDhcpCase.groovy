@@ -200,10 +200,8 @@ class OneVmDhcpCase extends SubCase {
         }
 
         DhcpInfo info = cmd.dhcpInfos.get(0).dhcp[0]
-        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value()))
-        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VLAN.value()))
-        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.value()))
-        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_DUMMY.value()))
+        // Updating the global configuration mtu will not affect the mtu of the existing vm
+        assert info.mtu.equals(1500)
 
         setL3NetworkMtu {
             delegate.mtu = 1450
