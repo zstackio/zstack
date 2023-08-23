@@ -426,7 +426,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                 try {
                     Integer startPort = Integer.valueOf(portRange[0]);
                     Integer endPort = Integer.valueOf(portRange[1]);
-                    if (startPort > endPort || startPort < SecurityGroupConstant.PORT_NUMBER_MIN
+                    if (startPort >= endPort || startPort < SecurityGroupConstant.PORT_NUMBER_MIN
                         || endPort > SecurityGroupConstant.PORT_NUMBER_MAX) {
                         throw new ApiMessageInterceptionException(argerr("invalid port range[%s]", port));
                     }
@@ -772,7 +772,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("could not add security group rule, because the protocol type ALL or ICMP cant not set dstPortRange[%s]", ao.getDstPortRange()));
                 }
             } else {
-                if (ao.getStartPort() >= 0 && ao.getEndPort() < 65535) {
+                if (ao.getStartPort() >= SecurityGroupConstant.PORT_NUMBER_MIN && ao.getEndPort() < SecurityGroupConstant.PORT_NUMBER_MAX) {
                     if (ao.getStartPort() > ao.getEndPort()) {
                         throw new ApiMessageInterceptionException(argerr("could not add security group rule, because invalid rule endPort[%d], endPort must be greater than or equal to startPort[%d]", ao.getEndPort(), ao.getStartPort()));
                     }
@@ -848,10 +848,10 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("could not add security group rule, because security group %s rules number[%d] is out of max limit[%d]",
                     SecurityGroupRuleType.Egress, (egressRuleCount + toCreateEgressRuleCount), SecurityGroupGlobalConfig.SECURITY_GROUP_RULES_NUM_LIMIT.value(Integer.class)));
         }
-        if (msg.getPriority() > (ingressRuleCount + 1)) {
+        if (msg.getPriority() > (ingressRuleCount + 1) && toCreateIngressRuleCount > 0) {
             throw new ApiMessageInterceptionException(argerr("could not add security group rule, because priority[%d] must be consecutive, the ingress rule maximum priority is [%d]", msg.getPriority(), ingressRuleCount));
         }
-        if (msg.getPriority() > (egressRuleCount + 1)) {
+        if (msg.getPriority() > (egressRuleCount + 1) && toCreateEgressRuleCount > 0) {
             throw new ApiMessageInterceptionException(argerr("could not add security group rule, because priority[%d] must be consecutive, the egress rule maximum priority is [%d]", msg.getPriority(), egressRuleCount));
         }
     }
