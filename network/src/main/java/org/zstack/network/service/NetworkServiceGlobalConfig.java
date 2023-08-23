@@ -1,5 +1,6 @@
 package org.zstack.network.service;
 
+import org.zstack.core.GlobalProperty;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
@@ -31,4 +32,7 @@ public class NetworkServiceGlobalConfig {
 
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ENABLE_VHOSTUSER = new GlobalConfig(CATEGORY, "enableVHostUser");
+
+    @GlobalProperty(name="upgradeMtuSystemTag", defaultValue = "false")
+    public static boolean UPGRADE_MTU_SYSTEMTAG;
 }

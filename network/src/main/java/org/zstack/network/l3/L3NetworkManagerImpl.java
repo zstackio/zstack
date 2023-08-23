@@ -30,14 +30,12 @@ import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.ResourceSharingExtensionPoint;
-import org.zstack.network.l2.L2NetworkCascadeFilterExtensionPoint;
 import org.zstack.network.service.MtuGetter;
-import org.zstack.network.service.NetworkServiceSystemTag;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.resourceconfig.ResourceConfigUpdateExtensionPoint;
 import org.zstack.tag.PatternedSystemTag;
-import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.ObjectUtils;
@@ -53,7 +51,6 @@ import javax.persistence.TypedQuery;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
@@ -130,17 +127,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     private void handle(final APISetL3NetworkMtuMsg msg) {
         final APISetL3NetworkMtuEvent evt = new APISetL3NetworkMtuEvent(msg.getId());
 
-        NetworkServiceSystemTag.L3_MTU.delete(msg.getL3NetworkUuid());
-        SystemTagCreator creator = NetworkServiceSystemTag.L3_MTU.newSystemTagCreator(msg.getL3NetworkUuid());
-        creator.ignoreIfExisting = true;
-        creator.inherent = false;
-        creator.setTagByTokens(
-                map(
-                        e(NetworkServiceSystemTag.MTU_TOKEN, msg.getMtu()),
-                        e(NetworkServiceSystemTag.L3_UUID_TOKEN, msg.getL3NetworkUuid())
-                )
-        );
-        creator.create();
+        new MtuGetter().createL3MtuSystemTag(msg.getL3NetworkUuid(), msg.getMtu());
 
         bus.publish(evt);
     }
@@ -476,6 +463,13 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             }
         }
 
+        L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class)
+                .eq(L2NetworkVO_.uuid, inv.getL2NetworkUuid())
+                .find();
+        Integer mtu = new MtuGetter().getDefaultL2MtuFromGlobalConfig(L2NetworkInventory.valueOf(l2NetworkVO));
+        int defaultMtu = Integer.parseInt(NetworkServiceGlobalConfig.DHCP_MTU_DUMMY.value());
+        new MtuGetter().createL3MtuSystemTag(inv.getUuid(), mtu != null ? mtu : defaultMtu);
+
         APICreateL3NetworkEvent evt = new APICreateL3NetworkEvent(msg.getId());
         evt.setInventory(inv);
         logger.debug(String.format("Successfully created L3Network[name:%s, uuid:%s]", inv.getName(), inv.getUuid()));
@@ -534,6 +528,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             }
             ipRangeFactories.put(f.getType().toString(), f);
         }
+
     }
 
     private void installResourceConfigExtensions() {
