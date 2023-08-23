@@ -244,7 +244,7 @@ doc {
 					type "Integer"
 					optional true
 					since "4.7.21"
-					values ("301","302","307")
+					values ("301","302","303","307","308")
 				}
 			}
         }

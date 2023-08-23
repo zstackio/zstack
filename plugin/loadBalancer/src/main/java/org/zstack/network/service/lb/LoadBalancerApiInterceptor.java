@@ -816,6 +816,16 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             throw new ApiMessageInterceptionException(argerr("could not assign redirect port or status code without specifying http redirect https"));
         }
 
+        List<String> validRedirectValues = Arrays.asList("disable", "enable");
+        if (httpRedirectHttps != null && !validRedirectValues.contains(httpRedirectHttps)) {
+            throw new ApiMessageInterceptionException(argerr("invalid redirect status [%s], it only support %s", httpRedirectHttps, validRedirectValues));
+        }
+
+        List<String> validCodeValues = Arrays.asList("301", "302", "303", "307", "308");
+        if (statusCode != null && !validCodeValues.contains(statusCode)) {
+            throw new ApiMessageInterceptionException(argerr("invalid status code [%s], it only support %s", statusCode, validCodeValues));
+        }
+
         if (HttpRedirectHttps.enable.toString().equals(httpRedirectHttps)) {
             if (!LB_PROTOCOL_HTTP.equals(msg.getProtocol())) {
                 throw new ApiMessageInterceptionException(argerr("could not support protocols other than HTTP when specifying http redirect https"));
@@ -839,6 +849,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             if (seessionPersistence != null && !LoadBalancerSessionPersistence.disable.toString().equals(seessionPersistence)) {
                 throw new ApiMessageInterceptionException(argerr("could not support both HTTP redirect HTTPS and session persistence at the same time"));
             }
+        }
+
+        List<String> validPersistenceValues = Arrays.asList("disable", "enable");
+        if (seessionPersistence != null && !validPersistenceValues.contains(seessionPersistence)) {
+            throw new ApiMessageInterceptionException(argerr("invalid session persistence status [%s], it only support %s", seessionPersistence, validPersistenceValues));
         }
 
         /*can not modify session persistence when the listener algorithm is leastconn except disable*/
@@ -1559,6 +1574,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APIRemoveServerGroupFromLoadBalancerListenerMsg msg){
+        Boolean httpRedirectHttps = Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
+                .eq(SystemTagVO_.tag, "httpRedirectHttps::enable")
+                .eq(SystemTagVO_.resourceUuid, msg.getListenerUuid()).isExists();
+        if (httpRedirectHttps) {
+            throw new ApiMessageInterceptionException(argerr("could not  remove server groups[uuid:%s} from listener [uuid:%s] because it has enable HTTP redirect HTTPS", msg.getServerGroupUuid(), msg.getListenerUuid()));
+        }
+
         List<LoadBalancerListenerServerGroupRefVO> existingRefs
                 = Q.New(LoadBalancerListenerServerGroupRefVO.class)
                 .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())

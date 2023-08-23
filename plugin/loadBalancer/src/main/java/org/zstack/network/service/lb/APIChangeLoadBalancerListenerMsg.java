@@ -78,7 +78,7 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(numberRange = {1, 65535}, required = false)
     private Integer redirectPort;
 
-    @APIParam(validValues = {"301", "302", "307"}, required = false)
+    @APIParam(validValues = {"301", "302", "303", "307", "308"}, required = false)
     private Integer statusCode;
 
     @APINoSee
