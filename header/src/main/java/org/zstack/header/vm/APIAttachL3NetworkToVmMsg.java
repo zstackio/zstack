@@ -67,6 +67,9 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
     @APIParam(required = false)
     private String customMac;
 
+    @APIParam(required = false)
+    private String vmNicParams;
+
     @APINoSee
     @Deprecated
     private List<String> secondaryL3Uuids;
@@ -94,6 +97,14 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
 
     public void setCustomMac(String customMac) {
         this.customMac = customMac;
+    }
+
+    public String getVmNicParams() {
+        return vmNicParams;
+    }
+
+    public void setVmNicParams(String vmNicParams) {
+        this.vmNicParams = vmNicParams;
     }
 
     @Override
