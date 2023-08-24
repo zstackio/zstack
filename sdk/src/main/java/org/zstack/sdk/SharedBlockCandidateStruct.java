@@ -92,4 +92,12 @@ public class SharedBlockCandidateStruct  {
         return this.transport;
     }
 
+    public java.lang.String targetIdentifier;
+    public void setTargetIdentifier(java.lang.String targetIdentifier) {
+        this.targetIdentifier = targetIdentifier;
+    }
+    public java.lang.String getTargetIdentifier() {
+        return this.targetIdentifier;
+    }
+
 }
