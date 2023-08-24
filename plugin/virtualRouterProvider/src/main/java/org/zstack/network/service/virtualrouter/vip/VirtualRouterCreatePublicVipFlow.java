@@ -20,6 +20,8 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmNicInventory;
@@ -94,9 +96,23 @@ public class VirtualRouterCreatePublicVipFlow implements Flow {
         boolean vip6Created = true;
         if (vipIp != null) {
             vip4Created = Q.New(VipVO.class).eq(VipVO_.ip, vipIp).eq(VipVO_.l3NetworkUuid, nic.getL3NetworkUuid()).isExists();
+            if (vip4Created) {
+                VipVO vip = Q.New(VipVO.class).eq(VipVO_.ip, vipIp).eq(VipVO_.l3NetworkUuid, nic.getL3NetworkUuid()).find();
+                vip.setSystem(true);
+                vip.setUsedIpUuid(publicNic.getUsedIpUuid());
+                dbf.updateAndRefresh(vip);
+                vipConfigProxy.attachNetworkService(vr.getUuid(), VipVO.class.getSimpleName(), Arrays.asList(vip.getUuid()));
+            }
         }
         if (vipIp6 != null) {
             vip6Created = Q.New(VipVO.class).eq(VipVO_.ip, vipIp6).eq(VipVO_.l3NetworkUuid, nic.getL3NetworkUuid()).isExists();
+            if (vip6Created) {
+                VipVO vip = Q.New(VipVO.class).eq(VipVO_.ip, vipIp6).eq(VipVO_.l3NetworkUuid, nic.getL3NetworkUuid()).find();
+                vip.setSystem(true);
+                vip.setUsedIpUuid(publicNic.getUsedIpUuid());
+                dbf.updateAndRefresh(vip);
+                vipConfigProxy.attachNetworkService(vr.getUuid(), VipVO.class.getSimpleName(), Arrays.asList(vip.getUuid()));
+            }
         }
         if (vip4Created && vip6Created) {
             logger.debug(String.format("vip [ip:%s] in l3 network [uuid:%s] already created", vipIp, nic.getL3NetworkUuid()));
