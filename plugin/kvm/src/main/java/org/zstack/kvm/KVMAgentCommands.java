@@ -3395,6 +3395,86 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class BlockCommitVolumeCmd extends AgentCommand {
+        private String vmUuid;
+        private String volumeUuid;
+        private VolumeTO volume;
+        private String top;
+        private String base;
+        private long timeout;
+
+        public long getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(long timeout) {
+            this.timeout = timeout;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
+
+        public VolumeTO getVolume() {
+            return volume;
+        }
+
+        public void setVolume(VolumeTO volume) {
+            this.volume = volume;
+        }
+
+        public String getTop() {
+            return top;
+        }
+
+        public void setTop(String top) {
+            this.top = top;
+        }
+
+        public String getBase() {
+            return base;
+        }
+
+        public void setBase(String base) {
+            this.base = base;
+        }
+    }
+
+    public static class BlockCommitVolumeResponse extends AgentResponse {
+        @Validation
+        private String newVolumeInstallPath;
+        @Validation(notZero = true)
+        private long size;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public String getNewVolumeInstallPath() {
+            return newVolumeInstallPath;
+        }
+
+        public void setNewVolumeInstallPath(String newVolumeInstallPath) {
+            this.newVolumeInstallPath = newVolumeInstallPath;
+        }
+    }
+
     public static class TakeSnapshotCmd extends AgentCommand {
         private String vmUuid;
         private String volumeUuid;

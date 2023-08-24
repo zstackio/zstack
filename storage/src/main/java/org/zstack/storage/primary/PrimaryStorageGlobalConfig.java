@@ -35,4 +35,7 @@ public class PrimaryStorageGlobalConfig {
     @GlobalConfigValidation(inNumberRange = {1, 255})
     @GlobalConfigDef(defaultValue = "10", type = Integer.class,  description = "allocator concurrency level, if enabled.")
     public static GlobalConfig ALLOCATE_PRIMARYSTORAGE_CONCURRENCY = new GlobalConfig(CATEGORY, "allocate.primaryStore.Concurrency");
+    @BindResourceConfig({PrimaryStorageVO.class})
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "Whether undo temp snapshot after template uploaded")
+    public static GlobalConfig UNDO_TEMP_SNAPSHOT = new GlobalConfig(CATEGORY, "undo.tempSnapshot");
 }

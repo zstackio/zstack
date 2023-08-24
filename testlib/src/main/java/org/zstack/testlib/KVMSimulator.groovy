@@ -574,5 +574,13 @@ class KVMSimulator implements Simulator {
             def rsp = new KVMAgentCommands.DetachVolumeRsp()
             return rsp
         }
+
+        spec.simulator(KVMConstant.KVM_BLOCK_COMMIT_VOLUME_PATH)  { HttpEntity<String> e ->
+            KVMAgentCommands.BlockCommitVolumeCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.BlockCommitVolumeCmd.class)
+            def rsp = new KVMAgentCommands.BlockCommitVolumeResponse()
+            rsp.newVolumeInstallPath = cmd.base
+            rsp.size = 1
+            return rsp
+        }
     }
 }

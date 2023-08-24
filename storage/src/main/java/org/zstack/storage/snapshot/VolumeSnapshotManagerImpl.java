@@ -596,8 +596,12 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 chain.getUuid(), snapshot.getUuid()));
     }
 
-    @Transactional
     private VolumeSnapshotStruct saveChainTypeSnapshot(VolumeSnapshotVO vo) {
+        return saveChainTypeSnapshot(vo, SnapshotMode.AUTO);
+    }
+
+    @Transactional
+    private VolumeSnapshotStruct saveChainTypeSnapshot(VolumeSnapshotVO vo, SnapshotMode mode) {
         String sql = "select c" +
                 " from VolumeSnapshotTreeVO c" +
                 " where c.volumeUuid = :volUuid" +
@@ -617,7 +621,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         }
 
         if (chain == null) {
-            return newChain(vo, maxIncrementalSnapshotNum == 0);
+            return newChain(vo, SnapshotMode.isFullSnapShot(mode, () -> maxIncrementalSnapshotNum == 0));
         } else {
             sql = "select s" +
                     " from VolumeSnapshotVO s" +
@@ -629,7 +633,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             q.setParameter("chainUuid", chain.getUuid());
             VolumeSnapshotVO latest = q.getSingleResult();
 
-            if (latest.getDistance() >= maxIncrementalSnapshotNum) {
+            VolumeSnapshotVO finalLatest = latest;
+            if (SnapshotMode.isFullSnapShot(mode, () -> finalLatest.getDistance() >= maxIncrementalSnapshotNum)) {
                 dbf.getEntityManager().merge(chain);
                 return newChain(vo, true);
             }
@@ -737,7 +742,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             protected VolumeSnapshotStruct scripts() {
                 VolumeSnapshotStruct s = null;
                 if (VolumeSnapshotArrangementType.CHAIN == capability.getArrangementType()) {
-                    s = saveChainTypeSnapshot(vo);
+                    s = saveChainTypeSnapshot(vo, msg.getRequiredSnapShotMode());
                 } else if (VolumeSnapshotArrangementType.INDIVIDUAL == capability.getArrangementType()) {
                     s = saveIndividualTypeSnapshot(vo);
                 } else {
