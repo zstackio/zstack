@@ -1557,14 +1557,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", hostUuid));
                             ImageCacheVO cvo = q.find();
 
-                            LocalStorageUtils.InstallPath path = new LocalStorageUtils.InstallPath();
-                            path.installPath = cvo.getInstallUrl();
-                            path.hostUuid = hostUuid;
-
                             ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
                             rmsg.setDiskSize(cvo.getSize());
                             rmsg.setPrimaryStorageUuid(cvo.getPrimaryStorageUuid());
-                            rmsg.setAllocatedInstallUrl(path.makeFullPath());
+                            rmsg.setAllocatedInstallUrl(cvo.getInstallUrl());
                             bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, cvo.getPrimaryStorageUuid());
                             bus.send(rmsg);
 
