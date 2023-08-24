@@ -19,10 +19,10 @@ public class APIChangeSecurityGroupRuleMsg extends APIMessage{
     @APIParam(resourceType = SecurityGroupRuleVO.class, nonempty = true)
     private String uuid;
 
-    @APIParam(required = false)
+    @APIParam(required = false, maxLength = 255)
     private String description;
 
-    @APIParam(resourceType = SecurityGroupVO.class, required = false)
+    @APIParam(required = false)
     private String remoteSecurityGroupUuid;
 
     @APIParam(validValues = {"DROP", "ACCEPT"}, required = false, nonempty = true)
@@ -37,13 +37,13 @@ public class APIChangeSecurityGroupRuleMsg extends APIMessage{
     @APIParam(validValues = {"ALL", "TCP", "UDP", "ICMP"}, required = false, nonempty = true)
     private String protocol;
 
-    @APIParam(required = false)
+    @APIParam(required = false, maxLength = 1024)
     private String srcIpRange;
 
-    @APIParam(required = false)
+    @APIParam(required = false, maxLength = 1024)
     private String dstIpRange;
 
-    @APIParam(required = false)
+    @APIParam(required = false, maxLength = 255)
     private String dstPortRange;
 
     public String getUuid() {

@@ -955,102 +955,129 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     private void handle(APIChangeSecurityGroupRuleMsg msg) {
-        SecurityGroupRuleVO vo = dbf.findByUuid(msg.getUuid(), SecurityGroupRuleVO.class);
-
-        boolean isApply = false;
-        if (msg.getDescription() != null && !msg.getDescription().equals(vo.getDescription())) {
-            vo.setDescription(msg.getDescription());
-        }
-
-        if (msg.getRemoteSecurityGroupUuid() != null) {
-            if (vo.getSrcIpRange() != null || vo.getDstIpRange() != null) {
-                vo.setSrcIpRange(null);
-                vo.setDstIpRange(null);
-            }
-            vo.setRemoteSecurityGroupUuid(msg.getRemoteSecurityGroupUuid());
-            isApply = true;
-        }
-
-        if (msg.getAction() != null && !msg.getAction().equals(vo.getAction().toString())) {
-            vo.setAction(msg.getAction());
-            isApply = true;
-        }
-
-        if (msg.getState() != null && !msg.getState().equals(vo.getState().toString())) {
-            vo.setState(SecurityGroupRuleState.valueOf(msg.getState()));
-            isApply = true;
-        }
-
-        if (msg.getSrcIpRange() != null) {
-            vo.setSrcIpRange(msg.getSrcIpRange());
-            vo.setRemoteSecurityGroupUuid(null);
-            isApply = true;
-        }
-
-        if (msg.getDstIpRange() != null) {
-            vo.setDstIpRange(msg.getDstIpRange());
-            vo.setRemoteSecurityGroupUuid(null);
-            isApply = true;
-        }
-
-        if (msg.getDstPortRange() != null) {
-            vo.setDstPortRange(msg.getDstPortRange());
-            isApply = true;
-        }
-
-        if (msg.getProtocol() != null && !msg.getProtocol().equals(vo.getProtocol().toString())) {
-            vo.setProtocol(SecurityGroupRuleProtocolType.valueOf(msg.getProtocol()));
-            isApply = true;
-        }
-
-        if (msg.getPriority() != null && msg.getPriority() != vo.getPriority()) {
-            isApply = true;
-        }
-
-        vo = doChangeSecurityGroupRule(vo, msg.getPriority());
-
-        if (isApply) {
-            RuleCalculator cal = new RuleCalculator();
-            cal.securityGroupUuids = asList(vo.getSecurityGroupUuid());
-            cal.vmStates = asList(VmInstanceState.Running);
-            List<HostRuleTO> rhtos = cal.calculate();
-            applyRules(rhtos);
-        }
-
         APIChangeSecurityGroupRuleEvent evt = new APIChangeSecurityGroupRuleEvent(msg.getId());
-        evt.setInventory(SecurityGroupRuleInventory.valueOf(vo));
-        bus.publish(evt);
+
+        String sgUuid = Q.New(SecurityGroupRuleVO.class).select(SecurityGroupRuleVO_.securityGroupUuid).eq(SecurityGroupRuleVO_.uuid, msg.getUuid()).findValue();
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(sgUuid);
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doChangeSecurityGroupRule(msg, sgUuid, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        SecurityGroupRuleVO vo = dbf.findByUuid(msg.getUuid(), SecurityGroupRuleVO.class);
+                        evt.setInventory(SecurityGroupRuleInventory.valueOf(vo));
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("change-security-group-%s-rule-%s", sgUuid, msg.getUuid());
+            }
+        });
     }
 
-    @Transactional
-    private SecurityGroupRuleVO doChangeSecurityGroupRule(SecurityGroupRuleVO vo, Integer priority) {
-        if (priority == null || priority == vo.getPriority()) {
-            return dbf.updateAndRefresh(vo);
-        }
+    private void doChangeSecurityGroupRule(APIChangeSecurityGroupRuleMsg msg, String sgUuid, Completion completion) {
+        Map data = new HashMap();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setData(data);
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "change-security-group-rule-in-db";
 
-        List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class)
-                .eq(SecurityGroupRuleVO_.securityGroupUuid, vo.getSecurityGroupUuid())
-                .eq(SecurityGroupRuleVO_.type, vo.getType())
-                .notEq(SecurityGroupRuleVO_.uuid, vo.getUuid())
-                .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
-                .list();
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                SecurityGroupRuleVO vo = findByUuid(msg.getUuid(), SecurityGroupRuleVO.class);
+                                vo.setDescription(msg.getDescription());
+                                vo.setState(SecurityGroupRuleState.valueOf(msg.getState()));
+                                vo.setAction(msg.getAction());
+                                vo.setProtocol(SecurityGroupRuleProtocolType.valueOf(msg.getProtocol()));
+                                vo.setRemoteSecurityGroupUuid(msg.getRemoteSecurityGroupUuid());
+                                vo.setSrcIpRange(msg.getSrcIpRange());
+                                vo.setDstIpRange(msg.getDstIpRange());
+                                vo.setDstPortRange(msg.getDstPortRange());
 
-        final int finalPriority = priority == -1 ? rvos.size() + 1 : priority;
-        
-        if (vo.getPriority() > finalPriority) {
-            List<SecurityGroupRuleVO> toUpdate = rvos.stream().filter(r -> r.getPriority() >= finalPriority && r.getPriority() < vo.getPriority()).collect(Collectors.toList());
+                                if (msg.getPriority() != null && msg.getPriority() != vo.getPriority()) {
+                                    List<SecurityGroupRuleVO> others = Q.New(SecurityGroupRuleVO.class)
+                                        .eq(SecurityGroupRuleVO_.securityGroupUuid, vo.getSecurityGroupUuid())
+                                        .eq(SecurityGroupRuleVO_.type, vo.getType())
+                                        .notEq(SecurityGroupRuleVO_.uuid, vo.getUuid())
+                                        .notEq(SecurityGroupRuleVO_.priority, SecurityGroupConstant.DEFAULT_RULE_PRIORITY)
+                                        .list();
+                                    final int finalPriority = msg.getPriority() == -1 ? others.size() + 1 : msg.getPriority();
 
-            toUpdate.stream().forEach(r -> r.setPriority(r.getPriority() + 1));
-            dbf.updateCollection(toUpdate);
-        } else {
-            List<SecurityGroupRuleVO> toUpdate = rvos.stream().filter(r -> r.getPriority() <= finalPriority && r.getPriority() > vo.getPriority()).collect(Collectors.toList());
+                                    if (vo.getPriority() > finalPriority) {
+                                        List<SecurityGroupRuleVO> toUpdate = others.stream().filter(r -> r.getPriority() >= finalPriority && r.getPriority() < vo.getPriority()).collect(Collectors.toList());
 
-            toUpdate.stream().forEach(r -> r.setPriority(r.getPriority() - 1));
-            dbf.updateCollection(toUpdate);
-        }
+                                        toUpdate.stream().forEach(r -> r.setPriority(r.getPriority() + 1));
+                                        dbf.updateCollection(toUpdate);
+                                    } else {
+                                        List<SecurityGroupRuleVO> toUpdate = others.stream().filter(r -> r.getPriority() <= finalPriority && r.getPriority() > vo.getPriority()).collect(Collectors.toList());
 
-        vo.setPriority(finalPriority);
-        return dbf.updateAndRefresh(vo);
+                                        toUpdate.stream().forEach(r -> r.setPriority(r.getPriority() - 1));
+                                        dbf.updateCollection(toUpdate);
+                                    }
+
+                                    vo.setPriority(finalPriority);
+                                }
+
+                                dbf.updateAndRefresh(vo);
+                            }
+                        }.execute();
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "apply-rules-on-hosts";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        RuleCalculator cal = new RuleCalculator();
+                        cal.securityGroupUuids = asList(sgUuid);
+                        cal.vmStates = asList(VmInstanceState.Running);
+                        List<HostRuleTO> htos = cal.calculate();
+                        applyRules(htos);
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+
+            }
+        }).start();
     }
 
     private void handle(APIUpdateSecurityGroupMsg msg) {
