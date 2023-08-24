@@ -9,8 +9,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.resourceconfig.ResourceConfigVO;
-import org.zstack.resourceconfig.ResourceConfigVO_;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -106,11 +105,9 @@ public class VolumeTO extends BaseVirtualDeviceTO {
         to.setUseVirtioSCSI(!ImagePlatform.Other.toString().equals(platform) && KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
         to.setWwn(KVMHost.computeWwnIfAbsent(vol.getUuid()));
         to.setShareable(vol.isShareable());
-        to.setCacheMode(Q.New(ResourceConfigVO.class)
-                .select(ResourceConfigVO_.value)
-                .eq(ResourceConfigVO_.name, KVMGlobalConfig.LIBVIRT_CACHE_MODE.getName())
-                .eq(ResourceConfigVO_.resourceUuid, vol.getUuid())
-                .findValue());
+        ResourceConfigFacade rcf = Platform.getComponentLoader().getComponent(ResourceConfigFacade.class);
+        to.setCacheMode(rcf.getResourceConfigValue(KVMGlobalConfig.LIBVIRT_CACHE_MODE, vol.getUuid(), String.class));
+
         String psType = Q.New(PrimaryStorageVO.class)
                 .eq(PrimaryStorageVO_.uuid, vol.getPrimaryStorageUuid())
                 .select(PrimaryStorageVO_.type)
