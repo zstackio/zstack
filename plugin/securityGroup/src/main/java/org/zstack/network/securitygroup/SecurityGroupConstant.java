@@ -23,7 +23,7 @@ public interface SecurityGroupConstant {
     int ONE_API_RULES_MAX_NUM = 100;
 
     public static enum Param {
-        SECURITYGROUPINV,
-        SECURITYGROUPVO
+        SECURITY_GROUP_RULE_VO,
+        SECURITY_GROUP_VO
     }
 }

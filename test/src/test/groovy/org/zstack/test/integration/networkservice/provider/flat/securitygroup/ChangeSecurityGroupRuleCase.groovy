@@ -26,7 +26,7 @@ class ChangeSecurityGroupRuleCase extends SubCase {
 
     L3NetworkInventory l3Net
     VmInstanceInventory vm1, vm2, vm3, vm4
-    SecurityGroupInventory sg1, sg2, sg3
+    SecurityGroupInventory sg1, sg2, sg3, sg4
 
     void testChangeRulePriority() {
         List<SecurityGroupRuleAO> ingressRules = new ArrayList<>()
@@ -231,6 +231,218 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         }
     }
 
+    void testChangeRuleDuplicate() {
+        sg4 = createSecurityGroup {
+            name = "sg-4"
+            ipVersion = 4
+        } as SecurityGroupInventory
+
+        SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+        r.type = "Egress"
+        r.description = "egress-rule-1"
+        r.ipVersion = 4
+        r.dstPortRange = "100-200"
+        r.dstIpRange = "1.1.1.1"
+        r.protocol = "TCP"
+
+        sg4 = addSecurityGroupRule {
+            securityGroupUuid = sg4.uuid
+            rules = [r]
+        }
+
+        SecurityGroupRuleAO r2 = new SecurityGroupRuleAO()
+        r2.type = "Egress"
+        r2.description = "egress-rule-2"
+        r2.ipVersion = 4
+        r2.dstPortRange = "100-200"
+        r2.protocol = "TCP"
+
+        sg4 = addSecurityGroupRule {
+            securityGroupUuid = sg4.uuid
+            rules = [r2]
+        }
+
+        SecurityGroupRuleInventory rule1 = sg4.rules.find { it.description == "egress-rule-1" }
+        SecurityGroupRuleInventory rule2 = sg4.rules.find { it.description == "egress-rule-2" }
+
+        assert rule1 != null
+        assert rule2 != null
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = rule1.uuid
+                dstIpRange = ''
+            }
+        }
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = rule1.uuid
+                srcIpRange = '2.2.2.2'
+            }
+        }
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = rule1.uuid
+                dstIpRange = ''
+                dstPortRange = ''
+                protocol = 'ALL'
+                remoteSecurityGroupUuid = sg4.uuid
+            }
+        }
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = rule1.uuid
+                priority = 3
+            }
+        }
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = rule1.uuid
+                priority = 0
+            }
+        }
+
+        expect(AssertionError) {
+            changeSecurityGroupRule {
+                uuid = rule1.uuid
+                dstIpRange = '2.2.2.2'
+                remoteSecurityGroupUuid = sg4.uuid
+            }
+        }
+    }
+
+    void testChangeRuleParamLimit() {
+        SecurityGroupRuleAO r = new SecurityGroupRuleAO()
+        r.type = 'Ingress'
+        r.description = 'ingress-rule-1'
+        r.ipVersion = 4
+        r.dstPortRange = '300-400'
+        r.srcIpRange = '3.3.3.3'
+        r.protocol = 'TCP'
+
+        sg4 = addSecurityGroupRule {
+            securityGroupUuid = sg4.uuid
+            rules = [r]
+        }
+
+        SecurityGroupRuleInventory rule1 = sg4.rules.find { it.description == 'ingress-rule-1' }
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            remoteSecurityGroupUuid = sg4.uuid
+        }
+
+        assert rule1.srcIpRange == null
+        assert rule1.remoteSecurityGroupUuid == sg4.uuid
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            srcIpRange = '4.4.4.4'
+        }
+        assert rule1.srcIpRange == '4.4.4.4'
+        assert rule1.remoteSecurityGroupUuid == null
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            srcIpRange = ''
+        }
+        assert rule1.srcIpRange == null
+        assert rule1.remoteSecurityGroupUuid == null
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            remoteSecurityGroupUuid = sg4.uuid
+        }
+        assert rule1.srcIpRange == null
+        assert rule1.remoteSecurityGroupUuid == sg4.uuid
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            remoteSecurityGroupUuid = ''
+        }
+
+        assert rule1.srcIpRange == null
+        assert rule1.remoteSecurityGroupUuid == null
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            dstPortRange = '400-500'
+        }
+
+        assert rule1.dstPortRange == '400-500'
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            protocol = 'UDP'
+        }
+
+        assert rule1.protocol == 'UDP'
+        assert rule1.dstPortRange == '400-500'
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            protocol = 'ALL'
+        }
+
+        assert rule1.protocol == 'ALL'
+        assert rule1.dstPortRange == null
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            protocol = 'ICMP'
+        }
+
+        assert rule1.protocol == 'ICMP'
+        assert rule1.dstPortRange == null
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            protocol = 'TCP'
+            dstPortRange = '500-600'
+        }
+
+        assert rule1.protocol == 'TCP'
+        assert rule1.dstPortRange == '500-600'
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            srcIpRange = '5.5.5.5'
+            protocol = 'UDP'
+            dstPortRange = '700-800'
+            action = 'DROP'
+            state = 'Disabled'
+            description = 'change description'
+        }
+
+        assert rule1.srcIpRange == '5.5.5.5'
+        assert rule1.protocol == 'UDP'
+        assert rule1.dstPortRange == '700-800'
+        assert rule1.action == 'DROP'
+        assert rule1.state == 'Disabled'
+        assert rule1.description == 'change description'
+
+        rule1 = changeSecurityGroupRule {
+            uuid = rule1.uuid
+            remoteSecurityGroupUuid = sg4.uuid
+            protocol = 'ICMP'
+            action = 'ACCEPT'
+            state = 'Enabled'
+            description = ''
+        }
+
+        assert rule1.srcIpRange == null
+        assert rule1.remoteSecurityGroupUuid == sg4.uuid
+        assert rule1.protocol == 'ICMP'
+        assert rule1.dstPortRange == null
+        assert rule1.action == 'ACCEPT'
+        assert rule1.state == 'Enabled'
+        assert rule1.description == null
+    }
+
     @Override
     void clean() {
         env.delete()
@@ -275,5 +487,7 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         testChangeRuleRemoteGroup()
         testChangeDefaultRule()
         testChangeRulePriorityError()
+        testChangeRuleDuplicate()
+        testChangeRuleParamLimit()
     }
 }

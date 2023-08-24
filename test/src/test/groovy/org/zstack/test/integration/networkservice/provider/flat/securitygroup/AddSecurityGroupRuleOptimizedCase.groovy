@@ -100,6 +100,36 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
                 rules = [errorRule]
             }
         }
+
+        errorRule.dstPortRange = null
+        errorRule.protocol = "ALL"
+        errorRule.ipVersion = 4
+        errorRule.type = "Egress"
+        errorRule.dstIpRange = '2023:1:1:1::/64'
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg1.uuid
+                rules = [errorRule]
+            }
+        }
+
+        errorRule.ipVersion = 6
+        errorRule.dstIpRange = '2001:db8:2de::e13,2001:db8:2de::e14-2001:db8:2de::e15,2001:db8:2de::e16-2001:db8:2de::e17'
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg1.uuid
+                rules = [errorRule]
+            }
+        }
+
+        errorRule.ipVersion = 6
+        errorRule.dstIpRange = '172.16.90.157'
+        expect(AssertionError) {
+            addSecurityGroupRule {
+                securityGroupUuid = sg1.uuid
+                rules = [errorRule]
+            }
+        }
     }
 
     void testAddSecurityGroupRule() {
@@ -183,7 +213,7 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
         rule6.endPort = 600
         rule6.action = "DROP"
         rule6.state = "Disabled"
-        rule6.ipVersion = 6
+        rule6.ipVersion = 4
         sg1 = addSecurityGroupRule {
             securityGroupUuid = sg1.uuid
             rules = [rule6]
@@ -490,10 +520,10 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
             } as SecurityGroupInventory
         }
 
-        testAddSecurityGroupRuleError()
         testAddSecurityGroupRule()
         testDeleteRules()
         testAddRuleExceedLimit()
         testAddRuleDiscontinuously()
+        testAddSecurityGroupRuleError()
     }
 }
