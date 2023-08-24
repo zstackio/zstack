@@ -154,6 +154,18 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         return type;
     }
 
+    private String getInitializationPoolName(String existPoolName, String customName, String systemDefinedPoolName) {
+        if (existPoolName != null) {
+            return existPoolName;
+        }
+
+        if (customName != null) {
+            return customName;
+        }
+
+        return systemDefinedPoolName;
+    }
+
     @Override
     @Transactional
     public PrimaryStorageInventory createPrimaryStorage(PrimaryStorageVO vo, APIAddPrimaryStorageMsg msg) {
@@ -166,7 +178,16 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
         dbf.getEntityManager().persist(cvo);
 
-        String rootVolumePoolName = cmsg.getRootVolumePoolName() == null ? String.format("pri-v-r-%s", vo.getUuid()) : cmsg.getRootVolumePoolName();
+        String customName = msg.getSystemTags() == null ? null : msg.getSystemTags()
+                        .stream().filter(v -> CephSystemTags.CUSTOM_INITIALIZATION_POOL_NAME.isMatch(v))
+                        .map(v -> CephSystemTags.CUSTOM_INITIALIZATION_POOL_NAME.getTokenByTag(v, CephSystemTags.CUSTOM_INITIALIZATION_POOL_NAME_TOKEN))
+                        .findFirst().orElse(null);
+
+        if (customName != null) {
+            msg.getSystemTags().removeIf(t -> CephSystemTags.CUSTOM_INITIALIZATION_POOL_NAME.isMatch(t));
+        }
+
+        String rootVolumePoolName = getInitializationPoolName(cmsg.getRootVolumePoolName(), customName, String.format("pri-v-r-%s", vo.getUuid()));
         CephPrimaryStoragePoolVO rootVolumePoolVO = new CephPrimaryStoragePoolVO();
         rootVolumePoolVO.setUuid(Platform.getUuid());
         rootVolumePoolVO.setPrimaryStorageUuid(cvo.getUuid());
@@ -179,7 +200,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         creator.recreate = true;
         creator.create();
 
-        String dataVolumePoolName = cmsg.getDataVolumePoolName() == null ? String.format("pri-v-d-%s", vo.getUuid()) : cmsg.getDataVolumePoolName();
+        String dataVolumePoolName = getInitializationPoolName(cmsg.getDataVolumePoolName(), customName, String.format("pri-v-d-%s", vo.getUuid()));
         CephPrimaryStoragePoolVO dataVolumePoolVO = new CephPrimaryStoragePoolVO();
         dataVolumePoolVO.setUuid(Platform.getUuid());
         dataVolumePoolVO.setPrimaryStorageUuid(cvo.getUuid());
