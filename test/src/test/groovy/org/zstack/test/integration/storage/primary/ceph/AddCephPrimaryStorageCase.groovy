@@ -5,11 +5,14 @@ import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.kvm.KVMSystemTags
 import org.zstack.sdk.AddCephPrimaryStorageAction
+import org.zstack.storage.ceph.CephSystemTags
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
 import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO
+import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO_
 import org.zstack.storage.ceph.primary.CephPrimaryStorageVO
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -170,6 +173,36 @@ use:
         assert Q.New(CephPrimaryStorageMonVO.class).count() == 3l
     }
 
+    void testCreateInitializationPoolWithCustomName() {
+        env.simulator(CephPrimaryStorageBase.GET_FACTS) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new CephPrimaryStorageBase.GetFactsRsp()
+            rsp.fsid = "78f218d9-f525-435f-8a40-3618d1772a65"
+            rsp.monAddr = "127.0.0.4"
+            return rsp
+        }
+
+        env.simulator(CephPrimaryStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.InitCmd.class)
+            assert cmd.pools.stream().filter {v -> v.name == "testname" }.count() == 2
+
+            def rsp = new CephPrimaryStorageBase.InitRsp()
+            rsp.fsid = "78f218d9-f525-435f-8a40-3618d1772a65"
+            rsp.availableCapacity = SizeUnit.GIGABYTE.toByte(1)
+            rsp.totalCapacity = SizeUnit.GIGABYTE.toByte(1)
+            return rsp
+        }
+
+        addCephPrimaryStorage {
+            name = "test"
+            monUrls = ["root:password@127.0.0.4"]
+            zoneUuid = env.inventoryByName("zone1").uuid
+            systemTags = ["ceph::customInitializationPoolName::testname"]
+        }
+
+        assert Q.New(CephPrimaryStoragePoolVO.class).eq(CephPrimaryStoragePoolVO_.poolName, "testname").count() == 2
+        assert querySystemTag {conditions = ["tag=ceph::customInitializationPoolName::testname"]}.size() == 0
+    }
+
     @Override
     void test() {
         dbf = bean(DatabaseFacade.class)
@@ -178,6 +211,7 @@ use:
         env.create {
             testAfterAddCephPrimaryStorageTimeoutStillConnect()
             testAddCephPrimaryStorageGetFactsFailed()
+            testCreateInitializationPoolWithCustomName()
         }
     }
 }
