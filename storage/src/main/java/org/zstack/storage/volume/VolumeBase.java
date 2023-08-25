@@ -37,6 +37,7 @@ import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.*;
+import org.zstack.header.storage.backup.VolumeBackupOverlayMsg;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.MemorySnapshotGroupExtensionPoint;
@@ -75,7 +76,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * To change this template use File | Settings | File Templates.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VolumeBase implements Volume {
+public class VolumeBase extends AbstractVolume implements Volume {
     private static final CLogger logger = Utils.getLogger(VolumeBase.class);
     protected String syncThreadId;
     protected VolumeVO self;
@@ -650,6 +651,11 @@ public class VolumeBase implements Volume {
 
             @Override
             public void run(SyncTaskChain chain) {
+                ErrorCode err = validateOperationByState(msg, self.getStatus(), SysErrors.OPERATION_ERROR);
+                if (err != null) {
+                    throw new OperationFailureException(err);
+                }
+
                 doOverlayMessage(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
@@ -684,6 +690,11 @@ public class VolumeBase implements Volume {
 
             @Override
             public void run(SyncTaskChain chain) {
+                ErrorCode err = validateOperationByState(msg, self.getStatus(), SysErrors.OPERATION_ERROR);
+                if (err != null) {
+                    throw new OperationFailureException(err);
+                }
+
                 bus.send(msg.getMessages(), new CloudBusListCallBack(msg, chain) {
                     @Override
                     public void run(List<MessageReply> replies) {
@@ -1886,6 +1897,10 @@ public class VolumeBase implements Volume {
             @Override
             public void run(SyncTaskChain chain) {
                 CreateVolumeSnapshotGroupReply reply = new CreateVolumeSnapshotGroupReply();
+                ErrorCode err = validateOperationByState(msg, self.getStatus(), SysErrors.OPERATION_ERROR);
+                if (err != null) {
+                    throw new OperationFailureException(err);
+                }
                 doCreateVolumeSnapshotGroup(msg, new ReturnValueCompletion<VolumeSnapshotGroupInventory>(chain) {
                     @Override
                     public void success(VolumeSnapshotGroupInventory inv) {
@@ -2484,6 +2499,11 @@ public class VolumeBase implements Volume {
             @Override
 
             public void run(final SyncTaskChain chain) {
+                ErrorCode err = validateOperationByState(msg, self.getStatus(), SysErrors.OPERATION_ERROR);
+                if (err != null) {
+                    throw new OperationFailureException(err);
+                }
+
                 CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
                 cmsg.setName(msg.getName());
                 cmsg.setDescription(msg.getDescription());
